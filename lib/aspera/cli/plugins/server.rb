@@ -21,7 +21,7 @@ module Aspera
         ASCP_ACTIONS=%i[upload download health].freeze
 
         class LocalExecutor
-          def execute(cmd,_input=nil)
+          def execute(cmd, _input=nil)
             Log.log.debug("Executing: #{cmd}")
             %x(#{cmd.join(' ')})
           end
@@ -29,10 +29,10 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.add_opt_simple(:ssh_keys,'SSH key path list (Array or single)')
-          options.add_opt_simple(:ssh_options,'SSH options (Hash)')
-          options.set_option(:ssh_keys,[])
-          options.set_option(:ssh_options,{})
+          options.add_opt_simple(:ssh_keys, 'SSH key path list (Array or single)')
+          options.add_opt_simple(:ssh_options, 'SSH options (Hash)')
+          options.set_option(:ssh_keys, [])
+          options.set_option(:ssh_options, {})
           options.parse_options!
         end
 
@@ -42,7 +42,7 @@ module Aspera
 
         # @return an object able to execute `ascmd` or nil (WSS)
         # also set transfer spec
-        def executor(url,server_transfer_spec)
+        def executor(url, server_transfer_spec)
           server_uri = URI.parse(url)
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           server_transfer_spec['remote_host']=server_uri.hostname
@@ -68,10 +68,10 @@ module Aspera
           end
           # Scheme is SSH
           if options.get_option(:username).nil?
-            options.set_option(:username,Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+            options.set_option(:username, Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
             Log.log.info("No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
           end
-          server_transfer_spec['remote_user'] = options.get_option(:username,is_type: :mandatory)
+          server_transfer_spec['remote_user'] = options.get_option(:username, is_type: :mandatory)
           ssh_options = options.get_option(:ssh_options)
           raise 'expecting a Hash for ssh_options' unless ssh_options.is_a?(Hash)
           ssh_options = ssh_options.symbolize_keys
@@ -104,14 +104,14 @@ module Aspera
           # if user provided transfer spec has a token, we will use bypass keys
           cred_set = true if transfer.option_transfer_spec['token'].is_a?(String)
           raise 'Either password, key , or transfer spec token must be provided' if !cred_set
-          return Ssh.new(server_transfer_spec['remote_host'],server_transfer_spec['remote_user'],ssh_options)
+          return Ssh.new(server_transfer_spec['remote_host'], server_transfer_spec['remote_user'], ssh_options)
         end
 
-        ACTIONS = [ASCP_ACTIONS,Aspera::AsCmd::OPERATIONS,ASCMD_ALIASES.keys].flatten
+        ACTIONS = [ASCP_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys].flatten
 
         def execute_action
           server_transfer_spec={}
-          shell_executor = executor(options.get_option(:url,is_type: :mandatory),server_transfer_spec)
+          shell_executor = executor(options.get_option(:url, is_type: :mandatory), server_transfer_spec)
           # the set of available commands depends on SSH executor availability (i.e. no WSS)
           available_commands = shell_executor.nil? ? ASCP_ACTIONS : ACTIONS
           # get command and translate aliases
@@ -131,35 +131,35 @@ module Aspera
                 'direction'     => 'send',
                 'cookie'        => 'aspera.sync', # hide in console
                 'resume_policy' => 'none',
-                'paths'         => [{'source' => filepath,'destination' => '.fasping'}]
+                'paths'         => [{'source' => filepath, 'destination' => '.fasping'}]
               })
-              statuses = transfer.start(probe_ts,:direct)
+              statuses = transfer.start(probe_ts, :direct)
               file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
-                nagios.add_ok('transfer','ok')
+                nagios.add_ok('transfer', 'ok')
               else
-                nagios.add_critical('transfer',statuses.reject{|i|i.eql?(:success)}.first.to_s)
+                nagios.add_critical('transfer', statuses.reject{|i|i.eql?(:success)}.first.to_s)
               end
             else raise 'ERROR'
             end
             return nagios.result
           when :upload
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND),:direct))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND), :direct))
           when :download
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE),:direct))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE), :direct))
           when *Aspera::AsCmd::OPERATIONS
-            args = options.get_next_argument('ascmd command arguments',expected: :multiple,mandatory: false)
+            args = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
             ascmd = Aspera::AsCmd.new(shell_executor)
             begin
-              result = ascmd.send(:execute_single,command,args)
+              result = ascmd.send(:execute_single, command, args)
               case command
-              when :mkdir,:mv,:cp,:rm then return Main.result_success
-              when :ls                then return {type: :object_list,data: key_symb_to_str_list(result),fields: %w[zmode zuid zgid size mtime name]}
-              when :df                then return {type: :object_list,data: key_symb_to_str_list(result)}
-              when :du,:md5sum,:info  then return {type: :single_object,data: result.stringify_keys}
+              when :mkdir, :mv, :cp, :rm then return Main.result_success
+              when :ls                then return {type: :object_list, data: key_symb_to_str_list(result), fields: %w[zmode zuid zgid size mtime name]}
+              when :df                then return {type: :object_list, data: key_symb_to_str_list(result)}
+              when :du, :md5sum, :info then return {type: :single_object, data: result.stringify_keys}
               end
             rescue Aspera::AsCmd::Error => e
-              raise CliBadArgument,e.extended_message
+              raise CliBadArgument, e.extended_message
             end
           else raise 'internal error: unexpected action'
           end

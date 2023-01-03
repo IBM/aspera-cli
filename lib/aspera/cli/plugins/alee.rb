@@ -13,9 +13,9 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :entitlement
-            entitlement_id = options.get_option(:username,is_type: :mandatory)
-            customer_id = options.get_option(:password,is_type: :mandatory)
-            api_metering = AoC.metering_api(entitlement_id,customer_id)
+            entitlement_id = options.get_option(:username, is_type: :mandatory)
+            customer_id = options.get_option(:password, is_type: :mandatory)
+            api_metering = AoC.metering_api(entitlement_id, customer_id)
             return {type: :single_object, data: api_metering.read('entitlement')[:data]}
           end
         end

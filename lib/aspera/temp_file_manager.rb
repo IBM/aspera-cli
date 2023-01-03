@@ -11,7 +11,7 @@ module Aspera
     SEC_IN_DAY = 86_400
     # assume no transfer last longer than this
     # (garbage collect file list which were not deleted after transfer)
-    FILE_LIST_AGE_MAX_SEC = 5 * SEC_IN_DAY
+    FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
     private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
     include Singleton
     def initialize

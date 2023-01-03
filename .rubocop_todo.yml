@@ -8,8 +8,6 @@ Layout/DotPosition:
   Enabled: false
 Layout/AssignmentIndentation:
   Enabled: true
-Layout/SpaceAfterComma:
-  Enabled: false
 Layout/SpaceAroundOperators:
   Enabled: false
 Layout/SpaceBeforeBlockBraces:

@@ -15,7 +15,7 @@ module Aspera
     class CliBadArgument < CliError; end
 
     class CliNoSuchId < CliError
-      def initialize(res_type,res_id)
+      def initialize(res_type, res_id)
         msg = "No such #{res_type} identifier: #{res_id}"
         super(msg)
       end
@@ -25,7 +25,7 @@ module Aspera
     class AttrAccessor
       #attr_accessor :object
       #attr_accessor :attr_symb
-      def initialize(object,attr_symb)
+      def initialize(object, attr_symb)
         @object = object
         @attr_symb = attr_symb
       end
@@ -35,7 +35,7 @@ module Aspera
       end
 
       def value=(val)
-        @object.send("#{@attr_symb}=",val)
+        @object.send("#{@attr_symb}=", val)
       end
     end
 
@@ -45,16 +45,16 @@ module Aspera
     class Manager
       # boolean options are set to true/false from the following values
       BOOLEAN_SIMPLE = %i[no yes].freeze
-      FALSE_VALUES = [BOOLEAN_SIMPLE.first,false].freeze
-      TRUE_VALUES = [BOOLEAN_SIMPLE.last,true].freeze
-      BOOLEAN_VALUES = [TRUE_VALUES,FALSE_VALUES].flatten.freeze
+      FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
+      TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
+      BOOLEAN_VALUES = [TRUE_VALUES, FALSE_VALUES].flatten.freeze
 
       # option name separator on command line
       OPTION_SEP_LINE = '-'
       # option name separator in code (symbol)
       OPTION_SEP_NAME = '_'
 
-      private_constant :FALSE_VALUES,:TRUE_VALUES,:BOOLEAN_VALUES,:OPTION_SEP_LINE,:OPTION_SEP_NAME
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_NAME
 
       class << self
         def enum_to_bool(enum)
@@ -67,19 +67,19 @@ module Aspera
         end
 
         # find shortened string value in allowed symbol list
-        def get_from_list(shortval,descr,allowed_values)
+        def get_from_list(shortval, descr, allowed_values)
           # we accept shortcuts
           matching_exact = allowed_values.select{|i| i.to_s.eql?(shortval)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{|i| i.to_s.start_with?(shortval)}
-          raise CliBadArgument,bad_arg_message_multi("unknown value for #{descr}: #{shortval}",allowed_values) if matching.empty?
-          raise CliBadArgument,bad_arg_message_multi("ambigous shortcut for #{descr}: #{shortval}",matching) unless matching.length.eql?(1)
+          raise CliBadArgument, bad_arg_message_multi("unknown value for #{descr}: #{shortval}", allowed_values) if matching.empty?
+          raise CliBadArgument, bad_arg_message_multi("ambigous shortcut for #{descr}: #{shortval}", matching) unless matching.length.eql?(1)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
 
-        def bad_arg_message_multi(error_msg,choices)
-          return [error_msg,'Use:',choices.map{|c|"- #{c}"}.sort].flatten.join("\n")
+        def bad_arg_message_multi(error_msg, choices)
+          return [error_msg, 'Use:', choices.map{|c|"- #{c}"}.sort].flatten.join("\n")
         end
       end
 
@@ -87,7 +87,7 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
-      def initialize(program_name,argv: nil)
+      def initialize(program_name, argv: nil)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments = []
         # command line values starting with '-'
@@ -109,9 +109,9 @@ module Aspera
         @parser.program_name = program_name
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_NAME
-        ENV.each do |k,v|
+        ENV.each do |k, v|
           if k.start_with?(env_prefix)
-            @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym,v])
+            @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym, v])
           end
         end
         Log.log.debug("env=#{@unprocessed_env}".red)
@@ -121,10 +121,10 @@ module Aspera
         unless argv.nil?
           @parser.separator('')
           @parser.separator('OPTIONS: global')
-          set_obj_attr(:interactive,self,:ask_missing_mandatory)
-          set_obj_attr(:ask_options,self,:ask_missing_optional)
-          add_opt_boolean(:interactive,'use interactive input of missing params')
-          add_opt_boolean(:ask_options,'ask even optional options')
+          set_obj_attr(:interactive, self, :ask_missing_mandatory)
+          set_obj_attr(:ask_options, self, :ask_missing_optional)
+          add_opt_boolean(:interactive, 'use interactive input of missing params')
+          add_opt_boolean(:ask_options, 'ask even optional options')
           parse_options!
           process_options = true
           while !argv.empty?
@@ -144,7 +144,7 @@ module Aspera
         Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
       end
 
-      def get_next_command(command_list); return get_next_argument('command',expected: command_list); end
+      def get_next_command(command_list); return get_next_argument('command', expected: command_list); end
 
       # @param expected is
       #    - Array of allowed value (single value)
@@ -153,7 +153,7 @@ module Aspera
       # @param mandatory true/false
       # @param type expected class for result
       # @return value, list or nil
-      def get_next_argument(descr,expected: :single,mandatory: true, type: nil)
+      def get_next_argument(descr, expected: :single, mandatory: true, type: nil)
         unless type.nil?
           raise 'internal: type must be a Class' unless type.is_a?(Class)
           descr="#{descr} (#{type})"
@@ -171,11 +171,11 @@ module Aspera
               result = result.first
             end
           else
-            result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift,descr,expected)
+            result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, expected)
           end
         elsif mandatory
           # no value provided
-          result = get_interactive(:argument,descr,expected: expected)
+          result = get_interactive(:argument, descr, expected: expected)
         end
         Log.log.debug("#{descr}=#{result}")
         raise "argument shall be #{type.name}" unless type.nil? || result.is_a?(type)
@@ -183,7 +183,7 @@ module Aspera
       end
 
       # declare option of type :accessor, or :value
-      def declare_option(option_symbol,type)
+      def declare_option(option_symbol, type)
         Log.log.debug("declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green)
         if @declared_options.has_key?(option_symbol)
           raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" \
@@ -196,15 +196,15 @@ module Aspera
       end
 
       # define option with handler
-      def set_obj_attr(option_symbol,object,attr_symb,default_value=nil)
+      def set_obj_attr(option_symbol, object, attr_symb, default_value=nil)
         Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
-        declare_option(option_symbol,:accessor)
-        @declared_options[option_symbol][:accessor] = AttrAccessor.new(object,attr_symb)
-        set_option(option_symbol,default_value,'default obj attr') if !default_value.nil?
+        declare_option(option_symbol, :accessor)
+        @declared_options[option_symbol][:accessor] = AttrAccessor.new(object, attr_symb)
+        set_option(option_symbol, default_value, 'default obj attr') if !default_value.nil?
       end
 
       # set an option value by name, either store value or call handler
-      def set_option(option_symbol,value,where='default')
+      def set_option(option_symbol, value, where='default')
         if !@declared_options.has_key?(option_symbol)
           Log.log.debug("set unknown option: #{option_symbol}")
           raise 'ERROR: cannot set undeclared option'
@@ -226,7 +226,7 @@ module Aspera
       # get an option value by name
       # either return value or call handler, can return nil
       # ask interactively if requested/required
-      def get_option(option_symbol,is_type: :optional)
+      def get_option(option_symbol, is_type: :optional)
         result = nil
         if @declared_options.has_key?(option_symbol)
           case @declared_options[option_symbol][:type]
@@ -244,7 +244,7 @@ module Aspera
         #Log.log.debug("interactive=#{@ask_missing_mandatory}")
         if result.nil?
           if !@ask_missing_mandatory
-            raise CliBadArgument,"Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
+            raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
           elsif @ask_missing_optional || is_type.eql?(:mandatory)
             # ask_missing_mandatory
             expected = :single
@@ -252,26 +252,26 @@ module Aspera
             if @declared_options.has_key?(option_symbol) && @declared_options[option_symbol].has_key?(:values)
               expected = @declared_options[option_symbol][:values]
             end
-            result = get_interactive(:option,option_symbol.to_s,expected: expected)
-            set_option(option_symbol,result,'interactive')
+            result = get_interactive(:option, option_symbol.to_s, expected: expected)
+            set_option(option_symbol, result, 'interactive')
           end
         end
         return result
       end
 
       # param must be hash
-      def add_option_preset(preset_hash,op: :push)
+      def add_option_preset(preset_hash, op: :push)
         Log.log.debug("add_option_preset=#{preset_hash}")
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # incremental override
-        preset_hash.each{|k,v|@unprocessed_defaults.send(op,[k.to_sym,v])}
+        preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}
       end
 
       # define an option with restricted values
-      def add_opt_list(option_symbol,values,help,*on_args)
-        declare_option(option_symbol,:value)
+      def add_opt_list(option_symbol, values, help, *on_args)
+        declare_option(option_symbol, :value)
         Log.log.debug("add_opt_list #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,'ENUM'))
+        on_args.unshift(symbol_to_option(option_symbol, 'ENUM'))
         # this option value must be a symbol
         @declared_options[option_symbol][:values] = values
         value = get_option(option_symbol)
@@ -282,46 +282,46 @@ module Aspera
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args){|v|set_option(option_symbol,self.class.get_from_list(v.to_s,help,values),'cmdline')}
+        @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, help, values), 'cmdline')}
       end
 
-      def add_opt_boolean(option_symbol,help,*on_args)
-        add_opt_list(option_symbol,BOOLEAN_VALUES,help,*on_args)
+      def add_opt_boolean(option_symbol, help, *on_args)
+        add_opt_list(option_symbol, BOOLEAN_VALUES, help, *on_args)
         # if default was defined for obj, it may still be enum (yes/no) instead of boolean
         default_value=get_option(option_symbol)
-        set_option(option_symbol,default_value,'opt boolean') unless default_value.nil?
+        set_option(option_symbol, default_value, 'opt boolean') unless default_value.nil?
       end
 
       # define an option with open values
-      def add_opt_simple(option_symbol,*on_args)
-        declare_option(option_symbol,:value)
+      def add_opt_simple(option_symbol, *on_args)
+        declare_option(option_symbol, :value)
         Log.log.debug("add_opt_simple #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,'VALUE'))
+        on_args.unshift(symbol_to_option(option_symbol, 'VALUE'))
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args) { |v| set_option(option_symbol,v,'cmdline') }
+        @parser.on(*on_args) { |v| set_option(option_symbol, v, 'cmdline') }
       end
 
       # define an option with date format
-      def add_opt_date(option_symbol,*on_args)
-        declare_option(option_symbol,:value)
+      def add_opt_date(option_symbol, *on_args)
+        declare_option(option_symbol, :value)
         Log.log.debug("add_opt_date #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,'DATE'))
+        on_args.unshift(symbol_to_option(option_symbol, 'DATE'))
         Log.log.debug("on_args=#{on_args}")
         @parser.on(*on_args) do |v|
           case v
-          when 'now' then set_option(option_symbol,Manager.time_to_string(Time.now),'cmdline')
-          when /^-([0-9]+)h/ then set_option(option_symbol,Manager.time_to_string(Time.now - (3600 * Regexp.last_match(1).to_i)),'cmdline')
-          else set_option(option_symbol,v,'cmdline')
+          when 'now' then set_option(option_symbol, Manager.time_to_string(Time.now), 'cmdline')
+          when /^-([0-9]+)h/ then set_option(option_symbol, Manager.time_to_string(Time.now - (Regexp.last_match(1).to_i * 3600)), 'cmdline')
+          else set_option(option_symbol, v, 'cmdline')
           end
         end
       end
 
       # define an option without value
-      def add_opt_switch(option_symbol,*on_args,&block)
+      def add_opt_switch(option_symbol, *on_args, &block)
         Log.log.debug("add_opt_on #{option_symbol}")
-        on_args.unshift(symbol_to_option(option_symbol,nil))
+        on_args.unshift(symbol_to_option(option_symbol, nil))
         Log.log.debug("on_args=#{on_args}")
-        @parser.on(*on_args,&block)
+        @parser.on(*on_args, &block)
       end
 
       # check if there were unprocessed values to generate error
@@ -347,13 +347,13 @@ module Aspera
           when /^--([^=]+)=(.*)$/
             name = Regexp.last_match(1)
             value = Regexp.last_match(2)
-            name.gsub!(OPTION_SEP_LINE,OPTION_SEP_NAME)
+            name.gsub!(OPTION_SEP_LINE, OPTION_SEP_NAME)
             value = ExtendedValue.instance.evaluate(value)
             Log.log.debug("option #{name}=#{value}")
             result[name] = value
             @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining
           else
-            raise CliBadArgument,"wrong option format: #{optionval}"
+            raise CliBadArgument, "wrong option format: #{optionval}"
           end
         end
         return result
@@ -373,8 +373,8 @@ module Aspera
       def parse_options!
         Log.log.debug('parse_options!'.red)
         # first conf file, then env var
-        apply_options_preset(@unprocessed_defaults,'file')
-        apply_options_preset(@unprocessed_env,'env')
+        apply_options_preset(@unprocessed_defaults, 'file')
+        apply_options_preset(@unprocessed_env, 'env')
         # command line override
         unknown_options = []
         begin
@@ -395,16 +395,16 @@ module Aspera
 
       private
 
-      def prompt_user_input(prompt,sensitive)
+      def prompt_user_input(prompt, sensitive)
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         return $stdin.gets.chomp
       end
 
-      def get_interactive(type,descr,expected: :single)
+      def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory
-          raise CliBadArgument,self.class.bad_arg_message_multi("missing: #{descr}",expected) if expected.is_a?(Array)
-          raise CliBadArgument,"missing argument (#{expected}): #{descr}"
+          raise CliBadArgument, self.class.bad_arg_message_multi("missing: #{descr}", expected) if expected.is_a?(Array)
+          raise CliBadArgument, "missing argument (#{expected}): #{descr}"
         end
         result = nil
         sensitive = type.eql?(:option) && @declared_options[descr.to_sym][:sensitive]
@@ -415,21 +415,21 @@ module Aspera
           result = []
           puts(' (one per line, end with empty line)')
           loop do
-            entry = prompt_user_input(default_prompt,sensitive)
+            entry = prompt_user_input(default_prompt, sensitive)
             break if entry.empty?
             result.push(ExtendedValue.instance.evaluate(entry))
           end
         when :single
-          result = ExtendedValue.instance.evaluate(prompt_user_input(default_prompt,sensitive))
+          result = ExtendedValue.instance.evaluate(prompt_user_input(default_prompt, sensitive))
         else # one fixed
-          result = self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}",sensitive),descr,expected)
+          result = self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}", sensitive), descr, expected)
         end
         return result
       end
 
       # generate command line option from option symbol
-      def symbol_to_option(symbol,opt_val)
-        result = '--' + symbol.to_s.gsub(OPTION_SEP_NAME,OPTION_SEP_LINE)
+      def symbol_to_option(symbol, opt_val)
+        result = '--' + symbol.to_s.gsub(OPTION_SEP_NAME, OPTION_SEP_LINE)
         result = result + '=' + opt_val unless opt_val.nil?
         return result
       end
@@ -438,16 +438,16 @@ module Aspera
         $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
       end
 
-      def apply_options_preset(preset,where)
+      def apply_options_preset(preset, where)
         unprocessed = []
         preset.each do |pair|
-          k,v = *pair
+          k, v = *pair
           if @declared_options.has_key?(k)
             # constrained parameters as string are revert to symbol
             if @declared_options[k].has_key?(:values) && v.is_a?(String)
-              v = self.class.get_from_list(v,k.to_s + " in #{where}",@declared_options[k][:values])
+              v = self.class.get_from_list(v, k.to_s + " in #{where}", @declared_options[k][:values])
             end
-            set_option(k,v,where)
+            set_option(k, v, where)
           else
             unprocessed.push(pair)
           end

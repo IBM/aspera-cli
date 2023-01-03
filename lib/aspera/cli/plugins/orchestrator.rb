@@ -9,15 +9,15 @@ module Aspera
       class Orchestrator < BasicAuthPlugin
         def initialize(env)
           super(env)
-          options.add_opt_simple(:params,'parameters hash table, use @json:{"param":"value"}')
-          options.add_opt_simple(:result,"specify result value as: 'work step:parameter'")
-          options.add_opt_boolean(:synchronous,'work step:parameter expected as result')
-          options.add_opt_list(:ret_style,%i[header arg ext],'how return type is requested in api')
-          options.add_opt_list(:auth_style,%i[arg_pass head_basic apikey],'authentication type')
-          options.set_option(:params,{})
-          options.set_option(:synchronous,:no)
-          options.set_option(:ret_style,:arg)
-          options.set_option(:auth_style,:head_basic)
+          options.add_opt_simple(:params, 'parameters hash table, use @json:{"param":"value"}')
+          options.add_opt_simple(:result, "specify result value as: 'work step:parameter'")
+          options.add_opt_boolean(:synchronous, 'work step:parameter expected as result')
+          options.add_opt_list(:ret_style, %i[header arg ext], 'how return type is requested in api')
+          options.add_opt_list(:auth_style, %i[arg_pass head_basic apikey], 'authentication type')
+          options.set_option(:params, {})
+          options.set_option(:synchronous, :no)
+          options.set_option(:ret_style, :arg)
+          options.set_option(:auth_style, :head_basic)
           options.parse_options!
         end
 
@@ -41,15 +41,15 @@ module Aspera
         #          return @api_orch.call(call_args)
         #        end
 
-        def call_ao(endpoint,opt={})
+        def call_ao(endpoint, opt={})
           opt[:prefix] = 'api' unless opt.has_key?(:prefix)
           # calls are GET
-          call_args = {operation: 'GET',subpath: endpoint}
+          call_args = {operation: 'GET', subpath: endpoint}
           # specify prefix if necessary
           call_args[:subpath] = "#{opt[:prefix]}/#{call_args[:subpath]}" unless opt[:prefix].nil?
           # specify id if necessary
           call_args[:subpath] = "#{call_args[:subpath]}/#{opt[:id]}" if opt.has_key?(:id)
-          call_type = options.get_option(:ret_style,is_type: :mandatory)
+          call_type = options.get_option(:ret_style, is_type: :mandatory)
           call_type = opt[:ret_style] if opt.has_key?(:ret_style)
           format = 'json'
           format = opt[:format] if opt.has_key?(:format)
@@ -68,24 +68,24 @@ module Aspera
           end
           result = @api_orch.call(call_args)
           result[:data] = XmlSimple.xml_in(result[:http].body, opt[:xml_opt] || {'ForceArray' => true}) if format.eql?('xml')
-          Log.dump(:data,result[:data])
+          Log.dump(:data, result[:data])
           return result
         end
 
         def execute_action
-          rest_params = {base_url: options.get_option(:url,is_type: :mandatory)}
-          case options.get_option(:auth_style,is_type: :mandatory)
+          rest_params = {base_url: options.get_option(:url, is_type: :mandatory)}
+          case options.get_option(:auth_style, is_type: :mandatory)
           when :arg_pass
             rest_params[:auth] = {
               type:      :url,
               url_creds: {
-                'login'    => options.get_option(:username,is_type: :mandatory),
-                'password' => options.get_option(:password,is_type: :mandatory) }}
+                'login'    => options.get_option(:username, is_type: :mandatory),
+                'password' => options.get_option(:password, is_type: :mandatory) }}
           when :head_basic
             rest_params[:auth] = {
               type:     :basic,
-              username: options.get_option(:username,is_type: :mandatory),
-              password: options.get_option(:password,is_type: :mandatory) }
+              username: options.get_option(:username, is_type: :mandatory),
+              password: options.get_option(:password, is_type: :mandatory) }
           when :apikey
             raise 'Not implemented'
           end
@@ -97,24 +97,24 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              info = call_ao('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})[:data]
-              nagios.add_ok('api','accessible')
-              nagios.check_product_version('api','orchestrator', info['orchestrator-version'])
+              info = call_ao('remote_node_ping', format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+              nagios.add_ok('api', 'accessible')
+              nagios.check_product_version('api', 'orchestrator', info['orchestrator-version'])
             rescue StandardError => e
-              nagios.add_critical('node api',e.to_s)
+              nagios.add_critical('node api', e.to_s)
             end
             return nagios.result
           when :info
-            result = call_ao('remote_node_ping',format: 'xml', xml_opt: {'ForceArray' => false})[:data]
-            return {type: :single_object,data: result}
+            result = call_ao('remote_node_ping', format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+            return {type: :single_object, data: result}
           when :processes
             # TODO: Jira ? API has only XML format
-            result = call_ao('processes_status',format: 'xml')[:data]
-            return {type: :object_list,data: result['process']}
+            result = call_ao('processes_status', format: 'xml')[:data]
+            return {type: :object_list, data: result['process']}
           when :plugins
             # TODO: Jira ? only json format on url
             result = call_ao('plugin_version')[:data]
-            return {type: :object_list,data: result['Plugin']}
+            return {type: :object_list, data: result['Plugin']}
           when :workflow
             command = options.get_next_command(%i[list status inputs details start export])
             unless [:list].include?(command)
@@ -124,21 +124,21 @@ module Aspera
             when :status
               options = {}
               options[:id] = wf_id unless wf_id.eql?('ALL')
-              result = call_ao('workflows_status',options)[:data]
-              return {type: :object_list,data: result['workflows']['workflow']}
+              result = call_ao('workflows_status', options)[:data]
+              return {type: :object_list, data: result['workflows']['workflow']}
             when :list
-              result = call_ao('workflows_list',id: 0)[:data]
-              return {type: :object_list,data: result['workflows']['workflow'],
+              result = call_ao('workflows_list', id: 0)[:data]
+              return {type: :object_list, data: result['workflows']['workflow'],
 fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]}
             when :details
-              result = call_ao('workflow_details',id: wf_id)[:data]
-              return {type: :object_list,data: result['workflows']['workflow']['statuses']}
+              result = call_ao('workflow_details', id: wf_id)[:data]
+              return {type: :object_list, data: result['workflows']['workflow']['statuses']}
             when :inputs
-              result = call_ao('workflow_inputs_spec',id: wf_id)[:data]
-              return {type: :single_object,data: result['workflow_inputs_spec']}
+              result = call_ao('workflow_inputs_spec', id: wf_id)[:data]
+              return {type: :single_object, data: result['workflow_inputs_spec']}
             when :export
-              result = call_ao('export_workflow',id: wf_id,format: nil)[:http]
-              return {type: :text,data: result.body}
+              result = call_ao('export_workflow', id: wf_id, format: nil)[:http]
+              return {type: :text, data: result.body}
             when :start
               result = {
                 type: :single_object,
@@ -147,11 +147,11 @@ fields: %w[id portable_id name published_status published_revision_id latest_rev
               call_params = {format: :json}
               override_accept = nil
               # set external parameters if any
-              self.options.get_option(:params,is_type: :mandatory).each do |name,value|
+              self.options.get_option(:params, is_type: :mandatory).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params['synchronous'] = true if self.options.get_option(:synchronous,is_type: :mandatory)
+              call_params['synchronous'] = true if self.options.get_option(:synchronous, is_type: :mandatory)
               # expected result for synchro call ?
               expected = self.options.get_option(:result)
               unless expected.nil?
@@ -167,7 +167,7 @@ fields: %w[id portable_id name published_status published_revision_id latest_rev
                 result[:type] = :text
                 override_accept = 'text/plain'
               end
-              result[:data] = call_ao('initiate',id: wf_id,args: call_params,accept: override_accept)[:data]
+              result[:data] = call_ao('initiate', id: wf_id, args: call_params, accept: override_accept)[:data]
               return result
             end # wf command
           else raise "ERROR, unknown command: [#{command}]"

@@ -49,13 +49,13 @@ def spec_table
     r << ' ' << c.to_s.upcase << ' |'
   end
   r << ' Description |' << "\n"
-  r << r.join.gsub(/[^\|\n]/,'-')
+  r << r.join.gsub(/[^\|\n]/, '-')
   Aspera::Fasp::Parameters.man_table(to_text: false).sort_by { |a| a[:name] }.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
     p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
-    p[:description] = p[:description].gsub("\n",'<br/>')
-    p[:type] = p[:type].gsub(',','<br/>')
+    p[:description] = p[:description].gsub("\n", '<br/>')
+    p[:type] = p[:type].gsub(',', '<br/>')
     r << '| ' << p[:name] << ' | ' << p[:type] << ' |'
     Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
       r << ' ' << p[c] << ' |'
@@ -70,7 +70,7 @@ end
 def ruby_minimum_version
   requirement = gemspec.required_ruby_version.to_s
   raise "gemspec version must be generic, i.e. like '>= x.y', not specific like '#{requirement}'" if gemspec.required_ruby_version.specific?
-  return requirement.gsub(/^[^0-9]*/,'')
+  return requirement.gsub(/^[^0-9]*/, '')
 end
 
 def ruby_version
@@ -87,7 +87,7 @@ def generate_help(varname)
 end
 
 def include_usage
-  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)},'\1/usershome\2')
+  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)}, '\1/usershome\2')
 end
 
 def include_asession
@@ -97,34 +97,34 @@ end
 # various replacements from commands in test makefile
 REPLACEMENTS = [
   # replace command name
-  [/^.*\$\(EXE_MAN.?\) +/,''],
+  [/^.*\$\(EXE_MAN.?\) +/, ''],
   # replace makefile macros
-  [/\$\(([^)]*)\)/,'\1'],
+  [/\$\(([^)]*)\)/, '\1'],
   # remove multi command mark
-  [/\)?&&\\$/,''],
+  [/\)?&&\\$/, ''],
   # remove redirection
-  [/ [>|] .*$/,''],
+  [/ [>|] .*$/, ''],
   # remove folder macro
-  [/DIR_[A-Z]+/,''],
+  [/DIR_[A-Z]+/, ''],
   # replace shell vars in JSON
-  [/'"\$\$\{([a-z_0-9]+)\}"'/,'my_\1'],
+  [/'"\$\$\{([a-z_0-9]+)\}"'/, 'my_\1'],
   # replace shell vars in shell
-  [/\$\$\{([a-z_0-9]+)\}/,'my_\1'],
+  [/\$\$\{([a-z_0-9]+)\}/, 'my_\1'],
   # de-dup dollar in regex
-  ['$$','$'],
+  ['$$', '$'],
   # hidden parameters to make test work
-  [/OPTST_[A-Z0-5]+/,''],
-  ['@preset:misc.','my_'],
-  ['LOCAL_SAMPLE_FILENAME','testfile.bin'],
-  ['LOCAL_SAMPLE_FILEPATH','testfile.bin'],
-  ['HSTS_UPLOADED_FILE','testfile.bin'],
+  [/OPTST_[A-Z0-5]+/, ''],
+  ['@preset:misc.', 'my_'],
+  ['LOCAL_SAMPLE_FILENAME', 'testfile.bin'],
+  ['LOCAL_SAMPLE_FILEPATH', 'testfile.bin'],
+  ['HSTS_UPLOADED_FILE', 'testfile.bin'],
   %w[HSTS_FOLDER_UPLOAD folder_1],
-  ['Test Package TIMESTAMP','Important files delivery'],
-  ['AOC_EXTERNAL_EMAIL','external.user@example.com'],
-  ['EMAIL_ADDR','internal.user@example.com'],
-  ['CF_',''],
-  ['$@','test'],
-  ['my_f5_meta','']
+  ['Test Package TIMESTAMP', 'Important files delivery'],
+  ['AOC_EXTERNAL_EMAIL', 'external.user@example.com'],
+  ['EMAIL_ADDR', 'internal.user@example.com'],
+  ['CF_', ''],
+  ['$@', 'test'],
+  ['my_f5_meta', '']
 ].freeze
 
 def all_test_commands_by_plugin
@@ -134,7 +134,7 @@ def all_test_commands_by_plugin
       f.each_line do |line|
         next unless line.match?(/\$\(EXE_MAN.?\) +/)
         line = line.chomp
-        REPLACEMENTS.each{|r|line = line.gsub(r.first,r.last)}
+        REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
         # plugin name shall be the first argument: command
         plugin=line.split(/ +/).first
         commands[plugin]||=[]
@@ -157,7 +157,7 @@ end
 
 def include_commands
   all=[]
-  all_test_commands_by_plugin.each do |_k,v|
+  all_test_commands_by_plugin.each do |_k, v|
     all.concat(v)
   end
   return all.join("\n")
@@ -171,9 +171,9 @@ def generate_generic_conf
   n = {}
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
-  YAML.load_file(local_config).each do |k,v|
+  YAML.load_file(local_config).each do |k, v|
     next if k.start_with?('nt_') # no template
-    n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i,m|m[i] = 'your value here'}
+    n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i, m|m[i] = 'your value here'}
   end
   puts(n.to_yaml)
 end

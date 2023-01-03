@@ -13,7 +13,7 @@ require 'uri'
 #Aspera::Log.instance.logger_type=:stderr
 
 class LocalExecutor
-  def execute(cmd,line)
+  def execute(cmd, line)
     %Q(echo "#{line}"|#{cmd})
   end
 end
@@ -29,20 +29,20 @@ ssh_url = URI.parse(params[:url])
 
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN = '/'
-demo_executor = Aspera::Ssh.new(ssh_url.host,params[:user],{password: params[:pass],port: ssh_url.port})
+demo_executor = Aspera::Ssh.new(ssh_url.host, params[:user], {password: params[:pass], port: ssh_url.port})
 
 # to use a local executor, set PATH_FOLDER_MAIN to the main folder
 #PATH_FOLDER_MAIN='/local/data'
 #demo_executor=LocalExecutor.new
 TEST_RUN_ID = rand(1000).to_s
-PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN,'aspera-test-dir-tiny')
-PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN,'Upload')
-PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST,"newfolder-#{TEST_RUN_ID}")
-PATH_FOLDER_RENAMED = File.join(PATH_FOLDER_DEST,"renamedfolder-#{TEST_RUN_ID}")
+PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
+PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN, 'Upload')
+PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST, "newfolder-#{TEST_RUN_ID}")
+PATH_FOLDER_RENAMED = File.join(PATH_FOLDER_DEST, "renamedfolder-#{TEST_RUN_ID}")
 NAME_FILE1 = '200KB.1'
-PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY,NAME_FILE1)
-PATH_FILE_COPY = File.join(PATH_FOLDER_DEST,NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
-PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST,NAME_FILE1 + ".renamed-#{TEST_RUN_ID}")
+PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
+PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
+PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".renamed-#{TEST_RUN_ID}")
 PAC_FILE = 'file:///./examples/proxy.pac'
 
 RSpec.describe(Aspera::Cli::Main) do
@@ -64,20 +64,20 @@ RSpec.describe(Aspera::AsCmd) do
   #    ['df'],
   describe 'info' do
     it 'works' do
-      res = ascmd.execute_single('info',[])
+      res = ascmd.execute_single('info', [])
       expect(res).to(be_a(Hash))
       expect(res[:lang]).to(eq('C'))
     end
   end
   describe 'ls' do
     it "works on folder #{PATH_FOLDER_TINY}" do
-      res = ascmd.execute_single('ls',[PATH_FOLDER_TINY])
+      res = ascmd.execute_single('ls', [PATH_FOLDER_TINY])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.map{|i|i[:name]}).to(include(NAME_FILE1))
     end
     it "works on file #{PATH_FILE_EXIST}" do
-      res = ascmd.execute_single('ls',[PATH_FILE_EXIST])
+      res = ascmd.execute_single('ls', [PATH_FILE_EXIST])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.map{|i|i[:name]}).to(match_array([NAME_FILE1]))
@@ -85,18 +85,18 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'mkdir' do
     it "works on folder #{PATH_FOLDER_NEW}" do
-      res = ascmd.execute_single('mkdir',[PATH_FOLDER_NEW])
+      res = ascmd.execute_single('mkdir', [PATH_FOLDER_NEW])
       expect(res).to(be(true))
     end
   end
   describe 'cp' do
     it "works on files #{PATH_FILE_EXIST} #{PATH_FILE_COPY}" do
-      res = ascmd.execute_single('cp',[PATH_FILE_EXIST,PATH_FILE_COPY])
+      res = ascmd.execute_single('cp', [PATH_FILE_EXIST, PATH_FILE_COPY])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin
-        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -105,16 +105,16 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'rename' do
     it "works on folder #{PATH_FOLDER_NEW} #{PATH_FOLDER_RENAMED}" do
-      res = ascmd.execute_single('mv',[PATH_FOLDER_NEW,PATH_FOLDER_RENAMED])
+      res = ascmd.execute_single('mv', [PATH_FOLDER_NEW, PATH_FOLDER_RENAMED])
       expect(res).to(be(true))
     end
     it 'works on file' do
-      res = ascmd.execute_single('mv',[PATH_FILE_COPY,PATH_FILE_RENAMED])
+      res = ascmd.execute_single('mv', [PATH_FILE_COPY, PATH_FILE_RENAMED])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin
-        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -123,13 +123,13 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'md5sum' do
     it 'works on file' do
-      res = ascmd.execute_single('md5sum',[PATH_FILE_EXIST])
+      res = ascmd.execute_single('md5sum', [PATH_FILE_EXIST])
       expect(res).to(be_a(Hash))
       expect(res[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
       begin
-        ascmd.execute_single('md5sum',['/notexist'])
+        ascmd.execute_single('md5sum', ['/notexist'])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -138,16 +138,16 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'delete' do
     it 'works on file' do
-      res = ascmd.execute_single('rm',[PATH_FILE_RENAMED])
+      res = ascmd.execute_single('rm', [PATH_FILE_RENAMED])
       expect(res).to(be(true))
     end
     it 'works on folder' do
-      res = ascmd.execute_single('rm',[PATH_FOLDER_RENAMED])
+      res = ascmd.execute_single('rm', [PATH_FOLDER_RENAMED])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin
-        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -156,7 +156,7 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'df' do
     it 'works alone' do
-      res = ascmd.execute_single('df',[])
+      res = ascmd.execute_single('df', [])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.first[:fs]).to(be_a(String))
@@ -164,7 +164,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin
-        ascmd.execute_single('mv',['/notexist',PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))

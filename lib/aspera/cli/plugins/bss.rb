@@ -23,7 +23,7 @@ module Aspera
 
         def execute_action
           if @api_bss.nil?
-            key = options.get_option(:password,is_type: :mandatory)
+            key = options.get_option(:password, is_type: :mandatory)
             @api_bss = Rest.new(
               base_url: 'https://dashboard.bss.asperasoft.com/platform',
               headers: {cookie: "_dashboard_key=#{key}"})
@@ -35,15 +35,15 @@ module Aspera
             object = 'bssSubscriptions'
             case command
             when :find
-              query = options.get_option(:query,is_type: :mandatory) # AOC_ORGANIZATION_QUERY AOC_USER_EMAIL
-              value = options.get_option(:value,is_type: :mandatory)
+              query = options.get_option(:query, is_type: :mandatory) # AOC_ORGANIZATION_QUERY AOC_USER_EMAIL
+              value = options.get_option(:value, is_type: :mandatory)
               request = {
-                'variables' => {'filter' => {'key' => query,'value' => value}},
+                'variables' => {'filter' => {'key' => query, 'value' => value}},
                 'query'     => "query($filter: BssSubscriptionFilter!) {#{object}(filter: $filter) { #{all_fields('bssSubscriptions')} } }"
               }
-              result = @api_bss.create('graphql',request)[:data]
+              result = @api_bss.create('graphql', request)[:data]
               # give fields to keep order
-              return {type: :object_list, data: result['data'][object],fields: FIELDS['bssSubscriptions']}
+              return {type: :object_list, data: result['data'][object], fields: FIELDS['bssSubscriptions']}
             when :show
               id = instance_identifier
               request = {
@@ -52,7 +52,7 @@ module Aspera
                   'instances { id state planId serviceId ssmSubscriptionId entitlement { id } aocOrganization { id subdomainName name status tier urlId trialExpiresAt '\
                   'users(organizationAdmin: true) { id name email atsAdmin subscriptionAdmin } } } } }'
               }
-              result = @api_bss.create('graphql',request)[:data]['data'][object].first
+              result = @api_bss.create('graphql', request)[:data]['data'][object].first
               result.delete('instances')
               return {type: :single_object, data: result}
             when :instances
@@ -61,7 +61,7 @@ module Aspera
                 'variables' => {'id' => id},
                 'query'     => "query($id: ID!) {#{object}(id: $id) { aocOrganization { id subdomainName name status tier urlId trialExpiresAt } } } }"
               }
-              result = @api_bss.create('graphql',request)[:data]['data'][object].first
+              result = @api_bss.create('graphql', request)[:data]['data'][object].first
               return {type: :object_list, data: result['instances']}
             end
           end

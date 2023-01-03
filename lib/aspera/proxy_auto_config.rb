@@ -22,9 +22,9 @@ module Aspera
   class ProxyAutoConfig
     # template file is read once, it contains functions that can be used in a proxy autoconf script
     # it is similar to mozilla ascii_pac_utils.inc
-    PAC_FUNCTIONS_FILE = __FILE__.gsub(/\.rb$/,'.js').freeze
+    PAC_FUNCTIONS_FILE = __FILE__.gsub(/\.rb$/, '.js').freeze
     PAC_MAIN_FUNCTION = 'FindProxyForURL'
-    private_constant :PAC_FUNCTIONS_FILE,:PAC_MAIN_FUNCTION
+    private_constant :PAC_FUNCTIONS_FILE, :PAC_MAIN_FUNCTION
 
     private
 
@@ -52,7 +52,7 @@ END_OF_JAVASCRIPT
 
     public
 
-    attr_writer :proxy_user,:proxy_pass
+    attr_writer :proxy_user, :proxy_pass
 
     # @param proxy_auto_config the proxy auto config script to be evaluated
     def initialize(proxy_auto_config)
@@ -101,7 +101,7 @@ END_OF_JAVASCRIPT
         return uri_list
       end
       proxy_list_str.strip!
-      proxy_list_str.gsub!(/\s+/,' ')
+      proxy_list_str.gsub!(/\s+/, ' ')
       proxy_list_str.split(';').each do |item|
         # strip and split by space
         parts = item.strip.split

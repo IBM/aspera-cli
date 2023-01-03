@@ -10,7 +10,7 @@ module Aspera
     class EncryptedHash
       CIPHER_NAME='aes-256-cbc'
       CONTENT_KEYS = %i[label username password url description].freeze
-      def initialize(path,current_password)
+      def initialize(path, current_password)
         @path=path
         self.password=current_password
         raise 'path to vault file shall be String' unless @path.is_a?(String)
@@ -22,11 +22,11 @@ module Aspera
         # derive key from passphrase
         key="#{new_password}#{"\x0"*key_bytes}"[0..(key_bytes-1)]
         Log.log.debug("key=[#{key}],#{key.length}")
-        SymmetricEncryption.cipher=@cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME,key: key,encoding: :none)
+        SymmetricEncryption.cipher=@cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME, key: key, encoding: :none)
       end
 
       def save
-        File.write(@path, @cipher.encrypt(YAML.dump(@all_secrets)),encoding: 'BINARY')
+        File.write(@path, @cipher.encrypt(YAML.dump(@all_secrets)), encoding: 'BINARY')
       end
 
       def set(options)
@@ -42,7 +42,7 @@ module Aspera
 
       def list
         result = []
-        @all_secrets.each do |label,values|
+        @all_secrets.each do |label, values|
           normal = values.symbolize_keys
           normal[:label] = label
           CONTENT_KEYS.each{|k|normal[k] = '' unless normal.has_key?(k)}

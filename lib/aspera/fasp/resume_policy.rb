@@ -20,7 +20,7 @@ module Aspera
         @parameters = DEFAULTS.dup
         if !params.nil?
           raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
-          params.each do |k,v|
+          params.each do |k, v|
             raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}" unless DEFAULTS.has_key?(k)
             raise "#{k} must be Integer" unless v.is_a?(Integer)
             @parameters[k] = v
@@ -49,7 +49,7 @@ module Aspera
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
-              raise Fasp::Error,'Maximum number of retry reached' if remaining_resumes <= 0
+              raise Fasp::Error, 'Maximum number of retry reached' if remaining_resumes <= 0
             else
               # give one chance only to non retryable errors
               unless remaining_resumes.eql?(@parameters[:iter_max])

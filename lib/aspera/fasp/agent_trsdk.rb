@@ -18,7 +18,7 @@ module Aspera
         raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
         # set default options and override if specified
         options = DEFAULT_OPTIONS.dup
-        user_opts&.each do |k,v|
+        user_opts&.each do |k, v|
           raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
           options[k] = v
         end
@@ -27,17 +27,17 @@ module Aspera
         # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
-        @transfer_client = Transfersdk::TransferService::Stub.new("#{options[:address]}:#{options[:port]}",:this_channel_is_insecure)
+        @transfer_client = Transfersdk::TransferService::Stub.new("#{options[:address]}:#{options[:port]}", :this_channel_is_insecure)
         begin
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug("daemon info: #{get_info_response}")
         rescue GRPC::Unavailable
           Log.log.warn('no daemon present, starting daemon...')
           # location of daemon binary
-          bin_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder,'..'))
+          bin_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
           # config file and logs are created in same folder
-          conf_file = File.join(bin_folder,'sdk.conf')
-          log_base = File.join(bin_folder,'transferd')
+          conf_file = File.join(bin_folder, 'sdk.conf')
+          log_base = File.join(bin_folder, 'transferd')
           # create a config file for daemon
           config = {
             address:      options[:address],
@@ -50,8 +50,8 @@ module Aspera
               }
             }
           }
-          File.write(conf_file,config.to_json)
-          trd_pid = Process.spawn(Installation.instance.path(:transferd),'--config', conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
+          File.write(conf_file, config.to_json)
+          trd_pid = Process.spawn(Installation.instance.path(:transferd), '--config', conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
           Process.detach(trd_pid)
           sleep(2.0)
           retry
@@ -80,16 +80,16 @@ module Aspera
           case response.status
           when :RUNNING
             if !started && !response.sessionInfo.preTransferBytes.eql?(0)
-              notify_begin(@transfer_id,response.sessionInfo.preTransferBytes)
+              notify_begin(@transfer_id, response.sessionInfo.preTransferBytes)
               started = true
             elsif started
-              notify_progress(@transfer_id,response.transferInfo.bytesTransferred)
+              notify_progress(@transfer_id, response.transferInfo.bytesTransferred)
             end
           when :FAILED, :COMPLETED, :CANCELED
             notify_end(@transfer_id)
             raise Fasp::Error, JSON.parse(response.message)['Description'] unless :COMPLETED.eql?(response.status)
             break
-          when :QUEUED,:UNKNOWN_STATUS,:PAUSED,:ORPHANED
+          when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
             # ignore
           else
             Log.log.error("unknown status#{response.status}")

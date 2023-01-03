@@ -11,14 +11,14 @@ module Aspera
         def initialize(env)
           super(env)
           @service_creds = nil
-          options.add_opt_simple(:bucket,'Bucket name')
-          options.add_opt_simple(:endpoint,'Storage endpoint url')
-          options.add_opt_simple(:apikey,'Storage API key')
-          options.add_opt_simple(:crn,'Ressource instance id')
-          options.add_opt_simple(:service_credentials,'IBM Cloud service credentials (Hash)')
-          options.add_opt_simple(:region,'Storage region')
-          options.add_opt_simple(:identity,"Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})")
-          options.set_option(:identity,CosNode::IBM_CLOUD_TOKEN_URL)
+          options.add_opt_simple(:bucket, 'Bucket name')
+          options.add_opt_simple(:endpoint, 'Storage endpoint url')
+          options.add_opt_simple(:apikey, 'Storage API key')
+          options.add_opt_simple(:crn, 'Ressource instance id')
+          options.add_opt_simple(:service_credentials, 'IBM Cloud service credentials (Hash)')
+          options.add_opt_simple(:region, 'Storage region')
+          options.add_opt_simple(:identity, "Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})")
+          options.set_option(:identity, CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!
         end
 
@@ -28,22 +28,22 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :node
-            bucket_name = options.get_option(:bucket,is_type: :mandatory)
+            bucket_name = options.get_option(:bucket, is_type: :mandatory)
             # get service credentials, Hash, e.g. @json:@file:...
             service_credentials = options.get_option(:service_credentials)
             storage_endpoint = options.get_option(:endpoint)
-            raise CliBadArgument,'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
-            raise CliBadArgument,'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
+            raise CliBadArgument, 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
+            raise CliBadArgument, 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
             if service_credentials.nil?
-              service_api_key = options.get_option(:apikey,is_type: :mandatory)
-              instance_id = options.get_option(:crn,is_type: :mandatory)
+              service_api_key = options.get_option(:apikey, is_type: :mandatory)
+              instance_id = options.get_option(:crn, is_type: :mandatory)
             else
-              params=CosNode.parameters_from_svc_creds(service_credentials,options.get_option(:region,is_type: :mandatory))
+              params=CosNode.parameters_from_svc_creds(service_credentials, options.get_option(:region, is_type: :mandatory))
               storage_endpoint = params[:storage_endpoint]
               service_api_key = params[:service_api_key]
               instance_id = params[:instance_id]
             end
-            api_node = CosNode.new(bucket_name,storage_endpoint,instance_id,service_api_key,options.get_option(:identity,is_type: :mandatory))
+            api_node = CosNode.new(bucket_name, storage_endpoint, instance_id, service_api_key, options.get_option(:identity, is_type: :mandatory))
             #command=self.options.get_next_command(Node::ACTIONS)
             #command=self.options.get_next_command(Node::COMMON_ACTIONS)
             command = options.get_next_command(%i[upload download info access_key api_details transfer])

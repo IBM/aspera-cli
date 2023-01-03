@@ -14,7 +14,7 @@ module Aspera
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
-      def levels; Logger::Severity.constants.sort{|a,b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
+      def levels; Logger::Severity.constants.sort{|a, b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
 
       # where logs are sent to
       def logtypes; %i[stderr stdout syslog];end
@@ -25,14 +25,14 @@ module Aspera
       # dump object in debug mode
       # @param name string or symbol
       # @param format either pp or json format
-      def dump(name,object,format=:json)
+      def dump(name, object, format=:json)
         log.debug do
           result =
             case format
             when :json
-              JSON.pretty_generate(object) rescue PP.pp(object,+'')
+              JSON.pretty_generate(object) rescue PP.pp(object, +'')
             when :ruby
-              PP.pp(object,+'')
+              PP.pp(object, +'')
             else
               raise 'wrong parameter, expect pp or json'
             end

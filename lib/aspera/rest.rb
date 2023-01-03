@@ -49,10 +49,10 @@ module Aspera
         define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p] = val}
       end
 
-      def basic_creds(user,pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
+      def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
 
       # build URI from URL and parameters and check it is http or https
-      def build_uri(url,params=nil)
+      def build_uri(url, params=nil)
         uri = URI.parse(url)
         raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
         if !params.nil?
@@ -60,15 +60,15 @@ module Aspera
           if params.is_a?(Hash)
             orig = params
             params = []
-            orig.each do |k,v|
+            orig.each do |k, v|
               case v
               when Array
                 suffix = v.first.eql?('[]') ? v.shift : ''
                 v.each do |e|
-                  params.push([k + suffix,e])
+                  params.push([k + suffix, e])
                 end
               else
-                params.push([k,v])
+                params.push([k, v])
               end
             end
           end
@@ -121,26 +121,26 @@ module Aspera
       raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
       raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
       @params = a_rest_params.clone
-      Log.dump('REST params',@params)
+      Log.dump('REST params', @params)
       # base url without trailing slashes (note: string may be frozen)
-      @params[:base_url] = @params[:base_url].gsub(/\/+$/,'')
+      @params[:base_url] = @params[:base_url].gsub(/\/+$/, '')
       @http_session = nil
       # default is no auth
       @params[:auth] ||= {type: :none}
       @params[:not_auth_codes] ||= ['401']
       @oauth = nil
-      Log.dump('REST params(2)',@params)
+      Log.dump('REST params(2)', @params)
     end
 
     def oauth_token(force_refresh: false)
-      raise "ERROR: expecting boolean, have #{force_refresh}" unless [true,false].include?(force_refresh)
+      raise "ERROR: expecting boolean, have #{force_refresh}" unless [true, false].include?(force_refresh)
       return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
     def build_request(call_data)
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri = self.class.build_uri("#{call_data[:base_url]}#{['','/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}",call_data[:url_params])
+      uri = self.class.build_uri("#{call_data[:base_url]}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
       Log.log.debug("URI=#{uri}")
       begin
         # instanciate request object based on string name
@@ -150,7 +150,7 @@ module Aspera
       end
       if call_data.has_key?(:json_params) && !call_data[:json_params].nil?
         req.body = JSON.generate(call_data[:json_params])
-        Log.dump('body JSON data',call_data[:json_params])
+        Log.dump('body JSON data', call_data[:json_params])
         #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
@@ -171,7 +171,7 @@ module Aspera
         end
       end
       # :type = :basic
-      req.basic_auth(call_data[:auth][:username],call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
+      req.basic_auth(call_data[:auth][:username], call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
       return req
     end
 
@@ -242,7 +242,7 @@ module Aspera
             target_file = call_data[:save_to_file]
             # override user's path to path in header
             if !response['Content-Disposition'].nil? && (m = response['Content-Disposition'].match(/filename="([^"]+)"/))
-              target_file = File.join(File.dirname(target_file),m[1])
+              target_file = File.join(File.dirname(target_file), m[1])
             end
             # download with temp filename
             target_file_tmp = "#{target_file}#{self.class.download_partial_suffix}"
@@ -265,14 +265,14 @@ module Aspera
         Log.log.debug("result: body=#{result[:http].body}")
         result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first
         result[:data] = case result_mime
-        when 'application/json','application/vnd.api+json'
+        when 'application/json', 'application/vnd.api+json'
           JSON.parse(result[:http].body) rescue nil
         else #when 'text/plain'
           result[:http].body
         end
-        Log.dump("result: parsed: #{result_mime}",result[:data])
+        Log.dump("result: parsed: #{result_mime}", result[:data])
         Log.log.debug("result: code=#{result[:http].code}")
-        RestErrorAnalyzer.instance.raise_on_error(req,result)
+        RestErrorAnalyzer.instance.raise_on_error(req, result)
       rescue RestCallError => e
         # not authorized: oauth token expired
         if call_data[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
@@ -319,24 +319,24 @@ module Aspera
     #
 
     # @param encoding : one of: :json_params, :url_params
-    def create(subpath,params,encoding=:json_params)
-      return call({operation: 'POST',subpath: subpath,headers: {'Accept' => 'application/json'},encoding => params})
+    def create(subpath, params, encoding=:json_params)
+      return call({operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, encoding => params})
     end
 
-    def read(subpath,args=nil)
-      return call({operation: 'GET',subpath: subpath,headers: {'Accept' => 'application/json'},url_params: args})
+    def read(subpath, args=nil)
+      return call({operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: args})
     end
 
-    def update(subpath,params)
-      return call({operation: 'PUT',subpath: subpath,headers: {'Accept' => 'application/json'},json_params: params})
+    def update(subpath, params)
+      return call({operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params})
     end
 
     def delete(subpath)
-      return call({operation: 'DELETE',subpath: subpath,headers: {'Accept' => 'application/json'}})
+      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}})
     end
 
     def cancel(subpath)
-      return call({operation: 'CANCEL',subpath: subpath,headers: {'Accept' => 'application/json'}})
+      return call({operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'}})
     end
   end
 end #module Aspera

@@ -35,11 +35,11 @@ class String
   }.freeze
   private_constant :VTSTYLES
   # defines methods to String, one per entry in VTSTYLES
-  VTSTYLES.each do |name,code|
+  VTSTYLES.each do |name, code|
     if $stderr.tty?
       begin_seq = vtcmd(code)
       end_code = 0 # by default reset all
-      if code <= 7 then 20 + code
+      if code <= 7 then code + 20
       elsif code <= 37 then 39
       elsif code <= 47 then 49
       end

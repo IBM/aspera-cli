@@ -27,16 +27,16 @@ module Aspera
       @delete_condition = options[:delete] || lambda{|d|d.empty?}
       @persist_format = options[:format] || lambda {|h| JSON.generate(h)}
       persist_parse = options[:parse] || lambda {|t| JSON.parse(t)}
-      persist_merge = options[:merge] || lambda {|current,file| current.concat(file).uniq rescue current}
+      persist_merge = options[:merge] || lambda {|current, file| current.concat(file).uniq rescue current}
       value = @manager.get(@object_id)
-      persist_merge.call(@persisted_object,persist_parse.call(value)) unless value.nil?
+      persist_merge.call(@persisted_object, persist_parse.call(value)) unless value.nil?
     end
 
     def save
       if @delete_condition.call(@persisted_object)
         @manager.delete(@object_id)
       else
-        @manager.put(@object_id,@persist_format.call(@persisted_object))
+        @manager.put(@object_id, @persist_format.call(@persisted_object))
       end
     end
 

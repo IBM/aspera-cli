@@ -8,7 +8,7 @@ require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'cgi'
 
-Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
+Aspera::Oauth.register_token_creator(:aoc_pub_link, lambda{|o|
   o.api.call({
     operation:   'POST',
     subpath:     o.gparams[:path_token],
@@ -16,8 +16,8 @@ Aspera::Oauth.register_token_creator(:aoc_pub_link,lambda{|o|
     json_params: o.sparams[:json],
     url_params:  o.sparams[:url].merge(scope: o.gparams[:scope]) # scope is here because it changes over time (node)
   })
-},lambda { |oauth|
-  return [oauth.sparams.dig(:json,:url_token)]
+}, lambda { |oauth|
+  return [oauth.sparams.dig(:json, :url_token)]
 })
 
 module Aspera
@@ -40,8 +40,8 @@ module Aspera
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN = %w[name email id default_workspace_id organization_id].freeze
 
-    private_constant :MAX_REDIRECT,:GLOBAL_CLIENT_APPS,:DATA_REPO_INDEX_START,:COOKIE_PREFIX,:PUBLIC_LINK_PATHS,:JWT_AUDIENCE,
-      :OAUTH_API_SUBPATH,:USER_INFO_FIELDS_MIN
+    private_constant :MAX_REDIRECT, :GLOBAL_CLIENT_APPS, :DATA_REPO_INDEX_START, :COOKIE_PREFIX, :PUBLIC_LINK_PATHS, :JWT_AUDIENCE,
+      :OAUTH_API_SUBPATH, :USER_INFO_FIELDS_MIN
 
     # various API scopes supported
     SCOPE_FILES_SELF = 'self'
@@ -68,21 +68,21 @@ module Aspera
       def get_client_info(client_name=GLOBAL_CLIENT_APPS.first)
         client_index = GLOBAL_CLIENT_APPS.index(client_name)
         raise "no such pre-defined client: #{client_name}" if client_index.nil?
-        return client_name,Base64.urlsafe_encode64(DataRepository.instance.data(DATA_REPO_INDEX_START + client_index))
+        return client_name, Base64.urlsafe_encode64(DataRepository.instance.data(DATA_REPO_INDEX_START + client_index))
       end
 
       # @param url of AoC instance
       # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
       def parse_url(aoc_org_url)
-        uri = URI.parse(aoc_org_url.gsub(/\/+$/,''))
+        uri = URI.parse(aoc_org_url.gsub(/\/+$/, ''))
         instance_fqdn = uri.host
         Log.log.debug("instance_fqdn=#{instance_fqdn}")
         raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
-        organization,instance_domain = instance_fqdn.split('.',2)
+        organization, instance_domain = instance_fqdn.split('.', 2)
         Log.log.debug("instance_domain=#{instance_domain}")
         Log.log.debug("organization=#{organization}")
         raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
-        return organization,instance_domain
+        return organization, instance_domain
       end
 
       # base API url depends on domain, which could be "qa.xxx"
@@ -90,22 +90,22 @@ module Aspera
         return "https://#{organization}.#{api_domain}"
       end
 
-      def metering_api(entitlement_id,customer_id,api_domain=PROD_DOMAIN)
+      def metering_api(entitlement_id, customer_id, api_domain=PROD_DOMAIN)
         return Rest.new({
           base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
-          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id,customer_id)}
+          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id, customer_id)}
         })
       end
 
       # node API scopes
-      def node_scope(access_key,scope)
+      def node_scope(access_key, scope)
         return "node.#{access_key}:#{scope}"
       end
 
       # check option "link"
       # if present try to get token value (resolve redirection if short links used)
       # then set options url/token/auth
-      def resolve_pub_link(a_auth,a_opt)
+      def resolve_pub_link(a_auth, a_opt)
         public_link_url = a_opt[:link]
         return if public_link_url.nil?
         raise 'do not use both link and url options' unless a_opt[:url].nil?
@@ -115,7 +115,7 @@ module Aspera
           # detect if it's an expected format
           if PUBLIC_LINK_PATHS.include?(uri.path)
             url_param_token_pair = URI.decode_www_form(uri.query).find{|e|e.first.eql?('token')}
-            raise ArgumentError,'link option must be URL with "token" parameter' if url_param_token_pair.nil?
+            raise ArgumentError, 'link option must be URL with "token" parameter' if url_param_token_pair.nil?
             # ok we get it !
             a_opt[:url] = 'https://' + uri.host
             a_auth[:crtype] = :aoc_pub_link
@@ -130,7 +130,7 @@ module Aspera
           Log.log.debug("no expected format: #{public_link_url}")
           r = Net::HTTP.get_response(uri)
           # not a redirection
-          raise ArgumentError,'link option must be redirect or have token parameter' unless r.code.start_with?('3')
+          raise ArgumentError, 'link option must be redirect or have token parameter' unless r.code.start_with?('3')
           public_link_url = r['location']
           raise 'no location in redirection' if public_link_url.nil?
           Log.log.debug("redirect to: #{public_link_url}")
@@ -139,7 +139,7 @@ module Aspera
       end
 
       # additional transfer spec (tags) for package information
-      def package_tags(package_info,operation)
+      def package_tags(package_info, operation)
         return {'tags' => {'aspera' => {'files' => {
           'package_id'        => package_info['id'],
           'package_name'      => package_info['name'],
@@ -148,7 +148,7 @@ module Aspera
       end
 
       # add details to show in analytics
-      def analytics_ts(app,direction,ws_id,ws_name)
+      def analytics_ts(app, direction, ws_id, ws_name)
         # translate transfer to operation
         operation =
           case direction
@@ -162,7 +162,7 @@ module Aspera
             'aspera' => {
               'usage_id' => "aspera.files.workspace.#{ws_id}", # activity tracking
               'files'    => {
-                'files_transfer_action' => "#{operation}_#{app.gsub(/s$/,'')}",
+                'files_transfer_action' => "#{operation}_#{app.gsub(/s$/, '')}",
                 'workspace_name'        => ws_name, # activity tracking
                 'workspace_id'          => ws_id
               }
@@ -174,7 +174,7 @@ module Aspera
 
     # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:passphrase,:username,:subpath,:password (for pub link)
     def initialize(opt)
-      raise ArgumentError,'Missing mandatory option: scope' if opt[:scope].nil?
+      raise ArgumentError, 'Missing mandatory option: scope' if opt[:scope].nil?
 
       # access key secrets are provided out of band to get node api access
       # key: access key
@@ -188,13 +188,13 @@ module Aspera
       aoc_auth_p = aoc_rest_p[:auth]
 
       # sets opt[:url], aoc_rest_p[:auth][:crtype], [:auth][:aoc_pub_link] if there is a link
-      self.class.resolve_pub_link(aoc_auth_p,opt)
+      self.class.resolve_pub_link(aoc_auth_p, opt)
 
       # test here because link may set url
-      raise ArgumentError,'Missing mandatory option: url' if opt[:url].nil?
+      raise ArgumentError, 'Missing mandatory option: url' if opt[:url].nil?
 
       # get org name and domain from url
-      organization,instance_domain = self.class.parse_url(opt[:url])
+      organization, instance_domain = self.class.parse_url(opt[:url])
       # this is the base API url
       api_url_base = self.class.api_base_url(api_domain: instance_domain)
       # API URL, including subpath (version ...)
@@ -207,24 +207,24 @@ module Aspera
 
       # filled if pub link
       if !aoc_auth_p.has_key?(:crtype)
-        raise ArgumentError,'Missing mandatory option: auth' if opt[:auth].nil?
+        raise ArgumentError, 'Missing mandatory option: auth' if opt[:auth].nil?
         aoc_auth_p[:crtype] = opt[:auth]
       end
 
       if aoc_auth_p[:client_id].nil?
-        aoc_auth_p[:client_id],aoc_auth_p[:client_secret] = self.class.get_client_info
+        aoc_auth_p[:client_id], aoc_auth_p[:client_secret] = self.class.get_client_info
       end
 
       # fill other auth parameters based on Oauth method
       case aoc_auth_p[:crtype]
       when :web
-        raise ArgumentError,'Missing mandatory option: redirect_uri' if opt[:redirect_uri].nil?
+        raise ArgumentError, 'Missing mandatory option: redirect_uri' if opt[:redirect_uri].nil?
         aoc_auth_p[:web] = {redirect_uri: opt[:redirect_uri]}
       when :jwt
-        raise ArgumentError,'Missing mandatory option: private_key' if opt[:private_key].nil?
-        raise ArgumentError,'Missing mandatory option: username' if opt[:username].nil?
+        raise ArgumentError, 'Missing mandatory option: private_key' if opt[:private_key].nil?
+        raise ArgumentError, 'Missing mandatory option: username' if opt[:username].nil?
         aoc_auth_p[:jwt] = {
-          private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key],opt[:passphrase]),
+          private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key], opt[:passphrase]),
           payload:         {
             iss: aoc_auth_p[:client_id],  # issuer
             sub: opt[:username],          # subject
@@ -235,7 +235,7 @@ module Aspera
         aoc_auth_p[:jwt][:payload][:org] = organization if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
       when :aoc_pub_link
         # basic auth required for /token
-        aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id],password: aoc_auth_p[:client_secret]}
+        aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
       else raise "ERROR: unsupported auth method: #{aoc_auth_p[:crtype]}"
       end
       super(aoc_rest_p)
@@ -272,7 +272,7 @@ module Aspera
     # build ts addon for IBM Aspera Console (cookie)
     def console_ts(app)
       # we are sure that fields are not nil
-      elements = [app,user_info['name'],user_info['email']].map{|e|Base64.strict_encode64(e)}
+      elements = [app, user_info['name'], user_info['email']].map{|e|Base64.strict_encode64(e)}
       elements.unshift(COOKIE_PREFIX)
       return {'cookie' => elements.join(':')}
     end
@@ -280,7 +280,7 @@ module Aspera
     # build "transfer info", 2 elements array with:
     # - transfer spec for aspera on cloud, based on node information and file id
     # - source and token regeneration method
-    def tr_spec(app,direction,node_file,ts_add)
+    def tr_spec(app, direction, node_file, ts_add)
       # get node api
       node_api = node_info_to_api(node_file[:node_info])
       # this lambda returns the bearer token for node, if
@@ -354,7 +354,7 @@ module Aspera
         node_rest_params[:headers] = {'X-Aspera-AccessKey' => node_info['access_key']}
         # OAuth bearer token
         node_rest_params[:auth] = params[:auth].clone
-        node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'],scope)
+        node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
       end
       return Node.new(node_rest_params)
     end
@@ -369,11 +369,11 @@ module Aspera
       raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)
       raise 'node_info must have id' unless node_info.has_key?('id')
       raise 'file_id is empty' if file_id.to_s.empty?
-      return node_info,file_id
+      return node_info, file_id
     end
 
     # add entry to list if test block is success
-    def process_find_files(entry,path)
+    def process_find_files(entry, path)
       begin
         # add to result if match filter
         @find_state[:found].push(entry.merge({'path' => path})) if @find_state[:test_block].call(entry)
@@ -381,7 +381,7 @@ module Aspera
         if entry[:type].eql?('link')
           sub_node_info = read("nodes/#{entry['target_node_id']}")[:data]
           sub_opt = {method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
-          node_info_to_api(sub_node_info).crawl(self,sub_opt)
+          node_info_to_api(sub_node_info).crawl(self, sub_opt)
         end
       rescue StandardError => e
         Log.log.error("#{path}: #{e.message}")
@@ -391,16 +391,16 @@ module Aspera
     end
 
     def find_files(top_node_file, test_block)
-      top_node_info,top_file_id = check_get_node_file(top_node_file)
+      top_node_info, top_file_id = check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
       @find_state = {found: [], test_block: test_block}
-      node_info_to_api(top_node_info).crawl(self,{method: :process_find_files, top_file_id: top_file_id})
+      node_info_to_api(top_node_info).crawl(self, {method: :process_find_files, top_file_id: top_file_id})
       result = @find_state[:found]
       @find_state = nil
       return result
     end
 
-    def process_resolve_node_file(entry,_path)
+    def process_resolve_node_file(entry, _path)
       # stop digging here if not in right path
       return false unless entry['name'].eql?(@resolve_state[:path].first)
       # ok it matches, so we remove the match
@@ -415,7 +415,7 @@ module Aspera
         if @resolve_state[:path].empty?
           @resolve_state[:result][:file_id] = entry['target_id']
         else
-          node_info_to_api(@resolve_state[:result][:node_info]).crawl(self,{method: :process_resolve_node_file, top_file_id: entry['target_id']})
+          node_info_to_api(@resolve_state[:result][:node_info]).crawl(self, {method: :process_resolve_node_file, top_file_id: entry['target_id']})
         end
       when 'folder'
         if @resolve_state[:path].empty?
@@ -435,7 +435,7 @@ module Aspera
     # @param element_path_string String   path of element
     # @return Array(node_info,file_id)   for the given path
     def resolve_node_file(top_node_file, element_path_string)
-      top_node_info,top_file_id = check_get_node_file(top_node_file)
+      top_node_info, top_file_id = check_get_node_file(top_node_file)
       path_elements = element_path_string.split(PATH_SEPARATOR).reject(&:empty?)
       result = {node_info: top_node_info, file_id: nil}
       if path_elements.empty?
@@ -443,7 +443,7 @@ module Aspera
       else
         # init result state
         @resolve_state = {path: path_elements, result: result}
-        node_info_to_api(top_node_info).crawl(self,{method: :process_resolve_node_file, top_file_id: top_file_id})
+        node_info_to_api(top_node_info).crawl(self, {method: :process_resolve_node_file, top_file_id: top_file_id})
         not_found = @resolve_state[:path]
         @resolve_state = nil
         raise "entry not found: #{not_found}" if result[:file_id].nil?
@@ -454,9 +454,9 @@ module Aspera
     # @param entity_type path of entuty in API
     # @param entity_name name of searched entity
     # @param options additional search options
-    def lookup_entity_by_name(entity_type,entity_name,options={})
+    def lookup_entity_by_name(entity_type, entity_name, options={})
       # returns entities whose name contains value (case insensitive)
-      matching_items = read(entity_type,options.merge({'q' => CGI.escape(entity_name)}))[:data]
+      matching_items = read(entity_type, options.merge({'q' => CGI.escape(entity_name)}))[:data]
       case matching_items.length
       when 1 then return matching_items.first
       when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}

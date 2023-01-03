@@ -32,7 +32,7 @@ module Aspera
           getpass:  :g
         }.freeze
         class << self
-          def execute(command,options=nil,supported=nil,lastopt=nil)
+          def execute(command, options=nil, supported=nil, lastopt=nil)
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
@@ -40,11 +40,11 @@ module Aspera
               options[:protocol] = 'htps'
               raise 'host required in URL' if uri.host.nil?
               options[:server] = uri.host
-              options[:path] = uri.path unless ['','/'].include?(uri.path)
+              options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
-            cmd=['security',command]
-            options&.each do |k,v|
+            cmd=['security', command]
+            options&.each do |k, v|
               raise "unknown option: #{k}" unless supported.has_key?(k)
               next if v.nil?
               cmd.push("-#{supported[k]}")
@@ -70,8 +70,8 @@ module Aspera
           end
 
           def list(options={})
-            raise ArgumentError,"Invalid domain #{options[:domain]}, expected one of: #{DOMAINS}" unless options[:domain].nil? || DOMAINS.include?(options[:domain])
-            keychains(execute('list-keychains',options,LIST_OPTIONS))
+            raise ArgumentError, "Invalid domain #{options[:domain]}, expected one of: #{DOMAINS}" unless options[:domain].nil? || DOMAINS.include?(options[:domain])
+            keychains(execute('list-keychains', options, LIST_OPTIONS))
           end
 
           def by_name(name)
@@ -88,15 +88,15 @@ module Aspera
           [string].pack('H*').force_encoding('UTF-8')
         end
 
-        def password(operation,passtype,options)
+        def password(operation, passtype, options)
           raise "wrong operation: #{operation}" unless %i[add find delete].include?(operation)
           raise "wrong passtype: #{passtype}" unless %i[generic internet].include?(passtype)
           raise 'options shall be Hash' unless options.is_a?(Hash)
           missing=(operation.eql?(:add) ? %i[account service password] : %i[label])-options.keys
           raise "missing options: #{missing}" unless missing.empty?
           options[:getpass]='' if operation.eql?(:find)
-          output=self.class.execute("#{operation}-#{passtype}-password",options,ADD_PASS_OPTIONS,@path)
-          raise output.gsub(/^.*: /,'') if output.start_with?('security: ')
+          output=self.class.execute("#{operation}-#{passtype}-password", options, ADD_PASS_OPTIONS, @path)
+          raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
           return nil unless operation.eql?(:find)
           attributes = {}
           output.split("\n").each do |line|
@@ -121,7 +121,7 @@ module Aspera
     end
 
     class MacosSystem
-      def initialize(name=nil,password=nil)
+      def initialize(name=nil, password=nil)
         @keychain = name.nil? ? MacosSecurity::Keychain.default_keychain : MacosSecurity::Keychain.by_name(name)
         raise "no such keychain #{name}" if @keychain.nil?
       end
@@ -130,7 +130,7 @@ module Aspera
         raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported = options.keys - %i[label username password url description]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        @keychain.password(:add,:generic, service: options[:label],
+        @keychain.password(:add, :generic, service: options[:label],
           account: options[:username] || 'none', password: options[:password], comment: options[:description])
       end
 
@@ -138,7 +138,7 @@ module Aspera
         raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported = options.keys - %i[label]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        info = @keychain.password(:find,:generic,label: options[:label])
+        info = @keychain.password(:find, :generic, label: options[:label])
         raise 'not found' if info.nil?
         result = options.clone
         result[:secret] = info['password']

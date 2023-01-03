@@ -35,7 +35,7 @@ module Aspera
     # a prefix for persistency of tokens (simplify garbage collect)
     PERSIST_CATEGORY_TOKEN = 'token'
 
-    private_constant :JWT_NOTBEFORE_OFFSET_SEC,:JWT_EXPIRY_OFFSET_SEC,:TOKEN_CACHE_EXPIRY_SEC,:PERSIST_CATEGORY_TOKEN,:TOKEN_EXPIRATION_GUARD_SEC
+    private_constant :JWT_NOTBEFORE_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
 
     # persistency manager
     @persist = nil
@@ -48,7 +48,7 @@ module Aspera
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
-        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN,TOKEN_CACHE_EXPIRY_SEC)
+        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, TOKEN_CACHE_EXPIRY_SEC)
       end
 
       def persist_mgr
@@ -56,7 +56,7 @@ module Aspera
           Log.log.debug('Not using persistency') # (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)
           # create NULL persistency class
           @persist = Class.new do
-            def get(_x);nil;end;def delete(_x);nil;end;def put(_x,_y);nil;end;def garbage_collect(_x,_y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
+            def get(_x);nil;end;def delete(_x);nil;end;def put(_x, _y);nil;end;def garbage_collect(_x, _y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
           end.new
         end
         return @persist
@@ -64,7 +64,7 @@ module Aspera
 
       # delete all existing tokens
       def flush_tokens
-        persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN,nil)
+        persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN, nil)
       end
 
       # register a bearer token decoder, mainly to inspect expiry date
@@ -109,9 +109,9 @@ module Aspera
     register_decoder lambda { |token| parts = token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
 
     # generic token creation, parameters are provided in :generic
-    register_token_creator :generic,lambda { |oauth|
+    register_token_creator :generic, lambda { |oauth|
       return oauth.create_token(oauth.sparams)
-    },lambda { |oauth|
+    }, lambda { |oauth|
       return [
         oauth.sparams[:grant_type]&.split(':')&.last,
         oauth.sparams[:apikey],
@@ -120,7 +120,7 @@ module Aspera
     }
 
     # Authentication using Web browser
-    register_token_creator :web,lambda { |oauth|
+    register_token_creator :web, lambda { |oauth|
       random_state = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri("#{oauth.api[:base_url]}/#{oauth.sparams[:path_authorize]}",
         oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.sparams[:redirect_uri], state: random_state))
@@ -138,12 +138,12 @@ module Aspera
         grant_type:   'authorization_code',
         code:         received_params['code'],
         redirect_uri: oauth.sparams[:redirect_uri]))
-    },lambda { |_oauth|
+    }, lambda { |_oauth|
       return []
     }
 
     # Authentication using private key
-    register_token_creator :jwt,lambda { |oauth|
+    register_token_creator :jwt, lambda { |oauth|
       # https://tools.ietf.org/html/rfc7523
       # https://tools.ietf.org/html/rfc7519
       require 'jwt'
@@ -162,8 +162,8 @@ module Aspera
       assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.sparams[:headers] || {})
       Log.log.debug("assertion=[#{assertion}]")
       return oauth.create_token(oauth.optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
-    },lambda { |oauth|
-      return [oauth.sparams.dig(:payload,:sub)]
+    }, lambda { |oauth|
+      return [oauth.sparams.dig(:payload, :sub)]
     }
 
     attr_reader :gparams, :sparams, :api
@@ -209,8 +209,8 @@ module Aspera
       @gparams.delete(:base_url)
       @gparams.delete(:auth)
       @gparams.delete(@gparams[:crtype])
-      Log.dump(:gparams,@gparams)
-      Log.dump(:sparams,@sparams)
+      Log.dump(:gparams, @gparams)
+      Log.dump(:sparams, @sparams)
     end
 
     public
@@ -254,7 +254,7 @@ module Aspera
       # `direct` agent is equipped with refresh code
       if !use_refresh_token && !token_data.nil?
         decoded_token = self.class.decode_token(token_data[@gparams[:token_field]])
-        Log.dump('decoded_token',decoded_token) unless decoded_token.nil?
+        Log.dump('decoded_token', decoded_token) unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
             if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
@@ -280,12 +280,12 @@ module Aspera
           Log.log.info("refresh=[#{refresh_token}]".bg_green)
           # try to refresh
           # note: AoC admin token has no refresh, and lives by default 1800secs
-          resp = create_token(optional_scope_client_id.merge(grant_type: 'refresh_token',refresh_token: refresh_token))
+          resp = create_token(optional_scope_client_id.merge(grant_type: 'refresh_token', refresh_token: refresh_token))
           if resp[:http].code.start_with?('2')
             # save only if success
             json_data = resp[:http].body
             token_data = JSON.parse(json_data)
-            self.class.persist_mgr.put(token_id,json_data)
+            self.class.persist_mgr.put(token_id, json_data)
           else
             Log.log.debug("refresh failed: #{resp[:http].body}".bg_red)
           end
@@ -297,7 +297,7 @@ module Aspera
         resp = self.class.token_creator(@gparams[:crtype]).call(self)
         json_data = resp[:http].body
         token_data = JSON.parse(json_data)
-        self.class.persist_mgr.put(token_id,json_data)
+        self.class.persist_mgr.put(token_id, json_data)
       end # if ! in_cache
       raise "API error: No such field in answer: #{@gparams[:token_field]}" unless token_data.has_key?(@gparams[:token_field])
       # ok we shall have a token here

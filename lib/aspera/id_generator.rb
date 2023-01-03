@@ -7,7 +7,7 @@ module Aspera
     ID_SEPARATOR = '_'
     WINDOWS_PROTECTED_CHAR = %r{[/:"<>\\*?]}.freeze
     PROTECTED_CHAR_REPLACE = '_'
-    private_constant :ID_SEPARATOR,:PROTECTED_CHAR_REPLACE,:WINDOWS_PROTECTED_CHAR
+    private_constant :ID_SEPARATOR, :PROTECTED_CHAR_REPLACE, :WINDOWS_PROTECTED_CHAR
     class << self
       def from_list(object_id)
         if object_id.is_a?(Array)
@@ -17,8 +17,8 @@ module Aspera
         end
         raise 'id must be a String' unless object_id.is_a?(String)
         return object_id.
-            gsub(WINDOWS_PROTECTED_CHAR,PROTECTED_CHAR_REPLACE). # remove windows forbidden chars
-            gsub('.',PROTECTED_CHAR_REPLACE).  # keep dot for extension only (nicer)
+            gsub(WINDOWS_PROTECTED_CHAR, PROTECTED_CHAR_REPLACE). # remove windows forbidden chars
+            gsub('.', PROTECTED_CHAR_REPLACE).  # keep dot for extension only (nicer)
             downcase
       end
     end

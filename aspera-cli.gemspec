@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   gemspec_file = File.expand_path(__FILE__)
   raise "Error: this file extension must be '#{GEMSPEC_EXT}'" unless gemspec_file.end_with?(GEMSPEC_EXT)
   raise "This file shall be named: #{Aspera::Cli::GEM_NAME}#{GEMSPEC_EXT}" unless
-    Aspera::Cli::GEM_NAME.eql?(File.basename(gemspec_file,GEMSPEC_EXT).downcase)
+    Aspera::Cli::GEM_NAME.eql?(File.basename(gemspec_file, GEMSPEC_EXT).downcase)
   # the base name of this file shall be the gem name
   spec.name          = Aspera::Cli::GEM_NAME
   spec.version       = Aspera::Cli::VERSION

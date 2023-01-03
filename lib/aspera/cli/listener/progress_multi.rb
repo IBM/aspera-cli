@@ -24,7 +24,7 @@ module Aspera
 
         def update_total
           begin
-            @progress_bar.total = @sessions.values.inject(0){|m,s|m += s[:job_size].to_i;m;}
+            @progress_bar.total = @sessions.values.inject(0){|m, s|m += s[:job_size].to_i;m;}
           rescue StandardError
             nil
           end
@@ -32,7 +32,7 @@ module Aspera
 
         def update_progress
           begin
-            @progress_bar.progress = @sessions.values.inject(0){|m,s|m += s[:current].to_i;m;}
+            @progress_bar.progress = @sessions.values.inject(0){|m, s|m += s[:current].to_i;m;}
           rescue StandardError
             nil
           end

@@ -10,7 +10,7 @@ module Aspera
     # keys in hash that contain secrets
     ASCP_SECRETS=%w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS].freeze
     KEY_SECRETS =%w[password secret private_key passphrase].freeze
-    ALL_SECRETS =[ASCP_SECRETS,KEY_SECRETS].flatten.freeze
+    ALL_SECRETS =[ASCP_SECRETS, KEY_SECRETS].flatten.freeze
     # regex that define namec captures :begin and :end
     REGEX_LOG_REPLACES=[
       # CLI manager get/set options
@@ -26,7 +26,7 @@ module Aspera
       # private key values
       /(?<begin>--+BEGIN .+ KEY--+)[[:ascii:]]+?(?<end>--+?END .+ KEY--+)/
     ].freeze
-    private_constant :HIDDEN_PASSWORD,:ASCP_SECRETS,:KEY_SECRETS,:ALL_SECRETS,:REGEX_LOG_REPLACES
+    private_constant :HIDDEN_PASSWORD, :ASCP_SECRETS, :KEY_SECRETS, :ALL_SECRETS, :REGEX_LOG_REPLACES
     @log_secrets = false
     class << self
       attr_accessor :log_secrets
@@ -43,25 +43,25 @@ module Aspera
         end
       end
 
-      def secret?(keyword,value)
+      def secret?(keyword, value)
         keyword=keyword.to_s if keyword.is_a?(Symbol)
         # only Strings can be secrets, not booleans, or hash, arrays
         keyword.is_a?(String) && ALL_SECRETS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
       end
 
-      def deep_remove_secret(obj,is_name_value: false)
+      def deep_remove_secret(obj, is_name_value: false)
         case obj
         when Array
           if is_name_value
             obj.each do |i|
-              i['value']=HIDDEN_PASSWORD if secret?(i['parameter'],i['value'])
+              i['value']=HIDDEN_PASSWORD if secret?(i['parameter'], i['value'])
             end
           else
             obj.each{|i|deep_remove_secret(i)}
           end
         when Hash
-          obj.each do |k,v|
-            if secret?(k,v)
+          obj.each do |k, v|
+            if secret?(k, v)
               obj[k] = HIDDEN_PASSWORD
             elsif obj[k].is_a?(Hash)
               deep_remove_secret(obj[k])

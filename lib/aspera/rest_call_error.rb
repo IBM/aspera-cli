@@ -5,7 +5,7 @@ module Aspera
   class RestCallError < StandardError
     attr_accessor :request, :response
     # @param http response
-    def initialize(req,resp,msg)
+    def initialize(req, resp, msg)
       @request = req
       @response = resp
       super(msg)

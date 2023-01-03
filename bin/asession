@@ -15,7 +15,7 @@ TS_TMP_FILELIST_FOLDER = 'EX_file_list_folder'
 
 SAMPLE_DEMO='"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
 SAMPLE_DEMO2='"direction":"receive","destination_root":"./test.dir"'
-def assert_usage(assertion,errmsg)
+def assert_usage(assertion, errmsg)
   return if assertion
   $stderr.puts('ERROR: '.red.blink + errmsg) if errmsg
   $stderr.puts('USAGE')
@@ -48,17 +48,17 @@ if ARGV.empty?
   parameter_source_err_msg = ' (JSON on stdin)'
 end
 # anyway expect only one argument: session information
-assert_usage(ARGV.length.eql?(1),'exactly one argument is expected')
-assert_usage(!['-h','--help'].include?(ARGV.first),nil)
+assert_usage(ARGV.length.eql?(1), 'exactly one argument is expected')
+assert_usage(!['-h', '--help'].include?(ARGV.first), nil)
 # parse transfer spec
 begin
   transfer_spec_arg = ARGV.pop
   transfer_spec = Aspera::Cli::ExtendedValue.instance.evaluate(transfer_spec_arg)
 rescue
-  assert_usage(false,"Cannot extract transfer spec from: #{transfer_spec_arg}")
+  assert_usage(false, "Cannot extract transfer spec from: #{transfer_spec_arg}")
 end
 # ensure right type
-assert_usage(transfer_spec.is_a?(Hash),"the value must be a hash table#{parameter_source_err_msg}")
+assert_usage(transfer_spec.is_a?(Hash), "the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability
 if transfer_spec.has_key?(TS_LOGLEVEL)
   Aspera::Log.instance.level = transfer_spec[TS_LOGLEVEL]
@@ -80,7 +80,7 @@ Thread.new do
   begin
     loop do
       data = JSON.parse($stdin.gets)
-      client.send_command(job_id,0,data)
+      client.send_command(job_id, 0, data)
     end
   rescue
     Process.exit(1)

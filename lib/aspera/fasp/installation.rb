@@ -43,8 +43,8 @@ module Aspera
         </CONF>
       END_OF_CONFIG_FILE
       DUMMY_CERT_INFO='/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com'
-      private_constant :PRODUCT_CONNECT,:PRODUCT_CLI_V1,:PRODUCT_DRIVE,:PRODUCT_ENTSRV,:EXT_RUBY_PROTOBUF,:RB_SDK_FOLDER,
-        :ONE_YEAR_SECONDS,:DEFAULT_ASPERA_CONF,:DUMMY_CERT_INFO
+      private_constant :PRODUCT_CONNECT, :PRODUCT_CLI_V1, :PRODUCT_DRIVE, :PRODUCT_ENTSRV, :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER,
+        :ONE_YEAR_SECONDS, :DEFAULT_ASPERA_CONF, :DUMMY_CERT_INFO
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp = v
@@ -55,7 +55,7 @@ module Aspera
       end
 
       def sdk_ruby_folder
-        ruby_pb_folder = File.join(sdk_folder,RB_SDK_FOLDER)
+        ruby_pb_folder = File.join(sdk_folder, RB_SDK_FOLDER)
         FileUtils.mkdir_p(ruby_pb_folder) unless Dir.exist?(ruby_pb_folder)
         return ruby_pb_folder
       end
@@ -106,13 +106,13 @@ module Aspera
             next false unless Dir.exist?(item[:app_root])
             Log.log.debug("Found #{item[:app_root]}")
             sub_bin = item[:sub_bin] || BIN_SUBFOLDER
-            item[:ascp_path] = File.join(item[:app_root],sub_bin,ascp_filename)
+            item[:ascp_path] = File.join(item[:app_root], sub_bin, ascp_filename)
             # skip if no ascp
             next false unless File.exist?(item[:ascp_path])
             # read info from product info file if present
             product_info_file = "#{item[:app_root]}/#{PRODUCT_INFO}"
             if File.exist?(product_info_file)
-              res_s = XmlSimple.xml_in(File.read(product_info_file),{'ForceArray' => false})
+              res_s = XmlSimple.xml_in(File.read(product_info_file), {'ForceArray' => false})
               item[:name] = res_s['name']
               item[:version] = res_s['version']
             else
@@ -131,19 +131,19 @@ module Aspera
       # keys and certs are generated locally... (they are well known values, arch. independant)
       def path(k)
         case k
-        when :ascp,:ascp4
+        when :ascp, :ascp4
           use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
           file = @path_to_ascp
           # note that there might be a .exe at the end
-          file = file.gsub('ascp','ascp4') if k.eql?(:ascp4)
+          file = file.gsub('ascp', 'ascp4') if k.eql?(:ascp4)
         when :transferd
           file = transferd_filepath
         when :ssh_bypass_key_dsa
-          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera_bypass_dsa.pem')) {get_key('dsa',1)}
+          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_dsa.pem')) {get_key('dsa', 1)}
         when :ssh_bypass_key_rsa
-          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera_bypass_rsa.pem')) {get_key('rsa',2)}
+          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
         when :aspera_license
-          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera-license')) do
+          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
             clear=[
               Zlib::Inflate.inflate(DataRepository.instance.data(6)),
               "==SIGNATURE==\n",
@@ -152,10 +152,10 @@ module Aspera
             Base64.strict_encode64(clear.join)
           end
         when :aspera_conf
-          file=Environment.write_file_restricted(File.join(sdk_folder,'aspera.conf')) {DEFAULT_ASPERA_CONF}
-        when :fallback_cert,:fallback_key
-          file_key = File.join(sdk_folder,'aspera_fallback_key.pem')
-          file_cert = File.join(sdk_folder,'aspera_fallback_cert.pem')
+          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
+        when :fallback_cert, :fallback_key
+          file_key = File.join(sdk_folder, 'aspera_fallback_key.pem')
+          file_cert = File.join(sdk_folder, 'aspera_fallback_cert.pem')
           if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -182,9 +182,9 @@ module Aspera
       # @return the file path of local connect where API's URI can be read
       def connect_uri
         connect = get_product_folders(PRODUCT_CONNECT)
-        folder = File.join(connect[:run_root],VARRUN_SUBFOLDER)
-        ['','s'].each do |ext|
-          uri_file = File.join(folder,"http#{ext}.uri")
+        folder = File.join(connect[:run_root], VARRUN_SUBFOLDER)
+        ['', 's'].each do |ext|
+          uri_file = File.join(folder, "http#{ext}.uri")
           Log.log.debug("checking connect port file: #{uri_file}")
           if File.exist?(uri_file)
             return File.open(uri_file, &:gets).strip
@@ -196,12 +196,12 @@ module Aspera
       # @ return path to configuration file of aspera CLI
       def cli_conf_file
         connect = get_product_folders(PRODUCT_CLI_V1)
-        return File.join(connect[:app_root],BIN_SUBFOLDER,'.aspera_cli_conf')
+        return File.join(connect[:app_root], BIN_SUBFOLDER, '.aspera_cli_conf')
       end
 
       # default bypass key phrase
       def bypass_pass
-        return format('%08x-%04x-%04x-%04x-%04x%08x',*DataRepository.instance.data(3).unpack('NnnnnN'))
+        return format('%08x-%04x-%04x-%04x-%04x%08x', *DataRepository.instance.data(3).unpack('NnnnnN'))
       end
 
       def bypass_keys
@@ -210,11 +210,11 @@ module Aspera
 
       # use in plugin `config`
       def get_ascp_version(exe_path)
-        return get_exe_version(exe_path,'-A')
+        return get_exe_version(exe_path, '-A')
       end
 
       # Check that specified path is ascp and get version
-      def get_exe_version(exe_path,vers_arg)
+      def get_exe_version(exe_path, vers_arg)
         raise 'ERROR: nil arg' if exe_path.nil?
         return nil unless File.exist?(exe_path)
         exe_version = nil
@@ -233,18 +233,18 @@ module Aspera
         # SDK is organized by architecture, check this first, in case architecture is not supported
         arch_filter = "#{Environment.architecture}/"
         require 'zip'
-        sdk_zip_path = File.join(Dir.tmpdir,'sdk.zip')
+        sdk_zip_path = File.join(Dir.tmpdir, 'sdk.zip')
         if sdk_url.start_with?('file:')
           # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
           raise 'use format: file:///<path>' unless sdk_url.start_with?('file:///')
-          sdk_zip_path = sdk_url.gsub(%r{^file:///},'')
+          sdk_zip_path = sdk_url.gsub(%r{^file:///}, '')
         else
-          Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET',save_to_file: sdk_zip_path)
+          Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_zip_path)
         end
         # rename old install
         if !Dir.empty?(sdk_folder)
           Log.log.warn('Previous install exists, renaming folder.')
-          File.rename(sdk_folder,"#{sdk_folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
+          File.rename(sdk_folder, "#{sdk_folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
         # extract files from archive
@@ -258,7 +258,7 @@ module Aspera
             # ruby adapters
             dest_folder = sdk_ruby_folder if entry.name.end_with?(EXT_RUBY_PROTOBUF)
             next if dest_folder.nil?
-            File.open(File.join(dest_folder,File.basename(entry.name)), 'wb') do |output_stream|
+            File.open(File.join(dest_folder, File.basename(entry.name)), 'wb') do |output_stream|
               IO.copy_stream(entry.get_input_stream, output_stream)
             end
           end
@@ -267,17 +267,17 @@ module Aspera
         # ensure license file are generated so that ascp invokation for version works
         path(:aspera_license)
         path(:aspera_conf)
-        ascp_path = File.join(sdk_folder,ascp_filename)
+        ascp_path = File.join(sdk_folder, ascp_filename)
         raise "No #{ascp_filename} found in SDK archive" unless File.exist?(ascp_path)
         Environment.restrict_file_access(ascp_path, mode: 0755)
-        Environment.restrict_file_access(ascp_path.gsub('ascp','ascp4'), mode: 0755)
-        ascp_version = get_ascp_version(File.join(sdk_folder,ascp_filename))
+        Environment.restrict_file_access(ascp_path.gsub('ascp', 'ascp4'), mode: 0755)
+        ascp_version = get_ascp_version(File.join(sdk_folder, ascp_filename))
         trd_path = transferd_filepath
         Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
         Environment.restrict_file_access(trd_path, mode: 0755) if File.exist?(trd_path)
-        transferd_version = get_exe_version(trd_path,'version')
+        transferd_version = get_exe_version(trd_path, 'version')
         sdk_version = transferd_version || ascp_version
-        File.write(File.join(sdk_folder,PRODUCT_INFO),"<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
+        File.write(File.join(sdk_folder, PRODUCT_INFO), "<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
         return sdk_version
       end
 
@@ -285,13 +285,13 @@ module Aspera
 
       BIN_SUBFOLDER = 'bin'
       ETC_SUBFOLDER = 'etc'
-      VARRUN_SUBFOLDER = File.join('var','run')
+      VARRUN_SUBFOLDER = File.join('var', 'run')
       # product information manifest: XML (part of aspera product)
       PRODUCT_INFO = 'product-info.mf'
       # policy for product selection
       FIRST_FOUND = 'FIRST'
 
-      private_constant :BIN_SUBFOLDER,:ETC_SUBFOLDER,:VARRUN_SUBFOLDER,:PRODUCT_INFO
+      private_constant :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VARRUN_SUBFOLDER, :PRODUCT_INFO
 
       def initialize
         @path_to_ascp = nil
@@ -313,7 +313,7 @@ module Aspera
       end
 
       def transferd_filepath
-        return File.join(sdk_folder,'asperatransferd' + Environment.exe_extension)
+        return File.join(sdk_folder, 'asperatransferd' + Environment.exe_extension)
       end
 
       # @return product folders depending on OS fields
@@ -326,54 +326,54 @@ module Aspera
         case Aspera::Environment.os
         when Aspera::Environment::OS_WINDOWS; return [{
           expected: PRODUCT_CONNECT,
-          app_root: File.join(ENV['LOCALAPPDATA'],'Programs','Aspera','Aspera Connect'),
-          log_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect','var','log'),
-          run_root: File.join(ENV['LOCALAPPDATA'],'Aspera','Aspera Connect')
-        },{
+          app_root: File.join(ENV['LOCALAPPDATA'], 'Programs', 'Aspera', 'Aspera Connect'),
+          log_root: File.join(ENV['LOCALAPPDATA'], 'Aspera', 'Aspera Connect', 'var', 'log'),
+          run_root: File.join(ENV['LOCALAPPDATA'], 'Aspera', 'Aspera Connect')
+        }, {
           expected: PRODUCT_CLI_V1,
-          app_root: File.join('C:','Program Files','Aspera','cli'),
-          log_root: File.join('C:','Program Files','Aspera','cli','var','log')
-        },{
+          app_root: File.join('C:', 'Program Files', 'Aspera', 'cli'),
+          log_root: File.join('C:', 'Program Files', 'Aspera', 'cli', 'var', 'log')
+        }, {
           expected: PRODUCT_ENTSRV,
-          app_root: File.join('C:','Program Files','Aspera','Enterprise Server'),
-          log_root: File.join('C:','Program Files','Aspera','Enterprise Server','var','log')
+          app_root: File.join('C:', 'Program Files', 'Aspera', 'Enterprise Server'),
+          log_root: File.join('C:', 'Program Files', 'Aspera', 'Enterprise Server', 'var', 'log')
         }]
         when Aspera::Environment::OS_X; return [{
           expected: PRODUCT_CONNECT,
-          app_root: File.join(Dir.home,'Applications','Aspera Connect.app'),
-          log_root: File.join(Dir.home,'Library','Logs','Aspera_Connect'),
-          run_root: File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-          sub_bin:  File.join('Contents','Resources')
-        },{
+          app_root: File.join(Dir.home, 'Applications', 'Aspera Connect.app'),
+          log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Connect'),
+          run_root: File.join(Dir.home, 'Library', 'Application Support', 'Aspera', 'Aspera Connect'),
+          sub_bin:  File.join('Contents', 'Resources')
+        }, {
           expected: PRODUCT_CONNECT,
-          app_root: File.join('','Applications','Aspera Connect.app'),
-          log_root: File.join(Dir.home,'Library','Logs','Aspera_Connect'),
-          run_root: File.join(Dir.home,'Library','Application Support','Aspera','Aspera Connect'),
-          sub_bin:  File.join('Contents','Resources')
-        },{
+          app_root: File.join('', 'Applications', 'Aspera Connect.app'),
+          log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Connect'),
+          run_root: File.join(Dir.home, 'Library', 'Application Support', 'Aspera', 'Aspera Connect'),
+          sub_bin:  File.join('Contents', 'Resources')
+        }, {
           expected: PRODUCT_CLI_V1,
-          app_root: File.join(Dir.home,'Applications','Aspera CLI'),
-          log_root: File.join(Dir.home,'Library','Logs','Aspera')
-        },{
+          app_root: File.join(Dir.home, 'Applications', 'Aspera CLI'),
+          log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera')
+        }, {
           expected: PRODUCT_ENTSRV,
-          app_root: File.join('','Library','Aspera'),
-          log_root: File.join(Dir.home,'Library','Logs','Aspera')
-        },{
+          app_root: File.join('', 'Library', 'Aspera'),
+          log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera')
+        }, {
           expected: PRODUCT_DRIVE,
-          app_root: File.join('','Applications','Aspera Drive.app'),
-          log_root: File.join(Dir.home,'Library','Logs','Aspera_Drive'),
-          sub_bin:  File.join('Contents','Resources')
+          app_root: File.join('', 'Applications', 'Aspera Drive.app'),
+          log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Drive'),
+          sub_bin:  File.join('Contents', 'Resources')
         }]
         else; return [{ # other: Linux and Unix family
           expected: PRODUCT_CONNECT,
-          app_root: File.join(Dir.home,'.aspera','connect'),
-          run_root: File.join(Dir.home,'.aspera','connect')
-        },{
+          app_root: File.join(Dir.home, '.aspera', 'connect'),
+          run_root: File.join(Dir.home, '.aspera', 'connect')
+        }, {
           expected: PRODUCT_CLI_V1,
-          app_root: File.join(Dir.home,'.aspera','cli')
-        },{
+          app_root: File.join(Dir.home, '.aspera', 'cli')
+        }, {
           expected: PRODUCT_ENTSRV,
-          app_root: File.join('','opt','aspera')
+          app_root: File.join('', 'opt', 'aspera')
         }]
         end
       end
@@ -381,7 +381,7 @@ module Aspera
       # @return a standard bypass key
       # @param type rsa or dsa
       # @param id in repository 1 for dsa, 2 for rsa
-      def get_key(type,id)
+      def get_key(type, id)
         # generate PEM from DER
         OpenSSL::PKey.const_get(type.upcase).new(DataRepository.instance.data(id)).to_pem
       end

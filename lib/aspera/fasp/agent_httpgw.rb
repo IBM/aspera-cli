@@ -27,7 +27,7 @@ module Aspera
       # upload endpoints
       V1_UPLOAD='/v1/upload'
       V2_UPLOAD='/v2/upload'
-      private_constant :DEFAULT_OPTIONS,:MSG_END_UPLOAD,:MSG_END_SLICE,:V1_UPLOAD,:V2_UPLOAD
+      private_constant :DEFAULT_OPTIONS, :MSG_END_UPLOAD, :MSG_END_SLICE, :V1_UPLOAD, :V2_UPLOAD
 
       # send message on http gw web socket
       def ws_snd_json(data)
@@ -56,7 +56,7 @@ module Aspera
           # save actual file location to be able read contents later
           full_src_filepath = item['source']
           # add source root if needed
-          full_src_filepath = File.join(source_root,full_src_filepath) unless source_root.nil?
+          full_src_filepath = File.join(source_root, full_src_filepath) unless source_root.nil?
           # GW expects a simple file name in 'source' but if user wants to change the name, we take it
           item['source'] = File.basename(item['destination'].nil? ? item['source'] : item['destination'])
           item['file_size'] = File.size(full_src_filepath)
@@ -72,7 +72,7 @@ module Aspera
         # is the latest supported? else revert to old api
         upload_api_version=V1_UPLOAD unless @api_info['endpoints'].any?{|i|i.include?(upload_api_version)}
         Log.log.debug{"api version: #{upload_api_version}"}
-        url=File.join(@gw_api.params[:base_url],upload_api_version)
+        url=File.join(@gw_api.params[:base_url], upload_api_version)
         #uri = URI.parse(url)
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_socket = Rest.start_http_session(url)
@@ -125,9 +125,9 @@ module Aspera
           Log.log.debug("ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})")
         end
         # notify progress bar
-        notify_begin(session_id,total_size)
+        notify_begin(session_id, total_size)
         # first step send transfer spec
-        Log.dump(:ws_spec,transfer_spec)
+        Log.dump(:ws_spec, transfer_spec)
         ws_snd_json(transfer_spec: transfer_spec)
         # current file index
         file_index = 0
@@ -165,7 +165,7 @@ module Aspera
                     ws_snd_json(slice_upload: slice_data)
                   else
                     ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
-                    ws_send(data,type: :binary)
+                    ws_send(data, type: :binary)
                     Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
                     ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
                   end
@@ -176,7 +176,7 @@ module Aspera
                 sent_bytes += data.length
                 currenttime = Time.now
                 if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])
-                  notify_progress(session_id,sent_bytes)
+                  notify_progress(session_id, sent_bytes)
                   last_progress_time = currenttime
                 end
                 slicenum += 1
@@ -191,7 +191,7 @@ module Aspera
         ws_send(nil, type: :close) unless @ws_io.nil?
         @ws_io = nil
         http_socket&.finish
-        notify_progress(session_id,sent_bytes)
+        notify_progress(session_id, sent_bytes)
         notify_end(session_id)
       end
 
@@ -203,14 +203,14 @@ module Aspera
           # by default it is the name of first file
           dname = File.basename(transfer_spec['paths'].first['source'])
           # we remove extension
-          dname = dname.gsub(/\.@gw_api.*$/,'')
+          dname = dname.gsub(/\.@gw_api.*$/, '')
           # ands add indication of number of files if there is more than one
           if transfer_spec['paths'].length > 1
             dname += " #{transfer_spec['paths'].length} Files"
           end
           transfer_spec['download_name'] = dname
         end
-        creation = @gw_api.create('v1/download',{'transfer_spec' => transfer_spec})[:data]
+        creation = @gw_api.create('v1/download', {'transfer_spec' => transfer_spec})[:data]
         transfer_uuid = creation['url'].split('/').last
         file_dest =
           if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
@@ -220,8 +220,8 @@ module Aspera
             # it is a plain file if we don't require zip and there is only one file
             File.basename(transfer_spec['paths'].first['source'])
           end
-        file_dest = File.join(transfer_spec['destination_root'],file_dest)
-        @gw_api.call({operation: 'GET',subpath: "v1/download/#{transfer_uuid}",save_to_file: file_dest})
+        file_dest = File.join(transfer_spec['destination_root'], file_dest)
+        @gw_api.call({operation: 'GET', subpath: "v1/download/#{transfer_uuid}", save_to_file: file_dest})
       end
 
       # start FASP transfer based on transfer spec (hash table)
@@ -231,7 +231,7 @@ module Aspera
         raise 'GW URL must be set' if @gw_api.nil?
         raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
         raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
-        Log.dump(:user_spec,transfer_spec)
+        Log.dump(:user_spec, transfer_spec)
         transfer_spec['authentication'] ||= 'token'
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_SEND
@@ -261,13 +261,13 @@ module Aspera
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
         raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)
-        opts.symbolize_keys.each do |k,v|
+        opts.symbolize_keys.each do |k, v|
           raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
           @options[k] = v
         end
         raise 'missing param: url' if @options[:url].nil?
         # remove /v1 from end
-        @options[:url].gsub(%r{/v1/*$},'')
+        @options[:url].gsub(%r{/v1/*$}, '')
         super()
         @gw_api = Rest.new({base_url: @options[:url]})
         @api_info = @gw_api.read('v1/info')[:data]

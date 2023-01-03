@@ -39,7 +39,7 @@ module Aspera
 
       # used internally to ensure node api is set before using.
       def node_api_
-        raise StandardError,'Before using this object, set the node_api attribute to a Aspera::Rest object' if @node_api.nil?
+        raise StandardError, 'Before using this object, set the node_api attribute to a Aspera::Rest object' if @node_api.nil?
         return @node_api
       end
       # use this to read the node_api end point.
@@ -81,7 +81,7 @@ module Aspera
         if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.params[:base_url]).host)
           transfer_spec['remote_host'] = '127.0.0.1'
         end
-        resp = node_api_.create('ops/transfers',transfer_spec)[:data]
+        resp = node_api_.create('ops/transfers', transfer_spec)[:data]
         @transfer_id = resp['id']
         Log.log.debug("tr_id=#{@transfer_id}")
         return @transfer_id
@@ -99,7 +99,7 @@ module Aspera
           when 'completed'
             notify_end(@transfer_id)
             break
-          when 'waiting','partially_completed','unknown','waiting(read error)'
+          when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)'
             if spinner.nil?
               spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
               spinner.start
@@ -111,10 +111,10 @@ module Aspera
             #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
             if !started && trdata['precalc'].is_a?(Hash) &&
             trdata['precalc']['status'].eql?('ready')
-              notify_begin(@transfer_id,trdata['precalc']['bytes_expected'])
+              notify_begin(@transfer_id, trdata['precalc']['bytes_expected'])
               started = true
             else
-              notify_progress(@transfer_id,trdata['bytes_transferred'])
+              notify_progress(@transfer_id, trdata['bytes_transferred'])
             end
           else
             Log.log.warn("trdata -> #{trdata}")

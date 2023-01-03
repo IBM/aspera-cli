@@ -7,7 +7,7 @@ require 'stringio'
 module Aspera
   # servlet called on callback: it records the callback request
   class WebAuthServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server,application) # additional args get here
+    def initialize(server, application) # additional args get here
       Log.log.debug('WebAuthServlet initialize')
       super(server)
       @app = application
@@ -15,8 +15,8 @@ module Aspera
 
     def service(request, response)
       Log.log.debug("received request from browser #{request.request_method} #{request.path}")
-      raise WEBrick::HTTPStatus::MethodNotAllowed,"unexpected method: #{request.request_method}" unless request.request_method.eql?('GET')
-      raise WEBrick::HTTPStatus::NotFound,"unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
+      raise WEBrick::HTTPStatus::MethodNotAllowed, "unexpected method: #{request.request_method}" unless request.request_method.eql?('GET')
+      raise WEBrick::HTTPStatus::NotFound, "unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
       # acquire lock and signal change
       @app.mutex.synchronize do
         @app.query = request.query
@@ -51,7 +51,7 @@ module Aspera
 
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth
-    attr_reader :expected_path,:mutex,:cond
+    attr_reader :expected_path, :mutex, :cond
     attr_writer :query
     # @param endpoint_url [String] e.g. 'https://127.0.0.1:12345'
     def initialize(endpoint_url)
@@ -74,7 +74,7 @@ module Aspera
       when 'https'
         webrick_options[:SSLEnable] = true
         # a- automatic certificate generation
-        webrick_options[:SSLCertName] = [['CN',WEBrick::Utils.getservername]]
+        webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
         # b- generate self signed cert
         #webrick_options[:SSLPrivateKey]   = OpenSSL::PKey::RSA.new(4096)
         #webrick_options[:SSLCertificate]  = OpenSSL::X509::Certificate.new

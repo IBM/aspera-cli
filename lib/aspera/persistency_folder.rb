@@ -33,12 +33,12 @@ module Aspera
       return @cache[object_id]
     end
 
-    def put(object_id,value)
+    def put(object_id, value)
       raise 'value: only String supported' unless value.is_a?(String)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug("persistency saving: #{persist_filepath}")
       File.delete(persist_filepath) if File.exist?(persist_filepath)
-      File.write(persist_filepath,value)
+      File.write(persist_filepath, value)
       Environment.restrict_file_access(persist_filepath)
       @cache[object_id] = value
     end
@@ -50,8 +50,8 @@ module Aspera
       @cache.delete(object_id)
     end
 
-    def garbage_collect(persist_category,max_age_seconds=nil)
-      garbage_files = Dir[File.join(@folder,persist_category + '*' + FILE_SUFFIX)]
+    def garbage_collect(persist_category, max_age_seconds=nil)
+      garbage_files = Dir[File.join(@folder, persist_category + '*' + FILE_SUFFIX)]
       if !max_age_seconds.nil?
         current_time = Time.now
         garbage_files.select! { |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}
@@ -70,7 +70,7 @@ module Aspera
       raise 'object_id: only String supported' unless object_id.is_a?(String)
       FileUtils.mkdir_p(@folder)
       Environment.restrict_file_access(@folder)
-      return File.join(@folder,"#{object_id}#{FILE_SUFFIX}")
+      return File.join(@folder, "#{object_id}#{FILE_SUFFIX}")
       #.gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)
     end
   end # PersistencyFolder

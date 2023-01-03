@@ -27,4 +27,4 @@ aocapi = Aspera::AoC.new(
 
 self_user_data = aocapi.read('self')
 
-Aspera::Log.dump('self',self_user_data)
+Aspera::Log.dump('self', self_user_data)

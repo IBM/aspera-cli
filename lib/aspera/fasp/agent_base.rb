@@ -13,7 +13,7 @@ module Aspera
       BOOLEAN_FIELDS = %w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled
                           MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect].freeze
       EXPECTED_METHODS = %i[text struct enhanced].freeze
-      private_constant :INTEGER_FIELDS,:BOOLEAN_FIELDS,:EXPECTED_METHODS
+      private_constant :INTEGER_FIELDS, :BOOLEAN_FIELDS, :EXPECTED_METHODS
 
       class << self
         # This checks the validity of the value returned by wait_for_transfers_completion
@@ -28,12 +28,12 @@ module Aspera
 
       # translates legacy event into enhanced (JSON) event
       def enhanced_event_format(event)
-        return event.keys.each_with_object({}) do |e,h|
+        return event.keys.each_with_object({}) do |e, h|
           # capital_to_snake_case
           new_name = e.
-              gsub(/([a-z\d])([A-Z])/,'\1_\2').
-              gsub(/([a-z\d])(usec)$/,'\1_\2').
-              gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+              gsub(/([a-z\d])([A-Z])/, '\1_\2').
+              gsub(/([a-z\d])(usec)$/, '\1_\2').
+              gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2').
               downcase
           value = event[e]
           value = value.to_i if INTEGER_FIELDS.include?(e)
@@ -46,7 +46,7 @@ module Aspera
         @listeners = []
       end
 
-      def notify_listeners(current_event_text,current_event_data)
+      def notify_listeners(current_event_text, current_event_data)
         Log.log.debug('send event to listeners')
         enhanced_event = nil
         @listeners.each do |listener|
@@ -59,16 +59,16 @@ module Aspera
         end
       end # notify_listeners
 
-      def notify_begin(id,size)
-        notify_listeners('emulated',{LISTENER_SESSION_ID_B => id,'Type' => 'NOTIFICATION','PreTransferBytes' => size})
+      def notify_begin(id, size)
+        notify_listeners('emulated', {LISTENER_SESSION_ID_B => id, 'Type' => 'NOTIFICATION', 'PreTransferBytes' => size})
       end
 
-      def notify_progress(id,size)
-        notify_listeners('emulated',{LISTENER_SESSION_ID_B => id,'Type' => 'STATS','Bytescont' => size})
+      def notify_progress(id, size)
+        notify_listeners('emulated', {LISTENER_SESSION_ID_B => id, 'Type' => 'STATS', 'Bytescont' => size})
       end
 
       def notify_end(id)
-        notify_listeners('emulated',{LISTENER_SESSION_ID_B => id,'Type' => 'DONE'})
+        notify_listeners('emulated', {LISTENER_SESSION_ID_B => id, 'Type' => 'DONE'})
       end
 
       public
@@ -78,7 +78,7 @@ module Aspera
 
       # listener receives events
       def add_listener(listener)
-        raise "expect one of #{EXPECTED_METHODS}" if EXPECTED_METHODS.inject(0){|m,e|m += listener.respond_to?("event_#{e}") ? 1 : 0;m}.eql?(0)
+        raise "expect one of #{EXPECTED_METHODS}" if EXPECTED_METHODS.inject(0){|m, e|m += listener.respond_to?("event_#{e}") ? 1 : 0;m}.eql?(0)
         @listeners.push(listener)
         self
       end

@@ -52,7 +52,7 @@ api_v3.read('me')
 #---------------
 
 # create a sample file to send
-file_to_send = File.join(tmpdir,'myfile.bin')
+file_to_send = File.join(tmpdir, 'myfile.bin')
 File.write(file_to_send, 'sample data')
 # package creation parameters
 package_create_params = {'delivery' => {
@@ -60,7 +60,7 @@ package_create_params = {'delivery' => {
   'recipients' => ['aspera.user1@gmail.com'],
   'sources'    => [{'paths' => [file_to_send]}]
 }}
-pkg_created = api_v3.create('send',package_create_params)[:data]
+pkg_created = api_v3.create('send', package_create_params)[:data]
 # get transfer specification (normally: only one)
 transfer_spec = pkg_created['xfer_sessions'].first
 # set paths of files to send
@@ -69,7 +69,7 @@ transfer_spec['paths'] = [{'source' => file_to_send}]
 transfer_client = Aspera::Fasp::AgentDirect.new({quiet: true})
 # start transfer (asynchronous)
 job_id = transfer_client.start_transfer(transfer_spec)
-Aspera::Log.dump('job_id',job_id)
+Aspera::Log.dump('job_id', job_id)
 # wait for all transfer completion (for the example)
 result = transfer_client.wait_for_transfers_completion
 #  notify of any transfer error
@@ -91,4 +91,4 @@ api_v4 = Aspera::Rest.new({
   }})
 
 # Use it. Note that Faspex 4 API v4 is totally different from Faspex 4 v3 APIs, see ref on line 2
-Aspera::Log.dump('users',api_v4.read('users')[:data])
+Aspera::Log.dump('users', api_v4.read('users')[:data])

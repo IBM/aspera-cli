@@ -3,7 +3,7 @@
 
 require 'rubygems'
 require 'securerandom'
-GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)),'..'))
+GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)), '..'))
 # coverage for tests
 if ENV.has_key?('ENABLE_COVERAGE')
   require 'simplecov'
@@ -14,13 +14,13 @@ if ENV.has_key?('ENABLE_COVERAGE')
   SimpleCov.command_name(SecureRandom.uuid)
   SimpleCov.at_exit do
     original_file_descriptor = $stdout
-    $stdout.reopen(File.join(GEM_ROOT,'simplecov.log'))
+    $stdout.reopen(File.join(GEM_ROOT, 'simplecov.log'))
     SimpleCov.result.format!
     $stdout.reopen(original_file_descriptor)
   end
   SimpleCov.start
 end
-$LOAD_PATH.unshift(File.join(GEM_ROOT,'lib'))
+$LOAD_PATH.unshift(File.join(GEM_ROOT, 'lib'))
 require 'aspera/cli/main'
 require 'aspera/environment'
 Encoding.default_internal = Encoding::UTF_8

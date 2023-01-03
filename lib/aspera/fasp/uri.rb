@@ -8,7 +8,7 @@ module Aspera
     # translates a "faspe:" URI (used in Faspex) into transfer spec hash
     class Uri
       def initialize(fasplink)
-        @fasp_uri = URI.parse(fasplink.gsub(' ','%20'))
+        @fasp_uri = URI.parse(fasplink.gsub(' ', '%20'))
         # TODO: check scheme is faspe
       end
 
@@ -34,7 +34,7 @@ module Aspera
           when 'minrate' then result_ts['min_rate_kbps'] = value.to_i
           when 'port' then result_ts['fasp_port'] = value.to_i
           when 'bwcap' then result_ts['target_rate_cap_kbps'] = value.to_i
-          when 'enc' then result_ts['cipher'] = value.gsub(/^aes/,'aes-').gsub(/cfb$/,'-cfb').gsub(/gcm$/,'-gcm').gsub(/--/,'-')
+          when 'enc' then result_ts['cipher'] = value.gsub(/^aes/, 'aes-').gsub(/cfb$/, '-cfb').gsub(/gcm$/, '-gcm').gsub(/--/, '-')
           when 'tags64' then result_ts['tags'] = JSON.parse(Base64.strict_decode64(value))
           when 'createpath' then result_ts['create_dir'] = CommandLineBuilder.yes_to_true(value)
           when 'fallback' then result_ts['http_fallback'] = CommandLineBuilder.yes_to_true(value)

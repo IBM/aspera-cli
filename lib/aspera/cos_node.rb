@@ -7,17 +7,17 @@ require 'xmlsimple'
 module Aspera
   class CosNode < Node
     class << self
-      def parameters_from_svc_creds(service_credentials,bucket_region)
+      def parameters_from_svc_creds(service_credentials, bucket_region)
         # check necessary contents
         raise 'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
         %w[apikey resource_instance_id endpoints].each do |field|
           raise "service_credentials must have a field: #{field}" unless service_credentials.has_key?(field)
         end
-        Aspera::Log.dump('service_credentials',service_credentials)
+        Aspera::Log.dump('service_credentials', service_credentials)
         # read endpoints from service provided in service credentials
         endpoints = Aspera::Rest.new({base_url: service_credentials['endpoints']}).read('')[:data]
-        Aspera::Log.dump('endpoints',endpoints)
-        storage_endpoint = endpoints.dig('service-endpoints','regional',bucket_region,'public',bucket_region)
+        Aspera::Log.dump('endpoints', endpoints)
+        storage_endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
         raise "no such region: #{bucket_region}" if storage_endpoint.nil?
         return {
           instance_id:      service_credentials['resource_instance_id'],
@@ -29,7 +29,7 @@ module Aspera
     IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
     TOKEN_FIELD = 'delegated_refresh_token'
     attr_reader :add_ts
-    def initialize(bucket_name,storage_endpoint,instance_id,api_key,auth_url=IBM_CLOUD_TOKEN_URL)
+    def initialize(bucket_name, storage_endpoint, instance_id, api_key, auth_url=IBM_CLOUD_TOKEN_URL)
       @auth_url = auth_url
       @api_key = api_key
       s3_api = Aspera::Rest.new({
@@ -53,7 +53,7 @@ module Aspera
         url_params: {'faspConnectionInfo' => nil}
       )[:http].body
       ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
-      Aspera::Log.dump('ats_info',ats_info)
+      Aspera::Log.dump('ats_info', ats_info)
       super({
         base_url: ats_info['ATSEndpoint'],
         auth:     {
@@ -83,7 +83,7 @@ module Aspera
           receiver_client_ids: 'aspera_ats'
         }})
       # get delegated token to be placed in rest call header and in transfer tags
-      @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /,'')
+      @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /, '')
       @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@add_ts['tags']['aspera']['node']['storage_credentials'])}
     end
   end

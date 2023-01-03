@@ -10,12 +10,12 @@ module Aspera
     OS_X = :osx
     OS_LINUX = :linux
     OS_AIX = :aix
-    OS_LIST = [OS_WINDOWS,OS_X,OS_LINUX,OS_AIX].freeze
+    OS_LIST = [OS_WINDOWS, OS_X, OS_LINUX, OS_AIX].freeze
     CPU_X86_64 = :x86_64
     CPU_PPC64 = :ppc64
     CPU_PPC64LE = :ppc64le
     CPU_S390 = :s390
-    CPU_LIST = [CPU_X86_64,CPU_PPC64,CPU_PPC64LE,CPU_S390].freeze
+    CPU_LIST = [CPU_X86_64, CPU_PPC64, CPU_PPC64LE, CPU_S390].freeze
 
     class << self
       def ruby_version
@@ -24,9 +24,9 @@ module Aspera
 
       def os
         case RbConfig::CONFIG['host_os']
-        when /mswin/,/msys/,/mingw/,/cygwin/,/bccwin/,/wince/,/emc/
+        when /mswin/, /msys/, /mingw/, /cygwin/, /bccwin/, /wince/, /emc/
           return OS_WINDOWS
-        when /darwin/,/mac os/
+        when /darwin/, /mac os/
           return OS_X
         when /linux/
           return OS_LINUX
@@ -39,9 +39,9 @@ module Aspera
 
       def cpu
         case RbConfig::CONFIG['host_cpu']
-        when /x86_64/,/x64/
+        when /x86_64/, /x64/
           return CPU_X86_64
-        when /powerpc/,/ppc64/
+        when /powerpc/, /ppc64/
           return CPU_PPC64LE if os.eql?(OS_LINUX)
           return CPU_PPC64
         when /s390/
@@ -76,21 +76,21 @@ module Aspera
 
       # secure execution of Ruby code
       def secure_eval(code)
-        Kernel.send('lave'.reverse,code,empty_binding, __FILE__, __LINE__)
+        Kernel.send('lave'.reverse, code, empty_binding, __FILE__, __LINE__)
       end
 
       # value is provided in block
-      def write_file_restricted(path,force: false)
+      def write_file_restricted(path, force: false)
         raise 'coding error, missing content block' unless block_given?
         if force || !File.exist?(path)
           File.unlink(path) rescue nil # Windows may give error
-          File.write(path,yield)
+          File.write(path, yield)
           restrict_file_access(path)
         end
         return path
       end
 
-      def restrict_file_access(path,mode: nil)
+      def restrict_file_access(path, mode: nil)
         begin
           if mode.nil?
             # or FileUtils ?
@@ -102,7 +102,7 @@ module Aspera
               Log.log.debug("No restriction can be set for #{path}");
             end
           end
-          File.chmod(mode,path) unless mode.nil?
+          File.chmod(mode, path) unless mode.nil?
         rescue => e
           Log.log.warn(e.message)
         end

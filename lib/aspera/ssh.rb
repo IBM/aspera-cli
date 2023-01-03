@@ -15,7 +15,7 @@ module Aspera
   class Ssh
     # ssh_options: same as Net::SSH.start
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
-    def initialize(host,username,ssh_options)
+    def initialize(host, username, ssh_options)
       Log.log.debug("ssh:#{username}@#{host}")
       Log.log.debug("ssh_options:#{ssh_options}")
       @host = host
@@ -24,7 +24,7 @@ module Aspera
       @ssh_options[:logger] = Log.log
     end
 
-    def execute(cmd,input=nil)
+    def execute(cmd, input=nil)
       if cmd.is_a?(Array)
         # concatenate arguments, enclose in double quotes
         cmd = cmd.map{|v|%Q("#{v}")}.join(' ')
@@ -34,7 +34,7 @@ module Aspera
       Net::SSH.start(@host, @username, @ssh_options) do |session|
         ssh_channel = session.open_channel do |channel|
           # prepare stdout processing
-          channel.on_data{|_chan,data|response.push(data)}
+          channel.on_data{|_chan, data|response.push(data)}
           # prepare stderr processing, stderr if type = 1
           channel.on_extended_data do |_chan, _type, data|
             errormsg = "#{cmd}: [#{data.chomp}]"
@@ -45,7 +45,7 @@ module Aspera
             raise errormsg
           end
           # send commannd to SSH channel (execute)
-          channel.send('cexe'.reverse,cmd){|_ch,_success|channel.send_data(input) unless input.nil?}
+          channel.send('cexe'.reverse, cmd){|_ch, _success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait
