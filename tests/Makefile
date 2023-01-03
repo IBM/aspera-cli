@@ -84,8 +84,8 @@ $(T)sh3: $(T).exists
 	set -x&&\
 	shares_upload=$$($(EXE_NOMAN) config preset get misc shares_upload)&&\
 	http_gw_fqdn=$$($(EXE_NOMAN) config preset get misc http_gw_fqdn_port)&&\
-	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
+	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
+	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
 	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 tshares: $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
@@ -312,6 +312,7 @@ $(T)nd_2_nd_xfer: $(T).exists
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
+	-$(EXE_NOMAN) node -Pnode_srv service delete service1&&sleep 5
 	$(EXE_MAN) node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXE_MAN) node -Pnode_srv service list
 	@echo "waiting a little...";sleep 2
@@ -348,9 +349,32 @@ $(T)nd_nagios: $(T).exists
 $(T)nd_ak: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Pnode_srv access_key list
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name br /
 	@touch $@
-tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios $(T)nd_ak
+$(T)nd_ak1: $(T).exists
+	@echo $@
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name node_info /
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name browse /
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name find /
+	@touch $@
+$(T)nd_ak2: $(T).exists
+	@echo $@
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name mkdir /folder1
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name rename /folder1 folder2
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name delete /folder2
+	@touch $@
+$(T)nd_ak3: $(T).exists
+	@echo $@
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k'
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name file show --path=/testfile1
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name delete testfile1
+	@touch $@
+$(T)nd_ak4: $(T).exists
+	@echo $@
+	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name file show 1
+	@touch $@
+tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
+tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios tndak
 
 $(T)aocg1: $(T).exists
 	@echo $@
@@ -627,12 +651,13 @@ $(T)aocat7: $(T).exists
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
 	@echo $@
-	set -x&&\
+	-$(EXE_NOMAN) aoc admin ats access_key delete ak1ibmcloud
+	-set -x&&\
 	icos_bucket_region=$$($(EXE_NOMAN) config preset get misc icos_bucket_region)&&\
 	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak1ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
@@ -649,11 +674,11 @@ $(T)aocat10: $(T).exists
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats access_key node akibmcloud --secret=somesecret browse /
+	$(EXE_MAN) aoc admin ats access_key node ak1ibmcloud --secret=somesecret browse /
 	@touch $@
 $(T)aocat13: $(T).exists
 	@echo $@
-	-$(EXE_MAN) aoc admin ats access_key delete akibmcloud
+	-$(EXE_MAN) aoc admin ats access_key delete ak1ibmcloud
 	@touch $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
 $(DIR_TMP)wf_id.txt: $(T)aocauto1
@@ -758,12 +783,13 @@ $(T)at3: $(T).exists
 	@touch $@
 $(T)at8: $(T).exists
 	@echo $@
-	set -x&&\
+	-$(EXE_NOMAN) ats access_key delete ak2ibmcloud
+	-set -x&&\
 	icos_bucket_region=$$($(EXE_NOMAN) config preset get misc icos_bucket_region)&&\
 	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
@@ -780,14 +806,14 @@ $(T)at10: $(T).exists
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key node akibmcloud browse / --secret=somesecret
+	$(EXE_MAN) ats access_key node ak2ibmcloud browse / --secret=somesecret
 	@touch $@
 $(T)at12: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key cluster akibmcloud --secret=somesecret
+	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=somesecret
 	@touch $@
 $(T)at13: $(T).exists
-	$(EXE_MAN) ats access_key delete akibmcloud
+	-$(EXE_MAN) ats access_key delete ak2ibmcloud
 	@touch $@
 $(T)at14: $(T).exists
 	@echo $@

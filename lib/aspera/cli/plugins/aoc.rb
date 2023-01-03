@@ -53,7 +53,6 @@ module Aspera
           options.add_opt_simple(:passphrase,'RSA private key passphrase')
           options.add_opt_simple(:workspace,'name of workspace')
           options.add_opt_simple(:name,'resource name')
-          options.add_opt_simple(:path,'file or folder path')
           options.add_opt_simple(:link,'public link to shared resource')
           options.add_opt_simple(:new_user_option,'new user creation option for unknown package recipients')
           options.add_opt_simple(:from_folder,'share to share source folder')
@@ -244,6 +243,8 @@ module Aspera
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: node_api)).execute_action(command_legacy)
           when :file
             command_node_file = options.get_next_command(%i[show permission modify])
+            options.add_opt_simple(:path,'file or folder path for gen4 operation "file"')
+            options.parse_options!
             file_path = options.get_option(:path)
             node_file =
               if !file_path.nil?

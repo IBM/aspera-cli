@@ -4122,7 +4122,9 @@ The IBM Cloud Object Storage provides the possibility to execute transfers using
 It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
 Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
-There are two possibilities to provide credentials. If you already have the endpoint, apikey and CRN, use the first method. If you don't have credentials but have access to the IBM Cloud console, then use the second method.
+There are two possibilities to provide credentials.
+If you already have the endpoint, apikey and CRN, use the first method.
+If you don't have credentials but have access to the IBM Cloud console, then use the second method.
 
 ### Using endpoint, apikey and Resource Instance ID (CRN)
 
@@ -4144,9 +4146,17 @@ Then, jump to the transfer example.
 
 ### Using service credential file
 
-If you are the COS administrator and don't have yet the credential: Service credentials are directly created using the IBM cloud web ui. Navigate to:
+If you are the COS administrator and don't have yet the credential:
+Service credentials are directly created using the IBM cloud Console (web UI).
+Navigate to:
 
-Navigation Menu &rarr; Resource List &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
+- &rarr; Navigation Menu 
+- &rarr; [Resource List](https://cloud.ibm.com/resources)
+- &rarr; [Storage](https://cloud.ibm.com/objectstorage)
+- &rarr; Select your storage instance
+- &rarr; Service Credentials
+- &rarr; New credentials (Leave default role: Writer, no special options)
+- &rarr; Copy to clipboard
 
 Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 

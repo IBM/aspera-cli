@@ -6,7 +6,7 @@
 
 Version : 4.10.1
 
-Laurent/2016-2022
+Laurent/2016-2023
 
 This gem provides the `ascli` Command Line Interface to IBM Aspera software.
 
@@ -2703,6 +2703,7 @@ OPTIONS:
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            sync name
+        --path=VALUE                 file or folder path for gen4 operation "file"
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
 
 
@@ -2844,7 +2845,6 @@ OPTIONS:
         --passphrase=VALUE           RSA private key passphrase
         --workspace=VALUE            name of workspace
         --name=VALUE                 resource name
-        --path=VALUE                 file or folder path
         --link=VALUE                 public link to shared resource
         --new-user-option=VALUE      new user creation option for unknown package recipients
         --from-folder=VALUE          share to share source folder
@@ -3913,10 +3913,10 @@ aoc -N remind --username=my_aoc_user_email
 aoc -N servers
 aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key delete akibmcloud
+aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+aoc admin ats access_key delete ak1ibmcloud
 aoc admin ats access_key list --fields=name,id
-aoc admin ats access_key node akibmcloud --secret=somesecret browse /
+aoc admin ats access_key node ak1ibmcloud --secret=somesecret browse /
 aoc admin ats cluster clouds
 aoc admin ats cluster list
 aoc admin ats cluster show --cloud=aws --region=eu-west-1
@@ -4120,13 +4120,13 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 ### ATS sample commands
 
 ```bash
-ats access_key cluster akibmcloud --secret=somesecret
+ats access_key cluster ak2ibmcloud --secret=somesecret
 ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"akibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ats access_key delete ak2ibmcloud
 ats access_key delete ak_aws
-ats access_key delete akibmcloud
 ats access_key list --fields=name,id
-ats access_key node akibmcloud browse / --secret=somesecret
+ats access_key node ak2ibmcloud browse / --secret=somesecret
 ats api_key create
 ats api_key instances
 ats api_key list
@@ -4174,7 +4174,7 @@ server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDE
 server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email
 server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5}' --progress=multi
+server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
 ```
 
 ### Authentication on Server with SSH session
@@ -4375,7 +4375,17 @@ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"myst
 ```bash
 node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
 node -N -Ptst_node_preview access_key delete aoc_1
-node -Pnode_srv access_key do my_aoc_ak_name br /
+node -Pnode_srv access_key do my_aoc_ak_name browse /
+node -Pnode_srv access_key do my_aoc_ak_name delete /folder2
+node -Pnode_srv access_key do my_aoc_ak_name delete testfile1
+node -Pnode_srv access_key do my_aoc_ak_name download testfile1 --to-folder=.
+node -Pnode_srv access_key do my_aoc_ak_name file show --path=/testfile1
+node -Pnode_srv access_key do my_aoc_ak_name file show 1
+node -Pnode_srv access_key do my_aoc_ak_name find /
+node -Pnode_srv access_key do my_aoc_ak_name mkdir /folder1
+node -Pnode_srv access_key do my_aoc_ak_name node_info /
+node -Pnode_srv access_key do my_aoc_ak_name rename /folder1 folder2
+node -Pnode_srv access_key do my_aoc_ak_name upload 'faux:///testfile1?1k'
 node -Pnode_srv access_key list
 node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 node -Pnode_srv service delete service1
@@ -4734,9 +4744,9 @@ shares admin user share_permissions 1
 shares repository browse /
 shares repository delete my_shares_upload/testfile.bin
 shares repository download --to-folder=. my_shares_upload/testfile.bin
-shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 shares repository upload --to-folder=my_shares_upload testfile.bin
-shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 ```
 
 ## <a id="console"></a>Plugin: `console`: IBM Aspera Console
@@ -4774,7 +4784,9 @@ The IBM Cloud Object Storage provides the possibility to execute transfers using
 It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Service (ATS).
 Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
-There are two possibilities to provide credentials. If you already have the endpoint, apikey and CRN, use the first method. If you don't have credentials but have access to the IBM Cloud console, then use the second method.
+There are two possibilities to provide credentials.
+If you already have the endpoint, apikey and CRN, use the first method.
+If you don't have credentials but have access to the IBM Cloud console, then use the second method.
 
 ### Using endpoint, apikey and Resource Instance ID (CRN)
 
@@ -4796,9 +4808,17 @@ Then, jump to the transfer example.
 
 ### Using service credential file
 
-If you are the COS administrator and don't have yet the credential: Service credentials are directly created using the IBM cloud web ui. Navigate to:
+If you are the COS administrator and don't have yet the credential:
+Service credentials are directly created using the IBM cloud Console (web UI).
+Navigate to:
 
-Navigation Menu &rarr; Resource List &rarr; Storage &rarr; Cloud Object Storage &rarr; Service Credentials &rarr; &lt;select or create credentials&gt; &rarr; view credentials &rarr; copy
+- &rarr; Navigation Menu 
+- &rarr; [Resource List](https://cloud.ibm.com/resources)
+- &rarr; [Storage](https://cloud.ibm.com/objectstorage)
+- &rarr; Select your storage instance
+- &rarr; Service Credentials
+- &rarr; New credentials (Leave default role: Writer, no special options)
+- &rarr; Copy to clipboard
 
 Then save the copied value to a file, e.g. : `$HOME/cos_service_creds.json`
 

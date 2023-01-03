@@ -29,7 +29,8 @@ module Aspera
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
         SEARCH_REMOVE_FIELDS=%w[basename permissions].freeze
-        private_constant :SAMPLE_SOAP_CALL,:SEARCH_REMOVE_FIELDS
+        VAL_ALL = 'ALL'
+        private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS VAL_ALL])
 
         def initialize(env)
           super(env)
@@ -38,6 +39,7 @@ module Aspera
           options.add_opt_simple(:validator,'identifier of validator (optional for central)')
           options.add_opt_simple(:asperabrowserurl,'URL for simple aspera web ui')
           options.add_opt_simple(:sync_name,'sync name')
+          options.add_opt_simple(:path,'file or folder path for gen4 operation "file"')
           options.add_opt_list(:token_type,%i[aspera basic hybrid],'Type of token used for transfers')
           options.set_option(:asperabrowserurl,'https://asperabrowser.mybluemix.net')
           options.set_option(:token_type,:aspera)
@@ -45,10 +47,11 @@ module Aspera
           return if env[:man_only]
           @api_node =
             if env.has_key?(:node_api)
+              # this can be Aspera::Node or Aspera::Rest (shares)
               env[:node_api]
             elsif options.get_option(:password,is_type: :mandatory).start_with?('Bearer ')
               # info is provided like node_info of aoc
-              Rest.new({
+              Aspera::Node.new({
                 base_url: options.get_option(:url,is_type: :mandatory),
                 headers:  {
                   'X-Aspera-AccessKey' => options.get_option(:username,is_type: :mandatory),
@@ -57,7 +60,13 @@ module Aspera
               })
             else
               # this is normal case
-              basic_auth_api
+              Aspera::Node.new({
+                base_url: options.get_option(:url,is_type: :mandatory),
+                auth:     {
+                  type:     :basic,
+                  username: options.get_option(:username,is_type: :mandatory),
+                  password: options.get_option(:password,is_type: :mandatory)
+                }})
             end
         end
 
@@ -262,40 +271,83 @@ module Aspera
             if %i[basic hybrid].include?(token_type)
               Aspera::Node.set_ak_basic_token(transfer_spec,@api_node.params[:auth][:username],@api_node.params[:auth][:password])
             end
-            return Main.result_transfer(transfer.start(transfer_spec,{ src: :node_gen3}))
+            return Main.result_transfer(transfer.start(transfer_spec,:node_gen3))
           when :api_details
             return { type: :single_object, data: @api_node.params }
           end
         end
 
-        # navigate the path from given file id
-        # @param id initial file id
-        # @param path file path
-        # @return {.api,.file_id}
-        def resolve_api_fid(id, path)
-          # TODO: implement
-          Log.log.debug("TODO #{path}")
-          return {api: @api_node, file_id: id}
-        end
-
         NODE4_COMMANDS = %i[browse find mkdir rename delete upload download http_node_download file permission bearer_token_node node_info].freeze
 
+        def aoc_tags(operation)
+          case operation
+          when :upload,:download
+            return {}
+            #return {'aspera' => {'files' => {'parentCwd' => "#{apifid[:node_info]['id']}:#{apifid[:file_id]}"}}}
+          when :permission
+            return {}
+            #return {'aspera' => {'files' => {'workspace' => {
+            #  'id'                => @workspace_id,
+            #  'workspace_name'    => @workspace_name,
+            #  'user_name'         => aoc_api.user_info['name'],
+            #  'shared_by_user_id' => aoc_api.user_info['id'],
+            #  'shared_by_name'    => aoc_api.user_info['name'],
+            #  'shared_by_email'   => aoc_api.user_info['email'],
+            #  'shared_with_name'  => access_id,
+            #  'access_key'        => apifid[:node_info]['access_key'],
+            #  'node'              => apifid[:node_info]['name']}}}}
+          end
+        end
+
+        def gen4_transfer_start(direction,apifid,ts_add)
+          transfer_spec = {
+            'direction' => direction,
+            'tags'      => {
+              'aspera' => {
+                'node' => {
+                  'access_key' => apifid[:api].read('access_keys/self')['id'],
+                  'file_id'    => apifid[:file_id]
+                } # node
+              } # aspera
+            } # tags
+          }
+          # add basic token
+          Aspera::Node.set_ak_basic_token(transfer_spec,apifid[:api].params[:auth][:username],apifid[:api].params[:auth][:password])
+          # add remote host info
+          if false # self.class.use_standard_ports
+            # get default TCP/UDP ports and transfer user
+            transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
+            # by default: same address as node API
+            transfer_spec['remote_host'] = URI.parse(apifid[:api].params[:base_url]).host
+          else
+            # retrieve values from API
+            std_t_spec = apifid[:api].create(
+              'files/download_setup',
+              {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
+            )[:data]['transfer_specs'].first['transfer_spec']
+            # copy some parts
+            %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
+          end
+          # add caller provided transfer spec
+          transfer_spec.deep_merge!(ts_add)
+          return transfer.start(transfer_spec,:node_gen4)
+        end
+
         def execute_node_gen4_command(command_repo, top_file_id)
-          #@api_node
           case command_repo
           when :node_info
             thepath = options.get_next_argument('path')
-            apifid = resolve_api_fid(top_file_id,thepath)
-            apifid[:api] = aoc_api.get_node_api(apifid[:node_info], use_secret: false)
+            apifid = @api_node.resolve_api_fid(top_file_id,thepath)
+            Log.log.warn("#{apifid}")
             return {type: :single_object,data: {
-              url:      apifid[:node_info]['url'],
-              username: apifid[:node_info]['access_key'],
-              password: apifid[:api].oauth_token,
+              url:      apifid[:api].params[:base_url],
+              username: apifid[:api].params[:auth][:username],
+              password: apifid[:api].params[:auth][:password], # TODO: could be Bearer token...
               root_id:  apifid[:file_id]
             }}
           when :browse
             thepath = options.get_next_argument('path')
-            apifid = resolve_api_fid(top_file_id,thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id,thepath)
             file_info = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
               result = apifid[:api].read("files/#{apifid[:file_id]}/files",options.get_option(:value))
@@ -307,34 +359,34 @@ module Aspera
             return {type: :object_list,data: items,fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             thepath = options.get_next_argument('path')
-            apifid = resolve_api_fid(top_file_id,thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id,thepath)
             test_block = Aspera::Node.file_matcher(options.get_option(:value))
-            return {type: :object_list,data: aoc_api.find_files(apifid,test_block),fields: ['path']}
+            return {type: :object_list,data: @api_node.find_files(apifid[:file_id],test_block),fields: ['path']}
           when :mkdir
             thepath = options.get_next_argument('path')
             containing_folder_path = thepath.split(AoC::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
-            apifid = resolve_api_fid(top_file_id,containing_folder_path.join(AoC::PATH_SEPARATOR))
+            apifid = @api_node.resolve_api_fid(top_file_id,containing_folder_path.join(AoC::PATH_SEPARATOR))
             result = apifid[:api].create("files/#{apifid[:file_id]}/files",{name: new_folder,type: :folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             thepath = options.get_next_argument('source path')
             newname = options.get_next_argument('new name')
-            apifid = resolve_api_fid(top_file_id,thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id,thepath)
             result = apifid[:api].update("files/#{apifid[:file_id]}",{name: newname})[:data]
             return Main.result_status("renamed #{thepath} to #{newname}")
           when :delete
             thepath = options.get_next_argument('path')
-            return do_bulk_operation(thepath,'deleted','path') do |l_path|
+            return do_bulk_operation(thepath,'deleted',id_result: 'path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
-              apifid = resolve_api_fid(top_file_id,l_path)
+              apifid = @api_node.resolve_api_fid(top_file_id,l_path)
               result = apifid[:api].delete("files/#{apifid[:file_id]}")[:data]
               {'path' => l_path}
             end
           when :upload
-            apifid = resolve_api_fid(top_file_id,transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
-            add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{apifid[:node_info]['id']}:#{apifid[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_SEND,apifid,add_ts))
+            apifid = @api_node.resolve_api_fid(top_file_id,transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
+            add_ts = {'tags' => aoc_tags(:upload)}
+            return Main.result_transfer(gen4_transfer_start(Fasp::TransferSpec::DIRECTION_SEND,apifid,add_ts))
           when :download
             source_paths = transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -345,11 +397,11 @@ module Aspera
               source_paths = [{'source' => source_folder.pop}]
               source_folder = source_folder.join(AoC::PATH_SEPARATOR)
             end
-            apifid = resolve_api_fid(top_file_id,source_folder)
+            apifid = @api_node.resolve_api_fid(top_file_id,source_folder)
             # override paths with just filename
-            add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{apifid[:node_info]['id']}:#{apifid[:file_id]}"}}}}
+            add_ts = {'tags' => aoc_tags(:download)}
             add_ts['paths'] = source_paths
-            return Main.result_transfer(transfer_start(AoC::FILES_APP,Fasp::TransferSpec::DIRECTION_RECEIVE,apifid,add_ts))
+            return Main.result_transfer(gen4_transfer_start(Fasp::TransferSpec::DIRECTION_RECEIVE,apifid,add_ts))
           when :http_node_download
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']
@@ -360,7 +412,7 @@ module Aspera
             end
             raise CliBadArgument,'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
-            apifid = resolve_api_fid(top_file_id,File.join(source_folder,file_name))
+            apifid = @api_node.resolve_api_fid(top_file_id,File.join(source_folder,file_name))
             apifid[:api].call(
               operation: 'GET',
               subpath: "files/#{apifid[:file_id]}/content",
@@ -368,6 +420,8 @@ module Aspera
             return Main.result_status("downloaded: #{file_name}")
           when :permission
             command_perm = options.get_next_command(%i[list create])
+            thepath = options.get_next_argument('source path')
+            apifid = @api_node.resolve_api_fid(top_file_id,thepath)
             case command_perm
             when :list
               # generic options : TODO: as arg ? option_url_query
@@ -384,22 +438,12 @@ module Aspera
               #create_param=self.options.get_next_argument('creation data (Hash)')
               set_workspace_info
               access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_id}"
-              apifid[:node_info]
               params = {
                 'file_id'       => apifid[:file_id], # mandatory
                 'access_type'   => 'user', # mandatory: user or group
                 'access_id'     => access_id, # id of user or group
                 'access_levels' => Aspera::Node::ACCESS_LEVELS,
-                'tags'          => {'aspera' => {'files' => {'workspace' => {
-                  'id'                => @workspace_id,
-                  'workspace_name'    => @workspace_name,
-                  'user_name'         => aoc_api.user_info['name'],
-                  'shared_by_user_id' => aoc_api.user_info['id'],
-                  'shared_by_name'    => aoc_api.user_info['name'],
-                  'shared_by_email'   => aoc_api.user_info['email'],
-                  'shared_with_name'  => access_id,
-                  'access_key'        => apifid[:node_info]['access_key'],
-                  'node'              => apifid[:node_info]['name']}}}}}
+                'tags'          => aoc_tags(:permission)}
               item = apifid[:api].create('permissions',params)[:data]
               return {type: :single_object,data: item}
             else raise "internal error:shall not reach here (#{command_perm})"
@@ -408,10 +452,10 @@ module Aspera
             command_node_file = options.get_next_command(%i[show modify])
             file_path = options.get_option(:path)
             apifid =
-              if !file_path.nil?
-                resolve_api_fid(top_file_id,file_path) # TODO: allow follow link ?
+              if file_path.nil?
+                {api: @api_node,file_id: instance_identifier}
               else
-                {node_info: top_file_id[:node_info],file_id: instance_identifier}
+                @api_node.resolve_api_fid(top_file_id,file_path) # TODO: allow follow link ?
               end
             case command_node_file
             when :show
@@ -584,11 +628,10 @@ module Aspera
             when :do
               access_key = options.get_next_argument('access key id')
               ak_info=@api_node.read("access_keys/#{access_key}")[:data]
-              # change API if needed
+              # change API credentials if different access key
               if !access_key.eql?('self')
-                secret=config.lookup_secret(url: @api_node.params[:base_url], username: access_key, mandatory: true)
-                @api_node.params[:auth][:username]=access_key
-                @api_node.params[:auth][:password]=secret
+                @api_node.params[:auth][:username]=ak_info['id']
+                @api_node.params[:auth][:password]=config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
               end
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo,ak_info['root_file_id'])
