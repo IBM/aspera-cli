@@ -99,9 +99,10 @@ $(T)serv_mkdir: $(T).exists
 	@echo $@
 	$(EXE_MAN) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
 	@touch $@
-$(T)serv_upload: $(T)serv_mkdir
+$(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+	$(EXE_MAN) server browse $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME)
 	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) config preset get misc email_external)&&\
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email}

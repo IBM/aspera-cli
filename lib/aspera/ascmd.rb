@@ -32,7 +32,7 @@ module Aspera
       system_info = result[:info]
       result.delete(:info)
       # make single file result like a folder
-      result.has_key?(:file) ? result[:dir] = [result[:file]];result.delete(:file) : nil
+      result[:dir] = [result.delete(:file)] if result.has_key?(:file)
       # add type field for stats
       if result.has_key?(:dir)
         result[:dir].each do |file|
