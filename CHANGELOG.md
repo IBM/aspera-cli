@@ -2,7 +2,12 @@
 
 * 4.11.0
 
-  * 
+  * new: vault: secret finder, migration from config file
+  * new: allow removal of transferspec parameter by setting value to `null`
+  * fix: security: no shell interpolation
+  * fix: when WSS and node agent: no localhost (certificate)
+  * fix: #99 `aoc file download` for single shared folder
+  * change: container image has entry point
 
 * 4.10.0
 
