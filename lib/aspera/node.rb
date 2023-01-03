@@ -20,10 +20,10 @@ module Aspera
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
     class << self
-      def set_ak_basic_token(ts,ak,secret)
+      def set_ak_basic_token(ts, ak, secret)
         Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
           "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-        ts['token'] = Rest.basic_creds(ak,secret)
+        ts['token'] = Rest.basic_creds(ak, secret)
       end
 
       # for access keys: provide expression to match entry in folder
@@ -39,9 +39,9 @@ module Aspera
       end
     end
 
-    #    def initialize(rest_params)
-    #      super(rest_params)
-    #    end
+    def initialize(rest_params)
+      super(rest_params)
+    end
 
     # recursively crawl in a folder.
     # subfolders a processed if the processing method returns true
@@ -50,17 +50,13 @@ module Aspera
     # - top_file_id file id to start at (default = access key root file id)
     # - top_file_path path of top folder (default = /)
     # - method processing method (default= process_entry)
-    def crawl(processor,opt={})
-      Log.log.debug("crawl1 #{opt}")
+    def crawl(processor:, method: :process_entry, top_file_id: nil, top_file_path: '/')
       # not possible with bearer token
-      opt[:top_file_id] ||= read('access_keys/self')[:data]['root_file_id']
-      opt[:top_file_path] ||= '/'
-      opt[:method] ||= :process_entry
-      raise "processor must have #{opt[:method]}" unless processor.respond_to?(opt[:method])
-      Log.log.debug("crawl #{opt}")
-      #top_info=read("files/#{opt[:top_file_id]}")[:data]
-      folders_to_explore = [{id: opt[:top_file_id], relpath: opt[:top_file_path]}]
-      Log.dump(:folders_to_explore,folders_to_explore)
+      top_file_id ||= read('access_keys/self')[:data]['root_file_id']
+      raise "processor #{processor.class} must have #{method}" unless processor.respond_to?(method)
+      #top_info=read("files/#{top_file_id}")[:data]
+      folders_to_explore = [{id: top_file_id, relpath: top_file_path}]
+      Log.dump(:folders_to_explore, folders_to_explore)
       while !folders_to_explore.empty?
         current_item = folders_to_explore.shift
         Log.log.debug("searching #{current_item[:relpath]}".bg_green)
@@ -72,19 +68,19 @@ module Aspera
             Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")
             []
           end
-        Log.dump(:folder_contents,folder_contents)
+        Log.dump(:folder_contents, folder_contents)
         folder_contents.each do |entry|
-          relative_path = File.join(current_item[:relpath],entry['name'])
+          relative_path = File.join(current_item[:relpath], entry['name'])
           Log.log.debug("looking #{relative_path}".bg_green)
           # entry type is file, folder or link
-          if processor.send(opt[:method],entry,relative_path) && entry['type'].eql?('folder')
-            folders_to_explore.push({id: entry['id'],relpath: relative_path})
+          if processor.send(method, entry, relative_path) && entry['type'].eql?('folder')
+            folders_to_explore.push({id: entry['id'], relpath: relative_path})
           end
         end
       end
     end # crawl
 
-    def process_folder_entry(entry,path)
+    def process_folder_entry(entry, path)
       # stop digging here if not in right path
       return false unless entry['name'].eql?(@resolve_state[:path].first)
       # ok it matches, so we remove the match
@@ -115,24 +111,21 @@ module Aspera
     # @return {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
       path_elements = path.split(AoC::PATH_SEPARATOR).reject(&:empty?)
+      return {api: self, file_id: top_file_id} if path_elements.empty?
       result = {api: self, file_id: nil}
-      if path_elements.empty?
-        result[:file_id] = top_file_id
-      else
-        # init result state
-        @resolve_state = {path: path_elements, result: result}
-        crawl(self,{method: :process_folder_entry, top_file_id: top_file_id})
-        not_found = @resolve_state[:path]
-        @resolve_state = nil
-        raise "entry not found: #{not_found}" if result[:file_id].nil?
-      end
+      # init result state
+      @resolve_state = {path: path_elements, result: result}
+      crawl(processor: self, method: :process_folder_entry, top_file_id: top_file_id)
+      not_found = @resolve_state[:path]
+      @resolve_state = nil
+      raise "entry not found: #{not_found}" if result[:file_id].nil?
       return result
     end
 
     def find_files(top_file_id, test_block)
       Log.log.debug("find_files: fileid=#{top_file_id}")
       @find_state = {found: [], test_block: test_block}
-      crawl(self,{method: :process_find_files, top_file_id: top_file_id})
+      crawl(processor: self, method: :process_find_files, top_file_id: top_file_id)
       result = @find_state[:found]
       @find_state = nil
       return result
@@ -141,7 +134,7 @@ module Aspera
     #private
 
     # add entry to list if test block is success
-    def process_find_files(entry,path)
+    def process_find_files(entry, path)
       begin
         # add to result if match filter
         @find_state[:found].push(entry.merge({'path' => path})) if @find_state[:test_block].call(entry)
@@ -149,7 +142,7 @@ module Aspera
         if entry[:type].eql?('link')
           #sub_node_info = read("nodes/#{entry['target_node_id']}")[:data]
           #sub_opt = {method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
-          #get_node_api(sub_node_info).crawl(self,sub_opt)
+          #node_info_to_api(sub_node_info).crawl(self,sub_opt)
           raise "cannot follow cross node link: #{path}"
         end
       rescue StandardError => e
