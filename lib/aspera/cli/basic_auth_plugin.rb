@@ -18,8 +18,7 @@ module Aspera
 
       def initialize(env)
         super(env)
-        return if env[:skip_basic_auth_options]
-        self.class.register_options(env)
+        self.class.register_options(env) unless env[:skip_basic_auth_options]
       end
 
       # returns a Rest object with basic auth

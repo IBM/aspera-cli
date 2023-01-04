@@ -356,7 +356,15 @@ module Aspera
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
       end
-      return Node.new(node_rest_params)
+      return Node.new(params: node_rest_params, node_id: node_info['id'], resolver: self)
+    end
+
+    def node_id_to_api(node_id)
+      node_info=read("nodes/#{node_id}")[:data]
+      return node_info_to_api(node_info)
+    end
+
+    def add_ts_tags(transfer_spec, direction, aoc_app)
     end
 
     # check that parameter has necessary types
@@ -373,15 +381,14 @@ module Aspera
     end
 
     # add entry to list if test block is success
-    def process_find_files(entry, path)
+    def process_find_files(entry, path, state)
       begin
         # add to result if match filter
-        @find_state[:found].push(entry.merge({'path' => path})) if @find_state[:test_block].call(entry)
+        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
         # process link
         if entry[:type].eql?('link')
           sub_node_info = read("nodes/#{entry['target_node_id']}")[:data]
-          sub_opt = {method: process_find_files, top_file_id: entry['target_id'], top_file_path: path}
-          node_info_to_api(sub_node_info).crawl(self, sub_opt)
+          node_info_to_api(sub_node_info).crawl(processor: self, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path, state: state)
         end
       rescue StandardError => e
         Log.log.error("#{path}: #{e.message}")
@@ -393,34 +400,32 @@ module Aspera
     def find_files(top_node_file, test_block)
       top_node_info, top_file_id = check_get_node_file(top_node_file)
       Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
-      @find_state = {found: [], test_block: test_block}
-      node_info_to_api(top_node_info).crawl(self, {method: :process_find_files, top_file_id: top_file_id})
-      result = @find_state[:found]
-      @find_state = nil
-      return result
+      find_state = {found: [], test_block: test_block}
+      node_info_to_api(top_node_info).crawl(processor: self, method: :process_find_files, top_file_id: top_file_id, state: find_state)
+      return find_state[:found]
     end
 
-    def process_resolve_node_file(entry, _path)
+    def process_resolve_node_file(entry, _path, state)
       # stop digging here if not in right path
-      return false unless entry['name'].eql?(@resolve_state[:path].first)
+      return false unless entry['name'].eql?(state[:path].first)
       # ok it matches, so we remove the match
-      @resolve_state[:path].shift
+      state[:path].shift
       case entry['type']
       when 'file'
         # file must be terminal
-        raise "#{entry['name']} is a file, expecting folder to find: #{@resolve_state[:path]}" unless @resolve_state[:path].empty?
-        @resolve_state[:result][:file_id] = entry['id']
+        raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless state[:path].empty?
+        state[:result][:file_id] = entry['id']
       when 'link'
-        @resolve_state[:result][:node_info] = read("nodes/#{entry['target_node_id']}")[:data]
-        if @resolve_state[:path].empty?
-          @resolve_state[:result][:file_id] = entry['target_id']
+        state[:result][:node_info] = read("nodes/#{entry['target_node_id']}")[:data]
+        if state[:path].empty?
+          state[:result][:file_id] = entry['target_id']
         else
-          node_info_to_api(@resolve_state[:result][:node_info]).crawl(self, {method: :process_resolve_node_file, top_file_id: entry['target_id']})
+          node_info_to_api(state[:result][:node_info]).crawl(processor: self, method: :process_resolve_node_file, top_file_id: entry['target_id'], state: state)
         end
       when 'folder'
-        if @resolve_state[:path].empty?
+        if state[:path].empty?
           # found: store
-          @resolve_state[:result][:file_id] = entry['id']
+          state[:result][:file_id] = entry['id']
           return false
         end
       else
@@ -437,18 +442,12 @@ module Aspera
     def resolve_node_file(top_node_file, element_path_string)
       top_node_info, top_file_id = check_get_node_file(top_node_file)
       path_elements = element_path_string.split(PATH_SEPARATOR).reject(&:empty?)
-      result = {node_info: top_node_info, file_id: nil}
-      if path_elements.empty?
-        result[:file_id] = top_file_id
-      else
-        # init result state
-        @resolve_state = {path: path_elements, result: result}
-        node_info_to_api(top_node_info).crawl(self, {method: :process_resolve_node_file, top_file_id: top_file_id})
-        not_found = @resolve_state[:path]
-        @resolve_state = nil
-        raise "entry not found: #{not_found}" if result[:file_id].nil?
-      end
-      return result
+      return {node_info: top_node_info, file_id: top_file_id} if path_elements.empty?
+      resolve_state = {path: path_elements, result: {node_info: top_node_info, file_id: nil}}
+      node_info_to_api(top_node_info).crawl(processor: self, method: :process_resolve_node_file, top_file_id: top_file_id, state: resolve_state)
+      not_found = resolve_state[:path]
+      raise "entry not found: #{not_found}" if resolve_state[:result][:file_id].nil?
+      return resolve_state[:result]
     end
 
     # @param entity_type path of entuty in API

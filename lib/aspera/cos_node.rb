@@ -54,17 +54,21 @@ module Aspera
       )[:http].body
       ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
       Aspera::Log.dump('ats_info', ats_info)
-      super({
+      super(params: {
         base_url: ats_info['ATSEndpoint'],
         auth:     {
           type:     :basic,
           username: ats_info['AccessKey']['Id'],
           password: ats_info['AccessKey']['Secret']}})
       # prepare transfer spec addition
-      @add_ts = {'tags' => {'aspera' => {'node' => {'storage_credentials' => {
-        'type'  => 'token',
-        'token' => {TOKEN_FIELD => nil}
-      }}}}}
+      @add_ts = {
+        'tags' => {
+          'aspera' => {
+            'node' => {
+              'storage_credentials' => {
+                'type'  => 'token',
+                'token' => {TOKEN_FIELD => nil}
+              }}}}}
       generate_token
     end
 

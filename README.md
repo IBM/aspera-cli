@@ -2852,6 +2852,15 @@ OPTIONS:
         --default-ports=ENUM         use standard FASP ports or get from node api: [no], yes
         --validate-metadata=ENUM     validate shared inbox metadata: [no], yes
 
+COMMAND: node
+SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async sync central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
+OPTIONS:
+        --validator=VALUE            identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --sync-name=VALUE            sync name
+        --path=VALUE                 file or folder path for gen4 operation "file"
+        --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
+
 
 COMMAND: server
 SUBCOMMANDS: upload download health ls rm mv du info mkdir cp df md5sum browse delete rename
@@ -4150,6 +4159,7 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 ```bash
 server -N -Ptst_server_bykey -Plocal_user br /
 server browse /
+server browse NEW_SERVER_FOLDER/testfile.bin
 server browse folder_1/target_hot
 server cp NEW_SERVER_FOLDER/testfile.bin folder_1/200KB.2
 server delete NEW_SERVER_FOLDER
