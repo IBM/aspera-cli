@@ -20,6 +20,8 @@ module Aspera
         }.freeze
         ASCP_ACTIONS=%i[upload download health].freeze
 
+        private_constant :URI_SCHEMES, :ASCMD_ALIASES, :ASCP_ACTIONS
+
         class LocalExecutor
           def execute(cmd, _input=nil)
             Log.log.debug("Executing: #{cmd}")
@@ -107,7 +109,7 @@ module Aspera
           return Ssh.new(server_transfer_spec['remote_host'], server_transfer_spec['remote_user'], ssh_options)
         end
 
-        ACTIONS = [ASCP_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys].flatten
+        ACTIONS = [].concat(ASCP_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys).freeze
 
         def execute_action
           server_transfer_spec={}
@@ -133,7 +135,7 @@ module Aspera
                 'resume_policy' => 'none',
                 'paths'         => [{'source' => filepath, 'destination' => '.fasping'}]
               })
-              statuses = transfer.start(probe_ts, :direct)
+              statuses = transfer.start(probe_ts)
               file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer', 'ok')
@@ -144,9 +146,9 @@ module Aspera
             end
             return nagios.result
           when :upload
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND), :direct))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND)))
           when :download
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE), :direct))
+            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE)))
           when *Aspera::AsCmd::OPERATIONS
             args = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
             ascmd = Aspera::AsCmd.new(shell_executor)

@@ -47,7 +47,7 @@ module Aspera
       BOOLEAN_SIMPLE = %i[no yes].freeze
       FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
       TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
-      BOOLEAN_VALUES = [TRUE_VALUES, FALSE_VALUES].flatten.freeze
+      BOOLEAN_VALUES = [].concat(TRUE_VALUES, FALSE_VALUES).freeze
 
       # option name separator on command line
       OPTION_SEP_LINE = '-'
@@ -79,7 +79,7 @@ module Aspera
         end
 
         def bad_arg_message_multi(error_msg, choices)
-          return [error_msg, 'Use:', choices.map{|c|"- #{c}"}.sort].flatten.join("\n")
+          return [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n")
         end
       end
 

@@ -30,7 +30,7 @@ module Aspera
           options.add_opt_simple(:client_id, 'OAuth client identifier')
           options.add_opt_simple(:client_secret, 'OAuth client secret')
           options.add_opt_simple(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.add_opt_list(:auth, [Oauth::STD_AUTH_TYPES, :boot].flatten, 'OAuth type of authentication')
+          options.add_opt_list(:auth, [:boot].concat(Oauth::STD_AUTH_TYPES), 'OAuth type of authentication')
           options.add_opt_simple(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.add_opt_simple(:passphrase, 'RSA private key passphrase')
           options.set_option(:auth, :jwt)
@@ -134,7 +134,7 @@ module Aspera
               # TODO: option to send from remote source
               transfer_spec = @api_v5.create("packages/#{package['id']}/transfer_spec/upload", {transfer_type: TRANSFER_CONNECT})[:data]
               transfer_spec.delete('authentication')
-              return Main.result_transfer(transfer.start(transfer_spec, :node_gen3))
+              return Main.result_transfer(transfer.start(transfer_spec))
             when :receive
               pkg_type = 'received'
               pack_id = instance_identifier
@@ -146,8 +146,11 @@ module Aspera
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data:    skip_ids_data,
-                  id:      IdGenerator.from_list(['faspex_recv', options.get_option(:url, is_type: :mandatory), options.get_option(:username, is_type: :mandatory),
-                                                  pkg_type]))
+                  id:      IdGenerator.from_list([
+                    'faspex_recv',
+                    options.get_option(:url, is_type: :mandatory),
+                    options.get_option(:username, is_type: :mandatory),
+                    pkg_type]))
               end
               if pack_id.eql?(VAL_ALL)
                 # TODO: if packages have same name, they will overwrite
@@ -162,7 +165,7 @@ module Aspera
                 # TODO: allow from sent as well ?
                 transfer_spec = @api_v5.create("packages/#{pkgid}/transfer_spec/download", {transfer_type: TRANSFER_CONNECT, type: pkg_type})[:data]
                 transfer_spec.delete('authentication')
-                statuses = transfer.start(transfer_spec, :node_gen3)
+                statuses = transfer.start(transfer_spec)
                 result_transfer.push({'package' => pkgid, Main::STATUS_FIELD => statuses})
                 # skip only if all sessions completed
                 skip_ids_data.push(pkgid) if TransferAgent.session_status(statuses).eql?(:success)

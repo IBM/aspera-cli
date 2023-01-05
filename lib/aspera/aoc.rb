@@ -8,17 +8,20 @@ require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'cgi'
 
-Aspera::Oauth.register_token_creator(:aoc_pub_link, lambda{|o|
-  o.api.call({
-    operation:   'POST',
-    subpath:     o.gparams[:path_token],
-    headers:     {'Accept' => 'application/json'},
-    json_params: o.sparams[:json],
-    url_params:  o.sparams[:url].merge(scope: o.gparams[:scope]) # scope is here because it changes over time (node)
+Aspera::Oauth.register_token_creator(
+  :aoc_pub_link,
+  lambda{|o|
+    o.api.call({
+      operation:   'POST',
+      subpath:     o.gparams[:path_token],
+      headers:     {'Accept' => 'application/json'},
+      json_params: o.sparams[:json],
+      url_params:  o.sparams[:url].merge(scope: o.gparams[:scope]) # scope is here because it changes over time (node)
+    })
+  },
+  lambda { |oauth|
+    return [oauth.sparams.dig(:json, :url_token)]
   })
-}, lambda { |oauth|
-  return [oauth.sparams.dig(:json, :url_token)]
-})
 
 module Aspera
   class AoC < Rest
@@ -40,8 +43,14 @@ module Aspera
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN = %w[name email id default_workspace_id organization_id].freeze
 
-    private_constant :MAX_REDIRECT, :GLOBAL_CLIENT_APPS, :DATA_REPO_INDEX_START, :COOKIE_PREFIX, :PUBLIC_LINK_PATHS, :JWT_AUDIENCE,
-      :OAUTH_API_SUBPATH, :USER_INFO_FIELDS_MIN
+    private_constant :MAX_REDIRECT,
+      :GLOBAL_CLIENT_APPS,
+      :DATA_REPO_INDEX_START,
+      :COOKIE_PREFIX,
+      :PUBLIC_LINK_PATHS,
+      :JWT_AUDIENCE,
+      :OAUTH_API_SUBPATH,
+      :USER_INFO_FIELDS_MIN
 
     # various API scopes supported
     SCOPE_FILES_SELF = 'self'
@@ -140,11 +149,14 @@ module Aspera
 
       # additional transfer spec (tags) for package information
       def package_tags(package_info, operation)
-        return {'tags' => {'aspera' => {'files' => {
-          'package_id'        => package_info['id'],
-          'package_name'      => package_info['name'],
-          'package_operation' => operation
-        }}}}
+        return {
+          'tags' => {
+            'aspera' => {
+              'files' => {
+                'package_id'        => package_info['id'],
+                'package_name'      => package_info['name'],
+                'package_operation' => operation
+              }}}}
       end
 
       # add details to show in analytics
@@ -336,10 +348,11 @@ module Aspera
     # @param scope e.g. SCOPE_NODE_USER
     # no scope: requires secret
     # if secret provided beforehand: use it
-    def node_info_to_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
+    def node_id_to_api(node_id, scope: SCOPE_NODE_USER, use_secret: true, app_info: nil)
+      node_info=read("nodes/#{node_id}")[:data]
       raise 'internal error' unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
       # get optional secret unless :use_secret is false
-      ak_secret = @secret_finder.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret && !@secret_finder.nil?
+      ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret
       raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}" if ak_secret.nil? && scope.nil?
       node_rest_params = {base_url: node_info['url']}
       # if secret is available
@@ -356,15 +369,24 @@ module Aspera
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
       end
-      return Node.new(params: node_rest_params, node_id: node_info['id'], resolver: self)
+      return Node.new(params: node_rest_params, node_id: node_info['id'], resolver: self, app_info: app_info)
     end
 
-    def node_id_to_api(node_id)
-      node_info=read("nodes/#{node_id}")[:data]
-      return node_info_to_api(node_info)
+    def node_info_to_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
+      return node_id_to_api(node_info['id'], scope: scope, use_secret: use_secret)
     end
 
-    def add_ts_tags(transfer_spec, direction, aoc_app)
+    def add_ts_tags(api:, transfer_spec:, app_info:)
+      transfer_spec.deep_merge!(AoC.analytics_ts(app_info[:aoc_app], transfer_spec['direction'], app_info[:ws_info]['id'], app_info[:ws_info]['name']))
+      transfer_spec.deep_merge!(console_ts(app_info[:aoc_app]))
+      #info=aoc_api.tr_spec(app_info[:aoc_app], transfer_spec['direction'], node_file, ts_add)
+      case app_info[:aoc_app]
+      when FILES_APP
+        file_id=transfer_spec['tags']['aspera']['node']['file_id']
+        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{api.node_id}:#{file_id}"}}}})
+      end
+      transfer_spec['tags']['aspera']['files']['node_id']=api.node_id
+      transfer_spec['tags']['aspera']['app']=app_info[:aoc_app]
     end
 
     # check that parameter has necessary types

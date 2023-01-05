@@ -8,7 +8,7 @@ module Aspera
       GLOBAL_OPS = %i[create list].freeze
       # operations with id
       INSTANCE_OPS = %i[modify delete show].freeze
-      ALL_OPS = [GLOBAL_OPS, INSTANCE_OPS].flatten.freeze
+      ALL_OPS = [].concat(GLOBAL_OPS, INSTANCE_OPS).freeze
       # max number of items for list command
       MAX_ITEMS = 'max'
       # max number of pages for list command

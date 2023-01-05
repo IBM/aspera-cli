@@ -38,15 +38,15 @@ module Aspera
         return lambda{|f|f['name'].match(/#{match_expression}/)}
       end
     end
-
+    attr_reader :node_id, :app_info
     # @param params [Hash] Rest parameters
     # @param node_id [Integer] optional node id
     # @param resolver [Object] object with methods
-    def initialize(params:, node_id: nil, resolver: nil, aoc_app: nil)
+    def initialize(params:, node_id: nil, resolver: nil, app_info: nil)
       super(params)
       @node_id=node_id
       @resolver=resolver
-      @aoc_app=aoc_app
+      @app_info=app_info
     end
 
     # @returns a Node or nil
@@ -57,8 +57,8 @@ module Aspera
       return nil
     end
 
-    def add_ts_tags(transfer_spec:, direction:)
-      @resolver.send(:add_ts_tags, transfer_spec, direction, @aoc_app) if @resolver&.respond_to?(:add_ts_tags)
+    def add_ts_tags(transfer_spec:)
+      @resolver.send(:add_ts_tags, api: self, transfer_spec: transfer_spec, app_info: @app_info) if @resolver&.respond_to?(:add_ts_tags)
     end
 
     # recursively crawl in a folder.

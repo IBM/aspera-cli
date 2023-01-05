@@ -30,8 +30,14 @@ module Aspera
         AK_MARKER_FILE = '.aspera_access_key'
         LOCAL_STORAGE_PCVL = 'file:///'
         LOG_LIMITER_SEC = 30.0
-        private_constant :PREV_GEN_TAG, :PREVIEW_FOLDER_SUFFIX, :PREVIEW_BASENAME, :TMP_DIR_PREFIX, :DEFAULT_PREVIEWS_FOLDER,
-          :LOCAL_STORAGE_PCVL, :AK_MARKER_FILE, :LOG_LIMITER_SEC
+        private_constant :PREV_GEN_TAG,
+          :PREVIEW_FOLDER_SUFFIX,
+          :PREVIEW_BASENAME,
+          :TMP_DIR_PREFIX,
+          :DEFAULT_PREVIEWS_FOLDER,
+          :LOCAL_STORAGE_PCVL,
+          :AK_MARKER_FILE,
+          :LOG_LIMITER_SEC
 
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
@@ -218,16 +224,17 @@ module Aspera
           tspec = @default_transfer_spec.merge({
             'direction' => direction,
             'paths'     => [{'source' => source_filename}],
-            'tags'      => { 'aspera' => {
-              PREV_GEN_TAG => true,
-              'node'       => {
-                'access_key' => @access_key_self['id'],
-                'file_id'    => folder_id }}}
+            'tags'      => {
+              'aspera' => {
+                PREV_GEN_TAG => true,
+                'node'       => {
+                  'access_key' => @access_key_self['id'],
+                  'file_id'    => folder_id }}}
           })
           # force destination
           # tspec['destination_root']=destination
           transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
-          Main.result_transfer(transfer.start(tspec, :node_gen4))
+          Main.result_transfer(transfer.start(tspec))
         end
 
         def get_infos_local(gen_infos, entry)
@@ -456,7 +463,8 @@ module Aspera
             # by default start at root
             folder_info =
               if scan_id.nil?
-                { 'id'   => @access_key_self['root_file_id'],
+                {
+                  'id'   => @access_key_self['root_file_id'],
                   'name' => '/',
                   'type' => 'folder',
                   'path' => '/' }

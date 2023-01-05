@@ -29,12 +29,11 @@ module Aspera
         ATOM_MAILBOXES = %i[inbox archive sent].freeze
         # allowed parameters for inbox.atom
         ATOM_PARAMS = %w[page count startIndex].freeze
-        # with special parameters (from Plugin class) : max and pmax
-        ATOM_EXT_PARAMS = ATOM_PARAMS + [MAX_ITEMS, MAX_PAGES]
+        # with special parameters (from Plugin class) : max and pmax (from Plugin)
+        ATOM_EXT_PARAMS = [MAX_ITEMS, MAX_PAGES].concat(ATOM_PARAMS).freeze
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
-        private_constant :KEY_NODE, :KEY_PATH, :VAL_ALL, :PACKAGE_MATCH_FIELD, :ATOM_MAILBOXES, :ATOM_PARAMS,
-          :ATOM_EXT_PARAMS, :PUB_LINK_EXTERNAL_MATCH
+        private_constant(*%i[KEY_NODE KEY_PATH VAL_ALL PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
 
         class << self
           def detect(base_url)
@@ -300,7 +299,7 @@ module Aspera
                 transfer_spec = send_publink_to_ts(public_link_url, package_create_params)
               end
               #Log.dump('transfer_spec',transfer_spec)
-              return Main.result_transfer(transfer.start(transfer_spec, :node_gen3))
+              return Main.result_transfer(transfer.start(transfer_spec))
             when :recv
               link_url = options.get_option(:link)
               # list of faspex ID/URI to download
@@ -389,7 +388,7 @@ module Aspera
                       text_body_params: xmlpayload})[:http].body
                   end
                   transfer_spec['direction'] = Fasp::TransferSpec::DIRECTION_RECEIVE
-                  statuses = transfer.start(transfer_spec, :node_gen3)
+                  statuses = transfer.start(transfer_spec)
                 end
                 result_transfer.push({'package' => id_uri[:id], Main::STATUS_FIELD => statuses})
                 # skip only if all sessions completed

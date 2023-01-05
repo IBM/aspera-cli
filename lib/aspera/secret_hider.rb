@@ -10,7 +10,7 @@ module Aspera
     # keys in hash that contain secrets
     ASCP_SECRETS=%w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS].freeze
     KEY_SECRETS =%w[password secret private_key passphrase].freeze
-    ALL_SECRETS =[ASCP_SECRETS, KEY_SECRETS].flatten.freeze
+    ALL_SECRETS =[].concat(ASCP_SECRETS, KEY_SECRETS).freeze
     # regex that define namec captures :begin and :end
     REGEX_LOG_REPLACES=[
       # CLI manager get/set options

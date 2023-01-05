@@ -26,7 +26,9 @@ module Aspera
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
       #% (formating bug in eclipse)
-      private_constant :FILE_LIST_FROM_ARGS, :FILE_LIST_FROM_TRANSFER_SPEC, :FILE_LIST_OPTIONS,
+      private_constant :FILE_LIST_FROM_ARGS,
+        :FILE_LIST_FROM_TRANSFER_SPEC,
+        :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIF_TMPL
       TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
 
@@ -179,29 +181,26 @@ module Aspera
 
       # start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec
-      # @param tr_type specifies how destination_root is set (how transfer spec was generated)
-      def start(transfer_spec, tr_type, token_generator: nil)
+      def start(transfer_spec, token_generator: nil)
         # check parameters
         raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
-        raise "tr_type must be Symbol (#{tr_type.class})" unless tr_type.is_a?(Symbol)
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE
           # init default if required in any case
           @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Fasp::TransferSpec::DIRECTION_SEND
-          case tr_type
-          when :direct
-            # init default if required
-            @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
-          when :node_gen3
+          if transfer_spec.dig('tags', 'aspera', 'node', 'access_key')
+            # gen4
+            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.has_key?('destination_root_id')
+          elsif transfer_spec.has_key?('token')
+            # gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call
             @transfer_spec_cmdline.delete('destination_root')
-          when :node_gen4
-            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.has_key?('destination_root_id')
           else
-            raise StandardError, "InternalError: unsupported value: #{tr_type}"
+            # init default if required
+            @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
           end
         end
         # update command line paths, unless destination already has one

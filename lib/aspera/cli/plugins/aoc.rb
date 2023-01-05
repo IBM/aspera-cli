@@ -105,17 +105,17 @@ module Aspera
           ts_add.deep_merge!(AoC.analytics_ts(app, direction, @workspace_info['id'], @workspace_info['name']))
           ts_add.deep_merge!(aoc_api.console_ts(app))
           info=aoc_api.tr_spec(app, direction, node_file, ts_add)
-          return transfer.start(info[:ts], :node_gen4, token_generator: info[:regenerate_token])
+          return transfer.start(info[:ts], token_generator: info[:regenerate_token])
         end
 
-        NODE4_CMD_PACKAGE = %i[bearer_token_node node_info browse find]
-        NODE4_COMMANDS = [NODE4_CMD_PACKAGE, %i[mkdir rename delete upload download transfer http_node_download v3 file]].flatten.freeze
+        NODE4_CMD_PACKAGE = %i[bearer_token_node node_info browse find].freeze
+        NODE4_COMMANDS = %i[mkdir rename delete upload download transfer http_node_download v3 file].concat(NODE4_CMD_PACKAGE).freeze
 
         def execute_node_gen4_command(command_repo, top_node_file)
           node_plugin=Node.new(@agents.merge(
             skip_basic_auth_options: true,
             skip_node_options: true,
-            node_api: aoc_api.node_id_to_api(top_node_file[:node_info]['id'])))
+            node_api: aoc_api.node_id_to_api(top_node_file[:node_info]['id'], app_info: {aoc_app: AoC::FILES_APP, ws_info: @workspace_info})))
           case command_repo
           when :bearer_token_node, :node_info, :browse, :find, :mkdir, :rename, :delete, :upload
             return node_plugin.execute_node_gen4_command(command_repo, top_node_file[:file_id])
@@ -892,7 +892,7 @@ module Aspera
             end
           when :packages
             set_workspace_info if @url_token_data.nil?
-            package_command = options.get_next_command([%i[shared_inboxes send recv list show delete], NODE4_CMD_PACKAGE].flatten)
+            package_command = options.get_next_command(%i[shared_inboxes send recv list show delete].concat(NODE4_CMD_PACKAGE))
             case package_command
             when :shared_inboxes
               case options.get_next_command(%i[list show])
@@ -1034,7 +1034,7 @@ module Aspera
             # get workspace related information
             set_workspace_info
             set_home_node_file
-            command_repo = options.get_next_command([NODE4_COMMANDS, :short_link].flatten)
+            command_repo = options.get_next_command([:short_link].concat(NODE4_COMMANDS))
             case command_repo
             when *NODE4_COMMANDS then return execute_node_gen4_command(command_repo, @home_node_file)
             when :short_link
@@ -1114,7 +1114,7 @@ module Aspera
             when :instances
               return entity_action(@api_aoc, 'workflow_instances')
             when :workflows
-              wf_command = options.get_next_command([Plugin::ALL_OPS, :action, :launch].flatten)
+              wf_command = options.get_next_command(%i[action launch].concat(Plugin::ALL_OPS))
               case wf_command
               when *Plugin::ALL_OPS
                 return entity_command(wf_command, automation_api, 'workflows', id_default: :id)

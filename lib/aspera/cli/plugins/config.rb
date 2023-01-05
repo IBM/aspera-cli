@@ -74,11 +74,31 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
         DEFAULT_PRIVKEY_LENGTH = 4096
-        private_constant :DEFAULT_CONFIG_FILENAME, :CONF_PRESET_CONFIG, :CONF_PRESET_VERSION, :CONF_PRESET_DEFAULT,
-          :CONF_PRESET_GLOBAL, :PROGRAM_NAME_V1, :PROGRAM_NAME_V2, :DEFAULT_REDIRECT, :ASPERA_PLUGINS_FOLDERNAME,
-          :RUBY_FILE_EXT, :AOC_COMMAND_V1, :AOC_COMMAND_V2, :AOC_COMMAND_V3, :AOC_COMMAND_CURRENT, :DEMO,
-          :TRANSFER_SDK_ARCHIVE_URL, :AOC_PATH_API_CLIENTS, :DEMO_SERVER_PRESET, :EMAIL_TEST_TEMPLATE, :EXTV_INCLUDE_PRESETS,
-          :EXTV_PRESET, :EXTV_VAULT, :DEFAULT_CHECK_NEW_VERSION_DAYS, :DEFAULT_PRIV_KEY_FILENAME, :SERVER_COMMAND,
+        private_constant :DEFAULT_CONFIG_FILENAME,
+          :CONF_PRESET_CONFIG,
+          :CONF_PRESET_VERSION,
+          :CONF_PRESET_DEFAULT,
+          :CONF_PRESET_GLOBAL,
+          :PROGRAM_NAME_V1,
+          :PROGRAM_NAME_V2,
+          :DEFAULT_REDIRECT,
+          :ASPERA_PLUGINS_FOLDERNAME,
+          :RUBY_FILE_EXT,
+          :AOC_COMMAND_V1,
+          :AOC_COMMAND_V2,
+          :AOC_COMMAND_V3,
+          :AOC_COMMAND_CURRENT,
+          :DEMO,
+          :TRANSFER_SDK_ARCHIVE_URL,
+          :AOC_PATH_API_CLIENTS,
+          :DEMO_SERVER_PRESET,
+          :EMAIL_TEST_TEMPLATE,
+          :EXTV_INCLUDE_PRESETS,
+          :EXTV_PRESET,
+          :EXTV_VAULT,
+          :DEFAULT_CHECK_NEW_VERSION_DAYS,
+          :DEFAULT_PRIV_KEY_FILENAME,
+          :SERVER_COMMAND,
           :PRESET_DIG_SEPARATOR
         def initialize(env, params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
@@ -666,7 +686,7 @@ module Aspera
             return {
               type:   :object_list,
               data:   Fasp::Parameters.man_table,
-              fields: ['name', 'type', Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), 'description'].flatten
+              fields: %w[name type].concat(Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description])
             }
           when :errors
             error_data = []
@@ -683,8 +703,8 @@ module Aspera
         # require existing preset
         PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
         # require id
-        PRESET_INSTANCE_ACTIONS = [PRESET_EXST_ACTIONS, %i[initialize update ask set]].flatten.freeze
-        PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS].flatten.freeze
+        PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXST_ACTIONS).freeze
+        PRESET_ALL_ACTIONS = [].concat(PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS).freeze
 
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
@@ -792,8 +812,29 @@ module Aspera
           end
         end
 
-        ACTIONS = [PRESET_GBL_ACTIONS, %i[id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee
-                                          ascp email_test smtp_settings proxy_check folder file check_update initdemo vault]].flatten.freeze
+        ACTIONS = %i[
+          id
+          preset
+          open
+          documentation
+          genkey
+          gem
+          plugin
+          flush_tokens
+          echo
+          wizard
+          export_to_cli
+          detect
+          coffee
+          ascp
+          email_test
+          smtp_settings
+          proxy_check
+          folder
+          file
+          check_update
+          initdemo
+          vault].concat(PRESET_GBL_ACTIONS).freeze
 
         # "config" plugin
         def execute_action
@@ -1263,7 +1304,7 @@ module Aspera
         def wizard_faspex5(params)
           self.format.display_status('Detected: Faspex v5'.bold)
           # if not defined by user, generate unique name
-          params[:preset_name] = [params[:application], URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/, '').split('.')].flatten.join('_') \
+          params[:preset_name] = [params[:application]].concat(URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/, '').split('.')).join('_') \
             if params[:preset_name].nil?
           self.format.display_status("Preparing preset: #{params[:preset_name]}")
           # init defaults if necessary

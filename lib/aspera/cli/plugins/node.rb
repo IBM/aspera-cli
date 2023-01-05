@@ -276,7 +276,7 @@ module Aspera
             if %i[basic hybrid].include?(token_type)
               Aspera::Node.set_ak_basic_token(transfer_spec, @api_node.params[:auth][:username], @api_node.params[:auth][:password])
             end
-            return Main.result_transfer(transfer.start(transfer_spec, :node_gen3))
+            return Main.result_transfer(transfer.start(transfer_spec))
           when :api_details
             return { type: :single_object, data: @api_node.params }
           end
@@ -304,6 +304,7 @@ module Aspera
           end
         end
 
+        # set generic tags necessary for gen4 transfers
         def gen4_transfer_start(apifid, direction, paths: nil)
           ak_name = nil
           ak_token = nil
@@ -328,7 +329,8 @@ module Aspera
             } # tags
           }
           transfer_spec['paths']=paths unless paths.nil?
-          apifid[:api].add_ts_tags(transfer_spec: transfer_spec, direction: direction)
+          # add application specific tags (AoC)
+          apifid[:api].add_ts_tags(transfer_spec: transfer_spec)
           # add basic token
           if transfer_spec['token'].nil?
             Aspera::Node.set_ak_basic_token(transfer_spec, apifid[:api].params[:auth][:username], apifid[:api].params[:auth][:password])
@@ -350,7 +352,7 @@ module Aspera
           end
           # add caller provided transfer spec
           #transfer_spec.deep_merge!(ts_add)
-          return transfer.start(transfer_spec, :node_gen4)
+          return transfer.start(transfer_spec)
         end
 
         def execute_node_gen4_command(command_repo, top_file_id)
@@ -597,7 +599,7 @@ module Aspera
           when *COMMON_ACTIONS then return execute_simple_common(command, prefix_path)
           when :async then return execute_async
           when :sync
-            sync_command = options.get_next_command([Plugin::ALL_OPS, %i[bandwidth counters files start state stop summary]].flatten-%i[modify])
+            sync_command = options.get_next_command(%i[bandwidth counters files start state stop summary].concat(Plugin::ALL_OPS)-%i[modify])
             case sync_command
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
             else
@@ -661,7 +663,7 @@ module Aspera
               raise 'error'
             end
           when :access_key
-            ak_command = options.get_next_command([Plugin::ALL_OPS, :do].flatten)
+            ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
             case ak_command
             when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
             when :do

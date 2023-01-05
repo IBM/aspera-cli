@@ -27,7 +27,7 @@ module Aspera
         #        end
 
         SAML_IMPORT_MANDATORY=%w[id name_id].freeze
-        SAML_IMPORT_ALLOWED=[SAML_IMPORT_MANDATORY, %w[email given_name surname]].flatten.freeze
+        SAML_IMPORT_ALLOWED=%w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
         ACTIONS = %i[health repository admin].freeze
 
