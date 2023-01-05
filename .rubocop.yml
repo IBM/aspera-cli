@@ -46,5 +46,7 @@ Style/DateTime:
   Enabled: false
 Style/TrailingCommaInArguments:
   Enabled: false
+Style/Encoding:
+  Enabled: true
 Lint/RedundantCopDisableDirective:
   Enabled: false
