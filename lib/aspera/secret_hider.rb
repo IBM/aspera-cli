@@ -7,16 +7,17 @@ module Aspera
   class SecretHider
     # display string for hidden secrets
     HIDDEN_PASSWORD = '🔑'
+    # env vars for ascp with secrets
+    ASCP_ENV_SECRETS=%w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
     # keys in hash that contain secrets
-    ASCP_SECRETS=%w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS].freeze
     KEY_SECRETS =%w[password secret private_key passphrase].freeze
-    ALL_SECRETS =[].concat(ASCP_SECRETS, KEY_SECRETS).freeze
+    ALL_SECRETS =[].concat(ASCP_ENV_SECRETS, KEY_SECRETS).freeze
     # regex that define namec captures :begin and :end
     REGEX_LOG_REPLACES=[
       # CLI manager get/set options
       /(?<begin>[sg]et (#{KEY_SECRETS.join('|')})=).*(?<end>)/,
       # env var ascp exec
-      /(?<begin> (#{ASCP_SECRETS.join('|')})=)[^ ]*(?<end> )/,
+      /(?<begin> (#{ASCP_ENV_SECRETS.join('|')})=)(\\.|[^ ])*(?<end> )/,
       # rendered JSON
       /(?<begin>["':][^"]*(#{ALL_SECRETS.join('|')})[^"]*["']?[=>: ]+")[^"]+(?<end>")/,
       # option "secret"
@@ -26,7 +27,7 @@ module Aspera
       # private key values
       /(?<begin>--+BEGIN .+ KEY--+)[[:ascii:]]+?(?<end>--+?END .+ KEY--+)/
     ].freeze
-    private_constant :HIDDEN_PASSWORD, :ASCP_SECRETS, :KEY_SECRETS, :ALL_SECRETS, :REGEX_LOG_REPLACES
+    private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :ALL_SECRETS, :REGEX_LOG_REPLACES
     @log_secrets = false
     class << self
       attr_accessor :log_secrets
