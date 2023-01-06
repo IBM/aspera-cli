@@ -41,8 +41,7 @@ module Aspera
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
         SEARCH_REMOVE_FIELDS=%w[basename permissions].freeze
-        VAL_ALL = 'ALL'
-        private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS VAL_ALL])
+        private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS])
 
         def initialize(env)
           super(env)
@@ -286,9 +285,6 @@ module Aspera
 
         def aoc_tags(operation)
           case operation
-          when :upload, :download
-            return {}
-            #return {'aspera' => {'files' => {'parentCwd' => "#{apifid[:node_info]['id']}:#{apifid[:file_id]}"}}}
           when :permission
             return {}
             #return {'aspera' => {'files' => {'workspace' => {
@@ -330,7 +326,8 @@ module Aspera
           }
           transfer_spec['paths']=paths unless paths.nil?
           # add application specific tags (AoC)
-          apifid[:api].add_ts_tags(transfer_spec: transfer_spec)
+          the_app=apifid[:api].app_info
+          the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
           # add basic token
           if transfer_spec['token'].nil?
             Aspera::Node.set_ak_basic_token(transfer_spec, apifid[:api].params[:auth][:username], apifid[:api].params[:auth][:password])
@@ -350,9 +347,62 @@ module Aspera
             # copy some parts
             %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
           end
-          # add caller provided transfer spec
-          #transfer_spec.deep_merge!(ts_add)
           return transfer.start(transfer_spec)
+        end
+
+        def execute_node_gen4_file_command(command_node_file, top_file_id)
+          file_path = options.get_option(:path)
+          apifid =
+            if file_path.nil?
+              {api: @api_node, file_id: instance_identifier}
+            else
+              @api_node.resolve_api_fid(top_file_id, file_path) # TODO: allow follow link ?
+            end
+          case command_node_file
+          when :show
+            items = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
+            return {type: :single_object, data: items}
+          when :modify
+            update_param = options.get_next_argument('update data', type: Hash)
+            apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
+            return Main.result_status('Done')
+          when :permission
+            command_perm = options.get_next_command(%i[list create delete])
+            case command_perm
+            when :list
+              # generic options : TODO: as arg ? option_url_query
+              list_options ||= {'include' => ['[]', 'access_level', 'permission_count']}
+              # special value: ALL will show all permissions
+              if !VAL_ALL.eql?(apifid[:file_id])
+                # add which one to get
+                list_options['file_id'] = apifid[:file_id]
+                list_options['inherited'] ||= false
+              end
+              items = apifid[:api].read('permissions', list_options)[:data]
+              return {type: :object_list, data: items}
+            when :delete
+              perm_id=instance_identifier
+              return do_bulk_operation(perm_id, 'deleted') do |one_id|
+                apifid[:api].delete("permissions/#{perm_id}")
+                {'id' => one_id}
+              end
+            when :create
+              create_param=options.get_next_argument('creation data', type: Hash)
+              raise 'no file_id' if create_param.has_key?('file_id')
+              create_param['file_id'] = apifid[:file_id]
+              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.has_key?('access_levels')
+              # add application specific tags (AoC)
+              the_app=apifid[:api].app_info
+              the_app[:api].permissions_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
+              # create permission
+              created_data = apifid[:api].create('permissions', create_param)[:data]
+              # bnotify application of creation
+              the_app[:api].permissions_create_event(created_data: created_data, app_info: the_app) unless the_app.nil?
+              return { type: :single_object, data: created_data}
+            else raise "internal error:shall not reach here (#{command_perm})"
+            end
+          else raise "internal error:shall not reach here (#{command_node_file})"
+          end
         end
 
         def execute_node_gen4_command(command_repo, top_file_id)
@@ -423,12 +473,27 @@ module Aspera
             # special case for AoC : all files must be in same folder
             source_folder = source_paths.shift['source']
             # if a single file: split into folder and path
-            if source_paths.empty?
-              source_folder = source_folder.split(AoC::PATH_SEPARATOR)
-              source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(AoC::PATH_SEPARATOR)
-            end
             apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
+            if source_paths.empty?
+              file_info = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
+              case file_info['type']
+              when 'file'
+                # if the single source is a file, we need to split into folder path and filename
+                src_dir_elements = source_folder.split(AoC::PATH_SEPARATOR)
+                # filename is the last one
+                source_paths = [{'source' => src_dir_elements.pop}]
+                # source folder is what remains
+                source_folder = src_dir_elements.join(AoC::PATH_SEPARATOR)
+                # TODO: instead of creating a new object, use the same, and change file id with parent folder id ? possible ?
+                apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
+              when 'link', 'folder'
+                # single source is 'folder' or 'link'
+                # TODO: add this ? , 'destination'=>file_info['name']
+                source_paths = [{'source' => '.'}]
+              else
+                raise "Unknown source type: #{file_info['type']}"
+              end
+            end
             return Main.result_transfer(gen4_transfer_start(apifid, Fasp::TransferSpec::DIRECTION_RECEIVE, paths: source_paths))
           when :http_node_download
             source_paths = transfer.ts_source_paths
@@ -463,7 +528,7 @@ module Aspera
               items = apifid[:api].read('permissions', list_options)[:data]
               return {type: :object_list, data: items}
             when :create
-              #create_param=self.options.get_next_argument('creation data (Hash)')
+              #create_param=self.options.get_next_argument('creation data', type: Hash)
               set_workspace_info
               access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_id}"
               params = {
@@ -477,27 +542,11 @@ module Aspera
             else raise "internal error:shall not reach here (#{command_perm})"
             end
           when :file
-            command_node_file = options.get_next_command(%i[show modify])
-            file_path = options.get_option(:path)
-            apifid =
-              if file_path.nil?
-                {api: @api_node, file_id: instance_identifier}
-              else
-                @api_node.resolve_api_fid(top_file_id, file_path) # TODO: allow follow link ?
-              end
-            case command_node_file
-            when :show
-              items = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
-              return {type: :single_object, data: items}
-            when :modify
-              update_param = options.get_next_argument('update data (Hash)')
-              res = apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
-              return {type: :single_object, data: res}
-            else raise "internal error:shall not reach here (#{command_node_file})"
-            end
+            command_node_file = options.get_next_command(%i[show modify permission])
+            return execute_node_gen4_file_command(command_node_file, top_file_id)
           else raise "INTERNAL ERROR: no case for #{command_repo}"
           end # command_repo
-          raise 'INTERNAL ERROR: no return'
+          #raise 'INTERNAL ERROR: missing return'
         end # execute_node_gen4_command
 
         # This is older API

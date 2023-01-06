@@ -29,7 +29,6 @@ module Aspera
           end
         end
         # special value for package id
-        VAL_ALL = 'ALL'
         ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
         KNOWN_AOC_RES=%i[
           self
@@ -52,6 +51,8 @@ module Aspera
           client_registration_token
           client_access_key
           kms_profile].freeze
+
+        attr_reader :workspace_info
 
         def initialize(env)
           super(env)
@@ -115,10 +116,22 @@ module Aspera
           node_plugin=Node.new(@agents.merge(
             skip_basic_auth_options: true,
             skip_node_options: true,
-            node_api: aoc_api.node_id_to_api(top_node_file[:node_info]['id'], app_info: {aoc_app: AoC::FILES_APP, ws_info: @workspace_info})))
+            node_api: aoc_api.node_id_to_api(
+              node_id: top_node_file[:node_info]['id'],
+              app_info: {
+                api:    aoc_api,
+                plugin: self,
+                app:    AoC::FILES_APP}
+            )))
           case command_repo
-          when :bearer_token_node, :node_info, :browse, :find, :mkdir, :rename, :delete, :upload
+          when :bearer_token_node, :node_info, :browse, :find, :mkdir, :rename, :delete, :upload, :download, :http_node_download, :file
             return node_plugin.execute_node_gen4_command(command_repo, top_node_file[:file_id])
+          when :v3
+            # Note: other common actions are unauthorized with user scope
+            command_legacy = options.get_next_command(Node::SIMPLE_ACTIONS)
+            # TODO: shall we support all methods here ? what if there is a link ?
+            node_api = aoc_api.node_info_to_api(top_node_file[:node_info])
+            return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: node_api)).execute_action(command_legacy)
           when :transfer
             # client side is agent
             # server side is protocol server
@@ -152,163 +165,13 @@ module Aspera
               'source_root_id'      => client_node_file[:file_id]
             }
             return Main.result_transfer(transfer_start(AoC::FILES_APP, client_tr_oper, server_node_file, add_ts))
-          when :upload2
-            node_file = aoc_api.resolve_node_file(top_node_file, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
-            add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            return Main.result_transfer(transfer_start(AoC::FILES_APP, Fasp::TransferSpec::DIRECTION_SEND, node_file, add_ts))
-          when :download
-            # get all source paths from command line
-            source_paths = transfer.ts_source_paths
-            # special case for AoC : all files must be in same folder, so the first one is the source folder
-            source_folder = source_paths.shift['source']
-            node_file = aoc_api.resolve_node_file(top_node_file, source_folder)
-            # if a single file: split into folder and path
-            if source_paths.empty?
-              node_api = aoc_api.node_info_to_api(node_file[:node_info])
-              file_info = node_api.read("files/#{node_file[:file_id]}")[:data]
-              case file_info['type']
-              when 'file'
-                # if the single source is a file, we need to split into folder path and filename
-                src_dir_elements = source_folder.split(AoC::PATH_SEPARATOR)
-                # filename is the last one
-                source_paths = [{'source' => src_dir_elements.pop}]
-                # source folder is what remains
-                source_folder = src_dir_elements.join(AoC::PATH_SEPARATOR)
-                node_file = aoc_api.resolve_node_file(top_node_file, source_folder)
-              when 'link', 'folder'
-                # single source is 'folder' or 'link'
-                source_paths = [{'source' => '.'}]
-              else
-                raise "Unknown source type: #{file_info['type']}"
-              end
-            end
-            # override paths with just filename
-            add_ts = {'tags' => {'aspera' => {'files' => {'parentCwd' => "#{node_file[:node_info]['id']}:#{node_file[:file_id]}"}}}}
-            add_ts['paths'] = source_paths
-            return Main.result_transfer(transfer_start(AoC::FILES_APP, Fasp::TransferSpec::DIRECTION_RECEIVE, node_file, add_ts))
-          when :http_node_download
-            source_paths = transfer.ts_source_paths
-            source_folder = source_paths.shift['source']
-            if source_paths.empty?
-              source_folder = source_folder.split(AoC::PATH_SEPARATOR)
-              source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(AoC::PATH_SEPARATOR)
-            end
-            raise CliBadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
-            file_name = source_paths.first['source']
-            node_file = aoc_api.resolve_node_file(top_node_file, File.join(source_folder, file_name))
-            node_api = aoc_api.node_info_to_api(node_file[:node_info])
-            node_api.call(
-              operation: 'GET',
-              subpath: "files/#{node_file[:file_id]}/content",
-              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
-            return Main.result_status("downloaded: #{file_name}")
-          when :v3
-            # Note: other common actions are unauthorized with user scope
-            command_legacy = options.get_next_command(Node::SIMPLE_ACTIONS)
-            # TODO: shall we support all methods here ? what if there is a link ?
-            node_api = aoc_api.node_info_to_api(top_node_file[:node_info])
-            return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: node_api)).execute_action(command_legacy)
-          when :file
-            command_node_file = options.get_next_command(%i[show permission modify])
-            file_path = options.get_option(:path)
-            node_file =
-              if !file_path.nil?
-                # directly returns node_file info
-                aoc_api.resolve_node_file(top_node_file, file_path) # TODO: allow follow link ?
-              else
-                # build node_file info from next argument on command line
-                {node_info: top_node_file[:node_info], file_id: instance_identifier}
-              end
-            node_api = aoc_api.node_info_to_api(node_file[:node_info])
-            case command_node_file
-            when :show
-              items = node_api.read("files/#{node_file[:file_id]}")[:data]
-              return {type: :single_object, data: items}
-            when :modify
-              update_param = options.get_next_argument('update data (Hash)')
-              res = node_api.update("files/#{node_file[:file_id]}", update_param)[:data]
-              return {type: :single_object, data: res}
-            when :permission
-              command_perm = options.get_next_command(%i[list create delete])
-              case command_perm
-              when :list
-                # generic options : TODO: as arg ? option_url_query
-                list_options ||= {'include' => ['[]', 'access_level', 'permission_count']}
-                # special value: ALL will show all permissions
-                if !VAL_ALL.eql?(node_file[:file_id])
-                  # add which one to get
-                  list_options['file_id'] = node_file[:file_id]
-                  list_options['inherited'] ||= false
-                end
-                items = node_api.read('permissions', list_options)[:data]
-                return {type: :object_list, data: items}
-              when :delete
-                perm_id=instance_identifier
-                return do_bulk_operation(perm_id, 'deleted') do |one_id|
-                  node_api.delete("permissions/#{perm_id}")
-                  {'id' => one_id}
-                end
-                #node_api.delete("permissions/#{perm_id}")
-              when :create
-                create_param=options.get_next_argument('creation data (Hash)')
-                #access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_info['id']}"
-                default_params = {
-                  'file_id'       => node_file[:file_id], # mandatory
-                  #'access_type'   => 'user', # mandatory: user or group
-                  #'access_id'     => access_id, # id of user or group
-                  'access_levels' => Aspera::Node::ACCESS_LEVELS,
-                  'tags'          => {
-                    'aspera' => {
-                      'files' => {
-                        'workspace' => {
-                          'id'                => @workspace_info['id'],
-                          'workspace_name'    => @workspace_info['name'],
-                          'user_name'         => aoc_api.user_info['name'],
-                          'shared_by_user_id' => aoc_api.user_info['id'],
-                          'shared_by_name'    => aoc_api.user_info['name'],
-                          'shared_by_email'   => aoc_api.user_info['email'],
-                          #'shared_with_name'  => access_id,
-                          'access_key'        => node_file[:node_info]['access_key'],
-                          'node'              => node_file[:node_info]['name']}}}}}
-                create_param = default_params.deep_merge(create_param)
-                if create_param.has_key?('with')
-                  contact_info = aoc_api.lookup_entity_by_name(
-                    'contacts',
-                    create_param['with'],
-                    {'current_workspace_id' => @workspace_info['id'], 'context'=> 'share_folder'})
-                  create_param.delete('with')
-                  create_param['access_type']=contact_info['source_type']
-                  create_param['access_id']=contact_info['source_id']
-                  create_param['tags']['aspera']['files']['workspace']['shared_with_name']=contact_info['email']
-                end
-                opt_link_name=nil
-                if create_param.has_key?('link_name')
-                  opt_link_name=create_param['link_name']
-                  create_param.delete('link_name')
-                end
-                # for admin type:
-                #node_file[:node_info]
-                #node_api = aoc_api.node_info_to_api(node_file[:node_info])
-                created_data = node_api.create('permissions', create_param)[:data]
-                event_creation={
-                  'types'        => ['permission.created'],
-                  'node_id'      => node_file[:node_info]['id'],
-                  'workspace_id' => @workspace_info['id'],
-                  'data'         => created_data # Response from previous step
-                }
-                #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
-                event_creation['link_name']=opt_link_name unless opt_link_name.nil?
-                aoc_api.create('events', event_creation)
-                return { type: :single_object, data: created_data}
-              else raise "internal error:shall not reach here (#{command_perm})"
-              end
-            else raise "internal error:shall not reach here (#{command_node_file})"
-            end
+          else raise "INTERNAL ERROR: Missing case: #{command_repo}"
           end # command_repo
-          raise 'internal error:shall not reach here'
+          #raise 'internal error:shall not reach here'
         end # execute_node_gen4_command
+
         AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
+
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
@@ -698,7 +561,7 @@ module Aspera
               id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
               # TODO: report inconsistency: creation url is !=, and does not return id.
               resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-              list_or_one = options.get_next_argument('creation data (Hash)')
+              list_or_one = options.get_next_argument('creation data', type: Hash)
               return do_bulk_operation(list_or_one, 'created', id_result: id_result) do |params|
                 raise 'expecting Hash' unless params.is_a?(Hash)
                 aoc_api.create(resource_class_path, params)[:data]
@@ -961,7 +824,7 @@ module Aspera
                   data: skip_ids_data,
                   id: IdGenerator.from_list(['aoc_recv', options.get_option(:url, is_type: :mandatory), @workspace_info['id']].push(*@persist_ids)))
               end
-              if ids_to_download.eql?(VAL_ALL)
+              if VAL_ALL.eql?(ids_to_download)
                 # get list of packages in inbox
                 package_info = aoc_api.read('packages', {
                   'archived'                 => false,
@@ -1140,7 +1003,7 @@ module Aspera
           when :gateway
             set_workspace_info
             require 'aspera/faspex_gw'
-            FaspexGW.new(@api_aoc, @workspace_info['id']).start_server
+            return FaspexGW.new(@api_aoc, @workspace_info['id']).start_server
           else
             raise "internal error: #{command}"
           end # action
@@ -1155,7 +1018,7 @@ module Aspera
           :option_url_query,
           :assert_public_link_types,
           :execute_admin_action
-        private_constant :VAL_ALL, :NODE4_COMMANDS, :ID_AK_ADMIN
+        private_constant :NODE4_COMMANDS, :ID_AK_ADMIN
       end # AoC
     end # Plugins
   end # Cli

@@ -7,7 +7,8 @@
   * fix: security: no shell interpolation
   * fix: when WSS and node agent: no localhost (certificate)
   * fix: #99 `aoc file download` for single shared folder
-  * change: container image has entry point
+  * fix: due to change of API in faspex 5 for send pakage (paths is mandatory for any type of transfer now)
+  * change: (break) container image has entry point
 
 * 4.10.0
 

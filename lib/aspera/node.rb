@@ -38,27 +38,34 @@ module Aspera
         return lambda{|f|f['name'].match(/#{match_expression}/)}
       end
     end
-    attr_reader :node_id, :app_info
+
+    REQUIRED_APP_INFO_FIELDS=%i[node_info app api plugin].freeze
+    REQUIRED_APP_API_METHODS=%i[node_id_to_api add_ts_tags].freeze
+    private_constant :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
+
+    attr_reader :app_info
+
     # @param params [Hash] Rest parameters
-    # @param node_id [Integer] optional node id
-    # @param resolver [Object] object with methods
-    def initialize(params:, node_id: nil, resolver: nil, app_info: nil)
+    # @param app_info [Hash,NilClass] special processing for AoC
+    def initialize(params:, app_info: nil)
       super(params)
-      @node_id=node_id
-      @resolver=resolver
       @app_info=app_info
+      if !@app_info.nil?
+        REQUIRED_APP_INFO_FIELDS.each do |field|
+          raise "INTERNAL ERROR: app_info lacks field #{field}" unless @app_info.has_key?(field)
+        end
+        REQUIRED_APP_API_METHODS.each do |method|
+          raise "INTERNAL ERROR: #{@app_info[:api].class} lacks method #{method}" unless @app_info[:api].respond_to?(method)
+        end
+      end
     end
 
-    # @returns a Node or nil
+    # @returns [Aspera::Node] a Node or nil
     def node_id_to_node(node_id)
-      return self if node_id&.eql?(@node_id)
-      return @resolver.send(:node_id_to_api, node_id) if @resolver&.respond_to?(:node_id_to_api)
+      return self if !@app_info.nil? && @app_info[:node_info]['id'].eql?(node_id)
+      return @app_info[:api].node_id_to_api(node_id) unless @app_info.nil?
       Log.log.warn("cannot resolve link with node id #{node_id}")
       return nil
-    end
-
-    def add_ts_tags(transfer_spec:)
-      @resolver.send(:add_ts_tags, api: self, transfer_spec: transfer_spec, app_info: @app_info) if @resolver&.respond_to?(:add_ts_tags)
     end
 
     # recursively crawl in a folder.

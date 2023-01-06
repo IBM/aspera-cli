@@ -13,6 +13,8 @@ module Aspera
       MAX_ITEMS = 'max'
       # max number of pages for list command
       MAX_PAGES = 'pmax'
+      # used when all resources are selected
+      VAL_ALL = 'ALL'
 
       #AGENTS=%i[options transfer config formater persistency].freeze
 

@@ -348,7 +348,7 @@ module Aspera
     # @param scope e.g. SCOPE_NODE_USER
     # no scope: requires secret
     # if secret provided beforehand: use it
-    def node_id_to_api(node_id, scope: SCOPE_NODE_USER, use_secret: true, app_info: nil)
+    def node_id_to_api(node_id:, app_info:, scope: SCOPE_NODE_USER, use_secret: true)
       node_info=read("nodes/#{node_id}")[:data]
       raise 'internal error' unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
       # get optional secret unless :use_secret is false
@@ -369,24 +369,25 @@ module Aspera
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
       end
-      return Node.new(params: node_rest_params, node_id: node_info['id'], resolver: self, app_info: app_info)
+      return Node.new(params: node_rest_params, app_info: app_info.merge({node_info: node_info}))
     end
 
     def node_info_to_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
-      return node_id_to_api(node_info['id'], scope: scope, use_secret: use_secret)
+      return node_id_to_api(node_id: node_info['id'], app_info: {app: 'files', api: self, plugin: nil}, scope: scope, use_secret: use_secret)
     end
 
-    def add_ts_tags(api:, transfer_spec:, app_info:)
-      transfer_spec.deep_merge!(AoC.analytics_ts(app_info[:aoc_app], transfer_spec['direction'], app_info[:ws_info]['id'], app_info[:ws_info]['name']))
-      transfer_spec.deep_merge!(console_ts(app_info[:aoc_app]))
-      #info=aoc_api.tr_spec(app_info[:aoc_app], transfer_spec['direction'], node_file, ts_add)
-      case app_info[:aoc_app]
+    def add_ts_tags(transfer_spec:, app_info:)
+      ws_info=app_info[:plugin].workspace_info
+      transfer_spec.deep_merge!(AoC.analytics_ts(app_info[:app], transfer_spec['direction'], ws_info['id'], ws_info['name']))
+      transfer_spec.deep_merge!(console_ts(app_info[:app]))
+      #info= tr_spec(app_info[:app], transfer_spec['direction'], node_file, ts_add)
+      case app_info[:app]
       when FILES_APP
         file_id=transfer_spec['tags']['aspera']['node']['file_id']
-        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{api.node_id}:#{file_id}"}}}})
+        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}})
       end
-      transfer_spec['tags']['aspera']['files']['node_id']=api.node_id
-      transfer_spec['tags']['aspera']['app']=app_info[:aoc_app]
+      transfer_spec['tags']['aspera']['files']['node_id']=app_info[:node_info]['id']
+      transfer_spec['tags']['aspera']['app']=app_info[:app]
     end
 
     # check that parameter has necessary types
@@ -400,31 +401,6 @@ module Aspera
       raise 'node_info must have id' unless node_info.has_key?('id')
       raise 'file_id is empty' if file_id.to_s.empty?
       return node_info, file_id
-    end
-
-    # add entry to list if test block is success
-    def process_find_files(entry, path, state)
-      begin
-        # add to result if match filter
-        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
-        # process link
-        if entry[:type].eql?('link')
-          sub_node_info = read("nodes/#{entry['target_node_id']}")[:data]
-          node_info_to_api(sub_node_info).crawl(processor: self, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path, state: state)
-        end
-      rescue StandardError => e
-        Log.log.error("#{path}: #{e.message}")
-      end
-      # process all folders
-      return true
-    end
-
-    def find_files(top_node_file, test_block)
-      top_node_info, top_file_id = check_get_node_file(top_node_file)
-      Log.log.debug("find_files: node_info=#{top_node_info}, fileid=#{top_file_id}")
-      find_state = {found: [], test_block: test_block}
-      node_info_to_api(top_node_info).crawl(processor: self, method: :process_find_files, top_file_id: top_file_id, state: find_state)
-      return find_state[:found]
     end
 
     def process_resolve_node_file(entry, _path, state)
@@ -491,6 +467,51 @@ module Aspera
         else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
         end
       end
+    end
+    ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
+    def permissions_create_params(create_param:, app_info:)
+      #access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
+      default_params = {
+        #'access_type'   => 'user', # mandatory: user or group
+        #'access_id'     => access_id, # id of user or group
+        'tags' => {
+          'aspera' => {
+            'files' => {
+              'workspace' => {
+                'id'                => app_info[:plugin].workspace_info['id'],
+                'workspace_name'    => app_info[:plugin].workspace_info['name'],
+                'user_name'         => user_info['name'],
+                'shared_by_user_id' => user_info['id'],
+                'shared_by_name'    => user_info['name'],
+                'shared_by_email'   => user_info['email'],
+                #'shared_with_name'  => access_id,
+                'access_key'        => app_info[:node_info]['access_key'],
+                'node'              => app_info[:node_info]['name']}}}}}
+      create_param.deep_merge!(default_params)
+      if create_param.has_key?('with')
+        contact_info = lookup_entity_by_name(
+          'contacts',
+          create_param['with'],
+          {'current_workspace_id' => app_info[:plugin].workspace_info['id'], 'context'=> 'share_folder'})
+        create_param.delete('with')
+        create_param['access_type']=contact_info['source_type']
+        create_param['access_id']=contact_info['source_id']
+        create_param['tags']['aspera']['files']['workspace']['shared_with_name']=contact_info['email']
+      end
+      # optionnal
+      app_info[:opt_link_name]=create_param.delete('link_name')
+    end
+
+    def permissions_create_event(created_data:, app_info:)
+      event_creation={
+        'types'        => ['permission.created'],
+        'node_id'      => app_info[:node_info]['id'],
+        'workspace_id' => app_info[:plugin].workspace_info['id'],
+        'data'         => created_data # Response from previous step
+      }
+      #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
+      event_creation['link_name']=app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
+      create('events', event_creation)
     end
   end # AoC
 end # Aspera

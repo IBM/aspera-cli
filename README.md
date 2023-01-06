@@ -2647,7 +2647,7 @@ OPTIONS: global
         --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: list overview lookup secure id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault
+SUBCOMMANDS: id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault list overview lookup secure
 OPTIONS:
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
@@ -2757,7 +2757,7 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: web, jwt, boot
+        --auth=ENUM                  OAuth type of authentication: boot, web, jwt
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
 
@@ -3972,7 +3972,8 @@ aoc files browse /
 aoc files browse / -N --link=my_aoc_publink_folder
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
-aoc files file permission --path=/ascli_test list
+aoc files file modify --path=my_aoc_test_folder
+aoc files file permission --path=my_aoc_test_folder list
 aoc files file show --path=/200KB.1
 aoc files file show my_file_id
 aoc files find / --value='\.partial$'

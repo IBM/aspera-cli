@@ -51,7 +51,8 @@ module Aspera
         ssh_channel.wait
         # main ssh session loop
         session.loop
-      end # session
+      end # start
+      # response as single string
       return response.join
     end
   end

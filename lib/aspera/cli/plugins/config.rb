@@ -751,7 +751,7 @@ module Aspera
             save_presets_to_config_file
             return Main.result_status("Updated: #{name}: #{param_name} <- #{param_value}")
           when :initialize
-            config_value = options.get_next_argument('extended value (Hash)')
+            config_value = options.get_next_argument('extended value', type: Hash)
             if @config_presets.has_key?(name)
               Log.log.warn("configuration already exists: #{name}, overwriting")
             end

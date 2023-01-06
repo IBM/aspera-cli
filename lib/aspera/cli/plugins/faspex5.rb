@@ -21,9 +21,8 @@ module Aspera
           end
         end
 
-        VAL_ALL = 'ALL'
         TRANSFER_CONNECT = 'connect'
-        private_constant :VAL_ALL, :TRANSFER_CONNECT
+        private_constant :TRANSFER_CONNECT
 
         def initialize(env)
           super(env)
@@ -158,7 +157,7 @@ module Aspera
                     options.get_option(:username, is_type: :mandatory),
                     pkg_type]))
               end
-              if pack_id.eql?(VAL_ALL)
+              if VAL_ALL.eql?(pack_id)
                 # TODO: if packages have same name, they will overwrite
                 parameters = options.get_option(:value)
                 parameters ||= {'type' => 'received', 'subtype' => 'mypackages', 'limit' => 1000}

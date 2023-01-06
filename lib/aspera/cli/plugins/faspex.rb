@@ -22,7 +22,6 @@ module Aspera
         # required hash key for source in config
         KEY_NODE = 'node' # value must be hash with url, username, password
         KEY_PATH = 'path' # value must be same sub-path as in Faspex's node
-        VAL_ALL = 'ALL'
         # added field in result that identifies the package
         PACKAGE_MATCH_FIELD = 'package_id'
         # list of supported atoms
@@ -33,7 +32,7 @@ module Aspera
         ATOM_EXT_PARAMS = [MAX_ITEMS, MAX_PAGES].concat(ATOM_PARAMS).freeze
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
-        private_constant(*%i[KEY_NODE KEY_PATH VAL_ALL PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
+        private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
 
         class << self
           def detect(base_url)
@@ -323,7 +322,7 @@ module Aspera
                 delivid = instance_identifier
                 raise 'empty id' if delivid.empty?
                 recipient = options.get_option(:recipient)
-                if delivid.eql?(VAL_ALL)
+                if VAL_ALL.eql?(delivid)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivid).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}['link'].first['href']
