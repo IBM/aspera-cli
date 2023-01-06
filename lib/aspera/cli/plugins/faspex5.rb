@@ -108,7 +108,7 @@ module Aspera
               when :show
                 return { type: :single_object, data: @api_v5.read('account/preferences')[:data] }
               when :modify
-                @api_v5.update('account/preferences', options.get_next_argument('modified parameters (Hash)'))
+                @api_v5.update('account/preferences', options.get_next_argument('modified parameters', type: Hash))
                 return Main.result_status('modified')
               end
             end
@@ -131,8 +131,14 @@ module Aspera
               parameters = options.get_option(:value, is_type: :mandatory)
               raise CliBadArgument, 'value must be hash, refer to API' unless parameters.is_a?(Hash)
               package = @api_v5.create('packages', parameters)[:data]
-              # TODO: option to send from remote source
-              transfer_spec = @api_v5.create("packages/#{package['id']}/transfer_spec/upload", {transfer_type: TRANSFER_CONNECT})[:data]
+              # TODO: option to send from remote source or httpgw
+              transfer_spec = @api_v5.call(
+                operation:   'POST',
+                subpath:     "packages/#{package['id']}/transfer_spec/upload",
+                headers:     {'Accept' => 'application/json'},
+                url_params:  {transfer_type: TRANSFER_CONNECT},
+                json_params: {paths: ['/the_files']}
+              )[:data]
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec))
             when :receive
@@ -163,7 +169,12 @@ module Aspera
               result_transfer = []
               package_ids.each do |pkgid|
                 # TODO: allow from sent as well ?
-                transfer_spec = @api_v5.create("packages/#{pkgid}/transfer_spec/download", {transfer_type: TRANSFER_CONNECT, type: pkg_type})[:data]
+                transfer_spec = @api_v5.call(
+                  operation:   'POST',
+                  subpath:     "packages/#{pkgid}/transfer_spec/download",
+                  headers:     {'Accept' => 'application/json'},
+                  url_params:  {transfer_type: TRANSFER_CONNECT, type: pkg_type}
+                )[:data]
                 transfer_spec.delete('authentication')
                 statuses = transfer.start(transfer_spec)
                 result_transfer.push({'package' => pkgid, Main::STATUS_FIELD => statuses})
