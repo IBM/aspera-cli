@@ -51,9 +51,9 @@ module Aspera
             return nagios.result
           when :repository
             api_shares_node = basic_auth_api('node_api')
-            command = options.get_next_command(Node::COMMON_ACTIONS)
+            command = options.get_next_command(Node::FILE_ACTIONS)
             case command
-            when *Node::COMMON_ACTIONS then Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(command)
+            when *Node::FILE_ACTIONS then Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(command)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

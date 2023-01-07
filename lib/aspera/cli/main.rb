@@ -205,7 +205,6 @@ module Aspera
         @opt_mgr.add_opt_list(:log_level, Log.levels, 'Log level')
         @opt_mgr.add_opt_list(:logger, Log.logtypes, 'log method')
         @opt_mgr.add_opt_simple(:lock_port, 'prevent dual execution of a command, e.g. in cron')
-        @opt_mgr.add_opt_simple(:query, 'additional filter for API calls (extended value) (some commands)')
         @opt_mgr.add_opt_simple(:http_options, 'options for http socket (extended value)')
         @opt_mgr.add_opt_boolean(:insecure, 'do not validate HTTPS certificate')
         @opt_mgr.add_opt_boolean(:once_only, 'process only new items (some commands)')

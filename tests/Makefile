@@ -574,27 +574,27 @@ $(T)aoc8: $(T).exists
 	@touch $@
 $(T)aoc9: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 events
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 events
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node v3 name @preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret access_key delete testsub1
+	$(EXE_MAN) aoc admin resource node do name @preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key delete testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 browse /
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do browse /
 	@touch $@
 $(T)aoc10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 mkdir /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do mkdir /folder1
 	@touch $@
 $(T)aoc13: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v4 delete /folder1
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do delete /folder1
 	@touch $@
 $(T)aoc14: $(T).exists
 	@echo $@

@@ -9,6 +9,7 @@
   * fix: #99 `aoc file download` for single shared folder
   * fix: due to change of API in faspex 5 for send pakage (paths is mandatory for any type of transfer now)
   * change: (break) container image has entry point
+  * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
 
 * 4.10.0
 

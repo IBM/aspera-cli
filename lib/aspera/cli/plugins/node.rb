@@ -40,6 +40,7 @@ module Aspera
           '<soapenv:Header></soapenv:Header>'\
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
+        # fields not displays in result of search
         SEARCH_REMOVE_FIELDS=%w[basename permissions].freeze
         private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS])
 
@@ -129,10 +130,6 @@ module Aspera
           return thepath.map {|p| File.join(path_prefix, p)} if thepath.is_a?(Array)
           raise StandardError, 'expect: nil, String or Array'
         end
-
-        SIMPLE_ACTIONS = %i[health events space info license mkdir mklink mkfile rename delete search].freeze
-
-        COMMON_ACTIONS = %i[browse upload download api_details].concat(SIMPLE_ACTIONS).freeze
 
         # common API to node and Shares
         # prefix_path is used to list remote sources in Faspex
@@ -281,25 +278,6 @@ module Aspera
           end
         end
 
-        NODE4_COMMANDS = %i[browse find mkdir rename delete upload download http_node_download file permission bearer_token_node node_info].freeze
-
-        def aoc_tags(operation)
-          case operation
-          when :permission
-            return {}
-            #return {'aspera' => {'files' => {'workspace' => {
-            #  'id'                => @workspace_id,
-            #  'workspace_name'    => @workspace_name,
-            #  'user_name'         => aoc_api.user_info['name'],
-            #  'shared_by_user_id' => aoc_api.user_info['id'],
-            #  'shared_by_name'    => aoc_api.user_info['name'],
-            #  'shared_by_email'   => aoc_api.user_info['email'],
-            #  'shared_with_name'  => access_id,
-            #  'access_key'        => apifid[:node_info]['access_key'],
-            #  'node'              => apifid[:node_info]['name']}}}}
-          end
-        end
-
         # set generic tags necessary for gen4 transfers
         def gen4_transfer_start(apifid, direction, paths: nil)
           ak_name = nil
@@ -372,17 +350,15 @@ module Aspera
             when :list
               # generic options : TODO: as arg ? option_url_query
               list_options ||= {'include' => ['[]', 'access_level', 'permission_count']}
-              # special value: ALL will show all permissions
-              if !VAL_ALL.eql?(apifid[:file_id])
-                # add which one to get
-                list_options['file_id'] = apifid[:file_id]
-                list_options['inherited'] ||= false
-              end
+              # add which one to get
+              list_options['file_id'] = apifid[:file_id]
+              list_options['inherited'] ||= false
               items = apifid[:api].read('permissions', list_options)[:data]
               return {type: :object_list, data: items}
             when :delete
               perm_id=instance_identifier
               return do_bulk_operation(perm_id, 'deleted') do |one_id|
+                # TODO: notify event ?
                 apifid[:api].delete("permissions/#{perm_id}")
                 {'id' => one_id}
               end
@@ -405,8 +381,18 @@ module Aspera
           end
         end
 
+        NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
+
+        NODE4_COMMANDS = %i[mkdir rename delete upload download http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
+
         def execute_node_gen4_command(command_repo, top_file_id)
           case command_repo
+          when :v3
+            # Note: other common actions are unauthorized with user scope
+            command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
+            # TODO: shall we support all methods here ? what if there is a link ?
+            apifid = @api_node.resolve_api_fid(top_file_id, '')
+            return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: apifid[:api])).execute_action(command_legacy)
           when :node_info, :bearer_token_node
             thepath = options.get_next_argument('path')
             apifid = @api_node.resolve_api_fid(top_file_id, thepath)
@@ -511,36 +497,6 @@ module Aspera
               subpath: "files/#{apifid[:file_id]}/content",
               save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
-          when :permission
-            command_perm = options.get_next_command(%i[list create])
-            thepath = options.get_next_argument('source path')
-            apifid = @api_node.resolve_api_fid(top_file_id, thepath)
-            case command_perm
-            when :list
-              # generic options : TODO: as arg ? option_url_query
-              list_options ||= {'include' => ['[]', 'access_level', 'permission_count']}
-              # special value: ALL will show all permissions
-              if !VAL_ALL.eql?(apifid[:file_id])
-                # add which one to get
-                list_options['file_id'] = apifid[:file_id]
-                list_options['inherited'] ||= false
-              end
-              items = apifid[:api].read('permissions', list_options)[:data]
-              return {type: :object_list, data: items}
-            when :create
-              #create_param=self.options.get_next_argument('creation data', type: Hash)
-              set_workspace_info
-              access_id = "#{ID_AK_ADMIN}_WS_#{@workspace_id}"
-              params = {
-                'file_id'       => apifid[:file_id], # mandatory
-                'access_type'   => 'user', # mandatory: user or group
-                'access_id'     => access_id, # id of user or group
-                'access_levels' => Aspera::Node::ACCESS_LEVELS,
-                'tags'          => aoc_tags(:permission)}
-              item = apifid[:api].create('permissions', params)[:data]
-              return {type: :single_object, data: item}
-            else raise "internal error:shall not reach here (#{command_perm})"
-            end
           when :file
             command_node_file = options.get_next_command(%i[show modify permission])
             return execute_node_gen4_file_command(command_node_file, top_file_id)
@@ -627,17 +583,29 @@ module Aspera
           end
         end
 
+        BASE_ACTIONS=%i[api_details health space mkdir mklink mkfile rename delete].freeze
+
+        BASE2_ACTIONS=%i[browse upload download].freeze
+
+        SPECIAL_ACTIONS=%i[search events info license].freeze
+
+        # actions available in v3 in gen4
+        V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+
+        # actions valid in Shares
+        FILE_ACTIONS = [].concat(BASE_ACTIONS).concat(BASE2_ACTIONS).freeze
+
+        # actions used commonly when a node is involved
+        COMMON_ACTIONS = [].concat(FILE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+
         ACTIONS = %i[
-          postprocess
-          stream
-          transfer
-          cleanup
-          forward
           access_key
-          watch_folder
-          service
           async
           sync
+          stream
+          transfer
+          service
+          watch_folder
           central
           asperabrowser
           basic_token].concat(COMMON_ACTIONS).freeze

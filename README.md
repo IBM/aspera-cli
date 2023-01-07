@@ -2639,7 +2639,6 @@ OPTIONS: global
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
         --logger=ENUM                log method: [stderr], stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
-        --query=VALUE                additional filter for API calls (extended value) (some commands)
         --http-options=VALUE         options for http socket (extended value)
         --insecure=ENUM              do not validate HTTPS certificate: no, [yes]
         --once-only=ENUM             process only new items (some commands): [no], yes
@@ -2647,8 +2646,9 @@ OPTIONS: global
         --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: id preset open documentation genkey gem plugin flush_tokens echo wizard export_to_cli detect coffee ascp email_test smtp_settings proxy_check folder file check_update initdemo vault list overview lookup secure
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test export_to_cli file flush_tokens folder gem genkey id initdemo list lookup open overview plugin preset proxy_check secure smtp_settings vault wizard
 OPTIONS:
+        --query=VALUE                additional filter for API calls (extended value) (some commands)
         --value=VALUE                extended value for create, update, list filter
         --property=VALUE             name of property to set
         --id=VALUE                   resource identifier (modify,delete,show)
@@ -2687,7 +2687,7 @@ OPTIONS:
 
 
 COMMAND: shares
-SUBCOMMANDS: health repository admin
+SUBCOMMANDS: admin health repository
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2695,7 +2695,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async sync central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
+SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2708,7 +2708,7 @@ OPTIONS:
 
 
 COMMAND: orchestrator
-SUBCOMMANDS: health info workflow plugins processes
+SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2737,7 +2737,7 @@ OPTIONS:
 
 
 COMMAND: ats
-SUBCOMMANDS: cluster access_key api_key aws_trust_policy
+SUBCOMMANDS: access_key api_key aws_trust_policy cluster
 OPTIONS:
         --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
         --instance=VALUE             ATS instance in ibm cloud
@@ -2749,7 +2749,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: health version user bearer_token package admin
+SUBCOMMANDS: admin bearer_token health package user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2775,7 +2775,7 @@ OPTIONS:
 
 
 COMMAND: faspex
-SUBCOMMANDS: health package source me dropbox v4 address_book login_methods
+SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2789,7 +2789,7 @@ OPTIONS:
 
 
 COMMAND: preview
-SUBCOMMANDS: scan events trevents check test
+SUBCOMMANDS: check events scan test trevents
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2824,14 +2824,14 @@ OPTIONS:
 
 
 COMMAND: sync
-SUBCOMMANDS: start admin
+SUBCOMMANDS: admin start
 OPTIONS:
         --parameters=VALUE           extended value for session set definition
         --session-name=VALUE         name of session to use for admin commands, by default first one
 
 
 COMMAND: aoc
-SUBCOMMANDS: reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway
+SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2853,7 +2853,7 @@ OPTIONS:
         --validate-metadata=ENUM     validate shared inbox metadata: [no], yes
 
 COMMAND: node
-SUBCOMMANDS: postprocess stream transfer cleanup forward access_key watch_folder service async sync central asperabrowser basic_token browse upload download api_details health events space info license mkdir mklink mkfile rename delete search
+SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space stream sync transfer upload watch_folder
 OPTIONS:
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
@@ -2863,7 +2863,7 @@ OPTIONS:
 
 
 COMMAND: server
-SUBCOMMANDS: upload download health ls rm mv du info mkdir cp df md5sum browse delete rename
+SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm upload
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2873,7 +2873,7 @@ OPTIONS:
 
 
 COMMAND: console
-SUBCOMMANDS: transfer health
+SUBCOMMANDS: health transfer
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -3950,12 +3950,12 @@ aoc admin res self show
 aoc admin res short_link list
 aoc admin res user list
 aoc admin res workspace_membership list
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v3 events
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 browse /
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 delete /folder1
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret v4 mkdir /folder1
-aoc admin resource node v3 name my_aoc_ak_name --secret=my_aoc_ak_secret access_key delete testsub1
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do browse /
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do delete /folder1
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do mkdir /folder1
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 events
+aoc admin resource node do name my_aoc_ak_name --secret=my_aoc_ak_secret v3 access_key delete testsub1
 aoc admin resource workspace list
 aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 aoc automation workflow action my_wf_id create --value=@json:'{"name":"toto"}'

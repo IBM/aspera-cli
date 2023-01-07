@@ -109,8 +109,7 @@ module Aspera
           return transfer.start(info[:ts], token_generator: info[:regenerate_token])
         end
 
-        NODE4_CMD_PACKAGE = %i[bearer_token_node node_info browse find].freeze
-        NODE4_COMMANDS = %i[mkdir rename delete upload download transfer http_node_download v3 file].concat(NODE4_CMD_PACKAGE).freeze
+        NODE4_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
 
         def execute_node_gen4_command(command_repo, top_node_file)
           node_plugin=Node.new(@agents.merge(
@@ -124,14 +123,8 @@ module Aspera
                 app:    AoC::FILES_APP}
             )))
           case command_repo
-          when :bearer_token_node, :node_info, :browse, :find, :mkdir, :rename, :delete, :upload, :download, :http_node_download, :file
+          when *Node::NODE4_COMMANDS
             return node_plugin.execute_node_gen4_command(command_repo, top_node_file[:file_id])
-          when :v3
-            # Note: other common actions are unauthorized with user scope
-            command_legacy = options.get_next_command(Node::SIMPLE_ACTIONS)
-            # TODO: shall we support all methods here ? what if there is a link ?
-            node_api = aoc_api.node_info_to_api(top_node_file[:node_info])
-            return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: node_api)).execute_action(command_legacy)
           when :transfer
             # client side is agent
             # server side is protocol server
@@ -355,20 +348,6 @@ module Aspera
           end
         end
 
-        # private
-        def option_url_query(default)
-          query = options.get_option(:query)
-          query = default if query.nil?
-          Log.log.debug("Query=#{query}".bg_red)
-          begin
-            # check it is suitable
-            URI.encode_www_form(query) unless query.nil?
-          rescue StandardError => e
-            raise CliBadArgument, "query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
-          end
-          return query
-        end
-
         def assert_public_link_types(expected)
           raise CliBadArgument, "public link type is #{@url_token_data['purpose']} but action requires one of #{expected.join(',')}" \
           unless expected.include?(@url_token_data['purpose'])
@@ -545,7 +524,7 @@ module Aspera
             global_operations =  %i[create list]
             supported_operations = %i[show modify]
             supported_operations.push(:delete, *global_operations) unless singleton_object
-            supported_operations.push(:v4, :v3) if resource_type.eql?(:node)
+            supported_operations.push(:do) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
             supported_operations.push(:shared_folder) if resource_type.eql?(:workspace)
             command = options.get_next_command(supported_operations)
@@ -606,10 +585,9 @@ module Aspera
               the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
               aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
               return Main.result_success
-            when :v3, :v4
+            when :do
               res_data = aoc_api.read(resource_instance_path)[:data]
               api_node = aoc_api.node_info_to_api(res_data)
-              return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: api_node)).execute_action if command.eql?(:v3)
               ak_root_file_id = api_node.read("access_keys/#{res_data['access_key']}")[:data]['root_file_id']
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo, {node_info: res_data, file_id: ak_root_file_id})
@@ -755,7 +733,7 @@ module Aspera
             end
           when :packages
             set_workspace_info if @url_token_data.nil?
-            package_command = options.get_next_command(%i[shared_inboxes send recv list show delete].concat(NODE4_CMD_PACKAGE))
+            package_command = options.get_next_command(%i[shared_inboxes send recv list show delete].concat(Node::NODE4_READ_ACTIONS))
             case package_command
             when :shared_inboxes
               case options.get_next_command(%i[list show])
@@ -883,7 +861,7 @@ module Aspera
                 raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
                 aoc_api.delete("packages/#{id}")[:data]
               end
-            when *NODE4_CMD_PACKAGE
+            when *Node::NODE4_READ_ACTIONS
               package_id = options.get_next_argument('package ID')
               #path = options.get_next_argument('path', mandatory: false) || '/'
               package_info = aoc_api.read("packages/#{package_id}")[:data]
@@ -1015,7 +993,6 @@ module Aspera
           :set_home_node_file,
           :do_bulk_operation,
           :resolve_package_recipients,
-          :option_url_query,
           :assert_public_link_types,
           :execute_admin_action
         private_constant :NODE4_COMMANDS, :ID_AK_ADMIN

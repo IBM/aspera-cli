@@ -30,9 +30,10 @@ module Aspera
         raise StandardError, 'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
-        options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).join(' ')}")
+        options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
         return if @@options_created
+        options.add_opt_simple(:query, 'additional filter for API calls (extended value) (some commands)')
         options.add_opt_simple(:value, 'extended value for create, update, list filter')
         options.add_opt_simple(:property, 'name of property to set')
         options.add_opt_simple(:id, "resource identifier (#{INSTANCE_OPS.join(',')})")
@@ -162,6 +163,20 @@ module Aspera
         #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command = options.get_next_command(ALL_OPS)
         return entity_command(command, rest_api, res_class_path, **opts)
+      end
+
+      # query for list operation
+      def option_url_query(default)
+        query = options.get_option(:query)
+        query = default if query.nil?
+        Log.log.debug("Query=#{query}".bg_red)
+        begin
+          # check it is suitable
+          URI.encode_www_form(query) unless query.nil?
+        rescue StandardError => e
+          raise CliBadArgument, "query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+        end
+        return query
       end
 
       # shortcuts helpers for plugin environment
