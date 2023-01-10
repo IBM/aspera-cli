@@ -385,9 +385,9 @@ module Aspera
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
             thepath = options.get_next_argument('path')
-            containing_folder_path = thepath.split(AoC::PATH_SEPARATOR)
+            containing_folder_path = thepath.split(Aspera::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(AoC::PATH_SEPARATOR))
+            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Aspera::Node::PATH_SEPARATOR))
             result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
@@ -418,11 +418,11 @@ module Aspera
               case file_info['type']
               when 'file'
                 # if the single source is a file, we need to split into folder path and filename
-                src_dir_elements = source_folder.split(AoC::PATH_SEPARATOR)
+                src_dir_elements = source_folder.split(Aspera::Node::PATH_SEPARATOR)
                 # filename is the last one
                 source_paths = [{'source' => src_dir_elements.pop}]
                 # source folder is what remains
-                source_folder = src_dir_elements.join(AoC::PATH_SEPARATOR)
+                source_folder = src_dir_elements.join(Aspera::Node::PATH_SEPARATOR)
                 # TODO: instead of creating a new object, use the same, and change file id with parent folder id ? possible ?
                 apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
               when 'link', 'folder'
@@ -438,9 +438,9 @@ module Aspera
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']
             if source_paths.empty?
-              source_folder = source_folder.split(AoC::PATH_SEPARATOR)
+              source_folder = source_folder.split(Aspera::Node::PATH_SEPARATOR)
               source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(AoC::PATH_SEPARATOR)
+              source_folder = source_folder.join(Aspera::Node::PATH_SEPARATOR)
             end
             raise CliBadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']

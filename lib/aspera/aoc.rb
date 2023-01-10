@@ -35,7 +35,7 @@ module Aspera
     # index offset in data repository of client app
     DATA_REPO_INDEX_START = 4
     # cookie prefix so that console can decode identity
-    COOKIE_PREFIX = 'aspera.aoc'
+    COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
     # path in URL of public links
     PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public].freeze
     JWT_AUDIENCE = 'https://api.asperafiles.com/api/v1/oauth2/token'
@@ -46,7 +46,7 @@ module Aspera
     private_constant :MAX_REDIRECT,
       :GLOBAL_CLIENT_APPS,
       :DATA_REPO_INDEX_START,
-      :COOKIE_PREFIX,
+      :COOKIE_PREFIX_CONSOLE_AOC,
       :PUBLIC_LINK_PATHS,
       :JWT_AUDIENCE,
       :OAUTH_API_SUBPATH,
@@ -60,7 +60,6 @@ module Aspera
     SCOPE_FILES_ADMIN_USER_USER = SCOPE_FILES_ADMIN_USER + '+' + SCOPE_FILES_USER
     SCOPE_NODE_USER = 'user:all'
     SCOPE_NODE_ADMIN = 'admin:all'
-    PATH_SEPARATOR = '/'
     FILES_APP = 'files'
     PACKAGES_APP = 'packages'
     API_V1 = 'api/v1'
@@ -141,43 +140,6 @@ module Aspera
           Log.log.debug("redirect to: #{public_link_url}")
         end # loop
         raise "exceeded max redirection: #{MAX_REDIRECT}"
-      end
-
-      # additional transfer spec (tags) for package information
-      def package_tags(package_info, operation)
-        return {
-          'tags' => {
-            'aspera' => {
-              'files' => {
-                'package_id'        => package_info['id'],
-                'package_name'      => package_info['name'],
-                'package_operation' => operation
-              }}}}
-      end
-
-      def direction_to_operation(direction)
-        # translate transfer to operation
-        return case direction
-               when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
-               when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
-               else raise "ERROR: unexpected value: #{direction}"
-               end
-      end
-
-      # add details to show in analytics
-      def analytics_ts(app, direction, ws_id, ws_name)
-        return {
-          'tags' => {
-            'aspera' => {
-              'usage_id' => "aspera.files.workspace.#{ws_id}", # activity tracking
-              'files'    => {
-                'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/, '')}",
-                'workspace_name'        => ws_name, # activity tracking
-                'workspace_id'          => ws_id
-              }
-            }
-          }
-        }
       end
     end # static methods
 
@@ -278,14 +240,6 @@ module Aspera
       return @user_info
     end
 
-    # build ts addon for IBM Aspera Console (cookie)
-    def console_ts(app)
-      # we are sure that fields are not nil
-      elements = [app, user_info['name'], user_info['email']].map{|e|Base64.strict_encode64(e)}
-      elements.unshift(COOKIE_PREFIX)
-      return {'cookie' => elements.join(':')}
-    end
-
     # @returns [Aspera::Node] a node API for access key
     # @param node_info [Hash] with 'url' and 'access_key'
     # @param scope e.g. SCOPE_NODE_USER
@@ -316,18 +270,52 @@ module Aspera
     end
 
     # Add transferspec
-    # callback in Aspera::Node.transfer_spec_gen4
+    # callback in Aspera::Node (transfer_spec_gen4)
     def add_ts_tags(transfer_spec:, app_info:)
+      # translate transfer direction to upload/download
+      transfer_type =
+        case transfer_spec['direction']
+        when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
+        when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
+        else raise "ERROR: unexpected value: #{transfer_spec['direction']}"
+        end
+      # Analytics tags
+      ################
       ws_info=app_info[:plugin].workspace_info
-      transfer_spec.deep_merge!(self.class.analytics_ts(app_info[:app], transfer_spec['direction'], ws_info['id'], ws_info['name']))
-      transfer_spec.deep_merge!(console_ts(app_info[:app]))
+      transfer_spec.deep_merge!({
+        'tags' => {
+          'aspera' => {
+            'usage_id' => "aspera.files.workspace.#{ws_info['id']}", # activity tracking
+            'files'    => {
+              'files_transfer_action' => "#{transfer_type}_#{app_info[:app].gsub(/s$/, '')}",
+              'workspace_name'        => ws_info['name'], # activity tracking
+              'workspace_id'          => ws_info['id']
+            }
+          }
+        }
+      })
+      # Console cookie
+      ################
+      # we are sure that fields are not nil
+      cookie_elements = [app_info[:app], user_info['name'], user_info['email']].map{|e|Base64.strict_encode64(e)}
+      cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
+      transfer_spec['cookie'] = cookie_elements.join(':')
+      # Application tags
+      ##################
       case app_info[:app]
       when FILES_APP
         file_id=transfer_spec['tags']['aspera']['node']['file_id']
         transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
           unless transfer_spec.has_key?('remote_access_key')
       when PACKAGES_APP
-        transfer_spec.deep_merge!(self.class.package_tags(app_info[:package_info], self.class.direction_to_operation(transfer_spec['direction'])))
+        transfer_spec.deep_merge!({
+          'tags' => {
+            'aspera' => {
+              'files' => {
+                'package_id'        => app_info[:package_info]['id'],
+                'package_name'      => app_info[:package_info]['name'],
+                'package_operation' => transfer_type
+              }}}})
       end
       transfer_spec['tags']['aspera']['files']['node_id']=app_info[:node_info]['id']
       transfer_spec['tags']['aspera']['app']=app_info[:app]

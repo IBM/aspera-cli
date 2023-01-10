@@ -16,6 +16,7 @@ module Aspera
     # prefix for ruby code for filter
     MATCH_EXEC_PREFIX = 'exec:'
     X_ASPERA_ACCESSKEY = 'X-Aspera-AccessKey'
+    PATH_SEPARATOR = '/'
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
@@ -156,7 +157,7 @@ module Aspera
     # @param path file path
     # @return {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
-      path_elements = path.split(AoC::PATH_SEPARATOR).reject(&:empty?)
+      path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
       resolve_state = {path: path_elements, result: nil}
       process_folder_tree(state: resolve_state, method: :process_resolve_node_path, top_file_id: top_file_id)
@@ -220,7 +221,7 @@ module Aspera
       the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
       # add basic token
       if transfer_spec['token'].nil?
-        Aspera::Node.set_ak_basic_token(transfer_spec, params[:auth][:username], params[:auth][:password])
+        self.class.set_ak_basic_token(transfer_spec, params[:auth][:username], params[:auth][:password])
       end
       # add remote host info
       if self.class.use_standard_ports
