@@ -2705,6 +2705,7 @@ OPTIONS:
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
+        --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
 COMMAND: orchestrator
@@ -2849,7 +2850,6 @@ OPTIONS:
         --new-user-option=VALUE      new user creation option for unknown package recipients
         --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --default-ports=ENUM         use standard FASP ports or get from node api: [no], yes
         --validate-metadata=ENUM     validate shared inbox metadata: [no], yes
 
 COMMAND: node
@@ -2860,6 +2860,7 @@ OPTIONS:
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
         --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
+        --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
 COMMAND: server

@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/node'
 require 'aspera/log'
 require 'tty-spinner'
 
@@ -21,8 +22,8 @@ module Aspera
         rest_params = { base_url: options[:url]}
         if /^Bearer /.match?(options[:password])
           rest_params[:headers] = {
-            'X-Aspera-AccessKey' => options[:username],
-            'Authorization'      => options[:password]
+            Aspera::Node::X_ASPERA_ACCESSKEY => options[:username],
+            'Authorization'                  => options[:password]
           }
           raise 'root_id is required for access key' if @root_id.nil?
         else

@@ -30,9 +30,12 @@ module Aspera
             env[:options].add_opt_simple(:sync_name, 'sync name')
             env[:options].add_opt_simple(:path, 'file or folder path for gen4 operation "file"')
             env[:options].add_opt_list(:token_type, %i[aspera basic hybrid], 'Type of token used for transfers')
+            env[:options].add_opt_boolean(:default_ports, 'use standard FASP ports or get from node api (gen4)')
             env[:options].set_option(:asperabrowserurl, 'https://asperabrowser.mybluemix.net')
             env[:options].set_option(:token_type, :aspera)
+            env[:options].set_option(:default_ports, :yes)
             env[:options].parse_options!
+            Aspera::Node.use_standard_ports = env[:options].get_option(:default_ports)
           end
         end
         SAMPLE_SOAP_CALL = '<?xml version="1.0" encoding="UTF-8"?>'\
@@ -59,8 +62,8 @@ module Aspera
               Aspera::Node.new(params: {
                 base_url: options.get_option(:url, is_type: :mandatory),
                 headers:  {
-                  'X-Aspera-AccessKey' => options.get_option(:username, is_type: :mandatory),
-                  'Authorization'      => options.get_option(:password, is_type: :mandatory)
+                  Aspera::Node::X_ASPERA_ACCESSKEY => options.get_option(:username, is_type: :mandatory),
+                  'Authorization'                  => options.get_option(:password, is_type: :mandatory)
                 }
               })
             else
@@ -278,56 +281,6 @@ module Aspera
           end
         end
 
-        # set generic tags necessary for gen4 transfers
-        def gen4_transfer_start(apifid, direction, paths: nil)
-          ak_name = nil
-          ak_token = nil
-          case apifid[:api].params[:auth][:type]
-          when :basic
-            ak_name=apifid[:api].params[:auth][:username]
-          when :oauth2
-            ak_name=apifid[:api].params[:headers]['X-Aspera-AccessKey']
-            ak_token=apifid[:api].oauth_token
-          else raise "Unsupported auth method for node gen4: #{apifid[:api].params[:auth][:type]}"
-          end
-          transfer_spec = {
-            'direction' => direction,
-            'token'     => ak_token,
-            'tags'      => {
-              'aspera' => {
-                'node' => {
-                  'access_key' => ak_name,
-                  'file_id'    => apifid[:file_id]
-                } # node
-              } # aspera
-            } # tags
-          }
-          transfer_spec['paths']=paths unless paths.nil?
-          # add application specific tags (AoC)
-          the_app=apifid[:api].app_info
-          the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
-          # add basic token
-          if transfer_spec['token'].nil?
-            Aspera::Node.set_ak_basic_token(transfer_spec, apifid[:api].params[:auth][:username], apifid[:api].params[:auth][:password])
-          end
-          # add remote host info
-          if AoC.use_standard_ports
-            # get default TCP/UDP ports and transfer user
-            transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
-            # by default: same address as node API
-            transfer_spec['remote_host'] = URI.parse(apifid[:api].params[:base_url]).host
-          else
-            # retrieve values from API
-            std_t_spec = apifid[:api].create(
-              'files/download_setup',
-              {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
-            )[:data]['transfer_specs'].first['transfer_spec']
-            # copy some parts
-            %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
-          end
-          return transfer.start(transfer_spec)
-        end
-
         def execute_node_gen4_file_command(command_node_file, top_file_id)
           file_path = options.get_option(:path)
           apifid =
@@ -406,7 +359,7 @@ module Aspera
               result[:username]=apifid[:api].params[:auth][:username]
               result[:password]= apifid[:api].params[:auth][:password]
             when :oauth2
-              result[:username]= apifid[:api].params[:headers]['X-Aspera-AccessKey']
+              result[:username]= apifid[:api].params[:headers][Aspera::Node::X_ASPERA_ACCESSKEY]
               result[:password]= apifid[:api].oauth_token
             else raise 'unknown'
             end
@@ -453,7 +406,7 @@ module Aspera
             end
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
-            return Main.result_transfer(gen4_transfer_start(apifid, Fasp::TransferSpec::DIRECTION_SEND))
+            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)))
           when :download
             source_paths = transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -480,7 +433,7 @@ module Aspera
                 raise "Unknown source type: #{file_info['type']}"
               end
             end
-            return Main.result_transfer(gen4_transfer_start(apifid, Fasp::TransferSpec::DIRECTION_RECEIVE, paths: source_paths))
+            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :http_node_download
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']

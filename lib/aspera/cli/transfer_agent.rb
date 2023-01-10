@@ -42,6 +42,8 @@ module Aspera
         end
       end
 
+      attr_accessor :token_regenerator
+
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr, config)
         @opt_mgr = opt_mgr
@@ -53,6 +55,8 @@ module Aspera
         @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
+        # only used with agent "direct" allows to regenerate the token if it is expired
+        @token_regenerator = nil
         @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts, "override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
         @opt_mgr.add_opt_simple(:local_resume, "set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume)}")
@@ -181,7 +185,7 @@ module Aspera
 
       # start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec
-      def start(transfer_spec, token_generator: nil)
+      def start(transfer_spec)
         # check parameters
         raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
         # process :src option
@@ -211,7 +215,7 @@ module Aspera
         # create transfer agent
         set_agent_by_options
         Log.log.debug("transfer agent is a #{@agent.class}")
-        @agent.token_regenerator=token_generator if @agent.respond_to?(:token_regenerator=)
+        @agent.token_regenerator=@token_regenerator if @agent.respond_to?(:token_regenerator=)
         @agent.start_transfer(transfer_spec)
         # list of : :success or error message
         result = @agent.wait_for_transfers_completion

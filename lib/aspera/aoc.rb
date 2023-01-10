@@ -67,12 +67,8 @@ module Aspera
     # error message when entity not found
     ENTITY_NOT_FOUND = 'No such'
 
-    # class instance variable, access with accessors on class
-    @use_standard_ports = true
-
     # class static methods
     class << self
-      attr_accessor :use_standard_ports
       # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
       def get_client_info(client_name=GLOBAL_CLIENT_APPS.first)
         client_index = GLOBAL_CLIENT_APPS.index(client_name)
@@ -159,22 +155,23 @@ module Aspera
               }}}}
       end
 
+      def direction_to_operation(direction)
+        # translate transfer to operation
+        return case direction
+               when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
+               when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
+               else raise "ERROR: unexpected value: #{direction}"
+               end
+      end
+
       # add details to show in analytics
       def analytics_ts(app, direction, ws_id, ws_name)
-        # translate transfer to operation
-        operation =
-          case direction
-          when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
-          when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
-          else raise "ERROR: unexpected value: #{direction}"
-          end
-
         return {
           'tags' => {
             'aspera' => {
               'usage_id' => "aspera.files.workspace.#{ws_id}", # activity tracking
               'files'    => {
-                'files_transfer_action' => "#{operation}_#{app.gsub(/s$/, '')}",
+                'files_transfer_action' => "#{direction_to_operation(direction)}_#{app.gsub(/s$/, '')}",
                 'workspace_name'        => ws_name, # activity tracking
                 'workspace_id'          => ws_id
               }
@@ -289,60 +286,6 @@ module Aspera
       return {'cookie' => elements.join(':')}
     end
 
-    # build "transfer info", 2 elements array with:
-    # - transfer spec for aspera on cloud, based on node information and file id
-    # - source and token regeneration method
-    def tr_spec(app, direction, node_file, ts_add)
-      # get node api
-      node_api = node_info_to_api(node_file[:node_info])
-      # this lambda returns the bearer token for node, if
-      token_generation_lambda = lambda{|do_refresh|node_api.oauth_token(force_refresh: do_refresh)}
-      # prepare transfer specification
-      # note xfer_id and xfer_retry are set by the transfer agent itself
-      transfer_spec = {
-        'direction' => direction,
-        'token'     => token_generation_lambda.call(false), # first time, use cache
-        'tags'      => {
-          'aspera' => {
-            'app'   => app,
-            'files' => {
-              'node_id' => node_file[:node_info]['id']
-            }, # files
-            'node'  => {
-              'access_key' => node_file[:node_info]['access_key'],
-              #'file_id'           => ts_add['source_root_id']
-              'file_id'    => node_file[:file_id]
-            } # node
-          } # aspera
-        } # tags
-      }
-      # add remote host info
-      if self.class.use_standard_ports
-        # get default TCP/UDP ports and transfer user
-        transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
-        # by default: same address as node API
-        transfer_spec['remote_host'] = node_file[:node_info]['host']
-        # 30 it's necessarily https scheme: webui does not allow anything else
-        if node_file[:node_info]['transfer_url'].is_a?(String) && !node_file[:node_info]['transfer_url'].empty?
-          transfer_spec['remote_host'] = URI.parse(node_file[:node_info]['transfer_url']).host
-        end
-      else
-        # retrieve values from API
-        std_t_spec = node_api.create(
-          'files/download_setup',
-          {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
-        )[:data]['transfer_specs'].first['transfer_spec']
-        %w[remote_host remote_user ssh_port fasp_port].each {|i| transfer_spec[i] = std_t_spec[i]}
-      end
-      # add caller provided transfer spec
-      transfer_spec.deep_merge!(ts_add)
-      # additional information for transfer agent
-      return {
-        ts:               transfer_spec,
-        regenerate_token: token_generation_lambda
-      }
-    end
-
     # @returns [Aspera::Node] a node API for access key
     # @param node_info [Hash] with 'url' and 'access_key'
     # @param scope e.g. SCOPE_NODE_USER
@@ -363,8 +306,8 @@ module Aspera
           password: ak_secret
         }
       else
-        # X-Aspera-AccessKey required for bearer token only
-        node_rest_params[:headers] = {'X-Aspera-AccessKey' => node_info['access_key']}
+        # special header required for bearer token only
+        node_rest_params[:headers] = {Aspera::Node::X_ASPERA_ACCESSKEY => node_info['access_key']}
         # OAuth bearer token
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
@@ -372,82 +315,25 @@ module Aspera
       return Node.new(params: node_rest_params, app_info: app_info.merge({node_info: node_info}))
     end
 
-    def node_info_to_api(node_info, scope: SCOPE_NODE_USER, use_secret: true)
-      return node_id_to_api(node_id: node_info['id'], app_info: {app: 'files', api: self, plugin: nil}, scope: scope, use_secret: use_secret)
-    end
-
+    # Add transferspec
+    # callback in Aspera::Node.transfer_spec_gen4
     def add_ts_tags(transfer_spec:, app_info:)
       ws_info=app_info[:plugin].workspace_info
-      transfer_spec.deep_merge!(AoC.analytics_ts(app_info[:app], transfer_spec['direction'], ws_info['id'], ws_info['name']))
+      transfer_spec.deep_merge!(self.class.analytics_ts(app_info[:app], transfer_spec['direction'], ws_info['id'], ws_info['name']))
       transfer_spec.deep_merge!(console_ts(app_info[:app]))
-      #info= tr_spec(app_info[:app], transfer_spec['direction'], node_file, ts_add)
       case app_info[:app]
       when FILES_APP
         file_id=transfer_spec['tags']['aspera']['node']['file_id']
-        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}})
+        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
+          unless transfer_spec.has_key?('remote_access_key')
+      when PACKAGES_APP
+        transfer_spec.deep_merge!(self.class.package_tags(app_info[:package_info], self.class.direction_to_operation(transfer_spec['direction'])))
       end
       transfer_spec['tags']['aspera']['files']['node_id']=app_info[:node_info]['id']
       transfer_spec['tags']['aspera']['app']=app_info[:app]
     end
 
-    # check that parameter has necessary types
-    # @return split values
-    def check_get_node_file(node_file)
-      raise "node_file must be Hash (got #{node_file.class})" unless node_file.is_a?(Hash)
-      raise 'node_file must have 2 keys: :file_id and :node_info' unless node_file.keys.sort.eql?(%i[file_id node_info])
-      node_info = node_file[:node_info]
-      file_id = node_file[:file_id]
-      raise "node_info must be Hash  (got #{node_info.class}: #{node_info})" unless node_info.is_a?(Hash)
-      raise 'node_info must have id' unless node_info.has_key?('id')
-      raise 'file_id is empty' if file_id.to_s.empty?
-      return node_info, file_id
-    end
-
-    def process_resolve_node_file(entry, _path, state)
-      # stop digging here if not in right path
-      return false unless entry['name'].eql?(state[:path].first)
-      # ok it matches, so we remove the match
-      state[:path].shift
-      case entry['type']
-      when 'file'
-        # file must be terminal
-        raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless state[:path].empty?
-        state[:result][:file_id] = entry['id']
-      when 'link'
-        state[:result][:node_info] = read("nodes/#{entry['target_node_id']}")[:data]
-        if state[:path].empty?
-          state[:result][:file_id] = entry['target_id']
-        else
-          node_info_to_api(state[:result][:node_info]).crawl(processor: self, method: :process_resolve_node_file, top_file_id: entry['target_id'], state: state)
-        end
-      when 'folder'
-        if state[:path].empty?
-          # found: store
-          state[:result][:file_id] = entry['id']
-          return false
-        end
-      else
-        Log.log.warn("Unknown element type: #{entry['type']}")
-      end
-      # continue to dig folder
-      return true
-    end
-
-    # Finds the actual node where files are located, supports links to secondary nodes
-    # @param top_node_file       Array    [root node,file id]
-    # @param element_path_string String   path of element
-    # @return Array(node_info,file_id)   for the given path
-    def resolve_node_file(top_node_file, element_path_string)
-      top_node_info, top_file_id = check_get_node_file(top_node_file)
-      path_elements = element_path_string.split(PATH_SEPARATOR).reject(&:empty?)
-      return {node_info: top_node_info, file_id: top_file_id} if path_elements.empty?
-      resolve_state = {path: path_elements, result: {node_info: top_node_info, file_id: nil}}
-      node_info_to_api(top_node_info).crawl(processor: self, method: :process_resolve_node_file, top_file_id: top_file_id, state: resolve_state)
-      not_found = resolve_state[:path]
-      raise "entry not found: #{not_found}" if resolve_state[:result][:file_id].nil?
-      return resolve_state[:result]
-    end
-
+    # Query entity type by name and returns the id if a single entry only
     # @param entity_type path of entuty in API
     # @param entity_name name of searched entity
     # @param options additional search options
@@ -470,6 +356,7 @@ module Aspera
     end
     ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
     def permissions_create_params(create_param:, app_info:)
+      # workspace shared folder:
       #access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
       default_params = {
         #'access_type'   => 'user', # mandatory: user or group

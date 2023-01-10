@@ -75,9 +75,7 @@ module Aspera
           options.add_opt_simple(:new_user_option, 'new user creation option for unknown package recipients')
           options.add_opt_simple(:from_folder, 'share to share source folder')
           options.add_opt_simple(:scope, 'OAuth scope for AoC API calls')
-          options.add_opt_boolean(:default_ports, 'use standard FASP ports or get from node api')
           options.add_opt_boolean(:validate_metadata, 'validate shared inbox metadata')
-          options.set_option(:default_ports, :yes)
           options.set_option(:validate_metadata, :yes)
           options.set_option(:new_user_option, {'package_contact' => true})
           options.set_option(:operation, :push)
@@ -86,7 +84,6 @@ module Aspera
           options.set_option(:private_key, '@file:' + env[:private_key_path]) if env[:private_key_path].is_a?(String)
           options.set_option(:workspace, :default)
           options.parse_options!
-          AoC.use_standard_ports = options.get_option(:default_ports)
           # add node options
           Node.new(env.merge({man_only: true, skip_basic_auth_options: true}))
           return if env[:man_only]
@@ -101,27 +98,20 @@ module Aspera
           return @api_aoc
         end
 
-        # starts transfer using transfer agent
-        def transfer_start(app, direction, node_file, ts_add)
-          ts_add.deep_merge!(AoC.analytics_ts(app, direction, @workspace_info['id'], @workspace_info['name']))
-          ts_add.deep_merge!(aoc_api.console_ts(app))
-          info=aoc_api.tr_spec(app, direction, node_file, ts_add)
-          return transfer.start(info[:ts], token_generator: info[:regenerate_token])
-        end
-
         NODE4_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
 
         def execute_node_gen4_command(command_repo, top_node_file)
+          top_node_api=aoc_api.node_id_to_api(
+            node_id: top_node_file[:node_info]['id'],
+            app_info: {
+              api:    aoc_api,
+              plugin: self,
+              app:    AoC::FILES_APP}
+          )
           node_plugin=Node.new(@agents.merge(
             skip_basic_auth_options: true,
-            skip_node_options: true,
-            node_api: aoc_api.node_id_to_api(
-              node_id: top_node_file[:node_info]['id'],
-              app_info: {
-                api:    aoc_api,
-                plugin: self,
-                app:    AoC::FILES_APP}
-            )))
+            skip_node_options:       true,
+            node_api:                top_node_api))
           case command_repo
           when *Node::NODE4_COMMANDS
             return node_plugin.execute_node_gen4_command(command_repo, top_node_file[:file_id])
@@ -129,7 +119,6 @@ module Aspera
             # client side is agent
             # server side is protocol server
             # in same workspace
-            server_home_node_file = client_home_node_file = top_node_file
             # default is push
             case options.get_option(:operation, is_type: :mandatory)
             when :push
@@ -141,23 +130,25 @@ module Aspera
               client_folder = transfer.destination_folder(client_tr_oper)
               server_folder = options.get_option(:from_folder, is_type: :mandatory)
             end
-            client_node_file = aoc_api.resolve_node_file(client_home_node_file, client_folder)
-            server_node_file = aoc_api.resolve_node_file(server_home_node_file, server_folder)
+            client_apfid = top_node_api.resolve_api_fid(top_node_file[:file_id], client_folder)
+            server_apfid = top_node_api.resolve_api_fid(top_node_file[:file_id], server_folder)
             # force node as transfer agent
-            client_node_api = aoc_api.node_info_to_api(client_node_file[:node_info], use_secret: false)
             @agents[:transfer].agent_instance = Fasp::AgentNode.new({
-              url:      client_node_api.params[:base_url],
-              username: client_node_file[:node_info]['access_key'],
-              password: client_node_api.oauth_token,
-              root_id:  client_node_file[:file_id]
+              url:      client_apfid[:api].params[:base_url],
+              username: client_apfid[:api].app_info[:node_info]['access_key'],
+              password: client_apfid[:api].oauth_token,
+              root_id:  client_apfid[:file_id]
             })
             # additional node to node TS info
             add_ts = {
-              'remote_access_key'   => server_node_file[:node_info]['access_key'],
-              'destination_root_id' => server_node_file[:file_id],
-              'source_root_id'      => client_node_file[:file_id]
+              'remote_access_key'   => server_apfid[:api].app_info[:node_info]['access_key'],
+              'destination_root_id' => server_apfid[:file_id],
+              'source_root_id'      => client_apfid[:file_id]
             }
-            return Main.result_transfer(transfer_start(AoC::FILES_APP, client_tr_oper, server_node_file, add_ts))
+            return Main.result_transfer(transfer.start(server_apfid[:api].transfer_spec_gen4(
+              server_apfid[:file_id],
+              client_tr_oper,
+              add_ts)))
           else raise "INTERNAL ERROR: Missing case: #{command_repo}"
           end # command_repo
           #raise 'internal error:shall not reach here'
@@ -226,8 +217,6 @@ module Aspera
             node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
             file_id:   home_file_id
           }
-          aoc_api.check_get_node_file(@home_node_file)
-
           return nil
         end
 
@@ -526,7 +515,6 @@ module Aspera
             supported_operations.push(:delete, *global_operations) unless singleton_object
             supported_operations.push(:do) if resource_type.eql?(:node)
             supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-            supported_operations.push(:shared_folder) if resource_type.eql?(:workspace)
             command = options.get_next_command(supported_operations)
             # require identifier for non global commands
             if !singleton_object && !global_operations.include?(command)
@@ -586,104 +574,14 @@ module Aspera
               aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
               return Main.result_success
             when :do
-              res_data = aoc_api.read(resource_instance_path)[:data]
-              api_node = aoc_api.node_info_to_api(res_data)
-              ak_root_file_id = api_node.read("access_keys/#{res_data['access_key']}")[:data]['root_file_id']
+              api_node = aoc_api.node_id_to_api(
+                node_id: res_id,
+                app_info: {app: AoC::FILES_APP, api: aoc_api, plugin: self},
+                scope: AoC::SCOPE_NODE_USER,
+                use_secret: true)
+              ak_root_file_id = api_node.read("access_keys/#{api_node.app_info[:node_info]['access_key']}")[:data]['root_file_id']
               command_repo = options.get_next_command(NODE4_COMMANDS)
-              return execute_node_gen4_command(command_repo, {node_info: res_data, file_id: ak_root_file_id})
-            when :shared_folder
-              Log.log.warn('ATTENTION: alpha, under development, do not use')
-              # inside a workspace
-              command_shared = options.get_next_command(%i[list create delete]) # member
-              core_api=Rest.new(aoc_api.params.merge(base_url: aoc_api.params[:base_url].gsub('/api.', '/sedemo.')))
-              # generic permission created for each shared folder
-              access_id = "#{ID_AK_ADMIN}_WS_#{res_id}"
-              case command_shared
-              when :list
-                query=options.get_option(:query)
-                query={'admin' => true, 'access_id' => access_id, 'access_type' => 'user'} if query.nil?
-                res_data = aoc_api.read("#{resource_instance_path}/permissions", query)[:data]
-                return { type: :object_list, data: res_data, fields: %w[id node_id file_id node_name file.path tags.aspera.files.workspace.share_as access_id]}
-              when :member
-                #https://sedemo.ibmaspera.com/api/v1/node/8669/permissions_and_members/3270?inherited=false&aspera-node-basic=8669&admin=true&page=1&per_page=25
-              when :delete
-                shared_id=instance_identifier
-                all_shared=aoc_api.read("#{resource_instance_path}/permissions", query)[:data].select{|i|i['id'].eql?(shared_id)}
-                raise 'no such shared folder id' if all_shared.empty?
-                raise 'error' unless all_shared.length.eql?(1)
-                shared_info=all_shared.first
-                #return { type: :single_object, data: shared_info}
-                node_id=shared_info['node_id']
-                Log.log.warn('ATTENTION: under dev: user vars: V1 and V2')
-                core_api.call(
-                  operation: 'DELETE',
-                  subpath: "node/#{node_id}/permissions",
-                  headers: {
-                    'Accept'             => 'application/json',
-                    'aspera-node-auth'   => ENV['V1'],
-                    'aspera-node-tokens' => ENV['V2']
-                  },
-                  url_params: {
-                    'ids'                      => shared_id,
-                    'aspera-node-basic'        => node_id,
-                    'aspera-node-prefer-basic' => node_id
-                  }
-                )
-                return Main.result_success
-              when :create
-                # workspace information
-                ws_info = aoc_api.read(resource_instance_path)[:data]
-                shared_create_data = options.get_next_argument('creation data', type: Hash)
-                # node is either provided by user, or by default the one of workspace
-                node_id = shared_create_data.has_key?('node_id') ? shared_create_data['node_id'] : ws_info['node_id']
-                # remove from creation data if present, as it is not a standard argument
-                shared_create_data.delete('node_id')
-                # get optional link_name
-                #opt_link_name=shared_create_data['link_name']
-                shared_create_data.delete('link_name')
-                raise 'missing node information: path' unless shared_create_data.has_key?('path')
-                folder_path=shared_create_data['path']
-                shared_create_data.delete('path')
-                node_file={node_info: aoc_api.read("nodes/#{node_id}")[:data], file_id: 1}
-                node_file = aoc_api.resolve_node_file(node_file, folder_path)
-                node_api = aoc_api.node_info_to_api(node_file[:node_info])
-                access_id = "#{ID_AK_ADMIN}_WS_#{ws_info['id']}"
-                # use can specify: tags.aspera.files.workspace.share_as  to  File.basename(folder_path)
-                default_create_data = {
-                  'file_id'       => node_file[:file_id],
-                  'access_type'   => 'user',
-                  'access_id'     => access_id,
-                  'access_levels' => %w[list read write delete mkdir rename preview],
-                  'tags'          => {
-                    'aspera' => {
-                      'files' => {
-                        'workspace' => {
-                          'id'                => ws_info['id'],
-                          'workspace_name'    => ws_info['name'],
-                          'user_name'         => aoc_api.user_info['name'],
-                          'shared_by_user_id' => aoc_api.user_info['id'],
-                          'shared_by_name'    => aoc_api.user_info['name'],
-                          'shared_by_email'   => aoc_api.user_info['email'],
-                          'shared_with_name'  => access_id,
-                          'access_key'        => node_file[:node_info]['access_key'],
-                          'node'              => node_file[:node_info]['name']}
-                      }}}}
-                shared_create_data = default_create_data.deep_merge(default_create_data) # ?aspera-node-basic=#{node_id}&aspera-node-prefer-basic=#{node_id}
-                created_data = node_api.create('permissions', shared_create_data)[:data]
-                # new API:
-                #created_data=aoc_api.create("node/#{node_id}/permissions",shared_create_data)[:data]
-                # TODO: send event
-                event_creation={
-                  'types'        => ['permission.created'],
-                  'node_id'      => node_file[:node_info]['id'],
-                  'workspace_id' => ws_info['id'],
-                  'data'         => created_data # Response from previous step
-                }
-                #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
-                #event_creation['link_name']=opt_link_name unless opt_link_name.nil?
-                aoc_api.create('events', event_creation)
-                return { type: :single_object, data: created_data}
-              end
+              return execute_node_gen4_command(command_repo, {node_info: api_node.app_info[:node_info], file_id: ak_root_file_id})
             else raise 'unknown command'
             end
           when :usage_reports
@@ -773,18 +671,21 @@ module Aspera
               #  create a new package container
               package_info = aoc_api.create('packages', package_data)[:data]
 
-              #  get node information for the node on which package must be created
-              node_info = aoc_api.read("nodes/#{package_info['node_id']}")[:data]
-
               # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
               # TODO: if multisession was used we should probably tell
               # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
               aoc_api.update("packages/#{package_info['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
-
-              # get destination: package folder
-              node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-              # execute transfer, raise exception if at least one error
-              Main.result_transfer(transfer_start(AoC::PACKAGES_APP, Fasp::TransferSpec::DIRECTION_SEND, node_file, AoC.package_tags(package_info, 'upload')))
+              package_node_api=aoc_api.node_id_to_api(
+                node_id: package_info['node_id'],
+                app_info: {
+                  api:          aoc_api,
+                  plugin:       self,
+                  app:          AoC::PACKAGES_APP,
+                  package_info: package_info}
+              )
+              statuses = transfer.start(package_node_api.transfer_spec_gen4(
+                package_info['contents_file_id'],
+                Fasp::TransferSpec::DIRECTION_SEND))
               # return all info on package
               return { type: :single_object, data: package_info}
             when :recv
@@ -821,11 +722,19 @@ module Aspera
               self.format.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
-                node_info = aoc_api.read("nodes/#{package_info['node_id']}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
-                add_ts = {'paths' => [{'source' => '.'}]}
-                node_file = {node_info: node_info, file_id: package_info['contents_file_id']}
-                statuses = transfer_start(AoC::PACKAGES_APP, Fasp::TransferSpec::DIRECTION_RECEIVE, node_file, AoC.package_tags(package_info, 'download').merge(add_ts))
+                package_node_api=aoc_api.node_id_to_api(
+                  node_id: package_info['node_id'],
+                  app_info: {
+                    api:          aoc_api,
+                    plugin:       self,
+                    app:          AoC::PACKAGES_APP,
+                    package_info: package_info}
+                )
+                statuses = transfer.start(package_node_api.transfer_spec_gen4(
+                  package_info['contents_file_id'],
+                  Fasp::TransferSpec::DIRECTION_RECEIVE,
+                  {'paths'=> [{'source' => '.'}]}))
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
                 if TransferAgent.session_status(statuses).eql?(:success)
@@ -879,6 +788,7 @@ module Aspera
             case command_repo
             when *NODE4_COMMANDS then return execute_node_gen4_command(command_repo, @home_node_file)
             when :short_link
+              # TODO: move to permissions ?
               folder_dest = options.get_option(:to_folder)
               value_option = options.get_option(:value)
               case value_option
@@ -888,12 +798,19 @@ module Aspera
               else raise 'value must be either: public, private, Hash or nil'
               end
               create_params = nil
-              node_file = nil
+              shared_apfid=nil
               if !folder_dest.nil?
-                node_file = aoc_api.resolve_node_file(@home_node_file, folder_dest)
+                home_node_api=aoc_api.node_id_to_api(
+                  node_id: @home_node_file[:node_info]['id'],
+                  app_info: {
+                    api:    aoc_api,
+                    plugin: self,
+                    app:    AoC::FILES_APP}
+                )
+                shared_apfid=home_node_api.resolve_api_fid(@home_node_file[:file_id], folder_dest)
                 create_params = {
-                  file_id:      node_file[:file_id],
-                  node_id:      node_file[:node_info]['id'],
+                  file_id:      shared_apfid[:file_id],
+                  node_id:      shared_apfid[:api].app_info[:node_info]['id'],
                   workspace_id: @workspace_info['id']
                 }
               end
@@ -919,11 +836,10 @@ module Aspera
               end
               result = entity_action(@api_aoc, 'short_links', id_default: 'self')
               if result[:data].is_a?(Hash) && result[:data].has_key?('created_at') && result[:data]['resource_type'].eql?('UrlToken')
-                node_api = aoc_api.node_info_to_api(node_file[:node_info])
                 # TODO: access level as arg
                 access_levels = Aspera::Node::ACCESS_LEVELS #['delete','list','mkdir','preview','read','rename','write']
                 perm_data = {
-                  'file_id'       => node_file[:file_id],
+                  'file_id'       => shared_apfid[:file_id],
                   'access_type'   => 'user',
                   'access_id'     => result[:data]['resource_id'],
                   'access_levels' => access_levels,
@@ -934,11 +850,11 @@ module Aspera
                     'folder_name'      => 'my folder',
                     'created_by_name'  => aoc_api.user_info['name'],
                     'created_by_email' => aoc_api.user_info['email'],
-                    'access_key'       => node_file[:node_info]['access_key'],
-                    'node'             => node_file[:node_info]['host']
+                    'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
+                    'node'             => shared_apfid[:api].app_info[:node_info]['host']
                   }
                 }
-                node_api.create("permissions?file_id=#{node_file[:file_id]}", perm_data)
+                shared_apfid[:api].create("permissions?file_id=#{shared_apfid[:file_id]}", perm_data)
                 # TODO: event ?
               end
               return result

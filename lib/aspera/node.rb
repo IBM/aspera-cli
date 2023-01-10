@@ -15,11 +15,16 @@ module Aspera
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter
     MATCH_EXEC_PREFIX = 'exec:'
+    X_ASPERA_ACCESSKEY = 'X-Aspera-AccessKey'
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
 
+    # class instance variable, access with accessors on class
+    @use_standard_ports = true
+
     class << self
+      attr_accessor :use_standard_ports
       def set_ak_basic_token(ts, ak, secret)
         Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
           "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
@@ -68,18 +73,15 @@ module Aspera
       return nil
     end
 
-    # recursively crawl in a folder.
+    # recursively browse in a folder (with non-recursive method)
     # subfolders a processed if the processing method returns true
-    # @param processor must provide a method to process each entry
-    # @param opt options
-    # - top_file_id file id to start at (default = access key root file id)
-    # - top_file_path path of top folder (default = /)
-    # - method processing method (default= process_entry)
-    def crawl(state:, method:, top_file_id:, processor: nil, top_file_path: '/')
+    # @param state [Object] state object sent to processing method
+    # @param method [Symbol] processing method name
+    # @param top_file_id [String] file id to start at (default = access key root file id)
+    # @param top_file_path [String] path of top folder (default = /)
+    def process_folder_tree(state:, method:, top_file_id:, top_file_path: '/')
       raise 'INTERNAL ERROR: top_file_path not set' if top_file_path.nil?
-      processor ||= self
-      raise "processor #{processor.class} must have #{method}" unless processor.respond_to?(method)
-      #top_info=read("files/#{top_file_id}")[:data]
+      raise "INTERNAL ERROR: Missing method #{method}" unless respond_to?(method)
       folders_to_explore = [{id: top_file_id, relpath: top_file_path}]
       Log.dump(:folders_to_explore, folders_to_explore)
       while !folders_to_explore.empty?
@@ -97,24 +99,24 @@ module Aspera
         folder_contents.each do |entry|
           relative_path = File.join(current_item[:relpath], entry['name'])
           Log.log.debug("looking #{relative_path}".bg_green)
-          # continue only if processor tells so
-          next unless processor.send(method, entry, relative_path, state)
+          # continue only if method returns true
+          next unless send(method, entry, relative_path, state)
           # entry type is file, folder or link
           case entry['type']
           when 'folder'
             folders_to_explore.push({id: entry['id'], relpath: relative_path})
           when 'link'
-            node_id_to_node(entry['target_node_id'])&.crawl(
+            node_id_to_node(entry['target_node_id'])&.process_folder_tree(
               state:         state,
               method:        method,
               top_file_id:   entry['target_id'],
-              processor:     processor.eql?(self) ? nil : processor,
               top_file_path: relative_path)
           end
         end
       end
-    end # crawl
+    end # process_folder_tree
 
+    # processing method to resolve a file path to id
     # @returns true if processing need to continue
     def process_resolve_node_path(entry, path, state)
       # stop digging here if not in right path
@@ -149,7 +151,7 @@ module Aspera
       return true
     end
 
-    # navigate the path from given file id
+    # Navigate the path from given file id
     # @param id initial file id
     # @param path file path
     # @return {.api,.file_id}
@@ -157,19 +159,10 @@ module Aspera
       path_elements = path.split(AoC::PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
       resolve_state = {path: path_elements, result: nil}
-      crawl(state: resolve_state, method: :process_resolve_node_path, top_file_id: top_file_id)
+      process_folder_tree(state: resolve_state, method: :process_resolve_node_path, top_file_id: top_file_id)
       raise "entry not found: #{resolve_state[:path]}" if resolve_state[:result].nil?
       return resolve_state[:result]
     end
-
-    def find_files(top_file_id, test_block)
-      Log.log.debug("find_files: fileid=#{top_file_id}")
-      find_state = {found: [], test_block: test_block}
-      crawl(state: find_state, method: :process_find_files, top_file_id: top_file_id)
-      return find_state[:found]
-    end
-
-    #private
 
     # add entry to list if test block is success
     def process_find_files(entry, path, state)
@@ -179,13 +172,75 @@ module Aspera
         # process link
         if entry[:type].eql?('link')
           other_node = node_id_to_node(entry['target_node_id'])
-          other_node.crawl(state: state, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path)
+          other_node.process_folder_tree(state: state, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path)
         end
       rescue StandardError => e
         Log.log.error("#{path}: #{e.message}")
       end
       # process all folders
       return true
+    end
+
+    def find_files(top_file_id, test_block)
+      Log.log.debug("find_files: fileid=#{top_file_id}")
+      find_state = {found: [], test_block: test_block}
+      process_folder_tree(state: find_state, method: :process_find_files, top_file_id: top_file_id)
+      return find_state[:found]
+    end
+
+    # Create transfer spec for gen4
+    def transfer_spec_gen4(file_id, direction, ts_merge=nil)
+      ak_name = nil
+      ak_token = nil
+      case params[:auth][:type]
+      when :basic
+        ak_name=params[:auth][:username]
+      when :oauth2
+        ak_name=params[:headers][X_ASPERA_ACCESSKEY]
+        token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
+        ak_token=token_generation_lambda.call(false) # first time, use cache
+        @app_info[:plugin].transfer.token_regenerator = token_generation_lambda unless @app_info.nil?
+      else raise "Unsupported auth method for node gen4: #{params[:auth][:type]}"
+      end
+      transfer_spec = {
+        'direction' => direction,
+        'token'     => ak_token,
+        'tags'      => {
+          'aspera' => {
+            'node' => {
+              'access_key' => ak_name,
+              'file_id'    => file_id
+            } # node
+          } # aspera
+        } # tags
+      }
+      transfer_spec.deep_merge!(ts_merge) unless ts_merge.nil?
+      # add application specific tags (AoC)
+      the_app=app_info
+      the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
+      # add basic token
+      if transfer_spec['token'].nil?
+        Aspera::Node.set_ak_basic_token(transfer_spec, params[:auth][:username], params[:auth][:password])
+      end
+      # add remote host info
+      if self.class.use_standard_ports
+        # get default TCP/UDP ports and transfer user
+        transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
+        # by default: same address as node API
+        transfer_spec['remote_host'] = URI.parse(params[:base_url]).host
+        if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
+          transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
+        end
+      else
+        # retrieve values from API
+        std_t_spec = create(
+          'files/download_setup',
+          {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
+        )[:data]['transfer_specs'].first['transfer_spec']
+        # copy some parts
+        %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
+      end
+      return transfer_spec
     end
   end
 end
