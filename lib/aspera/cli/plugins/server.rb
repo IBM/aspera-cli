@@ -49,7 +49,8 @@ module Aspera
           Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
           server_transfer_spec['remote_host']=server_uri.hostname
           unless URI_SCHEMES.include?(server_uri.scheme)
-            raise "Scheme [#{server_uri.scheme}] not supported, use one of: #{URI_SCHEMES.join(', ')}"
+            Log.log.warn("Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to ssh.")
+            server_uri.scheme='ssh'
           end
           if server_uri.scheme.eql?('local')
             # Using local execution (mostly for testing)
