@@ -26,12 +26,6 @@ module Aspera
 
     class << self
       attr_accessor :use_standard_ports
-      def set_ak_basic_token(ts, ak, secret)
-        Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
-          "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-        ts['token'] = Rest.basic_creds(ak, secret)
-      end
-
       # for access keys: provide expression to match entry in folder
       # if no prefix: regex
       # if prefix: ruby code
@@ -221,7 +215,7 @@ module Aspera
       the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
       # add basic token
       if transfer_spec['token'].nil?
-        self.class.set_ak_basic_token(transfer_spec, params[:auth][:username], params[:auth][:password])
+        ts_basic_token(transfer_spec)
       end
       # add remote host info
       if self.class.use_standard_ports
@@ -242,6 +236,14 @@ module Aspera
         %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
       end
       return transfer_spec
+    end
+
+    # set basic token in transfer spec
+    def ts_basic_token(ts)
+      Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
+        "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+      raise 'ERROR: no secret in node object' unless params[:auth][:password]
+      ts['token'] = Rest.basic_creds(params[:auth][:username], params[:auth][:password])
     end
   end
 end

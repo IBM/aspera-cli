@@ -216,7 +216,7 @@ module Aspera
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
-            Aspera::Node.set_ak_basic_token(@default_transfer_spec, @access_key_self['id'], options.get_option(:password, is_type: :mandatory))
+            @api_node.ts_basic_token(@default_transfer_spec)
             # note: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host'] = @transfer_server_address
@@ -415,7 +415,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           unless %i[check test].include?(command)
             # this will use node api
-            @api_node = basic_auth_api
+            @api_node = Aspera::Node.new(params: basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.params[:base_url]).host
             # get current access key
             @access_key_self = @api_node.read('access_keys/self')[:data]

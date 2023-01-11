@@ -4,6 +4,8 @@ module Aspera
   module Fasp
     # from https://www.google.com/search?q=FASP+error+codes
     # Note that the fact that an error is retryable is not internally defined by protocol, it's client-side responsibility
+    # rubocop:disable Layout/MultilineHashKeyLineBreaks
+    # rubocop:disable Layout/FirstHashElementLineBreak
     ERROR_INFO = {
       # id   retryable      mnemo                       message                                              additional info
       1  => { r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
@@ -18,13 +20,13 @@ module Aspera
       10 => { r: false, c: 'LIC_RATE_EXCEEDED',           m: 'Rate exceeds the cap imposed by license',        a: 'Rate exceeds cap imposed by license'},
       11 => { r: false, c: 'INTERNAL_ERROR',              m: 'Internal error (unexpected error)',              a: 'Internal error'},
       12 => { r: true,  c: 'TRANSFER_ERROR',              m: 'Error establishing control connection',
-                                                          a: 'Error establishing SSH connection (check SSH port and firewall)'},
+                                                              a: 'Error establishing SSH connection (check SSH port and firewall)'},
       13 => { r: true,  c: 'TRANSFER_TIMEOUT',            m: 'Timeout establishing control connection',
-                                                          a: 'Timeout establishing SSH connection (check SSH port and firewall)'},
+                                                              a: 'Timeout establishing SSH connection (check SSH port and firewall)'},
       14 => { r: true,  c: 'CONNECTION_ERROR',            m: 'Error establishing data connection',
-                                                          a: 'Error establishing UDP connection (check UDP port and firewall)'},
+                                                              a: 'Error establishing UDP connection (check UDP port and firewall)'},
       15 => { r: true,  c: 'CONNECTION_TIMEOUT',          m: 'Timeout establishing data connection',
-                                                          a: 'Timeout establishing UDP connection (check UDP port and firewall)'},
+                                                              a: 'Timeout establishing UDP connection (check UDP port and firewall)'},
       16 => { r: true,  c: 'CONNECTION_LOST',             m: 'Connection lost',                                a: 'Connection lost'},
       17 => { r: true,  c: 'RCVR_SEND_ERROR',             m: 'Receiver fails to send feedback',                a: 'Network failure (receiver can\'t send feedback)'},
       18 => { r: true,  c: 'RCVR_RECV_ERROR',             m: 'Receiver fails to receive data packets',         a: 'Network failure (receiver can\'t receive UDP data)'},
@@ -68,20 +70,21 @@ module Aspera
       54 => { r: false, c: 'THRESHOLD_VALIDATION_FAILED', m: 'File threshold validation failed',               a: 'File threshold validation failed'},
       55 => { r: false, c: 'FILEPATH_TOO_LONG',           m: 'File path/name too long for underlying file system', a: 'File path exceeds underlying file system limit'},
       56 => { r: false, c: 'ILLEGAL_CHARS_IN_PATH',       m: 'Windows path contains illegal characters',
-                                                          a: 'Path being written to Windows file system contains illegal characters'},
+                                                              a: 'Path being written to Windows file system contains illegal characters'},
       57 => { r: false, c: 'CHUNK_MUST_MATCH_ALIGNMENT',  m: 'Chunk size/start must be aligned with storage',  a: 'Chunk size/start must be aligned with storage'},
       58 => { r: false, c: 'VALIDATION_SESSION_ABORT',    m: 'Session aborted to due to validation error',     a: 'Session aborted to due validation error'},
       59 => { r: false, c: 'REMOTE_STORAGE_ERROR',        m: 'Remote storage errored',                         a: 'Remote storage errored'},
       60 => { r: false, c: 'LUA_SCRIPT_ABORTED_SESSION',  m: 'Session aborted due to Lua script abort',        a: 'Session aborted due to Lua script abort'},
       61 => { r: true,  c: 'SSEAR_RETRYABLE',             m: 'Transfer failed because of a retryable Encryption at Rest error',
-                                                          a: 'Transfer failed because of a retryable Encryption at Rest error'},
+                                                              a: 'Transfer failed because of a retryable Encryption at Rest error'},
       62 => { r: false, c: 'SSEAR_FATAL',                 m: 'Transfer failed because of a fatal Encryption at Rest error',
-                                                          a: 'Transfer failed because of a fatal Encryption at Rest error'},
+                                                              a: 'Transfer failed because of a fatal Encryption at Rest error'},
       63 => { r: false, c: 'LINK_LOOP',                   m: 'Path refers to a symbolic link loop',            a: 'Path refers to a symbolic link loop'},
       64 => { r: false, c: 'CANNOT_RENAME_PARTIAL_FILES', m: 'Can\'t rename a partial file',                   a: 'Can\'t rename a partial file.'},
       65 => { r: false, c: 'CIPHER_NON_COMPAT_FIPS',      m: 'Can\'t use this cipher with FIPS mode enabled',  a: 'Can\'t use this cipher with FIPS mode enabled'},
       66 => { r: false, c: 'PEER_REQUIRES_FIPS',          m: 'Peer rejects cipher due to FIPS mode enabled on peer',
-                                                          a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
+                                                              a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
     }.freeze
+    # rubocop:enable Layout/MultilineHashKeyLineBreaks
   end
 end

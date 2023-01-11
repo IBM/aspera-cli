@@ -40,6 +40,16 @@ Layout/FirstArgumentIndentation:
   Enabled: true
 Layout/MultilineArrayBraceLayout:
   Enabled: false
+Layout/MultilineMethodArgumentLineBreaks:
+  Enabled: false
+Layout/MultilineArrayLineBreaks:
+  Enabled: false
+Layout/FirstHashElementLineBreak:
+  Enabled: false
+Layout/FirstArrayElementLineBreak:
+  Enabled: false
+Layout/MultilineHashKeyLineBreaks:
+  Enabled: false
 Style/WordArray:
   Enabled: true
   EnforcedStyle: percent

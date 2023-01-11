@@ -6,7 +6,7 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.mak
 
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tprev tats tsample tcos tf5
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tats tsample tcos tf5 tprev
 # tnagios: already included
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)

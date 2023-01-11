@@ -95,9 +95,9 @@ module Aspera
           if mode.nil?
             # or FileUtils ?
             if File.file?(path)
-              mode=0600
+              mode=0o600
             elsif File.directory?(path)
-              mode=0700
+              mode=0o700
             else
               Log.log.debug("No restriction can be set for #{path}");
             end

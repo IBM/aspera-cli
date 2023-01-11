@@ -42,7 +42,8 @@ module Aspera
         # get recipient ids
         files_pkg_recipients = []
         faspex_pkg_delivery['recipients'].each do |recipient_email|
-          user_lookup = @aoc_api_user.read('contacts',
+          user_lookup = @aoc_api_user.read(
+            'contacts',
             { 'current_workspace_id' => @aoc_workspace_id, 'q' => recipient_email })[:data]
           raise StandardError,
             "no such unique user: #{recipient_email} / #{user_lookup}" unless !user_lookup.nil? && user_lookup.length.eql?(1)
@@ -67,7 +68,8 @@ module Aspera
         node_info = @aoc_api_user.read("nodes/#{the_package['node_id']}")[:data]
 
         #  get transfer token (for node)
-        node_auth_bearer_token = @aoc_api_user.oauth_token(scope: AoC.node_scope(node_info['access_key'],
+        node_auth_bearer_token = @aoc_api_user.oauth_token(scope: AoC.node_scope(
+          node_info['access_key'],
           AoC::SCOPE_NODE_USER))
 
         # tell Files what to expect in package: 1 transfer (can also be done after transfer)

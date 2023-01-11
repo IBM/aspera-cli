@@ -18,7 +18,7 @@ Ruby Doc: [<%=gemspec.metadata['documentation_uri']%>](<%=gemspec.metadata['docu
 
 Minimum required Ruby <%=ruby_version%>.
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
+[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)

@@ -20,7 +20,7 @@ Minimum required Ruby version: >= 2.4.
 
 > **Deprecation notice**: the minimum will be 2.7 in a future version.
 
-[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs)
+[Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)

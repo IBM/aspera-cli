@@ -8,6 +8,7 @@ require 'aspera/ascmd'
 require 'aspera/ssh'
 require 'aspera/log'
 require 'uri'
+require 'openssl'
 
 #Aspera::Log.instance.level=:debug
 #Aspera::Log.instance.logger_type=:stderr
@@ -44,6 +45,8 @@ PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".renamed-#{TEST_RUN_ID}")
 PAC_FILE = 'file:///./examples/proxy.pac'
+
+puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
 RSpec.describe(Aspera::Cli::Main) do
   it 'has a version number' do

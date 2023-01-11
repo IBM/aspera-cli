@@ -22,16 +22,20 @@ module Aspera
       end
 
       # returns a Rest object with basic auth
-      def basic_auth_api(subpath=nil)
+      def basic_auth_params(subpath=nil)
         api_url = options.get_option(:url, is_type: :mandatory)
         api_url = api_url + '/' + subpath unless subpath.nil?
-        return Rest.new({
+        return {
           base_url: api_url,
           auth:     {
             type:     :basic,
             username: options.get_option(:username, is_type: :mandatory),
             password: options.get_option(:password, is_type: :mandatory)
-          }})
+          }}
+      end
+
+      def basic_auth_api(subpath=nil)
+        return Rest.new(basic_auth_params(subpath))
       end
     end # BasicAuthPlugin
   end # Cli

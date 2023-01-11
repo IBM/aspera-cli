@@ -130,7 +130,8 @@ module Aspera
         raise 'options shall be Hash' unless options.is_a?(Hash)
         unsupported = options.keys - %i[label username password url description]
         raise "unsupported options: #{unsupported}" unless unsupported.empty?
-        @keychain.password(:add, :generic, service: options[:label],
+        @keychain.password(
+          :add, :generic, service: options[:label],
           account: options[:username] || 'none', password: options[:password], comment: options[:description])
       end
 

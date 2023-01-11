@@ -273,7 +273,7 @@ module Aspera
             else raise "ERROR: token_type #{tt}"
             end
             if %i[basic hybrid].include?(token_type)
-              Aspera::Node.set_ak_basic_token(transfer_spec, @api_node.params[:auth][:username], @api_node.params[:auth][:password])
+              @api_node.ts_basic_token(transfer_spec)
             end
             return Main.result_transfer(transfer.start(transfer_spec))
           when :api_details
