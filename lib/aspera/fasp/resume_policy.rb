@@ -26,7 +26,7 @@ module Aspera
             @parameters[k] = v
           end
         end
-        Log.log.debug("resume params=#{@parameters}")
+        Log.log.debug{"resume params=#{@parameters}"}
       end
 
       # calls block a number of times (resumes) until success or limit reached
@@ -36,7 +36,7 @@ module Aspera
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
         sleep_seconds = @parameters[:sleep_initial]
-        Log.log.debug("retries=#{remaining_resumes}")
+        Log.log.debug{"retries=#{remaining_resumes}"}
         # try to send the file until ascp is succesful
         loop do
           Log.log.debug('transfer starting');
@@ -45,7 +45,7 @@ module Aspera
             yield
             break
           rescue Fasp::Error => e
-            Log.log.warn("An error occurred: #{e.message}");
+            Log.log.warn{"An error occurred: #{e.message}"};
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
@@ -61,7 +61,7 @@ module Aspera
 
           # take this retry in account
           remaining_resumes -= 1
-          Log.log.warn("resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})");
+          Log.log.warn{"resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"};
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

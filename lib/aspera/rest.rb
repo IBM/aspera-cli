@@ -46,7 +46,7 @@ module Aspera
       # define accessors
       @@global.keys.each do |p|
         define_method(p){@@global[p]}
-        define_method("#{p}="){|val|Log.log.debug("#{p} => #{val}".red);@@global[p] = val}
+        define_method("#{p}="){|val|Log.log.debug{"#{p} => #{val}".red};@@global[p] = val}
       end
 
       def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
@@ -141,7 +141,7 @@ module Aspera
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
       uri = self.class.build_uri("#{call_data[:base_url]}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
-      Log.log.debug("URI=#{uri}")
+      Log.log.debug{"URI=#{uri}"}
       begin
         # instanciate request object based on string name
         req = Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
@@ -151,18 +151,18 @@ module Aspera
       if call_data.has_key?(:json_params) && !call_data[:json_params].nil?
         req.body = JSON.generate(call_data[:json_params])
         Log.dump('body JSON data', call_data[:json_params])
-        #Log.log.debug("body JSON data=#{JSON.pretty_generate(call_data[:json_params])}")
+        #Log.log.debug{"body JSON data=#{JSON.pretty_generate(call_data[:json_params])}"}
         req['Content-Type'] = 'application/json'
         #call_data[:headers]['Accept']='application/json'
       end
       if call_data.has_key?(:www_body_params)
         req.body = URI.encode_www_form(call_data[:www_body_params])
-        Log.log.debug("body www data=#{req.body.chomp}")
+        Log.log.debug{"body www data=#{req.body.chomp}"}
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
       if call_data.has_key?(:text_body_params)
         req.body = call_data[:text_body_params]
-        Log.log.debug("body data=#{req.body.chomp}")
+        Log.log.debug{"body data=#{req.body.chomp}"}
       end
       # set headers
       if call_data.has_key?(:headers)
@@ -199,7 +199,7 @@ module Aspera
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
       call_data[:subpath] = '' if call_data[:subpath].nil?
-      Log.log.debug("accessing #{call_data[:subpath]}".red.bold.bg_green)
+      Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
       call_data[:headers]['User-Agent'] ||= self.class.user_agent
       # defaults from @params are overriden by call data
@@ -220,7 +220,7 @@ module Aspera
       else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
       end
       req = build_request(call_data)
-      Log.log.debug("call_data = #{call_data}")
+      Log.log.debug{"call_data = #{call_data}"}
       result = {http: nil}
       # start a block to be able to retry the actual HTTP request
       begin
@@ -246,7 +246,7 @@ module Aspera
             end
             # download with temp filename
             target_file_tmp = "#{target_file}#{self.class.download_partial_suffix}"
-            Log.log.debug("saving to: #{target_file}")
+            Log.log.debug{"saving to: #{target_file}"}
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
@@ -262,7 +262,7 @@ module Aspera
         end
         # sometimes there is a UTF8 char (e.g. (c) )
         result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
-        Log.log.debug("result: body=#{result[:http].body}")
+        Log.log.debug{"result: body=#{result[:http].body}"}
         result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first
         result[:data] = case result_mime
         when 'application/json', 'application/vnd.api+json'
@@ -271,7 +271,7 @@ module Aspera
           result[:http].body
         end
         Log.dump("result: parsed: #{result_mime}", result[:data])
-        Log.log.debug("result: code=#{result[:http].code}")
+        Log.log.debug{"result: code=#{result[:http].code}"}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
       rescue RestCallError => e
         # not authorized: oauth token expired
@@ -285,7 +285,7 @@ module Aspera
             # regenerate a brand new token
             req['Authorization'] = oauth_token(use_cache: false)
           end
-          Log.log.debug("using new token=#{call_data[:headers]['Authorization']}")
+          Log.log.debug{"using new token=#{call_data[:headers]['Authorization']}"}
           retry unless (oauth_tries -= 1).zero?
         end # if oauth
         # moved ?
@@ -294,7 +294,7 @@ module Aspera
           current_uri = URI.parse(call_data[:base_url])
           new_url=e.response['location']
           new_url="#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
-          Log.log.info("URL is moved: #{new_url}")
+          Log.log.info{"URL is moved: #{new_url}"}
           redir_uri = URI.parse(new_url)
           call_data[:base_url] = new_url
           call_data[:subpath] = ''
@@ -303,14 +303,14 @@ module Aspera
             retry
           else
             # change host
-            Log.log.info("Redirect changes host: #{current_uri.host} -> #{redir_uri.host}")
+            Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redir_uri.host}"}
             return self.class.new(call_data).call(call_data)
           end
         end
         # raise exception if could not retry and not return error in result
         raise e unless call_data[:return_error]
       end # begin request
-      Log.log.debug("result=#{result}")
+      Log.log.debug{"result=#{result}"}
       return result
     end
 

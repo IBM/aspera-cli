@@ -67,7 +67,7 @@ module Aspera
       def fix_home
         return unless os.eql?(OS_WINDOWS) && ENV.has_key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
         ENV['HOME'] = ENV['USERPROFILE']
-        Log.log.debug("Windows: set home to USERPROFILE: #{ENV['HOME']}")
+        Log.log.debug{"Windows: set home to USERPROFILE: #{ENV['HOME']}"}
       end
 
       def empty_binding
@@ -99,7 +99,7 @@ module Aspera
             elsif File.directory?(path)
               mode=0o700
             else
-              Log.log.debug("No restriction can be set for #{path}");
+              Log.log.debug{"No restriction can be set for #{path}"};
             end
           end
           File.chmod(mode, path) unless mode.nil?

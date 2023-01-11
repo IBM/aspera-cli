@@ -14,17 +14,17 @@ module Aspera
     def initialize(folder)
       @cache = {}
       @folder = folder
-      Log.log.debug("persistency folder: #{@folder}")
+      Log.log.debug{"persistency folder: #{@folder}"}
     end
 
     # @return String or nil string on existing persist, else nil
     def get(object_id)
-      Log.log.debug("persistency get: #{object_id}")
+      Log.log.debug{"persistency get: #{object_id}"}
       if @cache.has_key?(object_id)
         Log.log.debug('got from memory cache')
       else
         persist_filepath = id_to_filepath(object_id)
-        Log.log.debug("persistency = #{persist_filepath}")
+        Log.log.debug{"persistency = #{persist_filepath}"}
         if File.exist?(persist_filepath)
           Log.log.debug('got from file cache')
           @cache[object_id] = File.read(persist_filepath)
@@ -36,7 +36,7 @@ module Aspera
     def put(object_id, value)
       raise 'value: only String supported' unless value.is_a?(String)
       persist_filepath = id_to_filepath(object_id)
-      Log.log.debug("persistency saving: #{persist_filepath}")
+      Log.log.debug{"persistency saving: #{persist_filepath}"}
       File.delete(persist_filepath) if File.exist?(persist_filepath)
       File.write(persist_filepath, value)
       Environment.restrict_file_access(persist_filepath)
@@ -45,7 +45,7 @@ module Aspera
 
     def delete(object_id)
       persist_filepath = id_to_filepath(object_id)
-      Log.log.debug("persistency deleting: #{persist_filepath}")
+      Log.log.debug{"persistency deleting: #{persist_filepath}"}
       File.delete(persist_filepath) if File.exist?(persist_filepath)
       @cache.delete(object_id)
     end
@@ -58,7 +58,7 @@ module Aspera
       end
       garbage_files.each do |filepath|
         File.delete(filepath)
-        Log.log.debug("persistency deleted expired: #{filepath}")
+        Log.log.debug{"persistency deleted expired: #{filepath}"}
       end
       return garbage_files
     end

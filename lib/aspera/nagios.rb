@@ -55,7 +55,7 @@ module Aspera
       rtime = DateTime.strptime(remote_date)
       diff_time = (rtime - DateTime.now).abs
       diff_disp = diff_time.round(-2)
-      Log.log.debug("DATE: #{remote_date} #{rtime} diff=#{diff_disp}")
+      Log.log.debug{"DATE: #{remote_date} #{rtime} diff=#{diff_disp}"}
       msg = "offset #{diff_disp} sec"
       if diff_time >= DATE_CRIT_OFFSET
         add_critical(component, msg)

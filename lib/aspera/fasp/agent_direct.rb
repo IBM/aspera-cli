@@ -42,7 +42,7 @@ module Aspera
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
           transfer_spec['tags']['aspera']['xfer_id'] ||= SecureRandom.uuid
-          Log.log.debug("xfer id=#{transfer_spec['xfer_id']}")
+          Log.log.debug{"xfer id=#{transfer_spec['xfer_id']}"}
           # TODO: useful ? node only ?
           transfer_spec['tags']['aspera']['xfer_retry'] ||= 3600
         end
@@ -66,7 +66,7 @@ module Aspera
           # Managed by multi-session, so delete from transfer spec
           transfer_spec.delete('multi_session')
           if multi_session_info[:count].negative?
-            Log.log.error("multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0")
+            Log.log.error{"multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0"}
             multi_session_info = nil
           elsif multi_session_info[:count].eql?(0)
             Log.log.debug('multi_session count is zero: no multisession')
@@ -131,7 +131,7 @@ module Aspera
 
         # add job to list of jobs
         @jobs[the_job_id] = xfer_job
-        Log.log.debug("jobs: #{@jobs.keys.count}")
+        Log.log.debug{"jobs: #{@jobs.keys.count}"}
 
         return the_job_id
       end # start_transfer
@@ -144,7 +144,7 @@ module Aspera
         result = []
         @jobs.each do |_id, job|
           job[:sessions].each do |session|
-            Log.log.debug("join #{session[:thread]}")
+            Log.log.debug{"join #{session[:thread]}"}
             session[:thread].join
             result.push(session[:error] || :success)
           end
@@ -174,7 +174,7 @@ module Aspera
         # by default we assume an exception will be raised (for ensure block)
         exception_raised = true
         begin
-          Log.log.debug("env_args=#{env_args.inspect}")
+          Log.log.debug{"env_args=#{env_args.inspect}"}
           # get location of ascp executable
           ascp_path = @mutex.synchronize do
             Fasp::Installation.instance.path(env_args[:ascp_version])
@@ -199,7 +199,7 @@ module Aspera
           # start process
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
-          Log.log.debug("before accept for pid (#{ascp_pid})")
+          Log.log.debug{"before accept for pid (#{ascp_pid})"}
           # init management socket
           ascp_mgt_io = nil
           Timeout.timeout(@options[:spawn_timeout_sec]) do
@@ -209,7 +209,7 @@ module Aspera
             # TODO: use same value as Encoding.default_external
             ascp_mgt_io.set_encoding(Encoding::UTF_8)
           end
-          Log.log.debug("after accept (#{ascp_mgt_io})")
+          Log.log.debug{"after accept (#{ascp_mgt_io})"}
           session[:io] = ascp_mgt_io
           # exact text for event, with \n
           current_event_text = ''
@@ -225,7 +225,7 @@ module Aspera
             break if line.nil?
             current_event_text += line
             line.chomp!
-            Log.log.debug("line=[#{line}]")
+            Log.log.debug{"line=[#{line}]"}
             case line
             when 'FASPMGR 2'
               # begin event
@@ -242,7 +242,7 @@ module Aspera
               case current_event_data['Type']
               when 'INIT'
                 session[:id] = current_event_data['SessionId']
-                Log.log.debug("session id: #{session[:id]}")
+                Log.log.debug{"session id: #{session[:id]}"}
               when 'DONE', 'ERROR'
                 # TODO: check if this is always the last event
                 last_status_event = current_event_data
@@ -258,7 +258,7 @@ module Aspera
               # all went well
               exception_raised = false
             when 'ERROR'
-              Log.log.error("code: #{last_status_event['Code']}")
+              Log.log.error{"code: #{last_status_event['Code']}"}
               if /bearer token/i.match?(last_status_event['Description'])
                 Log.log.error('need to regenerate token'.red)
                 if !@token_regenerator.nil?
@@ -269,7 +269,7 @@ module Aspera
               end
               # cannot resolve address
               #if last_status_event['Code'].to_i.eql?(14)
-              #  Log.log.warn("host: #{}")
+              #  Log.log.warn{"host: #{}"}
               #end
               raise Fasp::Error.new(last_status_event['Description'], last_status_event['Code'].to_i)
             else # case
@@ -316,7 +316,7 @@ module Aspera
         raise 'no such job' if job.nil?
         session = job[:sessions][session_index]
         raise 'no such session' if session.nil?
-        Log.log.debug("command: #{data}")
+        Log.log.debug{"command: #{data}"}
         # build command
         command = data.
           keys.
@@ -347,7 +347,7 @@ module Aspera
             @options[k] = v
           end
         end
-        Log.log.debug("local options= #{options}")
+        Log.log.debug{"local options= #{options}"}
         @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
         @token_regenerator = nil
       end
@@ -358,7 +358,7 @@ module Aspera
         begin
           # set name for logging
           Thread.current[:name] = 'transfer'
-          Log.log.debug("ENTER (#{Thread.current[:name]})")
+          Log.log.debug{"ENTER (#{Thread.current[:name]})"}
           # start transfer with selected resumer policy
           @resume_policy.execute_with_resume do
             start_transfer_with_args_env(session[:env_args], session)
@@ -366,9 +366,9 @@ module Aspera
           Log.log.debug('transfer ok'.bg_green)
         rescue StandardError => e
           session[:error] = e
-          Log.log.error("Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red) if Log.instance.level.eql?(:debug)
+          Log.log.error{"Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red} if Log.instance.level.eql?(:debug)
         end
-        Log.log.debug("EXIT (#{Thread.current[:name]})")
+        Log.log.debug{"EXIT (#{Thread.current[:name]})"}
       end
     end # AgentDirect
   end

@@ -21,13 +21,13 @@ module Aspera
         trynumber = 0
         begin
           connect_url = Installation.instance.connect_uri
-          Log.log.debug("found: #{connect_url}")
+          Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new({base_url: "#{connect_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
           cinfo = @connect_api.read('info/version')[:data]
           Log.dump(:connect_version, cinfo)
         rescue StandardError => e # Errno::ECONNREFUSED
           raise StandardError, "Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
-          Log.log.warn("connect is not started. Retry ##{trynumber}, err=#{e}")
+          Log.log.warn{"connect is not started. Retry ##{trynumber}, err=#{e}"}
           trynumber += 1
           if !OpenApplication.uri_graphical('fasp://initialize')
             OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
@@ -40,7 +40,7 @@ module Aspera
 
       def start_transfer(transfer_spec)
         if transfer_spec['direction'] == 'send'
-          Log.log.warn("Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red)
+          Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
           transfer_spec.delete('paths')
           resdata = @connect_api.create('windows/select-open-file-dialog/', {
             'aspera_connect_settings' => @connect_settings,

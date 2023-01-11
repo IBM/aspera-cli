@@ -42,7 +42,7 @@ module Aspera
           raise "unexpected command #{command_symb}" unless EXPERNAL_TOOLS.include?(command_symb)
           # build command line, and quote special characters
           command = command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
-          Log.log.debug("cmd=#{command}".blue)
+          Log.log.debug{"cmd=#{command}".blue}
           # capture3: only in ruby2+
           if Open3.respond_to?(:capture3)
             stdout, stderr, exit_status = Open3.capture3(command)
@@ -55,10 +55,10 @@ module Aspera
             raise "Error: #{command_symb} is not in the PATH"
           end
           unless exit_status.success?
-            Log.log.error("commandline: #{command}")
-            Log.log.error("Error code: #{exit_status}")
-            Log.log.error("stdout: #{stdout}")
-            Log.log.error("stderr: #{stderr}")
+            Log.log.error{"commandline: #{command}"}
+            Log.log.error{"Error code: #{exit_status}"}
+            Log.log.error{"stdout: #{stdout}"}
+            Log.log.error{"stderr: #{stderr}"}
             raise "#{command_symb} error #{exit_status}"
           end
           return {status: exit_status, stdout: stdout}

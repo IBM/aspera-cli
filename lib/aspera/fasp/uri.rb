@@ -40,10 +40,10 @@ module Aspera
           when 'fallback' then result_ts['http_fallback'] = CommandLineBuilder.yes_to_true(value)
           when 'lockpolicy' then result_ts['lock_rate_policy'] = CommandLineBuilder.yes_to_true(value)
           when 'lockminrate' then result_ts['lock_min_rate'] = CommandLineBuilder.yes_to_true(value)
-          when 'auth' then Log.log.debug("ignoring auth #{name}=#{value}") # TODO: translate into transfer spec ? yes/no
-          when 'v' then Log.log.debug("ignoring v #{name}=#{value}") # TODO: translate into transfer spec ? 2
-          when 'protect' then Log.log.debug("ignoring protect #{name}=#{value}") # TODO: translate into transfer spec ?
-          else Log.log.warn("URI parameter ignored: #{name} = #{value}")
+          when 'auth' then Log.log.debug{"ignoring auth #{name}=#{value}"} # TODO: translate into transfer spec ? yes/no
+          when 'v' then Log.log.debug{"ignoring v #{name}=#{value}"} # TODO: translate into transfer spec ? 2
+          when 'protect' then Log.log.debug{"ignoring protect #{name}=#{value}"} # TODO: translate into transfer spec ?
+          else Log.log.warn{"URI parameter ignored: #{name} = #{value}"}
           end
         end
         return result_ts

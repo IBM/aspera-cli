@@ -1438,7 +1438,7 @@ The vault is used with options `vault` and `vault_password`.
 
 `vault_password` specifies the password for the vault.
 Although it can be specified on command line, for security reason you can hide the value.
-For example it can be specified on command line like this:
+For example it can be securely specified on command line like this:
 
 ```bash
 export ASCLI_VAULT_PASSWORD

@@ -56,7 +56,7 @@ module Aspera
         # @param result [Hash] new hash flattened
         # @param prefix [String] true if last level is not
         def flattened_object(source, result: {}, prefix: '', expand_last: false)
-          Log.log.debug("(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-")
+          Log.log.debug{"(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-"}
           source.each do |k, v|
             if v.is_a?(Hash) && !(expand_last && simple_hash?(v))
               flattened_object(v, result: result, prefix: prefix + k.to_s + '.', expand_last: expand_last)

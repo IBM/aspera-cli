@@ -26,9 +26,9 @@ module Aspera
           when :start
             env_args = Aspera::Sync.new(options.get_option(:parameters, is_type: :mandatory)).compute_args
             async_bin = 'async'
-            Log.log.debug("execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_bin}\" \"#{env_args[:args].join('" "')}\"")
+            Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_bin}\" \"#{env_args[:args].join('" "')}\""}
             res = system(env_args[:env], [async_bin, async_bin], *env_args[:args])
-            Log.log.debug("result=#{res}")
+            Log.log.debug{"result=#{res}"}
             case res
             when true then return Main.result_success
             when false then raise "failed: #{$CHILD_STATUS}"
@@ -50,7 +50,7 @@ module Aspera
             case command2
             when :status
               stdout, stderr, status = Open3.capture3(*cmdline)
-              Log.log.debug("status=#{status}, stderr=#{stderr}")
+              Log.log.debug{"status=#{status}, stderr=#{stderr}"}
               items = stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */);m[i.first.lstrip] = i.last.lstrip;}
               return {type: :single_object, data: items}
             else raise 'error'

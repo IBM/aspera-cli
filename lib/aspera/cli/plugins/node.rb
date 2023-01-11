@@ -117,7 +117,7 @@ module Aspera
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result = success_msg
             if p.has_key?('error')
-              Log.log.error("#{p['error']['user_message']} : #{p['path']}")
+              Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
               result = 'ERROR: ' + p['error']['user_message']
             end
             resres[:data].push({type => p['path'], 'result' => result})

@@ -169,7 +169,7 @@ module Aspera
       def option_url_query(default)
         query = options.get_option(:query)
         query = default if query.nil?
-        Log.log.debug("Query=#{query}".bg_red)
+        Log.log.debug{"Query=#{query}".bg_red}
         begin
           # check it is suitable
           URI.encode_www_form(query) unless query.nil?

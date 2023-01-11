@@ -75,7 +75,7 @@ END_OF_JAVASCRIPT
       uri = URI.parse(service_url)
       simple_url = "#{uri.scheme}://#{uri.host}"
       if !@cache.has_key?(simple_url)
-        Log.log.debug("PAC: starting javascript for #{service_url}")
+        Log.log.debug{"PAC: starting javascript for #{service_url}"}
         # require at runtime, in case there is no js engine
         require 'execjs'
         # read template lib
@@ -84,7 +84,7 @@ END_OF_JAVASCRIPT
         js_to_execute = "#{pac_dns_functions(uri.host)}#{@pac_functions}#{@proxy_auto_config}"
         executable_js = ExecJS.compile(js_to_execute)
         @cache[simple_url] = executable_js.call(PAC_MAIN_FUNCTION, simple_url, uri.host)
-        Log.log.debug("PAC: result: #{@cache[simple_url]}")
+        Log.log.debug{"PAC: result: #{@cache[simple_url]}"}
       end
       return @cache[simple_url]
     end
@@ -97,7 +97,7 @@ END_OF_JAVASCRIPT
       # execute PAC script
       proxy_list_str = find_proxy_for_url(service_url)
       if !proxy_list_str.is_a?(String)
-        Log.log.warn("PAC: did not return a String, returned #{proxy_list_str.class}")
+        Log.log.warn{"PAC: did not return a String, returned #{proxy_list_str.class}"}
         return uri_list
       end
       proxy_list_str.strip!
@@ -121,15 +121,15 @@ END_OF_JAVASCRIPT
               uri.password=@proxy_pass
               uri_list.push(uri)
             else
-              Log.log.warn("PAC: PROXY must be <address>:<port>, ignoring #{addr_port}")
+              Log.log.warn{"PAC: PROXY must be <address>:<port>, ignoring #{addr_port}"}
             end
           rescue StandardError => e
-            Log.log.warn("PAC: cannot parse #{addr_port} #{e}")
+            Log.log.warn{"PAC: cannot parse #{addr_port} #{e}"}
           end
-        else Log.log.warn("PAC: ignoring proxy type #{parts.first}: not supported")
+        else Log.log.warn{"PAC: ignoring proxy type #{parts.first}: not supported"}
         end
       end
-      Log.log.debug("Proxies: #{uri_list}")
+      Log.log.debug{"Proxies: #{uri_list}"}
       return uri_list
     end
   end

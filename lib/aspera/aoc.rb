@@ -80,11 +80,11 @@ module Aspera
       def parse_url(aoc_org_url)
         uri = URI.parse(aoc_org_url.gsub(/\/+$/, ''))
         instance_fqdn = uri.host
-        Log.log.debug("instance_fqdn=#{instance_fqdn}")
+        Log.log.debug{"instance_fqdn=#{instance_fqdn}"}
         raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
         organization, instance_domain = instance_fqdn.split('.', 2)
-        Log.log.debug("instance_domain=#{instance_domain}")
-        Log.log.debug("organization=#{organization}")
+        Log.log.debug{"instance_domain=#{instance_domain}"}
+        Log.log.debug{"organization=#{organization}"}
         raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
         return organization, instance_domain
       end
@@ -131,13 +131,13 @@ module Aspera
             a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?
             return # SUCCESS
           end
-          Log.log.debug("no expected format: #{public_link_url}")
+          Log.log.debug{"no expected format: #{public_link_url}"}
           r = Net::HTTP.get_response(uri)
           # not a redirection
           raise ArgumentError, 'link option must be redirect or have token parameter' unless r.code.start_with?('3')
           public_link_url = r['location']
           raise 'no location in redirection' if public_link_url.nil?
-          Log.log.debug("redirect to: #{public_link_url}")
+          Log.log.debug{"redirect to: #{public_link_url}"}
         end # loop
         raise "exceeded max redirection: #{MAX_REDIRECT}"
       end
@@ -232,7 +232,7 @@ module Aspera
           begin
             read('self')[:data]
           rescue StandardError => e
-            Log.log.debug("ignoring error: #{e}")
+            Log.log.debug{"ignoring error: #{e}"}
             {}
           end
         USER_INFO_FIELDS_MIN.each{|f|@user_info[f] = 'unknown' if @user_info[f].nil?}

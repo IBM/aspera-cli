@@ -24,7 +24,7 @@ module Aspera
 
         class LocalExecutor
           def execute(cmd, _input=nil)
-            Log.log.debug("Executing: #{cmd}")
+            Log.log.debug{"Executing: #{cmd}"}
             %x(#{cmd.join(' ')})
           end
         end
@@ -46,10 +46,10 @@ module Aspera
         # also set transfer spec
         def executor(url, server_transfer_spec)
           server_uri = URI.parse(url)
-          Log.log.debug("URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}")
+          Log.log.debug{"URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}"}
           server_transfer_spec['remote_host']=server_uri.hostname
           unless URI_SCHEMES.include?(server_uri.scheme)
-            Log.log.warn("Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to ssh.")
+            Log.log.warn{"Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to ssh."}
             server_uri.scheme='ssh'
           end
           if server_uri.scheme.eql?('local')
@@ -66,13 +66,13 @@ module Aspera
             Log.log.warn('URL scheme is https but no (Basic) token was provided in transfer spec.')
             Log.log.warn('If you want to access the server, not using WSS for session, then use a URL with scheme "ssh" and proper SSH port')
             assumed_url="ssh://#{server_transfer_spec['remote_host']}:33001"
-            Log.log.warn("Assuming proper URL is: #{assumed_url}")
+            Log.log.warn{"Assuming proper URL is: #{assumed_url}"}
             server_uri = URI.parse(assumed_url)
           end
           # Scheme is SSH
           if options.get_option(:username).nil?
             options.set_option(:username, Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-            Log.log.info("No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}")
+            Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}"}
           end
           server_transfer_spec['remote_user'] = options.get_option(:username, is_type: :mandatory)
           ssh_options = options.get_option(:ssh_options)
@@ -94,12 +94,12 @@ module Aspera
             raise 'Expecting single value or array for ssh_keys' unless ssh_keys.is_a?(Array) || ssh_keys.is_a?(String)
             ssh_keys = [ssh_keys] if ssh_keys.is_a?(String)
             ssh_keys.map!{|p|File.expand_path(p)}
-            Log.log.debug("ssh keys=#{ssh_keys}")
+            Log.log.debug{"ssh keys=#{ssh_keys}"}
             if !ssh_keys.empty?
               ssh_options[:keys] = ssh_keys
               server_transfer_spec['EX_ssh_key_paths'] = ssh_keys
               ssh_keys.each do |k|
-                Log.log.warn("No such key file: #{k}") unless File.exist?(k)
+                Log.log.warn{"No such key file: #{k}"} unless File.exist?(k)
               end
               cred_set = true
             end

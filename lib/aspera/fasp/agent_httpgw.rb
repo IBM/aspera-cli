@@ -99,7 +99,7 @@ module Aspera
             begin
               frame << @ws_io.readuntil("\n")
               while (msg = frame.next)
-                Log.log.debug("ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}")
+                Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
                 message = msg.data
                 if message.eql?(MSG_END_UPLOAD)
                   shared_info[:end_uploads] += 1
@@ -122,7 +122,7 @@ module Aspera
               break
             end
           end
-          Log.log.debug("ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})")
+          Log.log.debug{"ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})"}
         end
         # notify progress bar
         notify_begin(session_id, total_size)
@@ -257,7 +257,7 @@ module Aspera
       private
 
       def initialize(opts)
-        Log.log.debug("local options= #{opts}")
+        Log.log.debug{"local options= #{opts}"}
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
         raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)

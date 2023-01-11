@@ -883,7 +883,7 @@ module Aspera
                 #TODO: not complete
                 wf_id = instance_identifier
                 wf_action_cmd = options.get_next_command(%i[list create show])
-                Log.log.warn("Not implemented: #{wf_action_cmd}")
+                Log.log.warn{"Not implemented: #{wf_action_cmd}"}
                 step = automation_api.create('steps', {'workflow_id' => wf_id})[:data]
                 automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
                 action = automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})[:data]

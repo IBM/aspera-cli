@@ -14,7 +14,7 @@ module Aspera
     # @param :format   Optional  dump method (default to JSON)
     # @param :merge    Optional  merge data from file to current data
     def initialize(options)
-      Log.log.debug("persistency: #{options}")
+      Log.log.debug{"persistency: #{options}"}
       raise 'options shall be Hash' unless options.is_a?(Hash)
       raise 'mandatory :manager' if options[:manager].nil?
       raise 'mandatory :data' if options[:data].nil?

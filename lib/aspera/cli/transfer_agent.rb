@@ -179,7 +179,7 @@ module Aspera
           @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
         else raise 'Unsupported src_type'
         end
-        Log.log.debug("paths=#{@transfer_paths}")
+        Log.log.debug{"paths=#{@transfer_paths}"}
         return @transfer_paths
       end
 
@@ -214,7 +214,7 @@ module Aspera
         transfer_spec.delete_if { |_key, value| value.nil? }
         # create transfer agent
         set_agent_by_options
-        Log.log.debug("transfer agent is a #{@agent.class}")
+        Log.log.debug{"transfer agent is a #{@agent.class}"}
         @agent.token_regenerator=@token_regenerator if @agent.respond_to?(:token_regenerator=)
         @agent.start_transfer(transfer_spec)
         # list of : :success or error message

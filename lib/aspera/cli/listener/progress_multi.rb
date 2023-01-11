@@ -47,7 +47,7 @@ module Aspera
               total:       nil)
           end
           if !data.has_key?(Fasp::AgentBase::LISTENER_SESSION_ID_S)
-            Log.log.error("Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}")
+            Log.log.error{"Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}"}
             return
           end
           newtitle = @sessions.length < 2 ? '' : "multi=#{@sessions.length}"
@@ -80,7 +80,7 @@ module Aspera
             update_progress
             update_total
           else
-            Log.log.debug("ignore: #{data['type']}")
+            Log.log.debug{"ignore: #{data['type']}"}
           end
         end
       end

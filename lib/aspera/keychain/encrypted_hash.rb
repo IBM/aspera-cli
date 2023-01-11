@@ -21,7 +21,7 @@ module Aspera
         key_bytes=CIPHER_NAME.split('-')[1].to_i/8
         # derive key from passphrase
         key="#{new_password}#{"\x0"*key_bytes}"[0..(key_bytes-1)]
-        Log.log.debug("key=[#{key}],#{key.length}")
+        Log.log.debug{"key=[#{key}],#{key.length}"}
         SymmetricEncryption.cipher=@cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME, key: key, encoding: :none)
       end
 

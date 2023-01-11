@@ -287,11 +287,11 @@ module Aspera
         detected_mime = MimeMagic.by_magic(File.open(filepath)).to_s
         # check extension only
         if !SUPPORTED_MIME_TYPES.has_key?(detected_mime)
-          Log.log.debug("no conversion for #{detected_mime}, trying extension")
+          Log.log.debug{"no conversion for #{detected_mime}, trying extension"}
           detected_mime = MimeMagic.by_extension(File.extname(filepath)).to_s
         end
         detected_mime = nil if detected_mime.empty?
-        Log.log.debug("mimemagic: #{detected_mime.class.name} [#{detected_mime}]")
+        Log.log.debug{"mimemagic: #{detected_mime.class.name} [#{detected_mime}]"}
         return detected_mime
       end
 
@@ -299,7 +299,7 @@ module Aspera
       # @param filepath [String] full path to file
       # @param mimetype [String] provided by node api
       def conversion_type(filepath, mimetype)
-        Log.log.debug("conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})")
+        Log.log.debug{"conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})"}
         # 1- get type from provided mime type, using local mapping
         conv_type = SUPPORTED_MIME_TYPES[mimetype] if !mimetype.nil?
         # 2- else, from computed mime type (if available)
@@ -312,7 +312,7 @@ module Aspera
                 Log.log.debug('matching mime type per magic number')
               else
                 # note: detected can be nil
-                Log.log.debug("non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]")
+                Log.log.debug{"non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]"}
               end
             end
           end
@@ -320,7 +320,7 @@ module Aspera
         # 3- else, from extensions, using local mapping
         extension = File.extname(filepath.downcase)[1..-1]
         conv_type = SUPPORTED_EXTENSIONS[extension] if conv_type.nil?
-        Log.log.debug("conversion_type(#{extension}): #{conv_type.class.name} [#{conv_type}]")
+        Log.log.debug{"conversion_type(#{extension}): #{conv_type.class.name} [#{conv_type}]"}
         return conv_type
       end
     end

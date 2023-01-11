@@ -37,7 +37,7 @@ module Aspera
 
         faspex_pkg_parameters = JSON.parse(request.body)
         faspex_pkg_delivery = faspex_pkg_parameters['delivery']
-        Log.log.debug("faspex pkg create parameters=#{faspex_pkg_parameters}")
+        Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
 
         # get recipient ids
         files_pkg_recipients = []
@@ -125,7 +125,7 @@ module Aspera
           'links'         => { 'status' => 'unused' },
           'xfer_sessions' => [faspex_transfer_spec]
         }
-        Log.log.info("faspex_package_create_result=#{faspex_package_create_result}")
+        Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
         response.status = 200
         response.content_type = 'application/json'
         response.body = JSON.generate(faspex_package_create_result)
@@ -162,7 +162,7 @@ module Aspera
         SSLEnable:   true,
         SSLCertName: [['CN', WEBrick::Utils.getservername]]
       }
-      Log.log.info("Server started on port #{webrick_options[:Port]}")
+      Log.log.info{"Server started on port #{webrick_options[:Port]}"}
       @server = WEBrick::HTTPServer.new(webrick_options)
       @server.mount('/aspera/faspex', FxGwServlet, a_aoc_api_user, a_workspace_id)
       @server.mount('/newuser', NewUserServlet)

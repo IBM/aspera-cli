@@ -102,7 +102,7 @@ module Aspera
           if http.respond_to?(method)
             http.send(method, v)
           else
-            Log.log.error("no such attribute: #{k}")
+            Log.log.error{"no such attribute: #{k}"}
           end
         end
       end
@@ -221,12 +221,12 @@ module Aspera
       # @param plugin_name_sym : symbol for plugin name
       def get_plugin_instance_with_options(plugin_name_sym, env=nil)
         env ||= @plugin_env
-        Log.log.debug("get_plugin_instance_with_options(#{plugin_name_sym})")
+        Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instanciation
         env[:config].add_plugin_default_preset(plugin_name_sym)
         command_plugin = Plugins::Config.plugin_class(plugin_name_sym).new(env)
-        Log.log.debug("got #{command_plugin.class}")
+        Log.log.debug{"got #{command_plugin.class}"}
         # TODO: check that ancestor is Plugin?
         return command_plugin
       end
@@ -323,11 +323,11 @@ module Aspera
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
-              Log.log.debug("Opening lock port #{lock_port.to_i}")
+              Log.log.debug{"Opening lock port #{lock_port.to_i}"}
               @tcp_server = TCPServer.new('127.0.0.1', lock_port.to_i)
             rescue StandardError => e
               execute_command = false
-              Log.log.warn("Another instance is already running (#{e.message}).")
+              Log.log.warn{"Another instance is already running (#{e.message})."}
             end
           end
           # execute and display (if not exclusive execution)

@@ -84,7 +84,7 @@ module Aspera
         end
         resp = node_api_.create('ops/transfers', transfer_spec)[:data]
         @transfer_id = resp['id']
-        Log.log.debug("tr_id=#{@transfer_id}")
+        Log.log.debug{"tr_id=#{@transfer_id}"}
         return @transfer_id
       end
 
@@ -118,7 +118,7 @@ module Aspera
               notify_progress(@transfer_id, trdata['bytes_transferred'])
             end
           else
-            Log.log.warn("trdata -> #{trdata}")
+            Log.log.warn{"trdata -> #{trdata}"}
             raise Fasp::Error, "#{trdata['status']}: #{trdata['error_desc']}"
           end
           sleep(1)

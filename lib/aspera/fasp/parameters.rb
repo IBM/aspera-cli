@@ -112,7 +112,7 @@ module Aspera
         @job_spec = job_spec
         @options = options
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
-        Log.log.debug("agent options: #{@options}")
+        Log.log.debug{"agent options: #{@options}"}
       end
 
       # translate transfer spec to env vars and command line arguments for ascp

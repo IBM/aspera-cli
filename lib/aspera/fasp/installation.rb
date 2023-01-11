@@ -87,7 +87,7 @@ module Aspera
           raise "no such product installed: #{product_name}" if pl.nil?
         end
         self.ascp_path = pl[:ascp_path]
-        Log.log.debug("ascp_path=#{@path_to_ascp}")
+        Log.log.debug{"ascp_path=#{@path_to_ascp}"}
       end
 
       # @return the list of installed products in format of product_locations
@@ -104,7 +104,7 @@ module Aspera
           @found_products = scan_locations.select! do |item|
             # skip if not main folder
             next false unless Dir.exist?(item[:app_root])
-            Log.log.debug("Found #{item[:app_root]}")
+            Log.log.debug{"Found #{item[:app_root]}"}
             sub_bin = item[:sub_bin] || BIN_SUBFOLDER
             item[:ascp_path] = File.join(item[:app_root], sub_bin, ascp_filename)
             # skip if no ascp
@@ -185,7 +185,7 @@ module Aspera
         folder = File.join(connect[:run_root], VARRUN_SUBFOLDER)
         ['', 's'].each do |ext|
           uri_file = File.join(folder, "http#{ext}.uri")
-          Log.log.debug("checking connect port file: #{uri_file}")
+          Log.log.debug{"checking connect port file: #{uri_file}"}
           if File.exist?(uri_file)
             return File.open(uri_file, &:gets).strip
           end
@@ -273,7 +273,7 @@ module Aspera
         Environment.restrict_file_access(ascp_path.gsub('ascp', 'ascp4'), mode: 0o755)
         ascp_version = get_ascp_version(File.join(sdk_folder, ascp_filename))
         trd_path = transferd_filepath
-        Log.log.warn("No #{trd_path} in SDK archive") unless File.exist?(trd_path)
+        Log.log.warn{"No #{trd_path} in SDK archive"} unless File.exist?(trd_path)
         Environment.restrict_file_access(trd_path, mode: 0o755) if File.exist?(trd_path)
         transferd_version = get_exe_version(trd_path, 'version')
         sdk_version = transferd_version || ascp_version

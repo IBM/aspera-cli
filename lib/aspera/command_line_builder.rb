@@ -62,13 +62,13 @@ module Aspera
 
     def warn_unrecognized_params
       # warn about non translated arguments
-      @param_hash.each_pair{|key, val|Log.log.warn("unrecognized parameter: #{key} = \"#{val}\"") if !@used_param_names.include?(key)}
+      @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
     end
 
     # adds keys :env :args with resulting values after processing
     # warns if some parameters were not used
     def add_env_args(env, args)
-      Log.log.debug("ENV=#{@result_env}, ARGS=#{@result_args}")
+      Log.log.debug{"ENV=#{@result_env}, ARGS=#{@result_args}"}
       warn_unrecognized_params
       env.merge!(@result_env)
       args.push(*@result_args)
@@ -95,7 +95,7 @@ module Aspera
       options = @params_definition[param_name]
       # should not happen
       if options.nil?
-        Log.log.warn("Unknown parameter #{param_name}")
+        Log.log.warn{"Unknown parameter #{param_name}"}
         return
       end
       action = options[:cltype] if action.nil?
@@ -166,7 +166,7 @@ module Aspera
         # if transfer_spec value is an array, applies option many times
         parameter_value.each{|v|add_command_line_options([options[:clswitch], v])}
       when NilClass
-        Log.log.debug("Ignoring parameter: #{param_name}")
+        Log.log.debug{"Ignoring parameter: #{param_name}"}
       else
         raise "ERROR: unknown action: #{action}/#{action.class}"
       end

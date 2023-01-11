@@ -14,7 +14,7 @@ module Aspera
     end
 
     def service(request, response)
-      Log.log.debug("received request from browser #{request.request_method} #{request.path}")
+      Log.log.debug{"received request from browser #{request.request_method} #{request.path}"}
       raise WEBrick::HTTPStatus::MethodNotAllowed, "unexpected method: #{request.request_method}" unless request.request_method.eql?('GET')
       raise WEBrick::HTTPStatus::NotFound, "unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
       # acquire lock and signal change

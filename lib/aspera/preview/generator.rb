@@ -49,7 +49,7 @@ module Aspera
             name = "#{name}_using_#{@options.video_png_conv}"
           end
         end
-        Log.log.debug("method: #{name}")
+        Log.log.debug{"method: #{name}"}
         return name.to_sym
       end
 
@@ -64,16 +64,16 @@ module Aspera
       def generate
         raise 'could not detect type of file' if @conversion_type.nil?
         method_symb = processing_method_symb
-        Log.log.info("#{@source_file_path}->#{@destination_file_path} (#{method_symb})")
+        Log.log.info{"#{@source_file_path}->#{@destination_file_path} (#{method_symb})"}
         begin
           send(method_symb)
           # check that generated size does not exceed maximum
           result_size = File.size(@destination_file_path)
           if result_size > @options.max_size
-            Log.log.warn("preview size exceeds maximum #{result_size} > #{@options.max_size}")
+            Log.log.warn{"preview size exceeds maximum #{result_size} > #{@options.max_size}"}
           end
         rescue StandardError => e
-          Log.log.error("Ignoging: #{e.message}")
+          Log.log.error{"Ignoging: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
           FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
         ensure

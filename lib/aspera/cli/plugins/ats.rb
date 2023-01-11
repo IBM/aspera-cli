@@ -55,7 +55,7 @@ module Aspera
               server_data = server_by_cloud_region
               params['transfer_server_id'] = server_data['id']
             end
-            Log.log.debug("using params: #{params}".bg_red.gray)
+            Log.log.debug{"using params: #{params}".bg_red.gray}
             if params.has_key?('storage')
               case params['storage']['type']
               # here we need somehow to map storage type to field to get for auth end point
@@ -173,20 +173,18 @@ module Aspera
           rest_add_header = {}
           if !command.eql?(:instances)
             instance = options.get_option(:instance)
-            #Log.log.error("1>>#{instance}".red)
             if instance.nil?
               # Take the first Aspera on Cloud transfer service instance ID if not provided by user
               instance = ats_api_v2_auth_ibm.read('instances')[:data]['data'].first
               self.format.display_status("using first instance: #{instance}")
             end
-            #Log.log.error("2>>#{instance}".red)
             rest_add_header = {'X-ATS-Service-Instance-Id' => instance}
           end
           ats_ibm_api = ats_api_v2_auth_ibm(rest_add_header)
           case command
           when :instances
             instances = ats_ibm_api.read('instances')[:data]
-            Log.log.warn("more instances remaining: #{instances['remaining']}") unless instances['remaining'].to_i.eql?(0)
+            Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
             return {type: :value_list, data: instances['data'], name: 'instance'}
           when :create
             create_value = options.get_option(:value) || {}

@@ -20,9 +20,9 @@ Aspera::Log.instance.level = :debug
 Aspera::Fasp::Installation.instance.folder = tmpdir
 
 if !ARGV.length.eql?(3)
-  Aspera::Log.log.error("Wrong number of args: #{ARGV.length}")
-  Aspera::Log.log.error("Usage: #{$PROGRAM_NAME} <faspex URL> <faspex username> <faspex password>")
-  Aspera::Log.log.error("Example: #{$PROGRAM_NAME} https://faspex.com/aspera/faspex john p@sSw0rd")
+  Aspera::Log.log.error{"Wrong number of args: #{ARGV.length}"}
+  Aspera::Log.log.error{"Usage: #{$PROGRAM_NAME} <faspex URL> <faspex username> <faspex password>"}
+  Aspera::Log.log.error{"Example: #{$PROGRAM_NAME} https://faspex.com/aspera/faspex john p@sSw0rd"}
   Process.exit(1)
 end
 
@@ -74,7 +74,7 @@ Aspera::Log.dump('job_id', job_id)
 result = transfer_client.wait_for_transfers_completion
 #  notify of any transfer error
 result.reject{|i|i.eql?(:success)}.each do |e|
-  Aspera::Log.log.error("A transfer error occurred: #{e.message}")
+  Aspera::Log.log.error{"A transfer error occurred: #{e.message}"}
 end
 
 # 3: Faspex 4 API v4

@@ -64,7 +64,7 @@ module Aspera
     def node_id_to_node(node_id)
       return self if !@app_info.nil? && @app_info[:node_info]['id'].eql?(node_id)
       return @app_info[:api].node_id_to_api(node_id) unless @app_info.nil?
-      Log.log.warn("cannot resolve link with node id #{node_id}")
+      Log.log.warn{"cannot resolve link with node id #{node_id}"}
       return nil
     end
 
@@ -81,19 +81,19 @@ module Aspera
       Log.dump(:folders_to_explore, folders_to_explore)
       while !folders_to_explore.empty?
         current_item = folders_to_explore.shift
-        Log.log.debug("searching #{current_item[:relpath]}".bg_green)
+        Log.log.debug{"searching #{current_item[:relpath]}".bg_green}
         # get folder content
         folder_contents =
           begin
             read("files/#{current_item[:id]}/files")[:data]
           rescue StandardError => e
-            Log.log.warn("#{current_item[:relpath]}: #{e.class} #{e.message}")
+            Log.log.warn{"#{current_item[:relpath]}: #{e.class} #{e.message}"}
             []
           end
         Log.dump(:folder_contents, folder_contents)
         folder_contents.each do |entry|
           relative_path = File.join(current_item[:relpath], entry['name'])
-          Log.log.debug("looking #{relative_path}".bg_green)
+          Log.log.debug{"looking #{relative_path}".bg_green}
           # continue only if method returns true
           next unless send(method, entry, relative_path, state)
           # entry type is file, folder or link
@@ -140,7 +140,7 @@ module Aspera
           return false
         end
       else
-        Log.log.warn("Unknown element type: #{entry['type']}")
+        Log.log.warn{"Unknown element type: #{entry['type']}"}
       end
       # continue to dig folder
       return true
@@ -170,14 +170,14 @@ module Aspera
           other_node.process_folder_tree(state: state, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path)
         end
       rescue StandardError => e
-        Log.log.error("#{path}: #{e.message}")
+        Log.log.error{"#{path}: #{e.message}"}
       end
       # process all folders
       return true
     end
 
     def find_files(top_file_id, test_block)
-      Log.log.debug("find_files: fileid=#{top_file_id}")
+      Log.log.debug{"find_files: fileid=#{top_file_id}"}
       find_state = {found: [], test_block: test_block}
       process_folder_tree(state: find_state, method: :process_find_files, top_file_id: top_file_id)
       return find_state[:found]
@@ -240,8 +240,8 @@ module Aspera
 
     # set basic token in transfer spec
     def ts_basic_token(ts)
-      Log.log.warn("Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, "\
-        "but have #{ts['remote_user']}") unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+      Log.log.warn{"Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}"} \
+        unless ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
       raise 'ERROR: no secret in node object' unless params[:auth][:password]
       ts['token'] = Rest.basic_creds(params[:auth][:username], params[:auth][:password])
     end

@@ -67,7 +67,7 @@ module Aspera
       # add a new :reader or :decoder
       # decoder can be chained, reader is last one on right
       def set_handler(name, type, method)
-        Log.log.debug("setting #{type} handler for #{name}")
+        Log.log.debug{"setting #{type} handler for #{name}"}
         raise 'name must be Symbol' unless name.is_a?(Symbol)
         raise "type #{type} must be one of #{@handlers.keys}" unless @handlers.key?(type)
         @handlers[type][name] = method

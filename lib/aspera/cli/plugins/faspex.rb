@@ -164,7 +164,7 @@ module Aspera
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
             Log.dump(:box_data, box_data)
             items = box_data.has_key?('entry') ? box_data['entry'] : []
-            Log.log.debug("new items: #{items.count}")
+            Log.log.debug{"new items: #{items.count}"}
             # it is the end if page is empty
             break if items.empty?
             stop_condition = false
@@ -185,20 +185,20 @@ module Aspera
             end
             break if stop_condition
             #result.push({PACKAGE_MATCH_FIELD=>'======'})
-            Log.log.debug("total items: #{result.count}")
+            Log.log.debug{"total items: #{result.count}"}
             # reach the limit ?
             if !max_items.nil? && (result.count >= max_items)
               result = result.slice(0, max_items) if result.count > max_items
               break
             end
             link = box_data['link'].find{|i|i['rel'].eql?('next')}
-            Log.log.debug("link: #{link}")
+            Log.log.debug{"link: #{link}"}
             # no next link
             break if link.nil?
             # replace parameters with the ones from next link
             params = CGI.parse(URI.parse(link['href']).query)
             mailbox_query = params.keys.each_with_object({}){|i, m|;m[i] = params[i].first;}
-            Log.log.debug("query: #{mailbox_query}")
+            Log.log.debug{"query: #{mailbox_query}"}
             break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end
           return result
@@ -424,7 +424,7 @@ module Aspera
                 raise CliError, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info = source_hash[source_name]
-              Log.log.debug("source_info: #{source_info}")
+              Log.log.debug{"source_info: #{source_info}"}
               command_node = options.get_next_command(%i[info node])
               case command_node
               when :info
@@ -432,7 +432,7 @@ module Aspera
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
                 raise CliError, "bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
-                Log.log.debug("node=#{node_config}")
+                Log.log.debug{"node=#{node_config}"}
                 api_node = Rest.new({
                   base_url: node_config['url'],
                   auth:     {
@@ -489,7 +489,7 @@ module Aspera
                 u['email'] = email['value'] unless email.nil?
               end
               if u['email'].nil?
-                Log.log.warn("Skip user without email: #{u}")
+                Log.log.warn{"Skip user without email: #{u}"}
                 next
               end
               u['first_name'], u['last_name'] = u['displayName'].split(' ', 2)

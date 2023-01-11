@@ -114,7 +114,7 @@ module Aspera
             @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym, v])
           end
         end
-        Log.log.debug("env=#{@unprocessed_env}".red)
+        Log.log.debug{"env=#{@unprocessed_env}".red}
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
         # argv is nil when help is generated for every plugin
@@ -141,7 +141,7 @@ module Aspera
           end
         end
         @initial_cli_options = @unprocessed_cmd_line_options.dup
-        Log.log.debug("add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red)
+        Log.log.debug{"add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
 
       def get_next_command(command_list); return get_next_argument('command', expected: command_list); end
@@ -177,14 +177,14 @@ module Aspera
           # no value provided
           result = get_interactive(:argument, descr, expected: expected)
         end
-        Log.log.debug("#{descr}=#{result}")
+        Log.log.debug{"#{descr}=#{result}"}
         raise "argument shall be #{type.name}" unless type.nil? || result.is_a?(type)
         return result
       end
 
       # declare option of type :accessor, or :value
       def declare_option(option_symbol, type)
-        Log.log.debug("declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green)
+        Log.log.debug{"declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green}
         if @declared_options.has_key?(option_symbol)
           raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" \
           unless @declared_options[option_symbol][:type].eql?(:accessor)
@@ -197,7 +197,7 @@ module Aspera
 
       # define option with handler
       def set_obj_attr(option_symbol, object, attr_symb, default_value=nil)
-        Log.log.debug("set attr obj #{option_symbol} (#{object},#{attr_symb})")
+        Log.log.debug{"set attr obj #{option_symbol} (#{object},#{attr_symb})"}
         declare_option(option_symbol, :accessor)
         @declared_options[option_symbol][:accessor] = AttrAccessor.new(object, attr_symb)
         set_option(option_symbol, default_value, 'default obj attr') if !default_value.nil?
@@ -206,13 +206,13 @@ module Aspera
       # set an option value by name, either store value or call handler
       def set_option(option_symbol, value, where='default')
         if !@declared_options.has_key?(option_symbol)
-          Log.log.debug("set unknown option: #{option_symbol}")
+          Log.log.debug{"set unknown option: #{option_symbol}"}
           raise 'ERROR: cannot set undeclared option'
           #declare_option(option_symbol)
         end
         value = ExtendedValue.instance.evaluate(value)
         value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug("(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}")
+        Log.log.debug{"(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}"}
         case @declared_options[option_symbol][:type]
         when :accessor
           @declared_options[option_symbol][:accessor].value = value
@@ -237,11 +237,11 @@ module Aspera
           else
             raise 'unknown type'
           end
-          Log.log.debug("(#{@declared_options[option_symbol][:type]}) get #{option_symbol}=#{result}")
+          Log.log.debug{"(#{@declared_options[option_symbol][:type]}) get #{option_symbol}=#{result}"}
         end
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && is_type.eql?(:mandatory) && !@fail_on_missing_mandatory
-        #Log.log.debug("interactive=#{@ask_missing_mandatory}")
+        #Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory
             raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
@@ -261,7 +261,7 @@ module Aspera
 
       # param must be hash
       def add_option_preset(preset_hash, op: :push)
-        Log.log.debug("add_option_preset=#{preset_hash}")
+        Log.log.debug{"add_option_preset=#{preset_hash}"}
         raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
         # incremental override
         preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}
@@ -270,7 +270,7 @@ module Aspera
       # define an option with restricted values
       def add_opt_list(option_symbol, values, help, *on_args)
         declare_option(option_symbol, :value)
-        Log.log.debug("add_opt_list #{option_symbol}")
+        Log.log.debug{"add_opt_list #{option_symbol}"}
         on_args.unshift(symbol_to_option(option_symbol, 'ENUM'))
         # this option value must be a symbol
         @declared_options[option_symbol][:values] = values
@@ -281,7 +281,7 @@ module Aspera
         end
         on_args.push(values)
         on_args.push("#{help}: #{help_values}")
-        Log.log.debug("on_args=#{on_args}")
+        Log.log.debug{"on_args=#{on_args}"}
         @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, help, values), 'cmdline')}
       end
 
@@ -295,18 +295,18 @@ module Aspera
       # define an option with open values
       def add_opt_simple(option_symbol, *on_args)
         declare_option(option_symbol, :value)
-        Log.log.debug("add_opt_simple #{option_symbol}")
+        Log.log.debug{"add_opt_simple #{option_symbol}"}
         on_args.unshift(symbol_to_option(option_symbol, 'VALUE'))
-        Log.log.debug("on_args=#{on_args}")
+        Log.log.debug{"on_args=#{on_args}"}
         @parser.on(*on_args) { |v| set_option(option_symbol, v, 'cmdline') }
       end
 
       # define an option with date format
       def add_opt_date(option_symbol, *on_args)
         declare_option(option_symbol, :value)
-        Log.log.debug("add_opt_date #{option_symbol}")
+        Log.log.debug{"add_opt_date #{option_symbol}"}
         on_args.unshift(symbol_to_option(option_symbol, 'DATE'))
-        Log.log.debug("on_args=#{on_args}")
+        Log.log.debug{"on_args=#{on_args}"}
         @parser.on(*on_args) do |v|
           case v
           when 'now' then set_option(option_symbol, Manager.time_to_string(Time.now), 'cmdline')
@@ -318,9 +318,9 @@ module Aspera
 
       # define an option without value
       def add_opt_switch(option_symbol, *on_args, &block)
-        Log.log.debug("add_opt_on #{option_symbol}")
+        Log.log.debug{"add_opt_on #{option_symbol}"}
         on_args.unshift(symbol_to_option(option_symbol, nil))
-        Log.log.debug("on_args=#{on_args}")
+        Log.log.debug{"on_args=#{on_args}"}
         @parser.on(*on_args, &block)
       end
 
@@ -349,7 +349,7 @@ module Aspera
             value = Regexp.last_match(2)
             name.gsub!(OPTION_SEP_LINE, OPTION_SEP_NAME)
             value = ExtendedValue.instance.evaluate(value)
-            Log.log.debug("option #{name}=#{value}")
+            Log.log.debug{"option #{name}=#{value}"}
             result[name] = value
             @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining
           else
@@ -383,12 +383,12 @@ module Aspera
           @parser.parse!(@unprocessed_cmd_line_options)
           Log.log.debug('After parse'.red)
         rescue OptionParser::InvalidOption => e
-          Log.log.debug("InvalidOption #{e}".red)
+          Log.log.debug{"InvalidOption #{e}".red}
           # save for later processing
           unknown_options.push(e.args.first)
           retry
         end
-        Log.log.debug("remains: #{unknown_options}")
+        Log.log.debug{"remains: #{unknown_options}"}
         # set unprocessed options for next time
         @unprocessed_cmd_line_options = unknown_options
       end

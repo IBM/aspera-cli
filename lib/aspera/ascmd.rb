@@ -116,7 +116,7 @@ module Aspera
         indent_level = (indent_level || -1) + 1
         type_descr = TYPES_DESCR[type_name]
         raise "Unexpected type #{type_name}" if type_descr.nil?
-        Log.log.debug("#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red)
+        Log.log.debug{"#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red}
         result = nil
         case type_descr[:decode]
         when :base
@@ -124,7 +124,7 @@ module Aspera
           raise 'ERROR:not enough bytes' if buffer.length < num_bytes
           byte_array = buffer.shift(num_bytes);byte_array = [byte_array] unless byte_array.is_a?(Array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
-          Log.log.debug("#{'   .' * indent_level}-> base:#{byte_array} -> #{result}")
+          Log.log.debug{"#{'   .' * indent_level}-> base:#{byte_array} -> #{result}"}
           result = Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list
           result = []
@@ -134,7 +134,7 @@ module Aspera
             raise 'ERROR:not enough bytes' if buffer.length < length
             value = buffer.shift(length)
             result.push({btype: btype, buffer: value})
-            Log.log.debug("#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}")
+            Log.log.debug{"#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}"}
           end
         when :field_list
           # by default the result is one struct
@@ -143,7 +143,7 @@ module Aspera
           parse(buffer, :blist, indent_level).each do |typed_buffer|
             # what type of field is it ?
             field_info = field_description(type_name, typed_buffer)
-            Log.log.debug("#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green)
+            Log.log.debug{"#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green}
             case field_info[:special]
             when nil
               result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)

@@ -126,7 +126,7 @@ module Aspera
         "#{oauth.api[:base_url]}/#{oauth.sparams[:path_authorize]}",
         oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.sparams[:redirect_uri], state: random_state))
       # here, we need a human to authorize on a web page
-      Log.log.info("login_page_url=#{login_page_url}".bg_red.gray)
+      Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
       # start a web server to receive request code
       webserver = WebAuth.new(oauth.sparams[:redirect_uri])
       # start browser on login page
@@ -149,7 +149,7 @@ module Aspera
       # https://tools.ietf.org/html/rfc7519
       require 'jwt'
       seconds_since_epoch = Time.new.to_i
-      Log.log.info("seconds=#{seconds_since_epoch}")
+      Log.log.info{"seconds=#{seconds_since_epoch}"}
       raise 'missing JWT payload' unless oauth.sparams[:payload].is_a?(Hash)
       jwt_payload = {
         exp: seconds_since_epoch + JWT_EXPIRY_OFFSET_SEC, # expiration time
@@ -157,11 +157,11 @@ module Aspera
         iat: seconds_since_epoch, # issued at
         jti: SecureRandom.uuid # JWT id
       }.merge(oauth.sparams[:payload])
-      Log.log.debug("JWT jwt_payload=[#{jwt_payload}]")
+      Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}
       rsa_private = oauth.sparams[:private_key_obj] # type: OpenSSL::PKey::RSA
-      Log.log.debug("private=[#{rsa_private}]")
+      Log.log.debug{"private=[#{rsa_private}]"}
       assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.sparams[:headers] || {})
-      Log.log.debug("assertion=[#{assertion}]")
+      Log.log.debug{"assertion=[#{assertion}]"}
       return oauth.create_token(oauth.optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
     }, lambda { |oauth|
       return [oauth.sparams.dig(:payload, :sub)]
@@ -187,7 +187,7 @@ module Aspera
     # :web:path_authorize  [D] for type :web
     # :generic             [M] for type :generic
     def initialize(a_params)
-      Log.log.debug("auth=#{a_params}")
+      Log.log.debug{"auth=#{a_params}"}
       # replace default values
       @gparams = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       # check that type is known
@@ -263,7 +263,7 @@ module Aspera
             end
           # force refresh if we see a token too close from expiration
           use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < TOKEN_EXPIRATION_GUARD_SEC
-          Log.log.debug("Expiration: #{expires_at_sec} / #{use_refresh_token}")
+          Log.log.debug{"Expiration: #{expires_at_sec} / #{use_refresh_token}"}
         end
       end
 
@@ -278,7 +278,7 @@ module Aspera
         token_data = nil
         # lets try the existing refresh token
         if !refresh_token.nil?
-          Log.log.info("refresh=[#{refresh_token}]".bg_green)
+          Log.log.info{"refresh=[#{refresh_token}]".bg_green}
           # try to refresh
           # note: AoC admin token has no refresh, and lives by default 1800secs
           resp = create_token(optional_scope_client_id.merge(grant_type: 'refresh_token', refresh_token: refresh_token))
@@ -288,7 +288,7 @@ module Aspera
             token_data = JSON.parse(json_data)
             self.class.persist_mgr.put(token_id, json_data)
           else
-            Log.log.debug("refresh failed: #{resp[:http].body}".bg_red)
+            Log.log.debug{"refresh failed: #{resp[:http].body}".bg_red}
           end
         end
       end

@@ -51,9 +51,9 @@ module Aspera
               cmd.push(v.shellescape) unless v.empty?
             end
             cmd.push(lastopt) unless lastopt.nil?
-            Log.log.debug("executing>>#{cmd.join(' ')}")
+            Log.log.debug{"executing>>#{cmd.join(' ')}"}
             result=%x(#{cmd.join(' ')} 2>&1)
-            Log.log.debug("result>>[#{result}]")
+            Log.log.debug{"result>>[#{result}]"}
             return result
           end
 

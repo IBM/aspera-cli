@@ -22,7 +22,7 @@ module Aspera
           raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
           options[k] = v
         end
-        Log.log.debug("options= #{options}")
+        Log.log.debug{"options= #{options}"}
         super()
         # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
@@ -30,7 +30,7 @@ module Aspera
         @transfer_client = Transfersdk::TransferService::Stub.new("#{options[:address]}:#{options[:port]}", :this_channel_is_insecure)
         begin
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
-          Log.log.debug("daemon info: #{get_info_response}")
+          Log.log.debug{"daemon info: #{get_info_response}"}
         rescue GRPC::Unavailable
           Log.log.warn('no daemon present, starting daemon...')
           # location of daemon binary
@@ -66,9 +66,9 @@ module Aspera
           transferSpec: transfer_spec.to_json) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_transfer_response = @transfer_client.start_transfer(transfer_request)
-        Log.log.debug("start transfer response #{start_transfer_response}")
+        Log.log.debug{"start transfer response #{start_transfer_response}"}
         @transfer_id = start_transfer_response.transferId
-        Log.log.debug("transfer started with id #{@transfer_id}")
+        Log.log.debug{"transfer started with id #{@transfer_id}"}
       end
 
       def wait_for_transfers_completion
@@ -76,7 +76,7 @@ module Aspera
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
           Log.dump(:response, response.to_h)
-          #Log.log.debug("#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}")
+          #Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status
           when :RUNNING
             if !started && !response.sessionInfo.preTransferBytes.eql?(0)
@@ -92,7 +92,7 @@ module Aspera
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
             # ignore
           else
-            Log.log.error("unknown status#{response.status}")
+            Log.log.error{"unknown status#{response.status}"}
           end
         end
         # TODO return status
