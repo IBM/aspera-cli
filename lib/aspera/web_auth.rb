@@ -30,7 +30,7 @@ module Aspera
   end # WebAuthServlet
 
   # generates and adds self signed cert to provided webrick options
-  #def fill_self_signed_cert(cert,key)
+  # def fill_self_signed_cert(cert,key)
   #  cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
   #  cert.not_before = Time.now
   #  cert.not_after = Time.now + 365 * 24 * 60 * 60
@@ -47,12 +47,13 @@ module Aspera
   #  ]
   #  cert.add_extension(ef.create_extension('authorityKeyIdentifier','keyid:always,issuer:always'))
   #  cert.sign(key, OpenSSL::Digest::SHA256.new)
-  #end
+  # end
 
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth
     attr_reader :expected_path, :mutex, :cond
     attr_writer :query
+
     # @param endpoint_url [String] e.g. 'https://127.0.0.1:12345'
     def initialize(endpoint_url)
       uri = URI.parse(endpoint_url)
@@ -76,12 +77,12 @@ module Aspera
         # a- automatic certificate generation
         webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
         # b- generate self signed cert
-        #webrick_options[:SSLPrivateKey]   = OpenSSL::PKey::RSA.new(4096)
-        #webrick_options[:SSLCertificate]  = OpenSSL::X509::Certificate.new
-        #self.class.fill_self_signed_cert(webrick_options[:SSLCertificate],webrick_options[:SSLPrivateKey])
+        # webrick_options[:SSLPrivateKey]   = OpenSSL::PKey::RSA.new(4096)
+        # webrick_options[:SSLCertificate]  = OpenSSL::X509::Certificate.new
+        # self.class.fill_self_signed_cert(webrick_options[:SSLCertificate],webrick_options[:SSLPrivateKey])
         ## c- good cert
-        #webrick_options[:SSLPrivateKey]  = OpenSSL::PKey::RSA.new(File.read('.../myserver.key'))
-        #webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('.../myserver.crt'))
+        # webrick_options[:SSLPrivateKey]  = OpenSSL::PKey::RSA.new(File.read('.../myserver.key'))
+        # webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read('.../myserver.crt'))
       end
       # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { @server = WEBrick::HTTPServer.new(webrick_options) }

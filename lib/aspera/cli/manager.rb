@@ -23,8 +23,8 @@ module Aspera
 
     # option is retrieved from another object using accessor
     class AttrAccessor
-      #attr_accessor :object
-      #attr_accessor :attr_symb
+      # attr_accessor :object
+      # attr_accessor :attr_symb
       def initialize(object, attr_symb)
         @object = object
         @attr_symb = attr_symb
@@ -104,7 +104,7 @@ module Aspera
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults = []
         @unprocessed_env = []
-        # Note: was initially inherited but it is prefered to have specific methods
+        # NOTE: was initially inherited but it is prefered to have specific methods
         @parser = OptionParser.new
         @parser.program_name = program_name
         # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
@@ -127,7 +127,7 @@ module Aspera
           add_opt_boolean(:ask_options, 'ask even optional options')
           parse_options!
           process_options = true
-          while !argv.empty?
+          until argv.empty?
             value = argv.shift
             if process_options && value.start_with?('-')
               if value.eql?('--')
@@ -156,7 +156,7 @@ module Aspera
       def get_next_argument(descr, expected: :single, mandatory: true, type: nil)
         unless type.nil?
           raise 'internal: type must be a Class' unless type.is_a?(Class)
-          descr="#{descr} (#{type})"
+          descr = "#{descr} (#{type})"
         end
         result = nil
         if !@unprocessed_cmd_line_arguments.empty?
@@ -184,8 +184,8 @@ module Aspera
 
       # declare option of type :accessor, or :value
       def declare_option(option_symbol, type)
-        Log.log.debug{"declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.has_key?(option_symbol)}".green}
-        if @declared_options.has_key?(option_symbol)
+        Log.log.debug{"declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.key?(option_symbol)}".green}
+        if @declared_options.key?(option_symbol)
           raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" \
           unless @declared_options[option_symbol][:type].eql?(:accessor)
           return
@@ -205,10 +205,10 @@ module Aspera
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol, value, where='default')
-        if !@declared_options.has_key?(option_symbol)
+        if !@declared_options.key?(option_symbol)
           Log.log.debug{"set unknown option: #{option_symbol}"}
           raise 'ERROR: cannot set undeclared option'
-          #declare_option(option_symbol)
+          # declare_option(option_symbol)
         end
         value = ExtendedValue.instance.evaluate(value)
         value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
@@ -228,7 +228,7 @@ module Aspera
       # ask interactively if requested/required
       def get_option(option_symbol, is_type: :optional)
         result = nil
-        if @declared_options.has_key?(option_symbol)
+        if @declared_options.key?(option_symbol)
           case @declared_options[option_symbol][:type]
           when :accessor
             result = @declared_options[option_symbol][:accessor].value
@@ -241,15 +241,15 @@ module Aspera
         end
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && is_type.eql?(:mandatory) && !@fail_on_missing_mandatory
-        #Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
+        # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory
             raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
           elsif @ask_missing_optional || is_type.eql?(:mandatory)
             # ask_missing_mandatory
             expected = :single
-            #print "please enter: #{option_symbol.to_s}"
-            if @declared_options.has_key?(option_symbol) && @declared_options[option_symbol].has_key?(:values)
+            # print "please enter: #{option_symbol.to_s}"
+            if @declared_options.key?(option_symbol) && @declared_options[option_symbol].key?(:values)
               expected = @declared_options[option_symbol][:values]
             end
             result = get_interactive(:option, option_symbol.to_s, expected: expected)
@@ -288,7 +288,7 @@ module Aspera
       def add_opt_boolean(option_symbol, help, *on_args)
         add_opt_list(option_symbol, BOOLEAN_VALUES, help, *on_args)
         # if default was defined for obj, it may still be enum (yes/no) instead of boolean
-        default_value=get_option(option_symbol)
+        default_value = get_option(option_symbol)
         set_option(option_symbol, default_value, 'opt boolean') unless default_value.nil?
       end
 
@@ -362,7 +362,7 @@ module Aspera
       # return options as taken from config file and command line just before command execution
       def declared_options(only_defined: false)
         result = {}
-        @declared_options.keys.each do |option_symb|
+        @declared_options.each_key do |option_symb|
           v = get_option(option_symb)
           result[option_symb.to_s] = v unless only_defined && v.nil?
         end
@@ -442,9 +442,9 @@ module Aspera
         unprocessed = []
         preset.each do |pair|
           k, v = *pair
-          if @declared_options.has_key?(k)
+          if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
-            if @declared_options[k].has_key?(:values) && v.is_a?(String)
+            if @declared_options[k].key?(:values) && v.is_a?(String)
               v = self.class.get_from_list(v, k.to_s + " in #{where}", @declared_options[k][:values])
             end
             set_option(k, v, where)

@@ -53,7 +53,7 @@ module Aspera
         @request_id = SecureRandom.uuid
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
-        transfer_spec['authentication'] = 'token' if transfer_spec.has_key?('token')
+        transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
         connect_transfer_args = {
           'aspera_connect_settings' => @connect_settings.merge({
             'request_id'    => @request_id,
@@ -93,7 +93,7 @@ module Aspera
                 spinner.update(title: trdata['status'])
                 spinner.spin
               when 'running'
-                #puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
+                # puts "running: sessions:#{trdata['sessions'].length}, #{trdata['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
                 if !started && (trdata['bytes_expected'] != 0)
                   spinner&.success
                   notify_begin(@connect_settings['app_id'], trdata['bytes_expected'])

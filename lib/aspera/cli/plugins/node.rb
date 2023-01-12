@@ -44,7 +44,7 @@ module Aspera
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
         # fields not displays in result of search
-        SEARCH_REMOVE_FIELDS=%w[basename permissions].freeze
+        SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
         private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS])
 
         def initialize(env)
@@ -54,7 +54,7 @@ module Aspera
           self.class.register_node_options(env) unless env[:skip_node_options]
           return if env[:man_only]
           @api_node =
-            if env.has_key?(:node_api)
+            if env.key?(:node_api)
               # this can be Aspera::Node or Aspera::Rest (shares)
               env[:node_api]
             elsif options.get_option(:password, is_type: :mandatory).start_with?('Bearer ')
@@ -79,7 +79,10 @@ module Aspera
         end
 
         def c_textify_browse(table_data)
-          return table_data.map {|i| i['permissions'] = i['permissions'].map { |x| x['name'] }.join(','); i }
+          return table_data.map do |i|
+                   i['permissions'] = i['permissions'].map { |x| x['name'] }.join(',')
+                   i
+                 end
         end
 
         # key/value is defined in main in hash_table
@@ -116,7 +119,7 @@ module Aspera
           resres = { data: [], type: :object_list, fields: [type, 'result']}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result = success_msg
-            if p.has_key?('error')
+            if p.key?('error')
               Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
               result = 'ERROR: ' + p['error']['user_message']
             end
@@ -193,13 +196,13 @@ module Aspera
             path_list = [path_list] unless path_list.is_a?(Array)
             resp = @api_node.create('space', { 'paths' => path_list.map {|i| { path: i} } })
             result = { data: resp[:data]['paths'], type: :object_list}
-            #return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
+            # return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :mkdir
             path_list = get_next_arg_add_prefix(prefix_path, 'folder path or ext.val. list')
             path_list = [path_list] unless path_list.is_a?(Array)
-            #TODO: a command for that ?
-            #resp=@api_node.create('space',{ "paths" => path_list.map {|i| { type: :directory, path: i} } } )
+            # TODO: a command for that ?
+            # resp=@api_node.create('space',{ "paths" => path_list.map {|i| { type: :directory, path: i} } } )
             resp = @api_node.create('files/create', { 'paths' => [{ type: :directory, path: path_list }] })
             return c_result_translate_rem_prefix(resp, 'folder', 'created', prefix_path)
           when :mklink
@@ -224,7 +227,7 @@ module Aspera
             additional_query = options.get_option(:query)
             query.merge!(additional_query) unless additional_query.nil?
             send_result = @api_node.create('files/browse', query)[:data]
-            #example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
+            # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
             # if there is no items
             case send_result['self']['type']
             when 'directory', 'container' # directory: node, container: shares
@@ -232,8 +235,8 @@ module Aspera
               self.format.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
             else # 'file','symbolic_link'
               result = { data: send_result['self'], type: :single_object}
-              #result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
-              #raise "unknown type: #{send_result['self']['type']}"
+              # result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
+              # raise "unknown type: #{send_result['self']['type']}"
             end
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :upload, :download
@@ -243,13 +246,13 @@ module Aspera
             case token_type
             when :aspera, :hybrid
               # empty transfer spec for authorization request
-              request_transfer_spec={}
+              request_transfer_spec = {}
               # set requested paths depending on direction
               request_transfer_spec[:paths] = command.eql?(:download) ? transfer.ts_source_paths : [{ destination: transfer.destination_folder('send') }]
               # add fixed parameters if any (for COS)
               request_transfer_spec.deep_merge!(@add_request_param)
               # prepare payload for single request
-              setup_payload={transfer_requests: [{transfer_request: request_transfer_spec}]}
+              setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
               # only one request, so only one answer
               transfer_spec = @api_node.create("files/#{command}_setup", setup_payload)[:data]['transfer_specs'].first['transfer_spec']
               # delete this part, as the returned value contains only destination, and not sources
@@ -309,19 +312,19 @@ module Aspera
               items = apifid[:api].read('permissions', list_options)[:data]
               return {type: :object_list, data: items}
             when :delete
-              perm_id=instance_identifier
+              perm_id = instance_identifier
               return do_bulk_operation(perm_id, 'deleted') do |one_id|
                 # TODO: notify event ?
                 apifid[:api].delete("permissions/#{perm_id}")
                 {'id' => one_id}
               end
             when :create
-              create_param=options.get_next_argument('creation data', type: Hash)
-              raise 'no file_id' if create_param.has_key?('file_id')
+              create_param = options.get_next_argument('creation data', type: Hash)
+              raise 'no file_id' if create_param.key?('file_id')
               create_param['file_id'] = apifid[:file_id]
-              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.has_key?('access_levels')
+              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
               # add application specific tags (AoC)
-              the_app=apifid[:api].app_info
+              the_app = apifid[:api].app_info
               the_app[:api].permissions_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
               # create permission
               created_data = apifid[:api].create('permissions', create_param)[:data]
@@ -341,7 +344,7 @@ module Aspera
         def execute_node_gen4_command(command_repo, top_file_id)
           case command_repo
           when :v3
-            # Note: other common actions are unauthorized with user scope
+            # NOTE: other common actions are unauthorized with user scope
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
@@ -356,11 +359,11 @@ module Aspera
             raise 'No auth for node' if apifid[:api].params[:auth].nil?
             case apifid[:api].params[:auth][:type]
             when :basic
-              result[:username]=apifid[:api].params[:auth][:username]
-              result[:password]= apifid[:api].params[:auth][:password]
+              result[:username] = apifid[:api].params[:auth][:username]
+              result[:password] = apifid[:api].params[:auth][:password]
             when :oauth2
-              result[:username]= apifid[:api].params[:headers][Aspera::Node::X_ASPERA_ACCESSKEY]
-              result[:password]= apifid[:api].oauth_token
+              result[:username] = apifid[:api].params[:headers][Aspera::Node::X_ASPERA_ACCESSKEY]
+              result[:password] = apifid[:api].oauth_token
             else raise 'unknown'
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)
@@ -455,7 +458,7 @@ module Aspera
             return execute_node_gen4_file_command(command_node_file, top_file_id)
           else raise "INTERNAL ERROR: no case for #{command_repo}"
           end # command_repo
-          #raise 'INTERNAL ERROR: missing return'
+          # raise 'INTERNAL ERROR: missing return'
         end # execute_node_gen4_command
 
         # This is older API
@@ -536,11 +539,11 @@ module Aspera
           end
         end
 
-        BASE_ACTIONS=%i[api_details health space mkdir mklink mkfile rename delete].freeze
+        BASE_ACTIONS = %i[api_details health space mkdir mklink mkfile rename delete].freeze
 
-        BASE2_ACTIONS=%i[browse upload download].freeze
+        BASE2_ACTIONS = %i[browse upload download].freeze
 
-        SPECIAL_ACTIONS=%i[search events info license].freeze
+        SPECIAL_ACTIONS = %i[search events info license].freeze
 
         # actions available in v3 in gen4
         V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
@@ -569,12 +572,12 @@ module Aspera
           when *COMMON_ACTIONS then return execute_simple_common(command, prefix_path)
           when :async then return execute_async
           when :sync
-            sync_command = options.get_next_command(%i[bandwidth counters files start state stop summary].concat(Plugin::ALL_OPS)-%i[modify])
+            sync_command = options.get_next_command(%i[bandwidth counters files start state stop summary].concat(Plugin::ALL_OPS) - %i[modify])
             case sync_command
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
             else
               parameters = options.get_option(:value)
-              asyncs_id=instance_identifier
+              asyncs_id = instance_identifier
               if %i[start stop].include?(sync_command)
                 @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)
                 return Main.result_status('ok')
@@ -615,7 +618,7 @@ module Aspera
             case command
             when :list
               # could use ? subpath: 'transfers'
-              query=options.get_option(:value) || options.get_option(:query)
+              query = options.get_option(:value) || options.get_option(:query)
               raise 'Query must be a Hash' unless query.nil? || query.is_a?(Hash)
               resp = @api_node.read(res_class_path, query)
               return {
@@ -638,11 +641,11 @@ module Aspera
             when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
             when :do
               access_key = options.get_next_argument('access key id')
-              ak_info=@api_node.read("access_keys/#{access_key}")[:data]
+              ak_info = @api_node.read("access_keys/#{access_key}")[:data]
               # change API credentials if different access key
               if !access_key.eql?('self')
-                @api_node.params[:auth][:username]=ak_info['id']
-                @api_node.params[:auth][:password]=config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
+                @api_node.params[:auth][:username] = ak_info['id']
+                @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
               end
               command_repo = options.get_next_command(NODE4_COMMANDS)
               return execute_node_gen4_command(command_repo, ak_info['root_file_id'])

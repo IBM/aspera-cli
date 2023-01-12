@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/listener'
 require 'aspera/fasp/agent_base'
+require 'aspera/environment'
 require 'ruby-progressbar'
 
 module Aspera
@@ -20,33 +21,27 @@ module Aspera
           @sessions = {}
         end
 
-        BYTE_PER_MEGABIT = 1024 * 1024 / 8
-
         def update_total
-          begin
-            @progress_bar.total = @sessions.values.inject(0){|m, s|m += s[:job_size].to_i;m;}
-          rescue StandardError
-            nil
-          end
+          @progress_bar.total = @sessions.values.inject(0){|m, s|m + s[:job_size].to_i}
+        rescue StandardError
+          nil
         end
 
         def update_progress
-          begin
-            @progress_bar.progress = @sessions.values.inject(0){|m, s|m += s[:current].to_i;m;}
-          rescue StandardError
-            nil
-          end
+          @progress_bar.progress = @sessions.values.inject(0){|m, s|m + s[:current].to_i}
+        rescue StandardError
+          nil
         end
 
         def event_enhanced(data)
           if @progress_bar.nil?
             @progress_bar = ProgressBar.create(
               format:      '%t %a %B %p%% %r Mbps %e',
-              rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
+              rate_scale:  lambda{|rate|rate / Environment::BYTES_PER_MEBIBIT},
               title:       '',
               total:       nil)
           end
-          if !data.has_key?(Fasp::AgentBase::LISTENER_SESSION_ID_S)
+          if !data.key?(Fasp::AgentBase::LISTENER_SESSION_ID_S)
             Log.log.error{"Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}"}
             return
           end
@@ -61,7 +56,7 @@ module Aspera
           when 'INIT' # connection to ascp (get id)
           when 'SESSION' # session information
           when 'NOTIFICATION' # sent from remote
-            if data.has_key?('pre_transfer_bytes')
+            if data.key?('pre_transfer_bytes')
               session[:job_size] = data['pre_transfer_bytes']
               update_total
             end
@@ -69,7 +64,7 @@ module Aspera
             if @progress_bar.total.nil?
               @progress_bar.increment
             else
-              session[:current] = data.has_key?('bytescont') ? session[:cumulative] + data['bytescont'].to_i : data['transfer_bytes'].to_i
+              session[:current] = data.key?('bytescont') ? session[:cumulative] + data['bytescont'].to_i : data['transfer_bytes'].to_i
               update_progress
             end
           when 'STOP'

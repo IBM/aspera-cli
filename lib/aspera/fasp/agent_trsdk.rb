@@ -19,7 +19,7 @@ module Aspera
         # set default options and override if specified
         options = DEFAULT_OPTIONS.dup
         user_opts&.each do |k, v|
-          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           options[k] = v
         end
         Log.log.debug{"options= #{options}"}
@@ -76,7 +76,7 @@ module Aspera
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
           Log.dump(:response, response.to_h)
-          #Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
+          # Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status
           when :RUNNING
             if !started && !response.sessionInfo.preTransferBytes.eql?(0)
@@ -95,7 +95,7 @@ module Aspera
             Log.log.error{"unknown status#{response.status}"}
           end
         end
-        # TODO return status
+        # TODO: return status
         return []
       end
     end

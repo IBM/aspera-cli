@@ -15,7 +15,7 @@ module Aspera
         when 'file', NilClass
           local_file_path = proxy_uri.path
           raise 'URL shall have a path, check syntax' if local_file_path.nil?
-          local_file_path = File.expand_path(local_file_path.gsub(/^\//, '')) if /^\/(~|.|..)\//.match?(local_file_path)
+          local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
         else
           raise "unknown scheme: [#{proxy_uri.scheme}] for [#{uri_to_read}]"

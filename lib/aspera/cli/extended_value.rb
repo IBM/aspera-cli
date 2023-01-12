@@ -54,7 +54,7 @@ module Aspera
             path:  lambda{|v|File.expand_path(v)},
             env:   lambda{|v|ENV[v]},
             uri:   lambda{|v|UriReader.read(v)},
-            stdin: lambda{|v|raise 'no value allowed for stdin' unless v.empty?;$stdin.read}
+            stdin: lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read} # rubocop:disable Style/Semicolon
           }
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
@@ -62,7 +62,7 @@ module Aspera
 
       public
 
-      def modifiers;@handlers.keys.map{|i|@handlers[i].keys}.flatten.map(&:to_s);end
+      def modifiers; @handlers.keys.map{|i|@handlers[i].keys}.flatten.map(&:to_s); end
 
       # add a new :reader or :decoder
       # decoder can be chained, reader is last one on right

@@ -42,6 +42,7 @@ module Aspera
         # option_skip_format has special accessors
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
+
         def initialize(env)
           super(env)
           @skip_types = []
@@ -78,7 +79,7 @@ module Aspera
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             options.set_obj_attr(opt[:name], @gen_options, opt[:name], opt[:default])
-            if opt.has_key?(:values)
+            if opt.key?(:values)
               options.add_opt_list(opt[:name], opt[:values], opt[:description])
             elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
               options.add_opt_boolean(opt[:name], opt[:description])
@@ -121,7 +122,7 @@ module Aspera
           headers = {'Accept' => 'application/json'}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
           return @api_node.call({operation: 'GET', subpath: "files/#{file_id}/files", headers: headers, url_params: request_args})[:data]
-          #return @api_node.read("files/#{file_id}/files",request_args)[:data]
+          # return @api_node.read("files/#{file_id}/files",request_args)[:data]
         end
 
         # old version based on folders
@@ -146,9 +147,9 @@ module Aspera
           return if events.empty?
           events.each do |event|
             if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) &&
-            event['data']['status'].eql?('completed') &&
-            event['data']['error_code'].eql?(0) &&
-            event['data'].dig('tags', 'aspera', PREV_GEN_TAG).nil?
+                event['data']['status'].eql?('completed') &&
+                event['data']['error_code'].eql?(0) &&
+                event['data'].dig('tags', 'aspera', PREV_GEN_TAG).nil?
               folder_id = event.dig('data', 'tags', 'aspera', 'node', 'file_id')
               folder_id ||= event.dig('data', 'file_id')
               if !folder_id.nil?
@@ -183,7 +184,7 @@ module Aspera
             if event.dig('data', 'type').eql?('file')
               file_entry = @api_node.read("files/#{event['data']['id']}")[:data] rescue nil
               if !file_entry.nil? &&
-              @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
+                  @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
                 if event['types'].include?('file.deleted')
                   Log.log.error('TODO'.red)
@@ -211,13 +212,13 @@ module Aspera
             res = @api_node.create('files/upload_setup', {'transfer_requests' => [{'transfer_request' => {'paths' => [{}], 'destination_root' => '/'}}]})
             template_ts = res[:data]['transfer_specs'].first['transfer_spec']
             # get ports, anyway that should be 33001 for both. add remote_user ?
-            @default_transfer_spec = %w[ssh_port fasp_port].each_with_object({}){|e, h|h[e] = template_ts[e];}
+            @default_transfer_spec = %w[ssh_port fasp_port].each_with_object({}){|e, h|h[e] = template_ts[e]; }
             if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
             @api_node.ts_basic_token(@default_transfer_spec)
-            # note: we use the same address for ascp than for node api instead of the one from upload_setup
+            # NOTE: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host'] = @transfer_server_address
           end
@@ -254,18 +255,18 @@ module Aspera
         def get_infos_remote(gen_infos, entry)
           # store source directly here
           local_original_filepath = File.join(@tmp_folder, entry['name'])
-          #original_mtime=DateTime.parse(entry['modified_time'])
+          # original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
           file_info = @api_node.read("files/#{entry['id']}")[:data]
-          #TODO: this does not work because previews is hidden in api (gen4)
-          #this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
+          # TODO: this does not work because previews is hidden in api (gen4)
+          # this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
           # TODO: use gen3 api to list files and get date
           gen_infos.each do |gen_info|
             gen_info[:src] = local_original_filepath
             gen_info[:dst] = File.join(local_entry_preview_dir, gen_info[:base_dest])
             # TODO: use this_preview_folder_entries (but it's hidden)
-            gen_info[:preview_exist] = file_info.has_key?('preview')
+            gen_info[:preview_exist] = file_info.key?('preview')
             # TODO: get change time and compare, useful ?
             gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
@@ -355,13 +356,13 @@ module Aspera
           if !scan_start.nil?
             # canonical path: start with / and ends with /
             scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
-            scan_start = "#{scan_start}/" #unless scan_start.end_with?('/')
+            scan_start = "#{scan_start}/" # unless scan_start.end_with?('/')
           end
           filter_block = Aspera::Node.file_matcher(options.get_option(:value))
           Log.log.debug{"scan: #{top_entry} : #{scan_start}".green}
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
-          while !entries_to_process.empty?
+          until entries_to_process.empty?
             entry = entries_to_process.shift
             # process this entry only if it is within the scan_start
             entry_path_with_slash = entry['path']
@@ -392,7 +393,7 @@ module Aspera
                   # process all items in current folder
                   folder_entries.each do |folder_entry|
                     # add path for older versions of ES
-                    if !folder_entry.has_key?('path')
+                    if !folder_entry.key?('path')
                       folder_entry['path'] = entry_path_with_slash + folder_entry['name']
                     end
                     folder_entry['parent_file_id'] = entry['id']
@@ -425,19 +426,19 @@ module Aspera
             @access_remote = @option_file_access.eql?(:remote)
             Log.log.debug{"remote: #{@access_remote}"}
             Log.log.debug{"access key info: #{@access_key_self}"}
-            #TODO: can the previews folder parameter be read from node api ?
+            # TODO: can the previews folder parameter be read from node api ?
             @option_skip_folders.push('/' + @option_previews_folder)
             if @access_remote
-              # note the filter "name", it's why we take the first one
+              # NOTE: the filter "name", it's why we take the first one
               @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
               raise CliError, "Folder #{@option_previews_folder} does not exist on node. "\
                 'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root = @access_key_self['storage']['path']
-              #TODO: option to override @local_storage_root='xxx'
+              # TODO: option to override @local_storage_root='xxx'
               @local_storage_root = @local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
-              #TODO: windows could have "C:" ?
+              # TODO: windows could have "C:" ?
               raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
               raise CliError, "Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
               @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)

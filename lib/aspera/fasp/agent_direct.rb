@@ -49,9 +49,9 @@ module Aspera
         Log.dump('ts', transfer_spec)
 
         # add bypass keys when authentication is token and no auth is provided
-        if transfer_spec.has_key?('token') &&
-        !transfer_spec.has_key?('remote_password') &&
-        !transfer_spec.has_key?('EX_ssh_key_paths')
+        if transfer_spec.key?('token') &&
+            !transfer_spec.key?('remote_password') &&
+            !transfer_spec.key?('EX_ssh_key_paths')
           # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used
           transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
         end
@@ -59,7 +59,7 @@ module Aspera
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
         multi_session_info = nil
-        if transfer_spec.has_key?('multi_session')
+        if transfer_spec.key?('multi_session')
           multi_session_info = {
             count: transfer_spec['multi_session'].to_i
           }
@@ -73,7 +73,7 @@ module Aspera
             multi_session_info = nil
           elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
-            multi_session_info[:udp_base] = transfer_spec.has_key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
+            multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
             # delete from original transfer spec, as we will increment values
             transfer_spec.delete('fasp_port')
             # override if specified, else use default value
@@ -189,12 +189,12 @@ module Aspera
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
           Log.log.debug do
-            'execute: '+
-            env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ')+
-            ' '+
-            Shellwords.shellescape(ascp_path)+
-            ' '+
-            ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')
+            'execute: ' +
+              env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ') +
+              ' ' +
+              Shellwords.shellescape(ascp_path) +
+              ' ' +
+              ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')
           end
           # start process
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments)
@@ -268,9 +268,9 @@ module Aspera
                 end
               end
               # cannot resolve address
-              #if last_status_event['Code'].to_i.eql?(14)
+              # if last_status_event['Code'].to_i.eql?(14)
               #  Log.log.warn{"host: #{}"}
-              #end
+              # end
               raise Fasp::Error.new(last_status_event['Description'], last_status_event['Code'].to_i)
             else # case
               raise "unexpected last event type: #{last_status_event['Type']}"
@@ -318,12 +318,12 @@ module Aspera
         raise 'no such session' if session.nil?
         Log.log.debug{"command: #{data}"}
         # build command
-        command = data.
-          keys.
-          map{|k|"#{k.capitalize}: #{data[k]}"}.
-          unshift('FASPMGR 2').
-          push('', '').
-          join("\n")
+        command = data
+          .keys
+          .map{|k|"#{k.capitalize}: #{data[k]}"}
+          .unshift('FASPMGR 2')
+          .push('', '')
+          .join("\n")
         session[:io].puts(command)
       end
 
@@ -343,7 +343,7 @@ module Aspera
         if !options.nil?
           raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
           options.each do |k, v|
-            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
             @options[k] = v
           end
         end

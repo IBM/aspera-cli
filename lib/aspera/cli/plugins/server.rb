@@ -12,13 +12,13 @@ module Aspera
     module Plugins
       # implement basic remote access with FASP/SSH
       class Server < BasicAuthPlugin
-        URI_SCHEMES=%w[ssh https local].freeze
-        ASCMD_ALIASES={
+        URI_SCHEMES = %w[ssh https local].freeze
+        ASCMD_ALIASES = {
           browse: :ls,
           delete: :rm,
           rename: :mv
         }.freeze
-        ASCP_ACTIONS=%i[upload download health].freeze
+        ASCP_ACTIONS = %i[upload download health].freeze
 
         private_constant :URI_SCHEMES, :ASCMD_ALIASES, :ASCP_ACTIONS
 
@@ -47,10 +47,10 @@ module Aspera
         def executor(url, server_transfer_spec)
           server_uri = URI.parse(url)
           Log.log.debug{"URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}"}
-          server_transfer_spec['remote_host']=server_uri.hostname
+          server_transfer_spec['remote_host'] = server_uri.hostname
           unless URI_SCHEMES.include?(server_uri.scheme)
             Log.log.warn{"Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to ssh."}
-            server_uri.scheme='ssh'
+            server_uri.scheme = 'ssh'
           end
           if server_uri.scheme.eql?('local')
             # Using local execution (mostly for testing)
@@ -65,7 +65,7 @@ module Aspera
             end
             Log.log.warn('URL scheme is https but no (Basic) token was provided in transfer spec.')
             Log.log.warn('If you want to access the server, not using WSS for session, then use a URL with scheme "ssh" and proper SSH port')
-            assumed_url="ssh://#{server_transfer_spec['remote_host']}:33001"
+            assumed_url = "ssh://#{server_transfer_spec['remote_host']}:33001"
             Log.log.warn{"Assuming proper URL is: #{assumed_url}"}
             server_uri = URI.parse(assumed_url)
           end
@@ -113,13 +113,13 @@ module Aspera
         ACTIONS = [].concat(ASCP_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys).freeze
 
         def execute_action
-          server_transfer_spec={}
+          server_transfer_spec = {}
           shell_executor = executor(options.get_option(:url, is_type: :mandatory), server_transfer_spec)
           # the set of available commands depends on SSH executor availability (i.e. no WSS)
           available_commands = shell_executor.nil? ? ASCP_ACTIONS : ACTIONS
           # get command and translate aliases
           command = options.get_next_command(available_commands)
-          command = ASCMD_ALIASES[command] if ASCMD_ALIASES.has_key?(command)
+          command = ASCMD_ALIASES[command] if ASCMD_ALIASES.key?(command)
           case command
           when :health
             nagios = Nagios.new

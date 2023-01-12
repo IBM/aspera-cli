@@ -42,17 +42,17 @@ module Aspera
         #        end
 
         def call_ao(endpoint, opt={})
-          opt[:prefix] = 'api' unless opt.has_key?(:prefix)
+          opt[:prefix] = 'api' unless opt.key?(:prefix)
           # calls are GET
           call_args = {operation: 'GET', subpath: endpoint}
           # specify prefix if necessary
           call_args[:subpath] = "#{opt[:prefix]}/#{call_args[:subpath]}" unless opt[:prefix].nil?
           # specify id if necessary
-          call_args[:subpath] = "#{call_args[:subpath]}/#{opt[:id]}" if opt.has_key?(:id)
+          call_args[:subpath] = "#{call_args[:subpath]}/#{opt[:id]}" if opt.key?(:id)
           call_type = options.get_option(:ret_style, is_type: :mandatory)
-          call_type = opt[:ret_style] if opt.has_key?(:ret_style)
+          call_type = opt[:ret_style] if opt.key?(:ret_style)
           format = 'json'
-          format = opt[:format] if opt.has_key?(:format)
+          format = opt[:format] if opt.key?(:format)
           call_args[:url_params] = opt[:args] unless opt[:args].nil?
           unless format.nil?
             case call_type

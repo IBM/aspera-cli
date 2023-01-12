@@ -56,7 +56,7 @@ module Aspera
           Log.log.debug('Not using persistency') # (use Aspera::Oauth.persist_mgr=Aspera::PersistencyFolder.new)
           # create NULL persistency class
           @persist = Class.new do
-            def get(_x);nil;end;def delete(_x);nil;end;def put(_x, _y);nil;end;def garbage_collect(_x, _y);nil;end # rubocop:disable Layout/EmptyLineBetweenDefs
+            def get(_x); nil; end; def delete(_x); nil; end; def put(_x, _y); nil; end; def garbage_collect(_x, _y); nil; end # rubocop:disable Layout/EmptyLineBetweenDefs, Style/Semicolon, Layout/LineLength
           end.new
         end
         return @persist
@@ -94,19 +94,19 @@ module Aspera
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token creator type unknown: #{id}/#{id.class}" unless @create_handlers.has_key?(id)
+        raise "token creator type unknown: #{id}/#{id.class}" unless @create_handlers.key?(id)
         @create_handlers[id]
       end
 
       # list of identifiers foundn in creation parameters that can be used to uniquely identify the token
       def id_creator(id)
-        raise "id creator type unknown: #{id}/#{id.class}" unless @id_handlers.has_key?(id)
+        raise "id creator type unknown: #{id}/#{id.class}" unless @id_handlers.key?(id)
         @id_handlers[id]
       end
     end # self
 
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    register_decoder lambda { |token| parts = token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))}
+    register_decoder lambda { |token| parts = token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))} # rubocop:disable Style/Semicolon, Layout/LineLength
 
     # generic token creation, parameters are provided in :generic
     register_token_creator :generic, lambda { |oauth|
@@ -193,8 +193,8 @@ module Aspera
       # check that type is known
       self.class.token_creator(@gparams[:crtype])
       # specific parameters for the creation type
-      @sparams=@gparams[@gparams[:crtype]]
-      if @gparams[:crtype].eql?(:web) && @sparams.has_key?(:redirect_uri)
+      @sparams = @gparams[@gparams[:crtype]]
+      if @gparams[:crtype].eql?(:web) && @sparams.key?(:redirect_uri)
         uri = URI.parse(@sparams[:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
@@ -204,7 +204,7 @@ module Aspera
         base_url:     @gparams[:base_url],
         redirect_max: 2
       }
-      rest_params[:auth] = a_params[:auth] if a_params.has_key?(:auth)
+      rest_params[:auth] = a_params[:auth] if a_params.key?(:auth)
       @api = Rest.new(rest_params)
       # if needed use from api
       @gparams.delete(:base_url)
@@ -227,7 +227,7 @@ module Aspera
 
     # @return Hash with optional general parameters
     def optional_scope_client_id(add_secret: false)
-      call_params={}
+      call_params = {}
       call_params[:scope] = @gparams[:scope] unless @gparams[:scope].nil?
       call_params[:client_id] = @gparams[:client_id] unless @gparams[:client_id].nil?
       call_params[:client_secret] = @gparams[:client_secret] if add_secret && !@gparams[:client_id].nil?
@@ -269,7 +269,7 @@ module Aspera
 
       # an API was already called, but failed, we need to regenerate or refresh
       if use_refresh_token
-        if token_data.is_a?(Hash) && token_data.has_key?('refresh_token')
+        if token_data.is_a?(Hash) && token_data.key?('refresh_token')
           # save possible refresh token, before deleting the cache
           refresh_token = token_data['refresh_token']
         end
@@ -300,7 +300,7 @@ module Aspera
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id, json_data)
       end # if ! in_cache
-      raise "API error: No such field in answer: #{@gparams[:token_field]}" unless token_data.has_key?(@gparams[:token_field])
+      raise "API error: No such field in answer: #{@gparams[:token_field]}" unless token_data.key?(@gparams[:token_field])
       # ok we shall have a token here
       return 'Bearer ' + token_data[@gparams[:token_field]]
     end

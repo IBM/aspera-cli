@@ -26,6 +26,7 @@ module Aspera
 
     class << self
       attr_accessor :use_standard_ports
+
       # for access keys: provide expression to match entry in folder
       # if no prefix: regex
       # if prefix: ruby code
@@ -39,8 +40,8 @@ module Aspera
       end
     end
 
-    REQUIRED_APP_INFO_FIELDS=%i[node_info app api plugin].freeze
-    REQUIRED_APP_API_METHODS=%i[node_id_to_api add_ts_tags].freeze
+    REQUIRED_APP_INFO_FIELDS = %i[node_info app api plugin].freeze
+    REQUIRED_APP_API_METHODS = %i[node_id_to_api add_ts_tags].freeze
     private_constant :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
     attr_reader :app_info
@@ -49,10 +50,10 @@ module Aspera
     # @param app_info [Hash,NilClass] special processing for AoC
     def initialize(params:, app_info: nil)
       super(params)
-      @app_info=app_info
+      @app_info = app_info
       if !@app_info.nil?
         REQUIRED_APP_INFO_FIELDS.each do |field|
-          raise "INTERNAL ERROR: app_info lacks field #{field}" unless @app_info.has_key?(field)
+          raise "INTERNAL ERROR: app_info lacks field #{field}" unless @app_info.key?(field)
         end
         REQUIRED_APP_API_METHODS.each do |method|
           raise "INTERNAL ERROR: #{@app_info[:api].class} lacks method #{method}" unless @app_info[:api].respond_to?(method)
@@ -79,7 +80,7 @@ module Aspera
       raise "INTERNAL ERROR: Missing method #{method}" unless respond_to?(method)
       folders_to_explore = [{id: top_file_id, relpath: top_file_path}]
       Log.dump(:folders_to_explore, folders_to_explore)
-      while !folders_to_explore.empty?
+      until folders_to_explore.empty?
         current_item = folders_to_explore.shift
         Log.log.debug{"searching #{current_item[:relpath]}".bg_green}
         # get folder content
@@ -189,11 +190,11 @@ module Aspera
       ak_token = nil
       case params[:auth][:type]
       when :basic
-        ak_name=params[:auth][:username]
+        ak_name = params[:auth][:username]
       when :oauth2
-        ak_name=params[:headers][X_ASPERA_ACCESSKEY]
+        ak_name = params[:headers][X_ASPERA_ACCESSKEY]
         token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
-        ak_token=token_generation_lambda.call(false) # first time, use cache
+        ak_token = token_generation_lambda.call(false) # first time, use cache
         @app_info[:plugin].transfer.token_regenerator = token_generation_lambda unless @app_info.nil?
       else raise "Unsupported auth method for node gen4: #{params[:auth][:type]}"
       end
@@ -211,7 +212,7 @@ module Aspera
       }
       transfer_spec.deep_merge!(ts_merge) unless ts_merge.nil?
       # add application specific tags (AoC)
-      the_app=app_info
+      the_app = app_info
       the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
       # add basic token
       if transfer_spec['token'].nil?
@@ -233,7 +234,7 @@ module Aspera
           {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
         )[:data]['transfer_specs'].first['transfer_spec']
         # copy some parts
-        %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.has_key?(i)}
+        %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = std_t_spec[i] if std_t_spec.key?(i)}
       end
       return transfer_spec
     end

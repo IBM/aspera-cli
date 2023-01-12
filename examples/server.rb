@@ -15,7 +15,7 @@ require 'tmpdir'
 
 tmpdir = ENV['tmp'] || Dir.tmpdir || '.'
 
-raise 'Usage: PASSWORD=<password> $0 ssh://<address>:<port> <transfer user>' unless ARGV.length.eql?(2) && ENV.has_key?('PASSWORD')
+raise 'Usage: PASSWORD=<password> $0 ssh://<address>:<port> <transfer user>' unless ARGV.length.eql?(2) && ENV.key?('PASSWORD')
 
 # example : ssh://asperaweb@eudemo.asperademo.com:33001
 server_uri = URI.parse(ARGV.shift)
@@ -34,10 +34,10 @@ Aspera::RestErrorsAspera.register_handlers
 # some required files are generated here (keys, certs)
 Aspera::Fasp::Installation.instance.folder = tmpdir
 # set path to your copy of ascp binary (else, let the system find)
-Aspera::Fasp::Installation.instance.ascp_path = ENV['ascp'] if ENV.has_key?('ascp')
+Aspera::Fasp::Installation.instance.ascp_path = ENV['ascp'] if ENV.key?('ascp')
 # another way is to detect installed products and use one of them
-#Aspera::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
-#Aspera::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
+# Aspera::Fasp::Installation.instance.installed_products.each{|p|puts("found: #{p[:name]}")}
+# Aspera::Fasp::Installation.instance.use_ascp_from_product('Aspera Connect')
 # or install:
 #
 
@@ -45,10 +45,10 @@ Aspera::Fasp::Installation.instance.ascp_path = ENV['ascp'] if ENV.has_key?('asc
 transfer_agent = Aspera::Fasp::AgentDirect.new
 
 # Note that it would also be possible to start transfers using other agents
-#require 'aspera/fasp/connect'
-#transfer_agent=Aspera::Fasp::Connect.new
-#require 'aspera/fasp/node'
-#transfer_agent=Aspera::Fasp::Node.new(Aspera::Rest.new(...))
+# require 'aspera/fasp/connect'
+# transfer_agent=Aspera::Fasp::Connect.new
+# require 'aspera/fasp/node'
+# transfer_agent=Aspera::Fasp::Node.new(Aspera::Rest.new(...))
 
 ##############################################################
 # Optional : register an event listener
@@ -57,7 +57,7 @@ transfer_agent = Aspera::Fasp::AgentDirect.new
 class MyListener < Aspera::Fasp::Listener
   # this is the callback called during transfers, here we only display the received information
   # but it could be used to get detailed error information, check "type" field is "ERROR"
-  def event_enhanced(data);$stdout.puts(JSON.generate(data));$stdout.flush;end
+  def event_enhanced(data); $stdout.puts(JSON.generate(data)); $stdout.flush; end # rubocop:disable Style/Semicolon
 end
 
 # register the sample listener to display events

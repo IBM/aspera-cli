@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/listener'
 require 'ruby-progressbar'
+require 'aspera/environment'
 
 module Aspera
   module Cli
@@ -14,15 +15,13 @@ module Aspera
           @cumulative = 0
         end
 
-        BYTE_PER_MEGABIT = (1024 * 1024) / 8
-
         def event_struct(data)
           case data['Type']
           when 'NOTIFICATION'
-            if data.has_key?('PreTransferBytes')
+            if data.key?('PreTransferBytes')
               @progress = ProgressBar.create(
                 format:      '%a %B %p%% %r Mbps %e',
-                rate_scale:  lambda{|rate|rate / BYTE_PER_MEGABIT},
+                rate_scale:  lambda{|rate|rate / Environment::BYTES_PER_MEBIBIT},
                 title:       'progress',
                 total:       data['PreTransferBytes'].to_i)
             end
@@ -33,7 +32,7 @@ module Aspera
             if @progress.nil?
               puts '.'
             else
-              @progress.progress = data.has_key?('Bytescont') ? @cumulative + data['Bytescont'].to_i : data['TransferBytes'].to_i
+              @progress.progress = data.key?('Bytescont') ? @cumulative + data['Bytescont'].to_i : data['TransferBytes'].to_i
             end
           when 'DONE'
             if @progress.nil?

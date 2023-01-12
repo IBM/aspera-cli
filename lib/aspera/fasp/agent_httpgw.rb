@@ -23,15 +23,15 @@ module Aspera
         upload_chunksize:       64_000,
         upload_bar_refresh_sec: 0.5
       }.freeze
-      DEFAULT_BASE_PATH='/aspera/http-gwy'
+      DEFAULT_BASE_PATH = '/aspera/http-gwy'
       # upload endpoints
-      V1_UPLOAD='/v1/upload'
-      V2_UPLOAD='/v2/upload'
+      V1_UPLOAD = '/v1/upload'
+      V2_UPLOAD = '/v2/upload'
       private_constant :DEFAULT_OPTIONS, :MSG_END_UPLOAD, :MSG_END_SLICE, :V1_UPLOAD, :V2_UPLOAD
 
       # send message on http gw web socket
       def ws_snd_json(data)
-        @slice_uploads += 1 if data.has_key?(:slice_upload)
+        @slice_uploads += 1 if data.key?(:slice_upload)
         Log.log.debug{JSON.generate(data)}
         ws_send(JSON.generate(data))
       end
@@ -47,7 +47,7 @@ module Aspera
         # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
         source_paths = []
         # get source root or nil
-        source_root = transfer_spec.has_key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] : nil
+        source_root = transfer_spec.key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] : nil
         # source root is ignored by GW, used only here
         transfer_spec.delete('source_root')
         # compute total size of files to upload (for progress)
@@ -66,18 +66,18 @@ module Aspera
         end
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        @slice_uploads=0
+        @slice_uploads = 0
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         upload_api_version = V2_UPLOAD
         # is the latest supported? else revert to old api
-        upload_api_version=V1_UPLOAD unless @api_info['endpoints'].any?{|i|i.include?(upload_api_version)}
+        upload_api_version = V1_UPLOAD unless @api_info['endpoints'].any?{|i|i.include?(upload_api_version)}
         Log.log.debug{"api version: #{upload_api_version}"}
-        url=File.join(@gw_api.params[:base_url], upload_api_version)
-        #uri = URI.parse(url)
+        url = File.join(@gw_api.params[:base_url], upload_api_version)
+        # uri = URI.parse(url)
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_socket = Rest.start_http_session(url)
         @ws_io = http_socket.instance_variable_get(:@socket)
-        #@ws_io.debug_output = Log.log
+        # @ws_io.debug_output = Log.log
         @ws_handshake = ::WebSocket::Handshake::Client.new(url: url, headers: {})
         @ws_io.write(@ws_handshake.to_s)
         sleep(0.1)
@@ -85,42 +85,40 @@ module Aspera
         raise 'Error in websocket handshake' unless @ws_handshake.finished?
         Log.log.debug('ws: handshake success')
         # data shared between main thread and read thread
-        shared_info={
+        shared_info = {
           read_exception: nil, # error message if any in callback
           end_uploads:    0 # number of files totally sent
-          #mutex: Mutex.new
-          #cond_var: ConditionVariable.new
+          # mutex: Mutex.new
+          # cond_var: ConditionVariable.new
         }
         # start read thread
         ws_read_thread = Thread.new do
           Log.log.debug('ws: thread: started')
           frame = ::WebSocket::Frame::Incoming::Client.new
           loop do
-            begin
-              frame << @ws_io.readuntil("\n")
-              while (msg = frame.next)
-                Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
-                message = msg.data
-                if message.eql?(MSG_END_UPLOAD)
-                  shared_info[:end_uploads] += 1
-                elsif message.eql?(MSG_END_SLICE)
-                else
-                  message.chomp!
-                  error_message =
-                    if message.start_with?('"') && message.end_with?('"')
-                      JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
-                    elsif message.start_with?('{') && message.end_with?('}')
-                      JSON.parse(message)['message']
-                    else
-                      "unknown message from gateway: [#{message}]"
-                    end
-                  raise error_message
-                end
+            frame << @ws_io.readuntil("\n")
+            while (msg = frame.next)
+              Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
+              message = msg.data
+              if message.eql?(MSG_END_UPLOAD)
+                shared_info[:end_uploads] += 1
+              elsif message.eql?(MSG_END_SLICE)
+              else
+                message.chomp!
+                error_message =
+                  if message.start_with?('"') && message.end_with?('"')
+                    JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
+                  elsif message.start_with?('{') && message.end_with?('}')
+                    JSON.parse(message)['message']
+                  else
+                    "unknown message from gateway: [#{message}]"
+                  end
+                raise error_message
               end
-            rescue => e
-              shared_info[:read_exception] = e unless e.is_a?(EOFError)
-              break
             end
+          rescue => e
+            shared_info[:read_exception] = e unless e.is_a?(EOFError)
+            break
           end
           Log.log.debug{"ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})"}
         end
@@ -135,56 +133,56 @@ module Aspera
         sent_bytes = 0
         # last progress event
         last_progress_time = nil
-        begin
-          transfer_spec['paths'].each do |item|
-            # TODO: get mime type?
-            file_mime_type = ''
-            file_size = item['file_size']
-            file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
-            # compute total number of slices
-            numslices = ((file_size - 1) / @options[:upload_chunksize])+1
-            File.open(source_paths[file_index]) do |file|
-              # current slice index
-              slicenum = 0
-              while !file.eof?
-                data = file.read(@options[:upload_chunksize])
-                slice_data = {
-                  name:         file_name,
-                  type:         file_mime_type,
-                  size:         file_size,
-                  slice:        slicenum,
-                  total_slices: numslices,
-                  fileIndex:    file_index
-                }
-                #Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
-                # interrupt main thread if read thread failed
+
+        transfer_spec['paths'].each do |item|
+          # TODO: get mime type?
+          file_mime_type = ''
+          file_size = item['file_size']
+          file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
+          # compute total number of slices
+          numslices = ((file_size - 1) / @options[:upload_chunksize]) + 1
+          File.open(source_paths[file_index]) do |file|
+            # current slice index
+            slicenum = 0
+            until file.eof?
+              data = file.read(@options[:upload_chunksize])
+              slice_data = {
+                name:         file_name,
+                type:         file_mime_type,
+                size:         file_size,
+                slice:        slicenum,
+                total_slices: numslices,
+                fileIndex:    file_index
+              }
+              # Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
+              # interrupt main thread if read thread failed
+              raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+              begin
+                if upload_api_version.eql?(V1_UPLOAD)
+                  slice_data[:data] = Base64.strict_encode64(data)
+                  ws_snd_json(slice_upload: slice_data)
+                else
+                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
+                  ws_send(data, type: :binary)
+                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
+                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices - 1)
+                end
+              rescue Errno::EPIPE => e
                 raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
-                begin
-                  if upload_api_version.eql?(V1_UPLOAD)
-                    slice_data[:data] = Base64.strict_encode64(data)
-                    ws_snd_json(slice_upload: slice_data)
-                  else
-                    ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
-                    ws_send(data, type: :binary)
-                    Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
-                    ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices-1)
-                  end
-                rescue Errno::EPIPE => e
-                  raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
-                  raise e
-                end
-                sent_bytes += data.length
-                currenttime = Time.now
-                if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])
-                  notify_progress(session_id, sent_bytes)
-                  last_progress_time = currenttime
-                end
-                slicenum += 1
+                raise e
               end
+              sent_bytes += data.length
+              currenttime = Time.now
+              if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])
+                notify_progress(session_id, sent_bytes)
+                last_progress_time = currenttime
+              end
+              slicenum += 1
             end
-            file_index += 1
           end
+          file_index += 1
         end
+
         Log.log.debug('Finished upload')
         ws_read_thread.join
         Log.log.debug{"result: #{shared_info[:end_uploads]} / #{@slice_uploads}"}
@@ -199,7 +197,7 @@ module Aspera
         transfer_spec['zip_required'] ||= false
         transfer_spec['source_root'] ||= '/'
         # is normally provided by application, like package name
-        if !transfer_spec.has_key?('download_name')
+        if !transfer_spec.key?('download_name')
           # by default it is the name of first file
           dname = File.basename(transfer_spec['paths'].first['source'])
           # we remove extension
@@ -262,7 +260,7 @@ module Aspera
         @options = DEFAULT_OPTIONS.dup
         raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)
         opts.symbolize_keys.each do |k, v|
-          raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.has_key?(k)
+          raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           @options[k] = v
         end
         raise 'missing param: url' if @options[:url].nil?

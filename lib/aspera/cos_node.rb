@@ -11,7 +11,7 @@ module Aspera
         # check necessary contents
         raise 'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
         %w[apikey resource_instance_id endpoints].each do |field|
-          raise "service_credentials must have a field: #{field}" unless service_credentials.has_key?(field)
+          raise "service_credentials must have a field: #{field}" unless service_credentials.key?(field)
         end
         Aspera::Log.dump('service_credentials', service_credentials)
         # read endpoints from service provided in service credentials
@@ -29,6 +29,7 @@ module Aspera
     IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
     TOKEN_FIELD = 'delegated_refresh_token'
     attr_reader :add_ts
+
     def initialize(bucket_name, storage_endpoint, instance_id, api_key, auth_url=IBM_CLOUD_TOKEN_URL)
       @auth_url = auth_url
       @api_key = api_key

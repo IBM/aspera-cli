@@ -17,7 +17,7 @@ module Aspera
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
-      CONF_OVERVIEW_KEYS=%w[config parameter value].freeze
+      CONF_OVERVIEW_KEYS = %w[config parameter value].freeze
 
       private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR,
         :CONF_OVERVIEW_KEYS
@@ -26,7 +26,7 @@ module Aspera
         # special for Aspera on Cloud display node
         # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
         def flatten_name_value_list(hash)
-          hash.keys.each do |k|
+          hash.keys.each do |k| # rubocop:disable Style/HashEachMethods
             v = hash[k]
             next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(%w[name value])
             v.each do |pair|
@@ -132,14 +132,14 @@ module Aspera
       def result_all_fields(_results, table_rows_hash_val)
         raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
         # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
-        return table_rows_hash_val.each_with_object({}){|v, m|v.keys.each{|c|m[c] = true};}.keys
+        return table_rows_hash_val.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}; }.keys
       end
 
       # this method displays the results, especially the table format
       def display_results(results)
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
-        raise 'INTERNAL ERROR, result must have type' unless results.has_key?(:type)
-        raise 'INTERNAL ERROR, result must have data' unless results.has_key?(:data) || %i[empty nothing].include?(results[:type])
+        raise 'INTERNAL ERROR, result must have type' unless results.key?(:type)
+        raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
         # for config overvuew, it is name and value
         is_config_overview = res_data.is_a?(Array) && !res_data.empty? && res_data.first.is_a?(Hash) && res_data.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
@@ -191,7 +191,7 @@ module Aspera
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || %w[key value]
             if @option_flat_hash
-              res_data=self.class.flattened_object(res_data, expand_last: results[:option_expand_last])
+              res_data = self.class.flattened_object(res_data, expand_last: results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
             end
             asked_fields =
@@ -233,7 +233,7 @@ module Aspera
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
-          table_rows_hash_val = results[:textify].call(table_rows_hash_val) if results.has_key?(:textify)
+          table_rows_hash_val = results[:textify].call(table_rows_hash_val) if results.key?(:textify)
           unless @option_select.nil? || (@option_select.respond_to?(:empty?) && @option_select.empty?)
             raise CliBadArgument, "expecting hash for select, have #{@option_select.class}: #{@option_select}" unless @option_select.is_a?(Hash)
             @option_select.each{|k, v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
@@ -246,12 +246,12 @@ module Aspera
           when :table
             style = @option_table_style.chars
             # display the table !
-            #display_message(:data,Text::Table.new(
-            #head:  final_table_columns,
-            #rows:  final_table_rows,
-            #horizontal_boundary:    style[0],
-            #vertical_boundary:      style[1],
-            #boundary_intersection:  style[2]))
+            # display_message(:data,Text::Table.new(
+            # head:  final_table_columns,
+            # rows:  final_table_rows,
+            # horizontal_boundary:    style[0],
+            # vertical_boundary:      style[1],
+            # boundary_intersection:  style[2]))
             display_message(:data, Terminal::Table.new(
               headings:  final_table_columns,
               rows:      final_table_rows,

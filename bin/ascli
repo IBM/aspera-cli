@@ -3,9 +3,9 @@
 
 require 'rubygems'
 require 'securerandom'
-GEM_ROOT=File.realpath(File.join(File.dirname(File.realpath(__FILE__)), '..'))
+GEM_ROOT = File.realpath(File.join(File.dirname(File.realpath(__FILE__)), '..'))
 # coverage for tests
-if ENV.has_key?('ENABLE_COVERAGE')
+if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
   SimpleCov.root(GEM_ROOT)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)

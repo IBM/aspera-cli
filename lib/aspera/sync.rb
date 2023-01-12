@@ -39,7 +39,7 @@ module Aspera
         'preserve_gid'               => { cltype: :opt_without_arg},
         'create_dir'                 => { cltype: :opt_without_arg},
         'reset'                      => { cltype: :opt_without_arg},
-        # note: only one env var, but multiple sessions... may be a problem
+        # NOTE: only one env var, but multiple sessions... may be a problem
         'remote_password'            => { cltype: :envvar, clvarname: 'ASPERA_SCP_PASS'},
         'cookie'                     => { cltype: :envvar, clvarname: 'ASPERA_SCP_COOKIE'},
         'token'                      => { cltype: :envvar, clvarname: 'ASPERA_SCP_TOKEN'},
@@ -69,7 +69,7 @@ module Aspera
         env:  {}
       }
 
-      if @sync_params.has_key?('instance')
+      if @sync_params.key?('instance')
         raise StandardError, 'instance key must be hash' unless @sync_params['instance'].is_a?(Hash)
         instance_builder = CommandLineBuilder.new(@sync_params['instance'], INSTANCE_PARAMS)
         instance_builder.process_params
@@ -78,7 +78,7 @@ module Aspera
 
       @sync_params['sessions'].each do |session_params|
         raise StandardError, 'sessions must contain hashes' unless session_params.is_a?(Hash)
-        raise StandardError, 'session must contain at leat name' unless session_params.has_key?('name')
+        raise StandardError, 'session must contain at leat name' unless session_params.key?('name')
         session_builder = CommandLineBuilder.new(session_params, SESSION_PARAMS)
         session_builder.process_params
         session_builder.add_env_args(env_args[:env], env_args[:args])

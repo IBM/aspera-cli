@@ -10,10 +10,10 @@ module Aspera
       # keychain based on macOS keychain, using `security` cmmand line
       class Keychain
         DOMAINS = %i[user system common dynamic].freeze
-        LIST_OPTIONS={
+        LIST_OPTIONS = {
           domain: :c
         }
-        ADD_PASS_OPTIONS={
+        ADD_PASS_OPTIONS = {
           account:  :a,
           creator:  :c,
           type:     :C,
@@ -43,16 +43,16 @@ module Aspera
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
-            cmd=['security', command]
+            cmd = ['security', command]
             options&.each do |k, v|
-              raise "unknown option: #{k}" unless supported.has_key?(k)
+              raise "unknown option: #{k}" unless supported.key?(k)
               next if v.nil?
               cmd.push("-#{supported[k]}")
               cmd.push(v.shellescape) unless v.empty?
             end
             cmd.push(lastopt) unless lastopt.nil?
             Log.log.debug{"executing>>#{cmd.join(' ')}"}
-            result=%x(#{cmd.join(' ')} 2>&1)
+            result = %x(#{cmd.join(' ')} 2>&1)
             Log.log.debug{"result>>[#{result}]"}
             return result
           end
@@ -92,10 +92,10 @@ module Aspera
           raise "wrong operation: #{operation}" unless %i[add find delete].include?(operation)
           raise "wrong passtype: #{passtype}" unless %i[generic internet].include?(passtype)
           raise 'options shall be Hash' unless options.is_a?(Hash)
-          missing=(operation.eql?(:add) ? %i[account service password] : %i[label])-options.keys
+          missing = (operation.eql?(:add) ? %i[account service password] : %i[label]) - options.keys
           raise "missing options: #{missing}" unless missing.empty?
-          options[:getpass]='' if operation.eql?(:find)
-          output=self.class.execute("#{operation}-#{passtype}-password", options, ADD_PASS_OPTIONS, @path)
+          options[:getpass] = '' if operation.eql?(:find)
+          output = self.class.execute("#{operation}-#{passtype}-password", options, ADD_PASS_OPTIONS, @path)
           raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
           return nil unless operation.eql?(:find)
           attributes = {}

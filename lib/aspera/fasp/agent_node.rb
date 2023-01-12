@@ -13,9 +13,10 @@ module Aspera
     class AgentNode < AgentBase
       # option include: root_id if the node is an access key
       attr_writer :options
+
       def initialize(options)
         raise 'node specification must be Hash' unless options.is_a?(Hash)
-        %i[url username password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.has_key?(k) }
+        %i[url username password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.key?(k) }
         super()
         # root id is required for access key
         @root_id = options[:root_id]
@@ -65,9 +66,9 @@ module Aspera
           end
         end
         # manage special additional parameter
-        if transfer_spec.has_key?('EX_ssh_key_paths') && transfer_spec['EX_ssh_key_paths'].is_a?(Array) && !transfer_spec['EX_ssh_key_paths'].empty?
+        if transfer_spec.key?('EX_ssh_key_paths') && transfer_spec['EX_ssh_key_paths'].is_a?(Array) && !transfer_spec['EX_ssh_key_paths'].empty?
           # not standard, so place standard field
-          if transfer_spec.has_key?('ssh_private_key')
+          if transfer_spec.key?('ssh_private_key')
             Log.log.warn('Both ssh_private_key and EX_ssh_key_paths are present, using ssh_private_key')
           else
             Log.log.warn('EX_ssh_key_paths has multiple keys, using first one only') unless transfer_spec['EX_ssh_key_paths'].length.eql?(1)
@@ -107,11 +108,11 @@ module Aspera
             end
             spinner.update(title: trdata['status'])
             spinner.spin
-            #puts trdata
+            # puts trdata
           when 'running'
-            #puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
+            # puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
             if !started && trdata['precalc'].is_a?(Hash) &&
-            trdata['precalc']['status'].eql?('ready')
+                trdata['precalc']['status'].eql?('ready')
               notify_begin(@transfer_id, trdata['precalc']['bytes_expected'])
               started = true
             else
@@ -123,7 +124,7 @@ module Aspera
           end
           sleep(1)
         end
-        #TODO get status of sessions
+        # TODO: get status of sessions
         return []
       end
     end

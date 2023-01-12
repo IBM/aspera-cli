@@ -19,7 +19,7 @@ module Aspera
     private_constant :CLOUD_NAME
 
     class << self
-      def base_url;'https://ats.aspera.io';end
+      def base_url; 'https://ats.aspera.io'; end
     end
 
     def initialize
@@ -28,14 +28,14 @@ module Aspera
       @all_servers_cache = nil
     end
 
-    def cloud_names;CLOUD_NAME;end
+    def cloud_names; CLOUD_NAME; end
 
     # all available ATS servers
     # NOTE to Aspera: an API shall be created to retrieve all servers at once
     def all_servers
       if @all_servers_cache.nil?
         @all_servers_cache = []
-        CLOUD_NAME.keys.each do |name|
+        CLOUD_NAME.each_key do |name|
           read("servers/#{name.to_s.upcase}")[:data].each do |i|
             @all_servers_cache.push(i)
           end

@@ -8,12 +8,12 @@ module Aspera
     # display string for hidden secrets
     HIDDEN_PASSWORD = '🔑'
     # env vars for ascp with secrets
-    ASCP_ENV_SECRETS=%w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
+    ASCP_ENV_SECRETS = %w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
     # keys in hash that contain secrets
-    KEY_SECRETS =%w[password secret private_key passphrase].freeze
-    ALL_SECRETS =[].concat(ASCP_ENV_SECRETS, KEY_SECRETS).freeze
+    KEY_SECRETS = %w[password secret private_key passphrase].freeze
+    ALL_SECRETS = [].concat(ASCP_ENV_SECRETS, KEY_SECRETS).freeze
     # regex that define namec captures :begin and :end
-    REGEX_LOG_REPLACES=[
+    REGEX_LOG_REPLACES = [
       # CLI manager get/set options
       /(?<begin>[sg]et (#{KEY_SECRETS.join('|')})=).*(?<end>)/,
       # env var ascp exec
@@ -31,9 +31,10 @@ module Aspera
     @log_secrets = false
     class << self
       attr_accessor :log_secrets
+
       def log_formatter(original_formatter)
         original_formatter ||= Logger::Formatter.new
-        # note that @log_secrets may be set AFTER this init is done, so it's done at runtime
+        # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
         return lambda do |severity, datetime, progname, msg|
           if msg.is_a?(String) && !@log_secrets
             REGEX_LOG_REPLACES.each do |regx|
@@ -45,7 +46,7 @@ module Aspera
       end
 
       def secret?(keyword, value)
-        keyword=keyword.to_s if keyword.is_a?(Symbol)
+        keyword = keyword.to_s if keyword.is_a?(Symbol)
         # only Strings can be secrets, not booleans, or hash, arrays
         keyword.is_a?(String) && ALL_SECRETS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
       end
@@ -55,7 +56,7 @@ module Aspera
         when Array
           if is_name_value
             obj.each do |i|
-              i['value']=HIDDEN_PASSWORD if secret?(i['parameter'], i['value'])
+              i['value'] = HIDDEN_PASSWORD if secret?(i['parameter'], i['value'])
             end
           else
             obj.each{|i|deep_remove_secret(i)}

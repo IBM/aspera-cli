@@ -60,7 +60,7 @@ END_OF_JAVASCRIPT
       @proxy_auto_config = proxy_auto_config
       # avoid multiple execution, this does not support load balancing
       @cache = {}
-      @proxy_user=@proxy_pass=@pac_functions = nil
+      @proxy_user = @proxy_pass = @pac_functions = nil
     end
 
     def register_uri_generic
@@ -74,7 +74,7 @@ END_OF_JAVASCRIPT
     def find_proxy_for_url(service_url)
       uri = URI.parse(service_url)
       simple_url = "#{uri.scheme}://#{uri.host}"
-      if !@cache.has_key?(simple_url)
+      if !@cache.key?(simple_url)
         Log.log.debug{"PAC: starting javascript for #{service_url}"}
         # require at runtime, in case there is no js engine
         require 'execjs'
@@ -115,10 +115,10 @@ END_OF_JAVASCRIPT
           begin
             # PAC proxy addresses are <host>:<port>
             if /:[0-9]+$/.match?(addr_port)
-              uri=URI.parse("proxy://#{addr_port}")
+              uri = URI.parse("proxy://#{addr_port}")
               # ruby v>2.6 allows
-              uri.user=@proxy_user
-              uri.password=@proxy_pass
+              uri.user = @proxy_user
+              uri.password = @proxy_pass
               uri_list.push(uri)
             else
               Log.log.warn{"PAC: PROXY must be <address>:<port>, ignoring #{addr_port}"}

@@ -14,13 +14,13 @@ module Aspera
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
-      def levels; Logger::Severity.constants.sort{|a, b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym};end
+      def levels; Logger::Severity.constants.sort{|a, b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym}; end
 
       # where logs are sent to
-      def logtypes; %i[stderr stdout syslog];end
+      def logtypes; %i[stderr stdout syslog]; end
 
       # get the logger object of singleton
-      def log; instance.logger;end
+      def log; instance.logger; end
 
       # dump object in debug mode
       # @param name string or symbol
@@ -70,7 +70,7 @@ module Aspera
     # change underlying logger, but keep log level
     def logger_type=(new_logtype)
       current_severity_integer = @logger.level unless @logger.nil?
-      current_severity_integer = ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.has_key?('AS_LOG_LEVEL')
+      current_severity_integer = ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
       current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
       case new_logtype
       when :stderr

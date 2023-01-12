@@ -23,7 +23,7 @@ module Aspera
         end
 
         def server_by_cloud_region
-          # todo: provide list ?
+          # TODO: provide list ?
           cloud = options.get_option(:cloud, is_type: :mandatory).upcase
           region = options.get_option(:region, is_type: :mandatory)
           return @ats_api_pub.read("servers/#{cloud}/#{region}")[:data]
@@ -51,12 +51,12 @@ module Aspera
             params = options.get_option(:params) || {}
             server_data = nil
             # if transfer_server_id not provided, get it from command line options
-            if !params.has_key?('transfer_server_id')
+            if !params.key?('transfer_server_id')
               server_data = server_by_cloud_region
               params['transfer_server_id'] = server_data['id']
             end
             Log.log.debug{"using params: #{params}".bg_red.gray}
-            if params.has_key?('storage')
+            if params.key?('storage')
               case params['storage']['type']
               # here we need somehow to map storage type to field to get for auth end point
               when 'ibm-s3'
@@ -67,14 +67,14 @@ module Aspera
                 else
                   server_data2 = @ats_api_pub.all_servers.find do |s|
                     s['cloud'].eql?(server_data['cloud']) &&
-                    s['region'].eql?(server_data['region']) &&
-                    s.has_key?('s3_authentication_endpoint')
+                      s['region'].eql?(server_data['region']) &&
+                      s.key?('s3_authentication_endpoint')
                   end
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                   # specific one do not have s3 end point in id
                   params['transfer_server_id'] = server_data2['id']
                 end
-                if !params['storage'].has_key?('authentication_endpoint')
+                if !params['storage'].key?('authentication_endpoint')
                   params['storage']['endpoint'] = server_data2['s3_authentication_endpoint']
                 end
               end
@@ -156,7 +156,7 @@ module Aspera
             auth:     {
               type:     :oauth2,
               base_url: 'https://iam.bluemix.net/identity',
-              #does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
+              # does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
               crtype:   :generic,
               generic:  {
                 grant_type:    'urn:ibm:params:oauth:grant-type:apikey',

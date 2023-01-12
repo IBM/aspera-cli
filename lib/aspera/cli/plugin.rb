@@ -16,14 +16,14 @@ module Aspera
       # used when all resources are selected
       VAL_ALL = 'ALL'
 
-      #AGENTS=%i[options transfer config formater persistency].freeze
+      # AGENTS=%i[options transfer config formater persistency].freeze
 
       # global for inherited classes
       @@options_created = false # rubocop:disable Style/ClassVars
 
       def initialize(env)
         raise 'must be Hash' unless env.is_a?(Hash)
-        #env.each_key {|k| raise "wrong agent key #{k}" unless AGENTS.include?(k)}
+        # env.each_key {|k| raise "wrong agent key #{k}" unless AGENTS.include?(k)}
         @agents = env
         # check presence in descendant of mandatory method and constant
         raise StandardError, "missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
@@ -53,9 +53,9 @@ module Aspera
       end
 
       # TODO
-      #def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
+      # def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
       #  return get_next_argument('command',expected: command_list)
-      #end
+      # end
 
       # For create and delete operations: execute one actin or multiple if bulk is yes
       # @param params either single id or hash, or array for bulk
@@ -137,8 +137,8 @@ module Aspera
             data = data[res_class_path]
           end
           if item_list_key
-            item_list=data[item_list_key]
-            total_count=data['total_count']
+            item_list = data[item_list_key]
+            total_count = data['total_count']
             if !total_count.nil?
               count_msg = "Items: #{item_list.length}/#{total_count}"
               count_msg = count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
@@ -160,7 +160,7 @@ module Aspera
 
       # implement generic rest operations on given resource path
       def entity_action(rest_api, res_class_path, **opts)
-        #res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
+        # res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command = options.get_next_command(ALL_OPS)
         return entity_command(command, rest_api, res_class_path, **opts)
       end
@@ -180,15 +180,15 @@ module Aspera
       end
 
       # shortcuts helpers for plugin environment
-      def options; return @agents[:options];end
+      def options; return @agents[:options]; end
 
-      def transfer; return @agents[:transfer];end
+      def transfer; return @agents[:transfer]; end
 
-      def config; return @agents[:config];end
+      def config; return @agents[:config]; end
 
-      def format; return @agents[:formater];end
+      def format; return @agents[:formater]; end
 
-      def persistency; return @agents[:persistency];end
+      def persistency; return @agents[:persistency]; end
     end # Plugin
   end # Cli
 end # Aspera

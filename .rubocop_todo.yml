@@ -4,12 +4,6 @@ Metrics/MethodLength:
   Enabled: false
 Metrics/AbcSize:
   Enabled: false
-Layout/DotPosition:
-  Enabled: false
-Layout/AssignmentIndentation:
-  Enabled: true
-Layout/SpaceAroundOperators:
-  Enabled: false
 Layout/SpaceBeforeBlockBraces:
   Enabled: false
 Layout/SpaceInsideBlockBraces:
@@ -18,26 +12,8 @@ Layout/SpaceAroundBlockParameters:
   Enabled: false
 Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
-Layout/EmptyLinesAroundAttributeAccessor:
-  Enabled: false
-Layout/LeadingCommentSpace:
-  Enabled: false
-Layout/FirstHashElementIndentation:
-  Enabled: true
-Layout/EmptyLineAfterGuardClause:
-  Enabled: false
-Layout/HashAlignment:
-  Enabled: true
-Layout/CaseIndentation:
-  Enabled: true
 Layout/MultilineHashBraceLayout:
   Enabled: false
-Layout/SpaceAfterSemicolon:
-  Enabled: false
-Layout/MultilineMethodCallBraceLayout:
-  Enabled: false
-Layout/FirstArgumentIndentation:
-  Enabled: true
 Layout/MultilineArrayBraceLayout:
   Enabled: false
 Layout/MultilineMethodArgumentLineBreaks:
@@ -50,27 +26,15 @@ Layout/FirstArrayElementLineBreak:
   Enabled: false
 Layout/MultilineHashKeyLineBreaks:
   Enabled: false
-Style/WordArray:
-  Enabled: true
-  EnforcedStyle: percent
-Style/RescueModifier:
+Layout/MultilineMethodCallBraceLayout:
   Enabled: false
-Style/SymbolArray:
-  Enabled: true
-  EnforcedStyle: percent
 Style/IfUnlessModifier:
   Enabled: false
-Style/PreferredHashMethods:
-  Enabled: false
-Style/RegexpLiteral:
-  Enabled: false
-Style/CommentAnnotation:
+Style/RescueModifier:
   Enabled: false
 Style/Lambda:
   Enabled: false
 Style/CommentedKeyword:
-  Enabled: false
-Style/Semicolon:
   Enabled: false
 Style/NegatedIf:
   Enabled: false
@@ -78,45 +42,82 @@ Style/SingleLineMethods:
   Enabled: false
 Style/RedundantReturn:
   Enabled: false
-Style/HashEachMethods:
-  Enabled: false
 Style/StringConcatenation:
   Enabled: false
-Style/SafeNavigation:
-  Enabled: true
-Style/RedundantBegin:
+Style/StderrPuts:
+  Enabled: false
+Metrics/BlockLength:
   Enabled: false
 Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: false
-Layout/ArgumentAlignment:
-  Enabled: true
-Layout/MultilineOperationIndentation:
-  Enabled: false
 Style/Documentation:
-  Enabled: false
-Style/LambdaCall:
-  Enabled: true
-Metrics/BlockLength:
   Enabled: false
 Metrics/CyclomaticComplexity:
   Enabled: false
+Layout/DotPosition:
+  Enabled: true
+Layout/AssignmentIndentation:
+  Enabled: true
+Layout/SpaceAroundOperators:
+  Enabled: true
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: true
+Layout/LeadingCommentSpace:
+  Enabled: true
+Layout/FirstHashElementIndentation:
+  Enabled: true
+#Layout/EmptyLineAfterGuardClause:
+#  Enabled: true
+#Layout/HashAlignment:
+#  Enabled: true
+Layout/CaseIndentation:
+  Enabled: true
+Layout/SpaceAfterSemicolon:
+  Enabled: true
+Layout/FirstArgumentIndentation:
+  Enabled: true
+Style/WordArray:
+  Enabled: true
+  EnforcedStyle: percent
+Style/SymbolArray:
+  Enabled: true
+  EnforcedStyle: percent
+Style/PreferredHashMethods:
+  Enabled: true
+Style/CommentAnnotation:
+  Enabled: true
+Style/RegexpLiteral:
+  Enabled: true
+  AllowInnerSlashes: false
+Style/Semicolon:
+  Enabled: true
+Style/HashEachMethods:
+  Enabled: true
+Style/SafeNavigation:
+  Enabled: true
+Style/RedundantBegin:
+  Enabled: true
+Layout/ArgumentAlignment:
+  Enabled: true
+Layout/MultilineOperationIndentation:
+  Enabled: true
+Style/LambdaCall:
+  Enabled: true
 Style/MethodCallWithoutArgsParentheses:
   Enabled: true
 Layout/EmptyLineAfterMagicComment:
   Enabled: true
 Style/ClassAndModuleChildren:
-  Enabled: false
+  Enabled: true
 Lint/DuplicateBranch: # (new in 1.3)
   Enabled: true
 Lint/EmptyClass: # (new in 1.3)
-  Enabled: false
+  Enabled: true
 Style/DocumentDynamicEvalDefinition: # (new in 1.1)
-  Enabled: false
+  Enabled: true
 Style/NegatedIfElseCondition: # (new in 1.2)
-  Enabled: false
+  Enabled: true
 Style/NegatedWhile:
-  Enabled: false
+  Enabled: true
 Security/Eval:
-  Enabled: false
-Style/StderrPuts:
-  Enabled: false
+  Enabled: true

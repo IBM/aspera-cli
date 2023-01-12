@@ -32,7 +32,7 @@ module Aspera
             d_t_s = call_context[:data]['transfer_specs']
             if d_t_s.is_a?(Array)
               d_t_s.each do |res|
-                #r_err=res['transfer_spec']['error']
+                # r_err=res['transfer_spec']['error']
                 r_err = res['error']
                 if r_err.is_a?(Hash)
                   RestErrorAnalyzer.add_error(call_context, type, "#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")

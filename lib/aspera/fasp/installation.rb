@@ -42,7 +42,7 @@ module Aspera
         </default>
         </CONF>
       END_OF_CONFIG_FILE
-      DUMMY_CERT_INFO='/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com'
+      DUMMY_CERT_INFO = '/C=US/ST=California/L=Emeryville/O=Aspera Inc./OU=Corporate/CN=Aspera Inc./emailAddress=info@asperasoft.com'
       private_constant :PRODUCT_CONNECT, :PRODUCT_CLI_V1, :PRODUCT_DRIVE, :PRODUCT_ENTSRV, :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER,
         :ONE_YEAR_SECONDS, :DEFAULT_ASPERA_CONF, :DUMMY_CERT_INFO
       # set ascp executable path
@@ -134,17 +134,17 @@ module Aspera
         when :ascp, :ascp4
           use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
           file = @path_to_ascp
-          # note that there might be a .exe at the end
+          # NOTE: that there might be a .exe at the end
           file = file.gsub('ascp', 'ascp4') if k.eql?(:ascp4)
         when :transferd
           file = transferd_filepath
         when :ssh_bypass_key_dsa
-          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_dsa.pem')) {get_key('dsa', 1)}
+          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_dsa.pem')) {get_key('dsa', 1)}
         when :ssh_bypass_key_rsa
-          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
+          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
         when :aspera_license
-          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
-            clear=[
+          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
+            clear = [
               Zlib::Inflate.inflate(DataRepository.instance.data(6)),
               "==SIGNATURE==\n",
               Base64.strict_encode64(DataRepository.instance.data(7))
@@ -152,7 +152,7 @@ module Aspera
             Base64.strict_encode64(clear.join)
           end
         when :aspera_conf
-          file=Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
+          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
         when :fallback_cert, :fallback_key
           file_key = File.join(sdk_folder, 'aspera_fallback_key.pem')
           file_cert = File.join(sdk_folder, 'aspera_fallback_cert.pem')

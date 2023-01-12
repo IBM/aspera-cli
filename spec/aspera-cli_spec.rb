@@ -10,8 +10,8 @@ require 'aspera/log'
 require 'uri'
 require 'openssl'
 
-#Aspera::Log.instance.level=:debug
-#Aspera::Log.instance.logger_type=:stderr
+# Aspera::Log.instance.level=:debug
+# Aspera::Log.instance.logger_type=:stderr
 
 class LocalExecutor
   def execute(cmd, line)
@@ -33,8 +33,8 @@ PATH_FOLDER_MAIN = '/'
 demo_executor = Aspera::Ssh.new(ssh_url.host, params[:user], {password: params[:pass], port: ssh_url.port})
 
 # to use a local executor, set PATH_FOLDER_MAIN to the main folder
-#PATH_FOLDER_MAIN='/local/data'
-#demo_executor=LocalExecutor.new
+# PATH_FOLDER_MAIN='/local/data'
+# demo_executor=LocalExecutor.new
 TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
 PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN, 'Upload')
@@ -98,12 +98,10 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      begin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
-      end
+      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+      raise 'Shall not reach here'
+    rescue Aspera::AsCmd::Error => e
+      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
     end
   end
   describe 'rename' do
@@ -116,12 +114,10 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      begin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
-      end
+      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+      raise 'Shall not reach here'
+    rescue Aspera::AsCmd::Error => e
+      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
     end
   end
   describe 'md5sum' do
@@ -131,12 +127,10 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
-      begin
-        ascmd.execute_single('md5sum', ['/notexist'])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
-      end
+      ascmd.execute_single('md5sum', ['/notexist'])
+      raise 'Shall not reach here'
+    rescue Aspera::AsCmd::Error => e
+      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
     end
   end
   describe 'delete' do
@@ -149,12 +143,10 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      begin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
-      end
+      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+      raise 'Shall not reach here'
+    rescue Aspera::AsCmd::Error => e
+      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
     end
   end
   describe 'df' do
@@ -166,12 +158,10 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res.first[:total]).to(be_a(Integer))
     end
     it 'fails if no such file' do
-      begin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-        raise 'Shall not reach here'
-      rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
-      end
+      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+      raise 'Shall not reach here'
+    rescue Aspera::AsCmd::Error => e
+      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
     end
   end
 end

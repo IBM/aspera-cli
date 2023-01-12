@@ -34,9 +34,9 @@ Gem::Specification.new do |spec|
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
   spec.files = Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples README.md docs/*.conf).split("\x0")}
   # specify executable names: must be after lines defining: spec.bindir and spec.files
-  spec.executables = spec.files.grep(%r{^#{spec.bindir}}){|f|File.basename(f)}
+  spec.executables = spec.files.grep(/^#{spec.bindir}/){|f|File.basename(f)}
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
-  spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.has_key?('SIGNING_KEY')
+  spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
   # see also Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION
   spec.required_ruby_version = '>= 2.4'
   # dependency gems for runtime
@@ -53,7 +53,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('websocket', '~> 1.2')
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
-  #spec.add_development_dependency('grpc', '~> 1.0') # for transferSDK
+  # spec.add_development_dependency('grpc', '~> 1.0') # for transferSDK
   spec.add_development_dependency('mimemagic', '~> 0.3') # for preview
   # development gems
   spec.add_development_dependency('bundler', '~> 2.0')

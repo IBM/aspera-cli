@@ -26,8 +26,8 @@ module Aspera
         #          super(env)
         #        end
 
-        SAML_IMPORT_MANDATORY=%w[id name_id].freeze
-        SAML_IMPORT_ALLOWED=%w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
+        SAML_IMPORT_MANDATORY = %w[id name_id].freeze
+        SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
         ACTIONS = %i[health repository admin].freeze
 
@@ -37,9 +37,9 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              Rest.
-                new(base_url: options.get_option(:url, is_type: :mandatory)+'/node_api').
-                call(
+              Rest
+                .new(base_url: options.get_option(:url, is_type: :mandatory) + '/node_api')
+                .call(
                   operation: 'GET',
                   subpath: 'ping',
                   headers: {'content-type': 'application/json'},
@@ -69,17 +69,17 @@ module Aspera
               when :app_authorizations
                 return {type: :single_object, data: api_shares_admin.read("data/users/#{user_id}/app_authorizations")[:data]}
               when :share_permissions
-                #share_name = options.get_next_argument('share name')
-                #all_shares = api_shares_admin.read('data/shares')[:data]
-                #share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
+                # share_name = options.get_next_argument('share name')
+                # all_shares = api_shares_admin.read('data/shares')[:data]
+                # share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
                 return {type: :object_list, data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
               when :saml_import
                 parameters = options.get_option(:value)
                 return do_bulk_operation(parameters, 'created') do |user_params|
-                  user_params=user_params.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
+                  user_params = user_params.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
                   raise 'expecting Hash' unless user_params.is_a?(Hash)
                   SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if user_params[p].nil?}
-                  user_params.keys.each do |p|
+                  user_params.each_key do |p|
                     raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
                   end
                   api_shares_admin.create('data/saml_users/import', user_params)[:data]
@@ -99,9 +99,9 @@ module Aspera
               when :list
                 return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
               when :user_permissions
-                #share_name = options.get_next_argument('share name')
-                #share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
-                #raise "NOT IMPLEMENTED: #{share_name} #{share_id}"
+                # share_name = options.get_next_argument('share name')
+                # share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
+                # raise "NOT IMPLEMENTED: #{share_name} #{share_id}"
                 return {type: :object_list, data: api_shares_admin.read("data/shares/#{share_id}/user_permissions")[:data]}
               end
             end

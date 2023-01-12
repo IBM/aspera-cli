@@ -169,12 +169,12 @@ module Aspera
           pac_script = options.get_option(:fpac)
           # create PAC executor
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
-          proxy_creds=options.get_option(:proxy_credentials)
+          proxy_creds = options.get_option(:proxy_credentials)
           if !proxy_creds.nil?
             raise CliBadArgument, 'proxy credentials shall be an array (#{proxy_creds.class})' unless proxy_creds.is_a?(Array)
             raise CliBadArgument, 'proxy credentials shall have two elements (#{proxy_creds.length})' unless proxy_creds.length.eql?(2)
-            @pac_exec.proxy_user=Rest.proxy_user=proxy_creds[0]
-            @pac_exec.proxy_pass=Rest.proxy_pass=proxy_creds[1]
+            @pac_exec.proxy_user = Rest.proxy_user = proxy_creds[0]
+            @pac_exec.proxy_pass = Rest.proxy_pass = proxy_creds[1]
           end
         end
 
@@ -367,7 +367,7 @@ module Aspera
         # @param include_path to avoid inclusion loop
         def expanded_with_preset_includes(hash_val, include_path=[])
           raise CliError, "#{EXTV_INCLUDE_PRESETS} requires a Hash, have #{hash_val.class}" unless hash_val.is_a?(Hash)
-          if hash_val.has_key?(EXTV_INCLUDE_PRESETS)
+          if hash_val.key?(EXTV_INCLUDE_PRESETS)
             memory = hash_val.clone
             includes = memory[EXTV_INCLUDE_PRESETS]
             memory.delete(EXTV_INCLUDE_PRESETS)
@@ -432,7 +432,7 @@ module Aspera
 
         def convert_preset_plugin_name(old_name, new_name)
           default_preset = @config_presets[CONF_PRESET_DEFAULT]
-          return unless default_preset.is_a?(Hash) && default_preset.has_key?(old_name)
+          return unless default_preset.is_a?(Hash) && default_preset.key?(old_name)
           default_preset[new_name] = default_preset[old_name]
           default_preset.delete(old_name)
           Log.log.warn{"Converted plugin default: #{old_name} -> #{new_name}"}
@@ -441,96 +441,94 @@ module Aspera
         # read config file and validate format
         # tries to convert from older version if possible and required
         def read_config_file
-          begin
-            Log.log.debug{"config file is: #{@option_config_file}".red}
-            conf_file_v1 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V1, DEFAULT_CONFIG_FILENAME)
-            conf_file_v2 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V2, DEFAULT_CONFIG_FILENAME)
-            # files search for configuration, by default the one given by user
-            search_files = [@option_config_file]
-            # if default file, then also look for older versions
-            search_files.push(conf_file_v2, conf_file_v1) if @option_config_file.eql?(@conf_file_default)
-            # find first existing file (or nil)
-            conf_file_to_load = search_files.find{|f| File.exist?(f)}
-            # require save if old version of file
-            save_required = !@option_config_file.eql?(conf_file_to_load)
-            # if no file found, create default config
-            if conf_file_to_load.nil?
-              Log.log.warn{"No config file found. Creating empty configuration file: #{@option_config_file}"}
-              @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => @info[:version]}}
-            else
-              Log.log.debug{"loading #{@option_config_file}"}
-              @config_presets = YAML.load_file(conf_file_to_load)
-            end
-            files_to_copy = []
-            Log.log.debug{"Available_presets: #{@config_presets}"}
-            raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
-            # check there is at least the config section
-            if !@config_presets.has_key?(CONF_PRESET_CONFIG)
-              raise "Cannot find key: #{CONF_PRESET_CONFIG}"
-            end
-            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-            if version.nil?
-              raise 'No version found in config section.'
-            end
-            # oldest compatible conf file format, update to latest version when an incompatible change is made
-            # check compatibility of version of conf file
-            config_tested_version = '0.4.5'
-            if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-              raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
-            end
-            config_tested_version = '0.6.15'
-            if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-              convert_preset_plugin_name(AOC_COMMAND_V1, AOC_COMMAND_V2)
-              version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-              save_required = true
-            end
-            config_tested_version = '0.8.10'
-            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-              convert_preset_path(PROGRAM_NAME_V1, PROGRAM_NAME_V2, files_to_copy)
-              version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-              save_required = true
-            end
-            config_tested_version = '1.0'
-            if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-              convert_preset_plugin_name(AOC_COMMAND_V2, AOC_COMMAND_V3)
-              convert_preset_path(PROGRAM_NAME_V2, @info[:name], files_to_copy)
-              version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-              save_required = true
-            end
-            Log.log.debug{"conf version: #{version}"}
-            # Place new compatibility code here
-            if save_required
-              Log.log.warn('Saving automatic conversion.')
-              @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
-              save_presets_to_config_file
-              Log.log.warn('Copying referenced files')
-              files_to_copy.each do |file|
-                FileUtils.cp(file, @main_folder)
-                Log.log.warn{"..#{file} -> #{@main_folder}"}
-              end
-            end
-          rescue Psych::SyntaxError => e
-            Log.log.error('YAML error in config file')
-            raise e
-          rescue StandardError => e
-            Log.log.debug{"-> #{e.class.name} : #{e}"}
-            if File.exist?(@option_config_file)
-              # then there is a problem with that file.
-              new_name = "#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
-              File.rename(@option_config_file, new_name)
-              Log.log.warn{"Renamed config file to #{new_name}."}
-              Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
-            end
-            raise CliError, e.to_s
+          Log.log.debug{"config file is: #{@option_config_file}".red}
+          conf_file_v1 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V1, DEFAULT_CONFIG_FILENAME)
+          conf_file_v2 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V2, DEFAULT_CONFIG_FILENAME)
+          # files search for configuration, by default the one given by user
+          search_files = [@option_config_file]
+          # if default file, then also look for older versions
+          search_files.push(conf_file_v2, conf_file_v1) if @option_config_file.eql?(@conf_file_default)
+          # find first existing file (or nil)
+          conf_file_to_load = search_files.find{|f| File.exist?(f)}
+          # require save if old version of file
+          save_required = !@option_config_file.eql?(conf_file_to_load)
+          # if no file found, create default config
+          if conf_file_to_load.nil?
+            Log.log.warn{"No config file found. Creating empty configuration file: #{@option_config_file}"}
+            @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => @info[:version]}}
+          else
+            Log.log.debug{"loading #{@option_config_file}"}
+            @config_presets = YAML.load_file(conf_file_to_load)
           end
+          files_to_copy = []
+          Log.log.debug{"Available_presets: #{@config_presets}"}
+          raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
+          # check there is at least the config section
+          if !@config_presets.key?(CONF_PRESET_CONFIG)
+            raise "Cannot find key: #{CONF_PRESET_CONFIG}"
+          end
+          version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
+          if version.nil?
+            raise 'No version found in config section.'
+          end
+          # oldest compatible conf file format, update to latest version when an incompatible change is made
+          # check compatibility of version of conf file
+          config_tested_version = '0.4.5'
+          if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+            raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
+          end
+          config_tested_version = '0.6.15'
+          if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
+            convert_preset_plugin_name(AOC_COMMAND_V1, AOC_COMMAND_V2)
+            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
+            save_required = true
+          end
+          config_tested_version = '0.8.10'
+          if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+            convert_preset_path(PROGRAM_NAME_V1, PROGRAM_NAME_V2, files_to_copy)
+            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
+            save_required = true
+          end
+          config_tested_version = '1.0'
+          if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
+            convert_preset_plugin_name(AOC_COMMAND_V2, AOC_COMMAND_V3)
+            convert_preset_path(PROGRAM_NAME_V2, @info[:name], files_to_copy)
+            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
+            save_required = true
+          end
+          Log.log.debug{"conf version: #{version}"}
+          # Place new compatibility code here
+          if save_required
+            Log.log.warn('Saving automatic conversion.')
+            @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
+            save_presets_to_config_file
+            Log.log.warn('Copying referenced files')
+            files_to_copy.each do |file|
+              FileUtils.cp(file, @main_folder)
+              Log.log.warn{"..#{file} -> #{@main_folder}"}
+            end
+          end
+        rescue Psych::SyntaxError => e
+          Log.log.error('YAML error in config file')
+          raise e
+        rescue StandardError => e
+          Log.log.debug{"-> #{e.class.name} : #{e}"}
+          if File.exist?(@option_config_file)
+            # then there is a problem with that file.
+            new_name = "#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
+            File.rename(@option_config_file, new_name)
+            Log.log.warn{"Renamed config file to #{new_name}."}
+            Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
+          end
+          raise CliError, e.to_s
         end
 
         # find plugins in defined paths
         def add_plugins_from_lookup_folders
           @plugin_lookup_folders.each do |folder|
             next unless File.directory?(folder)
-            #TODO: add gem root to load path ? and require short folder ?
-            #$LOAD_PATH.push(folder) if i[:add_path]
+            # TODO: add gem root to load path ? and require short folder ?
+            # $LOAD_PATH.push(folder) if i[:add_path]
             Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
               add_plugin_info(File.join(folder, source))
             end
@@ -545,7 +543,7 @@ module Aspera
           raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
           plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
           req = path.gsub(/#{RUBY_FILE_EXT}$/o, '')
-          if @plugins.has_key?(plugin_symbol)
+          if @plugins.key?(plugin_symbol)
             Log.log.warn{"skipping plugin already registered: #{plugin_symbol}"}
             return
           end
@@ -615,7 +613,7 @@ module Aspera
               return {type: :object_list, data: all_links}
             when :download
               folder_dest = transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
-              #folder_dest=self.options.get_next_argument('destination folder')
+              # folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
               fileurl = one_link['href']
               filename = fileurl.gsub(%r{.*/}, '')
@@ -657,15 +655,20 @@ module Aspera
                 line.chomp!
                 last_line = line
                 case line
-                when %r{^DBG Path ([^ ]+) (dir|file) +: (.*)$} then data[Regexp.last_match(1)] = Regexp.last_match(3)
-                when %r{^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$}
+                when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
+                  data[Regexp.last_match(1)] = Regexp.last_match(3)
+                when /^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$/
                   data[Regexp.last_match(2)] = "#{Regexp.last_match(4)} #{Regexp.last_match(1)} v#{Regexp.last_match(3)}"
-                when %r{^DBG License result \(/license/(\S+)\): (.+)$} then data[Regexp.last_match(1)] = Regexp.last_match(2)
-                when %r{^LOG (.+) version ([0-9.]+)$} then data['product_name'] = Regexp.last_match(1);data['product_version'] = Regexp.last_match(2)
-                when %r{^LOG Initializing FASP version ([^,]+),} then data['ascp_version'] = Regexp.last_match(1)
+                when %r{^DBG License result \(/license/(\S+)\): (.+)$}
+                  data[Regexp.last_match(1)] = Regexp.last_match(2)
+                when /^LOG (.+) version ([0-9.]+)$/
+                  data['product_name'] = Regexp.last_match(1)
+                  data['product_version'] = Regexp.last_match(2)
+                when /^LOG Initializing FASP version ([^,]+),/
+                  data['ascp_version'] = Regexp.last_match(1)
                 end
               end
-              if !thread.value.exitstatus.eql?(1) && !data.has_key?('root')
+              if !thread.value.exitstatus.eql?(1) && !data.key?('root')
                 raise last_line
               end
             end
@@ -713,7 +716,7 @@ module Aspera
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           name = instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
-          raise "no such preset: #{name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.has_key?(name)
+          raise "no such preset: #{name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.key?(name)
           selected_preset = @config_presets[name]
           case action
           when :list
@@ -743,11 +746,11 @@ module Aspera
           when :set
             param_name = options.get_next_argument('parameter name')
             param_value = options.get_next_argument('parameter value')
-            if !@config_presets.has_key?(name)
+            if !@config_presets.key?(name)
               Log.log.debug{"no such config name: #{name}, initializing"}
               selected_preset = @config_presets[name] = {}
             end
-            if selected_preset.has_key?(param_name)
+            if selected_preset.key?(param_name)
               Log.log.warn{"overwriting value: #{selected_preset[param_name]}"}
             end
             selected_preset[param_name] = param_value
@@ -755,7 +758,7 @@ module Aspera
             return Main.result_status("Updated: #{name}: #{param_name} <- #{param_value}")
           when :initialize
             config_value = options.get_next_argument('extended value', type: Hash)
-            if @config_presets.has_key?(name)
+            if @config_presets.key?(name)
               Log.log.warn{"configuration already exists: #{name}, overwriting"}
             end
             @config_presets[name] = config_value
@@ -782,32 +785,32 @@ module Aspera
             return Main.result_status("Updated: #{name}")
           when :lookup
             BasicAuthPlugin.register_options(@agents)
-            url=options.get_option(:url, is_type: :mandatory)
-            user=options.get_option(:username, is_type: :mandatory)
-            result=lookup_preset(url: url, username: user)
+            url = options.get_option(:url, is_type: :mandatory)
+            user = options.get_option(:username, is_type: :mandatory)
+            result = lookup_preset(url: url, username: user)
             raise 'no such config found' if result.nil?
             return {type: :single_object, data: result}
           when :secure
-            identifier=options.get_next_argument('config name', mandatory: false)
+            identifier = options.get_next_argument('config name', mandatory: false)
             preset_names = identifier.nil? ? @config_presets.keys : [identifier]
-            secret_keywords=%w[password secret].freeze
+            secret_keywords = %w[password secret].freeze
             preset_names.each do |pset_name|
-              preset=@config_presets[pset_name]
+              preset = @config_presets[pset_name]
               next unless preset.is_a?(Hash)
-              preset.keys.each do |option_name|
+              preset.each_key do |option_name|
                 secret_keywords.each do |keyword|
                   next unless option_name.end_with?(keyword)
-                  vault_label=pset_name
-                  incr=0
-                  while !vault.get(label: vault_label, exception: false).nil?
-                    vault_label="#{pset_name}#{incr}"
-                    incr+=1
+                  vault_label = pset_name
+                  incr = 0
+                  until vault.get(label: vault_label, exception: false).nil?
+                    vault_label = "#{pset_name}#{incr}"
+                    incr += 1
                   end
-                  to_set={label: vault_label, password: preset[option_name]}
+                  to_set = {label: vault_label, password: preset[option_name]}
                   puts "need to encode #{pset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
-                  #to_copy=%i[]
+                  # to_copy=%i[]
                   vault.set(to_set)
-                  preset[option_name]="@vault:#{vault_label}.password"
+                  preset[option_name] = "@vault:#{vault_label}.password"
                 end
               end
             end
@@ -847,13 +850,13 @@ module Aspera
             Log.log.warn{"This syntax is deprecated, use command: preset #{action}"}
             return execute_preset(action: action)
           when :id # older syntax
-            identifier=options.get_next_argument('config name')
+            identifier = options.get_next_argument('config name')
             Log.log.warn{"This syntax is deprecated, use command: preset <verb> #{identifier}"}
             return execute_preset(name: identifier)
           when :preset # newer syntax
             return execute_preset
           when :open
-            OpenApplication.instance.uri(@option_config_file.to_s) #file://
+            OpenApplication.instance.uri(@option_config_file.to_s) # file://
             return Main.result_nothing
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
@@ -903,7 +906,7 @@ module Aspera
             options.ask_missing_mandatory = true
             # register url option
             BasicAuthPlugin.register_options(@agents)
-            params={}
+            params = {}
             # get from option, or ask
             params[:instance_url] = options.get_option(:url, is_type: :mandatory)
             # allow user to tell the preset name
@@ -911,7 +914,7 @@ module Aspera
             # allow user to specify type of application
             params[:application] = options.get_option(:value)
             params[:application] = params[:application].nil? ? identify_plugin_for_url(params[:instance_url])[:product] : params[:application].to_sym
-            params[:plugin_name]=params[:application]
+            params[:plugin_name] = params[:application]
             params[:test_args] = '<replace per app>'
             case params[:application]
             when :faspex5
@@ -997,7 +1000,7 @@ module Aspera
           when :check_update
             return {type: :single_object, data: check_gem_version}
           when :initdemo
-            if @config_presets.has_key?(DEMO_SERVER_PRESET)
+            if @config_presets.key?(DEMO_SERVER_PRESET)
               Log.log.warn{"Demo server preset already present: #{DEMO_SERVER_PRESET}"}
             else
               Log.log.info{"Creating Demo server preset: #{DEMO_SERVER_PRESET}"}
@@ -1008,7 +1011,7 @@ module Aspera
               }
             end
             @config_presets[CONF_PRESET_DEFAULT] ||= {}
-            if @config_presets[CONF_PRESET_DEFAULT].has_key?(SERVER_COMMAND)
+            if @config_presets[CONF_PRESET_DEFAULT].key?(SERVER_COMMAND)
               Log.log.warn{"Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND]}"}
               Log.log.warn{"Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}"} unless
                 DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND])
@@ -1027,16 +1030,16 @@ module Aspera
         def email_settings
           smtp = options.get_option(:smtp, is_type: :mandatory)
           # change string keys into symbol keys
-          smtp = smtp.keys.each_with_object({}){|v, m|m[v.to_sym] = smtp[v];}
+          smtp = smtp.keys.each_with_object({}){|v, m|m[v.to_sym] = smtp[v]; }
           # defaults
           smtp[:tls] ||= true
           smtp[:port] ||= smtp[:tls] ? 587 : 25
-          smtp[:from_email] ||= smtp[:username] if smtp.has_key?(:username)
-          smtp[:from_name] ||= smtp[:from_email].gsub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.has_key?(:username)
-          smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/, '') if smtp.has_key?(:from_email)
+          smtp[:from_email] ||= smtp[:username] if smtp.key?(:username)
+          smtp[:from_name] ||= smtp[:from_email].gsub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
+          smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/, '') if smtp.key?(:from_email)
           # check minimum required
           %i[server port domain].each do |n|
-            raise "Missing smtp parameter: #{n}" unless smtp.has_key?(n)
+            raise "Missing smtp parameter: #{n}" unless smtp.key?(n)
           end
           Log.log.debug{"smtp=#{smtp}"}
           return smtp
@@ -1054,10 +1057,10 @@ module Aspera
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
           %i[from_name from_email].each do |n|
-            raise "Missing email parameter: #{n}" unless values.has_key?(n)
+            raise "Missing email parameter: #{n}" unless values.key?(n)
           end
           start_options = [mail_conf[:domain]]
-          start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.has_key?(:username) && mail_conf.has_key?(:password)
+          start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
           # create a binding with only variables defined in values
           template_binding = empty_binding
           # add variables to binding
@@ -1092,10 +1095,10 @@ module Aspera
             Log.log.debug('skip default config')
             return nil
           end
-          if @config_presets.has_key?(CONF_PRESET_DEFAULT) &&
-          @config_presets[CONF_PRESET_DEFAULT].has_key?(plugin_sym.to_s)
+          if @config_presets.key?(CONF_PRESET_DEFAULT) &&
+              @config_presets[CONF_PRESET_DEFAULT].key?(plugin_sym.to_s)
             default_config_name = @config_presets[CONF_PRESET_DEFAULT][plugin_sym.to_s]
-            if !@config_presets.has_key?(default_config_name)
+            if !@config_presets.key?(default_config_name)
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_sym}], but it does not exist in config file.\n"\
                   'Please fix the issue: either create preset with one parameter: '\
@@ -1108,7 +1111,7 @@ module Aspera
           return nil
         end # get_plugin_default_config_name
 
-        ALLOWED_KEYS=%i[password username description].freeze
+        ALLOWED_KEYS = %i[password username description].freeze
         def execute_vault
           command = options.get_next_command(%i[list show create delete password])
           case command
@@ -1117,11 +1120,11 @@ module Aspera
           when :show
             return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
           when :create
-            label=options.get_next_argument('label')
-            info=options.get_next_argument('info Hash')
+            label = options.get_next_argument('label')
+            info = options.get_next_argument('info Hash')
             raise 'info must be Hash' unless info.is_a?(Hash)
-            info=info.symbolize_keys
-            info[:label]=label
+            info = info.symbolize_keys
+            info[:label] = label
             vault.set(info)
             return Main.result_status('Password added')
           when :delete
@@ -1129,33 +1132,33 @@ module Aspera
             return Main.result_status('Password deleted')
           when :password
             raise 'Vault does not support password change' unless vault.respond_to?(:password=)
-            new_password=options.get_next_argument('new_password')
-            vault.password=new_password
+            new_password = options.get_next_argument('new_password')
+            vault.password = new_password
             vault.save
             return Main.result_status('Password updated')
           end
         end
 
         def vault_value(name)
-          m=name.match(/^(.+)\.(.+)$/)
+          m = name.match(/^(.+)\.(.+)$/)
           raise 'vault name shall match <name>.<param>' if m.nil?
-          info=vault.get(label: m[1])
-          #raise "no such vault entry: #{m[1]}" if info.nil?
-          value=info[m[2].to_sym]
+          info = vault.get(label: m[1])
+          # raise "no such vault entry: #{m[1]}" if info.nil?
+          value = info[m[2].to_sym]
           raise "no such entry value: #{m[2]}" if value.nil?
           return value
         end
 
         def vault
           if @vault.nil?
-            vault_info = options.get_option(:vault) || {'type'=>'file', 'name'=>'vault.bin'}
+            vault_info = options.get_option(:vault) || {'type' => 'file', 'name' => 'vault.bin'}
             vault_password = options.get_option(:vault_password, is_type: :mandatory)
             raise 'vault must be Hash' unless vault_info.is_a?(Hash)
             vault_type = vault_info['type'] || 'file'
             vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
             case vault_type
             when 'file'
-              vault_path=File.absolute_path?(vault_name) ? vault_name : File.join(@main_folder, vault_name)
+              vault_path = File.absolute_path?(vault_name) ? vault_name : File.join(@main_folder, vault_name)
               @vault = Keychain::EncryptedHash.new(vault_path, vault_password)
             when 'system'
               case Environment.os
@@ -1180,11 +1183,11 @@ module Aspera
 
         def lookup_preset(url:, username:)
           # remove extra info to maximize match
-          url=canonical_url(url)
+          url = canonical_url(url)
           Log.log.debug{"Lookup preset for #{username}@#{url}"}
           @config_presets.each do |_k, v|
             next unless v.is_a?(Hash)
-            conf_url=v['url'].is_a?(String) ? canonical_url(v['url']) : nil
+            conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
             return v if conf_url.eql?(url) && v['username'].eql?(username)
           end
           nil
@@ -1193,10 +1196,10 @@ module Aspera
         def lookup_secret(url:, username:, mandatory: false)
           secret = options.get_option(:secret)
           if secret.nil?
-            conf=lookup_preset(url: url, username: username)
+            conf = lookup_preset(url: url, username: username)
             if conf.is_a?(Hash)
               Log.log.debug{"Found preset #{conf} with URL and username"}
-              secret=conf['password']
+              secret = conf['password']
             end
             raise "Please provide secret for #{username} using option: secret or by setting a preset for #{username}@#{url}." if secret.nil? && mandatory
           end
@@ -1216,9 +1219,9 @@ module Aspera
           params[:option_default] = options.get_option(:default, is_type: :mandatory)
           Log.log.error{"override=#{option_override} -> #{option_override.class}"}
           raise CliError, "A default configuration already exists for plugin '#{params[:plugin_name]}' (use --override=yes or --default=no)" \
-            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].has_key?(params[:plugin_name])
+            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].key?(params[:plugin_name])
           raise CliError, "Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
-            if !option_override && @config_presets.has_key?(params[:preset_name])
+            if !option_override && @config_presets.key?(params[:preset_name])
           # lets see if path to priv key is provided
           private_key_path = options.get_option(:pkeypath)
           # give a chance to provide
@@ -1321,9 +1324,9 @@ module Aspera
           params[:option_default] = options.get_option(:default, is_type: :mandatory)
           Log.log.error{"override=#{option_override} -> #{option_override.class}"}
           raise CliError, "A default configuration already exists for plugin '#{params[:plugin_name]}' (use --override=yes or --default=no)" \
-            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].has_key?(params[:plugin_name])
+            if !option_override && params[:option_default] && @config_presets[CONF_PRESET_DEFAULT].key?(params[:plugin_name])
           raise CliError, "Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
-            if !option_override && @config_presets.has_key?(params[:preset_name])
+            if !option_override && @config_presets.key?(params[:preset_name])
           # lets see if path to priv key is provided
           private_key_path = options.get_option(:pkeypath)
           # give a chance to provide

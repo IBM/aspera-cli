@@ -21,7 +21,7 @@ module Aspera
         if !params.nil?
           raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
           params.each do |k, v|
-            raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}" unless DEFAULTS.has_key?(k)
+            raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}" unless DEFAULTS.key?(k)
             raise "#{k} must be Integer" unless v.is_a?(Integer)
             @parameters[k] = v
           end
@@ -39,13 +39,13 @@ module Aspera
         Log.log.debug{"retries=#{remaining_resumes}"}
         # try to send the file until ascp is succesful
         loop do
-          Log.log.debug('transfer starting');
+          Log.log.debug('transfer starting')
           begin
             # call provided block
             yield
             break
           rescue Fasp::Error => e
-            Log.log.warn{"An error occurred: #{e.message}"};
+            Log.log.warn{"An error occurred: #{e.message}"}
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
@@ -61,7 +61,7 @@ module Aspera
 
           # take this retry in account
           remaining_resumes -= 1
-          Log.log.warn{"resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"};
+          Log.log.warn{"resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

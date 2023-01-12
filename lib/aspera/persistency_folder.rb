@@ -20,7 +20,7 @@ module Aspera
     # @return String or nil string on existing persist, else nil
     def get(object_id)
       Log.log.debug{"persistency get: #{object_id}"}
-      if @cache.has_key?(object_id)
+      if @cache.key?(object_id)
         Log.log.debug('got from memory cache')
       else
         persist_filepath = id_to_filepath(object_id)
@@ -71,7 +71,7 @@ module Aspera
       FileUtils.mkdir_p(@folder)
       Environment.restrict_file_access(@folder)
       return File.join(@folder, "#{object_id}#{FILE_SUFFIX}")
-      #.gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)
+      # .gsub(/[^a-z]+/,FILE_FIELD_SEPARATOR)
     end
   end # PersistencyFolder
 end # Aspera

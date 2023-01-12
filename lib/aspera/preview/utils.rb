@@ -27,7 +27,7 @@ module Aspera
 
         # check that external tools can be executed
         def check_tools(skip_types=[])
-          tools_to_check=EXPERNAL_TOOLS.dup
+          tools_to_check = EXPERNAL_TOOLS.dup
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
           tools_to_check.each do |command_symb|
@@ -66,7 +66,7 @@ module Aspera
 
         def ffmpeg(a)
           raise 'error: hash expected' unless a.is_a?(Hash)
-          #input_file,input_args,output_file,output_args
+          # input_file,input_args,output_file,output_args
           a[:gl_p] ||= [
             '-y', # overwrite output without asking
             '-loglevel', 'error' # show only errors and up]

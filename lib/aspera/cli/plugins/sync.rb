@@ -41,7 +41,7 @@ module Aspera
             cmdline = ['asyncadmin', '--quiet']
             session = n.nil? ? p['sessions'].first : p['sessions'].find{|s|s['name'].eql?(n)}
             cmdline.push('--name=' + session['name'])
-            if session.has_key?('local_db_dir')
+            if session.key?('local_db_dir')
               cmdline.push('--local-db-dir=' + session['local_db_dir'])
             else
               cmdline.push('--local-dir=' + session['local_dir'])
@@ -51,7 +51,7 @@ module Aspera
             when :status
               stdout, stderr, status = Open3.capture3(*cmdline)
               Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-              items = stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */);m[i.first.lstrip] = i.last.lstrip;}
+              items = stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
               return {type: :single_object, data: items}
             else raise 'error'
             end # command

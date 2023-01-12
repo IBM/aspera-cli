@@ -85,7 +85,7 @@ module Aspera
       # @param http [Net::HTTP] the newly created http session object
       def http_parameters=(http)
         if @option_insecure
-          url=http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
+          url = http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
           if !@ssl_warned_urls.include?(url)
             @plugin_env[:formater].display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not use unsafe certificates in production.")
             @ssl_warned_urls.push(url)
@@ -122,7 +122,7 @@ module Aspera
         @option_rest_debug = false
         @option_cache_tokens = true
         @option_http_options = {}
-        @ssl_warned_urls=[]
+        @ssl_warned_urls = []
         # environment provided to plugin for various capabilities
         @plugin_env = {}
         # give command line arguments to option manager
@@ -150,7 +150,7 @@ module Aspera
       end
 
       def app_banner
-        t=' '*8
+        t = ' ' * 8
         return <<~END_OF_BANNER
           NAME
           #{t}#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})
@@ -191,7 +191,7 @@ module Aspera
         @opt_mgr.add_opt_switch(:bash_comp, 'generate bash completion for command') { @bash_completion = true }
         @opt_mgr.add_opt_switch(:show_config, 'Display parameters used for the provided action.') { @option_show_config = true }
         @opt_mgr.add_opt_switch(:rest_debug, '-r', 'more debug for HTTP calls') { @option_rest_debug = true }
-        @opt_mgr.add_opt_switch(:version, '-v', 'display version') { @plugin_env[:formater].display_message(:data, Aspera::Cli::VERSION);Process.exit(0) }
+        @opt_mgr.add_opt_switch(:version, '-v', 'display version') { @plugin_env[:formater].display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         @opt_mgr.add_opt_switch(:warnings, '-w', 'check for language warnings') { $VERBOSE = true }
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level, Log.instance, :level)
@@ -233,7 +233,7 @@ module Aspera
 
       def generate_bash_completion
         if @opt_mgr.get_next_argument('', expected: :multiple, mandatory: false).nil?
-          @plugin_env[:config].plugins.keys.each{|p|puts p.to_s}
+          @plugin_env[:config].plugins.each_key{|p|puts p.to_s}
         else
           Log.log.warn('only first level completion so far')
         end
@@ -246,7 +246,7 @@ module Aspera
         @plugin_env[:formater].display_message(:error, @opt_mgr.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          @plugin_env[:config].plugins.keys.each do |plugin_name_sym|
+          @plugin_env[:config].plugins.each_key do |plugin_name_sym|
             next if plugin_name_sym.eql?(Plugins::Config::CONF_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @plugin_env.clone

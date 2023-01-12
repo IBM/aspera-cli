@@ -286,7 +286,7 @@ module Aspera
         # check magic number inside file (empty string if not found)
         detected_mime = MimeMagic.by_magic(File.open(filepath)).to_s
         # check extension only
-        if !SUPPORTED_MIME_TYPES.has_key?(detected_mime)
+        if !SUPPORTED_MIME_TYPES.key?(detected_mime)
           Log.log.debug{"no conversion for #{detected_mime}, trying extension"}
           detected_mime = MimeMagic.by_extension(File.extname(filepath)).to_s
         end
@@ -311,7 +311,7 @@ module Aspera
               if mimetype.eql?(detected_mime)
                 Log.log.debug('matching mime type per magic number')
               else
-                # note: detected can be nil
+                # NOTE: detected can be nil
                 Log.log.debug{"non matching mime types: node=[#{mimetype}], magic=[#{detected_mime}]"}
               end
             end

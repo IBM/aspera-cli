@@ -15,7 +15,7 @@ module Aspera
       FILE_LIST_FROM_ARGS = '@args'
       # special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
-      FILE_LIST_OPTIONS=[FILE_LIST_FROM_ARGS, FILE_LIST_FROM_TRANSFER_SPEC, 'Array'].freeze
+      FILE_LIST_OPTIONS = [FILE_LIST_FROM_ARGS, FILE_LIST_FROM_TRANSFER_SPEC, 'Array'].freeze
       DEFAULT_TRANSFER_NOTIF_TMPL = <<~END_OF_TEMPLATE
         From: <%=from_name%> <<%=from_email%>>
         To: <<%=to%>>
@@ -25,7 +25,7 @@ module Aspera
 
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
-      #% (formating bug in eclipse)
+      # % (formating bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
@@ -84,7 +84,7 @@ module Aspera
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
         if @opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:multi) ||
-        (@opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
+            (@opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -142,7 +142,7 @@ module Aspera
         # return cache if set
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority : get paths from transfer spec on command line
-        @transfer_paths = @transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.has_key?('paths')
+        @transfer_paths = @transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.key?('paths')
         # is there a source list option ?
         file_list = @opt_mgr.get_option(:sources)
         case file_list
@@ -196,8 +196,8 @@ module Aspera
         when Fasp::TransferSpec::DIRECTION_SEND
           if transfer_spec.dig('tags', 'aspera', 'node', 'access_key')
             # gen4
-            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.has_key?('destination_root_id')
-          elsif transfer_spec.has_key?('token')
+            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.key?('destination_root_id')
+          elsif transfer_spec.key?('token')
             # gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call
@@ -215,7 +215,7 @@ module Aspera
         # create transfer agent
         set_agent_by_options
         Log.log.debug{"transfer agent is a #{@agent.class}"}
-        @agent.token_regenerator=@token_regenerator if @agent.respond_to?(:token_regenerator=)
+        @agent.token_regenerator = @token_regenerator if @agent.respond_to?(:token_regenerator=)
         @agent.start_transfer(transfer_spec)
         # list of : :success or error message
         result = @agent.wait_for_transfers_completion

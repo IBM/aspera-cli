@@ -21,7 +21,7 @@ ENV ASCLI_SDK_FOLDER=/home/cliuser/.aspera/sdk
 # install SDK
 RUN ["ascli","conf","ascp","install","--sdk-url=file:///sdk.zip"]
 RUN rm -f sdk.zip
-# create key files and check ascp works
+# create key files and check that ascp works
 RUN ["ascli","conf","ascp","info"]
 ENTRYPOINT ["ascli"]
 CMD ["help"]

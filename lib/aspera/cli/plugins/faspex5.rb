@@ -73,7 +73,7 @@ module Aspera
                     aud: app_client_id,    # audience TODO: ???
                     sub: "user:#{options.get_option(:username, is_type: :mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
                   },
-                  #auth:                {type: :basic, options.get_option(:username,is_type: :mandatory), options.get_option(:password,is_type: :mandatory),
+                  # auth:                {type: :basic, options.get_option(:username,is_type: :mandatory), options.get_option(:password,is_type: :mandatory),
                   private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, is_type: :mandatory), options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
                 }
@@ -92,7 +92,7 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              result=Rest.new(base_url: @faxpex5_api_base_url).read('health')[:data]
+              result = Rest.new(base_url: @faxpex5_api_base_url).read('health')[:data]
               result.each do |k, v|
                 nagios.add_ok(k, v.to_s)
               end
@@ -190,8 +190,8 @@ module Aspera
               res_path = list_key = res_type.to_s
               case res_type
               when :metadata_profiles
-                res_path='configuration/metadata_profiles'
-                list_key='profiles'
+                res_path = 'configuration/metadata_profiles'
+                list_key = 'profiles'
               end
               display_fields =
                 case res_type

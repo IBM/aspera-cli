@@ -54,14 +54,14 @@ module Aspera
           # extract elements from anonymous faspex link
           def get_link_data(publink)
             publink_uri = URI.parse(publink)
-            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = publink_uri.path.match(/^(.*)\/(external.*)$/))
+            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = publink_uri.path.match(%r{^(.*)/(external.*)$}))
             base = m[1]
             subpath = m[2]
             port_add = publink_uri.port.eql?(publink_uri.default_port) ? '' : ":#{publink_uri.port}"
             result = {
               base_url: "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
               subpath:  subpath,
-              query:    URI.decode_www_form(publink_uri.query).each_with_object({}){|v, h|h[v.first] = v.last;}
+              query:    URI.decode_www_form(publink_uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
             }
             Log.dump('publink', result)
             return result
@@ -69,21 +69,21 @@ module Aspera
 
           # get faspe: URI from entry in xml, and fix problems..
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
-            unless entry.has_key?('link')
+            unless entry.key?('link')
               raise CliBadArgument, 'package has no link (deleted?)' if raise_no_link
               return nil
             end
             result = entry['link'].find{|e| e['rel'].eql?('package')}['href']
             # tags in the end of URL is not well % encoded... there are "=" that should be %3D
             # TODO: enter ticket to Faspex ?
-            ###XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
+            # ##XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
             return result
           end
 
           def textify_package_list(table_data)
             return table_data.map do |e|
-              e.keys.each {|k| e[k] = e[k].first if e[k].is_a?(Array) && (e[k].length == 1)}
-              e['items'] = e.has_key?('link') ? e['link'].length : 0
+              e.each_key {|k| e[k] = e[k].first if e[k].is_a?(Array) && (e[k].length == 1)}
+              e['items'] = e.key?('link') ? e['link'].length : 0
               e
             end
           end
@@ -151,7 +151,7 @@ module Aspera
           if !mailbox_query.nil?
             raise 'query: must be Hash or nil' unless mailbox_query.is_a?(Hash)
             raise "query: supported params: #{ATOM_EXT_PARAMS}" unless (mailbox_query.keys - ATOM_EXT_PARAMS).empty?
-            raise 'query: startIndex and page are exclusive' if mailbox_query.has_key?('startIndex') && mailbox_query.has_key?('page')
+            raise 'query: startIndex and page are exclusive' if mailbox_query.key?('startIndex') && mailbox_query.key?('page')
             max_items = mailbox_query[MAX_ITEMS]
             mailbox_query.delete(MAX_ITEMS)
             max_pages = mailbox_query[MAX_PAGES]
@@ -163,7 +163,7 @@ module Aspera
             atom_xml = api_v3.call({operation: 'GET', subpath: "#{mailbox}.atom", headers: {'Accept' => 'application/xml'}, url_params: mailbox_query})[:http].body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
             Log.dump(:box_data, box_data)
-            items = box_data.has_key?('entry') ? box_data['entry'] : []
+            items = box_data.key?('entry') ? box_data['entry'] : []
             Log.log.debug{"new items: #{items.count}"}
             # it is the end if page is empty
             break if items.empty?
@@ -184,7 +184,7 @@ module Aspera
               result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
             end
             break if stop_condition
-            #result.push({PACKAGE_MATCH_FIELD=>'======'})
+            # result.push({PACKAGE_MATCH_FIELD=>'======'})
             Log.log.debug{"total items: #{result.count}"}
             # reach the limit ?
             if !max_items.nil? && (result.count >= max_items)
@@ -197,7 +197,7 @@ module Aspera
             break if link.nil?
             # replace parameters with the ones from next link
             params = CGI.parse(URI.parse(link['href']).query)
-            mailbox_query = params.keys.each_with_object({}){|i, m|;m[i] = params[i].first;}
+            mailbox_query = params.keys.each_with_object({}){|i, m|; m[i] = params[i].first; }
             Log.log.debug{"query: #{mailbox_query}"}
             break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end
@@ -218,7 +218,7 @@ module Aspera
           delivery_info[:source_paths_list] = transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")
           api_public_link = Rest.new({base_url: link_data[:base_url]})
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
-          #pkg_created=api_public_link.create(create_path,package_create_params)[:data]
+          # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
           pkgdatares = api_public_link.call({
             operation:   'POST',
@@ -297,7 +297,7 @@ module Aspera
               else # publink
                 transfer_spec = send_publink_to_ts(public_link_url, package_create_params)
               end
-              #Log.dump('transfer_spec',transfer_spec)
+              # Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(transfer.start(transfer_spec))
             when :recv
               link_url = options.get_option(:link)
@@ -346,7 +346,7 @@ module Aspera
                 if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
                   raise CliBadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
                 end
-                # Note: unauthenticated API (authorization is in url params)
+                # NOTE: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new({base_url: link_data[:base_url]})
                 pkgdatares = api_public_link.call(
                   operation: 'GET',
@@ -376,7 +376,7 @@ module Aspera
                 else
                   transfer_spec = Fasp::Uri.new(id_uri[:uri]).transfer_spec
                   # NOTE: only external users have token in faspe: link !
-                  if !transfer_spec.has_key?('token')
+                  if !transfer_spec.key?('token')
                     sanitized = id_uri[:uri].gsub('&', '&amp;')
                     xmlpayload =
                       %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
@@ -410,17 +410,17 @@ module Aspera
               end
               # get id and name
               source_name = source_ids.first['name']
-              #source_id=source_ids.first['id']
+              # source_id=source_ids.first['id']
               source_hash = options.get_option(:storage, is_type: :mandatory)
               # check value of option
               raise CliError, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name, storage|
                 raise CliError, "storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
                 [KEY_NODE, KEY_PATH].each do |key|
-                  raise CliError, "storage '#{name}' must have a '#{key}'" unless storage.has_key?(key)
+                  raise CliError, "storage '#{name}' must have a '#{key}'" unless storage.key?(key)
                 end
               end
-              if !source_hash.has_key?(source_name)
+              if !source_hash.key?(source_name)
                 raise CliError, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info = source_hash[source_name]

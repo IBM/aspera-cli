@@ -13,8 +13,8 @@ TS_LOGLEVEL = 'EX_loglevel'
 # by default go to /tmp/username.filelist
 TS_TMP_FILELIST_FOLDER = 'EX_file_list_folder'
 
-SAMPLE_DEMO='"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
-SAMPLE_DEMO2='"direction":"receive","destination_root":"./test.dir"'
+SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
+SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
 def assert_usage(assertion, errmsg)
   return if assertion
   $stderr.puts('ERROR: '.red.blink + errmsg) if errmsg
@@ -60,12 +60,12 @@ end
 # ensure right type
 assert_usage(transfer_spec.is_a?(Hash), "the value must be a hash table#{parameter_source_err_msg}")
 # additional debug capability
-if transfer_spec.has_key?(TS_LOGLEVEL)
+if transfer_spec.key?(TS_LOGLEVEL)
   Aspera::Log.instance.level = transfer_spec[TS_LOGLEVEL]
   transfer_spec.delete(TS_LOGLEVEL)
 end
 # possibly override temp folder
-if transfer_spec.has_key?(TS_TMP_FILELIST_FOLDER)
+if transfer_spec.key?(TS_TMP_FILELIST_FOLDER)
   Aspera::Fasp::Parameters.file_list_folder = transfer_spec[TS_TMP_FILELIST_FOLDER]
   transfer_spec.delete(TS_TMP_FILELIST_FOLDER)
 end
@@ -77,14 +77,12 @@ client.add_listener(Aspera::Cli::Listener::LineDump.new)
 job_id = client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
-  begin
-    loop do
-      data = JSON.parse($stdin.gets)
-      client.send_command(job_id, 0, data)
-    end
-  rescue
-    Process.exit(1)
+  loop do
+    data = JSON.parse($stdin.gets)
+    client.send_command(job_id, 0, data)
   end
+rescue
+  Process.exit(1)
 end
 # no exit code: status is success (0)
 client.wait_for_transfers_completion

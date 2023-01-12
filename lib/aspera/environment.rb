@@ -17,6 +17,10 @@ module Aspera
     CPU_S390 = :s390
     CPU_LIST = [CPU_X86_64, CPU_PPC64, CPU_PPC64LE, CPU_S390].freeze
 
+    BITS_PER_BYTE = 8
+    MEBI = 1024 * 1024
+    BYTES_PER_MEBIBIT = MEBI / BITS_PER_BYTE
+
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
@@ -65,7 +69,7 @@ module Aspera
       # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
       # so, tell Ruby the right way
       def fix_home
-        return unless os.eql?(OS_WINDOWS) && ENV.has_key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
+        return unless os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
         ENV['HOME'] = ENV['USERPROFILE']
         Log.log.debug{"Windows: set home to USERPROFILE: #{ENV['HOME']}"}
       end
@@ -91,21 +95,19 @@ module Aspera
       end
 
       def restrict_file_access(path, mode: nil)
-        begin
-          if mode.nil?
-            # or FileUtils ?
-            if File.file?(path)
-              mode=0o600
-            elsif File.directory?(path)
-              mode=0o700
-            else
-              Log.log.debug{"No restriction can be set for #{path}"};
-            end
+        if mode.nil?
+          # or FileUtils ?
+          if File.file?(path)
+            mode = 0o600
+          elsif File.directory?(path)
+            mode = 0o700
+          else
+            Log.log.debug{"No restriction can be set for #{path}"}
           end
-          File.chmod(mode, path) unless mode.nil?
-        rescue => e
-          Log.log.warn(e.message)
         end
+        File.chmod(mode, path) unless mode.nil?
+      rescue => e
+        Log.log.warn(e.message)
       end
     end
   end

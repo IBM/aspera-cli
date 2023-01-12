@@ -7,8 +7,8 @@ module Aspera
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
     # parameter with onne of those tags is an ascp command line option with --
-    CLTYPE_OPTIONS=%i[opt_without_arg opt_with_arg].freeze
-    class<<self
+    CLTYPE_OPTIONS = %i[opt_without_arg opt_with_arg].freeze
+    class << self
       # transform yes/no to true/false
       def yes_to_true(value)
         case value
@@ -22,18 +22,18 @@ module Aspera
       def normalize_description(d)
         d.each do |param_name, options|
           raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
-          #options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
+          # options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
           # by default : not mandatory
           options[:mandatory] ||= false
           options[:desc] ||= ''
           # by default : string, unless it's without arg
-          if !options.has_key?(:accepted_types)
+          if !options.key?(:accepted_types)
             options[:accepted_types] = options[:cltype].eql?(:opt_without_arg) ? :bool : :string
           end
           # single type is placed in array
           options[:accepted_types] = [options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
           # add default switch name if not present
-          if !options.has_key?(:clswitch) && options.has_key?(:cltype) && CLTYPE_OPTIONS.include?(options[:cltype])
+          if !options.key?(:clswitch) && options.key?(:cltype) && CLTYPE_OPTIONS.include?(options[:cltype])
             options[:clswitch] = '--' + param_name.to_s.tr('_', '-')
           end
         end
@@ -82,7 +82,7 @@ module Aspera
     end
 
     def process_params
-      @params_definition.keys.each do |k|
+      @params_definition.each_key do |k|
         process_param(k)
       end
     end
@@ -100,10 +100,10 @@ module Aspera
       end
       action = options[:cltype] if action.nil?
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] && !@param_hash.has_key?(param_name)
+      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] && !@param_hash.key?(param_name)
       parameter_value = @param_hash[param_name]
 
-      #parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
+      # parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
 
       # Check parameter type
       expected_classes = options[:accepted_types].map do |s|
@@ -124,7 +124,7 @@ module Aspera
       return nil if parameter_value.nil?
 
       # check that value is of an accepted type (string, int bool)
-      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.has_key?(:enum) && !options[:enum].include?(parameter_value)
+      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.key?(:enum) && !options[:enum].include?(parameter_value)
 
       # convert some values if value on command line needs processing from value in structure
       case options[:clconvert]
@@ -161,7 +161,7 @@ module Aspera
         add_param = !add_param if options[:add_on_false]
         add_command_line_options([options[:clswitch]]) if add_param
       when :opt_with_arg # transform into command line option with value
-        #parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
+        # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
         parameter_value.each{|v|add_command_line_options([options[:clswitch], v])}

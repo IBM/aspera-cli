@@ -78,7 +78,7 @@ module Aspera
       # @param url of AoC instance
       # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
       def parse_url(aoc_org_url)
-        uri = URI.parse(aoc_org_url.gsub(/\/+$/, ''))
+        uri = URI.parse(aoc_org_url.gsub(%r{/+$}, ''))
         instance_fqdn = uri.host
         Log.log.debug{"instance_fqdn=#{instance_fqdn}"}
         raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
@@ -177,7 +177,7 @@ module Aspera
       aoc_auth_p[:scope] = opt[:scope]
 
       # filled if pub link
-      if !aoc_auth_p.has_key?(:crtype)
+      if !aoc_auth_p.key?(:crtype)
         raise ArgumentError, 'Missing mandatory option: auth' if opt[:auth].nil?
         aoc_auth_p[:crtype] = opt[:auth]
       end
@@ -246,25 +246,25 @@ module Aspera
     # no scope: requires secret
     # if secret provided beforehand: use it
     def node_id_to_api(node_id:, app_info:, scope: SCOPE_NODE_USER, use_secret: true)
-      node_info=read("nodes/#{node_id}")[:data]
-      raise 'internal error' unless node_info.is_a?(Hash) && node_info.has_key?('url') && node_info.has_key?('access_key')
+      node_info = read("nodes/#{node_id}")[:data]
+      raise 'internal error' unless node_info.is_a?(Hash) && node_info.key?('url') && node_info.key?('access_key')
       # get optional secret unless :use_secret is false
       ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret
       raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}" if ak_secret.nil? && scope.nil?
       node_rest_params = {base_url: node_info['url']}
       # if secret is available
-      if !ak_secret.nil?
-        node_rest_params[:auth] = {
-          type:     :basic,
-          username: node_info['access_key'],
-          password: ak_secret
-        }
-      else
+      if ak_secret.nil?
         # special header required for bearer token only
         node_rest_params[:headers] = {Aspera::Node::X_ASPERA_ACCESSKEY => node_info['access_key']}
         # OAuth bearer token
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
+      else
+        node_rest_params[:auth] = {
+          type:     :basic,
+          username: node_info['access_key'],
+          password: ak_secret
+        }
       end
       return Node.new(params: node_rest_params, app_info: app_info.merge({node_info: node_info}))
     end
@@ -281,7 +281,7 @@ module Aspera
         end
       # Analytics tags
       ################
-      ws_info=app_info[:plugin].workspace_info
+      ws_info = app_info[:plugin].workspace_info
       transfer_spec.deep_merge!({
         'tags' => {
           'aspera' => {
@@ -304,9 +304,9 @@ module Aspera
       ##################
       case app_info[:app]
       when FILES_APP
-        file_id=transfer_spec['tags']['aspera']['node']['file_id']
+        file_id = transfer_spec['tags']['aspera']['node']['file_id']
         transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
-          unless transfer_spec.has_key?('remote_access_key')
+          unless transfer_spec.key?('remote_access_key')
       when PACKAGES_APP
         transfer_spec.deep_merge!({
           'tags' => {
@@ -317,8 +317,8 @@ module Aspera
                 'package_operation' => transfer_type
               }}}})
       end
-      transfer_spec['tags']['aspera']['files']['node_id']=app_info[:node_info]['id']
-      transfer_spec['tags']['aspera']['app']=app_info[:app]
+      transfer_spec['tags']['aspera']['files']['node_id'] = app_info[:node_info]['id']
+      transfer_spec['tags']['aspera']['app'] = app_info[:app]
     end
 
     # Query entity type by name and returns the id if a single entry only
@@ -345,10 +345,10 @@ module Aspera
     ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
     def permissions_create_params(create_param:, app_info:)
       # workspace shared folder:
-      #access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
+      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
       default_params = {
-        #'access_type'   => 'user', # mandatory: user or group
-        #'access_id'     => access_id, # id of user or group
+        # 'access_type'   => 'user', # mandatory: user or group
+        # 'access_id'     => access_id, # id of user or group
         'tags' => {
           'aspera' => {
             'files' => {
@@ -359,33 +359,33 @@ module Aspera
                 'shared_by_user_id' => user_info['id'],
                 'shared_by_name'    => user_info['name'],
                 'shared_by_email'   => user_info['email'],
-                #'shared_with_name'  => access_id,
+                # 'shared_with_name'  => access_id,
                 'access_key'        => app_info[:node_info]['access_key'],
                 'node'              => app_info[:node_info]['name']}}}}}
       create_param.deep_merge!(default_params)
-      if create_param.has_key?('with')
+      if create_param.key?('with')
         contact_info = lookup_entity_by_name(
           'contacts',
           create_param['with'],
-          {'current_workspace_id' => app_info[:plugin].workspace_info['id'], 'context'=> 'share_folder'})
+          {'current_workspace_id' => app_info[:plugin].workspace_info['id'], 'context' => 'share_folder'})
         create_param.delete('with')
-        create_param['access_type']=contact_info['source_type']
-        create_param['access_id']=contact_info['source_id']
-        create_param['tags']['aspera']['files']['workspace']['shared_with_name']=contact_info['email']
+        create_param['access_type'] = contact_info['source_type']
+        create_param['access_id'] = contact_info['source_id']
+        create_param['tags']['aspera']['files']['workspace']['shared_with_name'] = contact_info['email']
       end
       # optionnal
-      app_info[:opt_link_name]=create_param.delete('link_name')
+      app_info[:opt_link_name] = create_param.delete('link_name')
     end
 
     def permissions_create_event(created_data:, app_info:)
-      event_creation={
+      event_creation = {
         'types'        => ['permission.created'],
         'node_id'      => app_info[:node_info]['id'],
         'workspace_id' => app_info[:plugin].workspace_info['id'],
         'data'         => created_data # Response from previous step
       }
-      #(optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
-      event_creation['link_name']=app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
+      # (optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
+      event_creation['link_name'] = app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
       create('events', event_creation)
     end
   end # AoC

@@ -30,7 +30,7 @@ module Aspera
         end
         # special value for package id
         ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
-        KNOWN_AOC_RES=%i[
+        KNOWN_AOC_RES = %i[
           self
           organization
           user
@@ -101,14 +101,14 @@ module Aspera
         NODE4_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
 
         def execute_node_gen4_command(command_repo, top_node_file)
-          top_node_api=aoc_api.node_id_to_api(
+          top_node_api = aoc_api.node_id_to_api(
             node_id: top_node_file[:node_info]['id'],
             app_info: {
               api:    aoc_api,
               plugin: self,
               app:    AoC::FILES_APP}
           )
-          node_plugin=Node.new(@agents.merge(
+          node_plugin = Node.new(@agents.merge(
             skip_basic_auth_options: true,
             skip_node_options:       true,
             node_api:                top_node_api))
@@ -151,10 +151,10 @@ module Aspera
               add_ts)))
           else raise "INTERNAL ERROR: Missing case: #{command_repo}"
           end # command_repo
-          #raise 'internal error:shall not reach here'
+          # raise 'internal error:shall not reach here'
         end # execute_node_gen4_command
 
-        AOC_PARAMS_COPY=%i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
+        AOC_PARAMS_COPY = %i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
 
         # build constructor option list for AoC based on options of CLI
         def aoc_params(subpath)
@@ -247,7 +247,7 @@ module Aspera
         # @param recipient_list_field The field in structure, i.e. recipients or bcc_recipients
         # @return nil package_data is modified
         def resolve_package_recipients(package_data, recipient_list_field)
-          return unless package_data.has_key?(recipient_list_field)
+          return unless package_data.key?(recipient_list_field)
           raise CliBadArgument, "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
           new_user_option = options.get_option(:new_user_option, is_type: :mandatory)
           # list with resolved elements
@@ -293,7 +293,7 @@ module Aspera
             api_meta = []
             pkg_data['metadata'].each do |k, v|
               api_meta.push({
-                #'input_type' => 'single-dropdown',
+                # 'input_type' => 'single-dropdown',
                 'name'   => k,
                 'values' => v.is_a?(Array) ? v : [v]
               })
@@ -307,10 +307,9 @@ module Aspera
         # Check metadata: remove when validation is done server side
         def validate_metadata(pkg_data)
           # validate only for shared inboxes
-          return unless
-            pkg_data['recipients'].is_a?(Array) &&
+          return unless pkg_data['recipients'].is_a?(Array) &&
             pkg_data['recipients'].first.is_a?(Hash) &&
-            pkg_data['recipients'].first.has_key?('type') &&
+            pkg_data['recipients'].first.key?('type') &&
             pkg_data['recipients'].first['type'].eql?('dropbox')
 
           shbx_kid = pkg_data['recipients'].first['id']
@@ -320,18 +319,18 @@ module Aspera
             return
           end
           pkg_meta = pkg_data['metadata']
-          raise "package requires metadata: #{meta_schema}" unless pkg_data.has_key?('metadata')
+          raise "package requires metadata: #{meta_schema}" unless pkg_data.key?('metadata')
           raise 'metadata must be an Array' unless pkg_meta.is_a?(Array)
           Log.dump(:metadata, pkg_meta)
           pkg_meta.each do |field|
             raise 'metadata field must be Hash' unless field.is_a?(Hash)
-            raise 'metadata field must have name' unless field.has_key?('name')
-            raise 'metadata field must have values' unless field.has_key?('values')
+            raise 'metadata field must have name' unless field.key?('name')
+            raise 'metadata field must have values' unless field.key?('values')
             raise 'metadata values must be an Array' unless field['values'].is_a?(Array)
             raise "unknown metadata field: #{field['name']}" if meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?
           end
           meta_schema.each do |field|
-            provided=pkg_meta.select{|i|i['name'].eql?(field['name'])}
+            provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}
             raise "only one field with name #{field['name']} allowed" if provided.count > 1
             raise "missing mandatory field: #{field['name']}" if field['required'] && provided.empty?
           end
@@ -348,7 +347,7 @@ module Aspera
         def read_with_paging(resource_class_path, base_query)
           raise 'Query must be Hash' unless base_query.is_a?(Hash)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
-          base_query['per_page'] = 1000 unless base_query.has_key?('per_page')
+          base_query['per_page'] = 1000 unless base_query.key?('per_page')
           max_items = base_query[MAX_ITEMS]
           base_query.delete(MAX_ITEMS)
           max_pages = base_query[MAX_PAGES]
@@ -463,12 +462,12 @@ module Aspera
               event_type = command_analytics.to_s
               filter_resource = options.get_option(:name) || 'organizations'
               filter_id = options.get_option(:id) ||
-              case filter_resource
-              when 'organizations' then aoc_api.user_info['organization_id']
-              when 'users' then aoc_api.user_info['id']
-              when 'nodes' then aoc_api.user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
-              else raise 'organizations or users for option --name'
-              end
+                case filter_resource
+                when 'organizations' then aoc_api.user_info['organization_id']
+                when 'users' then aoc_api.user_info['id']
+                when 'nodes' then aoc_api.user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
+                else raise 'organizations or users for option --name'
+                end
               filter = options.get_option(:query) || {}
               raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit'] ||= 100
@@ -480,8 +479,8 @@ module Aspera
                   ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, is_type: :mandatory), @workspace_info['name']].push(filter_resource, filter_id)))
                 start_datetime = saved_date.first
                 stop_datetime = Time.now.utc.strftime('%FT%T.%LZ')
-                #Log.log().error("start: #{start_datetime}")
-                #Log.log().error("end:   #{stop_datetime}")
+                # Log.log().error("start: #{start_datetime}")
+                # Log.log().error("end:   #{stop_datetime}")
                 saved_date[0] = stop_datetime
                 filter['start_time'] = start_datetime unless start_datetime.nil?
                 filter['stop_time'] = stop_datetime
@@ -537,8 +536,9 @@ module Aspera
               default_fields = ['id']
               default_query = {}
               case resource_type
-              when :application then default_query = {organization_apps: true};
-                                     default_fields.push('app_type', 'app_name', 'available', 'direct_authorizations_allowed', 'workspace_authorizations_allowed')
+              when :application
+                default_query = {organization_apps: true}
+                default_fields.push('app_type', 'app_name', 'available', 'direct_authorizations_allowed', 'workspace_authorizations_allowed')
               when :client, :client_access_key, :dropbox, :group, :package, :saml_configuration, :workspace then default_fields.push('name')
               when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
               when :contact then default_fields = %w[email name source_id source_type]
@@ -639,7 +639,7 @@ module Aspera
                 query = option_url_query(nil)
                 if query.nil?
                   query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
-                  query['workspace_id']=@workspace_info['id'] unless @workspace_info['id'].eql?(:undefined)
+                  query['workspace_id'] = @workspace_info['id'] unless @workspace_info['id'].eql?(:undefined)
                 end
                 return {type: :object_list, data: aoc_api.read('dropbox_memberships', query)[:data], fields: ['dropbox_id', 'dropbox.name']}
               when :show
@@ -660,7 +660,7 @@ module Aspera
               package_data['workspace_id'] = @workspace_info['id']
 
               # list of files to include in package, optional
-              #package_data['file_names']=self.transfer.ts_source_paths.map{|i|File.basename(i['source'])}
+              # package_data['file_names']=self.transfer.ts_source_paths.map{|i|File.basename(i['source'])}
 
               # lookup users
               resolve_package_recipients(package_data, 'recipients')
@@ -675,7 +675,7 @@ module Aspera
               # TODO: if multisession was used we should probably tell
               # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
               aoc_api.update("packages/#{package_info['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
-              package_node_api=aoc_api.node_id_to_api(
+              package_node_api = aoc_api.node_id_to_api(
                 node_id: package_info['node_id'],
                 app_info: {
                   api:          aoc_api,
@@ -723,7 +723,7 @@ module Aspera
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
-                package_node_api=aoc_api.node_id_to_api(
+                package_node_api = aoc_api.node_id_to_api(
                   node_id: package_info['node_id'],
                   app_info: {
                     api:          aoc_api,
@@ -748,11 +748,11 @@ module Aspera
               package_info = aoc_api.read("packages/#{package_id}")[:data]
               return { type: :single_object, data: package_info }
             when :list
-              display_fields=%w[id name bytes_transferred]
+              display_fields = %w[id name bytes_transferred]
               query = option_url_query({'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true})
-              if query.has_key?('dropbox_name')
+              if query.key?('dropbox_name')
                 # convenience: specify name instead of id
-                raise 'not both dropbox_name and dropbox_id' if query.has_key?('dropbox_id')
+                raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
                 query['dropbox_id'] = aoc_api.lookup_entity_by_name('dropboxes', query['dropbox_name'])['id']
                 query.delete('dropbox_name')
               end
@@ -772,7 +772,7 @@ module Aspera
               end
             when *Node::NODE4_READ_ACTIONS
               package_id = options.get_next_argument('package ID')
-              #path = options.get_next_argument('path', mandatory: false) || '/'
+              # path = options.get_next_argument('path', mandatory: false) || '/'
               package_info = aoc_api.read("packages/#{package_id}")[:data]
               package_node_file = {
                 node_info: aoc_api.read("nodes/#{package_info['node_id']}")[:data],
@@ -798,16 +798,16 @@ module Aspera
               else raise 'value must be either: public, private, Hash or nil'
               end
               create_params = nil
-              shared_apfid=nil
+              shared_apfid = nil
               if !folder_dest.nil?
-                home_node_api=aoc_api.node_id_to_api(
+                home_node_api = aoc_api.node_id_to_api(
                   node_id: @home_node_file[:node_info]['id'],
                   app_info: {
                     api:    aoc_api,
                     plugin: self,
                     app:    AoC::FILES_APP}
                 )
-                shared_apfid=home_node_api.resolve_api_fid(@home_node_file[:file_id], folder_dest)
+                shared_apfid = home_node_api.resolve_api_fid(@home_node_file[:file_id], folder_dest)
                 create_params = {
                   file_id:      shared_apfid[:file_id],
                   node_id:      shared_apfid[:api].app_info[:node_info]['id'],
@@ -835,9 +835,9 @@ module Aspera
                 options.set_option(:value, value_option)
               end
               result = entity_action(@api_aoc, 'short_links', id_default: 'self')
-              if result[:data].is_a?(Hash) && result[:data].has_key?('created_at') && result[:data]['resource_type'].eql?('UrlToken')
+              if result[:data].is_a?(Hash) && result[:data].key?('created_at') && result[:data]['resource_type'].eql?('UrlToken')
                 # TODO: access level as arg
-                access_levels = Aspera::Node::ACCESS_LEVELS #['delete','list','mkdir','preview','read','rename','write']
+                access_levels = Aspera::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
                 perm_data = {
                   'file_id'       => shared_apfid[:file_id],
                   'access_type'   => 'user',
@@ -880,7 +880,7 @@ module Aspera
                 data = automation_api.create("workflows/#{wf_id}/launch", {})[:data]
                 return {type: :single_object, data: data}
               when :action
-                #TODO: not complete
+                # TODO: not complete
                 wf_id = instance_identifier
                 wf_action_cmd = options.get_next_command(%i[list create show])
                 Log.log.warn{"Not implemented: #{wf_action_cmd}"}

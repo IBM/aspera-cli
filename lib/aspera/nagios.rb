@@ -22,20 +22,20 @@ module Aspera
       # process results of a analysis and display status and exit with code
       def process(data)
         raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
-        %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.has_key?(c)}
+        %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.key?(c)}
         res_errors = data.reject{|s|s['status'].eql?('ok')}
         # keep only errors in case of problem, other ok are assumed so
         data = res_errors unless res_errors.empty?
         # first is most critical
         data.sort!{|a, b|LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
         # build message: if multiple components: concatenate
-        #message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
-        message = data.
-          map{|i|i['component']}.
-          uniq.
-          map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}.
-          join(', ').
-          tr("\n", ' ')
+        # message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
+        message = data
+          .map{|i|i['component']}
+          .uniq
+          .map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}
+          .join(', ')
+          .tr("\n", ' ')
         status = data.first['status'].upcase
         # display status for nagios
         puts("#{status} - [#{message}]\n")
@@ -45,6 +45,7 @@ module Aspera
     end
 
     attr_reader :data
+
     def initialize
       @data = []
     end
@@ -68,7 +69,7 @@ module Aspera
 
     def check_product_version(component, _product, version)
       add_ok(component, "version #{version}")
-      # TODO check on database if latest version
+      # TODO: check on database if latest version
     end
 
     # translate for display

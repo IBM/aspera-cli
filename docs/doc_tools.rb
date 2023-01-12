@@ -11,35 +11,35 @@ require 'erb'
 
 # set values used in ERB
 # just command name
-def cmd;Aspera::Cli::PROGRAM_NAME;end
+def cmd; Aspera::Cli::PROGRAM_NAME; end
 
 # used in text with formatting of command
-def tool;'`' + cmd + '`';end
+def tool; '`' + cmd + '`'; end
 
 # prefix for env vars
-def evp;cmd.upcase + '_';end
+def evp; cmd.upcase + '_'; end
 
 # just the name for "option preset"
-def opprst;'option preset';end
+def opprst; 'option preset'; end
 
 # name with link
-def prst;'[' + opprst + '](#lprt)';end
+def prst; '[' + opprst + '](#lprt)'; end
 
 # name with link (plural)
-def prsts;'[' + opprst + 's](#lprt)';end
+def prsts; '[' + opprst + 's](#lprt)'; end
 
 # Transfer spec name with link
-def trspec;'[*transfer-spec*](#transferspec)';end
+def trspec; '[*transfer-spec*](#transferspec)'; end
 
 # in title
-def prstt;opprst.capitalize;end
+def prstt; opprst.capitalize; end
 
 # container image in dockerhub
-def containerimage;'martinlaurent/ascli';end
+def containerimage; 'martinlaurent/ascli'; end
 
-def gemspec;Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}");end
+def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
-def geminstadd;/\.[^0-9]/.match?(gemspec.version.to_s) ? ' --pre' : '';end
+def geminstadd; /\.[^0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
 # transfer spec description generation
 def spec_table
@@ -53,7 +53,7 @@ def spec_table
   Aspera::Fasp::Parameters.man_table(to_text: false).sort_by { |a| a[:name] }.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.delete(:cli)
-    p.keys.each{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
+    p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')
     p[:type] = p[:type].gsub(',', '<br/>')
     r << '| ' << p[:name] << ' | ' << p[:type] << ' |'
@@ -82,7 +82,7 @@ def ruby_version
 end
 
 def generate_help(varname)
-  raise "missing #{varname}" unless @env.has_key?(varname)
+  raise "missing #{varname}" unless @env.key?(varname)
   return %x(#{@env[varname]} -h 2>&1)
 end
 
@@ -136,35 +136,35 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
         # plugin name shall be the first argument: command
-        plugin=line.split(/ +/).first
-        commands[plugin]||=[]
+        plugin = line.split(/ +/).first
+        commands[plugin] ||= []
         commands[plugin].push(line)
       end
     end
-    commands.keys.each do |plugin|
-      commands[plugin]=commands[plugin].sort.uniq
+    commands.each_key do |plugin|
+      commands[plugin] = commands[plugin].sort.uniq
     end
-    @commands=commands
+    @commands = commands
   end
   return @commands
 end
 
 def include_commands_for_plugin(plugin_name)
-  commands=all_test_commands_by_plugin[plugin_name.to_s]
+  commands = all_test_commands_by_plugin[plugin_name.to_s]
   all_test_commands_by_plugin.delete(plugin_name.to_s)
   return commands.join("\n")
 end
 
 def include_commands
-  all=[]
+  all = []
   all_test_commands_by_plugin.each do |_k, v|
     all.concat(v)
   end
   return all.join("\n")
 end
 
-KEPT_GLOBAL_SECTIONS=%w[config default].freeze
-REMOVED_OPTIONS=%w[insecure].freeze
+KEPT_GLOBAL_SECTIONS = %w[config default].freeze
+REMOVED_OPTIONS = %w[insecure].freeze
 
 # main function to generate template configuration file for tests
 def generate_generic_conf

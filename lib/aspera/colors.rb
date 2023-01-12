@@ -5,7 +5,7 @@ class String
   class << self
     private
 
-    def vtcmd(code);"\e[#{code}m";end
+    def vtcmd(code); "\e[#{code}m"; end
   end
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
   # symbol is the method name added to String

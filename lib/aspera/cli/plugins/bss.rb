@@ -14,7 +14,7 @@ module Aspera
 
         def initialize(env)
           super(env)
-          @api_bss = env[:bss_api] if env.has_key?(:bss_api)
+          @api_bss = env[:bss_api] if env.key?(:bss_api)
         end
 
         def all_fields(name)

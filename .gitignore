@@ -17,7 +17,7 @@ simplecov.log
 /aspera-cli-*.gem
 # rspec failure tracking
 .rspec_status
-# contains private secrets:
+# to store things not to be in versioning:
 /local
 .*_checked
 .project

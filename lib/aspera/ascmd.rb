@@ -32,18 +32,18 @@ module Aspera
       system_info = result[:info]
       result.delete(:info)
       # make single file result like a folder
-      result[:dir] = [result.delete(:file)] if result.has_key?(:file)
+      result[:dir] = [result.delete(:file)] if result.key?(:file)
       # add type field for stats
-      if result.has_key?(:dir)
+      if result.key?(:dir)
         result[:dir].each do |file|
-          if file.has_key?(:smode)
+          if file.key?(:smode)
             # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type] = case file[:smode][0, 1];when 'd' then:directory;when '-' then:file;when 'l' then:link;else;:other;end
+            file[:type] = case file[:smode][0, 1]; when 'd' then:directory; when '-' then:file; when 'l' then:link; else; :other; end # rubocop:disable Style/Semicolon
           end
         end
       end
       # for info, second overrides first, so restore it
-      case result.keys.length;when 0 then result = system_info;when 1 then result = result[result.keys.first];else raise 'error';end
+      case result.keys.length; when 0 then result = system_info; when 1 then result = result[result.keys.first]; else raise 'error'; end
       # raise error as exception
       raise Error.new(result[:errno], result[:errstr], action_sym, args) if
         result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
@@ -53,7 +53,8 @@ module Aspera
     # This exception is raised when +ascmd+ returns an error.
     class Error < StandardError
       attr_reader :errno, :errstr, :command, :args
-      def initialize(errno, errstr, cmd, args);super();@errno = errno;@errstr = errstr;@command = cmd;@args = args;end
+
+      def initialize(errno, errstr, cmd, args); super(); @errno = errno; @errstr = errstr; @command = cmd; @args = args; end # rubocop:disable Style/Semicolon
 
       def message; "ascmd: (#{errno}) #{errstr}"; end
 
@@ -122,13 +123,14 @@ module Aspera
         when :base
           num_bytes = type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
           raise 'ERROR:not enough bytes' if buffer.length < num_bytes
-          byte_array = buffer.shift(num_bytes);byte_array = [byte_array] unless byte_array.is_a?(Array)
+          byte_array = buffer.shift(num_bytes)
+          byte_array = [byte_array] unless byte_array.is_a?(Array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
           Log.log.debug{"#{'   .' * indent_level}-> base:#{byte_array} -> #{result}"}
           result = Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list
           result = []
-          while !buffer.empty?
+          until buffer.empty?
             btype = parse(buffer, :int8, indent_level)
             length = parse(buffer, :int32, indent_level)
             raise 'ERROR:not enough bytes' if buffer.length < length

@@ -13,17 +13,11 @@ require 'cgi'
 require 'ruby-progressbar'
 
 # add cancel method to http
-class Net::HTTP::Cancel < Net::HTTPRequest
+class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
   METHOD = 'CANCEL'
   REQUEST_HAS_BODY  = false
   RESPONSE_HAS_BODY = false
 end
-
-#class Net::HTTP::Delete < Net::HTTPRequest
-#  METHOD = 'DELETE'
-#  REQUEST_HAS_BODY  = false
-#  RESPONSE_HAS_BODY = false
-#end
 
 module Aspera
   # a simple class to make HTTP calls, equivalent to rest-client
@@ -44,12 +38,15 @@ module Aspera
 
     class << self
       # define accessors
-      @@global.keys.each do |p|
+      @@global.each_key do |p|
         define_method(p){@@global[p]}
-        define_method("#{p}="){|val|Log.log.debug{"#{p} => #{val}".red};@@global[p] = val}
+        define_method("#{p}=") do |val|
+          Log.log.debug{"#{p} => #{val}".red}
+          @@global[p] = val
+        end
       end
 
-      def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}";end
+      def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
       # build URI from URL and parameters and check it is http or https
       def build_uri(url, params=nil)
@@ -82,8 +79,8 @@ module Aspera
         uri = build_uri(base_url)
         # this honors http_proxy env var
         http_session = Net::HTTP.new(uri.host, uri.port)
-        http_session.proxy_user=proxy_user
-        http_session.proxy_pass=proxy_pass
+        http_session.proxy_user = proxy_user
+        http_session.proxy_pass = proxy_pass
         http_session.use_ssl = uri.scheme.eql?('https')
         http_session.set_debug_output($stdout) if debug
         # set http options in callback, such as timeout and cert. verification
@@ -99,7 +96,7 @@ module Aspera
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
-        @http_session=self.class.start_http_session(@params[:base_url])
+        @http_session = self.class.start_http_session(@params[:base_url])
       end
       return @http_session
     end
@@ -123,7 +120,7 @@ module Aspera
       @params = a_rest_params.clone
       Log.dump('REST params', @params)
       # base url without trailing slashes (note: string may be frozen)
-      @params[:base_url] = @params[:base_url].gsub(/\/+$/, '')
+      @params[:base_url] = @params[:base_url].gsub(%r{/+$}, '')
       @http_session = nil
       # default is no auth
       @params[:auth] ||= {type: :none}
@@ -148,25 +145,25 @@ module Aspera
       rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
       end
-      if call_data.has_key?(:json_params) && !call_data[:json_params].nil?
+      if call_data.key?(:json_params) && !call_data[:json_params].nil?
         req.body = JSON.generate(call_data[:json_params])
         Log.dump('body JSON data', call_data[:json_params])
-        #Log.log.debug{"body JSON data=#{JSON.pretty_generate(call_data[:json_params])}"}
+        # Log.log.debug{"body JSON data=#{JSON.pretty_generate(call_data[:json_params])}"}
         req['Content-Type'] = 'application/json'
-        #call_data[:headers]['Accept']='application/json'
+        # call_data[:headers]['Accept']='application/json'
       end
-      if call_data.has_key?(:www_body_params)
+      if call_data.key?(:www_body_params)
         req.body = URI.encode_www_form(call_data[:www_body_params])
         Log.log.debug{"body www data=#{req.body.chomp}"}
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
-      if call_data.has_key?(:text_body_params)
+      if call_data.key?(:text_body_params)
         req.body = call_data[:text_body_params]
         Log.log.debug{"body data=#{req.body.chomp}"}
       end
       # set headers
-      if call_data.has_key?(:headers)
-        call_data[:headers].keys.each do |key|
+      if call_data.key?(:headers)
+        call_data[:headers].each_key do |key|
           req[key] = call_data[:headers][key]
         end
       end
@@ -211,7 +208,7 @@ module Aspera
         Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
-        call_data[:headers]['Authorization'] = oauth_token unless call_data[:headers].has_key?('Authorization')
+        call_data[:headers]['Authorization'] = oauth_token unless call_data[:headers].key?('Authorization')
       when :url
         call_data[:url_params] ||= {}
         call_data[:auth][:url_creds].each do |key, value|
@@ -267,7 +264,7 @@ module Aspera
         result[:data] = case result_mime
         when 'application/json', 'application/vnd.api+json'
           JSON.parse(result[:http].body) rescue nil
-        else #when 'text/plain'
+        else # when 'text/plain'
           result[:http].body
         end
         Log.dump("result: parsed: #{result_mime}", result[:data])
@@ -292,8 +289,8 @@ module Aspera
         if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
           tries_remain_redirect -= 1
           current_uri = URI.parse(call_data[:base_url])
-          new_url=e.response['location']
-          new_url="#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
+          new_url = e.response['location']
+          new_url = "#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
           Log.log.info{"URL is moved: #{new_url}"}
           redir_uri = URI.parse(new_url)
           call_data[:base_url] = new_url
@@ -339,4 +336,4 @@ module Aspera
       return call({operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'}})
     end
   end
-end #module Aspera
+end # module Aspera
