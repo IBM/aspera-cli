@@ -77,12 +77,14 @@ client.add_listener(Aspera::Cli::Listener::LineDump.new)
 job_id = client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
-  loop do
-    data = JSON.parse($stdin.gets)
-    client.send_command(job_id, 0, data)
+  begin
+    loop do
+      data = JSON.parse($stdin.gets)
+      client.send_command(job_id, 0, data)
+    end
+  rescue
+    Process.exit(1)
   end
-rescue
-  Process.exit(1)
 end
 # no exit code: status is success (0)
 client.wait_for_transfers_completion

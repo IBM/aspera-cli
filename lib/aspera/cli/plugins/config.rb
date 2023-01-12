@@ -1158,7 +1158,8 @@ module Aspera
             vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
             case vault_type
             when 'file'
-              vault_path = File.absolute_path?(vault_name) ? vault_name : File.join(@main_folder, vault_name)
+              # absolute_path? introduced in ruby 2.7
+              vault_path = vault_name.eql?(File.absolute_path(vault_name)) ? vault_name : File.join(@main_folder, vault_name)
               @vault = Keychain::EncryptedHash.new(vault_path, vault_password)
             when 'system'
               case Environment.os

@@ -96,29 +96,31 @@ module Aspera
           Log.log.debug('ws: thread: started')
           frame = ::WebSocket::Frame::Incoming::Client.new
           loop do
-            frame << @ws_io.readuntil("\n")
-            while (msg = frame.next)
-              Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
-              message = msg.data
-              if message.eql?(MSG_END_UPLOAD)
-                shared_info[:end_uploads] += 1
-              elsif message.eql?(MSG_END_SLICE)
-              else
-                message.chomp!
-                error_message =
-                  if message.start_with?('"') && message.end_with?('"')
-                    JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
-                  elsif message.start_with?('{') && message.end_with?('}')
-                    JSON.parse(message)['message']
-                  else
-                    "unknown message from gateway: [#{message}]"
-                  end
-                raise error_message
+            begin # rubocop:disable Style/RedundantBegin
+              frame << @ws_io.readuntil("\n")
+              while (msg = frame.next)
+                Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
+                message = msg.data
+                if message.eql?(MSG_END_UPLOAD)
+                  shared_info[:end_uploads] += 1
+                elsif message.eql?(MSG_END_SLICE)
+                else
+                  message.chomp!
+                  error_message =
+                    if message.start_with?('"') && message.end_with?('"')
+                      JSON.parse(Base64.strict_decode64(message.chomp[1..-2]))['message']
+                    elsif message.start_with?('{') && message.end_with?('}')
+                      JSON.parse(message)['message']
+                    else
+                      "unknown message from gateway: [#{message}]"
+                    end
+                  raise error_message
+                end
               end
+            rescue => e
+              shared_info[:read_exception] = e unless e.is_a?(EOFError)
+              break
             end
-          rescue => e
-            shared_info[:read_exception] = e unless e.is_a?(EOFError)
-            break
           end
           Log.log.debug{"ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})"}
         end

@@ -37,10 +37,12 @@ module Aspera
       # analyze errors from provided handlers
       # note that there can be an error even if code is 2XX
       @error_handlers.each do |handler|
-        # Log.log.debug{"test exception: #{handler[:name]}"}
-        handler[:block].call(handler[:name], call_context)
-      rescue StandardError => e
-        Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
+        begin # rubocop:disable Style/RedundantBegin
+          # Log.log.debug{"test exception: #{handler[:name]}"}
+          handler[:block].call(handler[:name], call_context)
+        rescue StandardError => e
+          Log.log.error{"ERROR in handler:\n#{e.message}\n#{e.backtrace}"}
+        end
       end
       raise RestCallError.new(call_context[:request], call_context[:response], call_context[:messages].join("\n")) unless call_context[:messages].empty?
     end

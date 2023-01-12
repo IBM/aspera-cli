@@ -98,10 +98,12 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-      raise 'Shall not reach here'
-    rescue Aspera::AsCmd::Error => e
-      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      begin # rubocop:disable Style/RedundantBegin
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        raise 'Shall not reach here'
+      rescue Aspera::AsCmd::Error => e
+        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      end
     end
   end
   describe 'rename' do
@@ -114,10 +116,12 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-      raise 'Shall not reach here'
-    rescue Aspera::AsCmd::Error => e
-      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      begin # rubocop:disable Style/RedundantBegin
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        raise 'Shall not reach here'
+      rescue Aspera::AsCmd::Error => e
+        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      end
     end
   end
   describe 'md5sum' do
@@ -127,10 +131,12 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
-      ascmd.execute_single('md5sum', ['/notexist'])
-      raise 'Shall not reach here'
-    rescue Aspera::AsCmd::Error => e
-      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      begin # rubocop:disable Style/RedundantBegin
+        ascmd.execute_single('md5sum', ['/notexist'])
+        raise 'Shall not reach here'
+      rescue Aspera::AsCmd::Error => e
+        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      end
     end
   end
   describe 'delete' do
@@ -143,10 +149,12 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
-      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-      raise 'Shall not reach here'
-    rescue Aspera::AsCmd::Error => e
-      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      begin # rubocop:disable Style/RedundantBegin
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        raise 'Shall not reach here'
+      rescue Aspera::AsCmd::Error => e
+        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      end
     end
   end
   describe 'df' do
@@ -158,10 +166,12 @@ RSpec.describe(Aspera::AsCmd) do
       expect(res.first[:total]).to(be_a(Integer))
     end
     it 'fails if no such file' do
-      ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
-      raise 'Shall not reach here'
-    rescue Aspera::AsCmd::Error => e
-      expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      begin # rubocop:disable Style/RedundantBegin
+        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        raise 'Shall not reach here'
+      rescue Aspera::AsCmd::Error => e
+        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+      end
     end
   end
 end
