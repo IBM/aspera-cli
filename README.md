@@ -1,4 +1,5 @@
 # Command Line Interface for IBM Aspera products
+<!-- markdownlint-disable MD033 MD003 MD053 -->
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
@@ -18,7 +19,7 @@ Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/ge
 
 Minimum required Ruby version: >= 2.4.
 
-> **Deprecation notice**: the minimum will be 2.7 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -66,7 +67,6 @@ For scripting and ad'hoc command line operations, `ascli` is perfect.
 In examples, command line operations are shown using a shell such: `bash` or `zsh`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
-
 
 ## Quick Start
 
@@ -178,11 +178,13 @@ It is possible to install *either* directly on the host operating system (Linux,
 
 The direct installation is recommended and consists in installing:
 
-- [Ruby](#ruby) (version: >= 2.4.
-
-> **Deprecation notice**: the minimum will be 2.7 in a future version)
+- [Ruby](#ruby)
 - [aspera-cli](#the_gem)
 - [Aspera SDK (`ascp`)](#fasp_prot)
+
+Ruby version: >= 2.4.
+
+> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
 
 The following sections provide information on the various installation methods.
 
@@ -329,7 +331,7 @@ A ruby interpreter is required to run the tool or to use the gem and tool.
 
 Required Ruby version: >= 2.4.
 
-> **Deprecation notice**: the minimum will be 2.7 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -337,9 +339,7 @@ Refer to the following sections for a proposed method for specific operating sys
 
 The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, macOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby : use it ! (version: >= 2.4.
-
-> **Deprecation notice**: the minimum will be 2.7 in a future version)
+If you have a simpler better way to install Ruby : use it !
 
 #### Generic: RVM: single user installation (not root)
 
@@ -406,7 +406,7 @@ Install Latest stable Ruby:
 - Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
 - Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
 - At the end of the installation procedure, the Msys2 installer is automatically executed, select option 3 (msys and mingw)
-- for the installation of 
+
 #### macOS: pre-installed or `brew`
 
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
@@ -425,15 +425,20 @@ brew install ruby
 
 If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
-Example: Centos 8 Stream
+Example: RHEL 8 and 9: basic installation
+
+```bash
+yum module install ruby:3.1
+```
+
+Example: RHEL 8, Centos 8 Stream: with extensions to compile native gems
 
 ```bash
 yum install make automake gcc gcc-c++ kernel-devel
 yum install redhat-rpm-config
 dnf module reset ruby
-dnf module enable ruby:3.0
-dnf module -y install ruby:3.0/common
-gem install aspera-cli
+dnf module enable ruby:3.1
+dnf module -y install ruby:3.1/common
 ```
 
 Other examples:
@@ -703,7 +708,7 @@ Depending on the case, a different `format` is used to display the actual value.
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
 
 Double quotes are processed by the shell to create a single string argument.
-For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash.
+For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
 ```bash
 ascli conf echo "Hello World" --format=text
@@ -718,7 +723,7 @@ Hello World
 #### Using a shell variable, parsed by shell, in an extended value
 
 To be evaluated by shell, the shell variable must not be in single quotes.
-Even if the variable contains spaces it makes only one argument to `ascli` because word parsing is made before variable expansion by shell. 
+Even if the variable contains spaces it makes only one argument to `ascli` because word parsing is made before variable expansion by shell.
 
 > **Note:** we use a simple variable here: the variable is not necessarily an environment variable.
 
@@ -1014,7 +1019,7 @@ The following "readers" are supported (returns value in []):
 - @path:PATH   : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 - @env:ENVVAR  : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
 - @stdin:      : [String] read from stdin (no value on right)
-- @preset:NAME : [Hash] get whole option preset value by name. Subvalues can also be used using `.` as separator. e.g. foo.bar is conf[foo][bar]
+- @preset:NAME : [Hash] get whole option preset value by name. Subvalues can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
@@ -1965,17 +1970,17 @@ Refer to section [FASP](#client).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
 
-| Name | Type | Description |
-|------|------|-------------|
-| wss | Bool | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: false |
-| spawn_timeout_sec | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
-| spawn_delay_sec | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
-| multi_incr_udp | Bool | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
-| resume | Hash | Resume<br/>parameters<br/>See below |
-| resume.iter_max | int | Resume<br/>Max number of retry on error<br/>Default: 7 |
-| resume.sleep_initial | int | Resume<br/>First Sleep before retry<br/>Default: 2 |
-| resume.sleep_factor | int | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
-| resume.sleep_max | int | Resume<br/>Default: 60 |
+| Name                 | Type  | Description |
+|----------------------|-------|-------------|
+| wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
+| spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
+| multi_incr_udp       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
+| resume               | Hash  | Resume<br/>parameters<br/>See below |
+| resume.iter_max      | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
+| resume.sleep_initial | int   | Resume<br/>First Sleep before retry<br/>Default: 2 |
+| resume.sleep_factor  | int   | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
+| resume.sleep_max     | int   | Resume<br/>Default: 60 |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
@@ -2023,9 +2028,9 @@ In addition to standard methods described in section [File List](#file_list), it
 ```
 
 > **Note:** File lists is shown here, there are also similar options for file pair lists.
-
+>
 > **Note:** Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
-
+>
 > **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
@@ -2230,8 +2235,6 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 | use_ascp4 | bool | Y | Y | &nbsp; | specify version of protocol |
 | wss_enabled | bool | Y | Y | Y | &nbsp; |
 | wss_port | int | Y | Y | Y | TCP port used for websocket service feed. |
-
-
 
 #### Destination folder for transfers
 
@@ -4824,7 +4827,7 @@ If you are the COS administrator and don't have yet the credential:
 Service credentials are directly created using the IBM cloud Console (web UI).
 Navigate to:
 
-- &rarr; Navigation Menu 
+- &rarr; Navigation Menu
 - &rarr; [Resource List](https://cloud.ibm.com/resources)
 - &rarr; [Storage](https://cloud.ibm.com/objectstorage)
 - &rarr; Select your storage instance
@@ -5374,7 +5377,7 @@ Create a file `session.json` with:
 
 Then start the session:
 
-```
+```bash
 asession < session.json
 ```
 
@@ -5467,7 +5470,7 @@ Note that:
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
 
 > **Note:** file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
-
+>
 > **Note:** parameters may be saved in a [option preset](#lprt) and used with `-P`.
 
 #### Scheduling
@@ -5502,7 +5505,7 @@ ascli aoc files download . --to-folder=. --lock-port=12345 --progress=none --dis
 ```
 
 > Note: option `delete_before_transfer` will delete files locally, if they are not present on remote side.
-
+>
 > Note: options `progress` and `display` limit output for headless operation (e.g. cron job)
 
 ## Health check and Nagios

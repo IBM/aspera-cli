@@ -21,7 +21,7 @@ module Aspera
       DEFAULT_OPTIONS = {
         spawn_timeout_sec: 3,
         spawn_delay_sec:   2,
-        wss:               false,
+        wss:               true, # true: if both SSH and wss in ts: prefer wss
         multi_incr_udp:    true,
         resume:            {},
         quiet:             true # by default no interactive progress bar

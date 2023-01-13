@@ -11,6 +11,7 @@
   * change: (break) container image has entry point
   * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
   * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used
+  * change: if wss is enabled on server, use wss
 
 * 4.10.0
 
