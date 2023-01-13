@@ -98,23 +98,24 @@ module Aspera
           return @api_aoc
         end
 
-        NODE4_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
+        NODE4_EXT_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
 
-        def execute_node_gen4_command(command_repo, top_node_file)
+        # @param file_id [String] root file id for the operation (can be AK root, or other, e.g. package, or link)
+        # @param scope [String] node scope, or nil (admin)
+        def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil)
           top_node_api = aoc_api.node_id_to_api(
-            node_id: top_node_file[:node_info]['id'],
-            app_info: {
-              api:    aoc_api,
-              plugin: self,
-              app:    AoC::FILES_APP}
+            node_id: node_id,
+            plugin: self,
+            scope: scope
           )
+          file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")[:data]['root_file_id'] if file_id.nil?
           node_plugin = Node.new(@agents.merge(
             skip_basic_auth_options: true,
             skip_node_options:       true,
             node_api:                top_node_api))
           case command_repo
           when *Node::NODE4_COMMANDS
-            return node_plugin.execute_node_gen4_command(command_repo, top_node_file[:file_id])
+            return node_plugin.execute_node_gen4_command(command_repo, file_id)
           when :transfer
             # client side is agent
             # server side is protocol server
@@ -130,8 +131,8 @@ module Aspera
               client_folder = transfer.destination_folder(client_tr_oper)
               server_folder = options.get_option(:from_folder, is_type: :mandatory)
             end
-            client_apfid = top_node_api.resolve_api_fid(top_node_file[:file_id], client_folder)
-            server_apfid = top_node_api.resolve_api_fid(top_node_file[:file_id], server_folder)
+            client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
+            server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
             @agents[:transfer].agent_instance = Fasp::AgentNode.new({
               url:      client_apfid[:api].params[:base_url],
@@ -152,7 +153,7 @@ module Aspera
           else raise "INTERNAL ERROR: Missing case: #{command_repo}"
           end # command_repo
           # raise 'internal error:shall not reach here'
-        end # execute_node_gen4_command
+        end # execute_nodegen4_command
 
         AOC_PARAMS_COPY = %i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
 
@@ -214,8 +215,8 @@ module Aspera
           home_file_id ||= @workspace_info['home_file_id']
           raise "Cannot get user's home node id, check your default workspace or specify one" if home_node_id.to_s.empty?
           @home_node_file = {
-            node_info: aoc_api.read("nodes/#{home_node_id}")[:data],
-            file_id:   home_file_id
+            node_id: home_node_id,
+            file_id: home_file_id
           }
           return nil
         end
@@ -574,14 +575,8 @@ module Aspera
               aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
               return Main.result_success
             when :do
-              api_node = aoc_api.node_id_to_api(
-                node_id: res_id,
-                app_info: {app: AoC::FILES_APP, api: aoc_api, plugin: self},
-                scope: AoC::SCOPE_NODE_USER,
-                use_secret: true)
-              ak_root_file_id = api_node.read("access_keys/#{api_node.app_info[:node_info]['access_key']}")[:data]['root_file_id']
-              command_repo = options.get_next_command(NODE4_COMMANDS)
-              return execute_node_gen4_command(command_repo, {node_info: api_node.app_info[:node_info], file_id: ak_root_file_id})
+              command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
+              return execute_nodegen4_command(command_repo, res_id)
             else raise 'unknown command'
             end
           when :usage_reports
@@ -676,16 +671,15 @@ module Aspera
               # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
               aoc_api.update("packages/#{package_info['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
               package_node_api = aoc_api.node_id_to_api(
-                node_id: package_info['node_id'],
-                app_info: {
-                  api:          aoc_api,
-                  plugin:       self,
-                  app:          AoC::PACKAGES_APP,
-                  package_info: package_info}
+                node_id:      package_info['node_id'],
+                plugin:       self,
+                package_info: package_info,
+                scope:        AoC::SCOPE_NODE_USER
               )
-              statuses = transfer.start(package_node_api.transfer_spec_gen4(
+              # raise error if necessary (but not return, package info is returned on success)
+              Main.result_transfer(transfer.start(package_node_api.transfer_spec_gen4(
                 package_info['contents_file_id'],
-                Fasp::TransferSpec::DIRECTION_SEND))
+                Fasp::TransferSpec::DIRECTION_SEND)))
               # return all info on package
               return { type: :single_object, data: package_info}
             when :recv
@@ -724,12 +718,10 @@ module Aspera
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
                 self.format.display_status("downloading package: #{package_info['name']}")
                 package_node_api = aoc_api.node_id_to_api(
-                  node_id: package_info['node_id'],
-                  app_info: {
-                    api:          aoc_api,
-                    plugin:       self,
-                    app:          AoC::PACKAGES_APP,
-                    package_info: package_info}
+                  node_id:      package_info['node_id'],
+                  plugin:       self,
+                  package_info: package_info,
+                  scope:        AoC::SCOPE_NODE_USER
                 )
                 statuses = transfer.start(package_node_api.transfer_spec_gen4(
                   package_info['contents_file_id'],
@@ -772,21 +764,17 @@ module Aspera
               end
             when *Node::NODE4_READ_ACTIONS
               package_id = options.get_next_argument('package ID')
-              # path = options.get_next_argument('path', mandatory: false) || '/'
               package_info = aoc_api.read("packages/#{package_id}")[:data]
-              package_node_file = {
-                node_info: aoc_api.read("nodes/#{package_info['node_id']}")[:data],
-                file_id:   package_info['file_id']
-              }
-              return execute_node_gen4_command(package_command, package_node_file)
+              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: AoC::SCOPE_NODE_USER)
             end
           when :files
             # get workspace related information
             set_workspace_info
             set_home_node_file
-            command_repo = options.get_next_command([:short_link].concat(NODE4_COMMANDS))
+            command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))
             case command_repo
-            when *NODE4_COMMANDS then return execute_node_gen4_command(command_repo, @home_node_file)
+            when *NODE4_EXT_COMMANDS
+              return execute_nodegen4_command(command_repo, @home_node_file[:node_id], file_id: @home_node_file[:file_id], scope: AoC::SCOPE_NODE_USER)
             when :short_link
               # TODO: move to permissions ?
               folder_dest = options.get_option(:to_folder)
@@ -801,11 +789,9 @@ module Aspera
               shared_apfid = nil
               if !folder_dest.nil?
                 home_node_api = aoc_api.node_id_to_api(
-                  node_id: @home_node_file[:node_info]['id'],
-                  app_info: {
-                    api:    aoc_api,
-                    plugin: self,
-                    app:    AoC::FILES_APP}
+                  node_id: @home_node_file[:node_id],
+                  plugin: self,
+                  scope: AoC::SCOPE_NODE_USER
                 )
                 shared_apfid = home_node_api.resolve_api_fid(@home_node_file[:file_id], folder_dest)
                 create_params = {
@@ -911,7 +897,7 @@ module Aspera
           :resolve_package_recipients,
           :assert_public_link_types,
           :execute_admin_action
-        private_constant :NODE4_COMMANDS, :ID_AK_ADMIN
+        private_constant :NODE4_EXT_COMMANDS, :ID_AK_ADMIN
       end # AoC
     end # Plugins
   end # Cli

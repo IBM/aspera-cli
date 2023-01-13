@@ -241,32 +241,55 @@ module Aspera
     end
 
     # @returns [Aspera::Node] a node API for access key
-    # @param node_info [Hash] with 'url' and 'access_key'
-    # @param scope e.g. SCOPE_NODE_USER
-    # no scope: requires secret
-    # if secret provided beforehand: use it
-    def node_id_to_api(node_id:, app_info:, scope: SCOPE_NODE_USER, use_secret: true)
+    # @param node_id [String] identifier of node in AoC
+    # @param scope e.g. SCOPE_NODE_USER, or nil (requires secret)
+    def node_id_to_api(node_id:, plugin:, scope: nil, package_info: nil)
       node_info = read("nodes/#{node_id}")[:data]
-      raise 'internal error' unless node_info.is_a?(Hash) && node_info.key?('url') && node_info.key?('access_key')
-      # get optional secret unless :use_secret is false
-      ak_secret = @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: false) if use_secret
-      raise "There must be at least one of: 'secret' or 'scope' for access key #{node_info['access_key']}" if ak_secret.nil? && scope.nil?
       node_rest_params = {base_url: node_info['url']}
       # if secret is available
-      if ak_secret.nil?
-        # special header required for bearer token only
-        node_rest_params[:headers] = {Aspera::Node::X_ASPERA_ACCESSKEY => node_info['access_key']}
-        # OAuth bearer token
-        node_rest_params[:auth] = params[:auth].clone
-        node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
-      else
+      if scope.nil?
         node_rest_params[:auth] = {
           type:     :basic,
           username: node_info['access_key'],
-          password: ak_secret
+          password: @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: true)
         }
+      else
+        # OAuth bearer token
+        node_rest_params[:auth] = params[:auth].clone
+        node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
+        # special header required for bearer token only
+        node_rest_params[:headers] = {Aspera::Node::X_ASPERA_ACCESSKEY => node_info['access_key']}
       end
-      return Node.new(params: node_rest_params, app_info: app_info.merge({node_info: node_info}))
+      app_info = {
+        plugin:    plugin,
+        node_info: node_info,
+        app:       package_info.nil? ? FILES_APP : PACKAGES_APP,
+        api:       self # for callback
+      }
+      app_info[:package_info] = package_info unless package_info.nil?
+      return Node.new(params: node_rest_params, app_info: app_info)
+    end
+
+    # Query entity type by name and returns the id if a single entry only
+    # @param entity_type path of entuty in API
+    # @param entity_name name of searched entity
+    # @param options additional search options
+    def lookup_entity_by_name(entity_type, entity_name, options={})
+      # returns entities whose name contains value (case insensitive)
+      matching_items = read(entity_type, options.merge({'q' => CGI.escape(entity_name)}))[:data]
+      case matching_items.length
+      when 1 then return matching_items.first
+      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}
+      else
+        # multiple case insensitive partial matches, try case insensitive full match
+        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
+        icase_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
+        case icase_matches.length
+        when 1 then return icase_matches.first
+        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
+        else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
+        end
+      end
     end
 
     # Add transferspec
@@ -321,28 +344,8 @@ module Aspera
       transfer_spec['tags']['aspera']['app'] = app_info[:app]
     end
 
-    # Query entity type by name and returns the id if a single entry only
-    # @param entity_type path of entuty in API
-    # @param entity_name name of searched entity
-    # @param options additional search options
-    def lookup_entity_by_name(entity_type, entity_name, options={})
-      # returns entities whose name contains value (case insensitive)
-      matching_items = read(entity_type, options.merge({'q' => CGI.escape(entity_name)}))[:data]
-      case matching_items.length
-      when 1 then return matching_items.first
-      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}
-      else
-        # multiple case insensitive partial matches, try case insensitive full match
-        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        icase_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
-        case icase_matches.length
-        when 1 then return icase_matches.first
-        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
-        else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
-        end
-      end
-    end
     ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
+    # Callback from Plugins::Node
     def permissions_create_params(create_param:, app_info:)
       # workspace shared folder:
       # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
@@ -377,6 +380,7 @@ module Aspera
       app_info[:opt_link_name] = create_param.delete('link_name')
     end
 
+    # Callback from Plugins::Node
     def permissions_create_event(created_data:, app_info:)
       event_creation = {
         'types'        => ['permission.created'],

@@ -539,9 +539,7 @@ module Aspera
           end
         end
 
-        BASE_ACTIONS = %i[api_details health space mkdir mklink mkfile rename delete].freeze
-
-        BASE2_ACTIONS = %i[browse upload download].freeze
+        BASE_ACTIONS = %i[api_details health space mkdir mklink mkfile rename delete browse upload download].freeze
 
         SPECIAL_ACTIONS = %i[search events info license].freeze
 
@@ -549,10 +547,10 @@ module Aspera
         V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
         # actions valid in Shares
-        FILE_ACTIONS = [].concat(BASE_ACTIONS).concat(BASE2_ACTIONS).freeze
+        FILE_ACTIONS = BASE_ACTIONS
 
         # actions used commonly when a node is involved
-        COMMON_ACTIONS = [].concat(FILE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+        COMMON_ACTIONS = [].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
         ACTIONS = %i[
           access_key

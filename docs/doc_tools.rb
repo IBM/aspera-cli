@@ -63,7 +63,7 @@ def spec_table
     r << ' ' << p[:description] << ' |' << "\n"
   end
   r << "\n"
-  return r.join
+  return r.join.gsub(/\n+$/, '')
 end
 
 # @return the minimum ruby version from gemspec
@@ -76,7 +76,7 @@ end
 def ruby_version
   message = "version: #{gemspec.required_ruby_version}"
   unless ruby_minimum_version.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
-    message += ".\n\n> **Deprecation notice**: the minimum will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
+    message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
   end
   return message
 end
