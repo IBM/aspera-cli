@@ -136,7 +136,7 @@ module Aspera
                 subpath:     "packages/#{package['id']}/transfer_spec/upload",
                 headers:     {'Accept' => 'application/json'},
                 url_params:  {transfer_type: TRANSFER_CONNECT},
-                json_params: {paths: ['/the_files']}
+                json_params: {paths: transfer.ts_source_paths.map{|i|i['source']}}
               )[:data]
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec))
@@ -167,12 +167,19 @@ module Aspera
               end
               result_transfer = []
               package_ids.each do |pkgid|
+                param_file_list = {}
+                begin
+                  param_file_list['paths'] = transfer.ts_source_paths.map{|i|i['source']}
+                rescue Aspera::Cli::CliBadArgument
+                  # paths is optional
+                end
                 # TODO: allow from sent as well ?
                 transfer_spec = @api_v5.call(
                   operation:   'POST',
                   subpath:     "packages/#{pkgid}/transfer_spec/download",
                   headers:     {'Accept' => 'application/json'},
-                  url_params:  {transfer_type: TRANSFER_CONNECT, type: pkg_type}
+                  url_params:  {transfer_type: TRANSFER_CONNECT, type: pkg_type},
+                  json_params: param_file_list
                 )[:data]
                 transfer_spec.delete('authentication')
                 statuses = transfer.start(transfer_spec)
