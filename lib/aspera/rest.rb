@@ -148,7 +148,6 @@ module Aspera
       if call_data.key?(:json_params) && !call_data[:json_params].nil?
         req.body = JSON.generate(call_data[:json_params])
         Log.dump('body JSON data', call_data[:json_params])
-        # Log.log.debug{"body JSON data=#{JSON.pretty_generate(call_data[:json_params])}"}
         req['Content-Type'] = 'application/json'
         # call_data[:headers]['Accept']='application/json'
       end
