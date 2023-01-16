@@ -33,7 +33,17 @@ module Aspera
           raise "no graphical open method for #{Aspera::Environment.os}"
         end
       end
-    end
+
+      def editor(file_path)
+        if ENV.key?('EDITOR')
+          system(ENV['EDITOR'], file_path.to_s)
+        elsif Aspera::Environment.os.eql?(Aspera::Environment::OS_WINDOWS)
+          system('notepad.exe', '"' + file_path.to_s + '"')
+        else
+          uri_graphical(file_path.to_s)
+        end
+      end
+    end # self
 
     attr_accessor :url_method
 

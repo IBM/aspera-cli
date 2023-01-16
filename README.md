@@ -1193,6 +1193,8 @@ If necessary, the configuration file can opened in a text editor with:
 ascli config open
 ```
 
+> Note: this starts the editor specified by env var `EDITOR` if defined.
+
 Older format for commands are still supported:
 
 ```bash

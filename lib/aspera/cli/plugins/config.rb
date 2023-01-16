@@ -856,7 +856,7 @@ module Aspera
           when :preset # newer syntax
             return execute_preset
           when :open
-            OpenApplication.instance.uri(@option_config_file.to_s) # file://
+            OpenApplication.editor(@option_config_file.to_s)
             return Main.result_nothing
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)

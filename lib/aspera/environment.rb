@@ -109,6 +109,6 @@ module Aspera
       rescue => e
         Log.log.warn(e.message)
       end
-    end
-  end
-end
+    end # self
+  end # Environment
+end # Aspera
