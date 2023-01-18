@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
   spec.add_runtime_dependency('net-smtp', '>=0.1', '<0.4')
-  spec.add_runtime_dependency('net-ssh', '~> 6.0')
+  spec.add_runtime_dependency('net-ssh', '>= 6.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
   spec.add_runtime_dependency('rubyzip', '~> 2.0')
   spec.add_runtime_dependency('symmetric-encryption', '~> 4.6')
