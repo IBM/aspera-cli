@@ -74,7 +74,7 @@ module Aspera
                 # share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
                 return {type: :object_list, data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
               when :saml_import
-                parameters = options.get_option(:value)
+                parameters = options.get_option(:value, is_type: :mandatory)
                 return do_bulk_operation(parameters, 'created') do |user_params|
                   user_params = user_params.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
                   raise 'expecting Hash' unless user_params.is_a?(Hash)
@@ -87,7 +87,7 @@ module Aspera
               when :ldap_import
                 parameters = options.get_option(:value)
                 return do_bulk_operation(parameters, 'created') do |user_name|
-                  raise 'expecting string (user name), have #{user_params.class}' unless user_params.is_a?(String)
+                  raise "expecting string (user name), have #{user_name.class}" unless user_name.is_a?(String)
                   api_shares_admin.create('data/ldap_users', {'user'=>user_name})[:data]
                 end
               end

@@ -152,6 +152,7 @@ module Aspera
       # value: associated secret
       @secret_finder = nil
       @user_info = nil
+      @cache_url_token_info = nil
 
       # init rest params
       aoc_rest_p = {auth: {type: :oauth2}}
@@ -214,8 +215,15 @@ module Aspera
 
     def url_token_data
       return nil unless params[:auth][:crtype].eql?(:aoc_pub_link)
+      return @cache_url_token_info unless @cache_url_token_info.nil?
       # TODO: can there be several in list ?
-      return read('url_tokens')[:data].first
+      @cache_url_token_info = read('url_tokens')[:data].first
+      return @cache_url_token_info
+    end
+
+    def additional_persistence_ids
+      return [user_info['id']] if url_token_data.nil?
+      return [] # TODO : url_token_data['id'] ?
     end
 
     def secret_finder=(secret_finder)
@@ -292,6 +300,84 @@ module Aspera
       end
     end
 
+    # Check metadata: remove when validation is done server side
+    def validate_metadata(pkg_data)
+      # validate only for shared inboxes
+      return unless pkg_data['recipients'].is_a?(Array) &&
+        pkg_data['recipients'].first.is_a?(Hash) &&
+        pkg_data['recipients'].first.key?('type') &&
+        pkg_data['recipients'].first['type'].eql?('dropbox')
+
+      shbx_kid = pkg_data['recipients'].first['id']
+      meta_schema = read("dropboxes/#{shbx_kid}")[:data]['metadata_schema']
+      if meta_schema.nil? || meta_schema.empty?
+        Log.log.debug('no metadata in shared inbox')
+        return
+      end
+      pkg_meta = pkg_data['metadata']
+      raise "package requires metadata: #{meta_schema}" unless pkg_data.key?('metadata')
+      raise 'metadata must be an Array' unless pkg_meta.is_a?(Array)
+      Log.dump(:metadata, pkg_meta)
+      pkg_meta.each do |field|
+        raise 'metadata field must be Hash' unless field.is_a?(Hash)
+        raise 'metadata field must have name' unless field.key?('name')
+        raise 'metadata field must have values' unless field.key?('values')
+        raise 'metadata values must be an Array' unless field['values'].is_a?(Array)
+        raise "unknown metadata field: #{field['name']}" if meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?
+      end
+      meta_schema.each do |field|
+        provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}
+        raise "only one field with name #{field['name']} allowed" if provided.count > 1
+        raise "missing mandatory field: #{field['name']}" if field['required'] && provided.empty?
+      end
+    end
+
+    # Normalize package creation recipient lists as expected by AoC API
+    # AoC expects {type: , id: }, but ascli allows providing either the native values or just a name
+    # in that case, the name is resolved and replaced with {type: , id: }
+    # @param package_data The whole package creation payload
+    # @param recipient_list_field The field in structure, i.e. recipients or bcc_recipients
+    # @return nil package_data is modified
+    def resolve_package_recipients(package_data, ws_id, recipient_list_field, new_user_option)
+      return unless package_data.key?(recipient_list_field)
+      raise CliBadArgument, "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
+      new_user_option = {'package_contact' => true} if new_user_option.nil?
+      # list with resolved elements
+      resolved_list = []
+      package_data[recipient_list_field].each do |short_recipient_info|
+        case short_recipient_info
+        when Hash # native API information, check keys
+          raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(%w[id type])
+        when String # CLI helper: need to resolve provided name to type/id
+          # email: user, else dropbox
+          entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
+          begin
+            full_recipient_info = lookup_entity_by_name(entity_type, short_recipient_info, {'current_workspace_id' => ws_id})
+          rescue RuntimeError => e
+            raise e unless e.message.start_with?(ENTITY_NOT_FOUND)
+            # dropboxes cannot be created on the fly
+            raise "No such shared inbox in workspace #{ws_id}" if entity_type.eql?('dropboxes')
+            # unknown user: create it as external user
+            full_recipient_info = create('contacts', {
+              'current_workspace_id' => ws_id,
+              'email'                => short_recipient_info}.merge(new_user_option))[:data]
+          end
+          short_recipient_info = if entity_type.eql?('dropboxes')
+            {'id' => full_recipient_info['id'], 'type' => 'dropbox'}
+          else
+            {'id' => full_recipient_info['source_id'], 'type' => full_recipient_info['source_type']}
+          end
+        else # unexpected extended value, must be String or Hash
+          raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
+        end # type of recipient info
+        # add original or resolved recipient info
+        resolved_list.push(short_recipient_info)
+      end
+      # replace with resolved elements
+      package_data[recipient_list_field] = resolved_list
+      return nil
+    end
+
     # Add transferspec
     # callback in Aspera::Node (transfer_spec_gen4)
     def add_ts_tags(transfer_spec:, app_info:)
@@ -304,7 +390,7 @@ module Aspera
         end
       # Analytics tags
       ################
-      ws_info = app_info[:plugin].workspace_info
+      ws_info = app_info[:plugin].current_workspace_info
       transfer_spec.deep_merge!({
         'tags' => {
           'aspera' => {
@@ -348,7 +434,7 @@ module Aspera
     # Callback from Plugins::Node
     def permissions_create_params(create_param:, app_info:)
       # workspace shared folder:
-      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].workspace_info['id']}"
+      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].current_workspace_info['id']}"
       default_params = {
         # 'access_type'   => 'user', # mandatory: user or group
         # 'access_id'     => access_id, # id of user or group
@@ -356,8 +442,8 @@ module Aspera
           'aspera' => {
             'files' => {
               'workspace' => {
-                'id'                => app_info[:plugin].workspace_info['id'],
-                'workspace_name'    => app_info[:plugin].workspace_info['name'],
+                'id'                => app_info[:plugin].current_workspace_info['id'],
+                'workspace_name'    => app_info[:plugin].current_workspace_info['name'],
                 'user_name'         => user_info['name'],
                 'shared_by_user_id' => user_info['id'],
                 'shared_by_name'    => user_info['name'],
@@ -370,7 +456,7 @@ module Aspera
         contact_info = lookup_entity_by_name(
           'contacts',
           create_param['with'],
-          {'current_workspace_id' => app_info[:plugin].workspace_info['id'], 'context' => 'share_folder'})
+          {'current_workspace_id' => app_info[:plugin].current_workspace_info['id'], 'context' => 'share_folder'})
         create_param.delete('with')
         create_param['access_type'] = contact_info['source_type']
         create_param['access_id'] = contact_info['source_id']
@@ -385,7 +471,7 @@ module Aspera
       event_creation = {
         'types'        => ['permission.created'],
         'node_id'      => app_info[:node_info]['id'],
-        'workspace_id' => app_info[:plugin].workspace_info['id'],
+        'workspace_id' => app_info[:plugin].current_workspace_info['id'],
         'data'         => created_data # Response from previous step
       }
       # (optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.

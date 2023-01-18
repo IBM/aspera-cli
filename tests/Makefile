@@ -60,6 +60,9 @@ $(T)unit: $(T).exists
 tunit: $(T)unit
 $(T)shadm: $(T).exists
 	@echo $@
+	$(EXE_MAN) shares health
+	$(EXE_MAN) shares admin user saml_import --value=@json:'{"id":"the_id","name_id":"the_name"}'
+	-$(EXE_MAN) shares admin user ldap_import --value=the_name
 	$(EXE_MAN) shares admin share list
 	$(EXE_MAN) shares admin user list
 	$(EXE_MAN) shares admin user app_authorizations 1
@@ -568,6 +571,11 @@ $(T)aocp9: $(T).exists
 	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 	@touch $@
 taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8 $(T)aocp9
+$(T)aocadm1: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc admin auth_providers list
+	$(EXE_MAN) aoc admin subscription
+	@touch $@
 $(T)aoc8: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin resource workspace list
@@ -633,7 +641,7 @@ $(T)aoccltreg: $(T).exists
 	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1)&&\
 	$(EXE_MAN) aoc admin res client_registration_token delete $${clt_reg_id}
 	@touch $@
-taocadm: $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
+taocadm: $(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
 $(T)aocat4: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin ats cluster list
@@ -973,6 +981,7 @@ $(T)conf_vault: $(T).exists
 $(T)conf_help: $(T).exists
 	@echo $@
 	$(EXE_NOMAN) -h
+	$(EXE_NOMAN) --bash-comp
 	@touch $@
 $(T)conf_open_err: $(T).exists
 	@echo $@

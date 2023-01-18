@@ -2848,14 +2848,14 @@ OPTIONS:
         --client-secret=VALUE        OAuth API client passcode
         --redirect-uri=VALUE         OAuth API client redirect URI
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           RSA private key passphrase
-        --workspace=VALUE            name of workspace
-        --name=VALUE                 resource name
-        --link=VALUE                 public link to shared resource
-        --new-user-option=VALUE      new user creation option for unknown package recipients
-        --from-folder=VALUE          share to share source folder
         --scope=VALUE                OAuth scope for AoC API calls
-        --validate-metadata=ENUM     validate shared inbox metadata: [no], yes
+        --passphrase=VALUE           RSA private key passphrase
+        --workspace=VALUE            Name of workspace
+        --name=VALUE                 Resource name (prefer to use keyword name)
+        --link=VALUE                 Public link to shared resource
+        --new-user-option=VALUE      New user creation option for unknown package recipients
+        --from-folder=VALUE          Source folder for Folder-to-Folder transfer
+        --validate-metadata=ENUM     Validate shared inbox metadata: [no], yes
 
 COMMAND: node
 SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space stream sync transfer upload watch_folder
@@ -3936,6 +3936,7 @@ aoc admin ats cluster clouds
 aoc admin ats cluster list
 aoc admin ats cluster show --cloud=aws --region=eu-west-1
 aoc admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
+aoc admin auth_providers list
 aoc admin res application list
 aoc admin res client list
 aoc admin res client_access_key list
@@ -3964,6 +3965,7 @@ aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 ev
 aoc admin resource node do name my_aoc_ak_name --secret=my_aoc_ak_secret v3 access_key delete testsub1
 aoc admin resource workspace list
 aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+aoc admin subscription
 aoc automation workflow action my_wf_id create --value=@json:'{"name":"toto"}'
 aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
 aoc automation workflow delete my_wf_id
@@ -4756,8 +4758,11 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 shares admin share list
 shares admin share user_permissions 1
 shares admin user app_authorizations 1
+shares admin user ldap_import --value=the_name
 shares admin user list
+shares admin user saml_import --value=@json:'{"id":"the_id","name_id":"the_name"}'
 shares admin user share_permissions 1
+shares health
 shares repository browse /
 shares repository delete my_shares_upload/testfile.bin
 shares repository download --to-folder=. my_shares_upload/testfile.bin
