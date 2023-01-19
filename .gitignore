@@ -1,27 +1,14 @@
-/.idea/
-/.bundle/
-/.yardoc
-.DS_Store
 /Gemfile.lock
-/_yardoc/
+/aspera-cli-*.gem
 /coverage/
-simplecov.log
-/doc/
+/simplecov.log
 /docs/Manual*.html
 /docs/Manual*.pdf
-/docs/test_env.conf
-/spec/reports/
 /tmp/
-/t/
-/pkg
-/aspera-cli-*.gem
+/.*_checked
+/nameversion.mak
+.DS_Store
 # rspec failure tracking
-.rspec_status
+/.rspec_status
 # to store things not to be in versioning:
-/local
-.*_checked
-.project
-.settings
-/.vscode/
-nameversion.mak
-/vendor
+/local/

@@ -1193,7 +1193,7 @@ If necessary, the configuration file can opened in a text editor with:
 ascli config open
 ```
 
-> Note: this starts the editor specified by env var `EDITOR` if defined.
+> **Note:** this starts the editor specified by env var `EDITOR` if defined.
 
 Older format for commands are still supported:
 
@@ -2035,6 +2035,17 @@ In addition to standard methods described in section [File List](#file_list), it
 >
 > **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
+In addition to special transfer spec parameter `EX_ascp_args`, it is possible to provide the same `ascp` options using option `ascp_opts` of `ascli`.
+This option expects an `Array`, which can be conveniently provided with extended syntax `@list:`
+
+```bash
+ascli server download /aspera-test-dir-large/200MB --ascp-opts=@list:' -l 10m -k 3'
+```
+
+> **Note:** Using `@list:`, the use of quotes and leading character "space" here is important: The `@list:` expects a single string which must not be parsed by the shell (so protected with quotes) and the leading space is the separator character.
+>
+> **Note:** The option `ascp_opts` are appended to `EX_ascp_args` if present.
+
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
 By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
@@ -2681,14 +2692,14 @@ OPTIONS:
         --notif-template=VALUE       Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
-        --ts=VALUE                   override transfer spec values (Hash, use @json: prefix), current={"create_dir"=>true}
-        --local-resume=VALUE         set resume policy (Hash, use @json: prefix), current=
-        --to-folder=VALUE            destination folder for transfered files
-        --sources=VALUE              how list of transfered files is provided (@args,@ts,Array)
-        --src-type=ENUM              type of file list: list, pair
-        --transfer=ENUM              type of transfer agent: direct, node, connect, httpgw, trsdk
-        --transfer-info=VALUE        parameters for transfer agent
-        --progress=ENUM              type of progress bar: none, native, multi
+        --ts=VALUE                   Override transfer spec values (Hash, e.g. use @json: prefix), current={"create_dir"=>true}
+        --to-folder=VALUE            Destination folder for transfered files
+        --sources=VALUE              How list of transfered files is provided (@args,@ts,Array)
+        --ascp-opts=VALUE            Options for ascp in its native format
+        --src-type=ENUM              Type of file list: list, pair
+        --transfer=ENUM              Type of transfer agent: direct, node, connect, httpgw, trsdk
+        --transfer-info=VALUE        Parameters for transfer agent
+        --progress=ENUM              Type of progress bar: none, native, multi
 
 
 COMMAND: shares
@@ -5511,9 +5522,9 @@ ascli aoc files download . --to-folder=. --lock-port=12345 --progress=none --dis
 --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
-> Note: option `delete_before_transfer` will delete files locally, if they are not present on remote side.
+> **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
 >
-> Note: options `progress` and `display` limit output for headless operation (e.g. cron job)
+> **Note:** options `progress` and `display` limit output for headless operation (e.g. cron job)
 
 ## Health check and Nagios
 

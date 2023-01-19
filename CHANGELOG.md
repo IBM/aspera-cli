@@ -4,6 +4,7 @@
 
   * new: vault: secret finder, migration from config file
   * new: allow removal of transferspec parameter by setting value to `null`
+  * new: option `ascp_opts` allows to provide native `ascp` options on command line
   * fix: security: no shell interpolation
   * fix: when WSS and node agent: no localhost (certificate)
   * fix: #99 `aoc file download` for single shared folder

@@ -22,6 +22,19 @@ module Aspera
           TransferSpec.const_set("#{k.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
+      class<<self
+        def ascp_opts_to_ts(tspec,opts)
+          return if opts.nil?
+          raise "ascp options must be an Array" unless opts.is_a?(Array)
+          raise "transfer spec must be a Hash" unless tspec.is_a?(Hash)
+          raise "ascp options must be an Array or Strings" if opts.any?{|o|!o.is_a?(String)}
+          tspec['EX_ascp_args']||=[]
+          raise "EX_ascp_args must be an Array" unless tspec['EX_ascp_args'].is_a?(Array)
+          # TODO: translate command line args into transfer spec
+          # non translatable args are left in special ts parameter
+          tspec['EX_ascp_args']=tspec['EX_ascp_args'].concat(opts)
+        end
+      end
     end
   end
 end

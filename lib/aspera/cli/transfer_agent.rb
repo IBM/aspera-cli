@@ -58,18 +58,19 @@ module Aspera
         # only used with agent "direct" allows to regenerate the token if it is expired
         @token_regenerator = nil
         @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
-        @opt_mgr.add_opt_simple(:ts, "override transfer spec values (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
-        @opt_mgr.add_opt_simple(:local_resume, "set resume policy (Hash, use @json: prefix), current=#{@opt_mgr.get_option(:local_resume)}")
-        @opt_mgr.add_opt_simple(:to_folder, 'destination folder for transfered files')
-        @opt_mgr.add_opt_simple(:sources, "how list of transfered files is provided (#{FILE_LIST_OPTIONS.join(',')})")
-        @opt_mgr.add_opt_list(:src_type, %i[list pair], 'type of file list')
-        @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'type of transfer agent')
-        @opt_mgr.add_opt_simple(:transfer_info, 'parameters for transfer agent')
-        @opt_mgr.add_opt_list(:progress, %i[none native multi], 'type of progress bar')
+        @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
+        @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transfered files')
+        @opt_mgr.add_opt_simple(:sources, "How list of transfered files is provided (#{FILE_LIST_OPTIONS.join(',')})")
+        @opt_mgr.add_opt_simple(:ascp_opts, 'Options for ascp in its native format')
+        @opt_mgr.add_opt_list(:src_type, %i[list pair], 'Type of file list')
+        @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'Type of transfer agent')
+        @opt_mgr.add_opt_simple(:transfer_info, 'Parameters for transfer agent')
+        @opt_mgr.add_opt_list(:progress, %i[none native multi], 'Type of progress bar')
         @opt_mgr.set_option(:transfer, :direct)
         @opt_mgr.set_option(:src_type, :list)
         @opt_mgr.set_option(:progress, :native) # use native ascp progress bar as it is more reliable
         @opt_mgr.parse_options!
+        Fasp::TransferSpec.ascp_opts_to_ts(@transfer_spec_cmdline, @opt_mgr.get_option(:ascp_opts))
       end
 
       def option_transfer_spec; @transfer_spec_cmdline; end
