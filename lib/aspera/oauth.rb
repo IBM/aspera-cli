@@ -123,7 +123,7 @@ module Aspera
     register_token_creator :web, lambda { |oauth|
       random_state = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri(
-        "#{oauth.api[:base_url]}/#{oauth.sparams[:path_authorize]}",
+        "#{oauth.api.params[:base_url]}/#{oauth.sparams[:path_authorize]}",
         oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.sparams[:redirect_uri], state: random_state))
       # here, we need a human to authorize on a web page
       Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
