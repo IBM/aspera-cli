@@ -135,6 +135,8 @@ def all_test_commands_by_plugin
         next unless line.match?(/\$\(EXE_MAN.?\) +/)
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
+        # remove special configs
+        line = line.gsub(/-P[^ ]+ /, '').gsub('-N ', '')
         # plugin name shall be the first argument: command
         plugin = line.split(/ +/).first
         commands[plugin] ||= []

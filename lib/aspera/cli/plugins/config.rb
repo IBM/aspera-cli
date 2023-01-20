@@ -350,10 +350,10 @@ module Aspera
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets
           config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            raise CliError, "not a Hash: #{include_path} (#{current.class})" unless current.is_a?(Hash)
+            raise CliError, "Expecting Hash for subkey: #{include_path} (#{current.class})" unless current.is_a?(Hash)
             include_path.push(name)
             current = current[name]
-            raise CliError, "no such config preset: #{include_path}" if nil?
+            raise CliError, "No such config preset: #{include_path}" if current.nil?
           end
           case current
           when Hash then return expanded_with_preset_includes(current, include_path)

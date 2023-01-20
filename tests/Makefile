@@ -6,15 +6,21 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.mak
 
+# folder where flag files for integration tests are generated
+T=$(DIR_TMP)t/
+
 all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tats tsample tcos tf5 tprev
 # tnagios: already included
+
+# tests that require user interaction
+interactive: $(T)f5_webauth $(T)aoc_webauth
+
+# all tests, including interactive ones
+full: all interactive
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
 TIMESTAMP=$(shell LANG=C date)
-
-# folder where flag files for integration tests are generated
-T=$(DIR_TMP)t/
 
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
@@ -58,12 +64,17 @@ $(T)unit: $(T).exists
 	bundle exec rake spec
 	@touch $@
 tunit: $(T)unit
-$(T)shadm: $(T).exists
+$(T)sh_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares health
+	$(EXE_NOMAN) shares health --url=https://wrong.example.com
+	$(EXE_NOMAN) config detect --url=@preset:tst_shares.url
+	@touch $@
+$(T)shadm: $(T).exists
+	@echo $@
 	$(EXE_MAN) shares admin user saml_import --value=@json:'{"id":"the_id","name_id":"the_name"}'
 	-$(EXE_MAN) shares admin user ldap_import --value=the_name
-	$(EXE_MAN) shares admin share list
+	$(EXE_MAN) shares admin share list --fields=-status,status_message
 	$(EXE_MAN) shares admin user list
 	$(EXE_MAN) shares admin user app_authorizations 1
 	$(EXE_MAN) shares admin user share_permissions 1
@@ -91,7 +102,7 @@ $(T)sh3: $(T).exists
 	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
 	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
-tshares: $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
+tshares: $(T)sh_nagios $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 
 NEW_SERVER_FOLDER=$(CF_HSTS_FOLDER_UPLOAD)/server_folder
 $(T)serv_browse: $(T).exists
@@ -102,13 +113,18 @@ $(T)serv_mkdir: $(T).exists
 	@echo $@
 	$(EXE_MAN) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
 	@touch $@
+$(T)serv_error: $(T).exists
+	@echo $@
+	-$(EXE_NOMAN) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}'
+	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
 	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
 	$(EXE_MAN) server browse $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME)
 	set -x&&\
 	recipient_email=$$($(EXE_NOMAN) config preset get misc email_external)&&\
-	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email}
+	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email} --ascp-opts=@list:' -l 10m'
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
@@ -177,8 +193,14 @@ $(T)asession: $(T).exists
 	remote_pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
-tserver: $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
+tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 
+$(T)fx_nagios: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex health
+	$(EXE_NOMAN) faspex health --url=https://wrong.example.com
+	$(EXE_NOMAN) config detect --url=@preset:tst_faspex.url
+	@touch $@
 $(T)fx_plst: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex package list
@@ -193,19 +215,23 @@ $(T)fx_psnd: $(T).exists
 	@sleep 8
 $(T)fx_prs: $(T)fx_psnd
 	@echo $@
-	set -x&&package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&\
+	package_id=$$($(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP).
-	set -x&&package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&\
+	package_id=$$($(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP). --box=sent
 	@touch $@
 $(T)fx_pri: $(T).exists
 	@echo $@
-	set -x&&package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
+	set -x&&\
+	package_id=$$($(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv "$${package_id}" --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)fx_prl: $(T).exists
 	@echo $@
-	set -x&&faspex_publink_recv_from_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_recv_from_fxuser)&&\
+	set -x&&\
+	faspex_publink_recv_from_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_recv_from_fxuser)&&\
 	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --link="$${faspex_publink_recv_from_fxuser}"
 	@touch $@
 $(T)fx_prall: $(T).exists
@@ -214,7 +240,8 @@ $(T)fx_prall: $(T).exists
 	@touch $@
 $(T)fx_pslu: $(T).exists
 	@echo $@
-	set -x&&faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_send_to_fxuser)&&\
+	set -x&&\
+	faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_send_to_fxuser)&&\
 	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_psld: $(T).exists
@@ -231,9 +258,8 @@ $(T)fx_storage: $(T).exists
 	$(EXE_MAN) faspex source name "$${source_name}" info&&\
 	$(EXE_MAN) faspex source name "$${source_name}" node br /
 	@touch $@
-$(T)fx_nagios: $(T).exists
+$(T)fx_misc: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex health
 	$(EXE_MAN) faspex me
 	$(EXE_MAN) faspex address_book
 	$(EXE_MAN) faspex login_methods
@@ -262,11 +288,16 @@ $(T)fx_db1: $(T).exists
 	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_wkg}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}" --to-folder=$(DIR_TMP).
 	@touch $@
-tfaspex: $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_nagios $(T)fx_v4 $(T)fx_db1
+tfaspex: $(T)fx_nagios $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_misc $(T)fx_v4 $(T)fx_db1
 
-$(T)cons1: $(T).exists
+$(T)cons_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) console health
+	$(EXE_NOMAN) console health --url=https://wrong.example.com
+	-$(EXE_NOMAN) config detect --url=@preset:tst_console.url
+	@touch $@
+$(T)cons1: $(T).exists
+	@echo $@
 	$(EXE_MAN) console transfer current list
 	@touch $@
 $(T)cons2: $(T).exists
@@ -280,8 +311,14 @@ $(T)cons3: $(T).exists
 	file_name=$$($(EXE_NOMAN) config preset get misc console_smart_file)&&\
 	$(EXE_MAN) console transfer smart sub $${job_id} @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
 	@touch $@
-tconsole: $(T)cons1 $(T)cons2 $(T)cons3
+tconsole: $(T)cons_nagios $(T)cons1 $(T)cons2 $(T)cons3
 
+$(T)nd_nagios: $(T).exists
+	@echo $@
+	$(EXE_MAN) node health
+	$(EXE_NOMAN) node health --url=https://wrong.example.com
+	$(EXE_NOMAN) config detect --url=@preset:tst_console.url
+	@touch $@
 $(T)nd1: $(T).exists
 	@echo $@
 	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
@@ -308,24 +345,24 @@ $(T)nd2: $(T).exists
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
 	set -x&&\
-	node_url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
-	node_user=$$($(EXE_NOMAN) config preset get tst_node username)&&\
-	node_pass=$$($(EXE_NOMAN) config preset get tst_node password)&&\
+	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
+	node_user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
+	node_pass=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
 	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass}"'"}'
 	$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.1
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) node -Pnode_srv service delete service1&&sleep 5
-	$(EXE_MAN) node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
-	$(EXE_MAN) node -Pnode_srv service list
+	-$(EXE_NOMAN) node -Ptst_node_admak service delete service1&&sleep 5
+	$(EXE_MAN) node -Ptst_node_admak service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+	$(EXE_MAN) node -Ptst_node_admak service list
 	@echo "waiting a little...";sleep 2
-	$(EXE_MAN) node -Pnode_srv service delete service1
-	$(EXE_MAN) node -Pnode_srv service list
+	$(EXE_MAN) node -Ptst_node_admak service delete service1
+	$(EXE_MAN) node -Ptst_node_admak service list
 	@echo "waiting a little...";sleep 5
-	$(EXE_MAN) node -Pnode_srv service list
+	$(EXE_MAN) node -Ptst_node_admak service list
 	@echo "waiting a little...";sleep 5
-	$(EXE_MAN) node -Pnode_srv service list
+	$(EXE_MAN) node -Ptst_node_admak service list
 	@touch $@
 # test creation of access key
 $(T)nd5: $(T).exists
@@ -346,36 +383,32 @@ $(T)nd8: $(T).exists
 	@echo $@
 	$(EXE_MAN) node upload --username=@preset:misc.aoc_ak_name --password=@preset:misc.aoc_ak_secret $(CF_LOCAL_SAMPLE_FILEPATH) --token-type=basic
 	@touch $@
-$(T)nd_nagios: $(T).exists
-	@echo $@
-	$(EXE_MAN) node health
-	@touch $@
 $(T)nd_ak: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Pnode_srv access_key list
+	$(EXE_MAN) node -Ptst_node_admak access_key list
 	@touch $@
 $(T)nd_ak1: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name node_info /
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name browse /
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name find /
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name node_info /
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name browse /
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find /
 	@touch $@
 $(T)nd_ak2: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name mkdir /folder1
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name rename /folder1 folder2
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name delete /folder2
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name mkdir /folder1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name rename /folder1 folder2
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete /folder2
 	@touch $@
 $(T)nd_ak3: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k'
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name file show --path=/testfile1
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name delete testfile1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file show --path=/testfile1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete testfile1
 	@touch $@
 $(T)nd_ak4: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Pnode_srv access_key do @preset:misc.aoc_ak_name file show 1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file show 1
 	@touch $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios tndak
@@ -414,6 +447,10 @@ $(T)aocg7: $(T).exists
 $(T)aocg8: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc user workspaces current
+	@touch $@
+$(T)aoc_webauth: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) aoc -Ptst_aoc_web user profile show
 	@touch $@
 taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocg7 $(T)aocg8
 $(T)aocfbr: $(T).exists
@@ -520,7 +557,8 @@ $(T)aocp2: $(T).exists
 	@touch $@
 $(T)aocp3: $(T).exists
 	@echo $@
-	set -x&&package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1)&&\
+	set -x&&\
+	package_id=$$($(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data|head -n 1)&&\
 	$(EXE_MAN) aoc packages recv "$${package_id}" --to-folder=$(DIR_TMP).&&\
 	$(EXE_MAN) aoc packages browse "$${package_id}" /contents
 	@touch $@
@@ -704,7 +742,8 @@ $(T)aocauto2: $(T).exists
 	@touch $@
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
-	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	set -x&&\
+	wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
 	$(EXE_MAN) aoc automation workflow action $${wf_id} create --value=@json:'{"name":"toto"}' | tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
@@ -712,19 +751,23 @@ $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@touch $@
 $(T)aocauto10: $(DIR_TMP)wf_id.txt
 	@echo $@
-	set -x&&wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	set -x&&\
+	wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
 	$(EXE_MAN) aoc automation workflow delete $${wf_id}
 	rm -f $(T)wf.id
 	@touch $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
 taoc: taocgen taocf taocp taocadm taocts taocauto
 
-$(T)o1: $(T).exists
+$(T)orch_nagios: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator info
+	$(EXE_MAN) orchestrator health
+	-$(EXE_NOMAN) orchestrator health --url=https://wrong.example
+	-$(EXE_NOMAN) config detect --url=@preset:tst_orch.url
 	@touch $@
 $(T)o2: $(T).exists
 	@echo $@
+	$(EXE_MAN) orchestrator info
 	$(EXE_MAN) orchestrator workflow list
 	@touch $@
 $(T)o3: $(T).exists
@@ -761,7 +804,7 @@ $(T)o10: $(T).exists
 	$(EXE_MAN) orchestrator workflow export @preset:misc.orch_workflow_id
 	@touch $@
 
-torc: $(T)o1 $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10
+torc: $(T)orch_nagios $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10
 
 $(T)at4: $(T).exists
 	@echo $@
@@ -800,6 +843,8 @@ $(T)at8: $(T).exists
 	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
 	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
+	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
@@ -1024,7 +1069,7 @@ $(T)conf_detect: $(T).exists
 	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) config preset get misc aoc_org)&&\
 	faspex_url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
-	node_url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
+	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
 	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com&&\
 	$(EXE_MAN) config detect --url=$${faspex_url}&&\
 	$(EXE_MAN) config detect --url=$${node_url}
@@ -1067,6 +1112,10 @@ $(T)conf_echo: $(T).exists
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) config echo @zlib:@stdin:
+	set -xe&&\
+	for f in text ruby json jsonpp yaml table csv;do \
+	  $(EXE_NOMAN) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
+	done
 	@touch $@
 tconf: $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo
 
@@ -1162,21 +1211,23 @@ $(T)sdk_server: $(T).exists
 $(T)sdk_node: $(T).exists
 	@echo $@
 	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_node url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_node username)&&\
-	pass=$$($(EXE_NOMAN) config preset get tst_node password)&&\
+	url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
+	user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
+	pass=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
 	tmp=$(DIR_TMP). PASSWORD=$${pass} ruby -I $(DIR_LIB). $(DIR_TOP)examples/node.rb $${url} $${user}
 	@touch $@
 $(T)sdk_aoc: $(T).exists
 	@echo $@
-	set -x&&url=$$($(EXE_NOMAN) config preset get tst_aoc1 url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_aoc1 username)&&\
-	keypath=$$($(EXE_NOMAN) config preset get tst_aoc1 private_key)&&\
+	set -x&&\
+	url=$$($(EXE_NOMAN) config preset get tst_aoc_jwt url)&&\
+	user=$$($(EXE_NOMAN) config preset get tst_aoc_jwt username)&&\
+	keypath=$$($(EXE_NOMAN) config preset get tst_aoc_jwt private_key)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
 	@touch $@
 $(T)sdk_faspex4: $(T).exists
 	@echo $@
-	set -x&&url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
+	set -x&&\
+	url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
 	user=$$($(EXE_NOMAN) config preset get tst_faspex username)&&\
 	pass=$$($(EXE_NOMAN) config preset get tst_faspex password)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
@@ -1201,10 +1252,17 @@ $(T)tcos: $(T).exists
 	$(EXE_MAN) cos node download $(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP).
 	@touch $@
 tcos: $(T)tcos
+
+$(T)f5_nagios: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 health
+	-$(EXE_NOMAN) faspex5 health --url=https://wrong.example
+	$(EXE_NOMAN) config detect --url=@preset:tst_faspex5_jwt.url
+	@touch $@
 $(T)f5_p1: $(T).exists
 	@echo $@
 	set -x&&\
-	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5 username)&&\
+	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5_jwt username)&&\
 	f5_meta=$$($(EXE_NOMAN) config preset get misc faspex5_meta)&&\
 	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
 	@touch $@
@@ -1214,12 +1272,13 @@ $(T)f5_p2: $(T).exists
 	@touch $@
 $(T)f5_p3: $(T).exists
 	@echo $@
-	set -x&&package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
+	set -x&&\
+	package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
+	$(EXE_MAN) faspex5 package show "$${package_id}"&&\
 	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
 $(T)f5_a1: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 health
 	$(EXE_MAN) faspex5 bearer_token
 	$(EXE_MAN) faspex5 admin res accounts list
 	$(EXE_MAN) faspex5 admin res contacts list
@@ -1231,11 +1290,29 @@ $(T)f5_a1: $(T).exists
 	$(EXE_MAN) faspex5 admin res oauth_clients list
 	$(EXE_MAN) faspex5 admin res registrations list
 	$(EXE_MAN) faspex5 admin res saml_configs list
+	$(EXE_MAN) faspex5 admin res metadata_profiles list
+	@touch $@
+$(T)f5_user: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 user profile show
+	$(EXE_MAN) faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
+	@touch $@
+$(T)f5_error: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) faspex5 health --url=wrong
+	@touch $@
+$(T)f5_webauth: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) -N -Ptst_faspex5_web faspex5 version
+	@touch $@
+$(T)f5_detect: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) -N config detect --url=@preset:tst_faspex5_jwt.url
 	@touch $@
 
-tf5: $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1 $(T)f5_user $(T)f5_error $(T)f5_detect
 
-tnagios: $(T)fx_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
+tnagios: $(T)fx_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
 $(T)fxgw: $(T).exists
 	@echo $@

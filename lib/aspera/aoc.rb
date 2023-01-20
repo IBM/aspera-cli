@@ -143,7 +143,10 @@ module Aspera
       end
     end # static methods
 
-    # @param :link,:url,:auth,:client_id,:client_secret,:scope,:redirect_uri,:private_key,:passphrase,:username,:subpath,:password (for pub link)
+    # CLI options that are also options to initialize
+    OPTIONS_NEW = %i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
+
+    # @param any of OPTIONS_NEW + subpath
     def initialize(opt)
       raise ArgumentError, 'Missing mandatory option: scope' if opt[:scope].nil?
 
@@ -151,7 +154,7 @@ module Aspera
       # key: access key
       # value: associated secret
       @secret_finder = nil
-      @user_info = nil
+      @cache_user_info = nil
       @cache_url_token_info = nil
 
       # init rest params
@@ -233,19 +236,20 @@ module Aspera
     end
 
     # cached user information
-    def user_info
-      if @user_info.nil?
+    def user_info(exception: false)
+      if @cache_user_info.nil?
         # get our user's default information
-        @user_info =
+        @cache_user_info =
           begin
             read('self')[:data]
           rescue StandardError => e
+            raise e if exception
             Log.log.debug{"ignoring error: #{e}"}
             {}
           end
-        USER_INFO_FIELDS_MIN.each{|f|@user_info[f] = 'unknown' if @user_info[f].nil?}
+        USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = 'unknown' if @cache_user_info[f].nil?}
       end
-      return @user_info
+      return @cache_user_info
     end
 
     # @returns [Aspera::Node] a node API for access key

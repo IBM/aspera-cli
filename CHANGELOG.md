@@ -9,6 +9,7 @@
   * fix: when WSS and node agent: no localhost (certificate)
   * fix: #99 `aoc file download` for single shared folder
   * fix: due to change of API in faspex 5 for send pakage (paths is mandatory for any type of transfer now)
+  * fix: Oauth web authentication was broken, fixed now
   * change: (break) container image has entry point
   * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
   * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used

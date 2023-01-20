@@ -3935,8 +3935,6 @@ cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='
 ### AoC sample commands
 
 ```bash
-aoc -N remind --username=my_aoc_user_email
-aoc -N servers
 aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
@@ -3988,7 +3986,7 @@ aoc faspex
 aoc files bearer /
 aoc files bearer_token_node / --cache-tokens=no
 aoc files browse /
-aoc files browse / -N --link=my_aoc_publink_folder
+aoc files browse / --link=my_aoc_publink_folder
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
 aoc files file modify --path=my_aoc_test_folder
@@ -4003,11 +4001,11 @@ aoc files short_link create --to-folder=/testdst --value=private
 aoc files short_link create --to-folder=/testdst --value=public
 aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
+aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
-aoc files upload -N --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
-aoc org -N --link=my_aoc_publink_recv_from_aocuser
+aoc org --link=my_aoc_publink_recv_from_aocuser
 aoc organization
 aoc packages browse "my_package_id" /contents
 aoc packages list
@@ -4016,12 +4014,14 @@ aoc packages recv "my_package_id" --to-folder=.
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
 aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
+aoc packages send --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
+aoc packages send --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
 aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
 aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
 aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
-aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
-aoc packages send -N --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
 aoc packages shared_inboxes list
+aoc remind --username=my_aoc_user_email
+aoc servers
 aoc user profile modify @json:'{"name":"dummy change"}'
 aoc user profile show
 aoc user workspaces current
@@ -4154,8 +4154,10 @@ ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'
 ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
 ats access_key delete ak2ibmcloud
 ats access_key delete ak_aws
+ats access_key entitlement ak2ibmcloud
 ats access_key list --fields=name,id
 ats access_key node ak2ibmcloud browse / --secret=somesecret
+ats access_key show ak2ibmcloud
 ats api_key create
 ats api_key instances
 ats api_key list
@@ -4177,7 +4179,7 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 ### Server sample commands
 
 ```bash
-server -N -Ptst_server_bykey -Plocal_user br /
+server br /
 server browse /
 server browse NEW_SERVER_FOLDER/testfile.bin
 server browse folder_1/target_hot
@@ -4201,7 +4203,7 @@ server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --t
 server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
-server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email
+server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email --ascp-opts=@list:' -l 10m'
 server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
@@ -4403,23 +4405,20 @@ ascli node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"myst
 ### Node sample commands
 
 ```bash
-node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
-node -N -Ptst_node_preview access_key delete aoc_1
-node -Pnode_srv access_key do my_aoc_ak_name browse /
-node -Pnode_srv access_key do my_aoc_ak_name delete /folder2
-node -Pnode_srv access_key do my_aoc_ak_name delete testfile1
-node -Pnode_srv access_key do my_aoc_ak_name download testfile1 --to-folder=.
-node -Pnode_srv access_key do my_aoc_ak_name file show --path=/testfile1
-node -Pnode_srv access_key do my_aoc_ak_name file show 1
-node -Pnode_srv access_key do my_aoc_ak_name find /
-node -Pnode_srv access_key do my_aoc_ak_name mkdir /folder1
-node -Pnode_srv access_key do my_aoc_ak_name node_info /
-node -Pnode_srv access_key do my_aoc_ak_name rename /folder1 folder2
-node -Pnode_srv access_key do my_aoc_ak_name upload 'faux:///testfile1?1k'
-node -Pnode_srv access_key list
-node -Pnode_srv service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
-node -Pnode_srv service delete service1
-node -Pnode_srv service list
+node access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+node access_key delete aoc_1
+node access_key do my_aoc_ak_name browse /
+node access_key do my_aoc_ak_name delete /folder2
+node access_key do my_aoc_ak_name delete testfile1
+node access_key do my_aoc_ak_name download testfile1 --to-folder=.
+node access_key do my_aoc_ak_name file show --path=/testfile1
+node access_key do my_aoc_ak_name file show 1
+node access_key do my_aoc_ak_name find /
+node access_key do my_aoc_ak_name mkdir /folder1
+node access_key do my_aoc_ak_name node_info /
+node access_key do my_aoc_ak_name rename /folder1 folder2
+node access_key do my_aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
+node access_key list
 node api_details
 node async bandwidth 1
 node async counters 1
@@ -4443,6 +4442,9 @@ node mkfile /delfile1 "hello world"
 node mklink /todelete /tdlink
 node rename / delfile1 delfile
 node search / --value=@json:'{"sort":"mtime"}'
+node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+node service delete service1
+node service list
 node space /
 node sync bandwidth my_syncid
 node sync counters my_syncid
@@ -4543,6 +4545,7 @@ Usually using JSON format with prefix `@json:`.
 faspex5 admin res accounts list
 faspex5 admin res contacts list
 faspex5 admin res jobs list
+faspex5 admin res metadata_profiles list
 faspex5 admin res node list --value=@json:'{"type":"received","subtype":"mypackages"}'
 faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
@@ -4554,6 +4557,9 @@ faspex5 health
 faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
+faspex5 package show "my_package_id"
+faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
+faspex5 user profile show
 ```
 
 Other examples:
@@ -4767,6 +4773,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 
 ```bash
 shares admin share list
+shares admin share list --fields=-status,status_message
 shares admin share user_permissions 1
 shares admin user app_authorizations 1
 shares admin user ldap_import --value=the_name
@@ -4777,9 +4784,9 @@ shares health
 shares repository browse /
 shares repository delete my_shares_upload/testfile.bin
 shares repository download --to-folder=. my_shares_upload/testfile.bin
-shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 shares repository upload --to-folder=my_shares_upload testfile.bin
-shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 ```
 
 ## <a id="console"></a>Plugin: `console`: IBM Aspera Console
@@ -4798,6 +4805,7 @@ console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]}
 ### Orchestrator sample commands
 
 ```bash
+orchestrator health
 orchestrator info
 orchestrator plugins
 orchestrator processes
@@ -4917,8 +4925,8 @@ Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man
 ### COS sample commands
 
 ```bash
-cos -N --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
-cos -N --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
+cos --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
+cos --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
 cos node access_key show self
 cos node download testfile.bin --to-folder=.
 cos node info

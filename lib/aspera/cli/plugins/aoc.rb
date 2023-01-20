@@ -82,15 +82,10 @@ module Aspera
           Node.new(env.merge({man_only: true, skip_basic_auth_options: true}))
         end
 
-        # CLI options that are also options to Aspera::AoC
-        AOC_PARAMS_COPY = %i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
-
-        # build constructor option list for AoC based on options of CLI
+        # build list of options for AoC API, based on options of CLI
         def aoc_params(subpath)
           # copy command line options to args
-          opt = AOC_PARAMS_COPY.each_with_object({}){|i, m|m[i] = options.get_option(i)}
-          opt[:subpath] = subpath
-          return opt
+          return Aspera::AoC::OPTIONS_NEW.each_with_object({subpath: subpath}){|i, m|m[i] = options.get_option(i)}
         end
 
         def aoc_api
@@ -531,9 +526,9 @@ module Aspera
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: aoc_api.user_info }
+                return { type: :single_object, data: aoc_api.user_info(exception: true) }
               when :modify
-                aoc_api.update("users/#{aoc_api.user_info['id']}", options.get_next_argument('modified parameters (hash)'))
+                aoc_api.update("users/#{aoc_api.user_info(exception: true)['id']}", options.get_next_argument('modified parameters (hash)'))
                 return Main.result_status('modified')
               end
             end
