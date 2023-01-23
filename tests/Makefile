@@ -317,7 +317,7 @@ $(T)nd_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) node health
 	$(EXE_NOMAN) node health --url=https://wrong.example.com
-	$(EXE_NOMAN) config detect --url=@preset:tst_console.url
+	$(EXE_NOMAN) config detect --url=@preset:tst_node_simple.url
 	@touch $@
 $(T)nd1: $(T).exists
 	@echo $@
@@ -328,11 +328,11 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node search / --value=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
 	-$(EXE_MAN) node delete /todelete
-	$(EXE_MAN) node mkdir /todelete
-	$(EXE_MAN) node mklink /todelete /tdlink
-	$(EXE_MAN) node mkfile /delfile1 "hello world"
-	$(EXE_MAN) node rename / delfile1 delfile
-	$(EXE_MAN) node delete @list:,/todelete,/tdlink,/delfile
+	$(EXE_MAN) node mkdir $(CF_HSTS_FOLDER_UPLOAD)/todelete
+	$(EXE_MAN) node mklink $(CF_HSTS_FOLDER_UPLOAD)/todelete $(CF_HSTS_FOLDER_UPLOAD)/tdlink
+	$(EXE_MAN) node mkfile $(CF_HSTS_FOLDER_UPLOAD)/delfile1 "hello world"
+	$(EXE_MAN) node rename $(CF_HSTS_FOLDER_UPLOAD) delfile1 delfile
+	$(EXE_MAN) node delete @list:,$(CF_HSTS_FOLDER_UPLOAD)/todelete,$(CF_HSTS_FOLDER_UPLOAD)/tdlink,$(CF_HSTS_FOLDER_UPLOAD)/delfile
 	@touch $@
 $(T)nd2: $(T).exists
 	@echo $@
