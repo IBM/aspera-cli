@@ -224,7 +224,7 @@ module Aspera
           return {list: item_list, total: total_count}
         end
 
-        NODE4_EXT_COMMANDS = %i[transfer].concat(Node::NODE4_COMMANDS).freeze
+        NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
         private_constant :NODE4_EXT_COMMANDS
 
         # @param file_id [String] root file id for the operation (can be AK root, or other, e.g. package, or link)
@@ -241,8 +241,8 @@ module Aspera
             skip_node_options:       true,
             node_api:                top_node_api))
           case command_repo
-          when *Node::NODE4_COMMANDS
-            return node_plugin.execute_node_gen4_command(command_repo, file_id)
+          when *Node::COMMANDS_GEN4
+            return node_plugin.execute_command_gen4(command_repo, file_id)
           when :transfer
             # client side is agent
             # server side is protocol server

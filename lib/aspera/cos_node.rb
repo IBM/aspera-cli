@@ -28,9 +28,8 @@ module Aspera
     end
     IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
     TOKEN_FIELD = 'delegated_refresh_token'
-    attr_reader :add_ts
 
-    def initialize(bucket_name, storage_endpoint, instance_id, api_key, auth_url=IBM_CLOUD_TOKEN_URL)
+    def initialize(bucket_name, storage_endpoint, instance_id, api_key, auth_url= IBM_CLOUD_TOKEN_URL)
       @auth_url = auth_url
       @api_key = api_key
       s3_api = Aspera::Rest.new({
@@ -55,21 +54,19 @@ module Aspera
       )[:http].body
       ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
       Aspera::Log.dump('ats_info', ats_info)
-      super(params: {
-        base_url: ats_info['ATSEndpoint'],
-        auth:     {
-          type:     :basic,
-          username: ats_info['AccessKey']['Id'],
-          password: ats_info['AccessKey']['Secret']}})
-      # prepare transfer spec addition
-      @add_ts = {
-        'tags' => {
-          'aspera' => {
-            'node' => {
-              'storage_credentials' => {
-                'type'  => 'token',
-                'token' => {TOKEN_FIELD => nil}
-              }}}}}
+      @storage_credentials = {
+        'type'  => 'token',
+        'token' => {TOKEN_FIELD => nil}
+      }
+      super(
+        params: {
+          base_url: ats_info['ATSEndpoint'],
+          auth:     {
+            type:     :basic,
+            username: ats_info['AccessKey']['Id'],
+            password: ats_info['AccessKey']['Secret']}},
+        add_tspec: {'tags'=>{'aspera'=>{'node'=>{'storage_credentials'=>@storage_credentials}}}})
+      # update storage_credentials AND Rest params
       generate_token
     end
 
@@ -88,8 +85,8 @@ module Aspera
           receiver_client_ids: 'aspera_ats'
         }})
       # get delegated token to be placed in rest call header and in transfer tags
-      @add_ts['tags']['aspera']['node']['storage_credentials']['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /, '')
-      @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@add_ts['tags']['aspera']['node']['storage_credentials'])}
+      @storage_credentials['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /, '')
+      @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@storage_credentials)}
     end
   end
 end

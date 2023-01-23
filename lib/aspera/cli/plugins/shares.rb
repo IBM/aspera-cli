@@ -12,6 +12,7 @@ module Aspera
             # Shares
             begin
               # shall fail: shares requires auth, but we check error message
+              # TODO: use ping instead ?
               api.read('node_api/app')
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
@@ -51,9 +52,9 @@ module Aspera
             return nagios.result
           when :repository
             api_shares_node = basic_auth_api('node_api')
-            command = options.get_next_command(Node::FILE_ACTIONS)
+            command = options.get_next_command(Node::COMMANDS_SHARES)
             case command
-            when *Node::FILE_ACTIONS then Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(command)
+            when *Node::COMMANDS_SHARES then Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(command)
             else raise "INTERNAL ERROR, unknown command: [#{command}]"
             end
           when :admin

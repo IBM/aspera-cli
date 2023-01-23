@@ -4429,7 +4429,7 @@ node async show ALL
 node basic_token
 node browse / -r
 node delete /todelete
-node delete @list:,/todelete,/tdlink,/delfile
+node delete @list:,folder_1/todelete,folder_1/tdlink,folder_1/delfile
 node delete folder_1/10MB.1
 node delete testfile.bin
 node download testfile.bin --to-folder=.
@@ -4437,10 +4437,10 @@ node download testfile.bin --to-folder=. --token-type=hybrid
 node health
 node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 node license
-node mkdir /todelete
-node mkfile /delfile1 "hello world"
-node mklink /todelete /tdlink
-node rename / delfile1 delfile
+node mkdir folder_1/todelete
+node mkfile folder_1/delfile1 "hello world"
+node mklink folder_1/todelete folder_1/tdlink
+node rename folder_1 delfile1 delfile
 node search / --value=@json:'{"sort":"mtime"}'
 node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 node service delete service1
@@ -5268,16 +5268,16 @@ Aspera CLI can send email, for that setup SMTP configuration. This is done with 
 
 The `smtp` option is a hash table (extended value) with the following fields:
 
-| field | default | example | description |
-|-------|---------|---------|-------------|
-| `server` | - | smtp.gmail.com | SMTP server address |
-| `tls` | true | false | use of TLS |
-| `port` | 587 for tls<br/>25 else | 587 | port for service |
-| `domain` | domain of server | gmail.com | email domain of user |
-| `username` | - | john@example.com | user to authenticate on SMTP server, leave empty for open auth. |
-| `password` | - | MyP@ssword | password for above username |
-| `from_email` | username if defined | laurent.martin.l@gmail.com | address used if received replies |
-| `from_name` | same as email | John Wayne | display name of sender |
+| field        | default             | example                    | description                      |
+|--------------|---------------------|----------------------------|----------------------------------|
+| `server`     | -                   | smtp.gmail.com             | SMTP server address              |
+| `tls`        | true                | false                      | use of TLS                       |
+| `port`       | TLS: 587<br/>25     | 587                        | port for service                 |
+| `domain`     | domain of server    | gmail.com                  | email domain of user             |
+| `username`   | -                   | john@example.com           | user to authenticate on SMTP server, leave empty for open auth. |
+| `password`   | -                   | my_password_here           | password for above username      |
+| `from_email` | username if defined | johnny@example.com         | address used if receiver replies |
+| `from_name`  | same as email       | John Wayne                 | display name of sender           |
 
 ### Example of configuration
 

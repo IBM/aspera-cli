@@ -48,9 +48,11 @@ module Aspera
 
     # @param params [Hash] Rest parameters
     # @param app_info [Hash,NilClass] special processing for AoC
-    def initialize(params:, app_info: nil)
+    def initialize(params:, app_info: nil, add_tspec: nil)
       super(params)
       @app_info = app_info
+      # this is added to transfer spec, for instance to add tags (COS)
+      @add_tspec = add_tspec
       if !@app_info.nil?
         REQUIRED_APP_INFO_FIELDS.each do |field|
           raise "INTERNAL ERROR: app_info lacks field #{field}" unless @app_info.key?(field)
@@ -59,6 +61,12 @@ module Aspera
           raise "INTERNAL ERROR: #{@app_info[:api].class} lacks method #{method}" unless @app_info[:api].respond_to?(method)
         end
       end
+    end
+
+    # update transfer spec with special additional tags
+    def add_tspec_info(tspec)
+      tspec.deep_merge!(@add_tspec) unless @add_tspec.nil?
+      return tspec
     end
 
     # @returns [Aspera::Node] a Node or nil
@@ -152,6 +160,7 @@ module Aspera
     # @param path file path
     # @return {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
+      raise 'file id shall be String' unless top_file_id.is_a?(String)
       path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
       resolve_state = {path: path_elements, result: nil}
@@ -210,6 +219,8 @@ module Aspera
           } # aspera
         } # tags
       }
+      # add specials tags (cos)
+      add_tspec_info(transfer_spec)
       transfer_spec.deep_merge!(ts_merge) unless ts_merge.nil?
       # add application specific tags (AoC)
       the_app = app_info

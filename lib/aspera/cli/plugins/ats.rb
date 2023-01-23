@@ -113,8 +113,8 @@ module Aspera
                 username: access_key_id,
                 password: @agents[:config].lookup_secret(url: node_url, username: access_key_id)
               }})
-            command = options.get_next_command(Node::COMMON_ACTIONS)
-            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command)
+            command = options.get_next_command(Node::COMMANDS_GEN4)
+            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
             ats_url = ats_api_pub_v1.params[:base_url]
             rest_params = {

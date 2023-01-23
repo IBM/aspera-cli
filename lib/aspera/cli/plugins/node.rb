@@ -38,19 +38,44 @@ module Aspera
             Aspera::Node.use_standard_ports = env[:options].get_option(:default_ports)
           end
         end
-        SAMPLE_SOAP_CALL = '<?xml version="1.0" encoding="UTF-8"?>'\
+
+        # SOAP API call to test central API
+        CENTRAL_SOAP_API_TEST = '<?xml version="1.0" encoding="UTF-8"?>'\
           '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types">'\
           '<soapenv:Header></soapenv:Header>'\
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
-        # fields not displays in result of search
+
+        # fields removed in result of search
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
-        private_constant(*%i[SAMPLE_SOAP_CALL SEARCH_REMOVE_FIELDS])
+
+        # actions in execute_command_gen3
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download]
+
+        BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
+
+        SPECIAL_ACTIONS = %i[health events info license].freeze
+
+        # actions available in v3 in gen4
+        V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+
+        # actions used commonly when a node is involved
+        COMMON_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+
+        private_constant(*%i[CENTRAL_SOAP_API_TEST SEARCH_REMOVE_FIELDS BASE_ACTIONS SPECIAL_ACTIONS V3_IN_V4_ACTIONS COMMON_ACTIONS])
+
+        # used in aoc
+        NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
+
+        # commands for execute_command_gen4
+        COMMANDS_GEN4 = %i[mkdir rename delete upload download http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
+
+        COMMANDS_COS = %i[upload download info access_key api_details transfer].freeze
+        COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
+        COMMANDS_FASPEX = COMMON_ACTIONS
 
         def initialize(env)
           super(env)
-          # this is added to transfer spec, for instance to add tags (COS)
-          @add_request_param = env[:add_request_param] || {}
           self.class.register_node_options(env) unless env[:skip_node_options]
           return if env[:man_only]
           @api_node =
@@ -116,14 +141,20 @@ module Aspera
 
         # translates paths results into CLI result, and removes prefix
         def c_result_translate_rem_prefix(resp, type, success_msg, path_prefix)
+          errors = []
           resres = { data: [], type: :object_list, fields: [type, 'result']}
           JSON.parse(resp[:http].body)['paths'].each do |p|
             result = success_msg
             if p.key?('error')
               Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
               result = 'ERROR: ' + p['error']['user_message']
+              errors.push([p['path'], p['error']['user_message']])
             end
             resres[:data].push({type => p['path'], 'result' => result})
+          end
+          # one error make all fail
+          unless errors.empty?
+            raise errors.map{|i|"#{i.first}: #{i.last}"}.join(', ')
           end
           return c_result_remove_prefix_path(resres, type, path_prefix)
         end
@@ -137,43 +168,9 @@ module Aspera
           raise StandardError, 'expect: nil, String or Array'
         end
 
-        # common API to node and Shares
-        # prefix_path is used to list remote sources in Faspex
-        def execute_simple_common(command, prefix_path)
+        # file and folder related commands
+        def execute_command_gen3(command, prefix_path)
           case command
-          when :health
-            nagios = Nagios.new
-            begin
-              info = @api_node.read('info')[:data]
-              nagios.add_ok('node api', 'accessible')
-              nagios.check_time_offset(info['current_time'], 'node api')
-              nagios.check_product_version('node api', 'entsrv', info['version'])
-            rescue StandardError => e
-              nagios.add_critical('node api', e.to_s)
-            end
-            begin
-              @api_node.call(
-                operation: 'POST',
-                subpath: 'services/soap/Transfer-201210',
-                headers: {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
-                text_body_params: SAMPLE_SOAP_CALL)[:http].body
-              nagios.add_ok('central', 'accessible by node')
-            rescue StandardError => e
-              nagios.add_critical('central', e.to_s)
-            end
-            return nagios.result
-          when :events
-            events = @api_node.read('events', options.get_option(:value))[:data]
-            return { type: :object_list, data: events}
-          when :info
-            node_info = @api_node.read('info')[:data]
-            return { type: :single_object, data: node_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data, %w[capabilities settings])}}
-          when :license # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
-            node_license = @api_node.read('license')[:data]
-            if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
-              Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal')
-            end
-            return { type: :single_object, data: node_license}
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path, 'file list', :multiple)
             resp = @api_node.create('files/delete', { paths: paths_to_delete.map{|i| {'path' => i.start_with?('/') ? i : '/' + i} }})
@@ -191,7 +188,6 @@ module Aspera
             self.format.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :space
-            # TODO: could be a list of path
             path_list = get_next_arg_add_prefix(prefix_path, 'folder path or ext.val. list')
             path_list = [path_list] unless path_list.is_a?(Array)
             resp = @api_node.create('space', { 'paths' => path_list.map {|i| { path: i} } })
@@ -201,8 +197,6 @@ module Aspera
           when :mkdir
             path_list = get_next_arg_add_prefix(prefix_path, 'folder path or ext.val. list')
             path_list = [path_list] unless path_list.is_a?(Array)
-            # TODO: a command for that ?
-            # resp=@api_node.create('space',{ "paths" => path_list.map {|i| { type: :directory, path: i} } } )
             resp = @api_node.create('files/create', { 'paths' => [{ type: :directory, path: path_list }] })
             return c_result_translate_rem_prefix(resp, 'folder', 'created', prefix_path)
           when :mklink
@@ -250,7 +244,7 @@ module Aspera
               # set requested paths depending on direction
               request_transfer_spec[:paths] = command.eql?(:download) ? transfer.ts_source_paths : [{ destination: transfer.destination_folder('send') }]
               # add fixed parameters if any (for COS)
-              request_transfer_spec.deep_merge!(@add_request_param)
+              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
               # prepare payload for single request
               setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
               # only one request, so only one answer
@@ -272,13 +266,73 @@ module Aspera
                 'ssh_port'         => Aspera::Fasp::TransferSpec::SSH_PORT,
                 'direction'        => ts_direction,
                 'destination_root' => transfer.destination_folder(ts_direction)
-              }.deep_merge(@add_request_param)
+              }
+              @api_node.add_tspec_info(transfer_spec) if @api_node.respond_to?(:add_tspec_info)
             else raise "ERROR: token_type #{tt}"
             end
             if %i[basic hybrid].include?(token_type)
               @api_node.ts_basic_token(transfer_spec)
             end
             return Main.result_transfer(transfer.start(transfer_spec))
+          end
+          raise 'INTERNAL ERROR'
+        end
+
+        # common API to node and Shares
+        # prefix_path is used to list remote sources in Faspex
+        def execute_simple_common(command, prefix_path)
+          case command
+          when *COMMANDS_GEN3
+            execute_command_gen3(command, prefix_path)
+          when :access_key
+            ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
+            case ak_command
+            when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
+            when :do
+              access_key = options.get_next_argument('access key id')
+              ak_info = @api_node.read("access_keys/#{access_key}")[:data]
+              # change API credentials if different access key
+              if !access_key.eql?('self')
+                @api_node.params[:auth][:username] = ak_info['id']
+                @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
+              end
+              command_repo = options.get_next_command(COMMANDS_GEN4)
+              return execute_command_gen4(command_repo, ak_info['root_file_id'])
+            end
+          when :health
+            nagios = Nagios.new
+            begin
+              info = @api_node.read('info')[:data]
+              nagios.add_ok('node api', 'accessible')
+              nagios.check_time_offset(info['current_time'], 'node api')
+              nagios.check_product_version('node api', 'entsrv', info['version'])
+            rescue StandardError => e
+              nagios.add_critical('node api', e.to_s)
+            end
+            begin
+              @api_node.call(
+                operation: 'POST',
+                subpath: 'services/soap/Transfer-201210',
+                headers: {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
+                text_body_params: CENTRAL_SOAP_API_TEST)[:http].body
+              nagios.add_ok('central', 'accessible by node')
+            rescue StandardError => e
+              nagios.add_critical('central', e.to_s)
+            end
+            return nagios.result
+          when :events
+            events = @api_node.read('events', options.get_option(:value))[:data]
+            return { type: :object_list, data: events}
+          when :info
+            nd_info = @api_node.read('info')[:data]
+            return { type: :single_object, data: nd_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data, %w[capabilities settings])}}
+          when :license
+            # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
+            node_license = @api_node.read('license')[:data]
+            if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
+              Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal')
+            end
+            return { type: :single_object, data: node_license}
           when :api_details
             return { type: :single_object, data: @api_node.params }
           end
@@ -337,11 +391,7 @@ module Aspera
           end
         end
 
-        NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
-
-        NODE4_COMMANDS = %i[mkdir rename delete upload download http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
-
-        def execute_node_gen4_command(command_repo, top_file_id)
+        def execute_command_gen4(command_repo, top_file_id)
           case command_repo
           when :v3
             # NOTE: other common actions are unauthorized with user scope
@@ -459,7 +509,7 @@ module Aspera
           else raise "INTERNAL ERROR: no case for #{command_repo}"
           end # command_repo
           # raise 'INTERNAL ERROR: missing return'
-        end # execute_node_gen4_command
+        end # execute_command_gen4
 
         # This is older API
         def execute_async
@@ -539,21 +589,7 @@ module Aspera
           end
         end
 
-        BASE_ACTIONS = %i[api_details health space mkdir mklink mkfile rename delete browse upload download].freeze
-
-        SPECIAL_ACTIONS = %i[search events info license].freeze
-
-        # actions available in v3 in gen4
-        V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
-
-        # actions valid in Shares
-        FILE_ACTIONS = BASE_ACTIONS
-
-        # actions used commonly when a node is involved
-        COMMON_ACTIONS = [].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
-
         ACTIONS = %i[
-          access_key
           async
           sync
           stream
@@ -570,6 +606,7 @@ module Aspera
           when *COMMON_ACTIONS then return execute_simple_common(command, prefix_path)
           when :async then return execute_async
           when :sync
+            # newer api
             sync_command = options.get_next_command(%i[bandwidth counters files start state stop summary].concat(Plugin::ALL_OPS) - %i[modify])
             case sync_command
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
@@ -632,21 +669,6 @@ module Aspera
               return { type: :other_struct, data: resp[:data] }
             else
               raise 'error'
-            end
-          when :access_key
-            ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
-            case ak_command
-            when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
-            when :do
-              access_key = options.get_next_argument('access key id')
-              ak_info = @api_node.read("access_keys/#{access_key}")[:data]
-              # change API credentials if different access key
-              if !access_key.eql?('self')
-                @api_node.params[:auth][:username] = ak_info['id']
-                @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
-              end
-              command_repo = options.get_next_command(NODE4_COMMANDS)
-              return execute_node_gen4_command(command_repo, ak_info['root_file_id'])
             end
           when :service
             command = options.get_next_command(%i[list create delete])

@@ -44,10 +44,8 @@ module Aspera
               instance_id = params[:instance_id]
             end
             api_node = CosNode.new(bucket_name, storage_endpoint, instance_id, service_api_key, options.get_option(:identity, is_type: :mandatory))
-            # command=self.options.get_next_command(Node::ACTIONS)
-            # command=self.options.get_next_command(Node::COMMON_ACTIONS)
-            command = options.get_next_command(%i[upload download info access_key api_details transfer])
-            node_plugin = Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node, add_request_param: api_node.add_ts))
+            node_plugin = Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node))
+            command = options.get_next_command(Node::COMMANDS_COS)
             return node_plugin.execute_action(command)
           end
         end
