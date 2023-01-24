@@ -122,7 +122,7 @@ module Aspera
 
     # processing method to resolve a file path to id
     # @returns true if processing need to continue
-    def process_resolve_node_path(entry, path, state)
+    def process_resolve_node_path(entry, _path, state)
       # stop digging here if not in right path
       return false unless entry['name'].eql?(state[:path].first)
       # ok it matches, so we remove the match

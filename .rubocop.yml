@@ -40,6 +40,8 @@ Style/StringLiteralsInInterpolation:
   EnforcedStyle: single_quotes
 Style/BarePercentLiterals:
   EnforcedStyle: percent_q
+Style/NumericLiteralPrefix:
+  EnforcedOctalStyle: zero_with_o
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: no_comma
 Style/DateTime:

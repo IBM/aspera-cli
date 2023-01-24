@@ -116,7 +116,9 @@ $(T)serv_mkdir: $(T).exists
 $(T)serv_error: $(T).exists
 	@echo $@
 	-$(EXE_NOMAN) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	@echo 'Note: error is expected'
 	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}'
+	@echo 'Note: error is expected'
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@

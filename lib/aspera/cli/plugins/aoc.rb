@@ -126,7 +126,8 @@ module Aspera
             end
           Log.dump(:current_workspace_info, @cache_workspace_info)
           # display workspace
-          self.format.display_status("Current Workspace: #{@cache_workspace_info['name'].to_s.red}#{@cache_workspace_info['id'] == default_workspace_id ? ' (default)' : ''}")
+          default_flag = @cache_workspace_info['id'] == default_workspace_id ? ' (default)' : ''
+          self.format.display_status("Current Workspace: #{@cache_workspace_info['name'].to_s.red}#{default_flag}")
           return @cache_workspace_info
         end
 

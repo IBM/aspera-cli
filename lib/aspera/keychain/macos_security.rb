@@ -121,7 +121,7 @@ module Aspera
     end
 
     class MacosSystem
-      def initialize(name=nil, password=nil)
+      def initialize(name=nil, _password=nil)
         @keychain = name.nil? ? MacosSecurity::Keychain.default_keychain : MacosSecurity::Keychain.by_name(name)
         raise "no such keychain #{name}" if @keychain.nil?
       end

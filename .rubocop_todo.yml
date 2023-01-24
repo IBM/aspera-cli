@@ -101,6 +101,7 @@ Layout/ArgumentAlignment:
   Enabled: true
 Layout/MultilineOperationIndentation:
   Enabled: true
+  EnforcedStyle: indented
 Style/LambdaCall:
   Enabled: true
 Style/MethodCallWithoutArgsParentheses:
