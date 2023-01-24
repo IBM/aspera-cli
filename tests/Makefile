@@ -119,6 +119,11 @@ $(T)serv_error: $(T).exists
 	@echo 'Note: error is expected'
 	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}'
 	@echo 'Note: error is expected'
+	-$(EXE_NOMAN) server -N --url=local:// ls .
+	-$(EXE_NOMAN) server -N --url=foo:// ls .
+	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	@echo 'Note: error is expected'
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
@@ -183,6 +188,7 @@ $(T)serv_df: $(T).exists
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) server health transfer --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --format=nagios 
+	-$(EXE_NOMAN) server health transfer --to-folder=/wrong --format=nagios 
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
