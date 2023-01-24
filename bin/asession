@@ -77,7 +77,7 @@ client.add_listener(Aspera::Cli::Listener::LineDump.new)
 job_id = client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
-  begin
+  begin # rubocop:disable Style/RedundantBegin
     loop do
       data = JSON.parse($stdin.gets)
       client.send_command(job_id, 0, data)
