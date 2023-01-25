@@ -6,7 +6,7 @@ require 'aspera/ats_api'
 module Aspera
   module Cli
     module Plugins
-      # list and download connect client versions
+      # Access Aspera Transfer Service
       # https://52.44.83.163/docs/
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Plugin
