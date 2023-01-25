@@ -33,6 +33,26 @@ module Aspera
           # TODO: translate command line args into transfer spec
           # non translatable args are left in special ts parameter
           tspec['EX_ascp_args'] = tspec['EX_ascp_args'].concat(opts)
+          return tspec
+        end
+
+        def action_to_direction(tspec, command)
+          raise 'transfer spec must be a Hash' unless tspec.is_a?(Hash)
+          tspec['direction'] = case command.to_sym
+          when :upload then DIRECTION_SEND
+          when :download then DIRECTION_RECEIVE
+          else raise 'Error: upload or download only'
+          end
+          return tspec
+        end
+
+        def action(tspec)
+          raise 'transfer spec must be a Hash' unless tspec.is_a?(Hash)
+          return case tspec['direction']
+                 when DIRECTION_SEND then :upload
+                 when DIRECTION_RECEIVE then :download
+                 else raise 'Error: upload or download only'
+                 end
         end
       end
     end

@@ -4248,7 +4248,14 @@ Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man
 ## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
 
 A basic plugin to start an "async" using <%=tool%>.
-The main advantage is the possibility to start from ma configuration file, using <%=tool%> standard options.
+The main advantage over bare `async` command line is the possibility to use a configuration file, using <%=tool%> standard options.
+
+Also, the `sync` command is also made available through the `server sync` and `aoc files sync` commands.
+In this case, some of the `sync` parameters are fill from parameters of the related plugin.
+
+> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
+
+Although the command allows definition of multiple sync sessions in a single command, usually only one sync session is defined.
 
 ### Sync sample commands
 

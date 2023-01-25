@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/sync'
 require 'aspera/ascmd'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/ssh'
@@ -20,9 +21,9 @@ module Aspera
           delete: :rm,
           rename: :mv
         }.freeze
-        ASCP_ACTIONS = %i[upload download].freeze
+        TRANSFER_COMMANDS = %i[sync upload download].freeze
 
-        private_constant :SSH_SCHEME, :URI_SCHEMES, :ASCMD_ALIASES, :ASCP_ACTIONS
+        private_constant :SSH_SCHEME, :URI_SCHEMES, :ASCMD_ALIASES, :TRANSFER_COMMANDS
 
         class LocalExecutor
           def execute(cmd, line)
@@ -114,8 +115,19 @@ module Aspera
           return server_transfer_spec
         end
 
+        def execute_transfer(command, transfer_spec)
+          case command
+          when :upload, :download
+            Fasp::TransferSpec.action_to_direction(transfer_spec, command)
+            return Main.result_transfer(transfer.start(transfer_spec))
+          when :sync
+            sync_plugin = Sync.new(@agents, transfer_spec: transfer_spec)
+            return sync_plugin.execute_action
+          end
+        end
+
         # actions without ascmd
-        BASE_ACTIONS = %i[health].concat(ASCP_ACTIONS).freeze
+        BASE_ACTIONS = %i[health].concat(TRANSFER_COMMANDS).freeze
         # all actions
         ACTIONS = [].concat(BASE_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys).freeze
 
@@ -159,10 +171,8 @@ module Aspera
             else raise 'ERROR'
             end
             return nagios.result
-          when :upload
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_SEND)))
-          when :download
-            return Main.result_transfer(transfer.start(server_transfer_spec.merge('direction' => Fasp::TransferSpec::DIRECTION_RECEIVE)))
+          when *TRANSFER_COMMANDS
+            return execute_transfer(command, server_transfer_spec)
           when *Aspera::AsCmd::OPERATIONS
             args = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
             ascmd = Aspera::AsCmd.new(ascmd_executor)

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/plugins/sync'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
@@ -68,7 +69,7 @@ module Aspera
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
 
         # commands for execute_command_gen4
-        COMMANDS_GEN4 = %i[mkdir rename delete upload download http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
+        COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
 
         COMMANDS_COS = %i[upload download info access_key api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
@@ -254,19 +255,10 @@ module Aspera
             when :basic
               raise 'shall have auth' unless @api_node.params[:auth].is_a?(Hash)
               raise 'shall be basic auth' unless @api_node.params[:auth][:type].eql?(:basic)
-              ts_direction =
-                case command
-                when :upload then Fasp::TransferSpec::DIRECTION_SEND
-                when :download then Fasp::TransferSpec::DIRECTION_RECEIVE
-                else raise 'Error: need upload or download'
-                end
-              transfer_spec = {
-                'remote_host'      => URI.parse(@api_node.params[:base_url]).host,
-                'remote_user'      => Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER,
-                'ssh_port'         => Aspera::Fasp::TransferSpec::SSH_PORT,
-                'direction'        => ts_direction,
-                'destination_root' => transfer.destination_folder(ts_direction)
-              }
+              transfer_spec = {}.merge(Aspera::Fasp::TransferSpec::AK_TSPEC_BASE)
+              transfer_spec['remote_host'] = URI.parse(@api_node.params[:base_url]).host
+              Fasp::TransferSpec.action_to_direction(transfer_spec, command)
+              transfer_spec['destination_root'] = transfer.destination_folder(transfer_spec['direction'])
               @api_node.add_tspec_info(transfer_spec) if @api_node.respond_to?(:add_tspec_info)
             else raise "ERROR: token_type #{tt}"
             end
@@ -457,6 +449,13 @@ module Aspera
               result = apifid[:api].delete("files/#{apifid[:file_id]}")[:data]
               {'path' => l_path}
             end
+          when :sync
+            # remote is specified by option to_folder
+            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
+            transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)
+            Log.dump(:ts, transfer_spec)
+            sync_plugin = Plugins::Sync.new(@agents, transfer_spec: transfer_spec)
+            return sync_plugin.execute_action
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)))

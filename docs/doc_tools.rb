@@ -119,6 +119,7 @@ REPLACEMENTS = [
   ['LOCAL_SAMPLE_FILEPATH', 'testfile.bin'],
   ['HSTS_UPLOADED_FILE', 'testfile.bin'],
   %w[HSTS_FOLDER_UPLOAD folder_1],
+  %w['"CF_LOCAL_SYNC_DIR"' syncdir],
   ['Test Package TIMESTAMP', 'Important files delivery'],
   ['AOC_EXTERNAL_EMAIL', 'external.user@example.com'],
   ['EMAIL_ADDR', 'internal.user@example.com'],

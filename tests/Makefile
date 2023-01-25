@@ -30,6 +30,7 @@ EXE_NOMAN=$(EXE_MAN)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
+CF_LOCAL_SYNC_DIR=$(DIR_TMP)testsync123
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) config preset get misc upload_folder 2> /dev/null || echo error)
 CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
@@ -136,6 +137,13 @@ $(T)serv_upload: $(T)serv_mkdir
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@touch $@
+$(T)serv_sync: $(T)serv_upload 
+	@echo $@
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
+	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
+	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filepairlist.txt
@@ -201,7 +209,7 @@ $(T)asession: $(T).exists
 	remote_pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
 	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
-tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
+tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 
 $(T)fx_nagios: $(T).exists
 	@echo $@
@@ -509,6 +517,8 @@ $(T)aocfbearnode: $(T).exists
 $(T)aocfdown: $(T).exists
 	@echo $@
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
+	@-killall asperaconnect
+	@sleep 1
 	$(EXE_MAN) aoc files download --transfer=connect /200KB.1
 	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
 	@touch $@
@@ -519,6 +529,13 @@ $(T)aocfhttpd: $(T).exists
 $(T)aocfv3inf: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files v3 info
+	@touch $@
+$(T)aocfsync: $(T).exists
+	@echo $@
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) aoc files sync start --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
+	$(EXE_MAN) aoc files sync admin status --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
@@ -550,7 +567,7 @@ $(T)aocshlk3: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
 $(T)aocp1: $(T).exists
 	@echo $@
 	set -x&&\
@@ -1206,9 +1223,10 @@ $(T)sync1: $(T).exists
 	remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NOMAN) config preset get misc syncuser)&&\
 	local_user_key=$$($(EXE_NOMAN) config preset get local_user ssh_keys)&&\
-	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
-	-$(EXE_NOMAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33002,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
-	$(EXE_MAN) sync admin status --parameters=@json:'{"sessions":[{"name":"test","local_dir":"$(DIR_TMP)contents"}]}'
+	$(EXE_MAN) sync start --sync-info=@json:'{"instance":{"quiet":true},"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_paths":["'"$${local_user_key}"'"]}]}'
+	-$(EXE_NOMAN) sync start --sync-info=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33002,"user":"'"$${remote_user}"'","private_key_paths":["'"$${local_user_key}"'"]}]}'
+	$(EXE_MAN) sync admin status --sync-info=@json:'{"sessions":[{"name":"test","local_dir":"$(DIR_TMP)contents"}]}'
+	-$(EXE_NOMAN) sync admin status --sync-info=@json:'{"sessions":[{"name":"test"}]}'
 	@touch $@
 tsync: $(T)sync1
 $(T)sdk_server: $(T).exists

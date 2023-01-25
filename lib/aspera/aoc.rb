@@ -386,12 +386,7 @@ module Aspera
     # callback in Aspera::Node (transfer_spec_gen4)
     def add_ts_tags(transfer_spec:, app_info:)
       # translate transfer direction to upload/download
-      transfer_type =
-        case transfer_spec['direction']
-        when Fasp::TransferSpec::DIRECTION_SEND then    'upload'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE then 'download'
-        else raise "ERROR: unexpected value: #{transfer_spec['direction']}"
-        end
+      transfer_type = Fasp::TransferSpec.action(transfer_spec)
       # Analytics tags
       ################
       ws_info = app_info[:plugin].current_workspace_info

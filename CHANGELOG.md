@@ -5,6 +5,7 @@
   * new: vault: secret finder, migration from config file
   * new: allow removal of transferspec parameter by setting value to `null`
   * new: option `ascp_opts` allows to provide native `ascp` options on command line
+  * new: command `sync` added to `node` (gen4) and `server` plugins, also available in `aoc`
   * fix: security: no shell interpolation
   * fix: when WSS and node agent: no localhost (certificate)
   * fix: #99 `aoc file download` for single shared folder
@@ -12,6 +13,7 @@
   * fix: Oauth web authentication was broken, fixed now
   * change: (break) container image has entry point
   * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
+  * change: (break) renamed options for `sync`
   * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used
   * change: if wss is enabled on server, use wss
   * lots of cleanup and refactoring

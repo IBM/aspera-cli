@@ -24,7 +24,7 @@ module Aspera
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new({base_url: "#{connect_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
           cinfo = @connect_api.read('info/version')[:data]
-          Log.log.info("Connect was reached") if trynumber > 0
+          Log.log.info('Connect was reached') if trynumber > 0
           Log.dump(:connect_version, cinfo)
         rescue StandardError => e # Errno::ECONNREFUSED
           raise StandardError, "Unable to start connect #{trynumber} times" if trynumber >= MAX_CONNECT_START_RETRY
