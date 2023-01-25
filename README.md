@@ -4199,7 +4199,9 @@ server md5sum NEW_SERVER_FOLDER/testfile.bin
 server mkdir NEW_SERVER_FOLDER --logger=stdout
 server mkdir folder_1/target_hot
 server mv folder_1/200KB.2 folder_1/to.delete
-server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"syncdir","reset":true}]}'
+server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"syncdir"}}'
+server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"syncdir"}]}'
+server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"syncdir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
 server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"syncdir","reset":true}]}'
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER 
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
@@ -4946,8 +4948,10 @@ Also, the `sync` command is also made available through the `server sync` and `a
 In this case, some of the `sync` parameters are fill from parameters of the related plugin.
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
-
-Although the command allows definition of multiple sync sessions in a single command, usually only one sync session is defined.
+>
+> **Note:** Two JSON syntax are supported for option `sync_info`.
+> The first is same sync payload as specified on the `async` option `--conf`, this is the prefered syntax and supports a single session definition.
+> The second (legacy) is specific to `ascli` and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
 ### Sync sample commands
 

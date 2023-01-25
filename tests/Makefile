@@ -142,7 +142,9 @@ $(T)serv_sync: $(T)serv_upload
 	rm -fr $(CF_LOCAL_SYNC_DIR)
 	mkdir -p $(CF_LOCAL_SYNC_DIR)
 	$(EXE_MAN) server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
-	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
+	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'"}]}'
+	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'
+	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"}}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt

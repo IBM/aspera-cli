@@ -4254,8 +4254,10 @@ Also, the `sync` command is also made available through the `server sync` and `a
 In this case, some of the `sync` parameters are fill from parameters of the related plugin.
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
-
-Although the command allows definition of multiple sync sessions in a single command, usually only one sync session is defined.
+>
+> **Note:** Two JSON syntax are supported for option `sync_info`.
+> The first is same sync payload as specified on the `async` option `--conf`, this is the prefered syntax and supports a single session definition.
+> The second (legacy) is specific to <%=tool%> and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
 ### Sync sample commands
 
