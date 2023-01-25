@@ -1179,6 +1179,7 @@ $(T)prev_folder: $(T).exists
 	@touch $@
 
 tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mxf_png_fix $(T)prev_mxf_png_ani $(T)prev_mxf_blend $(T)prev_mxf_reencode $(T)prev_mxf_clips $(T)prev_events $(T)prev_scan
+# TODO : finalize
 thot:
 	rm -fr source_hot
 	mkdir source_hot
@@ -1206,6 +1207,8 @@ $(T)sync1: $(T).exists
 	remote_user=$$($(EXE_NOMAN) config preset get misc syncuser)&&\
 	local_user_key=$$($(EXE_NOMAN) config preset get local_user ssh_keys)&&\
 	$(EXE_MAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
+	-$(EXE_NOMAN) sync start --parameters=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33002,"user":"'"$${remote_user}"'","private_key_path":"'"$${local_user_key}"'"}]}'
+	$(EXE_MAN) sync admin status --parameters=@json:'{"sessions":[{"name":"test","local_dir":"$(DIR_TMP)contents"}]}'
 	@touch $@
 tsync: $(T)sync1
 $(T)sdk_server: $(T).exists
