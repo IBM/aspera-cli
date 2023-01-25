@@ -9,8 +9,8 @@ require 'tty-spinner'
 module Aspera
   module Fasp
     class AgentConnect < AgentBase
-      MAX_CONNECT_START_RETRY = 3
-      SLEEP_SEC_BETWEEN_RETRY = 2
+      MAX_CONNECT_START_RETRY = 4
+      SLEEP_SEC_BETWEEN_RETRY = 3
       private_constant :MAX_CONNECT_START_RETRY, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(_options)
         super()
@@ -24,12 +24,14 @@ module Aspera
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new({base_url: "#{connect_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
           cinfo = @connect_api.read('info/version')[:data]
+          Log.log.info("Connect was reached") if trynumber > 0
           Log.dump(:connect_version, cinfo)
         rescue StandardError => e # Errno::ECONNREFUSED
-          raise StandardError, "Unable to start connect after #{trynumber} try" if trynumber >= MAX_CONNECT_START_RETRY
-          Log.log.warn{"connect is not started. Retry ##{trynumber}, err=#{e}"}
+          raise StandardError, "Unable to start connect #{trynumber} times" if trynumber >= MAX_CONNECT_START_RETRY
+          Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{trynumber}..."}
           trynumber += 1
-          if !OpenApplication.uri_graphical('fasp://initialize')
+          start_url = trynumber <= 2 ? 'fasp://initialize' : 'https://test-connect.ibmaspera.com/'
+          if !OpenApplication.uri_graphical(start_url)
             OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
             raise StandardError, 'Connect is not installed'
           end
