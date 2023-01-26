@@ -5,7 +5,7 @@
 
 ##
 
-Version : 4.11.0
+Version : 4.12.0
 
 Laurent/2016-2023
 
@@ -81,7 +81,7 @@ ascli --version
 ```
 
 ```bash
-4.11.0
+4.12.0
 ```
 
 ### First use
@@ -242,7 +242,7 @@ ascli -v
 ```
 
 ```text
-4.11.0
+4.12.0
 ```
 
 In order to keep persistency of configuration on the host,
@@ -2605,7 +2605,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.11.0)
+        ascli -- a command line tool for Aspera Applications (v4.12.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
