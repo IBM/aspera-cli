@@ -4,7 +4,7 @@ require 'aspera/log'
 require 'aspera/rest'
 
 module Aspera
-  class AtsApi < Rest
+  class AtsApi < Aspera::Rest
     # currently supported clouds
     # Note to Aspera: shall be an API call
     CLOUD_NAME = {

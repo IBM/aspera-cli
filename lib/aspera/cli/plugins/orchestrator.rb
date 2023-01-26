@@ -6,7 +6,7 @@ require 'xmlsimple'
 module Aspera
   module Cli
     module Plugins
-      class Orchestrator < BasicAuthPlugin
+      class Orchestrator < Aspera::Cli::BasicAuthPlugin
         def initialize(env)
           super(env)
           options.add_opt_simple(:params, 'parameters hash table, use @json:{"param":"value"}')

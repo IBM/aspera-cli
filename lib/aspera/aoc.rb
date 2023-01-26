@@ -24,7 +24,7 @@ Aspera::Oauth.register_token_creator(
   })
 
 module Aspera
-  class AoC < Rest
+  class AoC < Aspera::Rest
     PRODUCT_NAME = 'Aspera on Cloud'
     # Production domain of AoC
     PROD_DOMAIN = 'ibmaspera.com'
@@ -57,7 +57,7 @@ module Aspera
     SCOPE_FILES_USER = 'user:all'
     SCOPE_FILES_ADMIN = 'admin:all'
     SCOPE_FILES_ADMIN_USER = 'admin-user:all'
-    SCOPE_FILES_ADMIN_USER_USER = SCOPE_FILES_ADMIN_USER + '+' + SCOPE_FILES_USER
+    SCOPE_FILES_ADMIN_USER_USER = "#{SCOPE_FILES_ADMIN_USER}+#{SCOPE_FILES_USER}"
     SCOPE_NODE_USER = 'user:all'
     SCOPE_NODE_ADMIN = 'admin:all'
     FILES_APP = 'files'

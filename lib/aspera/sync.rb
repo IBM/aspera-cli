@@ -131,7 +131,7 @@ module Aspera
 
         if sync_params.key?('instance')
           raise StandardError, 'instance key must be Hash' unless sync_params['instance'].is_a?(Hash)
-          instance_builder = CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
+          instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
           instance_builder.process_params
           instance_builder.add_env_args(@env_args[:env], @env_args[:args])
         end
@@ -139,7 +139,7 @@ module Aspera
         sync_params['sessions'].each do |session_params|
           raise StandardError, 'sessions must contain hashes' unless session_params.is_a?(Hash)
           raise StandardError, 'session must contain at leat name' unless session_params.key?('name')
-          session_builder = CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
+          session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
           session_builder.process_params
           session_builder.add_env_args(@env_args[:env], @env_args[:args])
         end

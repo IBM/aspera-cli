@@ -9,7 +9,7 @@ module Aspera
       # Access Aspera Transfer Service
       # https://52.44.83.163/docs/
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
-      class Ats < Plugin
+      class Ats < Aspera::Cli::Plugin
         def initialize(env)
           super(env)
           options.add_opt_simple(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')

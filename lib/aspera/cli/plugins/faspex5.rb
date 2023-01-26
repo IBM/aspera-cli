@@ -9,7 +9,7 @@ require 'securerandom'
 module Aspera
   module Cli
     module Plugins
-      class Faspex5 < BasicAuthPlugin
+      class Faspex5 < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)

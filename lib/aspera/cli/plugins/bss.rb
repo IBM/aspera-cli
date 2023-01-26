@@ -5,7 +5,7 @@ require 'aspera/rest'
 module Aspera
   module Cli
     module Plugins
-      class Bss < BasicAuthPlugin
+      class Bss < Aspera::Cli::BasicAuthPlugin
         ACTIONS = %i[subscription].freeze
 
         FIELDS = {

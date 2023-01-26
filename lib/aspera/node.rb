@@ -10,7 +10,7 @@ require 'base64'
 
 module Aspera
   # Provides additional functions using node API with gen4 extensions (access keys)
-  class Node < Rest
+  class Node < Aspera::Rest
     # permissions
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter

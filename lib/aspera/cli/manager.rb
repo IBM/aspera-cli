@@ -12,9 +12,9 @@ module Aspera
     class CliError < StandardError; end
 
     # raised when an unexpected argument is provided
-    class CliBadArgument < CliError; end
+    class CliBadArgument < Aspera::Cli::CliError; end
 
-    class CliNoSuchId < CliError
+    class CliNoSuchId < Aspera::Cli::CliError
       def initialize(res_type, res_id)
         msg = "No such #{res_type} identifier: #{res_id}"
         super(msg)

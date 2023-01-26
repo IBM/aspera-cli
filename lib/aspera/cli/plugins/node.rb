@@ -14,7 +14,7 @@ require 'zlib'
 module Aspera
   module Cli
     module Plugins
-      class Node < BasicAuthPlugin
+      class Node < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
             api = Rest.new({ base_url: base_url})

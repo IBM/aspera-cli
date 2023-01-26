@@ -28,7 +28,7 @@ module Aspera
   module Cli
     module Plugins
       # manage the CLI config file
-      class Config < Plugin
+      class Config < Aspera::Cli::Plugin
         # folder in $HOME for application files (config, cache)
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # default config file

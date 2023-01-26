@@ -6,7 +6,7 @@ require 'aspera/cli/plugin'
 module Aspera
   module Cli
     # base class for applications supporting basic authentication
-    class BasicAuthPlugin < Plugin
+    class BasicAuthPlugin < Aspera::Cli::Plugin
       class << self
         def register_options(env)
           env[:options].add_opt_simple(:url, 'URL of application, e.g. https://org.asperafiles.com')

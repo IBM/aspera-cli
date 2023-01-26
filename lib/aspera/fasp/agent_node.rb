@@ -10,7 +10,7 @@ module Aspera
   module Fasp
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
-    class AgentNode < AgentBase
+    class AgentNode < Aspera::Fasp::AgentBase
       # option include: root_id if the node is an access key
       attr_writer :options
 

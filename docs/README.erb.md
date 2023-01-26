@@ -4256,8 +4256,10 @@ In this case, some of the `sync` parameters are fill from parameters of the rela
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 >
 > **Note:** Two JSON syntax are supported for option `sync_info`.
-> The first is same sync payload as specified on the `async` option `--conf`, this is the prefered syntax and supports a single session definition.
+> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the prefered syntax and allows a single session definition.
 > The second (legacy) is specific to <%=tool%> and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
 ### Sync sample commands
 

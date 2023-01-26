@@ -14,7 +14,7 @@ require 'json'
 module Aspera
   module Fasp
     # start a transfer using Aspera HTTP Gateway, using web socket session for uploads
-    class AgentHttpgw < AgentBase
+    class AgentHttpgw < Aspera::Fasp::AgentBase
       # message returned by HTTP GW in case of success
       MSG_END_UPLOAD = 'end upload'
       MSG_END_SLICE = 'end_slice_upload'

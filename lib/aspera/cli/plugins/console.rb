@@ -6,7 +6,7 @@ require 'aspera/nagios'
 module Aspera
   module Cli
     module Plugins
-      class Console < BasicAuthPlugin
+      class Console < Aspera::Cli::BasicAuthPlugin
         DEFAULT_FILTER_AGE_SECONDS = 3 * 3600
         private_constant :DEFAULT_FILTER_AGE_SECONDS
         def initialize(env)

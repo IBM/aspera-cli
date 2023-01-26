@@ -5,7 +5,7 @@ require 'aspera/rest'
 require 'xmlsimple'
 
 module Aspera
-  class CosNode < Node
+  class CosNode < Aspera::Node
     class << self
       def parameters_from_svc_creds(service_credentials, bucket_region)
         # check necessary contents

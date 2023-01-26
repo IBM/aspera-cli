@@ -8,7 +8,7 @@ module Aspera
   module Cli
     module Listener
       # a listener to FASP event that displays a progress bar
-      class Progress < Fasp::Listener
+      class Progress < Aspera::Fasp::Listener
         def initialize
           super
           @progress = nil

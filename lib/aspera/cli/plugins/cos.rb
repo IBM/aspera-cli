@@ -7,7 +7,7 @@ require 'aspera/cos_node'
 module Aspera
   module Cli
     module Plugins
-      class Cos < Plugin
+      class Cos < Aspera::Cli::Plugin
         def initialize(env)
           super(env)
           @service_creds = nil

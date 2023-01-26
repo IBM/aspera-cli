@@ -16,7 +16,7 @@ require 'date'
 module Aspera
   module Cli
     module Plugins
-      class Aoc < BasicAuthPlugin
+      class Aoc < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
             api = Rest.new({base_url: base_url})

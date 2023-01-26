@@ -6,7 +6,7 @@ require 'json'
 
 module Aspera
   module Fasp
-    class AgentTrsdk < AgentBase
+    class AgentTrsdk < Aspera::Fasp::AgentBase
       DEFAULT_OPTIONS = {
         address: '127.0.0.1',
         port:    55_002

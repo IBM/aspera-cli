@@ -43,8 +43,8 @@ clean::
 # UML Diagram : requires tools: graphviz and gem xumlidot
 # on mac: `gem install xumlidot pry` and `brew install graphviz`
 uml: $(DIR_DOC)uml.png
-$(DIR_DOC)uml.png:
-	xumlidot --dot --no-composition $(DIR_LIB). > $(DIR_DOC)uml.dot
+$(DIR_DOC)uml.png: $(DIR_TOP)common.mak
+	xumlidot --dot --no-composition --usage $(DIR_LIB). > $(DIR_DOC)uml.dot
 	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
 	rm -f $(DIR_DOC)uml.dot
 clean::

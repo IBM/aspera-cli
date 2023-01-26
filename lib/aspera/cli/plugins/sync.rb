@@ -10,7 +10,7 @@ module Aspera
   module Cli
     module Plugins
       # Execute Aspera Sync
-      class Sync < Plugin
+      class Sync < Aspera::Cli::Plugin
         def initialize(env, transfer_spec: nil)
           super(env)
           options.add_opt_simple(:sync_info, 'Information for sync instance and sessions (Hash)')

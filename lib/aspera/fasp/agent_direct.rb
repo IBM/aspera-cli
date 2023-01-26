@@ -16,7 +16,7 @@ require 'shellwords'
 module Aspera
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
-    class AgentDirect < AgentBase
+    class AgentDirect < Aspera::Fasp::AgentBase
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
         spawn_timeout_sec: 3,

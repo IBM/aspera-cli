@@ -5,7 +5,7 @@ require 'aspera/cli/plugins/node'
 module Aspera
   module Cli
     module Plugins
-      class Shares < BasicAuthPlugin
+      class Shares < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
             api = Rest.new({base_url: base_url})

@@ -8,7 +8,7 @@ require 'tty-spinner'
 
 module Aspera
   module Fasp
-    class AgentConnect < AgentBase
+    class AgentConnect < Aspera::Fasp::AgentBase
       MAX_CONNECT_START_RETRY = 4
       SLEEP_SEC_BETWEEN_RETRY = 3
       private_constant :MAX_CONNECT_START_RETRY, :SLEEP_SEC_BETWEEN_RETRY

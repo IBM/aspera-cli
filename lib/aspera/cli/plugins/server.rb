@@ -13,7 +13,7 @@ module Aspera
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
-      class Server < BasicAuthPlugin
+      class Server < Aspera::Cli::BasicAuthPlugin
         SSH_SCHEME = 'ssh'
         URI_SCHEMES = %w[https local].push(SSH_SCHEME).freeze
         ASCMD_ALIASES = {
