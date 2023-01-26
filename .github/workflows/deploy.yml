@@ -15,7 +15,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ruby-version:'3.2.0'
+        ruby-version: '3.2'
 
     - name: Publish to RubyGems
       if: contains(github.ref, 'refs/tags/v')
