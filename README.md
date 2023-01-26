@@ -5,7 +5,7 @@
 
 ##
 
-Version : 4.10.1
+Version : 4.11.0
 
 Laurent/2016-2023
 
@@ -81,7 +81,7 @@ ascli --version
 ```
 
 ```bash
-4.10.1
+4.11.0
 ```
 
 ### First use
@@ -242,7 +242,7 @@ ascli -v
 ```
 
 ```text
-4.10.1
+4.11.0
 ```
 
 In order to keep persistency of configuration on the host,
@@ -2605,7 +2605,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.10.1)
+        ascli -- a command line tool for Aspera Applications (v4.11.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -4950,8 +4950,10 @@ In this case, some of the `sync` parameters are fill from parameters of the rela
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 >
 > **Note:** Two JSON syntax are supported for option `sync_info`.
-> The first is same sync payload as specified on the `async` option `--conf`, this is the prefered syntax and supports a single session definition.
+> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the prefered syntax and allows a single session definition.
 > The second (legacy) is specific to `ascli` and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
 ### Sync sample commands
 
