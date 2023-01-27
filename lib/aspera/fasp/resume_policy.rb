@@ -32,12 +32,12 @@ module Aspera
       # calls block a number of times (resumes) until success or limit reached
       # this is re-entrant, one resumer can handle multiple transfers in //
       def execute_with_resume
-        raise 'block manndatory' unless block_given?
+        raise 'block mandatory' unless block_given?
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
         sleep_seconds = @parameters[:sleep_initial]
         Log.log.debug{"retries=#{remaining_resumes}"}
-        # try to send the file until ascp is succesful
+        # try to send the file until ascp is successful
         loop do
           Log.log.debug('transfer starting')
           begin

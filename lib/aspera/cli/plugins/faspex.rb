@@ -480,7 +480,7 @@ module Aspera
               headers: {'Accept' => 'application/json'},
               url_params: {'format' => 'json', 'count' => 100_000}
             )[:data]
-            self.format.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
+            formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users = result['entry']
             # add missing entries
             users.each do |u|

@@ -19,7 +19,7 @@ module Aspera
         # decode comma separated table text
         def decode_csvt(value)
           col_titles = nil
-          hasharray = []
+          hash_array = []
           CSV.parse(value).each do |values|
             next if values.empty?
             if col_titles.nil?
@@ -27,11 +27,11 @@ module Aspera
             else
               entry = {}
               col_titles.each{|title|entry[title] = values.shift}
-              hasharray.push(entry)
+              hash_array.push(entry)
             end
           end
-          Log.log.warn('Titled CSV file without any line') if hasharray.empty?
-          return hasharray
+          Log.log.warn('Titled CSV file without any line') if hash_array.empty?
+          return hash_array
         end
       end
 

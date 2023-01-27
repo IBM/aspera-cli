@@ -78,7 +78,7 @@ module Aspera
     end
 
     # recursively browse in a folder (with non-recursive method)
-    # subfolders a processed if the processing method returns true
+    # sub folders are processed if the processing method returns true
     # @param state [Object] state object sent to processing method
     # @param method [Symbol] processing method name
     # @param top_file_id [String] file id to start at (default = access key root file id)

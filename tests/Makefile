@@ -56,6 +56,7 @@ $(T).exists: $(DIR_TMP).exists
 clean::
 	rm -f $(CF_LOCAL_SAMPLE_FILEPATH)
 	rm -fr $(T)
+	rm -f $(DIR_TOP).rspec_status
 $(T)unit: $(T).exists
 	@echo $@
 	set -x&&\

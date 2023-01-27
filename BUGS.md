@@ -11,7 +11,6 @@ Please, make sure to include the following information:
 
 [Use Github (Public Issue Reporting)](https://github.com/IBM/aspera-cli/issues)
 
-
 ## Security Policy
 
 | Version | Supported          |

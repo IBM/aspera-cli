@@ -47,7 +47,7 @@ module Aspera
       raise RestCallError.new(call_context[:request], call_context[:response], call_context[:messages].join("\n")) unless call_context[:messages].empty?
     end
 
-    # add a new error handler (done at application initialisation)
+    # add a new error handler (done at application initialization)
     # @param name : name of error handler (for logs)
     # @param block : processing of response: takes two parameters: name, call_context
     # name is the one provided here
@@ -69,7 +69,7 @@ module Aspera
         if call_context[:data].is_a?(Hash) && (!call_context[:response].code.start_with?('2') || always)
           msg_key = path.pop
           # dig and find sub entry corresponding to path in deep hash
-          error_struct = path.inject(call_context[:data]) { |subhash, key| subhash.respond_to?(:keys) ? subhash[key] : nil }
+          error_struct = path.inject(call_context[:data]) { |sub_hash, key| sub_hash.respond_to?(:keys) ? sub_hash[key] : nil }
           if error_struct.is_a?(Hash) && error_struct[msg_key].is_a?(String)
             RestErrorAnalyzer.add_error(call_context, type, error_struct[msg_key])
             error_struct.each do |k, v|
@@ -89,10 +89,10 @@ module Aspera
       # @param msg one error message  to add to list
       def add_error(call_context, type, msg)
         call_context[:messages].push(msg)
-        logfile = instance.log_file
+        log_file = instance.log_file
         # log error for further analysis (file must exist to activate)
-        return if logfile.nil? || !File.exist?(logfile)
-        File.open(logfile, 'a+') do |f|
+        return if log_file.nil? || !File.exist?(log_file)
+        File.open(log_file, 'a+') do |f|
           f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n"\
             "#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
         end

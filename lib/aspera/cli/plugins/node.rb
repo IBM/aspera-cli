@@ -185,8 +185,8 @@ module Aspera
             result = { type: :object_list, data: resp[:data]['items']}
             return Main.result_empty if result[:data].empty?
             result[:fields] = result[:data].first.keys.reject{|i|SEARCH_REMOVE_FIELDS.include?(i)}
-            self.format.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
-            self.format.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
+            formatter.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
+            formatter.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :space
             path_list = get_next_arg_add_prefix(prefix_path, 'folder path or ext.val. list')
@@ -227,7 +227,7 @@ module Aspera
             case send_result['self']['type']
             when 'directory', 'container' # directory: node, container: shares
               result = { data: send_result['items'], type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
-              self.format.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
+              formatter.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
             else # 'file','symbolic_link'
               result = { data: send_result['self'], type: :single_object}
               # result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
@@ -418,7 +418,7 @@ module Aspera
             if file_info['type'].eql?('folder')
               result = apifid[:api].read("files/#{apifid[:file_id]}/files", options.get_option(:value))
               items = result[:data]
-              self.format.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
+              formatter.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
             else
               items = [file_info]
             end
@@ -517,7 +517,7 @@ module Aspera
             asyncname = options.get_option(:sync_name)
             if asyncname.nil?
               asyncid = instance_identifier
-              if asyncid.eql?('ALL') && %i[show delete].include?(command)
+              if asyncid.eql?(VAL_ALL) && %i[show delete].include?(command)
                 asyncids = @api_node.read('async/list')[:data]['sync_ids']
               else
                 Integer(asyncid) # must be integer
@@ -540,7 +540,7 @@ module Aspera
           when :show
             resp = @api_node.create('async/summary', pdata)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
-            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if asyncid.eql?('ALL')
+            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if asyncid.eql?(VAL_ALL)
             return { type: :single_object, data: resp.first }
           when :delete
             resp = @api_node.create('async/delete', pdata)[:data]

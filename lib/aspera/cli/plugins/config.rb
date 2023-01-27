@@ -3,7 +3,7 @@
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
-require 'aspera/cli/formater'
+require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
@@ -129,7 +129,7 @@ module Aspera
           ExtendedValue.instance.set_handler(EXTV_PRESET, :reader, lambda{|v|preset_by_name(v)})
           ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS, :decoder, lambda{|v|expanded_with_preset_includes(v)})
           ExtendedValue.instance.set_handler(EXTV_VAULT, :decoder, lambda{|v|vault_value(v)})
-          # load defaults before it can be overriden
+          # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
           options.set_obj_attr(:ascp_path, Fasp::Installation.instance, :ascp_path)
@@ -297,7 +297,7 @@ module Aspera
             File.dirname(File.expand_path(__FILE__))
           end
 
-          # name of englobin module
+          # name of englobing module
           # @return "Aspera::Cli::Plugins"
           def module_full_name
             return Module.nesting[2].to_s
@@ -309,7 +309,7 @@ module Aspera
             File.expand_path(module_full_name.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
           end
 
-          # instanciate a plugin
+          # instantiate a plugin
           # plugins must be Capitalized
           def plugin_class(plugin_name_sym)
             # Module.nesting[2] is Aspera::Cli::Plugins
@@ -330,7 +330,7 @@ module Aspera
           end
           @config_presets[global_default_preset_name] ||= {}
           @config_presets[global_default_preset_name][key.to_s] = value
-          self.format.display_status("Updated: #{global_default_preset_name}: #{key} <- #{value}")
+          formatter.display_status("Updated: #{global_default_preset_name}: #{key} <- #{value}")
           save_presets_to_config_file
           return global_default_preset_name
         end
@@ -362,7 +362,7 @@ module Aspera
           end
         end
 
-        # @return the hash value with 'incps' keys expanced to include other presets
+        # @return the hash value with 'incps' keys expanded to include other presets
         # @param hash_val
         # @param include_path to avoid inclusion loop
         def expanded_with_preset_includes(hash_val, include_path=[])
@@ -615,9 +615,9 @@ module Aspera
               folder_dest = transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
               # folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
-              fileurl = one_link['href']
-              filename = fileurl.gsub(%r{.*/}, '')
-              api_connect_cdn.call({operation: 'GET', subpath: fileurl, save_to_file: File.join(folder_dest, filename)})
+              file_url = one_link['href']
+              filename = file_url.gsub(%r{.*/}, '')
+              api_connect_cdn.call({operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename)})
               return Main.result_status("Downloaded: #{filename}")
             when :open
               OpenApplication.instance.uri(one_link['href'])
@@ -634,7 +634,7 @@ module Aspera
           when :use
             ascp_path = options.get_next_argument('path to ascp')
             ascp_version = Fasp::Installation.instance.get_ascp_version(ascp_path)
-            self.format.display_status("ascp version: #{ascp_version}")
+            formatter.display_status("ascp version: #{ascp_version}")
             preset_name = set_global_default(:ascp_path, ascp_path)
             return Main.result_status("Saved to default global preset #{preset_name}")
           when :show # shows files used
@@ -722,7 +722,7 @@ module Aspera
           when :list
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
-            return {type: :object_list, data: Formater.flatten_config_overview(@config_presets)}
+            return {type: :object_list, data: Formatter.flatten_config_overview(@config_presets)}
           when :show
             raise "no such config: #{name}" if selected_preset.nil?
             return {type: :single_object, data: selected_preset}
@@ -766,10 +766,10 @@ module Aspera
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
-            theopts = options.get_options_table
-            Log.log.debug{"opts=#{theopts}"}
+            unprocessed_options = options.get_options_table
+            Log.log.debug{"opts=#{unprocessed_options}"}
             @config_presets[name] ||= {}
-            @config_presets[name].merge!(theopts)
+            @config_presets[name].merge!(unprocessed_options)
             # fix bug in 4.4 (creating key "true" in "default" preset)
             @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
             save_presets_to_config_file
@@ -777,9 +777,9 @@ module Aspera
           when :ask
             options.ask_missing_mandatory = :yes
             @config_presets[name] ||= {}
-            options.get_next_argument('option names', expected: :multiple).each do |optionname|
-              option_value = options.get_interactive(:option, optionname)
-              @config_presets[name][optionname] = option_value
+            options.get_next_argument('option names', expected: :multiple).each do |option_name|
+              option_value = options.get_interactive(:option, option_name)
+              @config_presets[name][option_name] = option_value
             end
             save_presets_to_config_file
             return Main.result_status("Updated: #{name}")
@@ -925,20 +925,20 @@ module Aspera
               raise CliBadArgument, "Supports only: aoc. Detected: #{params[:application]}"
             end # product
             if params[:option_default]
-              self.format.display_status("Setting config preset as default for #{params[:plugin_name]}")
+              formatter.display_status("Setting config preset as default for #{params[:plugin_name]}")
               @config_presets[CONF_PRESET_DEFAULT][params[:plugin_name]] = params[:preset_name]
             else
               params[:test_args] = "-P#{params[:preset_name]} #{params[:test_args]}"
             end
-            self.format.display_status('Saving config file.')
+            formatter.display_status('Saving config file.')
             save_presets_to_config_file
             return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{params[:test_args]}")
           when :export_to_cli # this method shall be deprecated in the future: it was used to export configuration to "aspera.exe" CLI
-            self.format.display_status('Exporting: Aspera on Cloud')
+            formatter.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
             # need url / username
             add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
-            # instanciate AoC plugin
+            # instantiate AoC plugin
             self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ? get options ?
             url = options.get_option(:url, is_type: :mandatory)
             cli_conf_file = Fasp::Installation.instance.cli_conf_file
@@ -961,9 +961,9 @@ module Aspera
             entry = data['AoCAccounts'].find{|i|i['organization'].eql?(organization)}
             if entry.nil?
               data['AoCAccounts'].push(new_conf)
-              self.format.display_status("Creating new aoc entry: #{organization}")
+              formatter.display_status("Creating new aoc entry: #{organization}")
             else
-              self.format.display_status("Updating existing aoc entry: #{organization}")
+              formatter.display_status("Updating existing aoc entry: #{organization}")
               entry.merge!(new_conf)
             end
             File.write(cli_conf_file, JSON.pretty_generate(data))
@@ -1208,12 +1208,12 @@ module Aspera
         end
 
         def wizard_aoc(params)
-          self.format.display_status('Detected: Aspera on Cloud'.bold)
+          formatter.display_status('Detected: Aspera on Cloud'.bold)
           params[:plugin_name] = AOC_COMMAND_CURRENT
           organization = AoC.parse_url(params[:instance_url]).first
           # if not defined by user, generate name
           params[:preset_name] = [params[:application], organization].join('_') if params[:preset_name].nil?
-          self.format.display_status("Preparing preset: #{params[:preset_name]}")
+          formatter.display_status("Preparing preset: #{params[:preset_name]}")
           # init defaults if necessary
           @config_presets[CONF_PRESET_DEFAULT] ||= {}
           option_override = options.get_option(:override, is_type: :mandatory)
@@ -1227,7 +1227,7 @@ module Aspera
           private_key_path = options.get_option(:pkeypath)
           # give a chance to provide
           if private_key_path.nil?
-            self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
+            formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
             private_key_path = options.get_option(:pkeypath, is_type: :mandatory).to_s
           end
           # else generate path
@@ -1235,45 +1235,45 @@ module Aspera
             private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
           end
           if File.exist?(private_key_path)
-            self.format.display_status('Using existing key:')
+            formatter.display_status('Using existing key:')
           else
-            self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+            formatter.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
             generate_rsa_private_key(private_key_path, DEFAULT_PRIVKEY_LENGTH)
-            self.format.display_status('Created:')
+            formatter.display_status('Created:')
           end
-          self.format.display_status(private_key_path)
+          formatter.display_status(private_key_path)
           pub_key_pem = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
           # declare command line options for AoC
           require 'aspera/cli/plugins/aoc'
           # make username mandatory for jwt, this triggers interactive input
           options.get_option(:username, is_type: :mandatory)
-          # instanciate AoC plugin, so that command line options are known
+          # instantiate AoC plugin, so that command line options are known
           aoc_api = self.class.plugin_class(params[:plugin_name]).new(@agents.merge({skip_basic_auth_options: true, private_key_path: private_key_path})).aoc_api
           auto_set_pub_key = false
           auto_set_jwt = false
           use_browser_authentication = false
           if options.get_option(:use_generic_client)
-            self.format.display_status('Using global client_id.')
-            self.format.display_status('Please Login to your Aspera on Cloud instance.'.red)
-            self.format.display_status('Navigate to your "Account Settings"'.red)
-            self.format.display_status('Check or update the value of "Public Key" to be:'.red.blink)
-            self.format.display_status(pub_key_pem.to_s)
+            formatter.display_status('Using global client_id.')
+            formatter.display_status('Please Login to your Aspera on Cloud instance.'.red)
+            formatter.display_status('Navigate to your "Account Settings"'.red)
+            formatter.display_status('Check or update the value of "Public Key" to be:'.red.blink)
+            formatter.display_status(pub_key_pem.to_s)
             if !options.get_option(:test_mode)
-              self.format.display_status('Once updated or validated, press enter.')
+              formatter.display_status('Once updated or validated, press enter.')
               OpenApplication.instance.uri(params[:instance_url])
               $stdin.gets
             end
           else
-            self.format.display_status('Using organization specific client_id.')
+            formatter.display_status('Using organization specific client_id.')
             if options.get_option(:client_id).nil? || options.get_option(:client_secret, is_type: :optional).nil?
-              self.format.display_status('Please login to your Aspera on Cloud instance.'.red)
-              self.format.display_status('Go to: Apps->Admin->Organization->Integrations')
-              self.format.display_status('Create or check if there is an existing integration named:')
-              self.format.display_status("- name: #{@info[:name]}")
-              self.format.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
-              self.format.display_status('- origin: localhost')
-              self.format.display_status('Once created or identified,')
-              self.format.display_status('Please enter:'.red)
+              formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
+              formatter.display_status('Go to: Apps->Admin->Organization->Integrations')
+              formatter.display_status('Create or check if there is an existing integration named:')
+              formatter.display_status("- name: #{@info[:name]}")
+              formatter.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
+              formatter.display_status('- origin: localhost')
+              formatter.display_status('Once created or identified,')
+              formatter.display_status('Please enter:'.red)
             end
             OpenApplication.instance.uri("#{params[:instance_url]}/#{AOC_PATH_API_CLIENTS}")
             options.get_option(:client_id, is_type: :mandatory)
@@ -1281,24 +1281,24 @@ module Aspera
             use_browser_authentication = true
           end
           if use_browser_authentication
-            self.format.display_status('We will use web authentication to bootstrap.')
+            formatter.display_status('We will use web authentication to bootstrap.')
             auto_set_pub_key = true
             auto_set_jwt = true
-            aoc_api.oauth.gparams[:crtype] = :web
-            aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
-            aoc_api.oauth.sparams[:redirect_uri] = DEFAULT_REDIRECT
+            aoc_api.oauth.generic_parameters[:crtype] = :web
+            aoc_api.oauth.generic_parameters[:scope] = AoC::SCOPE_FILES_ADMIN
+            aoc_api.oauth.specific_parameters[:redirect_uri] = DEFAULT_REDIRECT
           end
           myself = aoc_api.read('self')[:data]
           if auto_set_pub_key
             raise CliError, 'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
-            self.format.display_status('Updating profile with new key')
+            formatter.display_status('Updating profile with new key')
             aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
           end
           if auto_set_jwt
-            self.format.display_status('Enabling JWT for client')
+            formatter.display_status('Enabling JWT for client')
             aoc_api.update("clients/#{options.get_option(:client_id)}", {'jwt_grant_enabled' => true, 'explicit_authorization_required' => false})
           end
-          self.format.display_status("Creating new config preset: #{params[:preset_name]}")
+          formatter.display_status("Creating new config preset: #{params[:preset_name]}")
           @config_presets[params[:preset_name]] = {
             :url.to_s         => options.get_option(:url),
             :username.to_s    => myself['email'],
@@ -1314,11 +1314,11 @@ module Aspera
         end
 
         def wizard_faspex5(params)
-          self.format.display_status('Detected: Faspex v5'.bold)
+          formatter.display_status('Detected: Faspex v5'.bold)
           # if not defined by user, generate unique name
           params[:preset_name] = [params[:application]].concat(URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/, '').split('.')).join('_') \
             if params[:preset_name].nil?
-          self.format.display_status("Preparing preset: #{params[:preset_name]}")
+          formatter.display_status("Preparing preset: #{params[:preset_name]}")
           # init defaults if necessary
           @config_presets[CONF_PRESET_DEFAULT] ||= {}
           option_override = options.get_option(:override, is_type: :mandatory)
@@ -1332,7 +1332,7 @@ module Aspera
           private_key_path = options.get_option(:pkeypath)
           # give a chance to provide
           if private_key_path.nil?
-            self.format.display_status('Please provide path to your private RSA key, or empty to generate one:')
+            formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
             private_key_path = options.get_option(:pkeypath, is_type: :mandatory).to_s
           end
           # else generate path
@@ -1340,25 +1340,25 @@ module Aspera
             private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
           end
           if File.exist?(private_key_path)
-            self.format.display_status('Using existing key:')
+            formatter.display_status('Using existing key:')
           else
-            self.format.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+            formatter.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
             generate_rsa_private_key(private_key_path, DEFAULT_PRIVKEY_LENGTH)
-            self.format.display_status('Created:')
+            formatter.display_status('Created:')
           end
-          self.format.display_status(private_key_path)
+          formatter.display_status(private_key_path)
           pub_key_pem = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
           # declare command line options for AoC
           require 'aspera/cli/plugins/faspex5'
           self.class.plugin_class(params[:plugin_name]).new(@agents.merge({skip_basic_auth_options: true}))
-          self.format.display_status('Please login to Faspex 5.'.red)
+          formatter.display_status('Please login to Faspex 5.'.red)
           OpenApplication.instance.uri(params[:instance_url])
-          self.format.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
-          self.format.display_status('Create a client with:')
-          self.format.display_status('- JWT enabled')
-          self.format.display_status('- The following public key:')
-          self.format.display_status(pub_key_pem.to_s)
-          self.format.display_status('Once created, copy the following parameters:')
+          formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
+          formatter.display_status('Create a client with:')
+          formatter.display_status('- JWT enabled')
+          formatter.display_status('- The following public key:')
+          formatter.display_status(pub_key_pem.to_s)
+          formatter.display_status('Once created, copy the following parameters:')
           @config_presets[params[:preset_name]] = {
             :url.to_s           => options.get_option(:url),
             :username.to_s      => options.get_option(:username),

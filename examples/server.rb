@@ -23,7 +23,7 @@ server_user = ARGV.shift
 server_pass = ENV['PASSWORD']
 
 ##############################################################
-# generic initialisation : configuration of FaspManager
+# generic initialization : configuration of FaspManager
 
 # set trace level for sample, set to :debug to see complete list of debug information
 Aspera::Log.instance.level = :debug
@@ -66,7 +66,7 @@ transfer_agent.add_listener(MyListener.new)
 ##############################################################
 # first example: download by SSH credentials
 
-# manually build teansfer spec
+# manually build transfer spec
 transfer_spec = {
   'remote_host'      => server_uri.host,
   'ssh_port'         => server_uri.port,
@@ -82,7 +82,7 @@ transfer_spec = {
 transfer_agent.start_transfer(transfer_spec)
 
 # optional: helper method: wait for completion of transfers
-# here we started a single transfer session (no multisession parameter)
+# here we started a single transfer session (no multi session parameter)
 # get array of status, one for each session (so, a single value array)
 # each status is either :success or "error message"
 transfer_result = transfer_agent.wait_for_transfers_completion

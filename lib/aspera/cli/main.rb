@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/manager'
-require 'aspera/cli/formater'
+require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
@@ -81,13 +81,13 @@ module Aspera
 
       def option_ui=(value); OpenApplication.instance.url_method = value; end
 
-      # called everytime a new REST HTTP session is opened
+      # called every time a new REST HTTP session is opened
       # @param http [Net::HTTP] the newly created http session object
       def http_parameters=(http)
         if @option_insecure
           url = http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
           if !@ssl_warned_urls.include?(url)
-            @plugin_env[:formater].display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not use unsafe certificates in production.")
+            @formatter.display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not use unsafe certificates in production.")
             @ssl_warned_urls.push(url)
           end
           http.verify_mode = SELF_SIGNED_CERT
@@ -113,7 +113,7 @@ module Aspera
         early_debug_setup(argv)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        @plugin_env[:formater].display_message(:error, "#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
+        @formatter.display_message(:error, "#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
           unless current_prog_name.eql?(PROGRAM_NAME)
         @option_help = false
         @bash_completion = false
@@ -128,7 +128,7 @@ module Aspera
         # give command line arguments to option manager
         @plugin_env[:options] = @opt_mgr = Manager.new(PROGRAM_NAME, argv: argv)
         # formatter adds options
-        @plugin_env[:formater] = Formater.new(@plugin_env[:options])
+        @formatter = @plugin_env[:formatter] = Formatter.new(@plugin_env[:options])
         Rest.user_agent = PROGRAM_NAME
         Rest.session_cb = lambda{|http|self.http_parameters = http}
         # declare and parse global options
@@ -191,7 +191,7 @@ module Aspera
         @opt_mgr.add_opt_switch(:bash_comp, 'generate bash completion for command') { @bash_completion = true }
         @opt_mgr.add_opt_switch(:show_config, 'Display parameters used for the provided action.') { @option_show_config = true }
         @opt_mgr.add_opt_switch(:rest_debug, '-r', 'more debug for HTTP calls') { @option_rest_debug = true }
-        @opt_mgr.add_opt_switch(:version, '-v', 'display version') { @plugin_env[:formater].display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
+        @opt_mgr.add_opt_switch(:version, '-v', 'display version') { @formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         @opt_mgr.add_opt_switch(:warnings, '-w', 'check for language warnings') { $VERBOSE = true }
         # handler must be set before declaration
         @opt_mgr.set_obj_attr(:log_level, Log.instance, :level)
@@ -223,7 +223,7 @@ module Aspera
         env ||= @plugin_env
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
-        # load default params only if no param already loaded before plugin instanciation
+        # load default params only if no param already loaded before plugin instantiation
         env[:config].add_plugin_default_preset(plugin_name_sym)
         command_plugin = Plugins::Config.plugin_class(plugin_name_sym).new(env)
         Log.log.debug{"got #{command_plugin.class}"}
@@ -243,7 +243,7 @@ module Aspera
       def exit_with_usage(all_plugins)
         Log.log.debug('exit_with_usage'.bg_red)
         # display main plugin options
-        @plugin_env[:formater].display_message(:error, @opt_mgr.parser)
+        @formatter.display_message(:error, @opt_mgr.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           @plugin_env[:config].plugins.each_key do |plugin_name_sym|
@@ -255,7 +255,7 @@ module Aspera
             plugin_env[:options].parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym, plugin_env)
             # display generated help for plugin options
-            @plugin_env[:formater].display_message(:error, plugin_env[:options].parser.help)
+            @formatter.display_message(:error, plugin_env[:options].parser.help)
           end
         end
         Process.exit(0)
@@ -300,7 +300,7 @@ module Aspera
             end
           # command will not be executed, but we need manual
           @opt_mgr.fail_on_missing_mandatory = false if @option_help || @option_show_config
-          # main plugin is not dynamically instanciated
+          # main plugin is not dynamically instantiated
           case command_sym
           when :help
             exit_with_usage(true)
@@ -315,7 +315,7 @@ module Aspera
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            @plugin_env[:formater].display_results({type: :single_object, data: @opt_mgr.declared_options(only_defined: true)})
+            @formatter.display_results({type: :single_object, data: @opt_mgr.declared_options(only_defined: true)})
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
@@ -331,7 +331,7 @@ module Aspera
             end
           end
           # execute and display (if not exclusive execution)
-          @plugin_env[:formater].display_results(command_plugin.execute_action) if execute_command
+          @formatter.display_results(command_plugin.execute_action) if execute_command
           # finish
           @plugin_env[:transfer].shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
@@ -349,17 +349,17 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          @plugin_env[:formater].display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
-          @plugin_env[:formater].display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
+          @formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          @formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
-            @plugin_env[:formater].display_message(:error, "For this specific error, refer to:\n"\
+            @formatter.display_message(:error, "For this specific error, refer to:\n"\
               "#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
           @opt_mgr.final_errors.each do |msg|
-            @plugin_env[:formater].display_message(:error, "#{ERROR_FLASH} Argument: #{msg}")
+            @formatter.display_message(:error, "#{ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end
@@ -369,7 +369,7 @@ module Aspera
           # show stack trace in debug mode
           raise exception_info[:e] if Log.instance.level.eql?(:debug)
           # else give hint and exit
-          @plugin_env[:formater].display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
+          @formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)
         end
         return nil

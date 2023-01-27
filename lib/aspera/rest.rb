@@ -140,7 +140,7 @@ module Aspera
       uri = self.class.build_uri("#{call_data[:base_url]}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
       Log.log.debug{"URI=#{uri}"}
       begin
-        # instanciate request object based on string name
+        # instantiate request object based on string name
         req = Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
       rescue NameError
         raise "unsupported operation : #{call_data[:operation]}"
@@ -198,7 +198,7 @@ module Aspera
       Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
       call_data[:headers]['User-Agent'] ||= self.class.user_agent
-      # defaults from @params are overriden by call data
+      # defaults from @params are overridden by call data
       call_data = @params.deep_merge(call_data)
       case call_data[:auth][:type]
       when :none
@@ -291,15 +291,15 @@ module Aspera
           new_url = e.response['location']
           new_url = "#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
           Log.log.info{"URL is moved: #{new_url}"}
-          redir_uri = URI.parse(new_url)
+          redirection_uri = URI.parse(new_url)
           call_data[:base_url] = new_url
           call_data[:subpath] = ''
-          if current_uri.host.eql?(redir_uri.host) && current_uri.port.eql?(redir_uri.port)
+          if current_uri.host.eql?(redirection_uri.host) && current_uri.port.eql?(redirection_uri.port)
             req = build_request(call_data)
             retry
           else
             # change host
-            Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redir_uri.host}"}
+            Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redirection_uri.host}"}
             return self.class.new(call_data).call(call_data)
           end
         end

@@ -182,7 +182,7 @@ module Aspera
       # @return the file path of local connect where API's URI can be read
       def connect_uri
         connect = get_product_folders(PRODUCT_CONNECT)
-        folder = File.join(connect[:run_root], VARRUN_SUBFOLDER)
+        folder = File.join(connect[:run_root], VAR_RUN_SUBFOLDER)
         ['', 's'].each do |ext|
           uri_file = File.join(folder, "http#{ext}.uri")
           Log.log.debug{"checking connect port file: #{uri_file}"}
@@ -264,7 +264,7 @@ module Aspera
           end
         end
         File.unlink(sdk_zip_path) rescue nil # Windows may give error
-        # ensure license file are generated so that ascp invokation for version works
+        # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)
         path(:aspera_conf)
         ascp_path = File.join(sdk_folder, ascp_filename)
@@ -285,13 +285,13 @@ module Aspera
 
       BIN_SUBFOLDER = 'bin'
       ETC_SUBFOLDER = 'etc'
-      VARRUN_SUBFOLDER = File.join('var', 'run')
+      VAR_RUN_SUBFOLDER = File.join('var', 'run')
       # product information manifest: XML (part of aspera product)
       PRODUCT_INFO = 'product-info.mf'
       # policy for product selection
       FIRST_FOUND = 'FIRST'
 
-      private_constant :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VARRUN_SUBFOLDER, :PRODUCT_INFO
+      private_constant :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VAR_RUN_SUBFOLDER, :PRODUCT_INFO
 
       def initialize
         @path_to_ascp = nil

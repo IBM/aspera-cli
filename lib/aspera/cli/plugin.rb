@@ -16,8 +16,6 @@ module Aspera
       # used when all resources are selected
       VAL_ALL = 'ALL'
 
-      # AGENTS=%i[options transfer config formater persistency].freeze
-
       # global for inherited classes
       @@options_created = false # rubocop:disable Style/ClassVars
 
@@ -96,7 +94,7 @@ module Aspera
       # @param res_class_path [String] sub path in URL to resource relative to base url
       # @param display_fields [Array] fields to display by default
       # @param id_default [String] default identifier to use for existing entity commands (show, modify)
-      # @param item_list_key [String] result is in a subkey of the json
+      # @param item_list_key [String] result is in a sub key of the json
       # @return result suitable for CLI result
       def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false)
         if INSTANCE_OPS.include?(command)
@@ -142,7 +140,7 @@ module Aspera
             if !total_count.nil?
               count_msg = "Items: #{item_list.length}/#{total_count}"
               count_msg = count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
-              self.format.display_status(count_msg)
+              formatter.display_status(count_msg)
             end
             data = item_list
           end
@@ -180,15 +178,9 @@ module Aspera
       end
 
       # shortcuts helpers for plugin environment
-      def options; return @agents[:options]; end
-
-      def transfer; return @agents[:transfer]; end
-
-      def config; return @agents[:config]; end
-
-      def format; return @agents[:formater]; end
-
-      def persistency; return @agents[:persistency]; end
+      %i[options transfer config formatter persistency].each do |name|
+        define_method(name){@agents[name]}
+      end
     end # Plugin
   end # Cli
 end # Aspera

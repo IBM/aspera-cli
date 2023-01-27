@@ -50,13 +50,13 @@ module Aspera
       @data = []
     end
 
-    # comparte remote time with local time
+    # compare remote time with local time
     def check_time_offset(remote_date, component)
       # check date if specified : 2015-10-13T07:32:01Z
-      rtime = DateTime.strptime(remote_date)
-      diff_time = (rtime - DateTime.now).abs
+      remote_time = DateTime.strptime(remote_date)
+      diff_time = (remote_time - DateTime.now).abs
       diff_disp = diff_time.round(-2)
-      Log.log.debug{"DATE: #{remote_date} #{rtime} diff=#{diff_disp}"}
+      Log.log.debug{"DATE: #{remote_date} #{remote_time} diff=#{diff_disp}"}
       msg = "offset #{diff_disp} sec"
       if diff_time >= DATE_CRIT_OFFSET
         add_critical(component, msg)

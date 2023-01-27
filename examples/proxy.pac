@@ -31,7 +31,7 @@ function FindProxyForURL(url, host) {
 	if (isResolvable(host)) {
 		var hostIP = dnsResolve(host);
 
-		/* Don't proxy non-routable addresses (RFC 3330) */
+		/* Don't proxy private addresses (RFC 3330) */
 		if (isInNet(hostIP, '0.0.0.0', '255.0.0.0')
 				|| isInNet(hostIP, '10.0.0.0', '255.0.0.0')
 				|| isInNet(hostIP, '127.0.0.0', '255.0.0.0')

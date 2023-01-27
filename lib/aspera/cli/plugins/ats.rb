@@ -44,7 +44,7 @@ module Aspera
         def execute_action_access_key
           commands = %i[create list show modify delete node cluster entitlement]
           command = options.get_next_command(commands)
-          # those dont require access key id
+          # those do not require access key id
           access_key_id = instance_identifier unless %i[create list].include?(command)
           case command
           when :create
@@ -176,7 +176,7 @@ module Aspera
             if instance.nil?
               # Take the first Aspera on Cloud transfer service instance ID if not provided by user
               instance = ats_api_v2_auth_ibm.read('instances')[:data]['data'].first
-              self.format.display_status("using first instance: #{instance}")
+              formatter.display_status("using first instance: #{instance}")
             end
             rest_add_header = {'X-ATS-Service-Instance-Id' => instance}
           end

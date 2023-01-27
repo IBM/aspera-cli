@@ -14,7 +14,7 @@ module Aspera
           options.add_opt_simple(:bucket, 'Bucket name')
           options.add_opt_simple(:endpoint, 'Storage endpoint url')
           options.add_opt_simple(:apikey, 'Storage API key')
-          options.add_opt_simple(:crn, 'Ressource instance id')
+          options.add_opt_simple(:crn, 'Resource instance id')
           options.add_opt_simple(:service_credentials, 'IBM Cloud service credentials (Hash)')
           options.add_opt_simple(:region, 'Storage region')
           options.add_opt_simple(:identity, "Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})")

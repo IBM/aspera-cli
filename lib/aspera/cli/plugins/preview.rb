@@ -28,14 +28,14 @@ module Aspera
         TMP_DIR_PREFIX = 'prev_tmp'
         DEFAULT_PREVIEWS_FOLDER = 'previews'
         AK_MARKER_FILE = '.aspera_access_key'
-        LOCAL_STORAGE_PCVL = 'file:///'
+        PVCL_LOCAL_STORAGE = 'file:///'
         LOG_LIMITER_SEC = 30.0
         private_constant :PREV_GEN_TAG,
           :PREVIEW_FOLDER_SUFFIX,
           :PREVIEW_BASENAME,
           :TMP_DIR_PREFIX,
           :DEFAULT_PREVIEWS_FOLDER,
-          :LOCAL_STORAGE_PCVL,
+          :PVCL_LOCAL_STORAGE,
           :AK_MARKER_FILE,
           :LOG_LIMITER_SEC
 
@@ -69,7 +69,7 @@ module Aspera
           options.add_opt_simple(:skip_folders, 'list of folder to skip')
           options.add_opt_simple(:case, 'basename of output for for test')
           options.add_opt_simple(:scan_path, 'subpath in folder id to start scan in (default=/)')
-          options.add_opt_simple(:scan_id, 'forder id in storage to start scan in, default is access key main folder id')
+          options.add_opt_simple(:scan_id, 'folder id in storage to start scan in, default is access key main folder id')
           options.add_opt_boolean(:mimemagic, 'use Mime type detection of gem mimemagic')
           options.add_opt_list(:overwrite, %i[always never mtime], 'when to overwrite result file')
           options.add_opt_list(:file_access, %i[local remote], 'how to read and write files in repository')
@@ -222,7 +222,7 @@ module Aspera
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host'] = @transfer_server_address
           end
-          tspec = @default_transfer_spec.merge({
+          t_spec = @default_transfer_spec.merge({
             'direction' => direction,
             'paths'     => [{'source' => source_filename}],
             'tags'      => {
@@ -233,9 +233,9 @@ module Aspera
                   'file_id'    => folder_id }}}
           })
           # force destination
-          # tspec['destination_root']=destination
+          # t_spec['destination_root']=destination
           transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
-          Main.result_transfer(transfer.start(tspec))
+          Main.result_transfer(transfer.start(t_spec))
         end
 
         def get_infos_local(gen_infos, entry)
@@ -437,7 +437,7 @@ module Aspera
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
               @local_storage_root = @access_key_self['storage']['path']
               # TODO: option to override @local_storage_root='xxx'
-              @local_storage_root = @local_storage_root[LOCAL_STORAGE_PCVL.length..-1] if @local_storage_root.start_with?(LOCAL_STORAGE_PCVL)
+              @local_storage_root = @local_storage_root[PVCL_LOCAL_STORAGE.length..-1] if @local_storage_root.start_with?(PVCL_LOCAL_STORAGE)
               # TODO: windows could have "C:" ?
               raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
               raise CliError, "Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
@@ -456,6 +456,8 @@ module Aspera
             end
           end
           Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, is_type: :mandatory)
+          # check tools that are anyway required for all cases
+          Aspera::Preview::Utils.check_tools(@skip_types)
           case command
           when :scan
             scan_path = options.get_option(:scan_path)
@@ -490,8 +492,7 @@ module Aspera
             send("process_#{command}", iteration_persistency)
             return Main.result_status("#{command} finished")
           when :check
-            Aspera::Preview::Utils.check_tools(@skip_types)
-            return Main.result_status('tools validated')
+            return Main.result_status('Tools validated')
           when :test
             format = options.get_next_argument('format', expected: Aspera::Preview::Generator::PREVIEW_FORMATS)
             source = options.get_next_argument('source file')

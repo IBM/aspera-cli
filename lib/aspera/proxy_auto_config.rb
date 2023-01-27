@@ -11,14 +11,14 @@ module URI
       def register_proxy_finder
         raise 'mandatory block missing' unless Kernel.block_given?
         # overload the method in URI : call user's provided block and fallback to original method
-        define_method(:find_proxy) {|envars=ENV| yield(to_s) || find_proxy_orig(envars)}
+        define_method(:find_proxy) {|env_vars=ENV| yield(to_s) || find_proxy_orig(env_vars)}
       end
     end
   end
 end
 
 module Aspera
-  # Evaluate a proxy autoconfig script
+  # Evaluate a proxy auto config script
   class ProxyAutoConfig
     # template file is read once, it contains functions that can be used in a proxy autoconf script
     # it is similar to mozilla ascii_pac_utils.inc
@@ -70,7 +70,7 @@ END_OF_JAVASCRIPT
     end
 
     # execute proxy auto config script for the given URL : https://en.wikipedia.org/wiki/Proxy_auto-config
-    # @return either nil, or a String formated following PAC standard
+    # @return either nil, or a String formatted following PAC standard
     def find_proxy_for_url(service_url)
       uri = URI.parse(service_url)
       simple_url = "#{uri.scheme}://#{uri.host}"

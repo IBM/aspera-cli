@@ -127,7 +127,7 @@ module Aspera
           Log.dump(:current_workspace_info, @cache_workspace_info)
           # display workspace
           default_flag = @cache_workspace_info['id'] == default_workspace_id ? ' (default)' : ''
-          self.format.display_status("Current Workspace: #{@cache_workspace_info['name'].to_s.red}#{default_flag}")
+          formatter.display_status("Current Workspace: #{@cache_workspace_info['name'].to_s.red}#{default_flag}")
           return @cache_workspace_info
         end
 
@@ -251,12 +251,12 @@ module Aspera
             # default is push
             case options.get_option(:operation, is_type: :mandatory)
             when :push
-              client_tr_oper = Fasp::TransferSpec::DIRECTION_SEND
+              client_direction = Fasp::TransferSpec::DIRECTION_SEND
               client_folder = options.get_option(:from_folder, is_type: :mandatory)
-              server_folder = transfer.destination_folder(client_tr_oper)
+              server_folder = transfer.destination_folder(client_direction)
             when :pull
-              client_tr_oper = Fasp::TransferSpec::DIRECTION_RECEIVE
-              client_folder = transfer.destination_folder(client_tr_oper)
+              client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
+              client_folder = transfer.destination_folder(client_direction)
               server_folder = options.get_option(:from_folder, is_type: :mandatory)
             end
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
@@ -276,7 +276,7 @@ module Aspera
             }
             return Main.result_transfer(transfer.start(server_apfid[:api].transfer_spec_gen4(
               server_apfid[:file_id],
-              client_tr_oper,
+              client_direction,
               add_ts)))
           else raise "INTERNAL ERROR: Missing case: #{command_repo}"
           end # command_repo
@@ -285,7 +285,7 @@ module Aspera
 
         def execute_admin_action
           # upgrade scope to admin
-          aoc_api.oauth.gparams[:scope] = AoC::SCOPE_FILES_ADMIN
+          aoc_api.oauth.generic_parameters[:scope] = AoC::SCOPE_FILES_ADMIN
           command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
           when :auth_providers
@@ -463,7 +463,7 @@ module Aspera
               items = read_with_paging(resource_class_path, option_url_query(default_query))
               count_msg = "Items: #{items[:list].length}/#{items[:total]}"
               count_msg = count_msg.bg_red unless items[:list].length.eql?(items[:total].to_i)
-              self.format.display_status(count_msg)
+              formatter.display_status(count_msg)
               return {type: :object_list, data: items[:list], fields: default_fields}
             when :show
               object = aoc_api.read(resource_instance_path)[:data]
@@ -576,7 +576,7 @@ module Aspera
               package_info = aoc_api.create('packages', package_data)[:data]
 
               # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
-              # TODO: if multisession was used we should probably tell
+              # TODO: if multi session was used we should probably tell
               # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
               aoc_api.update("packages/#{package_info['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
               package_node_api = aoc_api.node_id_to_api(
@@ -619,14 +619,14 @@ module Aspera
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here
                 ids_to_download.reject!{|id|skip_ids_data.include?(id)}
-              end # ALL
+              end # VAL_ALL
               # list here
               ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               result_transfer = []
-              self.format.display_status("found #{ids_to_download.length} package(s).")
+              formatter.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
-                self.format.display_status("downloading package: #{package_info['name']}")
+                formatter.display_status("downloading package: #{package_info['name']}")
                 package_node_api = aoc_api.node_id_to_api(
                   node_id:      package_info['node_id'],
                   plugin:       self,

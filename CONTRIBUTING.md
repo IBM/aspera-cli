@@ -8,7 +8,7 @@ Before you go ahead please search existing issues for your problem.
 
 To make sure that we can help you quickly please include and check the following information:
 
-- Include the ascli version you are running in your report.
+- Include the `ascli` version you are running in your report.
 - If you are not running the latest version (please check), update.
 - Include your `ruby -e "puts RUBY_DESCRIPTION"`.
 

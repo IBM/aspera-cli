@@ -13,14 +13,14 @@ Aspera::Oauth.register_token_creator(
   lambda{|o|
     o.api.call({
       operation:   'POST',
-      subpath:     o.gparams[:path_token],
+      subpath:     o.generic_parameters[:path_token],
       headers:     {'Accept' => 'application/json'},
-      json_params: o.sparams[:json],
-      url_params:  o.sparams[:url].merge(scope: o.gparams[:scope]) # scope is here because it changes over time (node)
+      json_params: o.specific_parameters[:json],
+      url_params:  o.specific_parameters[:url].merge(scope: o.generic_parameters[:scope]) # scope is here because it changes over time (node)
     })
   },
   lambda { |oauth|
-    return [oauth.sparams.dig(:json, :url_token)]
+    return [oauth.specific_parameters.dig(:json, :url_token)]
   })
 
 module Aspera

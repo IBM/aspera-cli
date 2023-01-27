@@ -3,13 +3,13 @@
 * 4.11.0
 
   * new: vault: secret finder, migration from config file
-  * new: allow removal of transferspec parameter by setting value to `null`
+  * new: allow removal of transfer spec parameter by setting value to `null`
   * new: option `ascp_opts` allows to provide native `ascp` options on command line
   * new: command `sync` added to `node` (gen4) and `server` plugins, also available in `aoc`
   * fix: security: no shell interpolation
   * fix: when WSS and node agent: no localhost (certificate)
   * fix: #99 `aoc file download` for single shared folder
-  * fix: due to change of API in faspex 5 for send pakage (paths is mandatory for any type of transfer now)
+  * fix: due to change of API in faspex 5 for send package (paths is mandatory for any type of transfer now)
   * fix: Oauth web authentication was broken, fixed now
   * change: (break) container image has entry point
   * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
@@ -48,8 +48,8 @@
   * new: #75 gem is signed
   * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
   * change: (break) hash vault keys are string instead of symbol
-  * change: cleanup with rubocop, all strings are immutable now by default, list contants are frozen
-  * change: removed Hash.dig implemetation because it is by default in Ruby >= 2.3
+  * change: cleanup with rubocop, all strings are immutable now by default, list constants are frozen
+  * change: removed Hash.dig implementation because it is by default in Ruby >= 2.3
   * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
   * change: option `insecure` displays a warning
 
@@ -121,7 +121,7 @@
   * new: the error "Remote host is not who we expected" displays a special remediation message
   * new: `conf ascp spec` displays supported transfer spec
   * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
-  * fix: space character in `faspe:` url are precent encoded if needed
+  * fix: space character in `faspe:` url are percent encoded if needed
   * fix: `preview scan`: if file_id is unknown, ignore and continue scan
   * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
   * change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
@@ -383,7 +383,7 @@
 * 0.9.20
 
   * improved wizard (prepare for AoC global client id)
-  * preview generator: addedoption : --skip-format=&lt;png,mp4&gt;
+  * preview generator: added option : --skip-format=&lt;png,mp4&gt;
   * removed outdated pictures from this doc
 
 * 0.9.19

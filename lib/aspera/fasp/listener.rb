@@ -2,7 +2,7 @@
 
 module Aspera
   module Fasp
-    # imlement this class to get transfer events
+    # implement this class to get transfer events
     class Listener # rubocop:disable Lint/EmptyClass
       # define one of the following methods:
       # event_text(text_data)

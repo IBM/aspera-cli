@@ -37,23 +37,23 @@ module Aspera
         end
 
         def set_api
-          @faxpex5_api_base_url = options.get_option(:url, is_type: :mandatory).gsub(%r{/+$}, '')
-          @faxpex5_api_auth_url = "#{@faxpex5_api_base_url}/auth"
-          faxpex5_api_v5_url = "#{@faxpex5_api_base_url}/api/v5"
+          @faspex5_api_base_url = options.get_option(:url, is_type: :mandatory).gsub(%r{/+$}, '')
+          @faspex5_api_auth_url = "#{@faspex5_api_base_url}/auth"
+          faspex5_api_v5_url = "#{@faspex5_api_base_url}/api/v5"
           case options.get_option(:auth, is_type: :mandatory)
           when :boot
             # the password here is the token copied directly from browser in developer mode
             @api_v5 = Rest.new({
-              base_url: faxpex5_api_v5_url,
+              base_url: faspex5_api_v5_url,
               headers:  {'Authorization' => options.get_option(:password, is_type: :mandatory)}
             })
           when :web
             # opens a browser and ask user to auth using web
             @api_v5 = Rest.new({
-              base_url: faxpex5_api_v5_url,
+              base_url: faspex5_api_v5_url,
               auth:     {
                 type:      :oauth2,
-                base_url:  @faxpex5_api_auth_url,
+                base_url:  @faspex5_api_auth_url,
                 crtype:    :web,
                 client_id: options.get_option(:client_id, is_type: :mandatory),
                 web:       {redirect_uri: options.get_option(:redirect_uri, is_type: :mandatory)}
@@ -61,10 +61,10 @@ module Aspera
           when :jwt
             app_client_id = options.get_option(:client_id, is_type: :mandatory)
             @api_v5 = Rest.new({
-              base_url: faxpex5_api_v5_url,
+              base_url: faspex5_api_v5_url,
               auth:     {
                 type:      :oauth2,
-                base_url:  @faxpex5_api_auth_url,
+                base_url:  @faspex5_api_auth_url,
                 crtype:    :jwt,
                 client_id: app_client_id,
                 jwt:       {
@@ -92,7 +92,7 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              result = Rest.new(base_url: @faxpex5_api_base_url).read('health')[:data]
+              result = Rest.new(base_url: @faspex5_api_base_url).read('health')[:data]
               result.each do |k, v|
                 nagios.add_ok(k, v.to_s)
               end
@@ -166,7 +166,7 @@ module Aspera
                 package_ids.reject!{|i|skip_ids_data.include?(i)}
               end
               result_transfer = []
-              package_ids.each do |pkgid|
+              package_ids.each do |pkg_id|
                 param_file_list = {}
                 begin
                   param_file_list['paths'] = transfer.ts_source_paths.map{|i|i['source']}
@@ -176,16 +176,16 @@ module Aspera
                 # TODO: allow from sent as well ?
                 transfer_spec = @api_v5.call(
                   operation:   'POST',
-                  subpath:     "packages/#{pkgid}/transfer_spec/download",
+                  subpath:     "packages/#{pkg_id}/transfer_spec/download",
                   headers:     {'Accept' => 'application/json'},
                   url_params:  {transfer_type: TRANSFER_CONNECT, type: pkg_type},
                   json_params: param_file_list
                 )[:data]
                 transfer_spec.delete('authentication')
                 statuses = transfer.start(transfer_spec)
-                result_transfer.push({'package' => pkgid, Main::STATUS_FIELD => statuses})
+                result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
                 # skip only if all sessions completed
-                skip_ids_data.push(pkgid) if TransferAgent.session_status(statuses).eql?(:success)
+                skip_ids_data.push(pkg_id) if TransferAgent.session_status(statuses).eql?(:success)
               end
               skip_ids_persistency&.save
               return Main.result_transfer_multiple(result_transfer)
@@ -207,7 +207,7 @@ module Aspera
                 end
               adm_api = @api_v5
               if res_type.eql?(:oauth_clients)
-                adm_api = Rest.new(@api_v5.params.merge({base_url: @faxpex5_api_auth_url}))
+                adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
               end
               return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields)
             end

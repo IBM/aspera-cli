@@ -37,14 +37,14 @@ module Aspera
           channel.on_data{|_chan, data|response.push(data)}
           # prepare stderr processing, stderr if type = 1
           channel.on_extended_data do |_chan, _type, data|
-            errormsg = "#{cmd}: [#{data.chomp}]"
+            error_message = "#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
             if data.include?('Could not chdir to home directory')
-              errormsg += "\nHint: home not created in Windows?"
+              error_message += "\nHint: home not created in Windows?"
             end
-            raise errormsg
+            raise error_message
           end
-          # send commannd to SSH channel (execute)
+          # send command to SSH channel (execute)
           channel.send('cexe'.reverse, cmd){|_ch, _success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)

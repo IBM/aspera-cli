@@ -23,7 +23,7 @@ node_user = ARGV.shift
 node_pass = ENV['PASSWORD']
 
 ##############################################################
-# generic initialisation : configuration of FaspManager
+# generic initialization : configuration of FaspManager
 
 # set trace level for sample, set to :debug to see complete list of debug information
 Aspera::Log.instance.level = :debug

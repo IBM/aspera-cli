@@ -17,7 +17,7 @@ aoc_url = ARGV[0]
 aoc_user = ARGV[1]
 aoc_key_value = ARGV[2]
 
-aocapi = Aspera::AoC.new(
+aoc_api = Aspera::AoC.new(
   url: aoc_url,
   auth: :jwt,
   private_key: aoc_key_value,
@@ -25,6 +25,6 @@ aocapi = Aspera::AoC.new(
   scope: 'user:all',
   subpath: 'api/v1')
 
-self_user_data = aocapi.read('self')
+self_user_data = aoc_api.read('self')
 
 Aspera::Log.dump('self', self_user_data)

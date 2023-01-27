@@ -38,8 +38,8 @@ demo_executor = Aspera::Ssh.new(ssh_url.host, params[:user], {password: params[:
 TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
 PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN, 'Upload')
-PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST, "newfolder-#{TEST_RUN_ID}")
-PATH_FOLDER_RENAMED = File.join(PATH_FOLDER_DEST, "renamedfolder-#{TEST_RUN_ID}")
+PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST, "new_folder-#{TEST_RUN_ID}")
+PATH_FOLDER_RENAMED = File.join(PATH_FOLDER_DEST, "renamed_folder-#{TEST_RUN_ID}")
 NAME_FILE1 = '200KB.1'
 PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
@@ -99,7 +99,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -117,7 +117,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -132,7 +132,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('md5sum', ['/notexist'])
+        ascmd.execute_single('md5sum', ['/does_not_exist'])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -150,7 +150,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))
@@ -167,7 +167,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/notexist', PATH_FOLDER_NEW])
+        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: (2) No such file or directory'))

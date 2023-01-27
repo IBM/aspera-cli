@@ -68,11 +68,11 @@ module Aspera
     end
 
     # change underlying logger, but keep log level
-    def logger_type=(new_logtype)
+    def logger_type=(new_log_type)
       current_severity_integer = @logger.level unless @logger.nil?
       current_severity_integer = ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
       current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
-      case new_logtype
+      case new_log_type
       when :stderr
         @logger = Logger.new($stderr)
       when :stdout
@@ -81,10 +81,10 @@ module Aspera
         require 'syslog/logger'
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else
-        raise "unknown log type: #{new_logtype.class} #{new_logtype}"
+        raise "unknown log type: #{new_log_type.class} #{new_log_type}"
       end
       @logger.level = current_severity_integer
-      @logger_type = new_logtype
+      @logger_type = new_log_type
       # update formatter with password hiding
       @logger.formatter = SecretHider.log_formatter(@logger.formatter)
     end

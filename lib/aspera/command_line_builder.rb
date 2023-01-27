@@ -6,7 +6,7 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # parameter with onne of those tags is an ascp command line option with --
+    # parameter with one of those tags is an ascp command line option with --
     CLTYPE_OPTIONS = %i[opt_without_arg opt_with_arg].freeze
     class << self
       # transform yes/no to true/false

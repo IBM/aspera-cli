@@ -90,6 +90,8 @@ If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
 To test with Aspera demo transfer server, setup the environment and then test:
 
+<!-- spellchecker: disable -->
+
 ```bash
 <%=cmd%> config initdemo
 ```
@@ -108,6 +110,8 @@ To test with Aspera demo transfer server, setup the environment and then test:
 : dr-xr-xr-x : asperaweb : fasp : 4096   : 2018-05-04 14:26:55 +0200 : aspera-test-dir-large :
 :............:...........:......:........:...........................:.......................:
 ```
+
+<!-- spellchecker: enable -->
 
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
 
@@ -140,15 +144,10 @@ updated: default &rarr; server to myserver
 :............:...........:......:..............:...........................:............................:
 :   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
 :............:...........:......:..............:...........................:............................:
-: -rw-rw-rw- : asperaweb : fasp : 10133504     : 2018-05-04 14:16:24 +0200 : ctl_female_2.fastq.partial :
 : -rw-r--r-- : asperaweb : fasp : 209715200    : 2014-04-10 19:49:27 +0200 : 200MB                      :
 : -rw-r--r-- : asperaweb : fasp : 524288000    : 2014-04-10 19:44:15 +0200 : 500MB                      :
 : -rw-r--r-- : asperaweb : fasp : 5368709120   : 2014-04-10 19:45:52 +0200 : 5GB                        :
 : -rw-r--r-- : asperaweb : fasp : 500000000000 : 2017-06-14 20:09:57 +0200 : 500GB                      :
-: -rw-rw-rw- : asperaweb : fasp : 13606912     : 2018-05-04 14:20:21 +0200 : ctl_male_2.fastq.partial   :
-: -rw-rw-rw- : asperaweb : fasp : 76           : 2018-05-04 14:13:18 +0200 : ctl_female_2.fastq.haspx   :
-: -rw-rw-rw- : asperaweb : fasp : 647348       : 2018-05-04 14:26:39 +0200 : ctl_female_2.gz            :
-: -rw-rw-rw- : asperaweb : fasp : 74           : 2018-05-04 14:16:00 +0200 : ctl_male_2.fastq.haspx     :
 : -rw-r--r-- : asperaweb : fasp : 1048576000   : 2014-04-10 19:49:23 +0200 : 1GB                        :
 : -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
 : -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
@@ -286,7 +285,7 @@ A convenience sample script is also provided: download the script [`d<%=cmd%>`](
 
 > **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
 
-Some environment variables can be set for this script to adapt its behaviour:
+Some environment variables can be set for this script to adapt its behavior:
 
 | env var      | description                        | default                  | example                  |
 |--------------|------------------------------------|--------------------------|--------------------------|
@@ -696,13 +695,13 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 > **Note:** It gets its value after shell command line parsing and <%=tool%> extended value parsing.
 
 In the following examples (using a POSIX shell, such as `bash`), several sample commands are provided when equivalent.
-For all example, most of special character handling is not specific to <%=tool%>: It depoends on the underlying syntax: shell , JSON, etc...
+For all example, most of special character handling is not specific to <%=tool%>: It depends on the underlying syntax: shell , JSON, etc...
 Depending on the case, a different `format` is used to display the actual value.
 
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
 
 Double quotes are processed by the shell to create a single string argument.
-For POSIX shells, single quotes can also be used in this case, or protext the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
+For POSIX shells, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
 ```bash
 <%=cmd%> conf echo "Hello World" --format=text
@@ -792,9 +791,9 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 {"title":"Test \" ' & \\"}
 ```
 
-#### Reading special characters interractively
+#### Reading special characters interactively
 
-If <%=tool%> is used interractively (a user typing on terminal), it is easy to require the user to type values:
+If <%=tool%> is used interactively (a user typing on terminal), it is easy to require the user to type values:
 
 ```bash
 <%=cmd%> conf echo @ruby:"{'title'=>gets.chomp}" --format=json
@@ -1003,7 +1002,9 @@ The extended value syntax is:
 <0 or more decoders><0 or 1 reader><nothing or some text value>
 ```
 
-The difference between reader and decoder is order and ordinality. Both act like a function of value on right hand side. Decoders are at the beginning of the value, followed by a single optional reader, followed by the optional value.
+The difference between reader and decoder is order and cardinality.
+Both act like a function of value on right hand side.
+Decoders are at the beginning of the value, followed by a single optional reader, followed by the optional value.
 
 The following "readers" are supported (returns value in []):
 
@@ -1013,13 +1014,13 @@ The following "readers" are supported (returns value in []):
 - @path:PATH   : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 - @env:ENVVAR  : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
 - @stdin:      : [String] read from stdin (no value on right)
-- @preset:NAME : [Hash] get whole <%=opprst%> value by name. Subvalues can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+- @preset:NAME : [Hash] get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 
 In addition it is possible to decode a value, using one or multiple decoders :
 
 - @base64: [String] decode a base64 encoded string
 - @json: [any] decode JSON values (convenient to provide complex structures)
-- @zlib: [String] uncompress data
+- @zlib: [String] un-compress data
 - @ruby: [any] execute ruby code
 - @csvt: [Array] decode a titled CSV value
 - @lines: [Array] split a string in multiple lines and return an array
@@ -1034,10 +1035,10 @@ Example: read the content of the specified file, then, base64 decode, then unzip
 <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
-Example: create a value as a hash, with one key and the value is read from a file:
+Example: Create a value as a hash, with one key and the value is read from a file:
 
 ```bash
-<%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("pubkey.txt")}'
+<%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("mykey.txt")}'
 ```
 
 Example: read a csv file and create a list of hash for bulk provisioning:
@@ -1117,7 +1118,7 @@ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-When OAuth is used (AoC, Faspex4 apiv4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in `[config folder]/persist_store` by default.
+When OAuth is used (AoC, Faspex4 api v4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in `[config folder]/persist_store` by default.
 Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
 The command `config flush_tokens` deletes all existing tokens.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
@@ -1409,11 +1410,11 @@ export <%=evp%>VAULT_PASSWORD
 read -s <%=evp%>VAULT_PASSWORD
 ```
 
-#### Vault: System keychain
+#### Vault: System key chain
 
 > **Note:** **macOS only**
 
-It is possible to manage secrets in macOS keychain (only read supported currently).
+It is possible to manage secrets in macOS key chain (only read supported currently).
 
 ```json
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
@@ -1486,9 +1487,9 @@ Typically, in `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`:
 PRIVKEYFILE=~/.aspera/<%=cmd%>/my_private_key
 ```
 
-Several methods can be used to generate a key pair:
+Several methods can be used to generate a key pair.
 
-- <%=tool%>
+#### <%=tool%> for key generation
 
 The generated key is of type RSA, by default: 4096 bit.
 For convenience, the public key is also extracted with extension `.pub`.
@@ -1498,7 +1499,7 @@ The key is not passphrase protected.
 <%=cmd%> config genkey ${PRIVKEYFILE} 4096
 ```
 
-- `ssh-keygen`
+#### `ssh-keygen`
 
 Both private and public keys are generated, option `-N` is for passphrase.
 
@@ -1506,24 +1507,27 @@ Both private and public keys are generated, option `-N` is for passphrase.
 ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 ```
 
-- `openssl`
+#### `openssl`
 
 To generate a private key pair with a passphrase the following can be used on any system:
-
+<!-- spellchecker: disable -->
 ```bash
 openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE}.protected 4096
 openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
 ```
+<!-- spellchecker: enable -->
 
 `openssl` is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
 In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` to generate a key without passphrase.
 
 If option `-nodes` is not available, the passphrase can be removed using this method:
 
+<!-- spellchecker: disable -->
 ```bash
 openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
 rm -f ${PRIVKEYFILE}.protected
 ```
+<!-- spellchecker: enable -->
 
 To change (or add) the passphrase for a key do:
 
@@ -1567,7 +1571,7 @@ Available plugins can be found using command:
 
 #### <a id="createownplugin"></a>Create your own plugin
 
-By default plugins are looked-up in folders specifed by (multi-value) option `plugin_folder`:
+By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
 ```javascript
 <%=cmd%> --show-config --select=@json:'{"key":"plugin_folder"}'
@@ -1696,7 +1700,7 @@ Refer to the following sections.
 There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
 
 The `http_proxy` environment variable (**lower case**, preferred) can be set to the URL of the proxy, e.g. `http://myproxy.org.net:3128`.
-Refer to [Ruby findproxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
+Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
 
 > **Note:** Ruby expects a URL and `myproxy.org.net:3128` alone is **not** accepted.
 
@@ -2050,7 +2054,7 @@ Example:
 
 #### <a id="agt_trsdk"></a>Transfer SDK
 
-Another possibility is to use the Transfer SDK daemon (asperatransferd).
+Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
 
 By default it will listen on local port `55002` on `127.0.0.1`.
 
@@ -2062,11 +2066,12 @@ gem install grpc
 ```
 
 On Windows the compilation may fail for various reasons (3.1.1):
-
+<!-- spellchecker: disable -->
 - `cannot find -lx64-ucrt-ruby310`
    &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to `[Ruby main dir]\lib\libx64-ucrt-ruby310.a` (remove the dll extension)
 - `conflicting types for 'gettimeofday'`
   &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)` ,i.e. change `struct timezone` to `void`
+<!-- spellchecker: enable -->
 
 ### <a id="transferspec"></a>Transfer Specification
 
@@ -2253,7 +2258,7 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Also known as Client-side encryption at reast (CSEAR), content protection allows a client to send files to a server
+Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server
 which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both
 using a passphrase, only known by users sharing files. Files stay encrypted on server side.
 
@@ -2409,7 +2414,7 @@ where:
 - `filename` is the name that will be assigned to the file on the destination
 - `filesize` is the number of bytes that will be sent (in decimal).
 
-Note: characters `?` and `&` are shell special characters (wildcard and backround), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
+Note: characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
 
 For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<sup>60</sup>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
@@ -2580,6 +2585,7 @@ If you did not use the wizard, you can also manually create a <%=prst%> for <%=t
 
 Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
+<!-- spellchecker: disable -->
 ```bash
 <%=cmd%> config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
@@ -2587,6 +2593,7 @@ option: client_id> my_BJbQiFw
 option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
 updated: my_aoc_org
 ```
+<!-- spellchecker: enable -->
 
 (This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
@@ -2925,6 +2932,8 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 
 #### Example: Find with filter and delete
 
+<!-- spellchecker: disable -->
+
 ```javascript
 <%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
@@ -2962,6 +2971,8 @@ echo $thelist
 : 98399 : deleted :
 :.......:.........:
 ```
+
+<!-- spellchecker: enable -->
 
 #### Example: <a id="deactuser"></a>Find deactivated users since more than 2 years
 
@@ -3185,6 +3196,8 @@ Then, transfer between those:
 
 #### Example: create registration key to register a node
 
+<!-- spellchecker: disable -->
+
 ```javascript
 <%=cmd%> aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 ```
@@ -3209,6 +3222,8 @@ jfqslfdjlfdjfhdjklqfhdkl
 | 102 | deleted |
 +-----+---------+
 ```
+
+<!-- spellchecker: enable -->
 
 #### Example: Create a Node
 
@@ -3321,7 +3336,9 @@ When user packages are listed, the following query is used:
 {"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}
 ```
 
-To list packages in a shared inbox, the query has to be specified with withe the shared inbox by name or its identifier. Additionnal parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode). The current workspace is added unless specified in the query.
+To list packages in a shared inbox, the query has to be specified with withe the shared inbox by name or its identifier.
+Additional parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode).
+The current workspace is added unless specified in the query.
 
 Using shared inbox name:
 
@@ -3529,9 +3546,11 @@ ATS is usable either :
 ### IBM Cloud ATS : creation of api key
 
 This section is about using ATS with an IBM cloud subscription.
-If you are using ATS as part of AoC, then authentication is thropugh AoC, not IBM Cloud.
+If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
 
 First get your IBM Cloud APIkey. For instance, it can be created using the IBM Cloud web interface, or using command line:
+
+<!-- spellchecker: disable -->
 
 ```bash
 ibmcloud iam api-key-create mykeyname -d 'my sample key'
@@ -3556,7 +3575,11 @@ References:
 - [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
 - [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
 
+<!-- spellchecker: enable -->
+
 Then, to register the key by default for the ats plugin, create a preset. Execute:
+
+<!-- spellchecker: disable -->
 
 ```bash
 <%=cmd%> config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
@@ -3596,9 +3619,12 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 <%=cmd%> config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
 
+<!-- spellchecker: enable -->
+
 ### <a id="ats_params"></a>ATS Access key creation parameters
 
-When creating an ATS access key, the option `params` must contain an extended value with the creation parameters. Those asre directly the parameters expected by the [ATS API](https://developer.ibm.com/apis/catalog?search=%22Aspera%20ATS%20API%22).
+When creating an ATS access key, the option `params` must contain an extended value with the creation parameters.
+Those are directly the parameters expected by the [ATS API](https://developer.ibm.com/apis/catalog?search=%22Aspera%20ATS%20API%22).
 
 ### Misc. Examples
 
@@ -3611,13 +3637,13 @@ Example: create access key on IBM Cloud (softlayer):
 Example: create access key on AWS:
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"testkey3","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
+<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
 (Note that the blob name is mandatory after server address and before parameters. and that parameter sr=c is mandatory.)
@@ -3625,7 +3651,7 @@ Example: create access key on Azure SAS:
 Example: create access key on Azure:
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"testkeyazure","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
+<%=cmd%> ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
 delete all my access keys:
@@ -3721,7 +3747,7 @@ This can also be set as default using a global preset.
 URL schemes `local` and `https` are also supported, mainly for testing purpose.
 (`--url=local:` , `--url=https://...`)
 
-- `local` will execute `ascmd` locally, instead of using a SSH cnnection.
+- `local` will execute `ascmd` locally, instead of using an SSH connection.
 - `https` will use Web Socket Session: This requires the use of a transfer token. For example a `Basic` token can be used.
 
 As, most of the time, SSH is used, if an `http` scheme is provided without token, the plugin will fallback to SSH and port 33001.
@@ -3799,11 +3825,15 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 - Start watchd and watchfolderd services running as a system user having access to files
 - configure a watchfolder to define automated transfers
 
+<!-- spellchecker: disable -->
+
 ```javascript
 <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
+
+<!-- spellchecker: enable -->
 
 ### Out of Transfer File Validation
 
@@ -3831,15 +3861,15 @@ updated
 
 ### Example: SHOD to ATS
 
-Scenario: Access to a "Shares on Demand" (SHOD) server on AWS is provided by a partner.
+Scenario: Access to a **Shares on Demand** (SHOD) server on AWS is provided by a partner.
 We need to transfer files from this third party SHOD instance into our Azure BLOB storage.
-Simply create an "Aspera Transfer Service" instance, which provides access to the node API.
-Then create a configuration for the "SHOD" instance in the configuration file: in section "shares", a configuration named: awsshod.
-Create another configuration for the Azure ATS instance: in section "node", named azureats.
+Simply create an **Aspera Transfer Service** instance, which provides access to the node API.
+Then create a configuration for the **SHOD** instance in the configuration file: in section "shares", a configuration named: aws_shod.
+Create another configuration for the Azure ATS instance: in section "node", named azure_ats.
 Then execute the following command:
 
 ```bash
-<%=cmd%> node download /share/sourcefile --to-folder=/destinationfolder --preset=awsshod --transfer=node --transfer-info=@preset:azureats
+<%=cmd%> node download /share/sourcefile --to-folder=/destination_folder --preset=aws_shod --transfer=node --transfer-info=@preset:azure_ats
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
@@ -3847,7 +3877,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 ### Create access key
 
 ```javascript
-<%=cmd%> node access_key create --value=@json:'{"id":"eudemo-sedemo","secret":"mystrongsecret","storage":{"type":"local","path":"/data/asperafiles"}}'
+<%=cmd%> node access_key create --value=@json:'{"id":"myaccesskey","secret":"mysecret","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 ### Node sample commands
@@ -3868,7 +3898,7 @@ IBM Aspera's newer self-managed application.
 
 ### Faspex 5 JWT authentication
 
-This is the **recomended** method to use.
+This is the **recommended** method to use.
 
 For `jwt`, create an API client in Faspex with JWT support:
 
@@ -3928,7 +3958,7 @@ Use this token as password and use `--auth=boot`.
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
-Parameters to commandsa are carried through option `value`, as extended value.
+Parameters to commands are carried through option `value`, as extended value.
 Usually using JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
@@ -4082,15 +4112,15 @@ my_faspex_conf:
   storage:
     testlaurent:
       node: "@preset:my_faspex_node"
-      path: /myfiles
+      path: /mydir
 my_faspex_node:
   url: https://10.25.0.3:9092
   username: node_faspex
   password: MyNodePassword
 ```
 
-In this example, a faspex storage named "testlaurent" exists in Faspex, and is located
-under the docroot in "/myfiles" (this must be the same as configured in Faspex).
+In this example, a faspex storage named `testlaurent` exists in Faspex, and is located
+under the docroot in `/mydir` (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
 
 Note: the v4 API provides an API for nodes and shares.
@@ -4191,6 +4221,8 @@ ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HO
 
 It consists in the following structure:
 
+<!-- spellchecker: disable -->
+
 ```javascript
 {
   "apikey": "_api_key_here_",
@@ -4206,6 +4238,8 @@ It consists in the following structure:
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
 }
 ```
+
+<!-- spellchecker: enable -->
 
 The field `resource_instance_id` is for option `crn`
 
@@ -4256,7 +4290,7 @@ In this case, some of the `sync` parameters are fill from parameters of the rela
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 >
 > **Note:** Two JSON syntax are supported for option `sync_info`.
-> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the prefered syntax and allows a single session definition.
+> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the preferred syntax and allows a single session definition.
 > The second (legacy) is specific to <%=tool%> and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
@@ -4364,6 +4398,7 @@ dnf install unoconv
 
 - Amazon Linux
 
+<!-- spellchecker: disable -->
 ```bash
 amazon-linux-extras enable libreoffice
 yum clean metadata
@@ -4372,6 +4407,7 @@ wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
 mv unoconv /usr/bin
 chmod a+x /usr/bin/unoconv
 ```
+<!-- spellchecker: enable -->
 
 ### Configuration
 
@@ -4431,6 +4467,7 @@ Lets first setup a script that will be used in the scheduler and set up the envi
 
 Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
 
+<!-- spellchecker: disable -->
 ```bash
  #!/bin/bash
  # set a timeout protection, just in case
@@ -4439,6 +4476,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 rvm use 2.6 --quiet
 exec timeout ${tmout} <%=cmd%> "${@}"
 ```
+<!-- spellchecker: enable -->
 
 Here the cronjob is created for user `xfer`.
 
@@ -4676,7 +4714,7 @@ It aims at simplifying the startup of a FASP session from a programmatic stand p
 - common to Aspera Connect API (browser javascript startTransfer)
 - easy to generate by using any third party language specific JSON library
 
-Hopefully, IBM integrates this diectly in `ascp`, and this tool is made redundant.
+Hopefully, IBM integrates this directly in `ascp`, and this tool is made redundant.
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
@@ -4804,7 +4842,7 @@ Refer to section [Scheduling](#scheduling). (on use of option `lock_port`)
 
 The local folder (here, relative path: `source_hot`) is sent (upload) to an aspera server.
 Source files are deleted after transfer.
-Growing files will be sent only once they don't grow anymore (based on an 8-second cooloff period).
+Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
 If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
 ### Example: unidirectional synchronization (upload) to server
@@ -4859,7 +4897,7 @@ OK - [transfer:ok]
 ```
 
 ```bash
-<%=cmd%> server health asctlstatus --cmd_prefix='sudo ' --format=nagios
+<%=cmd%> server health asctl status --cmd_prefix='sudo ' --format=nagios
 ```
 
 ```output
@@ -4909,7 +4947,7 @@ When I joined Aspera, there was only one CLI: `ascp`, which is the implementatio
 
 There were a few pitfalls:
 
-- The tool was written in the aging `perl` language while most Aspera application products (but the Transfer Server) are written in `ruby`.
+- The tool was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
 - The tool was only for transfers, but not able to call other products APIs
 
 So, it evolved into <%=tool%>:
@@ -4939,7 +4977,7 @@ References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "C
 
 Some Ruby gems dependencies require compilation of native parts (C).
 This also requires Ruby header files.
-If Ruby was installed as a Linux Packages, then also install ruby dev elopment package:
+If Ruby was installed as a Linux Packages, then also install ruby development package:
 `ruby-dev` ir `ruby-devel`, depending on distribution.
 
 ### ED255519 key not supported

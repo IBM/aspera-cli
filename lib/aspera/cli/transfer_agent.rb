@@ -25,7 +25,7 @@ module Aspera
 
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
-      # % (formating bug in eclipse)
+      # % (formatting bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
@@ -59,8 +59,8 @@ module Aspera
         @token_regenerator = nil
         @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
-        @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transfered files')
-        @opt_mgr.add_opt_simple(:sources, "How list of transfered files is provided (#{FILE_LIST_OPTIONS.join(',')})")
+        @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transferred files')
+        @opt_mgr.add_opt_simple(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.add_opt_simple(:ascp_opts, 'Options for ascp in its native format')
         @opt_mgr.add_opt_list(:src_type, %i[list pair], 'Type of file list')
         @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'Type of transfer agent')
@@ -135,7 +135,7 @@ module Aspera
         return dest_folder
       end
 
-      # This is how the list of files to be transfered is specified
+      # This is how the list of files to be transferred is specified
       # get paths suitable for transfer spec from command line
       # @return {source: (mandatory), destination: (optional)}
       # computation is done only once, cache is kept in @transfer_paths

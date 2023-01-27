@@ -25,7 +25,7 @@ module Aspera
     STD_AUTH_TYPES = %i[web jwt].freeze
 
     # remove 5 minutes to account for time offset (TODO: configurable?)
-    JWT_NOTBEFORE_OFFSET_SEC = 300
+    JWT_NOT_BEFORE_OFFSET_SEC = 300
     # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET_SEC = 3600
     # tokens older than 30 minutes will be discarded from cache
@@ -35,7 +35,7 @@ module Aspera
     # a prefix for persistency of tokens (simplify garbage collect)
     PERSIST_CATEGORY_TOKEN = 'token'
 
-    private_constant :JWT_NOTBEFORE_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
+    private_constant :JWT_NOT_BEFORE_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
 
     # persistency manager
     @persist = nil
@@ -98,7 +98,7 @@ module Aspera
         @create_handlers[id]
       end
 
-      # list of identifiers foundn in creation parameters that can be used to uniquely identify the token
+      # list of identifiers found in creation parameters that can be used to uniquely identify the token
       def id_creator(id)
         raise "id creator type unknown: #{id}/#{id.class}" unless @id_handlers.key?(id)
         @id_handlers[id]
@@ -110,12 +110,12 @@ module Aspera
 
     # generic token creation, parameters are provided in :generic
     register_token_creator :generic, lambda { |oauth|
-      return oauth.create_token(oauth.sparams)
+      return oauth.create_token(oauth.specific_parameters)
     }, lambda { |oauth|
       return [
-        oauth.sparams[:grant_type]&.split(':')&.last,
-        oauth.sparams[:apikey],
-        oauth.sparams[:response_type]
+        oauth.specific_parameters[:grant_type]&.split(':')&.last,
+        oauth.specific_parameters[:apikey],
+        oauth.specific_parameters[:response_type]
       ]
     }
 
@@ -123,22 +123,22 @@ module Aspera
     register_token_creator :web, lambda { |oauth|
       random_state = SecureRandom.uuid # used to check later
       login_page_url = Rest.build_uri(
-        "#{oauth.api.params[:base_url]}/#{oauth.sparams[:path_authorize]}",
-        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.sparams[:redirect_uri], state: random_state))
+        "#{oauth.api.params[:base_url]}/#{oauth.specific_parameters[:path_authorize]}",
+        oauth.optional_scope_client_id.merge(response_type: 'code', redirect_uri: oauth.specific_parameters[:redirect_uri], state: random_state))
       # here, we need a human to authorize on a web page
       Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
       # start a web server to receive request code
-      webserver = WebAuth.new(oauth.sparams[:redirect_uri])
+      web_server = WebAuth.new(oauth.specific_parameters[:redirect_uri])
       # start browser on login page
       OpenApplication.instance.uri(login_page_url)
       # wait for code in request
-      received_params = webserver.received_request
+      received_params = web_server.received_request
       raise 'wrong received state' unless random_state.eql?(received_params['state'])
       # exchange code for token
       return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
         grant_type:   'authorization_code',
         code:         received_params['code'],
-        redirect_uri: oauth.sparams[:redirect_uri]))
+        redirect_uri: oauth.specific_parameters[:redirect_uri]))
     }, lambda { |_oauth|
       return []
     }
@@ -150,24 +150,24 @@ module Aspera
       require 'jwt'
       seconds_since_epoch = Time.new.to_i
       Log.log.info{"seconds=#{seconds_since_epoch}"}
-      raise 'missing JWT payload' unless oauth.sparams[:payload].is_a?(Hash)
+      raise 'missing JWT payload' unless oauth.specific_parameters[:payload].is_a?(Hash)
       jwt_payload = {
         exp: seconds_since_epoch + JWT_EXPIRY_OFFSET_SEC, # expiration time
-        nbf: seconds_since_epoch - JWT_NOTBEFORE_OFFSET_SEC, # not before
+        nbf: seconds_since_epoch - JWT_NOT_BEFORE_OFFSET_SEC, # not before
         iat: seconds_since_epoch, # issued at
         jti: SecureRandom.uuid # JWT id
-      }.merge(oauth.sparams[:payload])
+      }.merge(oauth.specific_parameters[:payload])
       Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}
-      rsa_private = oauth.sparams[:private_key_obj] # type: OpenSSL::PKey::RSA
+      rsa_private = oauth.specific_parameters[:private_key_obj] # type: OpenSSL::PKey::RSA
       Log.log.debug{"private=[#{rsa_private}]"}
-      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.sparams[:headers] || {})
+      assertion = JWT.encode(jwt_payload, rsa_private, 'RS256', oauth.specific_parameters[:headers] || {})
       Log.log.debug{"assertion=[#{assertion}]"}
       return oauth.create_token(oauth.optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
     }, lambda { |oauth|
-      return [oauth.sparams.dig(:payload, :sub)]
+      return [oauth.specific_parameters.dig(:payload, :sub)]
     }
 
-    attr_reader :gparams, :sparams, :api
+    attr_reader :generic_parameters, :specific_parameters, :api
 
     private
 
@@ -189,29 +189,29 @@ module Aspera
     def initialize(a_params)
       Log.log.debug{"auth=#{a_params}"}
       # replace default values
-      @gparams = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
+      @generic_parameters = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       # check that type is known
-      self.class.token_creator(@gparams[:crtype])
+      self.class.token_creator(@generic_parameters[:crtype])
       # specific parameters for the creation type
-      @sparams = @gparams[@gparams[:crtype]]
-      if @gparams[:crtype].eql?(:web) && @sparams.key?(:redirect_uri)
-        uri = URI.parse(@sparams[:redirect_uri])
+      @specific_parameters = @generic_parameters[@generic_parameters[:crtype]]
+      if @generic_parameters[:crtype].eql?(:web) && @specific_parameters.key?(:redirect_uri)
+        uri = URI.parse(@specific_parameters[:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
         # TODO: we could check that host is localhost or local address
       end
       rest_params = {
-        base_url:     @gparams[:base_url],
+        base_url:     @generic_parameters[:base_url],
         redirect_max: 2
       }
       rest_params[:auth] = a_params[:auth] if a_params.key?(:auth)
       @api = Rest.new(rest_params)
       # if needed use from api
-      @gparams.delete(:base_url)
-      @gparams.delete(:auth)
-      @gparams.delete(@gparams[:crtype])
-      Log.dump(:gparams, @gparams)
-      Log.dump(:sparams, @sparams)
+      @generic_parameters.delete(:base_url)
+      @generic_parameters.delete(:auth)
+      @generic_parameters.delete(@generic_parameters[:crtype])
+      Log.dump(:generic_parameters, @generic_parameters)
+      Log.dump(:specific_parameters, @specific_parameters)
     end
 
     public
@@ -220,7 +220,7 @@ module Aspera
     def create_token(www_params)
       return @api.call({
         operation:       'POST',
-        subpath:         @gparams[:path_token],
+        subpath:         @generic_parameters[:path_token],
         headers:         {'Accept' => 'application/json'},
         www_body_params: www_params})
     end
@@ -228,9 +228,9 @@ module Aspera
     # @return Hash with optional general parameters
     def optional_scope_client_id(add_secret: false)
       call_params = {}
-      call_params[:scope] = @gparams[:scope] unless @gparams[:scope].nil?
-      call_params[:client_id] = @gparams[:client_id] unless @gparams[:client_id].nil?
-      call_params[:client_secret] = @gparams[:client_secret] if add_secret && !@gparams[:client_id].nil?
+      call_params[:scope] = @generic_parameters[:scope] unless @generic_parameters[:scope].nil?
+      call_params[:client_id] = @generic_parameters[:client_id] unless @generic_parameters[:client_id].nil?
+      call_params[:client_secret] = @generic_parameters[:client_secret] if add_secret && !@generic_parameters[:client_id].nil?
       return call_params
     end
 
@@ -241,20 +241,20 @@ module Aspera
       token_id = IdGenerator.from_list([
         PERSIST_CATEGORY_TOKEN,
         @api.params[:base_url],
-        @gparams[:crtype],
-        self.class.id_creator(@gparams[:crtype]).call(self), # array, so we flatten later
-        @gparams[:scope],
+        @generic_parameters[:crtype],
+        self.class.id_creator(@generic_parameters[:crtype]).call(self), # array, so we flatten later
+        @generic_parameters[:scope],
         @api.params.dig(%i[auth username])
       ].flatten)
 
       # get token_data from cache (or nil), token_data is what is returned by /token
       token_data = self.class.persist_mgr.get(token_id) if use_cache
       token_data = JSON.parse(token_data) unless token_data.nil?
-      # Optional optimization: check if node token is expired  basd on decoded content then force refresh if close enough
+      # Optional optimization: check if node token is expired based on decoded content then force refresh if close enough
       # might help in case the transfer agent cannot refresh himself
       # `direct` agent is equipped with refresh code
       if !use_refresh_token && !token_data.nil?
-        decoded_token = self.class.decode_token(token_data[@gparams[:token_field]])
+        decoded_token = self.class.decode_token(token_data[@generic_parameters[:token_field]])
         Log.dump('decoded_token', decoded_token) unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
@@ -295,14 +295,14 @@ module Aspera
 
       # no cache, nor refresh: generate a token
       if token_data.nil?
-        resp = self.class.token_creator(@gparams[:crtype]).call(self)
+        resp = self.class.token_creator(@generic_parameters[:crtype]).call(self)
         json_data = resp[:http].body
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id, json_data)
       end # if ! in_cache
-      raise "API error: No such field in answer: #{@gparams[:token_field]}" unless token_data.key?(@gparams[:token_field])
+      raise "API error: No such field in answer: #{@generic_parameters[:token_field]}" unless token_data.key?(@generic_parameters[:token_field])
       # ok we shall have a token here
-      return 'Bearer ' + token_data[@gparams[:token_field]]
+      return 'Bearer ' + token_data[@generic_parameters[:token_field]]
     end
   end # OAuth
 end # Aspera

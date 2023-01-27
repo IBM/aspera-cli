@@ -8,7 +8,7 @@ require 'pp'
 module Aspera
   module Cli
     # Take care of output
-    class Formater
+    class Formatter
       FIELDS_ALL = 'ALL'
       FIELDS_DEFAULT = 'DEF'
       CSV_RECORD_SEPARATOR = "\n"
@@ -36,9 +36,9 @@ module Aspera
           end
         end
 
-        def flatten_config_overview(conffile)
+        def flatten_config_overview(hash_array_conf)
           r = []
-          conffile.each do |config, preset|
+          hash_array_conf.each do |config, preset|
             preset.each do |parameter, value|
               r.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
             end
@@ -131,7 +131,7 @@ module Aspera
 
       def result_all_fields(_results, table_rows_hash_val)
         raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
-        # get the list of all column names used in all lines, not just frst one, as all lines may have different columns
+        # get the list of all column names used in all lines, not just first one, as all lines may have different columns
         return table_rows_hash_val.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}; }.keys
       end
 
@@ -141,7 +141,7 @@ module Aspera
         raise 'INTERNAL ERROR, result must have type' unless results.key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
-        # for config overvuew, it is name and value
+        # for config overview, it is name and value
         is_config_overview = res_data.is_a?(Array) && !res_data.empty? && res_data.first.is_a?(Hash) && res_data.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
         SecretHider.deep_remove_secret(res_data, is_name_value: is_config_overview) unless @option_show_secrets || @option_display.eql?(:data)
         # comma separated list in string format

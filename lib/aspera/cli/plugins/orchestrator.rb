@@ -123,7 +123,7 @@ module Aspera
             case command
             when :status
               options = {}
-              options[:id] = wf_id unless wf_id.eql?('ALL')
+              options[:id] = wf_id unless wf_id.eql?(VAL_ALL)
               result = call_ao('workflows_status', options)[:data]
               return {type: :object_list, data: result['workflows']['workflow']}
             when :list
@@ -160,7 +160,7 @@ fields: %w[id portable_id name published_status published_revision_id latest_rev
                 raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
                 call_params['explicit_output_step'] = fields[0]
                 call_params['explicit_output_variable'] = fields[1]
-                # implicitely, call is synchronous
+                # implicitly, call is synchronous
                 call_params['synchronous'] = true
               end
               if call_params['synchronous']

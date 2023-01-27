@@ -73,7 +73,7 @@ module Aspera
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{|i| i.to_s.start_with?(shortval)}
           raise CliBadArgument, bad_arg_message_multi("unknown value for #{descr}: #{shortval}", allowed_values) if matching.empty?
-          raise CliBadArgument, bad_arg_message_multi("ambigous shortcut for #{descr}: #{shortval}", matching) unless matching.length.eql?(1)
+          raise CliBadArgument, bad_arg_message_multi("ambiguous shortcut for #{descr}: #{shortval}", matching) unless matching.length.eql?(1)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
@@ -104,10 +104,10 @@ module Aspera
         # those must be set before parse, parse consumes those defined only
         @unprocessed_defaults = []
         @unprocessed_env = []
-        # NOTE: was initially inherited but it is prefered to have specific methods
+        # NOTE: was initially inherited but it is preferred to have specific methods
         @parser = OptionParser.new
         @parser.program_name = program_name
-        # options can also be provided by env vars : --param-name -> ASLMCLI_PARAM_NAME
+        # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
         env_prefix = program_name.upcase + OPTION_SEP_NAME
         ENV.each do |k, v|
           if k.start_with?(env_prefix)
@@ -186,7 +186,7 @@ module Aspera
       def declare_option(option_symbol, type)
         Log.log.debug{"declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.key?(option_symbol)}".green}
         if @declared_options.key?(option_symbol)
-          raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be redeclared and ignored" \
+          raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be re-declared and ignored" \
           unless @declared_options[option_symbol][:type].eql?(:accessor)
           return
         end

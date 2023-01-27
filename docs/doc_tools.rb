@@ -39,7 +39,8 @@ def containerimage; 'martinlaurent/ascli'; end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
-def geminstadd; /\.[^0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
+# if version contains other characters than digit and dot, it is pre-release
+def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
 # transfer spec description generation
 def spec_table
