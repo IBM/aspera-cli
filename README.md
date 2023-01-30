@@ -1,6 +1,8 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-
+<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile -->
+<!-- cSpell:ignoreRegExp /-P[a-z]+/g -->
+<!-- cSpell:ignoreRegExp /my[a-z]+/g -->
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
 ##
@@ -2024,7 +2026,7 @@ In addition to standard methods described in section [File List](#file_list), it
 - Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_file_list`
 
 ```javascript
---sources=@ts --ts=@json:'{"EX_file_list":"filelist.txt"}'
+--sources=@ts --ts=@json:'{"EX_file_list":"file_list.txt"}'
 ```
 
 - Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args`
@@ -2068,8 +2070,8 @@ Parameters provided in option `transfer_info` are:
 | root_id | string | password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
-`--transfer-info=@preset:<psetname>` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"theuser","password":"_pass_here_"}'`
+`--transfer-info=@preset:_name_here_` or be specified using the extended value syntax :
+`--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"_pass_here_"}'`
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
@@ -2576,7 +2578,7 @@ The sequence parameter is applied as follows:
 
 - If `seq` is `sequential` then each file size is:
 
-  - `size + ((fileindex - 1) * inc)`
+  - `size + ((file_index - 1) * inc)`
   - Where first file is index 1
   - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
   - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less then 8*2<sup>60</sup>.
@@ -3009,8 +3011,8 @@ Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interacti
 ```bash
 ascli config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
-option: client_id> my_BJbQiFw
-option: client_secret> yFS1mu-crbKuQhGFtfhYuoRW...
+option: client_id> _client_id_here_
+option: client_secret> _client_secret_here_
 updated: my_aoc_org
 ```
 <!-- spellchecker: enable -->
@@ -5115,9 +5117,9 @@ The `xfer` user has a special protected shell: `aspshell`, so changing identity 
 ```bash
 su -s /bin/bash - xfer
 
-ascli config preset update previewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
+ascli config preset update mypreviewconf --url=https://localhost:9092 --username=my_access_key --password=my_secret --skip-types=office --lock-port=12346
 
-ascli config preset set default preview previewconf
+ascli config preset set default preview mypreviewconf
 ```
 
 Here we assume that Office file generation is disabled, else remove this option.

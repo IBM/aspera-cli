@@ -132,6 +132,11 @@ ignoreWords:
   - tmpdir
   - trevents
   - retryable
+  - nodeadmin
+  - userdata
+  - keychain
+  - aslmcli
+  - lprt
 import: []
 enableFiletypes:
   - makefile
