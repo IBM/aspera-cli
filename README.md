@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile -->
+<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted -->
 <!-- cSpell:ignoreRegExp /-P[a-z]+/g -->
 <!-- cSpell:ignoreRegExp /my[a-z]+/g -->
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
@@ -2660,7 +2660,7 @@ OPTIONS: global
     -w, --warnings                   check for language warnings
         --ui=ENUM                    method to start browser: text, [graphical]
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
-        --logger=ENUM                log method: [stderr], stdout, syslog
+        --logger=ENUM                logging method: [stderr], stdout, syslog
         --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
         --http-options=VALUE         options for http socket (extended value)
         --insecure=ENUM              do not validate HTTPS certificate: no, [yes]
@@ -2862,8 +2862,8 @@ OPTIONS:
         --password=VALUE             user's password
         --auth=ENUM                  OAuth type of authentication: web, jwt
         --operation=ENUM             client operation for transfers: push, pull
-        --client-id=VALUE            OAuth API client identifier in application
-        --client-secret=VALUE        OAuth API client passcode
+        --client-id=VALUE            OAuth API client identifier
+        --client-secret=VALUE        OAuth API client secret
         --redirect-uri=VALUE         OAuth API client redirect URI
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --scope=VALUE                OAuth scope for AoC API calls
@@ -3771,11 +3771,11 @@ ascli aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archiv
 Using shared inbox identifier: first retrieve the id of the shared inbox, and then list packages with the appropriate filter.
 
 ```bash
-shbxid=$(ascli aoc packages shared_inboxes show name 'My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
+shared_box_id=$(ascli aoc packages shared_inboxes show name 'My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
 ```
 
 ```javascript
-ascli aoc packages list --query=@json:'{"dropbox_id":"'$shbxid'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
+ascli aoc packages list --query=@json:'{"dropbox_id":"'$shared_box_id'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
 #### Example: Send a package with files from the Files app
@@ -4682,8 +4682,8 @@ ascli faspex package recv --link=faspe://...
 If the package is in a specific **dropbox**/**workgroup**, add option `recipient` for both the `list` and `recv` commands.
 
 ```bash
-ascli faspex package list --recipient='*thedropboxname'
-ascli faspex package recv 125 --recipient='*thedropboxname'
+ascli faspex package list --recipient='*dropbox_name'
+ascli faspex package recv 125 --recipient='*dropbox_name'
 ```
 
 if `id` is set to `ALL`, then all packages are downloaded, and if option `once_only`is used, then a persistency file is created to keep track of already downloaded packages.
@@ -4743,7 +4743,7 @@ my_faspex_conf:
   username: admin
   password: MyUserPassword
   storage:
-    testlaurent:
+    my_storage:
       node: "@preset:my_faspex_node"
       path: /mydir
 my_faspex_node:
@@ -4752,7 +4752,7 @@ my_faspex_node:
   password: MyNodePassword
 ```
 
-In this example, a faspex storage named `testlaurent` exists in Faspex, and is located
+In this example, a faspex storage named `my_storage` exists in Faspex, and is located
 under the docroot in `/mydir` (this must be the same as configured in Faspex).
 The node configuration name is "my_faspex_node" here.
 
