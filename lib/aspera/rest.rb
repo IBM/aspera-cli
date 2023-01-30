@@ -327,8 +327,8 @@ module Aspera
       return call({operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params})
     end
 
-    def delete(subpath)
-      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}})
+    def delete(subpath, args=nil)
+      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: args})
     end
 
     def cancel(subpath)

@@ -111,7 +111,7 @@ module Aspera
           parameters = options.get_option(:value, is_type: :mandatory)
         end
         # parameters optional for list
-        if [:list].include?(command)
+        if %i[list delete].include?(command)
           parameters = options.get_option(:value)
         end
         case command
@@ -122,7 +122,7 @@ module Aspera
           end
         when :delete
           return do_bulk_operation(one_res_id, 'deleted') do |one_id|
-            rest_api.delete("#{res_class_path}/#{one_id}")
+            rest_api.delete("#{res_class_path}/#{one_id}",parameters)
             {'id' => one_id}
           end
         when :show
