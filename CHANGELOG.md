@@ -1,5 +1,10 @@
 # Changes (Release notes)
 
+* 4.12.0
+
+  * new: generic `delete` operation supports option `value`
+  * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently.
+
 * 4.11.0
 
   * new: vault: secret finder, migration from config file
@@ -94,7 +99,7 @@
   * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
   * change: when using wss, use [ruby's CA certs](README.md#certificates)
   * change: unexpected parameter makes exit code not zero
-  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifer or name selection](README.md#res_select)
+  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifier or name selection](README.md#res_select)
   * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
   * change: (break): `orchestrator workflow status` requires id, and supports special id `ALL`
   * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
@@ -173,7 +178,7 @@
 
 * 0.11.8
 
-  * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb
+  * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb)
 
 * 0.11.7
 
@@ -411,19 +416,19 @@
 
 * 0.9.11
 
-  * Breaking change: @stdin is now @stdin:
+  * change: (break) @stdin is now @stdin:
   * support of ATS for IBM Cloud, removed old version based on aspera id
 
 * 0.9.10
 
-  * Breaking change: parameter transfer-node becomes more generic: transfer-info
+  * change: (break) parameter transfer-node becomes more generic: transfer-info
   * Display SaaS storage usage with command: aspera admin res node --id=nn info
   * cleaner way of specifying source file list for transfers
-  * Breaking change: replaced download_mode option with http_download action
+  * change: (break) replaced download_mode option with http_download action
 
 * 0.9.9
 
-  * Breaking change: "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
+  * change: (break) "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
   * Now supports "cargo" for Aspera on Cloud (automatic package download)
 
 * 0.9.8
@@ -441,7 +446,7 @@
 
 * 0.9.6
 
-  * Breaking change: `@param:`is now `@preset:` and is generic
+  * change: (break) `@param:`is now `@preset:` and is generic
   * AoC: added command to display current workspace information
 
 * 0.9.5
@@ -451,7 +456,7 @@
 
 * 0.9.4
 
-  * Breaking change: onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
+  * change: (break) onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
   * AoC Package send supports external users
   * new command to export AoC config to Aspera CLI config
 
@@ -462,15 +467,15 @@
   * modified transfer interface and allow token re-generation on error
   * async add admin command
   * async add db parameters
-  * Breaking change: new option "sources" to specify files to transfer
+  * change: (break) new option "sources" to specify files to transfer
 
 * 0.9.2
 
-  * Breaking change: changed AoC package creation to match API, see AoC section
+  * change: (break) changed AoC package creation to match API, see AoC section
 
 * 0.9.1
 
-  * Breaking change: changed faspex package creation to match API, see Faspex section
+  * change: (break) changed faspex package creation to match API, see Faspex section
 
 * 0.9
 
@@ -483,8 +488,8 @@
 
 * 0.7
 
-  * Breaking change: AoC package recv take option if for package instead of argument.
-  * Breaking change: Rest class and Oauth class changed init parameters
+  * change: (break) AoC package recv take option if for package instead of argument.
+  * change: (break) Rest class and Oauth class changed init parameters
   * AoC: receive package from public link
   * select by col value on output
   * added rename (AoC, node)
@@ -506,4 +511,4 @@
 
 * 0.6.15
 
-  * Breaking change: "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
+  * change: (break) "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".

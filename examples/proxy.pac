@@ -4,7 +4,7 @@ function FindProxyForURL(url, host) {
 	url = url.toLowerCase();
 	host = host.toLowerCase();
 
-	/* Don't proxy local hostnames */
+	/* Don't proxy local host names */
 	if (isPlainHostName(host)) {
 		return 'DIRECT';
 	}

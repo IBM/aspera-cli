@@ -461,7 +461,7 @@ module Aspera
         create_param['access_id'] = contact_info['source_id']
         create_param['tags']['aspera']['files']['workspace']['shared_with_name'] = contact_info['email']
       end
-      # optionnal
+      # optional
       app_info[:opt_link_name] = create_param.delete('link_name')
     end
 

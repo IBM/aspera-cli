@@ -11,13 +11,12 @@ module Aspera
   # Singleton object for logging
   class Log
     include Singleton
+    # where logs are sent to
+    LOG_TYPES = %i[stderr stdout syslog].freeze
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
       def levels; Logger::Severity.constants.sort{|a, b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym}; end
-
-      # where logs are sent to
-      def logtypes; %i[stderr stdout syslog]; end
 
       # get the logger object of singleton
       def log; instance.logger; end

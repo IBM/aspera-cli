@@ -59,8 +59,8 @@ module Aspera
           @cache_api_aoc = nil
           options.add_opt_list(:auth, Oauth::STD_AUTH_TYPES, 'OAuth type of authentication')
           options.add_opt_list(:operation, %i[push pull], 'client operation for transfers')
-          options.add_opt_simple(:client_id, 'OAuth API client identifier in application')
-          options.add_opt_simple(:client_secret, 'OAuth API client passcode')
+          options.add_opt_simple(:client_id, 'OAuth API client identifier')
+          options.add_opt_simple(:client_secret, 'OAuth API client secret')
           options.add_opt_simple(:redirect_uri, 'OAuth API client redirect URI')
           options.add_opt_simple(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.add_opt_simple(:scope, 'OAuth scope for AoC API calls')

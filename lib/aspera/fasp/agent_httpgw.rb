@@ -201,14 +201,14 @@ module Aspera
         # is normally provided by application, like package name
         if !transfer_spec.key?('download_name')
           # by default it is the name of first file
-          dname = File.basename(transfer_spec['paths'].first['source'])
+          download_name = File.basename(transfer_spec['paths'].first['source'])
           # we remove extension
-          dname = dname.gsub(/\.@gw_api.*$/, '')
+          download_name = download_name.gsub(/\.@gw_api.*$/, '')
           # ands add indication of number of files if there is more than one
           if transfer_spec['paths'].length > 1
-            dname += " #{transfer_spec['paths'].length} Files"
+            download_name += " #{transfer_spec['paths'].length} Files"
           end
-          transfer_spec['download_name'] = dname
+          transfer_spec['download_name'] = download_name
         end
         creation = @gw_api.create('v1/download', {'transfer_spec' => transfer_spec})[:data]
         transfer_uuid = creation['url'].split('/').last

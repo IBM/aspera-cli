@@ -203,7 +203,7 @@ module Aspera
         @opt_mgr.set_obj_attr(:cache_tokens, self, :option_cache_tokens)
         @opt_mgr.add_opt_list(:ui, OpenApplication.user_interfaces, 'method to start browser')
         @opt_mgr.add_opt_list(:log_level, Log.levels, 'Log level')
-        @opt_mgr.add_opt_list(:logger, Log.logtypes, 'log method')
+        @opt_mgr.add_opt_list(:logger, Log::LOG_TYPES, 'logging method')
         @opt_mgr.add_opt_simple(:lock_port, 'prevent dual execution of a command, e.g. in cron')
         @opt_mgr.add_opt_simple(:http_options, 'options for http socket (extended value)')
         @opt_mgr.add_opt_boolean(:insecure, 'do not validate HTTPS certificate')
