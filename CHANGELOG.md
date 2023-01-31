@@ -4,6 +4,7 @@
 
   * new: generic `delete` operation supports option `value`
   * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently.
+  * new: command `aoc packages recv` accepts option `query` to specify a shared inbox
 
 * 4.11.0
 

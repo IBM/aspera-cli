@@ -51,6 +51,7 @@ module Aspera
           client_access_key
           kms_profile].freeze
         ENTITY_NAME_SPECIFIER = 'name'
+        PACKAGE_QUERY_DEFAULT = {'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true}.freeze
 
         def initialize(env)
           super(env)
@@ -608,13 +609,17 @@ module Aspera
                                              current_workspace_info['id']].concat(aoc_api.additional_persistence_ids)))
               end
               if VAL_ALL.eql?(ids_to_download)
+                query = option_url_query(PACKAGE_QUERY_DEFAULT)
+                raise 'option query must be Hash' unless query.is_a?(Hash)
+                if query.key?('dropbox_name')
+                  # convenience: specify name instead of id
+                  raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
+                  query['dropbox_id'] = aoc_api.lookup_entity_by_name('dropboxes', query['dropbox_name'])['id']
+                  query.delete('dropbox_name')
+                end
+                query['workspace_id'] ||= current_workspace_info['id'] unless current_workspace_info['id'].eql?(:undefined)
                 # get list of packages in inbox
-                package_info = aoc_api.read('packages', {
-                  'archived'                 => false,
-                  'exclude_dropbox_packages' => true,
-                  'has_content'              => true,
-                  'received'                 => true,
-                  'workspace_id'             => current_workspace_info['id']})[:data]
+                package_info = aoc_api.read('packages', query)[:data]
                 # remove from list the ones already downloaded
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here
@@ -651,14 +656,14 @@ module Aspera
               return { type: :single_object, data: package_info }
             when :list
               display_fields = %w[id name bytes_transferred]
-              query = option_url_query({'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true})
+              query = option_url_query(PACKAGE_QUERY_DEFAULT)
+              raise 'option query must be Hash' unless query.is_a?(Hash)
               if query.key?('dropbox_name')
                 # convenience: specify name instead of id
                 raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
                 query['dropbox_id'] = aoc_api.lookup_entity_by_name('dropboxes', query['dropbox_name'])['id']
                 query.delete('dropbox_name')
               end
-              raise 'option must be Hash' unless query.is_a?(Hash)
               if current_workspace_info['id'].eql?(:undefined)
                 display_fields.push('workspace_id')
               else

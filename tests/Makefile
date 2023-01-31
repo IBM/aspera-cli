@@ -623,11 +623,13 @@ $(T)aocp8: $(T).exists
 	aoc_shbx_ws=$$($(EXE_NOMAN) config preset get misc aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	@touch $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) config preset get misc aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
 	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	set -x&&\
+	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
+	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 	@touch $@
 $(T)aocp9: $(T).exists
 	@echo $@

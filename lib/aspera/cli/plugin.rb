@@ -122,7 +122,7 @@ module Aspera
           end
         when :delete
           return do_bulk_operation(one_res_id, 'deleted') do |one_id|
-            rest_api.delete("#{res_class_path}/#{one_id}",parameters)
+            rest_api.delete("#{res_class_path}/#{one_id}", parameters)
             {'id' => one_id}
           end
         when :show
@@ -166,7 +166,8 @@ module Aspera
       # query for list operation
       def option_url_query(default)
         query = options.get_option(:query)
-        query = default if query.nil?
+        # dup default, as it could be frozen
+        query = default.dup if query.nil?
         Log.log.debug{"Query=#{query}".bg_red}
         begin
           # check it is suitable
