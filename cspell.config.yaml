@@ -154,6 +154,15 @@ ignoreWords:
   - demoserver # preset name
   - setx # cmd command
   - serban
+  - imgtag # env var for docker ascli
+  - loglevel # env var asession
+  - filelist # env var asession
+  - demoaspera
+  - transferspec # tag in doc
+  - usershome # tag in doc
+  - optst # tag in makefile
+  - bytescont # tag in progress bar
+  - progressbar # ruby gem
 import: []
 enableFiletypes:
   - shellscript

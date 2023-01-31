@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'aspera/fasp/listener'
-require 'ruby-progressbar'
 require 'aspera/environment'
+require 'ruby-progressbar'
 
 module Aspera
   module Cli

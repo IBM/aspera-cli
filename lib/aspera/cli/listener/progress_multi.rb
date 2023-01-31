@@ -45,8 +45,8 @@ module Aspera
             Log.log.error{"Internal error: no #{Fasp::AgentBase::LISTENER_SESSION_ID_S} in event: #{data}"}
             return
           end
-          newtitle = @sessions.length < 2 ? '' : "multi=#{@sessions.length}"
-          @progress_bar.title = newtitle unless @progress_bar.title.eql?(newtitle)
+          new_title = @sessions.length < 2 ? '' : "multi=#{@sessions.length}"
+          @progress_bar.title = new_title unless @progress_bar.title.eql?(new_title)
           session = @sessions[data[Fasp::AgentBase::LISTENER_SESSION_ID_S]] ||= {
             cumulative: 0,
             job_size:   0,

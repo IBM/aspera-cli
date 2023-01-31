@@ -15,9 +15,9 @@ TS_TMP_FILELIST_FOLDER = 'EX_file_list_folder'
 
 SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
 SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
-def assert_usage(assertion, errmsg)
+def assert_usage(assertion, error_message)
   return if assertion
-  $stderr.puts('ERROR: '.red.blink + errmsg) if errmsg
+  $stderr.puts('ERROR: '.red.blink + error_message) if error_message
   $stderr.puts('USAGE')
   $stderr.puts('    asession')
   $stderr.puts('    asession -h|--help')

@@ -14,7 +14,7 @@ add_dock_args=( $docker_args )
 # main config folder for ascli in container (same value as in `Dockerfile`)
 ascli_home_container=/home/cliuser/.aspera/ascli
 if test ! -d $ASCLI_HOME;then
-	echo "creating foder: $ASCLI_HOME"
+	echo "creating folder: $ASCLI_HOME"
 	# create it if necessary to allow mounting the volume in container
 	mkdir -p "$ASCLI_HOME"
 fi
