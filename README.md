@@ -2083,11 +2083,11 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 
 Parameters provided in option `transfer_info` are:
 
-| Name | Type | Description |
-|------|------|-------------|
-| url | string | URL of the HTTP GW</br>Mandatory |
-| upload_bar_refresh_sec | float | Refresh rate for upload progress bar |
-| upload_chunksize | int | Size in bytes of chunks for upload |
+| Name                   | Type   | Description                           |
+|------------------------|--------|---------------------------------------|
+| url                    | string | URL of the HTTP GW</br>Mandatory      |
+| upload_bar_refresh_sec | float  | Refresh rate for upload progress bar  |
+| upload_chunk_size      | int    | Size in bytes of chunks for upload    |
 
 Example:
 

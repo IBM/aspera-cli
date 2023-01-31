@@ -2040,11 +2040,11 @@ If it possible to send using a HTTP gateway, in case FASP is not allowed.
 
 Parameters provided in option `transfer_info` are:
 
-| Name | Type | Description |
-|------|------|-------------|
-| url | string | URL of the HTTP GW</br>Mandatory |
-| upload_bar_refresh_sec | float | Refresh rate for upload progress bar |
-| upload_chunksize | int | Size in bytes of chunks for upload |
+| Name                   | Type   | Description                           |
+|------------------------|--------|---------------------------------------|
+| url                    | string | URL of the HTTP GW</br>Mandatory      |
+| upload_bar_refresh_sec | float  | Refresh rate for upload progress bar  |
+| upload_chunk_size      | int    | Size in bytes of chunks for upload    |
 
 Example:
 
@@ -3264,7 +3264,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
   Then use the returned address for the `url` key to actually create the AoC Node entity:
 
   ```javascript
-  <%=cmd%> aoc admin res node create @json:'{"name":"myname","access_key":"*accesskeyid*","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
+  <%=cmd%> aoc admin res node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
   ```
 
 Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
@@ -3639,7 +3639,7 @@ Example: create access key on IBM Cloud (softlayer):
 Example: create access key on AWS:
 
 ```javascript
-<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"AKIA_MY_API_KEY","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
+<%=cmd%> ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
@@ -4216,7 +4216,7 @@ or using the IBM Cloud CLI:
 
 ```bash
 ibmcloud resource service-keys
-ibmcloud resource service-key aoclaurent --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
+ibmcloud resource service-key _service_key_name_here_ --output JSON|jq '.[0].credentials'>$HOME/service_creds.json
 ```
 
 (if you don't have `jq` installed, extract the structure as follows)
@@ -4945,7 +4945,10 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 ## History
 
-When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares). Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API. Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP. Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
+When I joined Aspera, there was only one CLI: `ascp`, which is the implementation of the FASP protocol, but there was no CLI to access the various existing products (Server, Faspex, Shares).
+Once, Serban (founder) provided a shell script able to create a Faspex Package using Faspex REST API.
+Since all products relate to file transfers using FASP (`ascp`), I thought it would be interesting to have a unified CLI for transfers using FASP.
+Also, because there was already the `ascp` tool, I thought of an extended tool : `eascp.pl` which was accepting all `ascp` options for transfer but was also able to transfer to Faspex and Shares (destination was a kind of URI for the applications).
 
 There were a few pitfalls:
 
@@ -4958,6 +4961,9 @@ So, it evolved into <%=tool%>:
 - easy to install with the `gem` utility
 - supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from `ascp` command line to <%=trspec%> (more reliable , more standard)
 - `ruby` is consistent with other Aspera products
+
+Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
+It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
 
 ## Common problems
 

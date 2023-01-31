@@ -83,7 +83,7 @@ module Aspera
       end
 
       # register a token creation method
-      # @param id creation type from field :crtype in constructor
+      # @param id creation type from field :grant_method in constructor
       # @param lambda_create called to create token
       # @param id_create called to generate unique id for token, for cache
       def register_token_creator(id, lambda_create, id_create)
@@ -94,7 +94,7 @@ module Aspera
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token creator type unknown: #{id}/#{id.class}" unless @create_handlers.key?(id)
+        raise "token grant method unknown: #{id}/#{id.class}" unless @create_handlers.key?(id)
         @create_handlers[id]
       end
 
@@ -174,7 +174,7 @@ module Aspera
     # [M]=mandatory [D]=has default value [0]=accept nil
     # :base_url            [M]  URL of authentication API
     # :auth
-    # :crtype              [M]  :generic, :web, :jwt, custom
+    # :grant_method        [M]  :generic, :web, :jwt, custom
     # :client_id           [0]
     # :client_secret       [0]
     # :scope               [0]
@@ -191,10 +191,10 @@ module Aspera
       # replace default values
       @generic_parameters = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       # check that type is known
-      self.class.token_creator(@generic_parameters[:crtype])
+      self.class.token_creator(@generic_parameters[:grant_method])
       # specific parameters for the creation type
-      @specific_parameters = @generic_parameters[@generic_parameters[:crtype]]
-      if @generic_parameters[:crtype].eql?(:web) && @specific_parameters.key?(:redirect_uri)
+      @specific_parameters = @generic_parameters[@generic_parameters[:grant_method]]
+      if @generic_parameters[:grant_method].eql?(:web) && @specific_parameters.key?(:redirect_uri)
         uri = URI.parse(@specific_parameters[:redirect_uri])
         raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
         raise 'redirect_uri must have a port' if uri.port.nil?
@@ -209,7 +209,7 @@ module Aspera
       # if needed use from api
       @generic_parameters.delete(:base_url)
       @generic_parameters.delete(:auth)
-      @generic_parameters.delete(@generic_parameters[:crtype])
+      @generic_parameters.delete(@generic_parameters[:grant_method])
       Log.dump(:generic_parameters, @generic_parameters)
       Log.dump(:specific_parameters, @specific_parameters)
     end
@@ -241,8 +241,8 @@ module Aspera
       token_id = IdGenerator.from_list([
         PERSIST_CATEGORY_TOKEN,
         @api.params[:base_url],
-        @generic_parameters[:crtype],
-        self.class.id_creator(@generic_parameters[:crtype]).call(self), # array, so we flatten later
+        @generic_parameters[:grant_method],
+        self.class.id_creator(@generic_parameters[:grant_method]).call(self), # array, so we flatten later
         @generic_parameters[:scope],
         @api.params.dig(%i[auth username])
       ].flatten)
@@ -295,7 +295,7 @@ module Aspera
 
       # no cache, nor refresh: generate a token
       if token_data.nil?
-        resp = self.class.token_creator(@generic_parameters[:crtype]).call(self)
+        resp = self.class.token_creator(@generic_parameters[:grant_method]).call(self)
         json_data = resp[:http].body
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id, json_data)

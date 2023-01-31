@@ -37,10 +37,10 @@ module Aspera
         not_auth_codes: %w[401 403], # error codes when not authorized
         headers:        {'ibm-service-instance-id' => instance_id},
         auth:           {
-          type:     :oauth2,
-          base_url: @auth_url,
-          crtype:   :generic,
-          generic:  {
+          type:         :oauth2,
+          base_url:     @auth_url,
+          grant_method: :generic,
+          generic:      {
             grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
             response_type: 'cloud_iam',
             apikey:        @api_key
@@ -74,11 +74,11 @@ module Aspera
     def generate_token
       # OAuth API to get delegated token
       delegated_oauth = Oauth.new({
-        type:        :oauth2,
-        base_url:    @auth_url,
-        token_field: TOKEN_FIELD,
-        crtype:      :generic,
-        generic:     {
+        type:         :oauth2,
+        base_url:     @auth_url,
+        token_field:  TOKEN_FIELD,
+        grant_method: :generic,
+        generic:      {
           grant_type:          'urn:ibm:params:oauth:grant-type:apikey',
           response_type:       'delegated_refresh_token',
           apikey:              @api_key,

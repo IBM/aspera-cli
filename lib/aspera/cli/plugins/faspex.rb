@@ -125,12 +125,12 @@ module Aspera
             @api_v4 = Rest.new({
               base_url: faspex_api_base + '/api',
               auth:     {
-                type:     :oauth2,
-                base_url: faspex_api_base + '/auth/oauth2',
-                auth:     {type: :basic, username: options.get_option(:username, is_type: :mandatory), password: options.get_option(:password, is_type: :mandatory)},
-                crtype:   :generic,
-                generic:  {grant_type: 'password'},
-                scope:    'admin'
+                type:         :oauth2,
+                base_url:     faspex_api_base + '/auth/oauth2',
+                auth:         {type: :basic, username: options.get_option(:username, is_type: :mandatory), password: options.get_option(:password, is_type: :mandatory)},
+                grant_method: :generic,
+                generic:      {grant_type: 'password'},
+                scope:        'admin'
               }})
           end
           return @api_v4

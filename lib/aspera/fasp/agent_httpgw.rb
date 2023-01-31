@@ -18,9 +18,10 @@ module Aspera
       # message returned by HTTP GW in case of success
       MSG_END_UPLOAD = 'end upload'
       MSG_END_SLICE = 'end_slice_upload'
+      # options available in CLI (transfer_info)
       DEFAULT_OPTIONS = {
         url:                    nil,
-        upload_chunksize:       64_000,
+        upload_chunk_size:      64_000,
         upload_bar_refresh_sec: 0.5
       }.freeze
       DEFAULT_BASE_PATH = '/aspera/http-gwy'
@@ -142,21 +143,21 @@ module Aspera
           file_size = item['file_size']
           file_name = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
           # compute total number of slices
-          numslices = ((file_size - 1) / @options[:upload_chunksize]) + 1
+          slice_total = ((file_size - 1) / @options[:upload_chunk_size]) + 1
           File.open(source_paths[file_index]) do |file|
             # current slice index
-            slicenum = 0
+            slice_index = 0
             until file.eof?
-              data = file.read(@options[:upload_chunksize])
+              data = file.read(@options[:upload_chunk_size])
               slice_data = {
                 name:         file_name,
                 type:         file_mime_type,
                 size:         file_size,
-                slice:        slicenum,
-                total_slices: numslices,
+                slice:        slice_index,
+                total_slices: slice_total,
                 fileIndex:    file_index
               }
-              # Log.dump(:slice_data,slice_data) #if slicenum.eql?(0)
+              # Log.dump(:slice_data,slice_data) #if slice_index.eql?(0)
               # interrupt main thread if read thread failed
               raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
               begin
@@ -164,22 +165,22 @@ module Aspera
                   slice_data[:data] = Base64.strict_encode64(data)
                   ws_snd_json(slice_upload: slice_data)
                 else
-                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(0)
+                  ws_snd_json(slice_upload: slice_data) if slice_index.eql?(0)
                   ws_send(data, type: :binary)
-                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slicenum}"}
-                  ws_snd_json(slice_upload: slice_data) if slicenum.eql?(numslices - 1)
+                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slice_index}"}
+                  ws_snd_json(slice_upload: slice_data) if slice_index.eql?(slice_total - 1)
                 end
               rescue Errno::EPIPE => e
                 raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
                 raise e
               end
               sent_bytes += data.length
-              currenttime = Time.now
-              if last_progress_time.nil? || ((currenttime - last_progress_time) > @options[:upload_bar_refresh_sec])
+              current_time = Time.now
+              if last_progress_time.nil? || ((current_time - last_progress_time) > @options[:upload_bar_refresh_sec])
                 notify_progress(session_id, sent_bytes)
-                last_progress_time = currenttime
+                last_progress_time = current_time
               end
-              slicenum += 1
+              slice_index += 1
             end
           end
           file_index += 1

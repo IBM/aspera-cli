@@ -122,7 +122,7 @@ module Aspera
             raise ArgumentError, 'link option must be URL with "token" parameter' if url_param_token_pair.nil?
             # ok we get it !
             a_opt[:url] = 'https://' + uri.host
-            a_auth[:crtype] = :aoc_pub_link
+            a_auth[:grant_method] = :aoc_pub_link
             a_auth[:aoc_pub_link] = {
               url:  {grant_type: 'url_token'}, # URL args
               json: {url_token: url_param_token_pair.last} # JSON body
@@ -162,7 +162,7 @@ module Aspera
       # shortcut to auth section
       aoc_auth_p = aoc_rest_p[:auth]
 
-      # sets opt[:url], aoc_rest_p[:auth][:crtype], [:auth][:aoc_pub_link] if there is a link
+      # sets opt[:url], aoc_rest_p[:auth][:grant_method], [:auth][:aoc_pub_link] if there is a link
       self.class.resolve_pub_link(aoc_auth_p, opt)
 
       # test here because link may set url
@@ -181,9 +181,9 @@ module Aspera
       aoc_auth_p[:scope] = opt[:scope]
 
       # filled if pub link
-      if !aoc_auth_p.key?(:crtype)
+      if !aoc_auth_p.key?(:grant_method)
         raise ArgumentError, 'Missing mandatory option: auth' if opt[:auth].nil?
-        aoc_auth_p[:crtype] = opt[:auth]
+        aoc_auth_p[:grant_method] = opt[:auth]
       end
 
       if aoc_auth_p[:client_id].nil?
@@ -191,7 +191,7 @@ module Aspera
       end
 
       # fill other auth parameters based on Oauth method
-      case aoc_auth_p[:crtype]
+      case aoc_auth_p[:grant_method]
       when :web
         raise ArgumentError, 'Missing mandatory option: redirect_uri' if opt[:redirect_uri].nil?
         aoc_auth_p[:web] = {redirect_uri: opt[:redirect_uri]}
@@ -211,13 +211,13 @@ module Aspera
       when :aoc_pub_link
         # basic auth required for /token
         aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
-      else raise "ERROR: unsupported auth method: #{aoc_auth_p[:crtype]}"
+      else raise "ERROR: unsupported auth method: #{aoc_auth_p[:grant_method]}"
       end
       super(aoc_rest_p)
     end
 
     def url_token_data
-      return nil unless params[:auth][:crtype].eql?(:aoc_pub_link)
+      return nil unless params[:auth][:grant_method].eql?(:aoc_pub_link)
       return @cache_url_token_info unless @cache_url_token_info.nil?
       # TODO: can there be several in list ?
       @cache_url_token_info = read('url_tokens')[:data].first

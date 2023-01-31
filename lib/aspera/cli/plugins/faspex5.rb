@@ -52,22 +52,22 @@ module Aspera
             @api_v5 = Rest.new({
               base_url: faspex5_api_v5_url,
               auth:     {
-                type:      :oauth2,
-                base_url:  @faspex5_api_auth_url,
-                crtype:    :web,
-                client_id: options.get_option(:client_id, is_type: :mandatory),
-                web:       {redirect_uri: options.get_option(:redirect_uri, is_type: :mandatory)}
+                type:         :oauth2,
+                base_url:     @faspex5_api_auth_url,
+                grant_method: :web,
+                client_id:    options.get_option(:client_id, is_type: :mandatory),
+                web:          {redirect_uri: options.get_option(:redirect_uri, is_type: :mandatory)}
               }})
           when :jwt
             app_client_id = options.get_option(:client_id, is_type: :mandatory)
             @api_v5 = Rest.new({
               base_url: faspex5_api_v5_url,
               auth:     {
-                type:      :oauth2,
-                base_url:  @faspex5_api_auth_url,
-                crtype:    :jwt,
-                client_id: app_client_id,
-                jwt:       {
+                type:         :oauth2,
+                base_url:     @faspex5_api_auth_url,
+                grant_method: :jwt,
+                client_id:    app_client_id,
+                jwt:          {
                   payload:         {
                     iss: app_client_id,    # issuer
                     aud: app_client_id,    # audience TODO: ???

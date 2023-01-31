@@ -382,22 +382,22 @@ module Aspera
               filter['limit'] ||= 100
               if options.get_option(:once_only, is_type: :mandatory)
                 saved_date = []
-                startdate_persistency = PersistencyActionOnce.new(
+                start_date_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: saved_date,
                   ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, is_type: :mandatory), current_workspace_info['name']].push(
                     filter_resource,
                     filter_id)))
-                start_datetime = saved_date.first
-                stop_datetime = Time.now.utc.strftime('%FT%T.%LZ')
-                # Log.log().error("start: #{start_datetime}")
-                # Log.log().error("end:   #{stop_datetime}")
-                saved_date[0] = stop_datetime
-                filter['start_time'] = start_datetime unless start_datetime.nil?
-                filter['stop_time'] = stop_datetime
+                start_date_time = saved_date.first
+                stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
+                # Log.log().error("start: #{start_date_time}")
+                # Log.log().error("end:   #{stop_date_time}")
+                saved_date[0] = stop_date_time
+                filter['start_time'] = start_date_time unless start_date_time.nil?
+                filter['stop_time'] = stop_date_time
               end
               events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", option_url_query(filter))[:data][event_type]
-              startdate_persistency&.save
+              start_date_persistency&.save
               if !options.get_option(:notif_to).nil?
                 events.each do |tr_event|
                   config.send_email_template(values: {ev: tr_event})

@@ -137,7 +137,23 @@ ignoreWords:
   - keychain
   - aslmcli
   - lprt
+  - tspec
+  - textify
+  - cltype
+  - clconvert
+  - clswitch
+  - readuntil
+  - apfid
+  - nodegen
+  - dropboxes
+  - paygo
+  - xmlsimple
+  - bfail # parameter
+  - pkeypath # parameter
+  - filelists # file part
+  - demoserver # preset name
+  - setx # cmd command
+  - serban
 import: []
 enableFiletypes:
-  - makefile
   - shellscript

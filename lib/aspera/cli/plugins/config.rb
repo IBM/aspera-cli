@@ -1284,7 +1284,7 @@ module Aspera
             formatter.display_status('We will use web authentication to bootstrap.')
             auto_set_pub_key = true
             auto_set_jwt = true
-            aoc_api.oauth.generic_parameters[:crtype] = :web
+            aoc_api.oauth.generic_parameters[:grant_method] = :web
             aoc_api.oauth.generic_parameters[:scope] = AoC::SCOPE_FILES_ADMIN
             aoc_api.oauth.specific_parameters[:redirect_uri] = DEFAULT_REDIRECT
           end

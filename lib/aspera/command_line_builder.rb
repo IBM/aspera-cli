@@ -135,10 +135,10 @@ module Aspera
         parameter_value = new_value
       when String
         # :clconvert has name of class and encoding method
-        convclass, convmethod = options[:clconvert].split('.')
-        newvalue = Kernel.const_get(convclass).send(convmethod, parameter_value)
-        raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}" if newvalue.nil?
-        parameter_value = newvalue
+        conversion_class, conversion_method = options[:clconvert].split('.')
+        converted_value = Kernel.const_get(conversion_class).send(conversion_method, parameter_value)
+        raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}" if converted_value.nil?
+        parameter_value = converted_value
       when NilClass
       else raise "not expected type for clconvert #{options[:clconvert].class} for #{param_name}"
       end

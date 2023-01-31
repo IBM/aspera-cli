@@ -162,10 +162,10 @@ module Aspera
 
         # get path arguments from command line, and add prefix
         def get_next_arg_add_prefix(path_prefix, name, number=:single)
-          thepath = options.get_next_argument(name, expected: number)
-          return thepath if path_prefix.nil?
-          return File.join(path_prefix, thepath) if thepath.is_a?(String)
-          return thepath.map {|p| File.join(path_prefix, p)} if thepath.is_a?(Array)
+          path_or_list = options.get_next_argument(name, expected: number)
+          return path_or_list if path_prefix.nil?
+          return File.join(path_prefix, path_or_list) if path_or_list.is_a?(String)
+          return path_or_list.map {|p| File.join(path_prefix, p)} if path_or_list.is_a?(Array)
           raise StandardError, 'expect: nil, String or Array'
         end
 
@@ -217,8 +217,7 @@ module Aspera
             resp = @api_node.create('files/rename', { 'paths' => [{ 'path' => path_base, 'source' => path_src, 'destination' => path_dst }] })
             return c_result_translate_rem_prefix(resp, 'entry', 'moved', prefix_path)
           when :browse
-            thepath = get_next_arg_add_prefix(prefix_path, 'path')
-            query = { path: thepath}
+            query = { path: get_next_arg_add_prefix(prefix_path, 'path')}
             additional_query = options.get_option(:query)
             query.merge!(additional_query) unless additional_query.nil?
             send_result = @api_node.create('files/browse', query)[:data]
@@ -392,8 +391,7 @@ module Aspera
             apifid = @api_node.resolve_api_fid(top_file_id, '')
             return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: apifid[:api])).execute_action(command_legacy)
           when :node_info, :bearer_token_node
-            thepath = options.get_next_argument('path')
-            apifid = @api_node.resolve_api_fid(top_file_id, thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             result = {
               url:     apifid[:api].params[:base_url],
               root_id: apifid[:file_id]
@@ -412,8 +410,7 @@ module Aspera
             raise 'not bearer token' unless result[:password].start_with?('Bearer ')
             return Main.result_status(result[:password])
           when :browse
-            thepath = options.get_next_argument('path')
-            apifid = @api_node.resolve_api_fid(top_file_id, thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             file_info = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
               result = apifid[:api].read("files/#{apifid[:file_id]}/files", options.get_option(:value))
@@ -424,26 +421,23 @@ module Aspera
             end
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
-            thepath = options.get_next_argument('path')
-            apifid = @api_node.resolve_api_fid(top_file_id, thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             test_block = Aspera::Node.file_matcher(options.get_option(:value))
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
-            thepath = options.get_next_argument('path')
-            containing_folder_path = thepath.split(Aspera::Node::PATH_SEPARATOR)
+            containing_folder_path = options.get_next_argument('path').split(Aspera::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
             apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Aspera::Node::PATH_SEPARATOR))
             result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
-            thepath = options.get_next_argument('source path')
+            file_path = options.get_next_argument('source path')
             newname = options.get_next_argument('new name')
-            apifid = @api_node.resolve_api_fid(top_file_id, thepath)
+            apifid = @api_node.resolve_api_fid(top_file_id, file_path)
             result = apifid[:api].update("files/#{apifid[:file_id]}", {name: newname})[:data]
-            return Main.result_status("renamed #{thepath} to #{newname}")
+            return Main.result_status("renamed #{file_path} to #{newname}")
           when :delete
-            thepath = options.get_next_argument('path')
-            return do_bulk_operation(thepath, 'deleted', id_result: 'path') do |l_path|
+            return do_bulk_operation(options.get_next_argument('path'), 'deleted', id_result: 'path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
               apifid = @api_node.resolve_api_fid(top_file_id, l_path)
               result = apifid[:api].delete("files/#{apifid[:file_id]}")[:data]
