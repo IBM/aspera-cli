@@ -55,9 +55,9 @@ module Aspera
       # check date if specified : 2015-10-13T07:32:01Z
       remote_time = DateTime.strptime(remote_date)
       diff_time = (remote_time - DateTime.now).abs
-      diff_disp = diff_time.round(-2)
-      Log.log.debug{"DATE: #{remote_date} #{remote_time} diff=#{diff_disp}"}
-      msg = "offset #{diff_disp} sec"
+      diff_rounded = diff_time.round(-2)
+      Log.log.debug{"DATE: #{remote_date} #{remote_time} diff=#{diff_rounded}"}
+      msg = "offset #{diff_rounded} sec"
       if diff_time >= DATE_CRIT_OFFSET
         add_critical(component, msg)
       elsif diff_time >= DATE_WARN_OFFSET
