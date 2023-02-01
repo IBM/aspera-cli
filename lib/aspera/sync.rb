@@ -10,48 +10,48 @@ module Aspera
   class Sync
     PARAMS_VX_INSTANCE =
       {
-        'alt_logdir'          => { cltype: :opt_with_arg, accepted_types: :string},
-        'watchd'              => { cltype: :opt_with_arg, accepted_types: :string},
-        'apply_local_docroot' => { cltype: :opt_without_arg},
-        'quiet'               => { cltype: :opt_without_arg},
-        'ws_connect'          => { cltype: :opt_without_arg}
+        'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'watchd'              => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'apply_local_docroot' => { cli: { type: :opt_without_arg}},
+        'quiet'               => { cli: { type: :opt_without_arg}},
+        'ws_connect'          => { cli: { type: :opt_without_arg}}
       }.freeze
 
     # map sync session parameters to transfer spec: sync -> ts, true if same
     PARAMS_VX_SESSION =
       {
-        'name'                       => { cltype: :opt_with_arg, accepted_types: :string},
-        'local_dir'                  => { cltype: :opt_with_arg, accepted_types: :string},
-        'remote_dir'                 => { cltype: :opt_with_arg, accepted_types: :string},
-        'local_db_dir'               => { cltype: :opt_with_arg, accepted_types: :string},
-        'remote_db_dir'              => { cltype: :opt_with_arg, accepted_types: :string},
-        'host'                       => { cltype: :opt_with_arg, accepted_types: :string, ts: :remote_host},
-        'user'                       => { cltype: :opt_with_arg, accepted_types: :string, ts: :remote_user},
-        'private_key_paths'          => { cltype: :opt_with_arg, accepted_types: :array, clswitch: '--private-key-path'},
-        'direction'                  => { cltype: :opt_with_arg, accepted_types: :string},
-        'checksum'                   => { cltype: :opt_with_arg, accepted_types: :string},
-        'tags'                       => { cltype: :opt_with_arg, accepted_types: :hash, ts: true,
-                                          clswitch: '--tags64', clconvert: 'Aspera::Fasp::Parameters.clconv_json64'},
-        'tcp_port'                   => { cltype: :opt_with_arg, accepted_types: :int, ts: :ssh_port},
-        'rate_policy'                => { cltype: :opt_with_arg, accepted_types: :string},
-        'target_rate'                => { cltype: :opt_with_arg, accepted_types: :string},
-        'cooloff'                    => { cltype: :opt_with_arg, accepted_types: :int},
-        'pending_max'                => { cltype: :opt_with_arg, accepted_types: :int},
-        'scan_intensity'             => { cltype: :opt_with_arg, accepted_types: :string},
-        'cipher'                     => { cltype: :opt_with_arg, accepted_types: :string, ts: true},
-        'transfer_threads'           => { cltype: :opt_with_arg, accepted_types: :int},
-        'preserve_time'              => { cltype: :opt_without_arg, ts: :preserve_times},
-        'preserve_access_time'       => { cltype: :opt_without_arg, ts: nil},
-        'preserve_modification_time' => { cltype: :opt_without_arg, ts: nil},
-        'preserve_uid'               => { cltype: :opt_without_arg, ts: :preserve_file_owner_uid},
-        'preserve_gid'               => { cltype: :opt_without_arg, ts: :preserve_file_owner_gid},
-        'create_dir'                 => { cltype: :opt_without_arg, ts: true},
-        'reset'                      => { cltype: :opt_without_arg},
+        'name'                       => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'local_dir'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'remote_dir'                 => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'local_db_dir'               => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'remote_db_dir'              => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'host'                       => { cli: { type: :opt_with_arg}, accepted_types: :string, ts: :remote_host},
+        'user'                       => { cli: { type: :opt_with_arg}, accepted_types: :string, ts: :remote_user},
+        'private_key_paths'          => { cli: { type: :opt_with_arg, switch: '--private-key-path'}, accepted_types: :array},
+        'direction'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'checksum'                   => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'tags'                       => { cli: { type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Fasp::Parameters.convert_json64'},
+                                          accepted_types: :hash, ts: true},
+        'tcp_port'                   => { cli: { type: :opt_with_arg}, accepted_types: :int, ts: :ssh_port},
+        'rate_policy'                => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'target_rate'                => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'cooloff'                    => { cli: { type: :opt_with_arg}, accepted_types: :int},
+        'pending_max'                => { cli: { type: :opt_with_arg}, accepted_types: :int},
+        'scan_intensity'             => { cli: { type: :opt_with_arg}, accepted_types: :string},
+        'cipher'                     => { cli: { type: :opt_with_arg}, accepted_types: :string, ts: true},
+        'transfer_threads'           => { cli: { type: :opt_with_arg}, accepted_types: :int},
+        'preserve_time'              => { cli: { type: :opt_without_arg}, ts: :preserve_times},
+        'preserve_access_time'       => { cli: { type: :opt_without_arg}, ts: nil},
+        'preserve_modification_time' => { cli: { type: :opt_without_arg}, ts: nil},
+        'preserve_uid'               => { cli: { type: :opt_without_arg}, ts: :preserve_file_owner_uid},
+        'preserve_gid'               => { cli: { type: :opt_without_arg}, ts: :preserve_file_owner_gid},
+        'create_dir'                 => { cli: { type: :opt_without_arg}, ts: true},
+        'reset'                      => { cli: { type: :opt_without_arg}},
         # NOTE: only one env var, but multiple sessions... could be a problem
-        'remote_password'            => { cltype: :envvar, clvarname: 'ASPERA_SCP_PASS', ts: true},
-        'cookie'                     => { cltype: :envvar, clvarname: 'ASPERA_SCP_COOKIE', ts: true},
-        'token'                      => { cltype: :envvar, clvarname: 'ASPERA_SCP_TOKEN', ts: true},
-        'license'                    => { cltype: :envvar, clvarname: 'ASPERA_SCP_LICENSE'}
+        'remote_password'            => { cli: { type: :envvar, variable: 'ASPERA_SCP_PASS'}, ts: true},
+        'cookie'                     => { cli: { type: :envvar, variable: 'ASPERA_SCP_COOKIE'}, ts: true},
+        'token'                      => { cli: { type: :envvar, variable: 'ASPERA_SCP_TOKEN'}, ts: true},
+        'license'                    => { cli: { type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
       }.freeze
 
     Aspera::CommandLineBuilder.normalize_description(PARAMS_VX_INSTANCE)
@@ -59,6 +59,7 @@ module Aspera
 
     PARAMS_VX_KEYS = %w[instance sessions].freeze
 
+    # new API
     TS_TO_PARAMS = {
       'remote_host'     => 'remote.host',
       'remote_user'     => 'remote.user',

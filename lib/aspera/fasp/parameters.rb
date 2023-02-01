@@ -40,34 +40,34 @@ module Aspera
         # @return a table suitable to display in manual
         def man_table(to_text: true)
           result = []
-          description.each do |k, i|
-            param = {name: k, type: [i[:accepted_types]].flatten.join(','), description: i[:desc]}
+          description.each do |name, options|
+            param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
             # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |a|
-              param[a.to_s[0].to_sym] = i[:tragents].nil? || i[:tragents].include?(a) ? 'Y' : ''
+              param[a.to_s[0].to_sym] = options[:agents].nil? || options[:agents].include?(a) ? 'Y' : ''
             end
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m, j|m && param[j].empty?}
             param[:cli] =
-              case i[:cltype]
-              when :envvar then 'env:' + i[:clvarname]
-              when :opt_without_arg then i[:clswitch]
+              case options[:cli][:type]
+              when :envvar then 'env:' + options[:cli][:variable]
+              when :opt_without_arg then options[:cli][:switch]
               when :opt_with_arg
-                values = if i.key?(:enum)
+                values = if options.key?(:enum)
                   ['enum']
-                elsif i[:accepted_types].is_a?(Array)
-                  i[:accepted_types]
-                elsif !i[:accepted_types].nil?
-                  [i[:accepted_types]]
+                elsif options[:accepted_types].is_a?(Array)
+                  options[:accepted_types]
+                elsif !options[:accepted_types].nil?
+                  [options[:accepted_types]]
                 else
                   raise "error: #{param}"
                 end.map{|n|"{#{n}}"}.join('|')
-                conv = i.key?(:clconvert) ? '(conversion)' : ''
-                "#{i[:clswitch]} #{conv}#{values}"
+                conv = options[:cli].key?(:convert) ? '(conversion)' : ''
+                "#{options[:cli][:switch]} #{conv}#{values}"
               else ''
               end
-            if i.key?(:enum)
-              param[:description] += "\nAllowed values: #{i[:enum].join(', ')}"
+            if options.key?(:enum)
+              param[:description] += "\nAllowed values: #{options[:enum].join(', ')}"
             end
             param[:description] = param[:description].gsub('&sol;', '/') if to_text
             result.push(param)
@@ -75,14 +75,14 @@ module Aspera
           return result
         end
 
-        # special encoding methods used in YAML (key: :clconvert)
-        def clconv_remove_hyphen(v); v.tr('-', ''); end
+        # special encoding methods used in YAML (key: :convert)
+        def convert_remove_hyphen(v); v.tr('-', ''); end
 
-        # special encoding methods used in YAML (key: :clconvert)
-        def clconv_json64(v); Base64.strict_encode64(JSON.generate(v)); end
+        # special encoding methods used in YAML (key: :convert)
+        def convert_json64(v); Base64.strict_encode64(JSON.generate(v)); end
 
-        # special encoding methods used in YAML (key: :clconvert)
-        def clconv_base64(v); Base64.strict_encode64(v); end
+        # special encoding methods used in YAML (key: :convert)
+        def convert_base64(v); Base64.strict_encode64(v); end
 
         # file list is provided directly with ascp arguments
         def ts_has_ascp_file_list(ts)
@@ -121,15 +121,15 @@ module Aspera
         # set if paths is mandatory in ts
         @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided
         # get paths in transfer spec (after setting if it is mandatory)
-        ts_paths_array = @builder.process_param('paths', :get_value)
+        ts_paths_array = @builder.read_param('paths')
         if ascp_file_list_provided && !ts_paths_array.nil?
           raise 'file list provided both in transfer spec and ascp file list. Remove one of them.'
         end
         # option 1: EX_file_list
-        file_list_file = @builder.process_param('EX_file_list', :get_value)
+        file_list_file = @builder.read_param('EX_file_list')
         if file_list_file.nil?
           # option 2: EX_file_pair_list
-          file_list_file = @builder.process_param('EX_file_pair_list', :get_value)
+          file_list_file = @builder.read_param('EX_file_pair_list')
           if !file_list_file.nil?
             option = '--file-pair-list'
           elsif !ts_paths_array.nil?
@@ -140,7 +140,7 @@ module Aspera
               @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
             else
               # safer option: generate a file list file if there is storage defined for it
-              # if there is destination in paths, then use filepairlist
+              # if there is destination in paths, then use file-pair-list
               # TODO: well, we test only the first one, but anyway it shall be consistent
               if ts_paths_array.first.key?('destination')
                 option = '--file-pair-list'
@@ -179,12 +179,12 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.process_param('wss_enabled', :get_value) && (@options[:wss] || !@job_spec.key?('fasp_port'))
+        if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
-          # quel bordel:
-          @job_spec['ssh_port'] = @builder.process_param('wss_port', :get_value)
+          # This will need to be cleaned up in aspera core
+          @job_spec['ssh_port'] = @builder.read_param('wss_port')
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
@@ -200,7 +200,7 @@ module Aspera
         @builder.process_params
 
         # symbol must be index of Installation.paths
-        if @builder.process_param('use_ascp4', :get_value)
+        if @builder.read_param('use_ascp4')
           env_args[:ascp_version] = :ascp4
         else
           env_args[:ascp_version] = :ascp
@@ -210,9 +210,9 @@ module Aspera
         # get list of files to transfer and build arg for ascp
         process_file_list
         # optional args, at the end to override previous ones (to allow override)
-        @builder.add_command_line_options(@builder.process_param('EX_ascp_args', :get_value))
+        @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
         # process destination folder
-        destination_folder = @builder.process_param('destination_root', :get_value) || '/'
+        destination_folder = @builder.read_param('destination_root') || '/'
         # ascp4 does not support base64 encoding of destination
         destination_folder = Base64.strict_encode64(destination_folder) unless env_args[:ascp_version].eql?(:ascp4)
         # destination MUST be last command line argument to ascp

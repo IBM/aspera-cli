@@ -40,12 +40,14 @@ module Aspera
           end
         end
 
+        # spellchecker: disable
         # SOAP API call to test central API
         CENTRAL_SOAP_API_TEST = '<?xml version="1.0" encoding="UTF-8"?>'\
           '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types">'\
           '<soapenv:Header></soapenv:Header>'\
           '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
           '</soapenv:Envelope>'
+        # spellchecker: enable
 
         # fields removed in result of search
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
@@ -88,8 +90,8 @@ module Aspera
               Aspera::Node.new(params: {
                 base_url: options.get_option(:url, is_type: :mandatory),
                 headers:  {
-                  Aspera::Node::X_ASPERA_ACCESSKEY => options.get_option(:username, is_type: :mandatory),
-                  'Authorization'                  => options.get_option(:password, is_type: :mandatory)
+                  Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => options.get_option(:username, is_type: :mandatory),
+                  'Authorization'                          => options.get_option(:password, is_type: :mandatory)
                 }
               })
             else
@@ -141,10 +143,10 @@ module Aspera
         end
 
         # translates paths results into CLI result, and removes prefix
-        def c_result_translate_rem_prefix(resp, type, success_msg, path_prefix)
+        def c_result_translate_rem_prefix(response, type, success_msg, path_prefix)
           errors = []
           resres = { data: [], type: :object_list, fields: [type, 'result']}
-          JSON.parse(resp[:http].body)['paths'].each do |p|
+          JSON.parse(response[:http].body)['paths'].each do |p|
             result = success_msg
             if p.key?('error')
               Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
@@ -402,7 +404,7 @@ module Aspera
               result[:username] = apifid[:api].params[:auth][:username]
               result[:password] = apifid[:api].params[:auth][:password]
             when :oauth2
-              result[:username] = apifid[:api].params[:headers][Aspera::Node::X_ASPERA_ACCESSKEY]
+              result[:username] = apifid[:api].params[:headers][Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY]
               result[:password] = apifid[:api].oauth_token
             else raise 'unknown'
             end
@@ -622,16 +624,14 @@ module Aspera
               resp = @api_node.create('streams', options.get_option(:value, is_type: :mandatory))
               return { type: :single_object, data: resp[:data] }
             when :show
-              trid = options.get_next_argument('transfer id')
-              resp = @api_node.read('ops/transfers/' + trid)
+              resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
               return { type: :other_struct, data: resp[:data] }
             when :modify
               trid = options.get_next_argument('transfer id')
               resp = @api_node.update('streams/' + trid, options.get_option(:value, is_type: :mandatory))
               return { type: :other_struct, data: resp[:data] }
             when :cancel
-              trid = options.get_next_argument('transfer id')
-              resp = @api_node.cancel('streams/' + trid)
+              resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
               return { type: :other_struct, data: resp[:data] }
             else
               raise 'error'

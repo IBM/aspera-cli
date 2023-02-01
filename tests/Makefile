@@ -26,7 +26,7 @@ TIMESTAMP=$(shell LANG=C date)
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_NOMAN" when the command is not needed in documentation
-EXE_NOMAN=$(EXE_MAN)
+EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
@@ -117,14 +117,14 @@ $(T)serv_mkdir: $(T).exists
 	@touch $@
 $(T)serv_error: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	-$(EXE_NOMAN) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
 	@echo 'Note: error is expected'
-	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}'
+	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' > /dev/null 2>&1
 	@echo 'Note: error is expected'
 	-$(EXE_NOMAN) server -N --url=local:// ls .
 	-$(EXE_NOMAN) server -N --url=foo:// ls .
-	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}'
-	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}'
+	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
+	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
 	@echo 'Note: error is expected'
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 

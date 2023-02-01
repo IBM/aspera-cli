@@ -139,9 +139,6 @@ ignoreWords:
   - lprt
   - tspec
   - textify
-  - cltype
-  - clconvert
-  - clswitch
   - readuntil
   - apfid
   - nodegen
@@ -163,6 +160,23 @@ ignoreWords:
   - optst # tag in makefile
   - bytescont # tag in progress bar
   - progressbar # ruby gem
+  - trustpolicy # aws API
+  - unshift # ruby
+  - ibmaspera # AoC
+  - asperafiles # AoC
+  - csum # ascp arg
+  - metafile # ascp arg
+  - xattr # ascp arg
+  - xattrs # ascp arg
+  - datagram
+  - asperanoded
+  - sshfp # ascp
+  - dnat # ascp
+  - dnats # ascp
+  - protobuf
+  - entsrv
+  - precalc
+  - keepalive
 import: []
 enableFiletypes:
   - shellscript

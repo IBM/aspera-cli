@@ -6,8 +6,14 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # parameter with one of those tags is an ascp command line option with --
-    CLTYPE_OPTIONS = %i[opt_without_arg opt_with_arg].freeze
+    # parameter with one of those tags is a command line option with --
+    CLI_OPTION_TYPE_SWITCH = %i[opt_without_arg opt_with_arg].freeze
+    CLI_OPTION_TYPES = %i[special ignore envvar].concat(CLI_OPTION_TYPE_SWITCH).freeze
+    OPTIONS_KEYS = %i[desc accepted_types default enum agents required cli ts].freeze
+    CLI_KEYS = %i[type switch convert variable].freeze
+
+    private_constant :CLI_OPTION_TYPE_SWITCH, :OPTIONS_KEYS, :CLI_KEYS
+
     class << self
       # transform yes/no to true/false
       def yes_to_true(value)
@@ -19,35 +25,32 @@ module Aspera
       end
 
       # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
-      def normalize_description(d)
-        d.each do |param_name, options|
-          raise "Expecting Hash, but have #{options.class} in #{param_name}" unless options.is_a?(Hash)
-          # options[:accepted_types]=:bool if options[:cltype].eql?(:envvar) and !options.has_key?(:accepted_types)
-          # by default : not mandatory
+      def normalize_description(full_description)
+        full_description.each do |name, options|
+          raise "Expecting Hash, but have #{options.class} in #{name}" unless options.is_a?(Hash)
+          unsupported_keys = options.keys - OPTIONS_KEYS
+          raise "Unsupported definition keys: #{unsupported_keys}" unless unsupported_keys.empty?
+          raise "Missing key: cli for #{name}" unless options.key?(:cli)
+          raise 'Key: cli must be Hash' unless options[:cli].is_a?(Hash)
+          raise 'Missing key: cli.type' unless options[:cli].key?(:type)
+          raise "Unsupported processing type for #{name}: #{options[:cli][:type]}" unless CLI_OPTION_TYPES.include?(options[:cli][:type])
+          # by default : optional
           options[:mandatory] ||= false
           options[:desc] ||= ''
+          cli = options[:cli]
+          unsupported_cli_keys = cli.keys - CLI_KEYS
+          raise "Unsupported cli keys: #{unsupported_cli_keys}" unless unsupported_cli_keys.empty?
           # by default : string, unless it's without arg
-          if !options.key?(:accepted_types)
-            options[:accepted_types] = options[:cltype].eql?(:opt_without_arg) ? :bool : :string
-          end
+          options[:accepted_types] ||= options[:cli][:type].eql?(:opt_without_arg) ? :bool : :string
           # single type is placed in array
           options[:accepted_types] = [options[:accepted_types]] unless options[:accepted_types].is_a?(Array)
           # add default switch name if not present
-          if !options.key?(:clswitch) && options.key?(:cltype) && CLTYPE_OPTIONS.include?(options[:cltype])
-            options[:clswitch] = '--' + param_name.to_s.tr('_', '-')
+          if !cli.key?(:switch) && cli.key?(:type) && CLI_OPTION_TYPE_SWITCH.include?(cli[:type])
+            cli[:switch] = '--' + name.to_s.tr('_', '-')
           end
         end
       end
-  end
-
-    private
-
-    # clvarname : command line variable name
-    def env_name(_param_name, options)
-      return options[:clvarname]
     end
-
-    public
 
     attr_reader :params_definition
 
@@ -60,22 +63,19 @@ module Aspera
       @used_param_names = []
     end
 
-    def warn_unrecognized_params
-      # warn about non translated arguments
-      @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
-    end
-
     # adds keys :env :args with resulting values after processing
     # warns if some parameters were not used
     def add_env_args(env, args)
       Log.log.debug{"ENV=#{@result_env}, ARGS=#{@result_args}"}
-      warn_unrecognized_params
+      # warn about non translated arguments
+      @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
+      # set result
       env.merge!(@result_env)
       args.push(*@result_args)
       return nil
     end
 
-    # add options directly to ascp command line
+    # add options directly to command line
     def add_command_line_options(options)
       return if options.nil?
       options.each{|o|@result_args.push(o.to_s)}
@@ -87,88 +87,92 @@ module Aspera
       end
     end
 
+    def read_param(name)
+      return process_param(name, read: true)
+    end
+
+    private
+
     # Process a parameter from transfer specification and generate command line param or env var
-    # @param param_name : key in transfer spec
-    # @param action : type of processing: ignore getvalue envvar opt_without_arg opt_with_arg defer
-    # @param options : options for type
-    def process_param(param_name, action=nil)
-      options = @params_definition[param_name]
+    # @param name [String] of parameter
+    # @param read [bool] read and return value of parameter instead of normal processing (for special)
+    def process_param(name, read: false)
+      options = @params_definition[name]
       # should not happen
       if options.nil?
-        Log.log.warn{"Unknown parameter #{param_name}"}
+        Log.log.warn{"Unknown parameter #{name}"}
         return
       end
-      action = options[:cltype] if action.nil?
+      processing_type = read ? :get_value : options[:cli][:type]
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error, "Missing mandatory parameter: #{param_name}" if options[:mandatory] && !@param_hash.key?(param_name)
-      parameter_value = @param_hash[param_name]
-
+      raise Fasp::Error, "Missing mandatory parameter: #{name}" if options[:mandatory] && !@param_hash.key?(name)
+      parameter_value = @param_hash[name]
+      # no default setting
       # parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
-
       # Check parameter type
-      expected_classes = options[:accepted_types].map do |s|
-        case s
+      expected_classes = options[:accepted_types].map do |type_symbol|
+        case type_symbol
         when :string then String
         when :array then Array
         when :hash then Hash
         when :int then Integer
         when :bool then [TrueClass, FalseClass]
-        else raise "INTERNAL: unexpected value: #{s}"
+        else raise "INTERNAL: unexpected value: #{type_symbol}"
         end
       end.flatten
-      raise Fasp::Error, "#{param_name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " \
+      # check that value is of expected type
+      raise Fasp::Error, "#{name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " \
         unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
-      @used_param_names.push(param_name) unless action.eql?(:defer)
+      # special processing will be requested with type get_value
+      @used_param_names.push(name) unless processing_type.eql?(:special)
 
       # process only non-nil values
       return nil if parameter_value.nil?
 
       # check that value is of an accepted type (string, int bool)
-      raise "Value #{parameter_value} is not allowed for #{param_name}" if options.key?(:enum) && !options[:enum].include?(parameter_value)
+      raise "Enum value #{parameter_value} is not allowed for #{name}" if options.key?(:enum) && !options[:enum].include?(parameter_value)
 
       # convert some values if value on command line needs processing from value in structure
-      case options[:clconvert]
+      case options[:cli][:convert]
       when Hash
         # translate using conversion table
-        new_value = options[:clconvert][parameter_value]
-        raise "unsupported value: #{parameter_value}, expect: #{options[:clconvert].keys.join(', ')}" if new_value.nil?
+        new_value = options[:cli][:convert][parameter_value]
+        raise "unsupported value: #{parameter_value}, expect: #{options[:cli][:convert].keys.join(', ')}" if new_value.nil?
         parameter_value = new_value
       when String
-        # :clconvert has name of class and encoding method
-        conversion_class, conversion_method = options[:clconvert].split('.')
+        # :convert has name of class and encoding method
+        conversion_class, conversion_method = options[:cli][:convert].split('.')
         converted_value = Kernel.const_get(conversion_class).send(conversion_method, parameter_value)
-        raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}" if converted_value.nil?
+        raise Fasp::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
         parameter_value = converted_value
       when NilClass
-      else raise "not expected type for clconvert #{options[:clconvert].class} for #{param_name}"
+      else raise "not expected type for convert #{options[:cli][:convert].class} for #{name}"
       end
 
-      case action
-      when :ignore, :defer # ignore this parameter or process later
-        return
-      when :get_value # just get value
+      case processing_type
+      when :get_value # just get value (deferred)
         return parameter_value
+      when :ignore, :special # ignore this parameter or process later
+        return
       when :envvar # set in env var
-        # define ascp parameter in env var from transfer spec
-        @result_env[env_name(param_name, options)] = parameter_value
+        raise 'error' unless options[:cli].key?(:variable)
+        @result_env[options[:cli][:variable]] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
         add_param = false
         case parameter_value
         when false then nil # nothing to put on command line, no creation by default
         when true then add_param = true
-        else raise Fasp::Error, "unsupported #{param_name}: #{parameter_value}"
+        else raise Fasp::Error, "unsupported #{name}: #{parameter_value}"
         end
         add_param = !add_param if options[:add_on_false]
-        add_command_line_options([options[:clswitch]]) if add_param
+        add_command_line_options([options[:cli][:switch]]) if add_param
       when :opt_with_arg # transform into command line option with value
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{|v|add_command_line_options([options[:clswitch], v])}
-      when NilClass
-        Log.log.debug{"Ignoring parameter: #{param_name}"}
+        parameter_value.each{|v|add_command_line_options([options[:cli][:switch], v])}
       else
-        raise "ERROR: unknown action: #{action}/#{action.class}"
+        raise "ERROR: unknown option processing type: #{processing_type}/#{processing_type.class}"
       end
     end
   end

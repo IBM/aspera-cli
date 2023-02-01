@@ -220,23 +220,23 @@ module Aspera
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
-          pkgdatares = api_public_link.call({
+          package_creation_data = api_public_link.call({
             operation:   'POST',
             subpath:     create_path,
             json_params: package_create_params,
             headers:     {'Accept' => 'text/javascript'}})[:http].body
           # get args of function call
-          pkgdatares.delete!("\n") # one line
-          pkgdatares.gsub!(/^[^"]+\("\{/, '{') # delete header
-          pkgdatares.gsub!(/"\);[^"]+$/, '"') # delete trailer
-          pkgdatares.gsub!(/\}", *"/, '},"') # between two args
-          pkgdatares.gsub!('\\"', '"') # remove protecting quote
+          package_creation_data.delete!("\n") # one line
+          package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
+          package_creation_data.gsub!(/"\);[^"]+$/, '"') # delete trailer
+          package_creation_data.gsub!(/\}", *"/, '},"') # between two args
+          package_creation_data.gsub!('\\"', '"') # remove protecting quote
           begin
-            pkgdatares = JSON.parse("[#{pkgdatares}]")
+            package_creation_data = JSON.parse("[#{package_creation_data}]")
           rescue JSON::ParserError # => e
             raise 'Unexpected response: missing metadata ?'
           end
-          return pkgdatares.first
+          return package_creation_data.first
         end
 
         ACTIONS = %i[health package source me dropbox v4 address_book login_methods].freeze
@@ -348,16 +348,16 @@ module Aspera
                 end
                 # NOTE: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new({base_url: link_data[:base_url]})
-                pkgdatares = api_public_link.call(
+                package_creation_data = api_public_link.call(
                   operation: 'GET',
                   subpath: link_data[:subpath],
                   url_params: {passcode: link_data[:query]['passcode']},
                   headers: {'Accept' => 'application/xml'})
-                if !pkgdatares[:http].body.start_with?('<?xml ')
+                if !package_creation_data[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
                   raise CliError, 'Unexpected response: package not found ?'
                 end
-                package_entry = XmlSimple.xml_in(pkgdatares[:http].body, {'ForceArray' => false})
+                package_entry = XmlSimple.xml_in(package_creation_data[:http].body, {'ForceArray' => false})
                 Log.dump(:package_entry, package_entry)
                 transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
                 pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]

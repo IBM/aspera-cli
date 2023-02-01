@@ -15,7 +15,7 @@ module Aspera
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter
     MATCH_EXEC_PREFIX = 'exec:'
-    X_ASPERA_ACCESSKEY = 'X-Aspera-AccessKey'
+    HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
     PATH_SEPARATOR = '/'
 
     # register node special token decoder
@@ -201,7 +201,7 @@ module Aspera
       when :basic
         ak_name = params[:auth][:username]
       when :oauth2
-        ak_name = params[:headers][X_ASPERA_ACCESSKEY]
+        ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
         ak_token = token_generation_lambda.call(false) # first time, use cache
         @app_info[:plugin].transfer.token_regenerator = token_generation_lambda unless @app_info.nil?

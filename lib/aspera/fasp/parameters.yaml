@@ -1,13 +1,13 @@
-# desc      : description
+# desc           : description
 # accepted_types : accepted types for non-enum
-# default   : default value if not specified
-# enum      : set with list of values for enum types accepted in transfer spec
-# tragents  : supported agents (for doc only)
-# required  : optional, default: false
-# cltype    : ascp: type of parameter: :opt_with_arg,:opt_without_arg,:envvar,:defer,:ignore,
-# clswitch  : ascp: switch for ascp command line
-# clconvert : ascp: transform value: either a Hash with conversion values, or name of class
-# clvarname : ascp: name of env var
+# default        : default value if not specified
+# enum           : set with list of values for enum types accepted in transfer spec
+# agents         : supported agents (for doc only)
+# required       : optional, default: false
+# cli.type       : ascp: type of parameter, one of CLI_OPTION_TYPES
+# cli.switch     : ascp: switch for ascp command line
+# cli.convert    : ascp: transform value: either a Hash with conversion values, or name of class
+# cli.variable   : ascp: name of env var
 ---
 cipher:
   :desc: "In transit encryption type."
@@ -23,31 +23,36 @@ cipher:
   - aes-192-gcm
   - aes-256-gcm
   :default: none
-  :cltype: :opt_with_arg
-  :clswitch: "-c"
-  :clconvert: Aspera::Fasp::Parameters.clconv_remove_hyphen
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-c"
+    :convert: Aspera::Fasp::Parameters.convert_remove_hyphen
 content_protection:
   :desc: Enable client-side encryption at rest. (CSEAR, content protection)
   :enum:
   - encrypt
   - decrypt
-  :cltype: :opt_with_arg
-  :clswitch: "--file-crypt"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--file-crypt"
 content_protection_password:
   :desc: "Specifies CSEAR password. (content protection)"
   :accepted_types: :string
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_FILEPASS
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_FILEPASS
 cookie:
   :desc: Metadata for transfer specified by application
   :accepted_types: :string
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_COOKIE
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_COOKIE
 create_dir:
   :desc: Specifies whether to create new directories.
   :accepted_types: :bool
-  :cltype: :opt_without_arg
-  :clswitch: "-d"
+  :cli:
+    :type: :opt_without_arg
+    :switch: "-d"
 delete_before_transfer:
   :desc: |-
     Before transfer, delete files that exist at the destination but not at the source.
@@ -56,54 +61,62 @@ delete_before_transfer:
     on the source are not deleted.
 
 
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 delete_source: # duplicate of remove_after_transfer ?
   :desc: Remove SRC files after transfer success
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :node
   - :direct
-  :cltype: :opt_without_arg
-  :clswitch: "--remove-after-transfer"
+  :cli:
+    :type: :opt_without_arg
+    :switch: "--remove-after-transfer"
 destination_root:
   :desc: Destination root directory.
   :required: true
-  :cltype: :defer
+  :cli:
+    :type: :special
 destination_root_id:
   :desc: The file ID of the destination root directory. Required when using Bearer token auth for the destination node.
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 direction:
   :desc: 'Direction of transfer (on client side)'
   :required: true
   :enum:
   - send
   - receive
-  :cltype: :opt_with_arg
-  :clswitch: "--mode"
-  :clconvert:
-    receive: recv
-    send: send
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--mode"
+    :convert:
+      receive: recv
+      send: send
 exclude_newer_than:
   :desc: skip src files with mtime > arg
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 exclude_older_than:
   :desc: skip src files with mtime < arg
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 fasp_port:
   :desc: Specifies fasp (UDP) port.
   :accepted_types: :int
   :default: 33001
-  :cltype: :opt_with_arg
-  :clswitch: "-O"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-O"
 file_checksum:
   :desc: "Enable checksum reporting for transferred files by specifying the hash to use."
   :enum:
@@ -114,41 +127,46 @@ file_checksum:
   - md5
   - none
   :default: none
-  :tragents:
+  :agents:
   - :sdk
   - :node
   - :direct
-  :cltype: :ignore
-  :clswitch: "--checksum-type"
+  :cli:
+    :type: :ignore
+    :switch: "--checksum-type"
 http_fallback:
   :desc: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
   :accepted_types:
   - :bool
   - :string
-  :cltype: :opt_with_arg
-  :clswitch: "-y"
-  :clconvert:
-    force: F
-    true: 1
-    false: 0
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-y"
+    :convert:
+      force: F
+      true: 1
+      false: 0
 http_fallback_port:
   :desc: Specifies http port when no cipher is used
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
-  :clswitch: "-t"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-t"
 https_fallback_port:
   :desc: Specifies https port when cipher is used
   :accepted_types: :int
-  :cltype: :opt_with_arg
-  :clswitch: "-t"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-t"
 move_after_transfer:
   :desc: The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.
-  :cltype: :opt_with_arg
-  :tragents:
+  :agents:
   - :direct
   - :node
+  :cli:
+    :type: :opt_with_arg
 multi_session:
   :desc: |
     Use multi-session transfer. max 128.
@@ -157,8 +175,9 @@ multi_session:
 
 
   :accepted_types: :int
-  :cltype: :ignore
-  :clswitch: "-C"
+  :cli:
+    :type: :ignore
+    :switch: "-C"
 multi_session_threshold:
   :desc: |-
     Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.
@@ -166,10 +185,11 @@ multi_session_threshold:
 
 
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :direct
   - :node
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 overwrite:
   :desc: "Overwrite destination files with the source files of the same name."
   :default: diff
@@ -179,7 +199,8 @@ overwrite:
   - diff
   - older
   - diff+older
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 password:
   :desc: |-
     Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.
@@ -189,26 +210,33 @@ password:
 
   :required: false
   :accepted_types: :string
-  :cltype: :ignore
-  :tragents:
+  :agents:
   - :node
+  :cli:
+    :type: :ignore
 paths:
   :desc: Array of path to the source (required) and a path to the destination (optional).
   :required: true
   :accepted_types: :array
-  :cltype: :defer
+  :cli:
+    :type: :special
 precalculate_job_size:
-  :cltype: :opt_without_arg
-  :accepted_types: :bool
   :desc: Specifies whether to precalculate the job size.
+  :accepted_types: :bool
+  :cli:
+    :type: :opt_without_arg
 preserve_access_time:
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 preserve_creation_time:
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 preserve_modification_time:
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 preserve_times:
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 rate_policy:
   :desc: The transfer rate policy to use when sharing bandwidth.
   :enum:
@@ -216,51 +244,59 @@ rate_policy:
   - fair
   - high
   - fixed
-  :cltype: :opt_with_arg
-  :clswitch: "--policy"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--policy"
 remote_access_key:
   :desc: The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 remote_host:
   :desc: IP or fully qualified domain name of the remote server
   :required: true
-  :cltype: :opt_with_arg
-  :clswitch: "--host"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--host"
 remote_user:
   :desc: Remote user. Default value is "xfer" on node or connect.
   :required: true
-  :cltype: :opt_with_arg
-  :clswitch: "--user"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--user"
 remote_password:
   :desc: SSH session password
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_PASS
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_PASS
 remove_after_transfer:
   :desc: Remove SRC files after transfer success
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :direct
   - :node
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 remove_empty_directories:
   :desc: Specifies whether to remove empty directories.
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :direct
   - :node
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 remove_skipped:
   :desc: Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :direct
   - :connect
   - :sdk
   - :node
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 proxy:
   :desc: |-
     Specify the address of the Aspera high-speed proxy server.
@@ -269,10 +305,11 @@ proxy:
     Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
 
 
-  :tragents:
+  :agents:
   - :direct
   - :sdk
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 resume_policy:
   :desc: If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.
   :default: faspmgr:none;other:sparse_csum
@@ -281,35 +318,39 @@ resume_policy:
   - attrs
   - sparse_csum
   - full_csum
-  :cltype: :opt_with_arg
-  :clswitch: "-k"
-  :clconvert:
-    none: 0
-    attrs: 1
-    sparse_csum: 2
-    full_csum: 3
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-k"
+    :convert:
+      none: 0
+      attrs: 1
+      sparse_csum: 2
+      full_csum: 3
 retry_duration:
   :desc: Specifies how long to wait before retrying transfer. (e.g. "5min")
   :accepted_types:
   - :string
   - :int
-  :tragents:
+  :agents:
   - :node
   - :connect
   - :sdk
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 source_root_id:
   :desc: The file ID of the source root directory. Required when using Bearer token auth for the source node.
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
   - :node
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 ssh_port:
   :desc: "Specifies SSH (TCP) port. Default: local:22, other:33001"
   :accepted_types: :int
-  :cltype: :opt_with_arg
-  :clswitch: "-P"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-P"
 ssh_private_key:
   :desc: |-
     Private key used for SSH authentication.
@@ -317,25 +358,28 @@ ssh_private_key:
     Note the JSON encoding: &sol;n for newlines.
 
 
-  :tragents:
+  :agents:
   - :direct
   - :sdk
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_KEY
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_KEY
 ssh_private_key_passphrase:
   :desc: The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
   - :direct
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_PASS
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_PASS
 ssh_args:
   :desc: Array of arguments to pass to SSH. Use with caution.
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 symlink_policy:
   :desc: "Handle source side symbolic links"
   :enum:
@@ -344,77 +388,92 @@ symlink_policy:
   - copy+force
   - skip
   :default: follow
-  :cltype: :opt_with_arg
-  :clswitch: "--symbolic-links"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--symbolic-links"
 tags:
   :desc: Metadata for transfer as JSON
   :accepted_types: :hash
-  :cltype: :opt_with_arg
-  :clswitch: "--tags64"
-  :clconvert: Aspera::Fasp::Parameters.clconv_json64
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--tags64"
+    :convert: Aspera::Fasp::Parameters.convert_json64
 target_rate_cap_kbps:
   :desc: Returned by upload/download_setup node API.
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :connect
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 target_rate_kbps:
   :desc: Specifies desired speed for the transfer.
   :accepted_types: :int
-  :cltype: :opt_with_arg
-  :clswitch: "-l"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-l"
 title:
   :desc: Title of the transfer
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :node
   - :connect
   - :sdk
+  :cli:
+    :type: :ignore
 token:
   :desc: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_TOKEN
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_TOKEN
 use_ascp4:
   :desc: specify version of protocol
   :accepted_types: :bool
   :default: false
-  :tragents:
+  :agents:
   - :direct
   - :node
   - :sdk
-  :cltype: :defer
+  :cli:
+    :type: :special
 use_system_ssh:
   :accepted_types: :string
-  :tragents:
+  :agents:
   - :sdk
-  :cltype: :ignore
-  :clswitch: "-SSH"
+  :cli:
+    :type: :ignore
+    :switch: "-SSH"
 source_root:
   :desc: |-
     Path to be prepended to each source path.
     This is either a conventional path or it can be a URI but only if there is no root defined.
 
 
-  :cltype: :opt_with_arg
-  :clswitch: "--source-prefix64"
-  :clconvert: Aspera::Fasp::Parameters.clconv_base64
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--source-prefix64"
+    :convert: Aspera::Fasp::Parameters.convert_base64
 min_rate_cap_kbps:
   :accepted_types: :int
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 lock_rate_policy:
   :accepted_types: :bool
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 lock_target_rate_kbps:
   :accepted_types: :bool
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 lock_min_rate_kbps:
-  :cltype: :ignore
   :accepted_types: :bool
+  :cli:
+    :type: :ignore
 apply_local_docroot:
-  :tragents:
+  :agents:
   - :direct
   - :sdk
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 src_base:
   :desc: |-
     Specify the prefix to be stripped off from each source object.
@@ -422,13 +481,14 @@ src_base:
     Special care must be taken when used with cloud storage.
 
 
-  :tragents:
+  :agents:
   - :direct
   - :node
   - :sdk
-  :cltype: :opt_with_arg
-  :clswitch: "--src-base64"
-  :clconvert: Aspera::Fasp::Parameters.clconv_base64
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--src-base64"
+    :convert: Aspera::Fasp::Parameters.convert_base64
 preserve_acls:
   :desc: "Preserve access control lists."
   :enum:
@@ -436,10 +496,11 @@ preserve_acls:
   - native
   - metafile
   :default: none
-  :tragents:
+  :agents:
   - :direct
   - :sdk
-  :cltype: :opt_with_arg
+  :cli:
+    :type: :opt_with_arg
 preserve_remote_acls:
   :desc: "Preserve remote access control lists."
   :enum:
@@ -447,25 +508,28 @@ preserve_remote_acls:
   - native
   - metafile
   :default: none
-  :tragents:
+  :agents:
   - :sdk
   - :direct
-  :cltype: :opt_with_arg
-  :clswitch: "--remote-preserve-acls"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--remote-preserve-acls"
 preserve_file_owner_uid:
   :desc: Preserve the user ID for a file owner
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :sdk
   - :direct
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 preserve_file_owner_gid:
   :desc: Preserve the group ID for a file owner
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :sdk
   - :direct
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 preserve_extended_attrs:
   :desc: "Preserve the extended attributes."
   :enum:
@@ -473,100 +537,116 @@ preserve_extended_attrs:
   - native
   - metafile
   :default: none
-  :tragents:
+  :agents:
   - :sdk
-  :cltype: :opt_with_arg
-  :clswitch: "--preserve-xattrs"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--preserve-xattrs"
 preserve_source_access_time:
   :desc: Preserve the time logged for when the source file was accessed
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :sdk
   - :direct
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 remove_empty_source_directory:
   :desc: "Remove empty source subdirectories and remove the source directory itself, if empty"
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :direct
   - :sdk
-  :cltype: :opt_without_arg
+  :cli:
+    :type: :opt_without_arg
 EX_at_rest_password:
   :desc: "DEPRECATED: Prefer to use standard parameter: content_protection_password"
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_FILEPASS
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_FILEPASS
 EX_proxy_password:
   :desc: |-
     Password used for Aspera proxy server authentication.
     May be overridden by password in URL EX_fasp_proxy_url.
 
 
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :envvar
-  :clvarname: ASPERA_PROXY_PASS
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_PROXY_PASS
 EX_license_text:
   :desc: "License file text override.\nBy default ascp looks for license file near executable."
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :envvar
-  :clvarname: ASPERA_SCP_LICENSE
+  :cli:
+    :type: :envvar
+    :variable: ASPERA_SCP_LICENSE
 keepalive:
-  :cltype: :opt_without_arg
-  :tragents:
+  :agents:
   - :none
+  :cli:
+    :type: :opt_without_arg
 dgram_size:
   :desc: UDP datagram size in bytes
   :accepted_types: :int
-  :cltype: :opt_with_arg
-  :clswitch: "-Z"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-Z"
 min_rate_kbps:
   :desc: Set the minimum transfer rate in kilobits per second.
   :accepted_types: :int
   :default: 0
-  :cltype: :opt_with_arg
-  :clswitch: "-m"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-m"
 sshfp:
   :desc: Check it against server SSH host key fingerprint
-  :cltype: :opt_with_arg
-  :clswitch: "--check-sshfp"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "--check-sshfp"
 EX_http_proxy_url:
   :desc: Specify the proxy server address used by HTTP Fallback
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
-  :clswitch: "-x"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-x"
 EX_ssh_key_paths:
   :desc: Use public key authentication for SSH and specify the private key file paths
   :accepted_types: :array
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
-  :clswitch: "-i"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-i"
 EX_http_transfer_jpeg:
   :desc: HTTP transfers as JPEG file
   :accepted_types: :int
   :default: '0'
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_with_arg
-  :clswitch: "-j"
+  :cli:
+    :type: :opt_with_arg
+    :switch: "-j"
 EX_no_read:
   :desc: no read source
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_without_arg
-  :clswitch: "--no-read"
+  :cli:
+    :type: :opt_without_arg
+    :switch: "--no-read"
 EX_no_write:
   :desc: no write on destination
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :opt_without_arg
-  :clswitch: "--no-write"
+  :cli:
+    :type: :opt_without_arg
+    :switch: "--no-write"
 target_rate_percentage:
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 rate_policy_allowed:
   :desc: "Specifies most aggressive rate policy that is allowed.\nReturned by node API."
   :enum:
@@ -574,69 +654,88 @@ rate_policy_allowed:
   - fair
   - high
   - fixed
-  :tragents:
+  :agents:
   - :connect
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 fasp_url:
-  :tragents:
+  :agents:
   - :unknown
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 lock_min_rate:
   :accepted_types: :bool
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 lock_target_rate:
   :accepted_types: :bool
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 authentication:
   :desc: 'value=token for SSH bypass keys, else password asked if not provided.'
-  :cltype: :ignore
-  :tragents:
+  :agents:
   - :connect
+  :cli:
+    :type: :ignore
 cipher_allowed:
   :desc: returned by node API. Valid literals include "aes-128" and "none".
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 obfuscate_file_names:
   :accepted_types: :bool
-  :tragents:
+  :agents:
   - :unknown
-  :cltype: :ignore
+  :cli:
+    :type: :ignore
 EX_file_list:
   :desc: source file list
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :defer
-  :clswitch: "--file-list"
+  :cli:
+    :type: :special
+    :switch: "--file-list"
 EX_file_pair_list:
   :desc: source file pair list
-  :tragents:
+  :agents:
   - :direct
-  :cltype: :defer
-  :clswitch: "--file-pair-list"
+  :cli:
+    :type: :special
+    :switch: "--file-pair-list"
 EX_ascp_args:
   :desc: Add native command line arguments to ascp
-  :cltype: :defer
   :accepted_types: :array
-  :tragents:
+  :agents:
   - :direct
+  :cli:
+    :type: :special
 wss_enabled:
-  :cltype: :defer
+  :desc: Server has Web Socket service enabled
   :accepted_types: :bool
+  :cli:
+    :type: :special
 wss_port:
-  :desc: TCP port used for websocket service feed.
+  :desc: TCP port used for websocket service feed
   :accepted_types: :int
-  :cltype: :defer
+  :cli:
+    :type: :special
 compression:
   :desc: ascp4 only, 0 / 1?
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :unknown
+  :cli:
+    :type: :ignore
 read_threads:
-  :accepted_types: :int
-  :tragents:
-  - :unknown
   :desc: ascp4 only
+  :accepted_types: :int
+  :agents:
+  - :unknown
+  :cli:
+    :type: :ignore
 write_threads:
   :desc: ascp4 only
   :accepted_types: :int
-  :tragents:
+  :agents:
   - :unknown
+  :cli:
+    :type: :ignore

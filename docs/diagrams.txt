@@ -4,46 +4,41 @@ mde with:  https://www.websequencediagrams.com/
 
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-title general Aspera Files APIs use
-Client->+Files API: GET authorization(parameters)
-Files API-->-Client: Result=Bearer token
-Client-->Files API: use APIs with Authorization=Bearer
+title general Aspera AoC APIs use
+Client->+AoC API: GET authorization(parameters)
+AoC API-->-Client: Result=Bearer token
+Client-->AoC API: use APIs with Authorization=Bearer
 
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 title basic OAuth with grant_type=password (username/password, only local users, not google, SAML)
-Client->+Files API: GET authorization(username/password)
-Files API-->-Client: Result=Bearer token
-Client-->Files API: use APIs with Authorization=Bearer
+Client->+AoC API: GET authorization(username/password)
+AoC API-->-Client: Result=Bearer token
+Client-->AoC API: use APIs with Authorization=Bearer
 
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 title OAuth with grant_type=code (any user: local users, google, SAML)
 note right of Client
-    * Client is registered in "Files", with redirect_uri
-    * Files generates client_id and secret
-    * Listen on "redirect_uri" end point (TCP port)
-    * build "login address" for user:
-    api.asperafiles.com/oauth2/<org>/authorize
-    * open a browser for user with this URL
+    * Client is registered in Aspera on Cloud, with redirect_uri
+    * AoC generates client_id and client_secret
+    * Client listens on "redirect_uri" end point (TCP port)
+    * Build "login address" for user:
+    api.ibmaspera.com/oauth2/<org>/authorize
+    * and open a browser for user with this URL
 end note
 Client->*Local Port: listen
 Client->Browser: open login url in browser (give redirect_uri and scope)
-Browser->Files: load login page
+Browser->AoC API: load login page (portal)
 note right of Browser: user clicks on "google auth"
-Browser->+Google: display google login page
+Browser->+SSO(IBMid): display google login page
 note right of Browser: user authenticates
-Google-->-Browser: browser is redirected to the "redirect URI" providing a "code"
+SSO(IBMid)-->-Browser: browser is redirected to the "redirect URI" providing a "code"
 Browser->Local Port: browser provides code to client
 Local Port-->Client: read code
 Client->Local Port: close
 destroy Local Port
 note right of Client: close listening port after use
-Client->+Files: GET oauth/token(grant_type=code)
-Files-->-Client: Bearer token
-Client-->Files API: use APIs with Authorization=Bearer
-
-
-
-
-
+Client->+AoC API: GET oauth/token(grant_type=code)
+AoC API-->-Client: Bearer token
+Client-->AoC API: use APIs with Authorization=Bearer

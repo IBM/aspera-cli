@@ -23,8 +23,8 @@ module Aspera
         rest_params = { base_url: options[:url]}
         if /^Bearer /.match?(options[:password])
           rest_params[:headers] = {
-            Aspera::Node::X_ASPERA_ACCESSKEY => options[:username],
-            'Authorization'                  => options[:password]
+            Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => options[:username],
+            'Authorization'                          => options[:password]
           }
           raise 'root_id is required for access key' if @root_id.nil?
         else
@@ -96,8 +96,8 @@ module Aspera
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
-          trdata = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(read error)'}
-          case trdata['status']
+          transfer_data = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(read error)'}
+          case transfer_data['status']
           when 'completed'
             notify_end(@transfer_id)
             break
@@ -106,21 +106,19 @@ module Aspera
               spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
               spinner.start
             end
-            spinner.update(title: trdata['status'])
+            spinner.update(title: transfer_data['status'])
             spinner.spin
-            # puts trdata
           when 'running'
-            # puts "running: sessions:#{trdata["sessions"].length}, #{trdata["sessions"].map{|i| i['bytes_transferred']}.join(',')}"
-            if !started && trdata['precalc'].is_a?(Hash) &&
-                trdata['precalc']['status'].eql?('ready')
-              notify_begin(@transfer_id, trdata['precalc']['bytes_expected'])
+            if !started && transfer_data['precalc'].is_a?(Hash) &&
+                transfer_data['precalc']['status'].eql?('ready')
+              notify_begin(@transfer_id, transfer_data['precalc']['bytes_expected'])
               started = true
             else
-              notify_progress(@transfer_id, trdata['bytes_transferred'])
+              notify_progress(@transfer_id, transfer_data['bytes_transferred'])
             end
           else
-            Log.log.warn{"trdata -> #{trdata}"}
-            raise Fasp::Error, "#{trdata['status']}: #{trdata['error_desc']}"
+            Log.log.warn{"transfer_data -> #{transfer_data}"}
+            raise Fasp::Error, "#{transfer_data['status']}: #{transfer_data['error_desc']}"
           end
           sleep(1)
         end

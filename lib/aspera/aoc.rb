@@ -270,7 +270,7 @@ module Aspera
         node_rest_params[:auth] = params[:auth].clone
         node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
         # special header required for bearer token only
-        node_rest_params[:headers] = {Aspera::Node::X_ASPERA_ACCESSKEY => node_info['access_key']}
+        node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
       end
       app_info = {
         plugin:    plugin,
@@ -311,9 +311,7 @@ module Aspera
         pkg_data['recipients'].first.is_a?(Hash) &&
         pkg_data['recipients'].first.key?('type') &&
         pkg_data['recipients'].first['type'].eql?('dropbox')
-
-      shbx_kid = pkg_data['recipients'].first['id']
-      meta_schema = read("dropboxes/#{shbx_kid}")[:data]['metadata_schema']
+      meta_schema = read("dropboxes/#{pkg_data['recipients'].first['id']}")[:data]['metadata_schema']
       if meta_schema.nil? || meta_schema.empty?
         Log.log.debug('no metadata in shared inbox')
         return
