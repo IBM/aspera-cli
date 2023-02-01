@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # set env var image to specify another docker image
-: ${image:=martinlaurent/ascli}
+: "${image:=martinlaurent/ascli}"
 # set env var version to specify another image version (default: latest version)
-: ${version:=latest}
+: "${version:=latest}"
 # set env var imgtag to specify a specific image/version
-: ${imgtag=$image:$version}
+: "${imgtag=$image:$version}"
 # set env var `docker` to podman, to use podman
-: ${docker:=docker}
+: "${docker:=docker}"
 # set env var docker_args to add options to docker run (transform var into array)
-add_dock_args=( $docker_args )
+read -a add_dock_args <<< $docker_args
 # set env var ASCLI_HOME to set the config folder on host
-: ${ASCLI_HOME:=$HOME/.aspera/ascli}
+: "${ASCLI_HOME:=$HOME/.aspera/ascli}"
 # main config folder for ascli in container (same value as in `Dockerfile`)
 ascli_home_container=/home/cliuser/.aspera/ascli
-if test ! -d $ASCLI_HOME;then
+if test ! -d "$ASCLI_HOME";then
 	echo "creating folder: $ASCLI_HOME"
 	# create it if necessary to allow mounting the volume in container
 	mkdir -p "$ASCLI_HOME"
