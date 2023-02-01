@@ -2253,8 +2253,8 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 | title | string | &nbsp; | Y | Y | Title of the transfer |
 | token | string | Y | Y | Y | Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN) |
 | use_ascp4 | bool | Y | Y | &nbsp; | specify version of protocol |
-| wss_enabled | bool | Y | Y | Y | &nbsp; |
-| wss_port | int | Y | Y | Y | TCP port used for websocket service feed. |
+| wss_enabled | bool | Y | Y | Y | Server has Web Socket service enabled |
+| wss_port | int | Y | Y | Y | TCP port used for websocket service feed |
 
 #### Destination folder for transfers
 

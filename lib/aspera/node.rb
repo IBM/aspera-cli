@@ -30,7 +30,7 @@ module Aspera
       # for access keys: provide expression to match entry in folder
       # if no prefix: regex
       # if prefix: ruby code
-      # if filder is nil, then always match
+      # if expression is nil, then always match
       def file_matcher(match_expression)
         match_expression ||= "#{MATCH_EXEC_PREFIX}true"
         if match_expression.start_with?(MATCH_EXEC_PREFIX)
@@ -86,29 +86,29 @@ module Aspera
     def process_folder_tree(state:, method:, top_file_id:, top_file_path: '/')
       raise 'INTERNAL ERROR: top_file_path not set' if top_file_path.nil?
       raise "INTERNAL ERROR: Missing method #{method}" unless respond_to?(method)
-      folders_to_explore = [{id: top_file_id, relpath: top_file_path}]
+      folders_to_explore = [{id: top_file_id, path: top_file_path}]
       Log.dump(:folders_to_explore, folders_to_explore)
       until folders_to_explore.empty?
         current_item = folders_to_explore.shift
-        Log.log.debug{"searching #{current_item[:relpath]}".bg_green}
+        Log.log.debug{"searching #{current_item[:path]}".bg_green}
         # get folder content
         folder_contents =
           begin
             read("files/#{current_item[:id]}/files")[:data]
           rescue StandardError => e
-            Log.log.warn{"#{current_item[:relpath]}: #{e.class} #{e.message}"}
+            Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
             []
           end
         Log.dump(:folder_contents, folder_contents)
         folder_contents.each do |entry|
-          relative_path = File.join(current_item[:relpath], entry['name'])
+          relative_path = File.join(current_item[:path], entry['name'])
           Log.log.debug{"looking #{relative_path}".bg_green}
           # continue only if method returns true
           next unless send(method, entry, relative_path, state)
           # entry type is file, folder or link
           case entry['type']
           when 'folder'
-            folders_to_explore.push({id: entry['id'], relpath: relative_path})
+            folders_to_explore.push({id: entry['id'], path: relative_path})
           when 'link'
             node_id_to_node(entry['target_node_id'])&.process_folder_tree(
               state:         state,

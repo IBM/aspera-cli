@@ -177,6 +177,7 @@ ignoreWords:
   - entsrv
   - precalc
   - keepalive
+  - transferd # ascli id
 import: []
 enableFiletypes:
   - shellscript
