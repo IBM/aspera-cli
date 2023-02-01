@@ -52,18 +52,18 @@ module Aspera
           end
 
           # extract elements from anonymous faspex link
-          def get_link_data(publink)
-            publink_uri = URI.parse(publink)
-            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = publink_uri.path.match(%r{^(.*)/(external.*)$}))
+          def get_link_data(public_url)
+            public_uri = URI.parse(public_url)
+            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = public_uri.path.match(%r{^(.*)/(external.*)$}))
             base = m[1]
             subpath = m[2]
-            port_add = publink_uri.port.eql?(publink_uri.default_port) ? '' : ":#{publink_uri.port}"
+            port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
             result = {
-              base_url: "#{publink_uri.scheme}://#{publink_uri.host}#{port_add}#{base}",
+              base_url: "#{public_uri.scheme}://#{public_uri.host}#{port_add}#{base}",
               subpath:  subpath,
-              query:    URI.decode_www_form(publink_uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
+              query:    URI.decode_www_form(public_uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
             }
-            Log.dump('publink', result)
+            Log.dump('link data', result)
             return result
           end
 
@@ -205,7 +205,7 @@ module Aspera
         end
 
         # retrieve transfer spec from pub link for send package
-        def send_publink_to_ts(public_link_url, package_create_params)
+        def send_public_link_to_ts(public_link_url, package_create_params)
           delivery_info = package_create_params['delivery']
           # pub link user
           link_data = self.class.get_link_data(public_link_url)
@@ -294,8 +294,8 @@ module Aspera
                 transfer_spec = pkg_created['xfer_sessions'].first
                 # use source from cmd line, this one only contains destination (already in dest root)
                 transfer_spec.delete('paths')
-              else # publink
-                transfer_spec = send_publink_to_ts(public_link_url, package_create_params)
+              else # public link
+                transfer_spec = send_public_link_to_ts(public_link_url, package_create_params)
               end
               # Log.dump('transfer_spec',transfer_spec)
               return Main.result_transfer(transfer.start(transfer_spec))
