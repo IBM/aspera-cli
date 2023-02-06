@@ -5,6 +5,7 @@ require 'aspera/cli/plugins/node'
 module Aspera
   module Cli
     module Plugins
+      # Plugin for Aspera Shares v1
       class Shares < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
@@ -121,29 +122,12 @@ module Aspera
               end
             when :share
               share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
-              # all_shares = api_shares_admin.read('data/shares')[:data]
               case share_command
               when *Plugin::ALL_OPS
                 return entity_command(share_command, api_shares_admin, 'data/shares')
                 # return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
               when :user_permissions, :group_permissions
-                share_id = instance_identifier
-                permission_path = "data/shares/#{share_id}/#{share_command}"
-                case options.get_next_command(%i[list show create modify delete])
-                when :list
-                  return {type: :object_list, data: api_shares_admin.read(permission_path)[:data]}
-                when :create
-                  parameters = options.get_option(:value)
-                  return {type: :single_object, data: api_shares_admin.create(permission_path, parameters)[:data]}
-                when :show
-                  return {type: :single_object, data: api_shares_admin.read("#{permission_path}/#{instance_identifier}")[:data]}
-                when :modify
-                  parameters = options.get_option(:value)
-                  return {type: :single_object, data: api_shares_admin.create("#{permission_path}/#{instance_identifier}", parameters)[:data]}
-                when :delete
-                  parameters = options.get_option(:value)
-                  return {type: :single_object, data: api_shares_admin.delete("#{permission_path}/#{instance_identifier}", parameters)[:data]}
-                end
+                return entity_action(api_shares_admin, "data/shares/#{instance_identifier}/#{share_command}")
               end
             end
           end

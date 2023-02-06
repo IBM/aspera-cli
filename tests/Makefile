@@ -75,13 +75,14 @@ $(T)sh_nagios: $(T).exists
 $(T)shadm: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares admin node list
+	$(EXE_MAN) shares admin group list
 	$(EXE_MAN) shares admin user list
 	$(EXE_MAN) shares admin user app_authorizations 1 show
 	$(EXE_MAN) shares admin user app_authorizations 1 modify --value=@json:'{"app_login":true}'
 	$(EXE_MAN) shares admin user share_permissions 1 list
 	$(EXE_MAN) shares admin user share_permissions 1 show 1
-	$(EXE_MAN) shares admin user import --user-type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
-	-$(EXE_MAN) shares admin user add --user-type=ldap --value=the_name
+	$(EXE_MAN) shares admin user import --type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
+	-$(EXE_MAN) shares admin user add --type=ldap --value=the_name
 	$(EXE_MAN) shares admin share list --fields=-status,status_message
 	$(EXE_MAN) shares admin share user_permissions 1 list
 	@touch $@

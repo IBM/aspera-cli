@@ -4818,13 +4818,14 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 ### Shares 1 sample commands
 
 ```bash
+shares admin group list
 shares admin node list
 shares admin share list --fields=-status,status_message
 shares admin share user_permissions 1 list
-shares admin user add --user-type=ldap --value=the_name
+shares admin user add --type=ldap --value=the_name
 shares admin user app_authorizations 1 modify --value=@json:'{"app_login":true}'
 shares admin user app_authorizations 1 show
-shares admin user import --user-type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
+shares admin user import --type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
 shares admin user list
 shares admin user share_permissions 1 list
 shares admin user share_permissions 1 show 1
