@@ -23,9 +23,12 @@ module Aspera
           end
         end
 
-        #        def initialize(env)
-        #          super(env)
-        #        end
+        def initialize(env)
+          super(env)
+          options.add_opt_list(:user_type, %i[any local ldap saml], 'Type of user for user operations')
+          options.set_option(:user_type, :any)
+          options.parse_options!
+        end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
         SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
@@ -59,22 +62,44 @@ module Aspera
             end
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
+            users_type = options.get_option(:user_type, is_type: :mandatory)
+            users_path = "data/#{users_type}_users"
+            users_actions = nil
+            case users_type
+            when :any
+              users_path = 'data/users'
+              users_actions = %i[list show delete share_permissions app_authorizations].freeze
+            when :local
+              users_actions = %i[list show create modify delete].freeze
+            when :ldap
+              users_actions = %i[add].freeze
+            when :saml
+              users_actions = %i[import].freeze
+            end
             command = options.get_next_command(%i[user share])
             case command
             when :user
-              command = options.get_next_command(%i[list app_authorizations share_permissions saml_import ldap_import])
+              command = options.get_next_command(users_actions)
               user_id = instance_identifier if %i[app_authorizations share_permissions].include?(command)
               case command
-              when :list
-                return {type: :object_list, data: api_shares_admin.read('data/users')[:data], fields: %w[id username email directory_user urn]}
+              when :list, :show, :create, :delete, :modify
+                return entity_command(command, api_shares_admin, users_path, display_fields: %w[id username email directory_user urn])
               when :app_authorizations
-                return {type: :single_object, data: api_shares_admin.read("data/users/#{user_id}/app_authorizations")[:data]}
+                case options.get_next_command(%i[modify show])
+                when :show
+                  return {type: :single_object, data: api_shares_admin.read("data/users/#{user_id}/app_authorizations")[:data]}
+                when :modify
+                  parameters = options.get_option(:value, is_type: :mandatory)
+                  return {type: :single_object, data: api_shares_admin.update("data/users/#{user_id}/app_authorizations", parameters)[:data]}
+                end
               when :share_permissions
-                # share_name = options.get_next_argument('share name')
-                # all_shares = api_shares_admin.read('data/shares')[:data]
-                # share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
-                return {type: :object_list, data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
-              when :saml_import
+                case options.get_next_command(%i[list show])
+                when :list
+                  return {type: :object_list, data: api_shares_admin.read("data/users/#{user_id}/share_permissions")[:data]}
+                when :show
+                  return {type: :single_object, data: api_shares_admin.read("data/users/#{user_id}/share_permissions/#{instance_identifier}")[:data]}
+                end
+              when :import
                 parameters = options.get_option(:value, is_type: :mandatory)
                 return do_bulk_operation(parameters, 'created') do |user_params|
                   user_params = user_params.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
@@ -85,7 +110,7 @@ module Aspera
                   end
                   api_shares_admin.create('data/saml_users/import', user_params)[:data]
                 end
-              when :ldap_import
+              when :add
                 parameters = options.get_option(:value)
                 return do_bulk_operation(parameters, 'created') do |user_name|
                   raise "expecting string (user name), have #{user_name.class}" unless user_name.is_a?(String)
@@ -93,17 +118,30 @@ module Aspera
                 end
               end
             when :share
-              command = options.get_next_command(%i[list user_permissions])
-              share_id = instance_identifier if %i[user_permissions].include?(command)
-              all_shares = api_shares_admin.read('data/shares')[:data]
+              command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
+              # all_shares = api_shares_admin.read('data/shares')[:data]
               case command
-              when :list
-                return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
-              when :user_permissions
-                # share_name = options.get_next_argument('share name')
-                # share_id = all_shares.find{|s| s['name'].eql?(share_name)}['id']
-                # raise "NOT IMPLEMENTED: #{share_name} #{share_id}"
-                return {type: :object_list, data: api_shares_admin.read("data/shares/#{share_id}/user_permissions")[:data]}
+              when *Plugin::ALL_OPS
+                return entity_command(command, api_shares_admin, 'data/shares')
+                # return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
+              when :user_permissions, :group_permissions
+                share_id = instance_identifier
+                permission_path = "data/shares/#{share_id}/#{command}"
+                case options.get_next_command(%i[list show create modify delete])
+                when :list
+                  return {type: :object_list, data: api_shares_admin.read(permission_path)[:data]}
+                when :create
+                  parameters = options.get_option(:value)
+                  return {type: :single_object, data: api_shares_admin.create(permission_path, parameters)[:data]}
+                when :show
+                  return {type: :single_object, data: api_shares_admin.read("#{permission_path}/#{instance_identifier}")[:data]}
+                when :modify
+                  parameters = options.get_option(:value)
+                  return {type: :single_object, data: api_shares_admin.create("#{permission_path}/#{instance_identifier}", parameters)[:data]}
+                when :delete
+                  parameters = options.get_option(:value)
+                  return {type: :single_object, data: api_shares_admin.delete("#{permission_path}/#{instance_identifier}", parameters)[:data]}
+                end
               end
             end
           end

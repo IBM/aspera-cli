@@ -5,6 +5,12 @@
   * new: generic `delete` operation supports option `value`
   * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently.
   * new: command `aoc packages recv` accepts option `query` to specify a shared inbox
+  * new: option `user_type` for command `shares admin user` and more supported commands
+  * new: full support for shares admin operations
+  * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --user-type=saml`
+  * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --user-type=ldap`
+  * change: (break) command `app_authorizations` now has sub commands `show` and `modify`
+  * change: (break) similar changes for `shares admin share user show`
 
 * 4.11.0
 
