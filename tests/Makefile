@@ -74,6 +74,7 @@ $(T)sh_nagios: $(T).exists
 	@touch $@
 $(T)shadm: $(T).exists
 	@echo $@
+	$(EXE_MAN) shares admin node list
 	$(EXE_MAN) shares admin user list
 	$(EXE_MAN) shares admin user app_authorizations 1 show
 	$(EXE_MAN) shares admin user app_authorizations 1 modify --value=@json:'{"app_login":true}'

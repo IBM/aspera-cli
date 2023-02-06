@@ -2715,7 +2715,7 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
         --password=VALUE             user's password
-        --user-type=ENUM             Type of user for user operations: any, local, ldap, saml
+        --type=ENUM                  Type of user/group for operations: any, local, ldap, saml
 
 
 COMMAND: node
@@ -4818,6 +4818,7 @@ Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 
 ### Shares 1 sample commands
 
 ```bash
+shares admin node list
 shares admin share list --fields=-status,status_message
 shares admin share user_permissions 1 list
 shares admin user add --user-type=ldap --value=the_name
