@@ -627,8 +627,7 @@ module Aspera
               resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
               return { type: :other_struct, data: resp[:data] }
             when :modify
-              trid = options.get_next_argument('transfer id')
-              resp = @api_node.update('streams/' + trid, options.get_option(:value, is_type: :mandatory))
+              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", options.get_option(:value, is_type: :mandatory))
               return { type: :other_struct, data: resp[:data] }
             when :cancel
               resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")

@@ -283,7 +283,7 @@ module Aspera
     end
 
     # Query entity type by name and returns the id if a single entry only
-    # @param entity_type path of entuty in API
+    # @param entity_type path of entity in API
     # @param entity_name name of searched entity
     # @param options additional search options
     def lookup_entity_by_name(entity_type, entity_name, options={})
@@ -295,11 +295,11 @@ module Aspera
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        icase_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
-        case icase_matches.length
-        when 1 then return icase_matches.first
+        name_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
+        case name_matches.length
+        when 1 then return name_matches.first
         when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
-        else raise "Two entities cannot have the same case insensitive name: #{icase_matches.map{|i|i['name']}}"
+        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{|i|i['name']}}"
         end
       end
     end

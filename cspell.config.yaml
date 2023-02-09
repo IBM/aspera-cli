@@ -1,5 +1,6 @@
 version: "0.2"
-ignorePaths: []
+ignorePaths:
+  - "**/*.pptx"
 dictionaryDefinitions: []
 dictionaries: []
 words: []
@@ -178,6 +179,24 @@ ignoreWords:
   - precalc
   - keepalive
   - transferd # ascli id
+  - mlia
+  - asperalm
 import: []
 enableFiletypes:
   - shellscript
+ignoreRegExpList:
+  - Email
+  - >-
+    /ftp:[^\s]*/g
+patterns:
+  - name: markdown_code_block
+    pattern: |
+      /
+          ^(\s*`{3,}).*     # match the ```
+          [\s\S]*?          # the block of code
+          ^\1               # end of the block
+      /gmx
+languageSettings:
+  - languageId: markdown
+    ignoreRegExpList:
+      - markdown_code_block
