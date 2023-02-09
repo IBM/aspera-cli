@@ -187,7 +187,7 @@ module Aspera
     end
 
     def find_files(top_file_id, test_block)
-      Log.log.debug{"find_files: fileid=#{top_file_id}"}
+      Log.log.debug{"find_files: file id=#{top_file_id}"}
       find_state = {found: [], test_block: test_block}
       process_folder_tree(state: find_state, method: :process_find_files, top_file_id: top_file_id)
       return find_state[:found]

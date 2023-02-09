@@ -181,6 +181,11 @@ ignoreWords:
   - transferd # ascli id
   - mlia
   - asperalm
+  - asyncs # node api
+  - fnid # node api
+  - rund # node api
+  - watchfolders # node api
+  - resolv # ruby gem
 import: []
 enableFiletypes:
   - shellscript
