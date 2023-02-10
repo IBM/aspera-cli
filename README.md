@@ -2774,7 +2774,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token health package user version
+SUBCOMMANDS: admin bearer_token gateway health package user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -4033,6 +4033,7 @@ aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
 aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
+aoc gateway --value=https://localhost:12345/aspera/faspex & jobs -p
 aoc org --link=my_aoc_publink_recv_from_aocuser
 aoc organization
 aoc packages browse "my_package_id" /contents
@@ -4599,6 +4600,7 @@ faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes list
 faspex5 admin res workgroups list
 faspex5 bearer_token
+faspex5 gateway --value=https://localhost:12345/aspera/faspex & jobs -p
 faspex5 health
 faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'

@@ -1,6 +1,15 @@
 version: "0.2"
 ignorePaths:
   - "**/*.pptx"
+  - "**/*.lock"
+  - "**/*.gem"
+  - "**/*.log"
+  - "**/*.html"
+  - "**/*.pdf"
+  - "coverage/**"
+  - "/tmp/**"
+  - ".rspec_status/**"
+  - "local/**"
 dictionaryDefinitions: []
 dictionaries: []
 words: []
