@@ -439,7 +439,7 @@ $(T)aocfxgw: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc gateway --value=https://localhost:12345/aspera/faspex & jobs -p > $(T)server_pid
 	sleep 2
-	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"test 1"}' 'faux:///test1?1m'
+	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -INT $$(cat $(T)server_pid)
 	@touch $@
 $(T)aocg1: $(T).exists
@@ -580,7 +580,7 @@ $(T)aocshlk3: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists
 	@echo $@
 	set -x&&\
@@ -1353,8 +1353,15 @@ $(T)f5_detect: $(T).exists
 	@echo $@
 	$(EXE_NOMAN) -N config detect --url=@preset:tst_faspex5_jwt.url
 	@touch $@
+$(T)f5_fxgw: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 gateway --value=https://localhost:12345/aspera/faspex & jobs -p > $(T)server_pid
+	sleep 2
+	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
+	kill -INT $$(cat $(T)server_pid)
+	@touch $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1 $(T)f5_user $(T)f5_error $(T)f5_detect
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1 $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
 
 tnagios: $(T)fx_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 

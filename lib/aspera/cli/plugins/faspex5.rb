@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# spellchecker: ignore workgroups,mypackages
+
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
@@ -22,7 +24,6 @@ module Aspera
         end
 
         TRANSFER_CONNECT = 'connect'
-        private_constant :TRANSFER_CONNECT
 
         def initialize(env)
           super(env)
@@ -81,7 +82,7 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health version user bearer_token package admin].freeze
+        ACTIONS = %i[health version user bearer_token package admin gateway].freeze
 
         def execute_action
           set_api
@@ -211,6 +212,18 @@ module Aspera
               end
               return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields)
             end
+          when :gateway
+            require 'aspera/faspex_gw'
+            url = options.get_option(:value, is_type: :mandatory)
+            uri = URI.parse(url)
+            server = WebServerSimple.new(uri)
+            server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
+            trap('INT') { server.shutdown }
+            formatter.display_status("Faspex 4 gateway listening on #{url}")
+            Log.log.info("Listening on #{url}")
+            # this is blocking until server exits
+            server.start
+            return Main.result_status('Gateway terminated')
           end # case command
         end # action
       end # Faspex5

@@ -6,45 +6,79 @@ require 'json'
 
 module Aspera
   # this class answers the Faspex /send API and creates a package on Aspera on Cloud
-  class Faspex4AoCServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(_server, a_aoc_api_user, a_workspace_id)
+  class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
+    # @param app_api [Aspera::AoC]
+    # @param app_context [String]
+    def initialize(_server, app_api, app_context)
       super
       # typed: Aspera::AoC
-      @aoc_api_user = a_aoc_api_user
-      @aoc_workspace_id = a_workspace_id
+      @app_api = app_api
+      @app_context = app_context
     end
 
+    # Map Faspex 4 /send API to AoC package create
     # parameters from user to Faspex API call
     # https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/Sending%20Packages%20(API%20v.3)
-    def process_faspex_send(request, response)
-      raise 'no payload' if request.body.nil?
-      faspex_pkg_parameters = JSON.parse(request.body)
+    def faspex4_send_to_aoc(faspex_pkg_parameters)
       faspex_pkg_delivery = faspex_pkg_parameters['delivery']
-      Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
       package_data = {
         # 'file_names'   => faspex_pkg_delivery['sources'][0]['paths'],
         'name'         => faspex_pkg_delivery['title'],
         'note'         => faspex_pkg_delivery['note'],
         'recipients'   => faspex_pkg_delivery['recipients'],
-        'workspace_id' => @aoc_workspace_id
+        'workspace_id' => @app_context
       }
-      created_package = @aoc_api_user.create_package_simple(package_data, true, @new_user_option)
+      created_package = @app_api.create_package_simple(package_data, true, @new_user_option)
       # but we place it in a Faspex package creation response
-      faspex_package_create_result = {
+      return {
         'links'         => { 'status' => 'unused' },
         'xfer_sessions' => [created_package[:spec]]
       }
-      Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
-      response.status = 200
-      response.content_type = 'application/json'
-      response.body = JSON.generate(faspex_package_create_result)
+    end
+
+    def faspex4_send_to_faspex5(faspex_pkg_parameters)
+      faspex_pkg_delivery = faspex_pkg_parameters['delivery']
+      package_data = {
+        'title'      => faspex_pkg_delivery['title'],
+        'note'       => faspex_pkg_delivery['note'],
+        'recipients' => faspex_pkg_delivery['recipients'].map{|name|{'name'=>name}}
+      }
+      package = @app_api.create('packages', package_data)[:data]
+      # TODO: option to send from remote source or httpgw
+      transfer_spec = @app_api.call(
+        operation:   'POST',
+        subpath:     "packages/#{package['id']}/transfer_spec/upload",
+        headers:     {'Accept' => 'application/json'},
+        url_params:  {transfer_type: Aspera::Cli::Plugins::Faspex5::TRANSFER_CONNECT},
+        json_params: {paths: [{'destination'=>'/'}]}
+      )[:data]
+      transfer_spec.delete('authentication')
+      # but we place it in a Faspex package creation response
+      return {
+        'links'         => { 'status' => 'unused' },
+        'xfer_sessions' => [transfer_spec]
+      }
     end
 
     def do_POST(request, response)
       case request.path
       when '/aspera/faspex/send'
         begin
-          process_faspex_send(request, response)
+          raise 'no payload' if request.body.nil?
+          faspex_pkg_parameters = JSON.parse(request.body)
+          Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
+          faspex_package_create_result =
+            if @app_api.is_a?(Aspera::AoC)
+              faspex4_send_to_aoc(faspex_pkg_parameters)
+            elsif @app_api.is_a?(Aspera::Rest)
+              faspex4_send_to_faspex5(faspex_pkg_parameters)
+            else
+              raise "No such adapter: #{@app_api.class}"
+            end
+          Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
+          response.status = 200
+          response.content_type = 'application/json'
+          response.body = JSON.generate(faspex_package_create_result)
         rescue => e
           response.status = 500
           response['Content-Type'] = 'application/json'
@@ -57,13 +91,5 @@ module Aspera
         response.body = {error: 'Bad request'}.to_json
       end
     end
-  end # Faspex4AoCServlet
-
-  class FaspexGW < WebServerSimple
-    # @param endpoint_url [String] https://localhost:12345
-    def initialize(uri, a_aoc_api_user, a_workspace_id)
-      super(uri)
-      mount(uri.path, Faspex4AoCServlet, a_aoc_api_user, a_workspace_id)
-    end
-  end # FaspexGW
+  end # Faspex4GWServlet
 end # AsperaLm

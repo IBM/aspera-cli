@@ -7,6 +7,7 @@
   * new: command `aoc packages recv` accepts option `query` to specify a shared inbox
   * new: option `type` for command `shares admin user` and more supported commands
   * new: full support for shares admin operations
+  * new: faspex 4 gateway to faspex 5 for package send
   * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
   * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
   * change: (break) command `app_authorizations` now has sub commands `show` and `modify`

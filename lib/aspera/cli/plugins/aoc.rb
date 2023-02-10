@@ -744,7 +744,9 @@ module Aspera
           when :gateway
             require 'aspera/faspex_gw'
             url = options.get_option(:value, is_type: :mandatory)
-            server = FaspexGW.new(URI.parse(url), aoc_api, current_workspace_info['id'])
+            uri = URI.parse(url)
+            server = WebServerSimple.new(uri)
+            server.mount(uri.path, Faspex4GWServlet, aoc_api, current_workspace_info['id'])
             trap('INT') { server.shutdown }
             formatter.display_status("Faspex 4 gateway listening on #{url}")
             Log.log.info("Listening on #{url}")
