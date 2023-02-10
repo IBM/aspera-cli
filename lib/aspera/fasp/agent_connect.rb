@@ -40,7 +40,7 @@ module Aspera
         end
       end
 
-      def start_transfer(transfer_spec)
+      def start_transfer(transfer_spec, token_regenerator: nil)
         if transfer_spec['direction'] == 'send'
           Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
           transfer_spec.delete('paths')

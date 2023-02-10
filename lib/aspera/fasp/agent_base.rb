@@ -86,7 +86,7 @@ module Aspera
       end
 
       # the following methods must be implemented by subclass:
-      # start_transfer(transfer_spec) : start and wait for completion
+      # start_transfer(transfer_spec, token_regenerator: nil) : start transfer
       # wait_for_transfers_completion : wait for termination of all transfers, @return list of : :success or error message
       # optional: shutdown
     end

@@ -10,9 +10,9 @@ module Aspera
     # env vars for ascp with secrets
     ASCP_ENV_SECRETS = %w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
     # keys in hash that contain secrets
-    KEY_SECRETS = %w[password secret private_key passphrase].freeze
-    ALL_SECRETS = [].concat(ASCP_ENV_SECRETS, KEY_SECRETS).freeze
-    # regex that define namec captures :begin and :end
+    KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
+    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS].flatten.freeze
+    # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # CLI manager get/set options
       /(?<begin>[sg]et (#{KEY_SECRETS.join('|')})=).*(?<end>)/,
@@ -70,6 +70,7 @@ module Aspera
             end
           end
         end
+        return obj
       end
     end
   end

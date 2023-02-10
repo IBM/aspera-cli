@@ -31,7 +31,7 @@ module Aspera
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
       # @param transfer_spec [Hash] aspera transfer specification
-      def start_transfer(transfer_spec)
+      def start_transfer(transfer_spec, token_regenerator: nil)
         the_job_id = SecureRandom.uuid
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
@@ -99,11 +99,12 @@ module Aspera
 
         # generic session information
         session = {
-          thread:   nil,         # Thread object monitoring management port, not nil when pushed to :sessions
-          error:    nil,         # exception if failed
-          io:       nil,         # management port server socket
-          id:       nil,         # SessionId from INIT message in mgt port
-          env_args: env_args     # env vars and args to ascp (from transfer spec)
+          thread:            nil,               # Thread object monitoring management port, not nil when pushed to :sessions
+          error:             nil,               # exception if failed
+          io:                nil,               # management port server socket
+          id:                nil,               # SessionId from INIT message in mgt port
+          token_regenerator: token_regenerator, # regenerate bearer token with oauth
+          env_args:          env_args           # env vars and args to ascp (from transfer spec)
         }
 
         if multi_session_info.nil?
@@ -261,10 +262,10 @@ module Aspera
               Log.log.error{"code: #{last_status_event['Code']}"}
               if /bearer token/i.match?(last_status_event['Description'])
                 Log.log.error('need to regenerate token'.red)
-                if !@token_regenerator.nil?
+                if session[:token_regenerator].respond_to?(:refreshed_transfer_token)
                   # regenerate token here, expired, or error on it
                   # Note: in multi-session, each session will have a different one.
-                  env_args[:env]['ASPERA_SCP_TOKEN'] = @token_regenerator.call(true)
+                  env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
                 end
               end
               # cannot resolve address
@@ -327,8 +328,6 @@ module Aspera
         session[:io].puts(command)
       end
 
-      attr_writer :token_regenerator
-
       private
 
       # @param options : keys(symbol): see DEFAULT_OPTIONS
@@ -349,7 +348,6 @@ module Aspera
         end
         Log.log.debug{"local options= #{options}"}
         @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
-        @token_regenerator = nil
       end
 
       # transfer thread entry

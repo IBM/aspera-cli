@@ -40,7 +40,7 @@ module Aspera
           r = []
           hash_array_conf.each do |config, preset|
             preset.each do |parameter, value|
-              r.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
+              r.push(CONF_OVERVIEW_KEYS.zip([config, parameter, SecretHider.deep_remove_secret(value).to_s]).to_h)
             end
           end
           return r
@@ -52,7 +52,7 @@ module Aspera
 
         # recursive function to modify a hash
         # @param source [Hash] to be modified
-        # @param expand_last [bool] truer if last level is not
+        # @param expand_last [TrueClass,FalseClass] true if last level is not
         # @param result [Hash] new hash flattened
         # @param prefix [String] true if last level is not
         def flattened_object(source, result: {}, prefix: '', expand_last: false)

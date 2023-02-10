@@ -228,7 +228,7 @@ module Aspera
       # start FASP transfer based on transfer spec (hash table)
       # note that it is asynchronous
       # HTTP download only supports file list
-      def start_transfer(transfer_spec)
+      def start_transfer(transfer_spec, token_regenerator: nil)
         raise 'GW URL must be set' if @gw_api.nil?
         raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
         raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)

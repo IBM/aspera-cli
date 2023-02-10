@@ -42,8 +42,6 @@ module Aspera
         end
       end
 
-      attr_accessor :token_regenerator
-
       # @param env external objects: option manager, config file manager
       def initialize(opt_mgr, config)
         @opt_mgr = opt_mgr
@@ -55,8 +53,6 @@ module Aspera
         @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
-        # only used with agent "direct" allows to regenerate the token if it is expired
-        @token_regenerator = nil
         @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
         @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
         @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transferred files')
@@ -137,7 +133,7 @@ module Aspera
 
       # This is how the list of files to be transferred is specified
       # get paths suitable for transfer spec from command line
-      # @return {source: (mandatory), destination: (optional)}
+      # @return [Hash] {source: (mandatory), destination: (optional)}
       # computation is done only once, cache is kept in @transfer_paths
       def ts_source_paths
         # return cache if set
@@ -185,8 +181,9 @@ module Aspera
       end
 
       # start a transfer and wait for completion, plugins shall use this method
-      # @param transfer_spec
-      def start(transfer_spec)
+      # @param transfer_spec [Hash]
+      # @param rest_token [Rest] if oauth token regeneration supported
+      def start(transfer_spec, rest_token: nil)
         # check parameters
         raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
         # process :src option
@@ -216,8 +213,7 @@ module Aspera
         # create transfer agent
         set_agent_by_options
         Log.log.debug{"transfer agent is a #{@agent.class}"}
-        @agent.token_regenerator = @token_regenerator if @agent.respond_to?(:token_regenerator=)
-        @agent.start_transfer(transfer_spec)
+        @agent.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of : :success or error message
         result = @agent.wait_for_transfers_completion
         @progress_listener.reset

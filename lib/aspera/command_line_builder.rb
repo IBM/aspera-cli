@@ -95,7 +95,7 @@ module Aspera
 
     # Process a parameter from transfer specification and generate command line param or env var
     # @param name [String] of parameter
-    # @param read [bool] read and return value of parameter instead of normal processing (for special)
+    # @param read [TrueClass,FalseClass] read and return value of parameter instead of normal processing (for special)
     def process_param(name, read: false)
       options = @params_definition[name]
       # should not happen

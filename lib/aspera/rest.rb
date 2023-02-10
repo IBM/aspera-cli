@@ -279,7 +279,7 @@ module Aspera
             e = e_tok
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
-            req['Authorization'] = oauth_token(use_cache: false)
+            req['Authorization'] = oauth_token(force_refresh: true)
           end
           Log.log.debug{"using new token=#{call_data[:headers]['Authorization']}"}
           retry unless (oauth_tries -= 1).zero?

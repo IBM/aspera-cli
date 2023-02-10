@@ -129,7 +129,7 @@ module Aspera
         # actions without ascmd
         BASE_ACTIONS = %i[health].concat(TRANSFER_COMMANDS).freeze
         # all actions
-        ACTIONS = [].concat(BASE_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys).freeze
+        ACTIONS = [BASE_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys].flatten.freeze
 
         def execute_action
           server_transfer_spec = options_to_base_transfer_spec

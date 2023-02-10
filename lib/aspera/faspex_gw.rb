@@ -16,6 +16,7 @@ module Aspera
     class FxGwServlet < WEBrick::HTTPServlet::AbstractServlet
       def initialize(_server, a_aoc_api_user, a_workspace_id)
         super
+        # typed: Aspera::AoC
         @aoc_api_user = a_aoc_api_user
         @aoc_workspace_id = a_workspace_id
       end
@@ -33,6 +34,30 @@ module Aspera
       #      }
       #    }
       def process_faspex_send(request, response)
+        raise 'no payload' if request.body.nil?
+        faspex_pkg_parameters = JSON.parse(request.body)
+        faspex_pkg_delivery = faspex_pkg_parameters['delivery']
+        Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
+        package_data = {
+          # 'file_names'   => faspex_pkg_delivery['sources'][0]['paths'],
+          'name'         => faspex_pkg_delivery['title'],
+          'note'         => faspex_pkg_delivery['note'],
+          'recipients'   => faspex_pkg_delivery['recipients'],
+          'workspace_id' => @aoc_workspace_id
+        }
+        created_package = @aoc_api_user.create_package_simple(package_data, true, @new_user_option)
+        # but we place it in a Faspex package creation response
+        faspex_package_create_result = {
+          'links'         => { 'status' => 'unused' },
+          'xfer_sessions' => [created_package[:spec]]
+        }
+        Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
+        response.status = 200
+        response.content_type = 'application/json'
+        response.body = JSON.generate(faspex_package_create_result)
+      end
+
+      def process_faspex_send_old(request, response)
         raise 'no payload' if request.body.nil?
 
         faspex_pkg_parameters = JSON.parse(request.body)
@@ -142,19 +167,6 @@ module Aspera
       end
     end # FxGwServlet
 
-    class NewUserServlet < WEBrick::HTTPServlet::AbstractServlet
-      def do_GET(request, response)
-        case request.path
-        when '/newuser'
-          response.status = 200
-          response.content_type = 'text/html'
-          response.body = '<html><body>hello world</body></html>'
-        else
-          raise "unsupported path: [#{request.path}]"
-        end
-      end
-    end
-
     def initialize(a_aoc_api_user, a_workspace_id)
       webrick_options = {
         Port:        9443,
@@ -165,7 +177,6 @@ module Aspera
       Log.log.info{"Server started on port #{webrick_options[:Port]}"}
       @server = WEBrick::HTTPServer.new(webrick_options)
       @server.mount('/aspera/faspex', FxGwServlet, a_aoc_api_user, a_workspace_id)
-      @server.mount('/newuser', NewUserServlet)
       trap('INT') { @server.shutdown }
     end
 

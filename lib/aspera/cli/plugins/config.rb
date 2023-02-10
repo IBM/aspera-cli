@@ -261,16 +261,16 @@ module Aspera
             Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
             # get javascript object only
             found = connect_versions_javascript.match(/^.*? = (.*);/)
-            raise CliError, 'Problen when getting connect versions from internet' if found.nil?
-            alldata = JSON.parse(found[1])
-            @connect_versions = alldata['entries']
+            raise CliError, 'Problem when getting connect versions from internet' if found.nil?
+            all_data = JSON.parse(found[1])
+            @connect_versions = all_data['entries']
           end
           return @connect_versions
         end
 
         # loads default parameters of plugin if no -P parameter
         # and if there is a section defined for the plugin in the "default" section
-        # try to find: conffile[conffile["default"][plugin_str]]
+        # try to find: conf[conf["default"][plugin_str]]
         # @param plugin_name_sym : symbol for plugin name
         def add_plugin_default_preset(plugin_name_sym)
           default_config_name = get_plugin_default_config_name(plugin_name_sym)
@@ -692,7 +692,7 @@ module Aspera
             return {
               type:   :object_list,
               data:   Fasp::Parameters.man_table,
-              fields: %w[name type].concat(Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description])
+              fields: [%w[name type], Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
             }
           when :errors
             error_data = []
@@ -710,7 +710,7 @@ module Aspera
         PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
         # require id
         PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXST_ACTIONS).freeze
-        PRESET_ALL_ACTIONS = [].concat(PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS).freeze
+        PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS].flatten.freeze
 
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?

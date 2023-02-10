@@ -40,8 +40,8 @@ module Aspera
       end
     end
 
-    REQUIRED_APP_INFO_FIELDS = %i[node_info app api plugin].freeze
-    REQUIRED_APP_API_METHODS = %i[node_id_to_api add_ts_tags].freeze
+    REQUIRED_APP_INFO_FIELDS = %i[node_info app api workspace_info].freeze
+    REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
     private_constant :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
     attr_reader :app_info
@@ -72,7 +72,7 @@ module Aspera
     # @returns [Aspera::Node] a Node or nil
     def node_id_to_node(node_id)
       return self if !@app_info.nil? && @app_info[:node_info]['id'].eql?(node_id)
-      return @app_info[:api].node_id_to_api(node_id) unless @app_info.nil?
+      return @app_info[:api].node_api_from(node_id: node_id, workspace_info: @app_info[workspace_info]) unless @app_info.nil?
       Log.log.warn{"cannot resolve link with node id #{node_id}"}
       return nil
     end
@@ -156,9 +156,9 @@ module Aspera
     end
 
     # Navigate the path from given file id
-    # @param id initial file id
-    # @param path file path
-    # @return {.api,.file_id}
+    # @param top_file_id [String] id initial file id
+    # @param path [String]  file path
+    # @return [Hash] {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
       raise 'file id shall be String' unless top_file_id.is_a?(String)
       path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
@@ -170,6 +170,7 @@ module Aspera
     end
 
     # add entry to list if test block is success
+    # @return [TrueClass,FalseClass]
     def process_find_files(entry, path, state)
       begin
         # add to result if match filter
@@ -193,6 +194,10 @@ module Aspera
       return find_state[:found]
     end
 
+    def refreshed_transfer_token
+      return oauth_token(force_refresh: true)
+    end
+
     # Create transfer spec for gen4
     def transfer_spec_gen4(file_id, direction, ts_merge=nil)
       ak_name = nil
@@ -202,9 +207,9 @@ module Aspera
         ak_name = params[:auth][:username]
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
-        token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
-        ak_token = token_generation_lambda.call(false) # first time, use cache
-        @app_info[:plugin].transfer.token_regenerator = token_generation_lambda unless @app_info.nil?
+        # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
+        # get bearer token, possibly use cache
+        ak_token = oauth_token(force_refresh: false)
       else raise "Unsupported auth method for node gen4: #{params[:auth][:type]}"
       end
       transfer_spec = {

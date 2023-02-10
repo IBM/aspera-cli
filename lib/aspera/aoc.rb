@@ -225,7 +225,7 @@ module Aspera
     end
 
     def additional_persistence_ids
-      return [user_info['id']] if url_token_data.nil?
+      return [current_user_info['id']] if url_token_data.nil?
       return [] # TODO : url_token_data['id'] ?
     end
 
@@ -236,7 +236,7 @@ module Aspera
     end
 
     # cached user information
-    def user_info(exception: false)
+    def current_user_info(exception: false)
       if @cache_user_info.nil?
         # get our user's default information
         @cache_user_info =
@@ -255,7 +255,21 @@ module Aspera
     # @returns [Aspera::Node] a node API for access key
     # @param node_id [String] identifier of node in AoC
     # @param scope e.g. SCOPE_NODE_USER, or nil (requires secret)
-    def node_id_to_api(node_id:, plugin:, scope: nil, package_info: nil)
+    def node_api_from(node_id: nil, workspace_info: nil, package_info: nil, scope: nil)
+      if node_id.nil?
+        if package_info.nil?
+          raise 'INTERNAL ERROR: either node_id or package_info is required'
+        else
+          node_id = package_info['node_id']
+        end
+      end
+      if workspace_info.nil?
+        if package_info.nil?
+          raise 'INTERNAL ERROR: either workspace_info or package_info is required'
+        else
+          workspace_info = package_info['workspace_id']
+        end
+      end
       node_info = read("nodes/#{node_id}")[:data]
       node_rest_params = {base_url: node_info['url']}
       # if secret is available
@@ -273,10 +287,10 @@ module Aspera
         node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
       end
       app_info = {
-        plugin:    plugin,
-        node_info: node_info,
-        app:       package_info.nil? ? FILES_APP : PACKAGES_APP,
-        api:       self # for callback
+        node_info:      node_info,
+        workspace_info: workspace_info,
+        app:            package_info.nil? ? FILES_APP : PACKAGES_APP,
+        api:            self # for callback
       }
       app_info[:package_info] = package_info unless package_info.nil?
       return Node.new(params: node_rest_params, app_info: app_info)
@@ -344,6 +358,7 @@ module Aspera
       return unless package_data.key?(recipient_list_field)
       raise CliBadArgument, "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
       new_user_option = {'package_contact' => true} if new_user_option.nil?
+      raise CliBadArgument, 'new_user_option must be a Hash' unless new_user_option.is_a?(Hash)
       # list with resolved elements
       resolved_list = []
       package_data[recipient_list_field].each do |short_recipient_info|
@@ -380,6 +395,58 @@ module Aspera
       return nil
     end
 
+    # CLI allows simplified format for metadata: transform if necessary for API
+    def update_package_metadata_for_api(pkg_data)
+      case pkg_data['metadata']
+      when Array, NilClass # no action
+      when Hash
+        api_meta = []
+        pkg_data['metadata'].each do |k, v|
+          api_meta.push({
+            # 'input_type' => 'single-dropdown',
+            'name'   => k,
+            'values' => v.is_a?(Array) ? v : [v]
+          })
+        end
+        pkg_data['metadata'] = api_meta
+      else raise "metadata field if not of expected type: #{pkg_meta.class}"
+      end
+      return nil
+    end
+
+    # create a package
+    # @param package_data [Hash] package creation (with extensions...)
+    # @param validate_meta [TrueClass,FalseClass] true to validate parameters locally
+    # @param new_user_option [Hash] options if an unknown user is specified
+    # @return transfer spec, node api and package information
+    def create_package_simple(package_data, validate_meta, new_user_option)
+      update_package_metadata_for_api(package_data)
+      # list of files to include in package, optional
+      # package_data['file_names']||=[..list of filenames to transfer...]
+
+      # lookup users
+      resolve_package_recipients(package_data, package_data['workspace_id'], 'recipients', new_user_option)
+      resolve_package_recipients(package_data, package_data['workspace_id'], 'bcc_recipients', new_user_option)
+
+      validate_metadata(package_data) if validate_meta
+
+      #  create a new package container
+      created_package = create('packages', package_data)[:data]
+
+      package_node_api = node_api_from(package_info: created_package, scope: AoC::SCOPE_NODE_USER)
+
+      # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
+      # TODO: if multi session was used we should probably tell
+      # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
+      update("packages/#{created_package['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
+
+      return {
+        spec: package_node_api.transfer_spec_gen4(created_package['contents_file_id'], Fasp::TransferSpec::DIRECTION_SEND),
+        node: package_node_api,
+        info: created_package
+      }
+    end
+
     # Add transferspec
     # callback in Aspera::Node (transfer_spec_gen4)
     def add_ts_tags(transfer_spec:, app_info:)
@@ -387,7 +454,7 @@ module Aspera
       transfer_type = Fasp::TransferSpec.action(transfer_spec)
       # Analytics tags
       ################
-      ws_info = app_info[:plugin].current_workspace_info
+      ws_info = app_info[:workspace_info]
       transfer_spec.deep_merge!({
         'tags' => {
           'aspera' => {
@@ -403,7 +470,7 @@ module Aspera
       # Console cookie
       ################
       # we are sure that fields are not nil
-      cookie_elements = [app_info[:app], user_info['name'], user_info['email']].map{|e|Base64.strict_encode64(e)}
+      cookie_elements = [app_info[:app], current_user_info['name'], current_user_info['email']].map{|e|Base64.strict_encode64(e)}
       cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
       transfer_spec['cookie'] = cookie_elements.join(':')
       # Application tags
@@ -431,7 +498,7 @@ module Aspera
     # Callback from Plugins::Node
     def permissions_create_params(create_param:, app_info:)
       # workspace shared folder:
-      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:plugin].current_workspace_info['id']}"
+      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:workspace_info]['id']}"
       default_params = {
         # 'access_type'   => 'user', # mandatory: user or group
         # 'access_id'     => access_id, # id of user or group
@@ -439,12 +506,12 @@ module Aspera
           'aspera' => {
             'files' => {
               'workspace' => {
-                'id'                => app_info[:plugin].current_workspace_info['id'],
-                'workspace_name'    => app_info[:plugin].current_workspace_info['name'],
-                'user_name'         => user_info['name'],
-                'shared_by_user_id' => user_info['id'],
-                'shared_by_name'    => user_info['name'],
-                'shared_by_email'   => user_info['email'],
+                'id'                => app_info[:workspace_info]['id'],
+                'workspace_name'    => app_info[:workspace_info]['name'],
+                'user_name'         => current_user_info['name'],
+                'shared_by_user_id' => current_user_info['id'],
+                'shared_by_name'    => current_user_info['name'],
+                'shared_by_email'   => current_user_info['email'],
                 # 'shared_with_name'  => access_id,
                 'access_key'        => app_info[:node_info]['access_key'],
                 'node'              => app_info[:node_info]['name']}}}}}
@@ -453,7 +520,7 @@ module Aspera
         contact_info = lookup_entity_by_name(
           'contacts',
           create_param['with'],
-          {'current_workspace_id' => app_info[:plugin].current_workspace_info['id'], 'context' => 'share_folder'})
+          {'current_workspace_id' => app_info[:workspace_info]['id'], 'context' => 'share_folder'})
         create_param.delete('with')
         create_param['access_type'] = contact_info['source_type']
         create_param['access_id'] = contact_info['source_id']
@@ -468,7 +535,7 @@ module Aspera
       event_creation = {
         'types'        => ['permission.created'],
         'node_id'      => app_info[:node_info]['id'],
-        'workspace_id' => app_info[:plugin].current_workspace_info['id'],
+        'workspace_id' => app_info[:workspace_info]['id'],
         'data'         => created_data # Response from previous step
       }
       # (optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.

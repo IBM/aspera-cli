@@ -11,6 +11,7 @@ domains: []
 reporters:
 - rubocop
 - require_not_found
+- typecheck
 formatter:
   rubocop:
     cops: safe
