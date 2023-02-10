@@ -743,7 +743,14 @@ module Aspera
             return execute_admin_action
           when :gateway
             require 'aspera/faspex_gw'
-            return FaspexGW.new(aoc_api, current_workspace_info['id']).start_server
+            url = options.get_option(:value, is_type: :mandatory)
+            server = FaspexGW.new(URI.parse(url), aoc_api, current_workspace_info['id'])
+            trap('INT') { server.shutdown }
+            formatter.display_status("Faspex 4 gateway listening on #{url}")
+            Log.log.info("Listening on #{url}")
+            # this is blocking until server exits
+            server.start
+            return Main.result_status('Gateway terminated')
           else
             raise "internal error: #{command}"
           end # action

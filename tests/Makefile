@@ -435,6 +435,13 @@ $(T)nd_ak4: $(T).exists
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios tndak
 
+$(T)aocfxgw: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc gateway --value=https://localhost:12345/aspera/faspex & jobs -p > $(T)server_pid
+	sleep 2
+	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"test 1"}' 'faux:///test1?1m'
+	kill -INT $$(cat $(T)server_pid)
+	@touch $@
 $(T)aocg1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc -N servers

@@ -356,9 +356,9 @@ module Aspera
     # @return nil package_data is modified
     def resolve_package_recipients(package_data, ws_id, recipient_list_field, new_user_option)
       return unless package_data.key?(recipient_list_field)
-      raise CliBadArgument, "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
+      raise "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
       new_user_option = {'package_contact' => true} if new_user_option.nil?
-      raise CliBadArgument, 'new_user_option must be a Hash' unless new_user_option.is_a?(Hash)
+      raise 'new_user_option must be a Hash' unless new_user_option.is_a?(Hash)
       # list with resolved elements
       resolved_list = []
       package_data[recipient_list_field].each do |short_recipient_info|
