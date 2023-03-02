@@ -101,13 +101,27 @@ gem install -P HighSecurity aspera-cli
 
 ## Docker image build
 
-### on MacOS using ubuntu multipass
+The default docker image build relies on the gem to be published as official version on rubygems.
 
-Install [multipass](https://multipass.run/docs) with [brew](https://multipass.run/docs/installing-on-macos#heading--use-brew):
+To build, and then push to docker hub (specify the version):
 
-[Initialize the docker environment](https://multipass.run/docs/docker-tutorial).
+```bash
+GEMVERS=4.11.0 make -e docker
+```
 
-Make sure the ubuntu user in container is part of the docker group.
+```bash
+GEMVERS=4.11.0 make -e dpush
+```
+
+To build/push a beta/development container:
+
+```bash
+make dockerbeta
+```
+
+```bash
+make dpushversion
+```
 
 ## Long Term Implementation and delivery improvements
 

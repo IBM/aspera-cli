@@ -64,9 +64,19 @@ For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
 ## Notations, Shell, Examples
 
-In examples, command line operations are shown using a shell such: `bash` or `zsh`.
+Command line operations examples are shown using a shell such: `bash` or `zsh`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
+
+<%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
+
+Some commands will start an Aspera-based transfer (e.g. `upload`).
+The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses an external Aspera Client called **[Transfer Agents](#agents)**.
+
+> **Note:** The transfer agent is a client for the remote Transfer Server (HSTS).
+The transfer agent may be local or remote...
+For example a remote Aspera Server may be used as a transfer agent (using node API).
+i.e. using option `--transfer=node`
 
 ## Quick Start
 
@@ -1766,7 +1776,8 @@ To specify a FASP proxy (forward), set the <%=trspec%> parameter: `EX_fasp_proxy
 
 ### <a id="client"></a>FASP configuration
 
-The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
+The `config` plugin also allows specification for the use of a local FASP **client**.
+It provides the following commands for `ascp` subcommand:
 
 - `show` : shows the path of `ascp` used
 - `use` : list,download connect client versions available on internet
@@ -1904,12 +1915,12 @@ Time: 00:00:02 =========================================================== 100% 
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
-### <a id="agents"></a>Transfer Agents
+### <a id="agents"></a>Transfer Clients: Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
 When a transfer needs to be started, a <%=trspec%> has been internally prepared.
-This <%=trspec%> will be executed by a transfer client, here called "Transfer Agent".
+This <%=trspec%> will be executed by a transfer client, here called **Transfer Agent**.
 
 There are currently 3 agents:
 

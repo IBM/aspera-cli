@@ -1,8 +1,10 @@
 # based on latest ruby
 FROM ruby:latest
+<%=arg_copy%>
 # install gem and optional gems
 RUN gem install grpc mimemagic <%=arg_gem%> && \
-  useradd -m -u 1000 -s /bin/bash cliuser
+  useradd -m -u 1000 -s /bin/bash cliuser && \
+  rm -f <%=arg_gem%>
 # Ensures that the docker container always start with this user
 USER cliuser
 # The default dir when starting the docker container.

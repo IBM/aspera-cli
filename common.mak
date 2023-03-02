@@ -29,8 +29,6 @@ GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
 # must be first target
 all::
 
-#GEMNAME=$(shell $(EXETESTB) conf gem name)
-#GEMVERS=$(shell $(EXETESTB) conf gem version)
 $(DIR_TOP)nameversion.mak: $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
 	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEMNAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
 	sed -n "s/.*'\([^']*\)'.*/GEMVERS=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@

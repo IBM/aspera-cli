@@ -65,12 +65,14 @@ LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
 SDK_URL=https://ibm.biz/aspera_transfer_sdk
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
-dockerbeta: $(PATH_GEMFILE) $(LOCAL_SDK_FILE)
-	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(LOCAL_SDK_FILE) --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
+# to build a specific version: GEMVERS=4.11.0 make -e docker
 docker: $(LOCAL_SDK_FILE)
-	erb arg_gem=$(GEMNAME):$(GEMVERS) arg_sdk=$(SDK_FILE) Dockerfile.tmpl.erb > Dockerfile
+	erb arg_copy= arg_gem=$(GEMNAME):$(GEMVERS) arg_sdk=$(LOCAL_SDK_FILE) Dockerfile.tmpl.erb > Dockerfile
 	docker build --tag $(DOCKER_TAG_VERSION) .
 	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
+dockerbeta: $(LOCAL_SDK_FILE)
+	erb arg_copy="COPY $(PATH_GEMFILE) aspera-cli.gem" arg_gem=aspera-cli.gem arg_sdk=$(LOCAL_SDK_FILE) Dockerfile.tmpl.erb > Dockerfile
+	docker build --tag $(DOCKER_TAG_VERSION) .
 dockertest:
 	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
 dpush: dpushversion dpushlatest
