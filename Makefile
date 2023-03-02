@@ -68,7 +68,7 @@ $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 dockerbeta: $(PATH_GEMFILE) $(LOCAL_SDK_FILE)
 	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(LOCAL_SDK_FILE) --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
 docker: $(LOCAL_SDK_FILE)
-	erb arg_gem=$(GEMNAME):$(GEMVERS) arg_sdk=$(SDK_FILE) Dockerfile.template > Dockerfile
+	erb arg_gem=$(GEMNAME):$(GEMVERS) arg_sdk=$(SDK_FILE) Dockerfile.tmpl.erb > Dockerfile
 	docker build --tag $(DOCKER_TAG_VERSION) .
 	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
 dockertest:
