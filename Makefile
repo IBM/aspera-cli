@@ -58,17 +58,28 @@ changes:
 ##################################
 # Docker image
 DOCKER_REPO=martinlaurent/ascli
-DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEMVERS)
+DOCKER_IMG_VERSION=$(GEMVERS)
+DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
-$(DIR_TMP)sdk.zip: $(DIR_TMP).exists
-	curl -L https://ibm.biz/aspera_transfer_sdk -o $(DIR_TMP)sdk.zip
-docker: $(PATH_GEMFILE) $(DIR_TMP)sdk.zip
-	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(DIR_TMP)sdk.zip --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
+LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
+SDK_URL=https://ibm.biz/aspera_transfer_sdk
+$(LOCAL_SDK_FILE): $(DIR_TMP).exists
+	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
+dockerbeta: $(PATH_GEMFILE) $(LOCAL_SDK_FILE)
+	docker build --build-arg gemfile=$(PATH_GEMFILE) --build-arg sdkfile=$(LOCAL_SDK_FILE) --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) $(DIR_TOP).
+docker: $(LOCAL_SDK_FILE)
+	erb arg_gem=$(GEMNAME):$(GEMVERS) arg_sdk=$(SDK_FILE) Dockerfile.template > Dockerfile
+	docker build --tag $(DOCKER_TAG_VERSION) .
+	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
 dockertest:
 	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
-dpush:
+dpush: dpushversion dpushlatest
+dpushversion:
 	docker push $(DOCKER_TAG_VERSION)
+dpushlatest:
 	docker push $(DOCKER_TAG_LATEST)
+clean::
+	rm -f Dockerfile
 ##################################
 # Single executable using https://github.com/pmq20/ruby-packer
 CLIEXEC=$(EXENAME).exe
