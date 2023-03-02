@@ -307,7 +307,7 @@
 * 0.10.4
 
   * new options for AoC : `secrets`
-  * ACLI-533 temp file list folder to use file lists is set by default, and used by asession
+  * ACLI-533 temp file list folder to use file lists is set by default, and used by `asession`
 
 * 0.10.3
 

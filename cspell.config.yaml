@@ -10,50 +10,22 @@ ignorePaths:
   - "/tmp/**"
   - ".rspec_status/**"
   - "local/**"
-dictionaryDefinitions: []
-dictionaries: []
+  - ".secrets.baseline"
+dictionaryDefinitions:
+  - name: aspera
+    path: aspera.dict
+    addWords: true
+dictionaries:
+  - aspera
 words: []
 ignoreWords:
-  - Aspera
-  - FASP
-  - ascli
-  - ascmd
-  - ascp
-  - asyncadmin
-  - asconfigurator
-  - asnodeadmin
-  - asuserdata
-  - asperatransferd
-  - aspshell
-  - asctl
-  - asession
-  - watchd
-  - watchfolderd
-  - faspex
-  - hsts
-  - xfer
-  - watchfolder
   - rubygems
   - containerimage
-  - trspec
-  - cliuser
-  - asperaweb
-  - docroot
   - cygwin
-  - xferdir
-  - xferfiles
   - automake
   - devel
   - gemdir
-  - asperasoft
-  - zmode
-  - zuid
-  - zgid
   - msys
-  - prst
-  - prsts
-  - prstt
-  - opprst
   - myserver
   - myvar
   - mykey
@@ -84,18 +56,10 @@ ignoreWords:
   - syncdir
   - lolo
   - kenji
-  - incps
-  - csvt
   - jsonpp
   - notif
   - privkeyfile
-  - httpgw
-  - trsdk
-  - csear
-  - pvcl
-  - trapd
   - anacron
-  - fpac
   - initdemo
   - samplefile
   - geminstadd
@@ -104,16 +68,6 @@ ignoreWords:
   - homedrive
   - homepath
   - localappdata
-  - kbps
-  - mbps
-  - gbps
-  - mebibyte
-  - mebibit
-  - gibibyte
-  - gibibytes
-  - apikey
-  - faspe
-  - pmax
   - ibmcloud
   - optipng
   - ffprobe
@@ -195,6 +149,9 @@ ignoreWords:
   - rund # node api
   - watchfolders # node api
   - resolv # ruby gem
+  - EXTV
+  - PRIVKEY
+  - PVALUE
 import: []
 enableFiletypes:
   - shellscript

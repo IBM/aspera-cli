@@ -319,15 +319,15 @@ module Aspera
                     ]))
                 end
                 # get command line parameters
-                delivid = instance_identifier
-                raise 'empty id' if delivid.empty?
+                delivery_id = instance_identifier
+                raise 'empty id' if delivery_id.empty?
                 recipient = options.get_option(:recipient)
-                if VAL_ALL.eql?(delivid)
+                if VAL_ALL.eql?(delivery_id)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif !recipient.nil? && recipient.start_with?('*')
-                  found_package_link = mailbox_filtered_entries(stop_at_id: delivid).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivid)}['link'].first['href']
+                  found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
                   raise 'Not Found. Dropbox and Workgroup packages can use the link option with faspe:' if found_package_link.nil?
-                  pkg_id_uri = [{id: delivid, uri: found_package_link}]
+                  pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint =
@@ -335,9 +335,9 @@ module Aspera
                     when :inbox, :archive then'received'
                     when :sent then 'sent'
                     end
-                  entry_xml = api_v3.call({operation: 'GET', subpath: "#{endpoint}/#{delivid}", headers: {'Accept' => 'application/xml'}})[:http].body
+                  entry_xml = api_v3.call({operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'}})[:http].body
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
-                  pkg_id_uri = [{id: delivid, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
+                  pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
                 end
               when /^faspe:/
                 pkg_id_uri = [{id: 'package', uri: link_url}]

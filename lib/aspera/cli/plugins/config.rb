@@ -706,17 +706,17 @@ module Aspera
 
         # legacy actions available globally
         PRESET_GBL_ACTIONS = %i[list overview lookup secure].freeze
-        # require existing preset
-        PRESET_EXST_ACTIONS = %i[show delete get unset].freeze
+        # operations requiring that preset exists
+        PRESET_EXIST_ACTIONS = %i[show delete get unset].freeze
         # require id
-        PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXST_ACTIONS).freeze
+        PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXIST_ACTIONS).freeze
         PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS].flatten.freeze
 
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           name = instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
           # those operations require existing option
-          raise "no such preset: #{name}" if PRESET_EXST_ACTIONS.include?(action) && !@config_presets.key?(name)
+          raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
           selected_preset = @config_presets[name]
           case action
           when :list
@@ -794,20 +794,20 @@ module Aspera
             identifier = options.get_next_argument('config name', mandatory: false)
             preset_names = identifier.nil? ? @config_presets.keys : [identifier]
             secret_keywords = %w[password secret].freeze
-            preset_names.each do |pset_name|
-              preset = @config_presets[pset_name]
+            preset_names.each do |preset_name|
+              preset = @config_presets[preset_name]
               next unless preset.is_a?(Hash)
               preset.each_key do |option_name|
                 secret_keywords.each do |keyword|
                   next unless option_name.end_with?(keyword)
-                  vault_label = pset_name
+                  vault_label = preset_name
                   incr = 0
                   until vault.get(label: vault_label, exception: false).nil?
-                    vault_label = "#{pset_name}#{incr}"
+                    vault_label = "#{preset_name}#{incr}"
                     incr += 1
                   end
                   to_set = {label: vault_label, password: preset[option_name]}
-                  puts "need to encode #{pset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
+                  puts "need to encode #{preset_name}.#{option_name} -> #{vault_label} -> #{to_set}"
                   # to_copy=%i[]
                   vault.set(to_set)
                   preset[option_name] = "@vault:#{vault_label}.password"

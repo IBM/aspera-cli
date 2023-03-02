@@ -3,7 +3,7 @@
 require 'webrick'
 require 'webrick/https'
 require 'aspera/log'
-#require 'openssl'
+# require 'openssl'
 
 # generates and adds self signed cert to provided webrick options
 # def fill_self_signed_cert(cert,key)
