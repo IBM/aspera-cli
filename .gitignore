@@ -13,3 +13,4 @@
 # to store things not to be in versioning:
 /local/
 .idea
+.vscode
