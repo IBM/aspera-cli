@@ -7,7 +7,7 @@
 
 ##
 
-Version : 4.12.0
+Version : 4.12.0.beta1
 
 Laurent/2016-2023
 
@@ -66,9 +66,19 @@ For scripting and ad'hoc command line operations, `ascli` is perfect.
 
 ## Notations, Shell, Examples
 
-In examples, command line operations are shown using a shell such: `bash` or `zsh`.
+Command line operations examples are shown using a shell such: `bash` or `zsh`.
 
 Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
+
+`ascli` is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
+
+Some commands will start an Aspera-based transfer (e.g. `upload`).
+The transfer is not directly implemented in `ascli`, rather `ascli` uses an external Aspera Client called **[Transfer Agents](#agents)**.
+
+> **Note:** The transfer agent is a client for the remote Transfer Server (HSTS).
+The transfer agent may be local or remote...
+For example a remote Aspera Server may be used as a transfer agent (using node API).
+i.e. using option `--transfer=node`
 
 ## Quick Start
 
@@ -83,7 +93,7 @@ ascli --version
 ```
 
 ```bash
-4.12.0
+4.12.0.beta1
 ```
 
 ### First use
@@ -125,7 +135,7 @@ If you want to use `ascli` with another server, and in order to make further cal
 - download a file
 
 ```bash
-ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_
+ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
 ```
 
 ```output
@@ -243,7 +253,7 @@ ascli -v
 ```
 
 ```text
-4.12.0
+4.12.0.beta1
 ```
 
 In order to keep persistency of configuration on the host,
@@ -413,7 +423,7 @@ Install Latest stable Ruby:
 macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
 
 ```bash
-sudo gem install aspera-cli
+sudo gem install aspera-cli --pre
 ```
 
 Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
@@ -499,7 +509,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:
 
 ```bash
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -1160,7 +1170,7 @@ ascli config preset set|delete|show|initialize|update <option preset>
 The command `update` allows the easy creation of [option preset](#lprt) by simply providing the options in their command line format, e.g. :
 
 ```bash
-ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=_pass_here_ --ts=@json:'{"precalculate_job_size":true}'
+ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
 ```
 
 - This creates a [option preset](#lprt) `demo_server` with all provided options.
@@ -1168,13 +1178,13 @@ ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --u
 The command `set` allows setting individual options in a [option preset](#lprt).
 
 ```bash
-ascli config preset set demo_server password _pass_here_
+ascli config preset set demo_server password my_password_here
 ```
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [*Structured Value*](#native).
 
 ```javascript
-ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"_pass_here_","ts":{"precalculate_job_size":true}}'
+ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
 ```
 
 A full terminal based overview of the configuration can be displayed using:
@@ -1298,7 +1308,7 @@ cli_default:
 demo_server:
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: _pass_here_
+  password: my_password_here
 ```
 
 We can see here:
@@ -1373,13 +1383,13 @@ ascli config preset unset cli_default interactive
 Example: Define options using command line:
 
 ```bash
-ascli -N --url=_url_here_ --password=_pass_here_ --username=_name_here_ node --show-config
+ascli -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config
 ```
 
 Example: Define options using a hash:
 
 ```javascript
-ascli -N --preset=@json:'{"url":"_url_here_","password":"_pass_here_","username":"_name_here_"}' node --show-config
+ascli -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
 ```
 
 #### Shares Examples
@@ -1389,7 +1399,7 @@ only username/password and url are required (either on command line, or from con
 Those can usually be provided on the command line:
 
 ```bash
-ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=_pass_here_
+ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
 This can also be provisioned in a config file:
@@ -1399,19 +1409,19 @@ This can also be provisioned in a config file:
 ```bash
 ascli config preset set shares06 url https://10.25.0.6
 ascli config preset set shares06 username john
-ascli config preset set shares06 password _pass_here_
+ascli config preset set shares06 password my_password_here
 ```
 
 This can also be done with one single command:
 
 ```javascript
-ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"_pass_here_"}'
+ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"my_password_here"}'
 ```
 
 or
 
 ```bash
-ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=_pass_here_
+ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
 - Define this [option preset](#lprt) as the default [option preset](#lprt) for the specified plugin (`shares`)
@@ -1487,7 +1497,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-ascli conf vault create mylabel @json:'{"password":"__value_here__","description":"for this account"}'
+ascli conf vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
 ```
 
 #### <a id="config_finder"></a>Configuration Finder
@@ -1509,7 +1519,7 @@ For a more secure storage one can do:
 
 ```bash
 `ascli` conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
-`ascli` conf vault create myconf @json:'{"password":"__value_here__"}'
+`ascli` conf vault create myconf @json:'{"password":"my_password_here"}'
 ```
 
 > **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -1809,7 +1819,8 @@ To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) para
 
 ### <a id="client"></a>FASP configuration
 
-The `config` plugin also allows specification for the use of a local FASP client. It provides the following commands for `ascp` subcommand:
+The `config` plugin also allows specification for the use of a local FASP **client**.
+It provides the following commands for `ascp` subcommand:
 
 - `show` : shows the path of `ascp` used
 - `use` : list,download connect client versions available on internet
@@ -1947,12 +1958,12 @@ Time: 00:00:02 =========================================================== 100% 
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
-### <a id="agents"></a>Transfer Agents
+### <a id="agents"></a>Transfer Clients: Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
 When a transfer needs to be started, a [*transfer-spec*](#transferspec) has been internally prepared.
-This [*transfer-spec*](#transferspec) will be executed by a transfer client, here called "Transfer Agent".
+This [*transfer-spec*](#transferspec) will be executed by a transfer client, here called **Transfer Agent**.
 
 There are currently 3 agents:
 
@@ -2071,7 +2082,7 @@ Parameters provided in option `transfer_info` are:
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
 `--transfer-info=@preset:_name_here_` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"_pass_here_"}'`
+`--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'`
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
@@ -2399,13 +2410,13 @@ activating CSEAR consists in using transfer spec parameters:
 Example: parameter to download a faspex package and decrypt on the fly
 
 ```javascript
---ts=@json:'{"content_protection":"decrypt","content_protection_password":"_pass_here_"}'
+--ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
 ```
 
 > **Note:** Up to version `ascli` 4.6.0, the following parameters should be used for agent `direct`:
 
 ```javascript
---ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"_secret_here_"}'
+--ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"my_secret_here"}'
 ```
 
 #### Transfer Spec Examples
@@ -2612,7 +2623,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.12.0)
+        ascli -- a command line tool for Aspera Applications (v4.12.0.beta1)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -3012,8 +3023,8 @@ Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interacti
 ```bash
 ascli config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
-option: client_id> _client_id_here_
-option: client_secret> _client_secret_here_
+option: client_id> my_client_id_here
+option: client_secret> my_client_secret_here
 updated: my_aoc_org
 ```
 <!-- spellchecker: enable -->
@@ -3280,7 +3291,7 @@ The secret is provided using the `secret` option.
 For example in a command like:
 
 ```bash
-ascli aoc admin res node --id=123 --secret="secret1" v3 info
+ascli aoc admin res node --id=123 --secret="my_secret_here" v3 info
 ```
 
 It is also possible to store secrets in the [secret vault](#vault) and then automatically find the related secret using the [config finder](#config_finder).
@@ -3943,19 +3954,19 @@ f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
 - Find files older than 1 year on a given node and store in file list
 
 ```bash
-ascli aoc admin res node --name='my node name' --secret='_secret_here_' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
+ascli aoc admin res node --name='my node name' --secret='my_secret_here' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
 ```
 
 - Delete the files, one by one
 
 ```bash
-cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='_secret_here_' v4 delete "$path" ;done
+cat my_file_list.txt|while read path;do echo ascli aoc admin res node --name='my node name' --secret='my_secret_here' v4 delete "$path" ;done
 ```
 
 - Delete the files in bulk
 
 ```bash
-cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='_secret_here_' v3 delete @lines:@stdin:
+cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='my_secret_here' v3 delete @lines:@stdin:
 ```
 
 ### AoC sample commands
@@ -3963,10 +3974,10 @@ cat my_file_list.txt | ascli aoc admin res node --name='my node name' --secret='
 ```bash
 aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key delete ak1ibmcloud
 aoc admin ats access_key list --fields=name,id
-aoc admin ats access_key node ak1ibmcloud --secret=somesecret browse /
+aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
 aoc admin ats cluster clouds
 aoc admin ats cluster list
 aoc admin ats cluster show --cloud=aws --region=eu-west-1
@@ -4088,7 +4099,7 @@ Please preserve the API key! It cannot be retrieved after it's created.
 Name          mykeyname
 Description   my sample key
 Created At    2019-09-30T12:17+0000
-API Key       my_secret_api_key_here_8f8d9fdakjhfsashjk678
+API Key       my_secret_api_key_here
 Locked        false
 UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f
 ```
@@ -4105,7 +4116,7 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 <!-- spellchecker: disable -->
 
 ```bash
-ascli config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here_8f8d9fdakjhfsashjk678
+ascli config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here
 ```
 
 ```bash
@@ -4154,13 +4165,13 @@ Those are directly the parameters expected by the [ATS API](https://developer.ib
 Example: create access key on IBM Cloud (softlayer):
 
 ```javascript
-ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"_secret_here_","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"my_secret_here","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
 ```javascript
-ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"_secret_here_"},"path":"/laurent"}}'
+ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"my_secret_here"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
@@ -4188,14 +4199,14 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 ### ATS sample commands
 
 ```bash
-ats access_key cluster ak2ibmcloud --secret=somesecret
+ats access_key cluster ak2ibmcloud --secret=my_secret_here
 ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
 ats access_key delete ak2ibmcloud
 ats access_key delete ak_aws
 ats access_key entitlement ak2ibmcloud
 ats access_key list --fields=name,id
-ats access_key node ak2ibmcloud browse / --secret=somesecret
+ats access_key node ak2ibmcloud browse / --secret=my_secret_here
 ats access_key show ak2ibmcloud
 ats api_key create
 ats api_key instances
@@ -4247,7 +4258,7 @@ server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
 server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email --ascp-opts=@list:' -l 10m'
-server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
 ```
@@ -4382,7 +4393,7 @@ It is possible to start a FASPStream session using the node API:
 Use the "node stream create" command, then arguments are provided as a [*transfer-spec*](#transferspec).
 
 ```javascript
-ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"_pass_here_"}' --preset=stream
+ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}' --preset=stream
 ```
 
 ### Watchfolder
@@ -4446,7 +4457,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 ### Create access key
 
 ```javascript
-ascli node access_key create --value=@json:'{"id":"myaccesskey","secret":"mysecret","storage":{"type":"local","path":"/data/mydir"}}'
+ascli node access_key create --value=@json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 ### Node sample commands
@@ -4505,7 +4516,7 @@ node sync state my_syncid
 node sync stop my_syncid
 node sync summary my_syncid
 node transfer list --value=@json:'{"active_only":true}'
-node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass"}'
+node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
@@ -4539,7 +4550,7 @@ Then use these options:
 ```text
 --auth=jwt
 --client-id=_client_id_here_
---client-secret=_secret_here_
+--client-secret=my_secret_here
 --username=_username_here_
 --private-key=@file:.../path/to/key.pem
 ```
@@ -4561,7 +4572,7 @@ Then use options:
 ```text
 --auth=web
 --client-id=_client_id_here_
---client-secret=_secret_here_
+--client-secret=my_secret_here
 --redirect-uri=https://127.0.0.1:8888
 ```
 
@@ -4604,7 +4615,7 @@ faspex5 gateway --value=https://localhost:12345/aspera/faspex & jobs -p
 faspex5 health
 faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
-faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
+faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 faspex5 package show "my_package_id"
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
@@ -4929,14 +4940,14 @@ It consists in the following structure:
 
 ```javascript
 {
-  "apikey": "_api_key_here_",
+  "apikey": "my_api_key_here",
   "cos_hmac_keys": {
-    "access_key_id": "_access_key_here_",
-    "secret_access_key": "_secret_here_"
+    "access_key_id": "my_access_key_here",
+    "secret_access_key": "my_secret_here"
   },
   "endpoints": "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints",
-  "iam_apikey_description": "my description _here_ ...",
-  "iam_apikey_name": "my key name _here_",
+  "iam_apikey_description": "my_description_here",
+  "iam_apikey_name": "my_key_name_here",
   "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Writer",
   "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....",
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
@@ -5355,19 +5366,19 @@ The `smtp` option is a hash table (extended value) with the following fields:
 ```bash
 ascli config preset set smtp_google server smtp.google.com
 ascli config preset set smtp_google username john@gmail.com
-ascli config preset set smtp_google password _pass_here_
+ascli config preset set smtp_google password my_password_here
 ```
 
 or
 
 ```javascript
-ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"_pass_here_"}'
+ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"my_password_here"}'
 ```
 
 or
 
 ```bash
-ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=_pass_here_
+ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=my_password_here
 ```
 
 Set this configuration as global default, for instance:
@@ -5469,7 +5480,7 @@ There are special "extended" [*transfer-spec*](#transferspec) parameters support
 Create a file `session.json` with:
 
 ```json
-{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"_pass_here_","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"my_password_here","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}],"resume_level":"none"}
 ````
 
 Then start the session:
@@ -5486,7 +5497,7 @@ This is particularly useful for a persistent session ( with the [*transfer-spec*
 
 ```javascript
 asession
-{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"_pass_here_","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
+{"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"my_password_here","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
 {"type":"DONE"}
 ```

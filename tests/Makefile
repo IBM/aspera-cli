@@ -139,7 +139,7 @@ $(T)serv_upload: $(T)serv_mkdir
 	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=$${recipient_email} --ascp-opts=@list:' -l 10m'
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
-	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"_secret_here_","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@touch $@
 $(T)serv_sync: $(T)serv_upload 
 	@echo $@
@@ -369,8 +369,8 @@ $(T)nd_2_nd_xfer: $(T).exists
 	set -x&&\
 	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
 	node_user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
-	node_pass=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
-	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass}"'"}'
+	node_pass_here=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
+	$(EXE_MAN) node upload --to-folder="$(CF_HSTS_FOLDER_UPLOAD)" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass_here}"'"}'
 	$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.1
 	@touch $@
 $(T)nd4: $(T).exists
@@ -745,7 +745,7 @@ $(T)aocat8: $(T).exists
 	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak1ibmcloud","secret":"my_ecret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
@@ -762,7 +762,7 @@ $(T)aocat10: $(T).exists
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats access_key node ak1ibmcloud --secret=somesecret browse /
+	$(EXE_MAN) aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
 	@touch $@
 $(T)aocat13: $(T).exists
 	@echo $@
@@ -882,7 +882,7 @@ $(T)at8: $(T).exists
 	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
 	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
 	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak2ibmcloud","secret":"somesecret","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	$(EXE_MAN) ats access_key create --cloud=softlayer --region=$${icos_bucket_region} --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@touch $@
@@ -901,11 +901,11 @@ $(T)at10: $(T).exists
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key node ak2ibmcloud browse / --secret=somesecret
+	$(EXE_MAN) ats access_key node ak2ibmcloud browse / --secret=my_secret_here
 	@touch $@
 $(T)at12: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=somesecret
+	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=my_secret_here
 	@touch $@
 $(T)at13: $(T).exists
 	-$(EXE_MAN) ats access_key delete ak2ibmcloud
@@ -1054,7 +1054,7 @@ $(T)conf_vault: $(T).exists
 	rm -f $$vault_file;\
 	export ASCLI_VAULT_PASSWORD=_simple_one_;\
 	export ASCLI_VAULT=@json:'{"type":"file","name":"'"$${vault_file}"'"}';\
-	$(EXETESTC) config vault create mylabel @json:'{"password":"_something_","description":"super"}';\
+	$(EXETESTC) config vault create mylabel @json:'{"password":"my_password_here","description":"super"}';\
 	$(EXETESTC) config vault list;\
 	$(EXETESTC) config vault show mylabel;\
 	new_pass=_other_one_;\
@@ -1308,7 +1308,7 @@ $(T)f5_p1: $(T).exists
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5_jwt username)&&\
 	f5_meta=$$($(EXE_NOMAN) config preset get misc faspex5_meta)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"_content_prot_here_"}'
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
