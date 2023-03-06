@@ -1321,6 +1321,12 @@ $(T)f5_p3: $(T).exists
 	$(EXE_MAN) faspex5 package show "$${package_id}"&&\
 	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
+$(T)f5_p4: $(T).exists
+	@echo $@
+	set -x&&\
+	shinbox=$$($(EXE_NOMAN) config preset get misc faspex5_shinbox)&&\
+	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	@touch $@
 $(T)f5_a1: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 bearer_token
@@ -1361,7 +1367,7 @@ $(T)f5_fxgw: $(T).exists
 	kill -INT $$(cat $(T)server_pid)
 	@touch $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_a1 $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_p4 $(T)f5_a1 $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
 
 tnagios: $(T)fx_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
