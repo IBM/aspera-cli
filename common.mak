@@ -51,6 +51,7 @@ $(TEST_CONF_FILE_PATH):
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
 	cd $(DIR_TOP). && bundle install
 	rm -f $$HOME/.rvm/gems/*/bin/as{cli,ession}
+	rm -f $$HOME/.rvm/rubies/*/bin/as{cli,ession}
 	touch $@
 clean::
 	rm -f $(DIR_TOP).gems_checked
