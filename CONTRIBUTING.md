@@ -101,15 +101,27 @@ gem install -P HighSecurity aspera-cli
 
 ## Docker image build
 
-The default docker image build relies on the gem to be published as official version on rubygems.
+The default docker image build installs the official gem version directly from <rubygems.org>.
 
-To build, and then push to docker hub (specify the version):
+By default it will build the image for the version in the current repository:
+
+```bash
+make docker
+```
+
+> **Note:** This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template (Makefile target `dockerfile`).
+A template is used as it allows some level of customization to tell where to take the gem from, as as for the SDK file.
+
+Then, to push to the image registry:
+
+```bash
+make dpush
+```
+
+It is possible to build a specific version by setting envvar `GEMVERS` and `make` with option `-e`:
 
 ```bash
 GEMVERS=4.11.0 make -e docker
-```
-
-```bash
 GEMVERS=4.11.0 make -e dpush
 ```
 
@@ -117,11 +129,10 @@ To build/push a beta/development container:
 
 ```bash
 make dockerbeta
-```
-
-```bash
 make dpushversion
 ```
+
+The Dockerfile template allows customizing the optional copy of gem file , versus install from rubygems,org as well as customizing the retrieval of the SDK.
 
 ## Long Term Implementation and delivery improvements
 
@@ -129,4 +140,4 @@ make dpushversion
   - <https://github.com/rest-client/rest-client>
   - <https://github.com/oauth-xx/oauth2>
 - use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
-- Package with <https://github.com/pmq20/ruby-packer> (rubyc)
+- Package a single-file executable for various architectures with <https://github.com/pmq20/ruby-packer> (rubyc)

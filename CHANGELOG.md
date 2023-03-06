@@ -2,13 +2,14 @@
 
 * 4.12.0
 
-  * new: generic `delete` operation supports option `value`
-  * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently.
+  * new: generic `delete` operation supports option `value` for deletion parameters
+  * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
   * new: command `aoc packages recv` accepts option `query` to specify a shared inbox
-  * new: option `type` for command `shares admin user` and more supported commands
+  * new: option `type` for command `shares admin user`
   * new: full support for shares admin operations
   * new: faspex 4 gateway to faspex 5 for package send
-  * fix: build docker image from deployed official version, possibility to deploy beta as well
+  * new: faspex 5 possibility to change email templates
+  * update: build docker image from deployed official version, possibility to deploy beta as well
   * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
   * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
   * change: (break) command `app_authorizations` now has sub commands `show` and `modify`

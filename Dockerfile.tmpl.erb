@@ -1,6 +1,6 @@
 # based on latest ruby
 FROM ruby:latest
-<%=arg_copy%>
+<%=arg_copy_gem%>
 # install gem and optional gems
 RUN gem install grpc mimemagic <%=arg_gem%> && \
   useradd -m -u 1000 -s /bin/bash cliuser && \
@@ -10,10 +10,10 @@ USER cliuser
 # The default dir when starting the docker container.
 WORKDIR /home/cliuser
 # SDK
-COPY <%=arg_sdk%> .
+<%=arg_copy_sdk%>
 # install SDK, create key files and check that ascp works
 RUN \
-  ascli conf ascp install --sdk-url=file:///sdk.zip && \
+  ascli conf ascp install <%=arg_sdk%> && \
   rm -f sdk.zip && \
   ascli conf ascp info
 ENTRYPOINT ["ascli"]
