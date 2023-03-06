@@ -36,6 +36,8 @@ module Aspera
       proxy_pass:              nil
     }
 
+    ARRAY_PARAMS = '[]'
+
     class << self
       # define accessors
       @@global.each_key do |p|
@@ -60,9 +62,9 @@ module Aspera
             orig.each do |k, v|
               case v
               when Array
-                suffix = v.first.eql?('[]') ? v.shift : ''
+                suffix = v.first.eql?(ARRAY_PARAMS) ? v.shift : ''
                 v.each do |e|
-                  params.push([k + suffix, e])
+                  params.push([k.to_s + suffix, e])
                 end
               else
                 params.push([k, v])
