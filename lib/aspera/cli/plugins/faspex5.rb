@@ -216,12 +216,17 @@ module Aspera
           when :admin
             case options.get_next_command([:resource])
             when :resource
-              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles])
+              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
+                                                     email_notifications])
               res_path = list_key = res_type.to_s
+              id_as_arg = false
               case res_type
               when :metadata_profiles
                 res_path = 'configuration/metadata_profiles'
                 list_key = 'profiles'
+              when :email_notifications
+                list_key = false
+                id_as_arg = 'type'
               end
               display_fields =
                 case res_type
@@ -232,7 +237,7 @@ module Aspera
               if res_type.eql?(:oauth_clients)
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
               end
-              return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields)
+              return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
             end
           when :gateway
             require 'aspera/faspex_gw'

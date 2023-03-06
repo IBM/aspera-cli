@@ -95,8 +95,9 @@ module Aspera
       # @param display_fields [Array] fields to display by default
       # @param id_default [String] default identifier to use for existing entity commands (show, modify)
       # @param item_list_key [String] result is in a sub key of the json
+      # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false)
+      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false)
         if INSTANCE_OPS.include?(command)
           begin
             one_res_id = instance_identifier
@@ -105,6 +106,7 @@ module Aspera
             one_res_id = id_default
           end
           one_res_path = "#{res_class_path}/#{one_res_id}"
+          one_res_path = "#{res_class_path}?#{id_as_arg}=#{one_res_id}" if id_as_arg
         end
         # parameters mandatory for create/modify
         if %i[create modify].include?(command)
@@ -132,6 +134,7 @@ module Aspera
           data = resp[:data]
           # TODO: not generic : which application is this for ?
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
+            Log.log.debug{'is vnd.api'}
             data = data[res_class_path]
           end
           if item_list_key
@@ -144,8 +147,15 @@ module Aspera
             end
             data = item_list
           end
-          return {type: :object_list, data: data, fields: display_fields} if data.empty? || data.first.is_a?(Hash)
-          return {type: :value_list, data: data, name: 'id'}
+          case data
+          when Hash
+            return {type: :single_object, data: data, fields: display_fields}
+          when Array
+            return {type: :object_list, data: data, fields: display_fields} if data.empty? || data.first.is_a?(Hash)
+            return {type: :value_list, data: data, name: 'id'}
+          else
+            raise "An error occurred: unexpected result type for list: #{data.class}"
+          end
         when :modify
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
