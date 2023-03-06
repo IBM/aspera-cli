@@ -4591,6 +4591,15 @@ Use this token as password and use `--auth=boot`.
 ascli conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
+### Faspex 5 packages
+
+The `value` option provided to command `faspex5 package send` is the same as for the Faspex 5 API: `POST /packages`.
+
+In addition, `ascli` adds some convenience: the field `recipients` is normally an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
+Then `ascli` will lookup existing contacts, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly.
+
+> **Note:** The lookup is case insensitive and on partial matches.
+
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
@@ -4623,15 +4632,25 @@ faspex5 user profile show
 
 Other examples:
 
+- Send a package with metadata
+
+The interface is the one of the API (Refer to API documentation, or look at request in browser):
+
+```json
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shinbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+```
+
+Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
+
 - List all shared inboxes
 
-```javascript
+```json
 ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
 - Create Metadata profile
 
-```javascript
+```json
 ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
@@ -4645,7 +4664,7 @@ ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox",
 
 Notes:
 
-- The command "v4" requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
+- The command `v4` requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
 - For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
 ### Listing Packages

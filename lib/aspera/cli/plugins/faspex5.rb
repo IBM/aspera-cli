@@ -12,6 +12,7 @@ module Aspera
   module Cli
     module Plugins
       class Faspex5 < Aspera::Cli::BasicAuthPlugin
+        RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)
@@ -82,6 +83,26 @@ module Aspera
           end
         end
 
+        def normalize_recipients(parameters)
+          return unless parameters.key?('recipients')
+          raise 'Field recipients must be an Array' unless parameters['recipients'].is_a?(Array)
+          parameters['recipients'] = parameters['recipients'].map do |recipient_data|
+            # if just a string, assume it is the name
+            if recipient_data.is_a?(String)
+              result = @api_v5.read('contacts', {q: recipient_data, context: 'packages', type: [Rest::ARRAY_PARAMS, *RECIPIENT_TYPES]})[:data]
+              raise "No matching contact for #{recipient_data}" if result.empty?
+              raise "Multiple matching contact for #{recipient_data} : #{result['contacts'].map{|i|i['name']}.join(', ')}" unless 1.eql?(result['total_count'])
+              matched = result['contacts'].first
+              recipient_data = {
+                name:           matched['name'],
+                recipient_type: matched['type']
+              }
+            end
+            # result for mapping
+            recipient_data
+          end
+        end
+
         ACTIONS = %i[health version user bearer_token package admin gateway].freeze
 
         def execute_action
@@ -129,7 +150,8 @@ module Aspera
               return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
             when :send
               parameters = options.get_option(:value, is_type: :mandatory)
-              raise CliBadArgument, 'value must be hash, refer to API' unless parameters.is_a?(Hash)
+              raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
+              normalize_recipients(parameters)
               package = @api_v5.create('packages', parameters)[:data]
               # TODO: option to send from remote source or httpgw
               transfer_spec = @api_v5.call(
