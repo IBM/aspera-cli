@@ -1428,7 +1428,7 @@ read -s <%=evp%>VAULT_PASSWORD
 
 It is possible to manage secrets in macOS key chain (only read supported currently).
 
-```json
+```bash
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
 ```
 
@@ -1436,7 +1436,7 @@ It is possible to manage secrets in macOS key chain (only read supported current
 
 It is possible to store and use secrets encrypted in a file.
 
-```json
+```bash
 --vault=@json:'{"type":"file","name":"vault.bin"}'
 ```
 
@@ -4001,7 +4001,7 @@ Other examples:
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
-```json
+```bash
 <%=cmd%> faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shinbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
 ```
 
@@ -4009,13 +4009,13 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 
 - List all shared inboxes
 
-```json
+```bash
 <%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
 - Create Metadata profile
 
-```json
+```bash
 <%=cmd%> faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
@@ -4068,7 +4068,7 @@ In Faspex 5, configure like this:
 
 `Webhook endpoint URI` : `http://localhost:8080/processing/script1.sh`
 
-Then, the postprocessing script executed withh be `script1.sh`.
+Then, the postprocessing script executed will be `script1.sh`.
 
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
 
