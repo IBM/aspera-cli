@@ -9,6 +9,7 @@
   * new: full support for shares admin operations
   * new: faspex 4 gateway to faspex 5 for package send
   * new: faspex 5 possibility to change email templates
+  * new: emulate faspex 4 postprocessing on faspex 5, plugin: `faspex5` command: `postprocessing`
   * update: build docker image from deployed official version, possibility to deploy beta as well
   * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
   * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
