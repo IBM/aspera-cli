@@ -4025,6 +4025,53 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 <%=cmd%> faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
+### Faspex 4-style postprocessing script with Faspex 5
+
+<%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
+It implements Faspex 5 web hooks, and calls a local script with the same environment as Faspex 4.
+
+It is invoked like this:
+
+```bash
+<%=cmd%> faspex5 postprocessing --value=@json:'{"url":"http://localhost:8080/processing"}'
+```
+
+The following parameters are supported:
+
+| parameter                  | type    | default                | description                                         |
+|----------------------------|---------|------------------------|-----------------------------------------------------|
+| url                        | string  | http://localhost:8080  | Defines the base url on which requests are listened |
+| certificate                | hash    | nil                    | used to define certificate if https is used         |
+| certificate.key            | string  | nil                    | path to private key file                            |
+| certificate.cert           | string  | nil                    | path to certificate                                 |
+| certificate.chain          | string  | nil                    | path to intermediary certificates                   |
+| processing                 | hash    | nil                    | behaviour of post processing                        |
+| processing.script_folder   | string  | .                      | prefix added to script path                         |
+| processing.fail_on_error   | bool    | false                  | if true and process exit with non zero, then fail   |
+| processing.timeout_seconds | integer | 60                     | processing script is killed if takes more time      |
+
+Parameter `url` defines:
+
+- if http or https is used
+- the local port
+- the "domain", i.e. main path of url
+
+When a request is received the following happens:
+
+- the processor get the path of the url called
+- it removes the "domain
+- it pre-prends it with the value of `script_folder`
+- it executes the script
+- upon success, a success code is returned
+
+In Faspex 5, configure like this:
+
+`Webhook endpoint URI` : `http://localhost:8080/processing/script1.sh`
+
+Then, the postprocessing script executed withh be `script1.sh`.
+
+Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+
 ## <a id="faspex"></a>Plugin: `faspex`: IBM Aspera Faspex v4
 
 Notes:

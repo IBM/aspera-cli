@@ -103,11 +103,11 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health version user bearer_token package admin gateway].freeze
+        ACTIONS = %i[health version user bearer_token package admin gateway postprocessing].freeze
 
         def execute_action
-          set_api
           command = options.get_next_command(ACTIONS)
+          set_api unless command.eql?(:postprocessing)
           case command
           when :version
             return { type: :single_object, data: @api_v5.read('version')[:data] }
@@ -248,6 +248,23 @@ module Aspera
             trap('INT') { server.shutdown }
             formatter.display_status("Faspex 4 gateway listening on #{url}")
             Log.log.info("Listening on #{url}")
+            # this is blocking until server exits
+            server.start
+            return Main.result_status('Gateway terminated')
+          when :postprocessing
+            require 'aspera/faspex_postproc'
+            parameters = options.get_option(:value, is_type: :mandatory)
+            raise 'parameters must be Hash' unless parameters.is_a?(Hash)
+            parameters = parameters.symbolize_keys
+            raise 'Missing key: url' unless parameters.key?(:url)
+            uri = URI.parse(parameters[:url])
+            parameters[:processing] ||= {}
+            parameters[:processing][:root] = uri.path
+            server = WebServerSimple.new(uri, certificate: parameters[:certificate])
+            server.mount(uri.path, Faspex4PostProcServlet, parameters[:processing])
+            trap('INT') { server.shutdown }
+            formatter.display_status("Faspex 4 post processing listening on #{uri.port}")
+            Log.log.info("Listening on #{uri.port}")
             # this is blocking until server exits
             server.start
             return Main.result_status('Gateway terminated')

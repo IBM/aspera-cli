@@ -9,8 +9,8 @@ module Aspera
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     # @param app_api [Aspera::AoC]
     # @param app_context [String]
-    def initialize(_server, app_api, app_context)
-      super
+    def initialize(server, app_api, app_context)
+      super(server)
       # typed: Aspera::AoC
       @app_api = app_api
       @app_context = app_context
