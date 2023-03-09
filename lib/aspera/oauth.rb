@@ -24,8 +24,8 @@ module Aspera
     # OAuth methods supported by default
     STD_AUTH_TYPES = %i[web jwt].freeze
 
-    # remove 5 minutes to account for time offset (TODO: configurable?)
-    JWT_NOT_BEFORE_OFFSET_SEC = 300
+    # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
+    JWT_ACCEPTED_OFFSET_SEC = 300
     # one hour validity (TODO: configurable?)
     JWT_EXPIRY_OFFSET_SEC = 3600
     # tokens older than 30 minutes will be discarded from cache
@@ -35,7 +35,7 @@ module Aspera
     # a prefix for persistency of tokens (simplify garbage collect)
     PERSIST_CATEGORY_TOKEN = 'token'
 
-    private_constant :JWT_NOT_BEFORE_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
+    private_constant :JWT_ACCEPTED_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
 
     # persistency manager
     @persist = nil
@@ -153,8 +153,8 @@ module Aspera
       raise 'missing JWT payload' unless oauth.specific_parameters[:payload].is_a?(Hash)
       jwt_payload = {
         exp: seconds_since_epoch + JWT_EXPIRY_OFFSET_SEC, # expiration time
-        nbf: seconds_since_epoch - JWT_NOT_BEFORE_OFFSET_SEC, # not before
-        iat: seconds_since_epoch, # issued at
+        nbf: seconds_since_epoch - JWT_ACCEPTED_OFFSET_SEC, # not before
+        iat: seconds_since_epoch - JWT_ACCEPTED_OFFSET_SEC + 1, # issued at (we tell a little in the past so that server always accepts)
         jti: SecureRandom.uuid # JWT id
       }.merge(oauth.specific_parameters[:payload])
       Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}
@@ -218,6 +218,7 @@ module Aspera
 
     # helper method to create token as per RFC
     def create_token(www_params)
+      Log.log.debug{'Generating a new token'.bg_green}
       return @api.call({
         operation:       'POST',
         subpath:         @generic_parameters[:path_token],
