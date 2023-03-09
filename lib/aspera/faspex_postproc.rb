@@ -19,6 +19,7 @@ module Aspera
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
       super(server)
+      Log.log.debug{"Faspex4PostProcServlet initialized"}
     end
 
     def do_POST(request, response)
@@ -38,7 +39,9 @@ module Aspera
           return
         end
         # build script path by removing domain, and adding script folder
-        script_path = File.join(@parameters[:script_folder], request.path[@parameters[:root].size .. ])
+        script_file = request.path[@parameters[:root].size .. ]
+        Log.log.debug{"script file=#{script_file}"}
+        script_path = File.join(@parameters[:script_folder], script_file)
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
         Log.dump(:webhook_parameters, webhook_parameters)
@@ -68,7 +71,7 @@ module Aspera
         response.status = 500
         response['Content-Type'] = 'application/json'
         response.body = {status: 'error', script: script_path, message: e.message}.to_json
-        end
+      end
     end
   end # Faspex4PostProcServlet
 end # AsperaLm

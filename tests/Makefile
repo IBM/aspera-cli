@@ -1361,9 +1361,17 @@ $(T)f5_detect: $(T).exists
 	@touch $@
 $(T)f5_fxgw: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 gateway --value=https://localhost:12345/aspera/faspex & jobs -p > $(T)server_pid
+	$(EXE_MAN) faspex5 gateway --value=https://localhost:12345/aspera/faspex &\
+	jobs -p > $(T)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
+	kill -INT $$(cat $(T)server_pid)
+	@touch $@
+$(T)f5_postproc: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 postprocessing --value=@json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
+	jobs -p > $(T)server_pid
+	sleep 10
 	kill -INT $$(cat $(T)server_pid)
 	@touch $@
 
