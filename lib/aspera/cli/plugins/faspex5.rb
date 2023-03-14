@@ -103,7 +103,7 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[health version user bearer_token package admin gateway postprocessing].freeze
+        ACTIONS = %i[health version user bearer_token package shared_folders admin gateway postprocessing].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
@@ -213,8 +213,27 @@ module Aspera
               skip_ids_persistency&.save
               return Main.result_transfer_multiple(result_transfer)
             end # case package
+          when :shared_folders
+            all_shared_folders = @api_v5.read('shared_folders', parameters)[:data]['shared_folders']
+            case options.get_next_command(%i[list browse])
+            when :list
+              return {type: :object_list, data: all_shared_folders}
+            when :browse
+              shared_folder_id = instance_identifier
+              path = options.get_next_argument('folder path', mandatory: false) || '/'
+              node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
+              raise "No such shared folder id #{shared_folder_id}" if node.nil?
+              browse = @api_v5.call({
+                operation:   'POST',
+                subpath:     "nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse",
+                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
+                json_params: {'path': path, 'filters': {'basenames': []}},
+                url_params:  {offset: 0, limit: 100}
+              })[:data]['items']
+              return {type: :object_list, data: browse}
+            end
           when :admin
-            case options.get_next_command([:resource])
+            case options.get_next_command(%i[resource])
             when :resource
               res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
                                                      email_notifications])

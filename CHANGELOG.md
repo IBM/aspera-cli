@@ -4,12 +4,13 @@
 
   * new: generic `delete` operation supports option `value` for deletion parameters
   * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
-  * new: command `aoc packages recv` accepts option `query` to specify a shared inbox
-  * new: option `type` for command `shares admin user`
-  * new: full support for shares admin operations
-  * new: faspex 4 gateway to faspex 5 for package send
-  * new: faspex 5 possibility to change email templates
-  * new: emulate faspex 4 postprocessing on faspex 5, plugin: `faspex5` command: `postprocessing`
+  * new: aoc: command `aoc packages recv` accepts option `query` to specify a shared inbox
+  * new: shares: option `type` for command `shares admin user`
+  * new: shares: full support for shares admin operations
+  * new: faspex 4: gateway to faspex 5 for package send
+  * new: faspex 5: possibility to change email templates
+  * new: faspex 5: shared folder list and browse
+  * new: faspex 5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
   * update: build docker image from deployed official version, possibility to deploy beta as well
   * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
   * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
