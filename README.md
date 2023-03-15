@@ -2785,7 +2785,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health package postprocessing user version
+SUBCOMMANDS: admin bearer_token gateway health package postprocessing shared_folders user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -4675,17 +4675,17 @@ ascli faspex5 postprocessing --value=@json:'{"url":"http://localhost:8080/proces
 
 The following parameters are supported:
 
-| parameter                  | type    | default                | description                                         |
-|----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | string  | http://localhost:8080  | Defines the base url on which requests are listened |
-| certificate                | hash    | nil                    | used to define certificate if https is used         |
-| certificate.key            | string  | nil                    | path to private key file                            |
-| certificate.cert           | string  | nil                    | path to certificate                                 |
-| certificate.chain          | string  | nil                    | path to intermediary certificates                   |
-| processing                 | hash    | nil                    | behaviour of post processing                        |
-| processing.script_folder   | string  | .                      | prefix added to script path                         |
-| processing.fail_on_error   | bool    | false                  | if true and process exit with non zero, then fail   |
-| processing.timeout_seconds | integer | 60                     | processing script is killed if takes more time      |
+| parameter                  | type    | default                 | description                                         |
+|----------------------------|---------|-------------------------|-----------------------------------------------------|
+| url                        | string  | `http://localhost:8080` | Defines the base url on which requests are listened |
+| certificate                | hash    | nil                     | used to define certificate if https is used         |
+| certificate.key            | string  | nil                     | path to private key file                            |
+| certificate.cert           | string  | nil                     | path to certificate                                 |
+| certificate.chain          | string  | nil                     | path to intermediary certificates                   |
+| processing                 | hash    | nil                     | behaviour of post processing                        |
+| processing.script_folder   | string  | .                       | prefix added to script path                         |
+| processing.fail_on_error   | bool    | false                   | if true and process exit with non zero, then fail   |
+| processing.timeout_seconds | integer | 60                      | processing script is killed if takes more time      |
 
 Parameter `url` defines:
 

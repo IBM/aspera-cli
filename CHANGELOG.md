@@ -2,20 +2,20 @@
 
 * 4.12.0
 
-  * new: generic `delete` operation supports option `value` for deletion parameters
-  * new: Faspex 4 user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
+  * new: docker: build image from official gem version, possibility to deploy beta as well
+  * new: generic: `delete` operation supports option `value` for deletion parameters
   * new: aoc: command `aoc packages recv` accepts option `query` to specify a shared inbox
+  * new: faspex: (v4) user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
+  * new: faspex: (v4) gateway to faspex 5 for package send
+  * new: faspex5: possibility to change email templates
+  * new: faspex5: shared folder list and browse
+  * new: faspex5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
   * new: shares: option `type` for command `shares admin user`
   * new: shares: full support for shares admin operations
-  * new: faspex 4: gateway to faspex 5 for package send
-  * new: faspex 5: possibility to change email templates
-  * new: faspex 5: shared folder list and browse
-  * new: faspex 5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
-  * update: build docker image from deployed official version, possibility to deploy beta as well
-  * change: (break) command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
-  * change: (break) command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
-  * change: (break) command `app_authorizations` now has sub commands `show` and `modify`
-  * change: (break) similar changes for `shares admin share user show`
+  * change(break): shares: command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
+  * change(break): shares: command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
+  * change(break): shares: command `app_authorizations` now has sub commands `show` and `modify`
+  * change(break): shares: similar changes for `shares admin share user show`
 
 * 4.11.0
 
@@ -28,9 +28,9 @@
   * fix: #99 `aoc file download` for single shared folder
   * fix: due to change of API in faspex 5 for send package (paths is mandatory for any type of transfer now)
   * fix: Oauth web authentication was broken, fixed now
-  * change: (break) container image has entry point
-  * change: (break) `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
-  * change: (break) renamed options for `sync`
+  * change(break): container image has entry point
+  * change(break): `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
+  * change(break): renamed options for `sync`
   * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used
   * change: if wss is enabled on server, use wss
   * lots of cleanup and refactoring
@@ -51,7 +51,7 @@
   * new: improved documentation on faspex and aoc package send
   * fix: `node do` command fixed
   * fix: improved secret hiding from logs
-  * change: (break) removed rarely commands nodeadmin, configuration, userdata, ctl from plugin `server`
+  * change(break): removed rarely commands nodeadmin, configuration, userdata, ctl from plugin `server`
     as well as option `cmd_prefix`
   * change: `ascli` runs as user `cliuser` instead of `root` in container
   * change: default access right for config folder is now user only, including private keys
@@ -63,8 +63,8 @@
   * new: add command `user profile` in `faspex5`
   * new: add config wizard for `faspex5`
   * new: #75 gem is signed
-  * change: (break) removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
-  * change: (break) hash vault keys are string instead of symbol
+  * change(break): removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
+  * change(break): hash vault keys are string instead of symbol
   * change: cleanup with rubocop, all strings are immutable now by default, list constants are frozen
   * change: removed Hash.dig implementation because it is by default in Ruby >= 2.3
   * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
@@ -79,11 +79,11 @@
   * new: added and updated commands for Faspex 5
   * new: option `cache_tokens`
   * new: Faspex4 dropbox packages can now be received by id
-  * change: (break) command `conf gem path` replaces `conf gem_path`
-  * change: (break) option `fpac` expects a value instead of URL
-  * change: (break) option `cipher` in transfer spec must have hyphen
-  * change: (break) renamed option `log_passwords` to `log_secrets`
-  * change: (break) removed plugin `shares2` as products is now EOL
+  * change(break): command `conf gem path` replaces `conf gem_path`
+  * change(break): option `fpac` expects a value instead of URL
+  * change(break): option `cipher` in transfer spec must have hyphen
+  * change(break): renamed option `log_passwords` to `log_secrets`
+  * change(break): removed plugin `shares2` as products is now EOL
   * fix: After AoC version update, wizard did not detect AoC properly
 
 * 4.6.0
@@ -92,12 +92,12 @@
   * new: global option `plugin_folder`
   * new: global option `transpose_single`
   * new: simplified metadata passing for shared inbox package creation in AoC
-  * change: (break) command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
-  * change: (break) command `aoc user profile` replaces `aoc user info`
-  * change: (break) command `aoc user workspaces list` replaces `aoc user workspaces`
-  * change: (break) command `aoc user workspaces current` replaces `aoc workspace`
-  * change: (break) command `conf plugin list` replaces `conf plugins`
-  * change: (break) command `conf connect` simplified
+  * change(break): command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
+  * change(break): command `aoc user profile` replaces `aoc user info`
+  * change(break): command `aoc user workspaces list` replaces `aoc user workspaces`
+  * change(break): command `aoc user workspaces current` replaces `aoc workspace`
+  * change(break): command `conf plugin list` replaces `conf plugins`
+  * change(break): command `conf connect` simplified
   * fix: #60 ascli executable was not installed by default in 4.5.0
   * fix: add password hiding case in logs
 
@@ -111,9 +111,9 @@
   * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
   * change: when using wss, use [ruby's CA certs](README.md#certificates)
   * change: unexpected parameter makes exit code not zero
-  * change: (break) options `id` and `name` cannot be specified at the same time anymore, use [positional identifier or name selection](README.md#res_select)
-  * change: (break) `aoc admin res node` does not take workspace main node as default node if no `id` specified.
-  * change: (break): `orchestrator workflow status` requires id, and supports special id `ALL`
+  * change(break): options `id` and `name` cannot be specified at the same time anymore, use [positional identifier or name selection](README.md#res_select)
+  * change(break): `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+  * change(break): : `orchestrator workflow status` requires id, and supports special id `ALL`
   * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
 
 * 4.4.0
@@ -124,7 +124,7 @@
   * new: `node` plugin accepts bearer token and access key as credential
   * new: `node` option `token_type` allows using basic token in addition to aspera type.
   * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
-  * change: (break) resource `apps_new` of `aoc` replaced with `application` (more clear)
+  * change(break): resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
 
@@ -141,7 +141,7 @@
   * fix: space character in `faspe:` url are percent encoded if needed
   * fix: `preview scan`: if file_id is unknown, ignore and continue scan
   * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
-  * change: (break) option `notify` or `aoc` replaced with `notif_to` and `notif_template`
+  * change(break): option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
 
@@ -158,8 +158,8 @@
   * fix: (break) multi_session_threshold is Integer, not String
   * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
   * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
-  * change: (break) `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-  * change: (break) parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
+  * change(break): `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+  * change(break): parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
@@ -428,19 +428,19 @@
 
 * 0.9.11
 
-  * change: (break) @stdin is now @stdin:
+  * change(break): @stdin is now @stdin:
   * support of ATS for IBM Cloud, removed old version based on aspera id
 
 * 0.9.10
 
-  * change: (break) parameter transfer-node becomes more generic: transfer-info
+  * change(break): parameter transfer-node becomes more generic: transfer-info
   * Display SaaS storage usage with command: aspera admin res node --id=nn info
   * cleaner way of specifying source file list for transfers
-  * change: (break) replaced download_mode option with http_download action
+  * change(break): replaced download_mode option with http_download action
 
 * 0.9.9
 
-  * change: (break) "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
+  * change(break): "aspera package send" parameter deprecated, use the --value option instead with "recipients" value. See example.
   * Now supports "cargo" for Aspera on Cloud (automatic package download)
 
 * 0.9.8
@@ -458,7 +458,7 @@
 
 * 0.9.6
 
-  * change: (break) `@param:`is now `@preset:` and is generic
+  * change(break): `@param:`is now `@preset:` and is generic
   * AoC: added command to display current workspace information
 
 * 0.9.5
@@ -468,7 +468,7 @@
 
 * 0.9.4
 
-  * change: (break) onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
+  * change(break): onCloud file list follow --source convention as well (plus specific case for download when first path is source folder, and other are source file names).
   * AoC Package send supports external users
   * new command to export AoC config to Aspera CLI config
 
@@ -479,15 +479,15 @@
   * modified transfer interface and allow token re-generation on error
   * async add admin command
   * async add db parameters
-  * change: (break) new option "sources" to specify files to transfer
+  * change(break): new option "sources" to specify files to transfer
 
 * 0.9.2
 
-  * change: (break) changed AoC package creation to match API, see AoC section
+  * change(break): changed AoC package creation to match API, see AoC section
 
 * 0.9.1
 
-  * change: (break) changed faspex package creation to match API, see Faspex section
+  * change(break): changed faspex package creation to match API, see Faspex section
 
 * 0.9
 
@@ -500,22 +500,22 @@
 
 * 0.7
 
-  * change: (break) AoC package recv take option if for package instead of argument.
-  * change: (break) Rest class and Oauth class changed init parameters
+  * change(break): AoC package recv take option if for package instead of argument.
+  * change(break): Rest class and Oauth class changed init parameters
   * AoC: receive package from public link
   * select by col value on output
   * added rename (AoC, node)
 
 * 0.6.19
 
-  * change: (break) ats server list provisioned &rarr; ats cluster list
-  * change: (break) ats server list clouds &rarr; ats cluster clouds
-  * change: (break) ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
-  * change: (break) ats server id xxx &rarr; ats cluster show --id=xxx
-  * change: (break) ats subscriptions &rarr; ats credential subscriptions
-  * change: (break) ats api_key repository list &rarr; ats credential cache list
-  * change: (break) ats api_key list &rarr; ats credential list
-  * change: (break) ats access_key id xxx &rarr; ats access_key --id=xxx
+  * change(break): ats server list provisioned &rarr; ats cluster list
+  * change(break): ats server list clouds &rarr; ats cluster clouds
+  * change(break): ats server list instance --cloud=x --region=y &rarr; ats cluster show --cloud=x --region=y
+  * change(break): ats server id xxx &rarr; ats cluster show --id=xxx
+  * change(break): ats subscriptions &rarr; ats credential subscriptions
+  * change(break): ats api_key repository list &rarr; ats credential cache list
+  * change(break): ats api_key list &rarr; ats credential list
+  * change(break): ats access_key id xxx &rarr; ats access_key --id=xxx
 
 * 0.6.18
 
@@ -523,4 +523,4 @@
 
 * 0.6.15
 
-  * change: (break) "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
+  * change(break): "files" application renamed to "aspera" (for "Aspera on Cloud"). "repository" renamed to "files". Default is automatically reset, e.g. in config files and change key "files" to "aspera" in preset "default".
