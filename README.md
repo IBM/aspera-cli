@@ -663,7 +663,7 @@ Using `ascli` with plugin `server` for command line gives advantages over `ascp`
 - choice of transfer agents
 - integrated support of multi-session
 
-Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`EX_ascp_args`).
+Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`ascp_args`).
 
 ### <a id="parsing"></a>Command line parsing, Special Characters
 
@@ -1677,7 +1677,7 @@ Available loggers: `stdout`, `stderr`, `syslog`.
 
 Available levels: `debug`, `info`, `warn`, `error`.
 
-> **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` option `EX_ascp_args`, see [`direct`](#agt_direct).
+> **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agt_direct).
 
 Examples:
 
@@ -1810,8 +1810,7 @@ ascli --proxy-credentials=@list::__username_here__:__password_here__ ...
 
 ### Proxy for Legacy Aspera HTTP/S Fallback
 
-To specify a proxy for legacy HTTP fallback, set the [*transfer-spec*](#transferspec) parameter: `EX_http_proxy_url` (only supported with the `direct` agent).
-(It is also possible to use `EX_ascp_args` and native options in `direct`)
+Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`. Alternatively, set the [*transfer-spec*](#transferspec) parameter: `EX_http_proxy_url`.
 
 ### FASP proxy (forward) for transfers
 
@@ -1992,6 +1991,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                 | Type  | Description |
 |----------------------|-------|-------------|
 | wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| ascp_args            | Array | Array of strings with native ascp arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
 | spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
 | multi_incr_udp       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
@@ -2023,14 +2023,14 @@ ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
 > **Note:** The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
-In particular the field, `EX_ascp_args` which is a list of additional command line options to `ascp`.
+But it is preferred to use the option `transfer_info` with parameter `ascp_args`.
 
 This can be useful to activate logging using option `-L` of `ascp`.
-For example the option `--ts=@json:'{"EX_ascp_args":["-DDL-"]}'` will activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`).
+For example the option `--transfer-info=@json:'{"ascp_args":["-DDL-"]}'` will activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`).
 This is useful if the transfer fails.
-To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--ts=@json:'{"EX_ascp_args":["-L","/path/to/folder"]}'`.
+To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
 
-> **Note:** Implementation note: when transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided in option `ts` in `EX_ascp_args`).
+> **Note:** When transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided using `transfer_info` parameter `ascp_args`).
 
 In addition to standard methods described in section [File List](#file_list), it is possible to specify the list of file using those additional methods:
 
@@ -2040,10 +2040,10 @@ In addition to standard methods described in section [File List](#file_list), it
 --sources=@ts --ts=@json:'{"EX_file_list":"file_list.txt"}'
 ```
 
-- Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_ascp_args`
+- Using option `transfer_info` parameter `ascp_args`
 
 ```javascript
---sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","myfilelist"]}'
+--sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","myfilelist"]}'
 ```
 
 > **Note:** File lists is shown here, there are also similar options for file pair lists.
@@ -2051,17 +2051,6 @@ In addition to standard methods described in section [File List](#file_list), it
 > **Note:** Those 2 additional methods avoid the creation of a copy of the file list: if the standard options `--sources=@lines:@file:... --src-type=...` are used, then the file is list read and parsed, and a new file list is created in a temporary folder.
 >
 > **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
-
-In addition to special transfer spec parameter `EX_ascp_args`, it is possible to provide the same `ascp` options using option `ascp_opts` of `ascli`.
-This option expects an `Array`, which can be conveniently provided with extended syntax `@list:`
-
-```bash
-ascli server download /aspera-test-dir-large/200MB --ascp-opts=@list:' -l 10m -k 3'
-```
-
-> **Note:** Using `@list:`, the use of quotes and leading character "space" here is important: The `@list:` expects a single string which must not be parsed by the shell (so protected with quotes) and the leading space is the separator character.
->
-> **Note:** The option `ascp_opts` are appended to `EX_ascp_args` if present.
 
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
@@ -2144,7 +2133,9 @@ is described in a [*transfer-spec*](#transferspec) (Transfer Specification), suc
 
 If needed, it is possible to modify or add any of the supported [*transfer-spec*](#transferspec) parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several [*transfer-spec*](#transferspec) parameters. Multiple `ts` options on command line are cumulative.
 
-It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using the special [*transfer-spec*](#transferspec) parameter: `EX_ascp_args`. Example: `--ts=@json:'{"EX_ascp_args":["-l","100m"]}'`. This is especially useful for `ascp` command line parameters not supported yet in the transfer spec.
+It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using `transfer_info` option parameter: `ascp_args`.
+Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
+This is especially useful for `ascp` command line parameters not supported in the transfer spec.
 
 The use of a [*transfer-spec*](#transferspec) instead of `ascp` parameters has the advantage of:
 
@@ -2411,12 +2402,6 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 ```javascript
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
-```
-
-> **Note:** Up to version `ascli` 4.6.0, the following parameters should be used for agent `direct`:
-
-```javascript
---ts=@json:'{"EX_ascp_args":["--file-crypt=decrypt"],"EX_at_rest_password":"my_secret_here"}'
 ```
 
 #### Transfer Spec Examples
@@ -2713,7 +2698,6 @@ OPTIONS:
         --ts=VALUE                   Override transfer spec values (Hash, e.g. use @json: prefix), current={"create_dir"=>true}
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
-        --ascp-opts=VALUE            Options for ascp in its native format
         --src-type=ENUM              Type of file list: list, pair
         --transfer=ENUM              Type of transfer agent: direct, node, connect, httpgw, trsdk
         --transfer-info=VALUE        Parameters for transfer agent
@@ -4257,7 +4241,7 @@ server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --t
 server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
-server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email --ascp-opts=@list:' -l 10m'
+server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
 server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
@@ -4276,7 +4260,7 @@ If no SSH password or key is provided and a transfer token is provided in transf
 Example:
 
 ```bash
-ascli server --url=ssh://_server_address_:33001 ... --ts=@json:'{"token":"Basic abc123"}'
+ascli server --url=ssh://_server_address_:33001 ... --ts=@json:'{"token":"Basic _token_here_"}'
 ```
 
 > **Note:** If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
@@ -4293,9 +4277,16 @@ ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
 For file operation command (browse, delete), the ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
-For a list of SSH client options, refer to the ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html).
 
-By default the SSH library expect that a local ssh-agent is running.
+For a list of SSH client options, refer to the ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start).
+
+Some of the 50 available SSH options:
+
+- `verbose`
+- `use_agent`
+- `passphrase`
+
+By default the SSH library will check if a local `ssh-agent` is running.
 
 On Linux, if you get an error message such as:
 
@@ -4309,22 +4300,23 @@ or on Windows:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that you don't have such an SSH agent running, then:
+This means that your environment suggessts to use an agent but you don't have such an SSH agent running, then:
 
 - Check env var: `SSH_AGENT_SOCK`
+- Check your file: `$HOME/.ssh/config`
 - Check if the SSH key is protected with a passphrase (then, use the `passphrase` SSH option)
-- [check the manual](https://net-ssh.github.io/ssh/v1/chapter-2.html#s2)
+- [Check the Ruby SSH manual](https://www.rubydoc.info/github/net-ssh/net-ssh/Net%2FSSH.start)
 - To disable the use of `ssh-agent`, use the option `ssh_options` like this:
 
 ```bash
-ascli server --ssh-options=@ruby:'{use_agent: false}' ...
+ascli server --ssh-options=@json:'{"use_agent": false}' ...
 ```
 
-This can also be set as default using a global preset.
+> **Note:** This can also be set using a preset.
 
 ### Other session channels for `server`
 
-URL schemes `local` and `https` are also supported, mainly for testing purpose.
+URL schemes `local` and `https` are also supported (mainly for testing purpose).
 (`--url=local:` , `--url=https://...`)
 
 - `local` will execute `ascmd` locally, instead of using an SSH connection.
@@ -4639,7 +4631,7 @@ Other examples:
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
 ```bash
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shinbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
 ```
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
@@ -4675,17 +4667,17 @@ ascli faspex5 postprocessing --value=@json:'{"url":"http://localhost:8080/proces
 
 The following parameters are supported:
 
-| parameter                  | type    | default                 | description                                         |
-|----------------------------|---------|-------------------------|-----------------------------------------------------|
-| url                        | string  | `http://localhost:8080` | Defines the base url on which requests are listened |
-| certificate                | hash    | nil                     | used to define certificate if https is used         |
-| certificate.key            | string  | nil                     | path to private key file                            |
-| certificate.cert           | string  | nil                     | path to certificate                                 |
-| certificate.chain          | string  | nil                     | path to intermediary certificates                   |
-| processing                 | hash    | nil                     | behaviour of post processing                        |
-| processing.script_folder   | string  | .                       | prefix added to script path                         |
-| processing.fail_on_error   | bool    | false                   | if true and process exit with non zero, then fail   |
-| processing.timeout_seconds | integer | 60                      | processing script is killed if takes more time      |
+| parameter                  | type    | default                | description                                         |
+|----------------------------|---------|------------------------|-----------------------------------------------------|
+| url                        | string  | http://localhost:8080  | Defines the base url on which requests are listened |
+| certificate                | hash    | nil                    | used to define certificate if https is used         |
+| certificate.key            | string  | nil                    | path to private key file                            |
+| certificate.cert           | string  | nil                    | path to certificate                                 |
+| certificate.chain          | string  | nil                    | path to intermediary certificates                   |
+| processing                 | hash    | nil                    | behaviour of post processing                        |
+| processing.script_folder   | string  | .                      | prefix added to script path                         |
+| processing.fail_on_error   | bool    | false                  | if true and process exit with non zero, then fail   |
+| processing.timeout_seconds | integer | 60                     | processing script is killed if takes more time      |
 
 Parameter `url` defines:
 
@@ -5630,16 +5622,16 @@ The general idea is to rely on :
 
 Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
-- `ascp` already takes care of sending only "new" files: option `-k 1,2,3` (`resume_policy`)
+- `ascp` already takes care of sending only **new** files: option `-k 1,2,3` (`resume_policy`)
 - `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
 - `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
 - `--src-base` (`src_base`) if top level folder name shall not be created on destination
 
-Note that:
-
-- `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `--ts` parameter.
-- most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters
-- native `ascp` arguments can be provided with the [*transfer-spec*](#transferspec) parameter: `EX_ascp_args` (array), only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node)
+> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `--ts` parameter.
+>
+> **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters.
+>
+> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided option `transfer_info` parameter `ascp_args`.
 
 #### server side and configuration
 

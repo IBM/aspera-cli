@@ -57,7 +57,6 @@ module Aspera
         @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
         @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.add_opt_simple(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
-        @opt_mgr.add_opt_simple(:ascp_opts, 'Options for ascp in its native format')
         @opt_mgr.add_opt_list(:src_type, %i[list pair], 'Type of file list')
         @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'Type of transfer agent')
         @opt_mgr.add_opt_simple(:transfer_info, 'Parameters for transfer agent')
@@ -66,7 +65,6 @@ module Aspera
         @opt_mgr.set_option(:src_type, :list)
         @opt_mgr.set_option(:progress, :native) # use native ascp progress bar as it is more reliable
         @opt_mgr.parse_options!
-        Fasp::TransferSpec.ascp_opts_to_ts(@transfer_spec_cmdline, @opt_mgr.get_option(:ascp_opts))
       end
 
       def option_transfer_spec; @transfer_spec_cmdline; end
@@ -153,7 +151,7 @@ module Aspera
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, is_type: :mandatory).eql?(:direct) &&
-            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline)
+            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline,@opt_mgr.get_option(:transfer_info))
           raise CliBadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths

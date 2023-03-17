@@ -24,6 +24,7 @@ module Aspera
         wss:               true, # true: if both SSH and wss in ts: prefer wss
         multi_incr_udp:    true,
         resume:            {},
+        ascp_args:         [],
         quiet:             true # by default no interactive progress bar
       }.freeze
       private_constant :DEFAULT_OPTIONS
@@ -52,7 +53,7 @@ module Aspera
         if transfer_spec.key?('token') &&
             !transfer_spec.key?('remote_password') &&
             !transfer_spec.key?('EX_ssh_key_paths')
-          # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used
+          # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used: no passphrase
           transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
         end
 
@@ -69,7 +70,7 @@ module Aspera
             Log.log.error{"multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0"}
             multi_session_info = nil
           elsif multi_session_info[:count].eql?(0)
-            Log.log.debug('multi_session count is zero: no multisession')
+            Log.log.debug('multi_session count is zero: no multi session')
             multi_session_info = nil
           elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
@@ -81,7 +82,7 @@ module Aspera
         end
 
         # compute known args
-        env_args = Parameters.ts_to_env_args(transfer_spec, wss: @options[:wss])
+        env_args = Parameters.ts_to_env_args(transfer_spec, wss: @options[:wss], ascp_args: @options[:ascp_args])
 
         # add fallback cert and key as arguments if needed
         if %w[1 force].include?(transfer_spec['http_fallback'])

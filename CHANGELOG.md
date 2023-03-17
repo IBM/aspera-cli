@@ -16,6 +16,7 @@
   * change(break): shares: command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
   * change(break): shares: command `app_authorizations` now has sub commands `show` and `modify`
   * change(break): shares: similar changes for `shares admin share user show`
+  * change(break): option `ascp_opts` is removed, and replaced with `transfer_info` parameter `ascp_args`
 
 * 4.11.0
 

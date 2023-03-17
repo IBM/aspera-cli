@@ -18,8 +18,9 @@ module Aspera
       SUPPORTED_AGENTS = %i[direct node connect].freeze
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
+      FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
 
-      private_constant :SUPPORTED_AGENTS
+      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
       class << self
         # Temp folder for file lists, must contain only file lists
@@ -85,14 +86,17 @@ module Aspera
         def convert_base64(v); Base64.strict_encode64(v); end
 
         # file list is provided directly with ascp arguments
-        def ts_has_ascp_file_list(ts)
-          (ts['EX_ascp_args'].is_a?(Array) && ['--file-list', '--file-pair-list'].any?{|i|ts['EX_ascp_args'].include?(i)}) ||
+        def ts_has_ascp_file_list(ts, ascp_args)
+          # it can also be option transfer_info
+          ascp_args = ascp_args['ascp_args'] if ascp_args.is_a?(Hash)
+          (ts['EX_ascp_args'].is_a?(Array) && ts['EX_ascp_args'].any?{|i|FILE_LIST_OPTIONS.include?(i)}) ||
+            (ascp_args.is_a?(Array) && ascp_args.any?{|i|FILE_LIST_OPTIONS.include?(i)}) ||
             ts.key?('EX_file_list') ||
             ts.key?('EX_file_pair_list')
         end
 
-        def ts_to_env_args(transfer_spec, options)
-          return Parameters.new(transfer_spec, options).ascp_args
+        def ts_to_env_args(transfer_spec, wss:, ascp_args:)
+          return Parameters.new(transfer_spec, wss: wss, ascp_args: ascp_args).ascp_args
         end
 
         # temp file list files are created here
@@ -107,17 +111,20 @@ module Aspera
         attr_reader :file_list_folder
       end # self
 
-      # @param options [Hash] key: :wss: bool
-      def initialize(job_spec, options)
+      # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
+      def initialize(job_spec, wss:, ascp_args:)
         @job_spec = job_spec
-        @options = options
+        @opt_wss = wss
+        @opt_args = ascp_args
+        Log.log.debug{"agent options: #{@opt_wss} #{@opt_args}"}
+        raise 'ascp args must be an Array' unless @opt_args.is_a?(Array)
+        raise 'ascp args must be an Array of String' if @opt_args.any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
-        Log.log.debug{"agent options: #{@options}"}
       end
 
       def process_file_list
         # is the file list provided through EX_ parameters?
-        ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec)
+        ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @opt_args)
         # set if paths is mandatory in ts
         @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided
         # get paths in transfer spec (after setting if it is mandatory)
@@ -179,7 +186,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
+        if @builder.read_param('wss_enabled') && (@opt_wss || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
@@ -211,6 +218,7 @@ module Aspera
         process_file_list
         # optional args, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
+        @builder.add_command_line_options(@opt_args)
         # process destination folder
         destination_folder = @builder.read_param('destination_root') || '/'
         # ascp4 does not support base64 encoding of destination
