@@ -223,14 +223,18 @@ module Aspera
               path = options.get_next_argument('folder path', mandatory: false) || '/'
               node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
               raise "No such shared folder id #{shared_folder_id}" if node.nil?
-              browse = @api_v5.call({
+              result = @api_v5.call({
                 operation:   'POST',
                 subpath:     "nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse",
                 headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
                 json_params: {'path': path, 'filters': {'basenames': []}},
                 url_params:  {offset: 0, limit: 100}
-              })[:data]['items']
-              return {type: :object_list, data: browse}
+              })[:data]
+              if result.key?('items')
+                return {type: :object_list, data: result['items']}
+              else
+                return {type: :single_object, data: result['self']}
+              end
             end
           when :admin
             case options.get_next_command(%i[resource])
