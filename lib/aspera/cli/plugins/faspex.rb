@@ -215,7 +215,7 @@ module Aspera
           create_path = link_data[:subpath].split('/')[0..-2].join('/')
           package_create_params[:passcode] = link_data[:query]['passcode']
           delivery_info[:transfer_type] = 'connect'
-          delivery_info[:source_paths_list] = transfer.ts_source_paths.map{|i|i['source']}.join("\r\n")
+          delivery_info[:source_paths_list] = transfer.source_list.join("\r\n")
           api_public_link = Rest.new({base_url: link_data[:base_url]})
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
@@ -273,7 +273,7 @@ module Aspera
                 # authenticated user
                 delivery_info['sources'] ||= [{'paths' => []}]
                 first_source = delivery_info['sources'].first
-                first_source['paths'].push(*transfer.ts_source_paths.map{|i|i['source']})
+                first_source['paths'].push(*transfer.source_list)
                 source_name = options.get_option(:source_name)
                 if !source_name.nil?
                   source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']

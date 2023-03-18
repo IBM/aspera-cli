@@ -129,6 +129,12 @@ module Aspera
         return dest_folder
       end
 
+      def source_list
+        return ts_source_paths.map do |i|
+          i['source']
+        end
+      end
+
       # This is how the list of files to be transferred is specified
       # get paths suitable for transfer spec from command line
       # @return [Hash] {source: (mandatory), destination: (optional)}
@@ -151,7 +157,7 @@ module Aspera
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, is_type: :mandatory).eql?(:direct) &&
-            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline,@opt_mgr.get_option(:transfer_info))
+            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline, @opt_mgr.get_option(:transfer_info))
           raise CliBadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths

@@ -6,13 +6,17 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/nagios'
+require 'aspera/environment'
 require 'securerandom'
+require 'ruby-progressbar'
+require 'tty-spinner'
 
 module Aspera
   module Cli
     module Plugins
       class Faspex5 < Aspera::Cli::BasicAuthPlugin
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
+        PACKAGE_TERMINATED = %w[completed failed].freeze
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)
@@ -34,6 +38,7 @@ module Aspera
           options.add_opt_list(:auth, [:boot].concat(Oauth::STD_AUTH_TYPES), 'OAuth type of authentication')
           options.add_opt_simple(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.add_opt_simple(:passphrase, 'RSA private key passphrase')
+          options.add_opt_simple(:shared_folder, 'Shared folder source for package files')
           options.set_option(:auth, :jwt)
           options.parse_options!
         end
@@ -103,6 +108,45 @@ module Aspera
           end
         end
 
+        def wait_for_complete_upload(id)
+          parameters = options.get_option(:value)
+          spinner = nil
+          progress = nil
+          while true
+            status = @api_v5.read("packages/#{id}/upload_details")[:data]
+            # user asked to not follow
+            break unless parameters
+            if status['upload_status'].eql?('submitted')
+              if spinner.nil?
+                spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
+                spinner.start
+              end
+              spinner.update(title: status['upload_status'])
+              spinner.spin
+            elsif progress.nil?
+              progress = ProgressBar.create(
+                format:     '%a %B %p%% %r Mbps %e',
+                rate_scale: lambda{|rate|rate / Environment::BYTES_PER_MEBIBIT},
+                title:      'progress',
+                total:      status['bytes_total'].to_i)
+            else
+              progress.progress = status['bytes_written'].to_i
+            end
+            break if PACKAGE_TERMINATED.include?(status['upload_status'])
+            sleep(0.5)
+          end
+          status['id'] = id
+          return status
+        end
+
+        def lookup_entity(entity_type, property, value)
+          # TODO: what if too many, use paging ?
+          all = @api_v5.read(entity_type)[:data][entity_type]
+          found = all.find{|i|i[property].eql?(value)}
+          raise "No #{entity_type} with #{property} = #{value}" if found.nil?
+          return found
+        end
+
         ACTIONS = %i[health version user bearer_token package shared_folders admin gateway postprocessing].freeze
 
         def execute_action
@@ -136,7 +180,7 @@ module Aspera
           when :bearer_token
             return {type: :text, data: @api_v5.oauth_token}
           when :package
-            command = options.get_next_command(%i[list show send receive])
+            command = options.get_next_command(%i[list show send receive status])
             case command
             when :list
               parameters = options.get_option(:value)
@@ -148,21 +192,40 @@ module Aspera
             when :show
               id = instance_identifier
               return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
+            when :status
+              status = wait_for_complete_upload(instance_identifier)
+              return {type: :single_object, data: status}
             when :send
               parameters = options.get_option(:value, is_type: :mandatory)
               raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
               normalize_recipients(parameters)
               package = @api_v5.create('packages', parameters)[:data]
-              # TODO: option to send from remote source or httpgw
-              transfer_spec = @api_v5.call(
-                operation:   'POST',
-                subpath:     "packages/#{package['id']}/transfer_spec/upload",
-                headers:     {'Accept' => 'application/json'},
-                url_params:  {transfer_type: TRANSFER_CONNECT},
-                json_params: {paths: transfer.ts_source_paths.map{|i|i['source']}}
-              )[:data]
-              transfer_spec.delete('authentication')
-              return Main.result_transfer(transfer.start(transfer_spec))
+              shared_folder = options.get_option(:shared_folder)
+              if shared_folder.nil?
+                # TODO: option to send from remote source or httpgw
+                transfer_spec = @api_v5.call(
+                  operation:   'POST',
+                  subpath:     "packages/#{package['id']}/transfer_spec/upload",
+                  headers:     {'Accept' => 'application/json'},
+                  url_params:  {transfer_type: TRANSFER_CONNECT},
+                  json_params: {paths: transfer.source_list}
+                )[:data]
+                transfer_spec.delete('authentication')
+                return Main.result_transfer(transfer.start(transfer_spec))
+              else
+                if !shared_folder.to_i.to_s.eql?(shared_folder)
+                  shared_folder = lookup_entity('shared_folders', 'name', shared_folder)['id']
+                end
+                transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
+                # start remote transfer and get first status
+                result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)[:data]
+                result['id'] = package['id']
+                unless result['status'].eql?('completed')
+                  formatter.display_status("Package #{package['id']}")
+                  result = wait_for_complete_upload(package['id'])
+                end
+                return {type: :single_object, data: result}
+              end
             when :receive
               pkg_type = 'received'
               pack_id = instance_identifier
@@ -192,7 +255,7 @@ module Aspera
               package_ids.each do |pkg_id|
                 param_file_list = {}
                 begin
-                  param_file_list['paths'] = transfer.ts_source_paths.map{|i|i['source']}
+                  param_file_list['paths'] = transfer.source_list
                 rescue Aspera::Cli::CliBadArgument
                   # paths is optional
                 end
@@ -214,7 +277,7 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             end # case package
           when :shared_folders
-            all_shared_folders = @api_v5.read('shared_folders', parameters)[:data]['shared_folders']
+            all_shared_folders = @api_v5.read('shared_folders')[:data]['shared_folders']
             case options.get_next_command(%i[list browse])
             when :list
               return {type: :object_list, data: all_shared_folders}

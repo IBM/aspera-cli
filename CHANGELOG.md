@@ -10,6 +10,7 @@
   * new: faspex5: possibility to change email templates
   * new: faspex5: shared folder list and browse
   * new: faspex5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
+  * new: faspex5: send package from remote source
   * new: shares: option `type` for command `shares admin user`
   * new: shares: full support for shares admin operations
   * change(break): shares: command `shares admin user saml_import` replaced with `shares admin user import --type=saml`

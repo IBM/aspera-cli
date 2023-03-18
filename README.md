@@ -967,7 +967,7 @@ The style of output can be set using the `format` parameter, supporting:
 
 Table output can be filtered using the `select` parameter. Example:
 
-```javascript
+```bash
 ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
@@ -1086,7 +1086,7 @@ ascli config echo @csvt:@file:test.csv
 
 Example: create a hash and include values from preset named "config" of config file in this hash
 
-```javascript
+```bash
 ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
 ```
 
@@ -1183,7 +1183,7 @@ ascli config preset set demo_server password my_password_here
 
 The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [*Structured Value*](#native).
 
-```javascript
+```bash
 ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
 ```
 
@@ -1238,7 +1238,7 @@ ascli config preset set default _plugin_name_ _default_preset_for_plugin_
 ascli config preset get default _plugin_name_
 ```
 
-```javascript
+```json
 "_default_preset_for_plugin_"
 ```
 
@@ -1388,7 +1388,7 @@ ascli -N --url=_url_here_ --password=my_password_here --username=_name_here_ nod
 
 Example: Define options using a hash:
 
-```javascript
+```bash
 ascli -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
 ```
 
@@ -1414,7 +1414,7 @@ ascli config preset set shares06 password my_password_here
 
 This can also be done with one single command:
 
-```javascript
+```bash
 ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"my_password_here"}'
 ```
 
@@ -1628,7 +1628,7 @@ ascli conf plugin list
 
 By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
-```javascript
+```bash
 ascli --show-config --select=@json:'{"key":"plugin_folder"}'
 ```
 
@@ -1723,7 +1723,7 @@ Like any other option, those can be set either on command line, or in config fil
 
 Example:
 
-```javascript
+```bash
 ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
@@ -2017,7 +2017,7 @@ ascli config ascp errors
 
 Examples:
 
-```javascript
+```bash
 ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
@@ -2036,13 +2036,13 @@ In addition to standard methods described in section [File List](#file_list), it
 
 - Using the pseudo [*transfer-spec*](#transferspec) parameter `EX_file_list`
 
-```javascript
+```bash
 --sources=@ts --ts=@json:'{"EX_file_list":"file_list.txt"}'
 ```
 
 - Using option `transfer_info` parameter `ascp_args`
 
-```javascript
+```bash
 --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","myfilelist"]}'
 ```
 
@@ -2091,7 +2091,7 @@ Parameters provided in option `transfer_info` are:
 
 Example:
 
-```javascript
+```bash
 ascli faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
@@ -2157,7 +2157,7 @@ References:
 
 Parameters can be displayed with commands:
 
-```javascript
+```bash
 ascli config ascp spec
 ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
@@ -2321,7 +2321,7 @@ So, by default, the list of files to transfer will be simply specified on the co
 
   - Using JSON array
 
-    ```javascript
+    ```bash
     --sources=@json:'["file1","file2"]'
     ```
 
@@ -2342,7 +2342,7 @@ Examples:
 
   - Using transfer spec
 
-  ```javascript
+  ```bash
   --sources=@ts --ts=@json:'{"paths":[{"source":"file1"},{"source":"file2"}]}'
   ```
 
@@ -2369,7 +2369,7 @@ Multi session, i.e. starting a transfer of a file set using multiple sessions (o
 
 - when agent=node :
 
-```javascript
+```bash
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -2377,7 +2377,7 @@ Multi-session is directly supported by the node daemon.
 
 - when agent=direct :
 
-```javascript
+```bash
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
@@ -2400,7 +2400,7 @@ activating CSEAR consists in using transfer spec parameters:
 
 Example: parameter to download a faspex package and decrypt on the fly
 
-```javascript
+```bash
 --ts=@json:'{"content_protection":"decrypt","content_protection_password":"my_password_here"}'
 ```
 
@@ -2408,25 +2408,25 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 - Change target rate
 
-```javascript
+```bash
 --ts=@json:'{"target_rate_kbps":500000}'
 ```
 
 - Override the FASP SSH port to a specific TCP port:
 
-```javascript
+```bash
 --ts=@json:'{"ssh_port":33002}'
 ```
 
 - Force http fallback mode:
 
-```javascript
+```bash
 --ts=@json:'{"http_fallback":"force"}'
 ```
 
 - Activate progress when not activated by default on server
 
-```javascript
+```bash
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
@@ -2780,6 +2780,7 @@ OPTIONS:
         --auth=ENUM                  OAuth type of authentication: boot, web, jwt
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
+        --shared-folder=VALUE        Shared folder source for package files
 
 
 COMMAND: cos
@@ -3057,7 +3058,7 @@ ascli aoc admin res client list
 :............:...............:
 ```
 
-```javascript
+```bash
 ascli aoc admin res client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
@@ -3192,19 +3193,19 @@ Examples:
 
 - List users with `laurent` in name:
 
-```javascript
+```bash
 ascli aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
 ```
 
 - List users who logged-in before a date:
 
-```javascript
+```bash
 ascli aoc admin res user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
 - List external users and sort in reverse alphabetical order using name:
 
-```javascript
+```bash
 ascli aoc admin res user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
 
@@ -3310,7 +3311,7 @@ The environment provided contains the following additional variable:
 
 Example:
 
-```javascript
+```bash
 ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 \
 --query=@json:'{"status":"completed","direction":"receive"}' \
 --notif-to=active --notif-template=@file:mytemplate.erb
@@ -3335,7 +3336,7 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 
 #### Example: Bulk creation of users
 
-```javascript
+```bash
 ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 ```
 
@@ -3352,7 +3353,7 @@ ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.
 
 <!-- spellchecker: disable -->
 
-```javascript
+```bash
 ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
@@ -3373,7 +3374,7 @@ thelist=$(ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fiel
 echo $thelist
 ```
 
-```javascript
+```json
 ["113501","354061"]
 ```
 
@@ -3432,11 +3433,11 @@ ascli aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q"
 
 Examples of query (TODO: cleanup):
 
-```javascript
+```json
 {"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
 ```
 
-```javascript
+```json
 {"tag":"aspera.files.package_id=LA8OU3p8w"}
 ```
 
@@ -3448,7 +3449,7 @@ ascli aoc admin res node --secret=_secret_ v3 events
 
 #### Example: Display members of a workspace
 
-```javascript
+```bash
 ascli aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ```
 
@@ -3467,7 +3468,7 @@ ascli aoc admin res workspace_membership list --fields=member_type,manager,membe
 
 Other query parameters:
 
-```javascript
+```json
 {"workspace_membership_through":true,"include_indirect":true}
 ```
 
@@ -3513,7 +3514,7 @@ ascli aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_membe
 
 #### Example: Get users who did not log since a date
 
-```javascript
+```bash
 ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
@@ -3528,7 +3529,7 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 
 #### Example: List "Limited" users
 
-```javascript
+```bash
 ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
@@ -3608,7 +3609,7 @@ Then, create two shared folders located in two regions, in your files home, in a
 
 Then, transfer between those:
 
-```javascript
+```bash
 ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
@@ -3616,7 +3617,7 @@ ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AW
 
 <!-- spellchecker: disable -->
 
-```javascript
+```bash
 ascli aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 ```
 
@@ -3661,7 +3662,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   The creation options are the ones of ATS API, refer to the [section on ATS](#ats_params) for more details and examples.
 
-  ```javascript
+  ```bash
   ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
   ```
 
@@ -3679,7 +3680,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 
   Then use the returned address for the `url` key to actually create the AoC Node entity:
 
-  ```javascript
+  ```bash
   ascli aoc admin res node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
   ```
 
@@ -3730,19 +3731,19 @@ Notes:
 
 #### Example: Send a package with one file to two users, using their email
 
-```javascript
+```bash
 ascli aoc packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
 ```
 
 #### Example: Send a package to a shared inbox with metadata
 
-```javascript
+```bash
 ascli aoc packages send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
-```javascript
+```bash
 ascli aoc packages send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
@@ -3750,7 +3751,7 @@ ascli aoc packages send --workspace=eudemo --value=@json:'{"name":"my pack title
 
 When user packages are listed, the following query is used:
 
-```javascript
+```json
 {"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}
 ```
 
@@ -4148,19 +4149,19 @@ Those are directly the parameters expected by the [ATS API](https://developer.ib
 
 Example: create access key on IBM Cloud (softlayer):
 
-```javascript
+```bash
 ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"my_secret_here","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
 ```
 
 Example: create access key on AWS:
 
-```javascript
+```bash
 ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"myaccesskey","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"my_secret_here"},"path":"/laurent"}}'
 ```
 
 Example: create access key on Azure SAS:
 
-```javascript
+```bash
 ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
 ```
 
@@ -4168,7 +4169,7 @@ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":
 
 Example: create access key on Azure:
 
-```javascript
+```bash
 ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"myaccesskey","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"myaccesskey","storage_endpoint":"myblob"},"path":"/"}}'
 ```
 
@@ -4354,7 +4355,7 @@ For transfers, it is possible to control how transfer is authorized using option
 - `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
 - `basic` : transfer spec is created like this:
 
-```javascript
+```json
 {
   "remote_host": "<address of node url>",
   "remote_user": "xfer",
@@ -4384,7 +4385,7 @@ It is possible to start a FASPStream session using the node API:
 
 Use the "node stream create" command, then arguments are provided as a [*transfer-spec*](#transferspec).
 
-```javascript
+```bash
 ascli node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}' --preset=stream
 ```
 
@@ -4399,7 +4400,7 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 
 <!-- spellchecker: disable -->
 
-```javascript
+```bash
 ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
@@ -4411,7 +4412,7 @@ ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","
 
 Follow the Aspera Transfer Server configuration to activate this feature.
 
-```javascript
+```bash
 ascli node central file list --validator=ascli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
@@ -4423,7 +4424,7 @@ ascli node central file list --validator=ascli --data=@json:'{"file_transfer_fil
 :..............:..............:............:......................................:
 ```
 
-```javascript
+```bash
 ascli node central file update --validator=ascli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
@@ -4448,7 +4449,7 @@ This will get transfer information from the SHOD instance and tell the Azure ATS
 
 ### Create access key
 
-```javascript
+```bash
 ascli node access_key create --value=@json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
@@ -4650,8 +4651,22 @@ ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the pro
 
 - Create a Shared inbox with specific metadata profile
 
-```javascript
+```bash
 ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
+```
+
+- List content in Shared folder and send package from remote source
+
+```bash
+ascli faspex5 shared_folders list
+```
+
+```bash
+ascli faspex5 shared_folders br 3 /folder
+```
+
+```bash
+ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=3 /folder/file
 ```
 
 ### Faspex 4-style postprocessing script with Faspex 5
@@ -4741,7 +4756,7 @@ If no parameter `max` or `pmax` is provided, then all packages will be listed in
 
 #### Example: list packages in dropbox
 
-```javascript
+```bash
 ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
 ```
 
@@ -4776,7 +4791,7 @@ The contents of `delivery_info` is directly the contents of the `send` v3 [API o
 
 Example:
 
-```javascript
+```bash
 ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
@@ -4794,7 +4809,7 @@ Like for any transfer, a notification can be sent by email using parameters: `no
 
 Example:
 
-```javascript
+```bash
 ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
@@ -4804,7 +4819,7 @@ In this example the notification template is directly provided on command line. 
 
 Example:
 
-```javascript
+```bash
 ascli faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
 ascli faspex v4 dropbox list
 ascli faspex v4 dropbox delete --id=36
@@ -4998,7 +5013,7 @@ It consists in the following structure:
 
 <!-- spellchecker: disable -->
 
-```javascript
+```json
 {
   "apikey": "my_api_key_here",
   "cos_hmac_keys": {
@@ -5431,7 +5446,7 @@ ascli config preset set smtp_google password my_password_here
 
 or
 
-```javascript
+```bash
 ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"my_password_here"}'
 ```
 
@@ -5555,7 +5570,7 @@ asession < session.json
 
 This is particularly useful for a persistent session ( with the [*transfer-spec*](#transferspec) parameter: `"keepalive":true` )
 
-```javascript
+```json
 asession
 {"remote_host":"demo.asperasoft.com","ssh_port":33001,"remote_user":"asperaweb","remote_password":"my_password_here","direction":"receive","destination_root":".","keepalive":true,"resume_level":"none"}
 {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
@@ -5783,7 +5798,7 @@ Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including EC
 
 Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
 
-```javascript
+```bash
 --ts=@json:'{"sshfp":null}'
 ```
 
