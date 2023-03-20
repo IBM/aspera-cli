@@ -1,5 +1,9 @@
 # Changes (Release notes)
 
+* 4.13.0
+
+  * <TBD>
+
 * 4.12.0
 
   * new: docker: build image from official gem version, possibility to deploy beta as well

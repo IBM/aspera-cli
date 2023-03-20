@@ -3,6 +3,7 @@
 module Aspera
   module Cli
     # for beta add extension : .beta1
-    VERSION = '4.12.0'
+    # for dev version add extension : .pre
+    VERSION = '4.13.0.pre'
   end
 end
