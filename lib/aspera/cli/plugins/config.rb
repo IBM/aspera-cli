@@ -582,7 +582,8 @@ module Aspera
                 Log.log.debug{"Cannot detect #{plugin_name_sym} : #{e.message}"}
               end
             end
-            return detection_info.merge(product: plugin_name_sym, url: current_url) unless detection_info.nil?
+            # if there is a redirect, then the detector can override the url.
+            return {product: plugin_name_sym, url: current_url}.merge(detection_info) unless detection_info.nil?
           end # loop
           raise "No known application found at #{url}"
         end

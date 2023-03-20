@@ -46,7 +46,7 @@ module Aspera
             if result[:http].body.start_with?('<?xml')
               res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
               version = res_s['XRD']['application']['version']
-              return {version: version}
+              return {version: version, url: result[:http].uri}
             end
             return nil
           end

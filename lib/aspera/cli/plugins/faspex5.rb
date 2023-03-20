@@ -17,12 +17,13 @@ module Aspera
       class Faspex5 < Aspera::Cli::BasicAuthPlugin
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         PACKAGE_TERMINATED = %w[completed failed].freeze
+        API_DETECT = 'api/v5/configuration/ping'
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)
-            result = api.read('api/v5/configuration/ping')
+            result = api.read(API_DETECT)
             if result[:http].code.start_with?('2') && result[:http].body.strip.empty?
-              return {version: '5'}
+              return {version: '5', url: result[:http].uri.to_s[0..-(API_DETECT.length + 2)]}
             end
             return nil
           end
