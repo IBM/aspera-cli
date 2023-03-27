@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# ffmpeg options:
+# spellchecker:ignore pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
+# spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos
+
 require 'open3'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
@@ -22,7 +26,6 @@ module Aspera
       # supported preview type is one of Preview::PREVIEW_FORMATS
       # the resulting preview file type is taken from destination file extension.
       # conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>
-      # (combi = combination of source file type and destination format)
       #   -> conversion_type is one of FileTypes::CONVERSION_TYPES
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
@@ -73,7 +76,7 @@ module Aspera
             Log.log.warn{"preview size exceeds maximum #{result_size} > #{@options.max_size}"}
           end
         rescue StandardError => e
-          Log.log.error{"Ignoging: #{e.message}"}
+          Log.log.error{"Ignoring: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
           FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
         ensure
@@ -102,11 +105,11 @@ module Aspera
       def convert_video_to_mp4_using_blend
         p_duration = Utils.video_get_duration(@source_file_path)
         p_start_offset = @options.video_start_sec.to_i
-        p_keyframecount = @options.blend_keyframes.to_i
+        p_key_frame_count = @options.blend_keyframes.to_i
         last_keyframe = nil
         current_index = 1
-        1.upto(p_keyframecount) do |i|
-          offset_seconds = get_offset(p_duration, p_start_offset, p_keyframecount, i)
+        1.upto(p_key_frame_count) do |i|
+          offset_seconds = get_offset(p_duration, p_start_offset, p_key_frame_count, i)
           Utils.video_dump_frame(@source_file_path, offset_seconds, @options.video_scale, this_tmpdir, current_index)
           Utils.video_dupe_frame(this_tmpdir, current_index, @options.blend_pauseframes)
           Utils.video_blend_frames(this_tmpdir, last_keyframe, current_index) unless last_keyframe.nil?
@@ -133,17 +136,17 @@ module Aspera
         File.open(filelist, 'w+') do |f|
           1.upto(@options.clips_count.to_i) do |i|
             offset_seconds = get_offset(p_duration, @options.video_start_sec.to_i, @options.clips_count.to_i, i)
-            tmpfilename = format('clip%04d.mp4', i)
+            tmp_file_name = format('clip%04d.mp4', i)
             Utils.ffmpeg(
               in_f: @source_file_path,
               in_p: ['-ss', offset_seconds * 0.9],
-              out_f: File.join(this_tmpdir, tmpfilename),
+              out_f: File.join(this_tmpdir, tmp_file_name),
               out_p: [
                 '-ss', offset_seconds * 0.1,
                 '-t', @options.clips_length,
                 '-filter:v', "scale=#{@options.video_scale}",
                 '-codec:a', 'libmp3lame'])
-            f.puts("file '#{tmpfilename}'")
+            f.puts("file '#{tmp_file_name}'")
           end
         end
         # concat clips
@@ -154,7 +157,7 @@ module Aspera
           out_p: ['-codec', 'copy'])
       end
 
-      # do a simple reencoding
+      # do a simple re-encoding
       def convert_video_to_mp4_using_reencode
         Utils.ffmpeg(
           in_f: @source_file_path,

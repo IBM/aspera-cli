@@ -145,7 +145,7 @@ module Aspera
         # translates paths results into CLI result, and removes prefix
         def c_result_translate_rem_prefix(response, type, success_msg, path_prefix)
           errors = []
-          resres = { data: [], type: :object_list, fields: [type, 'result']}
+          final_result = { data: [], type: :object_list, fields: [type, 'result']}
           JSON.parse(response[:http].body)['paths'].each do |p|
             result = success_msg
             if p.key?('error')
@@ -153,13 +153,13 @@ module Aspera
               result = 'ERROR: ' + p['error']['user_message']
               errors.push([p['path'], p['error']['user_message']])
             end
-            resres[:data].push({type => p['path'], 'result' => result})
+            final_result[:data].push({type => p['path'], 'result' => result})
           end
           # one error make all fail
           unless errors.empty?
             raise errors.map{|i|"#{i.first}: #{i.last}"}.join(', ')
           end
-          return c_result_remove_prefix_path(resres, type, path_prefix)
+          return c_result_remove_prefix_path(final_result, type, path_prefix)
         end
 
         # get path arguments from command line, and add prefix
@@ -375,7 +375,7 @@ module Aspera
               the_app[:api].permissions_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
               # create permission
               created_data = apifid[:api].create('permissions', create_param)[:data]
-              # bnotify application of creation
+              # notify application of creation
               the_app[:api].permissions_create_event(created_data: created_data, app_info: the_app) unless the_app.nil?
               return { type: :single_object, data: created_data}
             else raise "internal error:shall not reach here (#{command_perm})"
@@ -510,43 +510,43 @@ module Aspera
         def execute_async
           command = options.get_next_command(%i[list delete files show counters bandwidth])
           unless command.eql?(:list)
-            asyncname = options.get_option(:sync_name)
-            if asyncname.nil?
-              asyncid = instance_identifier
-              if asyncid.eql?(VAL_ALL) && %i[show delete].include?(command)
-                asyncids = @api_node.read('async/list')[:data]['sync_ids']
+            async_name = options.get_option(:sync_name)
+            if async_name.nil?
+              async_id = instance_identifier
+              if async_id.eql?(VAL_ALL) && %i[show delete].include?(command)
+                async_ids = @api_node.read('async/list')[:data]['sync_ids']
               else
-                Integer(asyncid) # must be integer
-                asyncids = [asyncid]
+                Integer(async_id) # must be integer
+                async_ids = [async_id]
               end
             else
-              asyncids = @api_node.read('async/list')[:data]['sync_ids']
-              summaries = @api_node.create('async/summary', {'syncs' => asyncids})[:data]['sync_summaries']
-              selected = summaries.find{|s|s['name'].eql?(asyncname)}
-              raise "no such sync: #{asyncname}" if selected.nil?
-              asyncid = selected['snid']
-              asyncids = [asyncid]
+              async_ids = @api_node.read('async/list')[:data]['sync_ids']
+              summaries = @api_node.create('async/summary', {'syncs' => async_ids})[:data]['sync_summaries']
+              selected = summaries.find{|s|s['name'].eql?(async_name)}
+              raise "no such sync: #{async_name}" if selected.nil?
+              async_id = selected['snid']
+              async_ids = [async_id]
             end
-            pdata = {'syncs' => asyncids}
+            post_data = {'syncs' => async_ids}
           end
           case command
           when :list
             resp = @api_node.read('async/list')[:data]['sync_ids']
             return { type: :value_list, data: resp, name: 'id' }
           when :show
-            resp = @api_node.create('async/summary', pdata)[:data]['sync_summaries']
+            resp = @api_node.create('async/summary', post_data)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
-            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if asyncid.eql?(VAL_ALL)
+            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if async_id.eql?(VAL_ALL)
             return { type: :single_object, data: resp.first }
           when :delete
-            resp = @api_node.create('async/delete', pdata)[:data]
+            resp = @api_node.create('async/delete', post_data)[:data]
             return { type: :single_object, data: resp, name: 'id' }
           when :bandwidth
-            pdata['seconds'] = 100 # TODO: as parameter with --value
-            resp = @api_node.create('async/bandwidth', pdata)[:data]
+            post_data['seconds'] = 100 # TODO: as parameter with --value
+            resp = @api_node.create('async/bandwidth', post_data)[:data]
             data = resp['bandwidth_data']
             return Main.result_empty if data.empty?
-            data = data.first[asyncid]['data']
+            data = data.first[async_id]['data']
             return { type: :object_list, data: data, name: 'id' }
           when :files
             # count int
@@ -554,10 +554,10 @@ module Aspera
             # skip int
             # status int
             filter = options.get_option(:value)
-            pdata.merge!(filter) unless filter.nil?
-            resp = @api_node.create('async/files', pdata)[:data]
+            post_data.merge!(filter) unless filter.nil?
+            resp = @api_node.create('async/files', post_data)[:data]
             data = resp['sync_files']
-            data = data.first[asyncid] unless data.empty?
+            data = data.first[async_id] unless data.empty?
             iteration_data = []
             skip_ids_persistency = nil
             if options.get_option(:once_only, is_type: :mandatory)
@@ -568,7 +568,7 @@ module Aspera
                   'sync_files',
                   options.get_option(:url, is_type: :mandatory),
                   options.get_option(:username, is_type: :mandatory),
-                  asyncid]))
+                  async_id]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i > iteration_data.first}
               end
@@ -578,7 +578,7 @@ module Aspera
             skip_ids_persistency&.save
             return { type: :object_list, data: data, name: 'id' }
           when :counters
-            resp = @api_node.create('async/counters', pdata)[:data]['sync_counters'].first[asyncid].last
+            resp = @api_node.create('async/counters', post_data)[:data]['sync_counters'].first[async_id].last
             return Main.result_empty if resp.nil?
             return { type: :single_object, data: resp }
           end
@@ -665,7 +665,7 @@ module Aspera
           when :service
             command = options.get_next_command(%i[list create delete])
             if [:delete].include?(command)
-              svcid = instance_identifier
+              service_id = instance_identifier
             end
             case command
             when :list
@@ -677,8 +677,8 @@ module Aspera
               resp = @api_node.create('rund/services', params)
               return Main.result_status("#{resp[:data]['id']} created")
             when :delete
-              @api_node.delete("rund/services/#{svcid}")
-              return Main.result_status("#{svcid} deleted")
+              @api_node.delete("rund/services/#{service_id}")
+              return Main.result_status("#{service_id} deleted")
             end
           when :watch_folder
             res_class_path = 'v3/watchfolders'

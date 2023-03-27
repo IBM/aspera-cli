@@ -24,10 +24,11 @@ module Aspera
       # concatenate arguments, enclose in double quotes, protect backslash and double quotes, add "as_" command and as_exit
       stdin_input = (args || []).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift('as_' + action_sym.to_s).join(' ') + "\nas_exit\n"
       # execute, get binary output
-      bytebuffer = @command_executor.execute('ascmd', stdin_input).unpack('C*')
+      byte_buffer = @command_executor.execute('ascmd', stdin_input).unpack('C*')
+      raise 'ERROR: empty answer from server' if byte_buffer.empty?
       # get hash or table result
-      result = self.class.parse(bytebuffer, :result)
-      raise 'ERROR: unparsed bytes remaining' unless bytebuffer.empty?
+      result = self.class.parse(byte_buffer, :result)
+      raise 'ERROR: unparsed bytes remaining' unless byte_buffer.empty?
       # get and delete info,always present in results
       system_info = result[:info]
       result.delete(:info)

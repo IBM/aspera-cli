@@ -8,24 +8,26 @@ require 'openssl'
 module Aspera
   class WebServerSimple < WEBrick::HTTPServer
     CERT_PARAMETERS = %i[key cert chain].freeze
-    # generates and adds self signed cert to provided webrick options
-    def self.fill_self_signed_cert(cert, key)
-      cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
-      cert.not_before = Time.now
-      cert.not_after = Time.now + 365 * 24 * 60 * 60
-      cert.public_key = key.public_key
-      cert.serial = 0x0
-      cert.version = 2
-      ef = OpenSSL::X509::ExtensionFactory.new
-      ef.issuer_certificate = cert
-      ef.subject_certificate = cert
-      cert.extensions = [
-        ef.create_extension('basicConstraints', 'CA:TRUE', true),
-        ef.create_extension('subjectKeyIdentifier', 'hash')
-        # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
-      ]
-      cert.add_extension(ef.create_extension('authorityKeyIdentifier', 'keyid:always,issuer:always'))
-      cert.sign(key, OpenSSL::Digest.new('SHA256'))
+    class << self
+      # generates and adds self signed cert to provided webrick options
+      def fill_self_signed_cert(cert, key)
+        cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
+        cert.not_before = Time.now
+        cert.not_after = Time.now + 365 * 24 * 60 * 60
+        cert.public_key = key.public_key
+        cert.serial = 0x0
+        cert.version = 2
+        ef = OpenSSL::X509::ExtensionFactory.new
+        ef.issuer_certificate = cert
+        ef.subject_certificate = cert
+        cert.extensions = [
+          ef.create_extension('basicConstraints', 'CA:TRUE', true),
+          ef.create_extension('subjectKeyIdentifier', 'hash')
+          # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
+        ]
+        cert.add_extension(ef.create_extension('authorityKeyIdentifier', 'keyid:always,issuer:always'))
+        cert.sign(key, OpenSSL::Digest.new('SHA256'))
+      end
     end
 
     # @param uri [URI]

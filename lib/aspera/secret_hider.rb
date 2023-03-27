@@ -35,13 +35,13 @@ module Aspera
       def log_formatter(original_formatter)
         original_formatter ||= Logger::Formatter.new
         # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
-        return lambda do |severity, datetime, progname, msg|
+        return lambda do |severity, date_time, program_name, msg|
           if msg.is_a?(String) && !@log_secrets
-            REGEX_LOG_REPLACES.each do |regx|
-              msg = msg.gsub(regx){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
+            REGEX_LOG_REPLACES.each do |reg_ex|
+              msg = msg.gsub(reg_ex){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
             end
           end
-          original_formatter.call(severity, datetime, progname, msg)
+          original_formatter.call(severity, date_time, program_name, msg)
         end
       end
 

@@ -12,6 +12,7 @@ module Aspera
       CONVERSION_TYPES = %i[image office pdf plaintext video].freeze
 
       # define how files are processed based on mime type
+      # spellchecker:disable
       SUPPORTED_MIME_TYPES = {
         'application/json'                                                          => :plaintext,
         'application/mac-binhex40'                                                  => :office,
@@ -267,6 +268,7 @@ module Aspera
         'ycbcra'       => :image,
         'yuv'          => :image,
         'zabw'         => :office}.freeze
+      # spellchecker:enable
 
       private_constant :SUPPORTED_MIME_TYPES, :SUPPORTED_EXTENSIONS
 
@@ -301,12 +303,12 @@ module Aspera
       def conversion_type(filepath, mimetype)
         Log.log.debug{"conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})"}
         # 1- get type from provided mime type, using local mapping
-        conv_type = SUPPORTED_MIME_TYPES[mimetype] if !mimetype.nil?
+        conversion_type = SUPPORTED_MIME_TYPES[mimetype] if !mimetype.nil?
         # 2- else, from computed mime type (if available)
-        if conv_type.nil? && @use_mimemagic
+        if conversion_type.nil? && @use_mimemagic
           detected_mime = mime_from_file(filepath)
           if !detected_mime.nil?
-            conv_type = SUPPORTED_MIME_TYPES[detected_mime]
+            conversion_type = SUPPORTED_MIME_TYPES[detected_mime]
             if !mimetype.nil?
               if mimetype.eql?(detected_mime)
                 Log.log.debug('matching mime type per magic number')
@@ -319,9 +321,9 @@ module Aspera
         end
         # 3- else, from extensions, using local mapping
         extension = File.extname(filepath.downcase)[1..-1]
-        conv_type = SUPPORTED_EXTENSIONS[extension] if conv_type.nil?
-        Log.log.debug{"conversion_type(#{extension}): #{conv_type.class.name} [#{conv_type}]"}
-        return conv_type
+        conversion_type = SUPPORTED_EXTENSIONS[extension] if conversion_type.nil?
+        Log.log.debug{"conversion_type(#{extension}): #{conversion_type.class.name} [#{conversion_type}]"}
+        return conversion_type
       end
     end
   end

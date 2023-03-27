@@ -15,11 +15,14 @@ dictionaryDefinitions:
   - name: aspera
     path: aspera.dict
     addWords: true
+  - name: ruby
+    path: ruby.dict
+    addWords: true
 dictionaries:
   - aspera
+  - ruby
 words: []
 ignoreWords:
-  - rubygems
   - containerimage
   - cygwin
   - automake
@@ -125,7 +128,6 @@ ignoreWords:
   - bytescont # tag in progress bar
   - progressbar # ruby gem
   - trustpolicy # aws API
-  - unshift # ruby
   - ibmaspera # AoC
   - asperafiles # AoC
   - csum # ascp arg
@@ -148,10 +150,23 @@ ignoreWords:
   - fnid # node api
   - rund # node api
   - watchfolders # node api
-  - resolv # ruby gem
   - EXTV
   - PRIVKEY
   - PVALUE
+  - reencode
+  - conv
+  - transframes
+  - passcode
+  - xrds
+  - wmembership
+  - dmembership
+  - workgroups
+  - mklink
+  - mkfile
+  - apifid
+  - snid
+  - asperabrowser
+  - asperabrowserurl
 import: []
 enableFiletypes:
   - shellscript
