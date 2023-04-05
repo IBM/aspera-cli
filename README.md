@@ -115,14 +115,14 @@ ascli server browse /
 ```
 
 ```output
-:............:...........:......:........:...........................:.......................:
-:   zmode    :   zuid    : zgid :  size  :           mtime           :         name          :
-:............:...........:......:........:...........................:.......................:
-: dr-xr-xr-x : asperaweb : fasp : 4096   : 2014-04-10 19:44:05 +0200 : aspera-test-dir-tiny  :
-: drwxr-xr-x : asperaweb : fasp : 176128 : 2018-03-15 12:20:10 +0100 : Upload                :
-: dr-xr-xr-x : asperaweb : fasp : 4096   : 2015-04-01 00:37:22 +0200 : aspera-test-dir-small :
-: dr-xr-xr-x : asperaweb : fasp : 4096   : 2018-05-04 14:26:55 +0200 : aspera-test-dir-large :
-:............:...........:......:........:...........................:.......................:
++------------+-----------+-----------+-------+---------------------------+-----------------------+
+| zmode      | zuid      | zgid      | size  | mtime                     | name                  |
++------------+-----------+-----------+-------+---------------------------+-----------------------+
+| drwxr-xr-x | asperaweb | asperaweb | 90112 | 2023-04-05 15:31:21 +0200 | Upload                |
+| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:16 +0200 | aspera-test-dir-large |
+| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-small |
+| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
++------------+-----------+-----------+-------+---------------------------+-----------------------+
 ```
 
 <!-- spellchecker: enable -->
@@ -155,17 +155,17 @@ ascli server browse /aspera-test-dir-large
 ```
 
 ```output
-:............:...........:......:..............:...........................:............................:
-:   zmode    :   zuid    : zgid :     size     :           mtime           :            name            :
-:............:...........:......:..............:...........................:............................:
-: -rw-r--r-- : asperaweb : fasp : 209715200    : 2014-04-10 19:49:27 +0200 : 200MB                      :
-: -rw-r--r-- : asperaweb : fasp : 524288000    : 2014-04-10 19:44:15 +0200 : 500MB                      :
-: -rw-r--r-- : asperaweb : fasp : 5368709120   : 2014-04-10 19:45:52 +0200 : 5GB                        :
-: -rw-r--r-- : asperaweb : fasp : 500000000000 : 2017-06-14 20:09:57 +0200 : 500GB                      :
-: -rw-r--r-- : asperaweb : fasp : 1048576000   : 2014-04-10 19:49:23 +0200 : 1GB                        :
-: -rw-r--r-- : asperaweb : fasp : 104857600    : 2014-04-10 19:49:29 +0200 : 100MB                      :
-: -rw-r--r-- : asperaweb : fasp : 10737418240  : 2014-04-10 19:49:04 +0200 : 10GB                       :
-:............:...........:......:..............:...........................:............................:
++------------+-----------+-----------+--------------+---------------------------+-------+
+| zmode      | zuid      | zgid      | size         | mtime                     | name  |
++------------+-----------+-----------+--------------+---------------------------+-------+
+| -r-xr-x--- | asperaweb | asperaweb | 104857600    | 2022-10-27 16:06:38 +0200 | 100MB |
+| -r-xr-x--- | asperaweb | asperaweb | 10737418240  | 2022-10-27 16:08:12 +0200 | 10GB  |
+| -r-xr-x--- | asperaweb | asperaweb | 500000000000 | 2022-10-27 16:06:26 +0200 | 500GB |
+| -r-xr-x--- | asperaweb | asperaweb | 524288000    | 2022-10-27 14:53:00 +0200 | 500MB |
+| -r-xr-x--- | asperaweb | asperaweb | 1048576000   | 2022-10-27 16:06:37 +0200 | 1GB   |
+| -r-xr-x--- | asperaweb | asperaweb | 5368709120   | 2022-10-27 14:53:47 +0200 | 5GB   |
+| -r-xr-x--- | asperaweb | asperaweb | 209715200    | 2022-10-27 14:52:56 +0200 | 200MB |
++------------+-----------+-----------+--------------+---------------------------+-------+
 ```
 
 ```bash
@@ -556,7 +556,6 @@ If the embedded method is not used, the following packages are also suitable:
 
 - IBM Aspera Connect Client (Free)
 - IBM Aspera Desktop Client (Free)
-- IBM Aspera CLI (Free)
 - IBM Aspera High Speed Transfer Server (Licensed)
 - IBM Aspera High Speed Transfer EndPoint (Licensed)
 
@@ -690,7 +689,7 @@ It's up to the program to parse arguments. Ruby follows the Microsoft C/C++ para
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the CLI parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
+Some of the `ascli` parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
 Typically, the `@json:` modifier is used, it expects a JSON string. JSON itself has some special syntax: for example `"` is used to denote strings.
 
 #### Testing Extended Values
@@ -972,12 +971,12 @@ ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sor
 ```
 
 ```output
-:...............................:..................................:...........:
-:             name              :              email               : ats_admin :
-:...............................:..................................:...........:
-: John Curtis                   : john@example.com                 : true      :
-: Laurent Martin                : laurent@example.com              : true      :
-:...............................:..................................:...........:
++-------------------------------+----------------------------------+-----------+
+|             name              |              email               | ats_admin |
++-------------------------------+----------------------------------+-----------+
+| John Curtis                   | john@example.com                 | true      |
+| Laurent Martin                | laurent@example.com              | true      |
++-------------------------------+----------------------------------+-----------+
 ```
 
 > **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
@@ -1076,12 +1075,12 @@ ascli config echo @csvt:@file:test.csv
 ```
 
 ```output
-:......:.....................:
-: name :        email        :
-:......:.....................:
-: lolo : laurent@example.com :
-: toto : titi@tutu.tata      :
-:......:.....................:
++------+---------------------+
+| name |        email        |
++------+---------------------+
+| lolo | laurent@example.com |
+| toto | titi@tutu.tata      |
++------+---------------------+
 ```
 
 Example: create a hash and include values from preset named "config" of config file in this hash
@@ -1242,7 +1241,7 @@ ascli config preset get default _plugin_name_
 "_default_preset_for_plugin_"
 ```
 
-#### <a id="config"></a>Plugin: `config`: CLI Configuration
+#### <a id="config"></a>Plugin: `config`: Configuration
 
 Plugin `config` is used to configure `ascli` and also contains global options.
 
@@ -1313,15 +1312,15 @@ demo_server:
 
 We can see here:
 
-- The configuration was created with CLI version 0.3.7
+- The configuration was created with `ascli` version 0.3.7
 - the default [option preset](#lprt) to load for `server` plugin is : `demo_server`
 - the [option preset](#lprt) `demo_server` defines some parameters: the URL and credentials
 - the default [option preset](#lprt) to load in any case is : `cli_default`
 
 Two [option presets](#lprt) are reserved:
 
-- `config` contains a single value: `version` showing the CLI
-version used to create the configuration file. It is used to check compatibility.
+- `config` contains a single value: `version` showing the version used to create the configuration file.
+  It is used to check compatibility.
 - `default` is reserved to define the default [option preset](#lprt) name used for known plugins.
 
 The user may create as many [option presets](#lprt) as needed. For instance, a particular [option preset](#lprt) can be created for a particular application instance and contain URL and credentials.
@@ -1611,7 +1610,7 @@ To update `ascli` trusted root certificates, just update your system's root cert
 
 ### Plugins
 
-The CLI tool uses a plugin mechanism.
+`ascli` uses a plugin mechanism.
 The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command.
 Each plugin usually represents commands sent to a specific application.
 For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
@@ -1705,7 +1704,7 @@ When `ascli` is used interactively in a shell, the shell itself will usually log
 
 ### Learning Aspera Product APIs (REST)
 
-This CLI uses REST APIs.
+`ascli` uses mainly Aspera applications REST APIs.
 To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display exact content of HTTP requests and responses.
 
 In order to get traces of execution, use argument : `--log-level=debug`
@@ -1742,7 +1741,7 @@ Some actions may require the use of a graphical tool:
 - a browser for Aspera on Cloud authentication (web auth method)
 - a text editor for configuration file edition
 
-By default the CLI will assume that a graphical environment is available on windows, and on other systems, rely on the presence of the "DISPLAY" environment variable.
+By default `ascli` assumes that a graphical environment is available on windows, and on other systems, rely on the presence of the `DISPLAY` environment variable.
 It is also possible to force the graphical mode with option --ui :
 
 - `--ui=graphical` forces a graphical environment, a browser will be opened for URLs or a text editor for file edition.
@@ -1878,7 +1877,7 @@ Saved to default global preset global_common_defaults
 
 Windows:
 
-```bash
+```text
 ascli config ascp use C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 ```
 
@@ -1899,14 +1898,14 @@ ascli config ascp products list
 ```
 
 ```output
-:.........................................:................................................:
-:                  name                   :                    app_root                    :
-:.........................................:................................................:
-: Aspera Connect                          : /Users/laurent/Applications/Aspera Connect.app :
-: IBM Aspera CLI                          : /Users/laurent/Applications/Aspera CLI         :
-: IBM Aspera High-Speed Transfer Endpoint : /Library/Aspera                                :
-: Aspera Drive                            : /Applications/Aspera Drive.app                 :
-:.........................................:................................................:
++---------------------------------------+----------------------------------------+
+| name                                  | app_root                               |
++---------------------------------------+----------------------------------------+
+| IBM Aspera SDK                        | /Users/laurent/.aspera/ascli/sdk       |
+| Aspera Connect                        | /Applications/Aspera Connect.app       |
+| IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
+| IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
++---------------------------------------+----------------------------------------+
 ```
 
 #### Selection of local client for `ascp` for [`direct`](#agt_direct) agent
@@ -2066,16 +2065,15 @@ By specifying option: `--transfer=connect`, `ascli` will start transfers using t
 
 #### <a id="agt_node"></a>Aspera Node API : Node to node transfers
 
-By specifying option: `--transfer=node`, the CLI will start transfers in an Aspera
-Transfer Server using the Node API, either on a local or remote node.
+By specifying option: `--transfer=node`, `ascli` starts transfers in an Aspera Transfer Server using the Node API, either on a local or remote node.
 Parameters provided in option `transfer_info` are:
 
-| Name | Type | Description |
-|------|------|-------------|
-| url | string | URL of the node API</br>Mandatory |
+| Name     | Type   | Description |
+|----------|--------|-------------|
+| url      | string | URL of the node API</br>Mandatory |
 | username | string | node api user or access key</br>Mandatory |
 | password | string | password, secret or bearer token</br>Mandatory |
-| root_id | string | password or secret</br>Mandatory only for bearer token |
+| root_id  | string | password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
 `--transfer-info=@preset:_name_here_` or be specified using the extended value syntax :
@@ -2970,7 +2968,7 @@ ascli config wizard --value=aoc
 
 Several types of OAuth authentication are supported:
 
-- JSON Web Token (JWT) : authentication is secured by a private key (recommended for CLI)
+- JSON Web Token (JWT) : authentication is secured by a private key (recommended for `ascli`)
 - Web based authentication : authentication is made by user using a browser
 - URL Token : external users authentication with url tokens (public links)
 
@@ -3059,11 +3057,11 @@ ascli aoc admin res client list
 ```
 
 ```output
-:............:...............:
-:     id     :  name         :
-:............:...............:
-: my_BJbQiFw : my-client-app :
-:............:...............:
++------------+---------------+
+|     id     |  name         |
++------------+---------------+
+| my_BJbQiFw | my-client-app |
++------------+---------------+
 ```
 
 ```bash
@@ -3095,12 +3093,12 @@ ascli aoc admin res user list
 ```
 
 ```output
-:........:................:
-:   id   :      name      :
-:........:................:
-: 109952 : Tech Support   :
-: 109951 : LAURENT MARTIN :
-:........:................:
++--------+----------------+
+|   id   |      name      |
++--------+----------------+
+| 109952 | Tech Support   |
+| 109951 | LAURENT MARTIN |
++--------+----------------+
 ```
 
 ```ruby
@@ -3349,12 +3347,12 @@ ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.
 ```
 
 ```output
-:.......:.........:
-:  id   : status  :
-:.......:.........:
-: 98398 : created :
-: 98399 : created :
-:.......:.........:
++-------+---------+
+|  id   | status  |
++-------+---------+
+| 98398 | created |
+| 98399 | created |
++-------+---------+
 ```
 
 #### Example: Find with filter and delete
@@ -3366,12 +3364,12 @@ ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,emai
 ```
 
 ```output
-:.......:........................:
-:  id   :         email          :
-:.......:........................:
-: 98398 : dummyuser1@example.com :
-: 98399 : dummyuser2@example.com :
-:.......:........................:
++-------+------------------------+
+|  id   |         email          |
++-------+------------------------+
+| 98398 | dummyuser1@example.com |
+| 98399 | dummyuser2@example.com |
++-------+------------------------+
 ```
 
 ```bash
@@ -3391,12 +3389,12 @@ ascli aoc admin res user --bulk=yes --id=@json:"$thelist" delete
 ```
 
 ```output
-:.......:.........:
-:  id   : status  :
-:.......:.........:
-: 98398 : deleted :
-: 98399 : deleted :
-:.......:.........:
++-------+---------+
+|  id   | status  |
++-------+---------+
+| 98398 | deleted |
+| 98399 | deleted |
++-------+---------+
 ```
 
 <!-- spellchecker: enable -->
@@ -3416,13 +3414,13 @@ ascli aoc user workspaces list
 ```
 
 ```output
-:......:............................:
-:  id  :            name            :
-:......:............................:
-: 16   : Engineering                :
-: 17   : Marketing                  :
-: 18   : Sales                      :
-:......:............................:
++------+----------------------------+
+|  id  |            name            |
++------+----------------------------+
+| 16   | Engineering                |
+| 17   | Marketing                  |
+| 18   | Sales                      |
++------+----------------------------+
 ```
 
 #### Example: Create a sub access key in a "node"
@@ -3462,16 +3460,16 @@ ascli aoc admin res workspace_membership list --fields=member_type,manager,membe
 ```
 
 ```output
-:.............:.........:..................................:
-: member_type : manager :           member.email           :
-:.............:.........:..................................:
-: user        : true    : john.curtis@email.com            :
-: user        : false   : laurent.martin.aspera@fr.ibm.com :
-: user        : false   : jean.dupont@me.com               :
-: user        : false   : another.user@example.com         :
-: group       : false   :                                  :
-: user        : false   : aspera.user@gmail.com            :
-:.............:.........:..................................:
++-------------+---------+----------------------------------+
+| member_type | manager |           member.email           |
++-------------+---------+----------------------------------+
+| user        | true    | john.curtis@email.com            |
+| user        | false   | laurent.martin.aspera@fr.ibm.com |
+| user        | false   | jean.dupont@me.com               |
+| user        | false   | another.user@example.com         |
+| group       | false   |                                  |
+| user        | false   | aspera.user@gmail.com            |
++-------------+---------+----------------------------------+
 ```
 
 Other query parameters:
@@ -3527,12 +3525,12 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 ```
 
 ```output
-:...............................:
-:             email             :
-:...............................:
-: John.curtis@acme.com          :
-: Jean.Dupont@tropfort.com      :
-:...............................:
++-------------------------------+
+|             email             |
++-------------------------------+
+| John.curtis@acme.com          |
+| Jean.Dupont@tropfort.com      |
++-------------------------------+
 ```
 
 #### Example: List "Limited" users
@@ -4425,11 +4423,11 @@ ascli node central file list --validator=ascli --data=@json:'{"file_transfer_fil
 ```
 
 ```output
-:..............:..............:............:......................................:
-: session_uuid :    file_id   :   status   :              path                    :
-:..............:..............:............:......................................:
-: 1a74444c-... : 084fb181-... : validating : /home/xfer.../PKG - my title/200KB.1 :
-:..............:..............:............:......................................:
++--------------+--------------+------------+--------------------------------------+
+| session_uuid |    file_id   |   status   |              path                    |
++--------------+--------------+------------+--------------------------------------+
+| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
++--------------+--------------+------------+--------------------------------------+
 ```
 
 ```bash
@@ -5429,7 +5427,7 @@ preview trevents --once-only=yes --skip-types=office --log-level=info
 
 ## SMTP for email notifications
 
-Aspera CLI can send email, for that setup SMTP configuration. This is done with option `smtp`.
+`ascli` can send email, for that setup SMTP configuration. This is done with option `smtp`.
 
 The `smtp` option is a hash table (extended value) with the following fields:
 
