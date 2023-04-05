@@ -56,7 +56,7 @@ So it is designed for:
 If the need is to perform operations programmatically in languages such as: C, Go, Python, nodejs, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 - Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, ruby, etc...)
+- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Ruby, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 
@@ -334,7 +334,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 Use this method to install on the native host.
 
-A ruby interpreter is required to run the tool or to use the gem and tool.
+A Ruby interpreter is required to run the tool or to use the gem and tool.
 
 Required Ruby <%=ruby_version%>.
 
@@ -366,7 +366,7 @@ If you keep the same terminal (not needed if re-login):
 source ~/.rvm/scripts/rvm
 ```
 
-It is advised to get one of the pre-compiled ruby version, you can list with:
+It is advised to get one of the pre-compiled Ruby version, you can list with:
 
 ```bash
 rvm list --remote
@@ -393,7 +393,7 @@ curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
 If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
-To activate ruby (and <%=cmd%>) later, source it:
+To activate Ruby (and <%=cmd%>) later, source it:
 
 ```bash
 source /etc/profile.d/rvm.sh.ok
@@ -428,7 +428,7 @@ brew install ruby
 
 #### Linux: package
 
-If your Linux distribution provides a standard ruby package, you can use it provided that the version is compatible (check at beginning of section).
+If your Linux distribution provides a standard Ruby package, you can use it provided that the version is compatible (check at beginning of section).
 
 Example: RHEL 8 and 9: basic installation
 
@@ -456,7 +456,7 @@ yum install -y ruby ruby-devel rubygems ruby-json
 apt install -y ruby ruby-dev rubygems ruby-json
 ```
 
-One can cleanup the whole yum-installed ruby environment like this to uninstall:
+One can cleanup the whole yum-installed Ruby environment like this to uninstall:
 
 ```bash
 gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
@@ -469,7 +469,7 @@ For example for AIX, one can look at:
 
 <https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#R>
 
-If your Unix does not provide a pre-built ruby, you can get it using one of those
+If your Unix does not provide a pre-built Ruby, you can get it using one of those
 [methods](https://www.ruby-lang.org/en/documentation/installation/).
 
 For instance to build from source, and install in `/opt/ruby` :
@@ -496,7 +496,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 <https://www.jruby.org/download>
 
-> **Note:** Using jruby the startup time is longer than the native ruby, but the transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** Using jruby the startup time is longer than the native Ruby, but the transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
@@ -664,9 +664,9 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 <%=tool%> is typically executed in a shell, either interactively or in a script.
 <%=tool%> receives its arguments from this shell (through Operating System).
 
-#### Shell parsing for Linux, Unix, Macos
+#### Shell parsing for Unix-like systems: Linux, Macos, AIX
 
-On Linux and Unix environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
+On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...
 see [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 Then it builds a list of arguments and then <%=tool%> (Ruby) is executed.
@@ -835,7 +835,7 @@ If the value is to be assigned directly to an option of <%=cmd%>, then you can d
 Test " ' & \
 ```
 
-If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any ruby code in expression, including reading from file or env var. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
+If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
 
 ```bash
 <%=cmd%> conf echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
@@ -1033,7 +1033,7 @@ In addition it is possible to decode a value, using one or multiple decoders :
 - @base64: [String] decode a base64 encoded string
 - @json: [any] decode JSON values (convenient to provide complex structures)
 - @zlib: [String] un-compress data
-- @ruby: [any] execute ruby code
+- @ruby: [any] execute Ruby code
 - @csvt: [Array] decode a titled CSV value
 - @lines: [Array] split a string in multiple lines and return an array
 - @list: [Array] split a string in multiple items taking first character as separator and return an array
@@ -1105,7 +1105,7 @@ It is also possible to provide a [Extended Value](#extended) in a file using `@j
 
 <%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[config folder]`: `[User's home folder]/.aspera/<%=cmd%>`.
 
-Note: `[User's home folder]` is found using ruby's `Dir.home` (`rb_w32_home_dir`).
+Note: `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
 The [config folder] can be displayed using :
@@ -1549,14 +1549,22 @@ openssl rsa -des3 -in old_file -out new_file
 
 ### <a id="certificates"></a>SSL CA certificate bundle
 
-<%=tool%> uses ruby `openssl` gem, which uses the `openssl` library.
-Certificates are checked against the ruby default certificates [OpenSSL::X509::DEFAULT_CERT_FILE](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html), which are typically the ones of `openssl` on Unix systems (Linux, macOS, etc..).
-The environment variables `SSL_CERT_FILE` and `SSL_CERT_DIR` are used if defined.
+<%=tool%> uses the Ruby `openssl` gem, which uses the `openssl` library.
+Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
 
-`ascp` also needs to validate certificates when using WSS.
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`).
-<%=tool%> overrides and sets the default ruby certificate path as well for `ascp` using `-i` switch.
-So to update certificates, update ruby's `openssl` gem, or use env vars `SSL_CERT_*`.
+To display the current root certificate store locations:
+
+```bash
+<%=cmd%> conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_FILE,OpenSSL::X509::DEFAULT_CERT_DIR]'
+```
+
+Ruby's default values can be overridden by env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
+
+`ascp` also needs to validate certificates when using **WSS**.
+By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS.
+<%=tool%> overrides and sets the default Ruby certificate path as well for `ascp` using `-i` switch.
+
+To update <%=tool%> trusted root certificates, just update your system's root certificates or use env vars specified here above.
 
 ### Plugins
 
@@ -2204,7 +2212,7 @@ So, by default, the list of files to transfer will be simply specified on the co
     --sources=@lines:@stdin:
     ```
 
-  - Using ruby code (one path per line in file)
+  - Using Ruby code (one path per line in file)
 
     ```ruby
     --sources=@ruby:'File.read("myfilelist.txt").split("\n")'
@@ -2350,10 +2358,10 @@ WARN -- : Another instance is already running (Address already in use - bind(2) 
 Instead, use the service provided by the Operating system:
 
 - Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
-- Linux/Unix: [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
-- etc...
+- Unix-like (Linux, ...): [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
 
-Linux also provides `anacron`, if tasks are hourly or daily.
+  Linux also provides `anacron`, if tasks are hourly or daily.
+- etc...
 
 ### "Proven&ccedil;ale"
 
@@ -3716,9 +3724,9 @@ Examples:
 <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-For file operation command (browse, delete), the ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
+For file operation command (browse, delete), the Ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
 
-For a list of SSH client options, refer to the ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start).
+For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start).
 
 Some of the 50 available SSH options:
 
@@ -3740,7 +3748,7 @@ or on Windows:
 ERROR -- net.ssh.authentication.agent: could not connect to ssh-agent: pageant process not running
 ```
 
-This means that your environment suggessts to use an agent but you don't have such an SSH agent running, then:
+This means that your environment suggests to use an agent but you don't have such an SSH agent running, then:
 
 - Check env var: `SSH_AGENT_SOCK`
 - Check your file: `$HOME/.ssh/config`
@@ -4047,7 +4055,7 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | string  | http://localhost:8080  | Defines the base url on which requests are listened |
+| url                        | string  | <http://localhost:8080>  | Defines the base url on which requests are listened |
 | certificate                | hash    | nil                    | used to define certificate if https is used         |
 | certificate.key            | string  | nil                    | path to private key file                            |
 | certificate.cert           | string  | nil                    | path to certificate                                 |
@@ -4833,7 +4841,7 @@ There are special "extended" <%=trspec%> parameters supported by `asession`:
 | required additional components to `ascp` | Ruby<br/>Aspera | - | library<br/>(headers) | daemon |
 | startup | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) | command line arguments | API | daemon |
 | events | JSON on stdout | none by default<br/>or need to open management port<br/>and proprietary text syntax | callback | callback |
-| platforms | any with ruby and `ascp` | any with `ascp` (and SDK if compiled) | any with `ascp` | any with `ascp` and transfer daemon |
+| platforms | any with Ruby and `ascp` | any with `ascp` (and SDK if compiled) | any with `ascp` | any with `ascp` and transfer daemon |
 
 ### Simple session
 
@@ -5075,7 +5083,7 @@ References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "C
 
 Some Ruby gems dependencies require compilation of native parts (C).
 This also requires Ruby header files.
-If Ruby was installed as a Linux Packages, then also install ruby development package:
+If Ruby was installed as a Linux Packages, then also install Ruby development package:
 `ruby-dev` ir `ruby-devel`, depending on distribution.
 
 ### ED255519 key not supported
@@ -5088,5 +5096,5 @@ Without this deactivation, if such key was present the following error was gener
 OpenSSH keys only supported if ED25519 is available
 ```
 
-Which meant that you do not have ruby support for ED25519 SSH keys.
+Which meant that you do not have Ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
