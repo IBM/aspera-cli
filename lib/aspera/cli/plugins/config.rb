@@ -747,6 +747,7 @@ module Aspera
           when :set
             param_name = options.get_next_argument('parameter name')
             param_value = options.get_next_argument('parameter value')
+            param_name = Manager.normalize_name(param_name)
             if !@config_presets.key?(name)
               Log.log.debug{"no such config name: #{name}, initializing"}
               selected_preset = @config_presets[name] = {}

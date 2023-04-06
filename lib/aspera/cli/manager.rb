@@ -81,6 +81,10 @@ module Aspera
         def bad_arg_message_multi(error_msg, choices)
           return [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n")
         end
+
+        def normalize_name(name)
+          return name.gsub(OPTION_SEP_LINE, OPTION_SEP_NAME)
+        end
       end
 
       attr_reader :parser
