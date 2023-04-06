@@ -183,7 +183,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 ## <a id="installation"></a>Installation
 
-It is possible to install *either* directly on the host operating system (Linux, Windows, macOS) or as a docker container.
+It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a docker container.
 
 The direct installation is recommended and consists in installing:
 
@@ -261,7 +261,7 @@ Add options:
 --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
-> **Note:** if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> **Note:** if you are using a `podman machine`, e.g. on macOS , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
@@ -663,7 +663,7 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 <%=tool%> is typically executed in a shell, either interactively or in a script.
 <%=tool%> receives its arguments from this shell (through Operating System).
 
-#### Shell parsing for Unix-like systems: Linux, Macos, AIX
+#### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...

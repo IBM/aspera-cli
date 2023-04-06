@@ -185,7 +185,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 ## <a id="installation"></a>Installation
 
-It is possible to install *either* directly on the host operating system (Linux, Windows, macOS) or as a docker container.
+It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a docker container.
 
 The direct installation is recommended and consists in installing:
 
@@ -265,7 +265,7 @@ Add options:
 --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli
 ```
 
-> **Note:** if you are using a `podman machine`, e.g. on Macos , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> **Note:** if you are using a `podman machine`, e.g. on macOS , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and `ascli` available,
 you can change the entry point, add option:
@@ -669,7 +669,7 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 `ascli` is typically executed in a shell, either interactively or in a script.
 `ascli` receives its arguments from this shell (through Operating System).
 
-#### Shell parsing for Unix-like systems: Linux, Macos, AIX
+#### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...
@@ -5412,7 +5412,7 @@ If the preview generator does not have access to files on the file system (it is
 
 ```bash
 preview check --skip-types=office
-preview folder 1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
+preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 preview scan --skip-types=office --log-level=info
 preview test --case=test mp4 my_file_mxf --video-conversion=blend --log-level=debug
 preview test --case=test mp4 my_file_mxf --video-conversion=clips --log-level=debug
