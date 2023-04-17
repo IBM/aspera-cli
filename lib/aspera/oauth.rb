@@ -272,7 +272,7 @@ module Aspera
 
       # an API was already called, but failed, we need to regenerate or refresh
       if use_refresh_token
-        if token_data.is_a?(Hash) && token_data.key?('refresh_token')
+        if token_data.is_a?(Hash) && token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
           # save possible refresh token, before deleting the cache
           refresh_token = token_data['refresh_token']
         end
