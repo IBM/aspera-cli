@@ -102,8 +102,6 @@ If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
 
 To test with Aspera demo transfer server, setup the environment and then test:
 
-<!-- spellchecker: disable -->
-
 ```bash
 <%=cmd%> config initdemo
 ```
@@ -122,8 +120,6 @@ To test with Aspera demo transfer server, setup the environment and then test:
 | dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
 +------------+-----------+-----------+-------+---------------------------+-----------------------+
 ```
-
-<!-- spellchecker: enable -->
 
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
 
@@ -1521,24 +1517,21 @@ ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 #### `openssl`
 
 To generate a private key pair with a passphrase the following can be used on any system:
-<!-- spellchecker: disable -->
+
 ```bash
 openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE}.protected 4096
 openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
 ```
-<!-- spellchecker: enable -->
 
 `openssl` is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
 In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` to generate a key without passphrase.
 
 If option `-nodes` is not available, the passphrase can be removed using this method:
 
-<!-- spellchecker: disable -->
 ```bash
 openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
 rm -f ${PRIVKEYFILE}.protected
 ```
-<!-- spellchecker: enable -->
 
 To change (or add) the passphrase for a key do:
 
@@ -2589,7 +2582,6 @@ If you did not use the wizard, you can also manually create a <%=prst%> for <%=t
 
 Lets create an <%=prst%> called: `my_aoc_org` using `ask` interactive input (client info from previous step):
 
-<!-- spellchecker: disable -->
 ```bash
 <%=cmd%> config preset ask my_aoc_org url client_id client_secret
 option: url> https://myorg.ibmaspera.com/
@@ -2597,7 +2589,6 @@ option: client_id> my_client_id_here
 option: client_secret> my_client_secret_here
 updated: my_aoc_org
 ```
-<!-- spellchecker: enable -->
 
 (This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
@@ -2936,8 +2927,6 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 
 #### Example: Find with filter and delete
 
-<!-- spellchecker: disable -->
-
 ```bash
 <%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
@@ -2975,8 +2964,6 @@ echo $thelist
 | 98399 | deleted |
 +-------+---------+
 ```
-
-<!-- spellchecker: enable -->
 
 #### Example: <a id="deactuser"></a>Find deactivated users since more than 2 years
 
@@ -3200,8 +3187,6 @@ Then, transfer between those:
 
 #### Example: create registration key to register a node
 
-<!-- spellchecker: disable -->
-
 ```bash
 <%=cmd%> aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 ```
@@ -3226,8 +3211,6 @@ jfqslfdjlfdjfhdjklqfhdkl
 | 102 | deleted |
 +-----+---------+
 ```
-
-<!-- spellchecker: enable -->
 
 #### Example: Create a Node
 
@@ -3340,7 +3323,7 @@ When user packages are listed, the following query is used:
 {"archived":false,"exclude_dropbox_packages":true,"has_content":true,"received":true}
 ```
 
-To list packages in a shared inbox, the query has to be specified with withe the shared inbox by name or its identifier.
+To list packages in a shared inbox, the query has to be specified with the the shared inbox by name or its identifier.
 Additional parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode).
 The current workspace is added unless specified in the query.
 
@@ -3560,8 +3543,6 @@ If you are using ATS as part of AoC, then authentication is through AoC, not IBM
 
 First get your IBM Cloud APIkey. For instance, it can be created using the IBM Cloud web interface, or using command line:
 
-<!-- spellchecker: disable -->
-
 ```bash
 ibmcloud iam api-key-create mykeyname -d 'my sample key'
 ```
@@ -3581,6 +3562,7 @@ UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f
 ```
 
 References:
+<!-- spellchecker: disable -->
 
 - [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
 - [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
@@ -3588,8 +3570,6 @@ References:
 <!-- spellchecker: enable -->
 
 Then, to register the key by default for the ats plugin, create a preset. Execute:
-
-<!-- spellchecker: disable -->
 
 ```bash
 <%=cmd%> config preset update my_ibm_ats --ibm-api-key=my_secret_api_key_here
@@ -3628,8 +3608,6 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 +--------+----------------------------------------------+
 <%=cmd%> config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 ```
-
-<!-- spellchecker: enable -->
 
 ### <a id="ats_params"></a>ATS Access key creation parameters
 
@@ -3843,15 +3821,11 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 - Start watchd and watchfolderd services running as a system user having access to files
 - configure a watchfolder to define automated transfers
 
-<!-- spellchecker: disable -->
-
 ```bash
 <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
-
-<!-- spellchecker: enable -->
 
 ### Out of Transfer File Validation
 
@@ -4058,7 +4032,7 @@ The following parameters are supported:
 | certificate.key            | string  | nil                    | path to private key file                            |
 | certificate.cert           | string  | nil                    | path to certificate                                 |
 | certificate.chain          | string  | nil                    | path to intermediary certificates                   |
-| processing                 | hash    | nil                    | behaviour of post processing                        |
+| processing                 | hash    | nil                    | behavior of post processing                        |
 | processing.script_folder   | string  | .                      | prefix added to script path                         |
 | processing.fail_on_error   | bool    | false                  | if true and process exit with non zero, then fail   |
 | processing.timeout_seconds | integer | 60                     | processing script is killed if takes more time      |
@@ -4073,7 +4047,7 @@ When a request is received the following happens:
 
 - the processor get the path of the url called
 - it removes the "domain
-- it pre-prends it with the value of `script_folder`
+- it prepends it with the value of `script_folder`
 - it executes the script
 - upon success, a success code is returned
 
@@ -4121,7 +4095,8 @@ As inboxes may be large, it is possible to use the following query parameters:
 
 The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "Services (API v.3)".
 
-If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`). By default page is `0` (`10`), it can be increased to have less calls.
+If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`).
+By default `count` is `0` (`10`), it can be increased to issue less HTTP calls.
 
 #### Example: list packages in dropbox
 
@@ -4240,7 +4215,7 @@ cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on 
 
 ## <a id="shares"></a>Plugin: `shares`: IBM Aspera Shares v1
 
-Aspera Shares supports the "node API" for the file transfer part. (Shares 1 and 2)
+Aspera Shares supports the "node API" for the file transfer part.
 
 ### Shares 1 sample commands
 
@@ -4319,8 +4294,6 @@ ibmcloud resource service-key _service_key_name_here_ --output JSON|jq '.[0].cre
 
 It consists in the following structure:
 
-<!-- spellchecker: disable -->
-
 ```json
 {
   "apikey": "my_api_key_here",
@@ -4336,8 +4309,6 @@ It consists in the following structure:
   "resource_instance_id": "crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx....."
 }
 ```
-
-<!-- spellchecker: enable -->
 
 The field `resource_instance_id` is for option `crn`
 
@@ -4496,7 +4467,6 @@ dnf install unoconv
 
 - Amazon Linux
 
-<!-- spellchecker: disable -->
 ```bash
 amazon-linux-extras enable libreoffice
 yum clean metadata
@@ -4505,7 +4475,6 @@ wget https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv
 mv unoconv /usr/bin
 chmod a+x /usr/bin/unoconv
 ```
-<!-- spellchecker: enable -->
 
 ### Configuration
 
@@ -4565,7 +4534,6 @@ Lets first setup a script that will be used in the scheduler and set up the envi
 
 Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
 
-<!-- spellchecker: disable -->
 ```bash
  #!/bin/bash
  # set a timeout protection, just in case
@@ -4574,7 +4542,6 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 rvm use 2.6 --quiet
 exec timeout ${tmout} <%=cmd%> "${@}"
 ```
-<!-- spellchecker: enable -->
 
 Here the cronjob is created for user `xfer`.
 

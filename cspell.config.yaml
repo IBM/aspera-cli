@@ -22,6 +22,20 @@ dictionaries:
   - aspera
   - ruby
 words: []
+import: []
+enableFiletypes:
+  - shellscript
+ignoreRegExpList:
+  - Email
+  - >-
+    /ftp:[^\s]*/g
+patterns:
+  - name: markdown_code_block
+    pattern: "/^\\s*```(.|\\n)+?^\\s*```/gm"
+languageSettings:
+  - languageId: markdown
+    ignoreRegExpList:
+      - markdown_code_block
 ignoreWords:
   - containerimage
   - cygwin
@@ -167,22 +181,3 @@ ignoreWords:
   - snid
   - asperabrowser
   - asperabrowserurl
-import: []
-enableFiletypes:
-  - shellscript
-ignoreRegExpList:
-  - Email
-  - >-
-    /ftp:[^\s]*/g
-patterns:
-  - name: markdown_code_block
-    pattern: |
-      /
-          ^(\s*`{3,}).*     # match the ```
-          [\s\S]*?          # the block of code
-          ^\1               # end of the block
-      /gmx
-languageSettings:
-  - languageId: markdown
-    ignoreRegExpList:
-      - markdown_code_block
