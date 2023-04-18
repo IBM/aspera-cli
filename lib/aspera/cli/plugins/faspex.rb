@@ -170,6 +170,7 @@ module Aspera
             stop_condition = false
             # results will be sorted in reverse id
             items.reverse_each do |package|
+              # create the package id, based on recipient's box
               package[PACKAGE_MATCH_FIELD] =
                 case mailbox
                 when :inbox, :archive
@@ -180,7 +181,7 @@ module Aspera
                 end
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
-              # keep only those for the specified recipient,
+              # keep only those for the specified recipient
               result.push(package) unless package[PACKAGE_MATCH_FIELD].nil?
             end
             break if stop_condition
