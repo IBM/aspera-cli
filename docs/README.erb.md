@@ -2302,15 +2302,47 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
-### <a id="scheduling"></a>Scheduling
+### <a id="scheduler"></a>Scheduler
 
 It is useful to configure automated scheduled execution.
+<%=tool%> does not provide an internal scheduler.
+Instead, use the service provided by the Operating system:
 
-#### <a id="locking"></a>Locking for exclusive execution
+- Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
+- Unix-like (Linux, ...): [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
 
-It is also useful to ensure that <%=tool%> is not executed several times in parallel.
+  Linux also provides `anacron`, if tasks are hourly or daily.
+- etc...
 
-For instance when <%=tool%> is executed automatically on a schedule basis, one generally desire that a new execution is not started if a previous execution is still running because an on-going operation may last longer than the scheduling period:
+For example, on Linux it is convenient to create a wrapping script, e.g. `cron_<%=cmd%>` that will setup the environment (e.g. Ruby) to properly start <%=tool%>:
+
+```bash
+#!/bin/bash
+# load the ruby environment
+. /etc/profile.d/rvm.sh
+rvm use 2.6 --quiet
+# set a timeout protection, just in case <%=cmd%> is frozen 
+tmout=30m
+# forward arguments to <%=cmd%>
+exec timeout ${tmout} <%=cmd%> "${@}"
+```
+
+Example of cronjob created for user `xfer`.
+
+```bash
+crontab<<EOF
+0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
+2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
+EOF
+```
+
+> **Note:** The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
+
+### <a id="locking"></a>Locking for exclusive execution
+
+In some cases one needs to ensure that <%=tool%> is not executed several times in parallel.
+
+When <%=tool%> is executed automatically on a schedule basis, one generally desires that a new execution is not started if a previous execution is still running because an on-going operation may last longer than the scheduling period:
 
 - Executing instances may pile-up and kill the system
 - The same file may be transferred by multiple instances at the same time.
@@ -2328,7 +2360,7 @@ Usually the OS native scheduler already provides some sort of protection against
 <%=tool%> natively supports a locking mechanism with option `lock_port`.
 (Technically, this opens a local TCP server port, and fails if this port is already used, providing a local lock. Lock is released when process exits).
 
-Example:
+Testing <%=tool%> locking:
 
 Run this same command in two separate terminals within less than 30 seconds:
 
@@ -2341,18 +2373,6 @@ The first instance will sleep 30 seconds, the second one will immediately exit l
 ```bash
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
 ```
-
-#### <a id="scheduler"></a>Scheduler
-
-<%=tool%> does not provide an internal scheduler.
-
-Instead, use the service provided by the Operating system:
-
-- Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
-- Unix-like (Linux, ...): [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
-
-  Linux also provides `anacron`, if tasks are hourly or daily.
-- etc...
 
 ### "Proven&ccedil;ale"
 
@@ -4507,7 +4527,7 @@ This shall list the contents of the storage root of the access key.
 
 The tool intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
 It needs to be run on a regular basis to create or update preview files.
-For that use your best reliable scheduler, see [Scheduling](#scheduling).
+For that use your best reliable scheduler, see [Scheduler](#scheduler).
 
 Typically, for **Access key** access, the system/transfer is `xfer`. So, in order to be consistent have generate the appropriate access rights, the generation process should be run as user `xfer`.
 
@@ -4525,34 +4545,15 @@ On subsequent run it reads this file and check that previews are generated for t
 
 ### Configuration for Execution in scheduler
 
-Here is an example of configuration for use with `cron` on Linux.
-Adapt the scripts to your own needs.
+Details are provided in section [Scheduler](#scheduler).
 
-We assume here that a configuration preset was created as shown previously.
+Shorter commands can be specified if a configuration preset was created as shown previously.
 
-Lets first setup a script that will be used in the scheduler and set up the environment.
-
-Example of startup script `cron_<%=cmd%>`, which sets the Ruby environment and adds some timeout protection:
+For example the timeout value can be differentiated depending on the option: event versus scan:
 
 ```bash
- #!/bin/bash
- # set a timeout protection, just in case
 case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
-. /etc/profile.d/rvm.sh
-rvm use 2.6 --quiet
-exec timeout ${tmout} <%=cmd%> "${@}"
 ```
-
-Here the cronjob is created for user `xfer`.
-
-```bash
-crontab<<EOF
-0    * * * *  /home/xfer/cron_<%=cmd%> preview scan --logger=syslog --display=error
-2-59 * * * *  /home/xfer/cron_<%=cmd%> preview trev --logger=syslog --display=error
-EOF
-```
-
-> **Note:** The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
 
 ### Candidate detection for creation or update (or deletion)
 
@@ -4897,7 +4898,7 @@ Virtually any transfer on a "repository" on a regular basis might emulate a hot 
 #### Scheduling
 
 Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
-Refer to section [Scheduling](#scheduling). (on use of option `lock_port`)
+Refer to section [Scheduler](#scheduler). (on use of option `lock_port`)
 
 ### Example: upload hot folder
 
