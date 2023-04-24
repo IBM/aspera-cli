@@ -2009,6 +2009,67 @@ In addition to standard methods described in section [File List](#file_list), it
 >
 > **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agt_direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
+This agent supports a local configuration file: `aspera.conf` where Virtual links can be configured:
+
+On a server (HSTS), the following commands can be used to set a global virtual link:
+
+```bash
+asconfigurator -x 'set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true'
+asconfigurator -x 'set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true'
+asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
+asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
+```
+
+But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli conf ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
+
+```xml
+<?xml version='1.0' encoding='UTF-8'?>
+<CONF version="2">
+    <default>
+        <transfer>
+            <in>
+                <bandwidth>
+                    <aggregate>
+                        <trunk_id>1</trunk_id>
+                    </aggregate>
+                </bandwidth>
+            </in>
+            <out>
+                <bandwidth>
+                    <aggregate>
+                        <trunk_id>2</trunk_id>
+                    </aggregate>
+                </bandwidth>
+            </out>
+        </transfer>
+    </default>
+    <trunks>
+        <trunk>
+            <id>1</id>
+            <name>in</name>
+            <on>true</on>
+            <capacity>
+                <schedule format="ranges">1000000</schedule>
+            </capacity>
+        </trunk>
+        <trunk>
+            <id>2</id>
+            <name>out</name>
+            <capacity>
+                <schedule format="ranges">1000000</schedule>
+            </capacity>
+            <on>true</on>
+        </trunk>
+    </trunks>
+</CONF>
+```
+
+It is also possible to set a schedule with different time and days, for example for the value of `schedule`:
+
+```text
+start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000
+```
+
 #### <a id="agt_connect"></a>IBM Aspera Connect Client GUI
 
 By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed Aspera Connect Client. There are no option for `transfer_info`.
@@ -2237,9 +2298,9 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 
 #### <a id="multisession"></a>Support of multi-session
 
-Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on "direct" and "node" agents, not yet on connect.
+Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on `direct` and `node` agents, not yet on connect.
 
-- when agent=node :
+- `--transfer=node`
 
 ```bash
 --ts=@json:'{"multi_session":10,"multi_session_threshold":1}'
@@ -2247,7 +2308,7 @@ Multi session, i.e. starting a transfer of a file set using multiple sessions (o
 
 Multi-session is directly supported by the node daemon.
 
-- when agent=direct :
+- `--transfer=direct`
 
 ```bash
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
