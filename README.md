@@ -5264,11 +5264,14 @@ chmod a+x /usr/bin/unoconv
 
 ### Configuration
 
-The preview generator is run as a user, preferably a regular user (not root). When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
+The preview generator should be executed as a non-user.
+When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
 
-Like any `ascli` commands, parameters can be passed on command line or using a configuration [option preset](#lprt).  The configuration file must be created with the same user used to run so that it is properly used on runtime.
+Like any `ascli` commands, parameters can be passed on command line or using a configuration [option preset](#lprt).
+The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
-The `xfer` user has a special protected shell: `aspshell`, so changing identity requires specification of alternate shell:
+The `xfer` user has a special protected shell: `aspshell`, so in order to update the configuration, and when changing identity, specify an alternate shell.
+E.g.:
 
 ```bash
 su -s /bin/bash - xfer
@@ -5288,6 +5291,12 @@ ascli -Ppreviewconf node browse /
 ```
 
 This shall list the contents of the storage root of the access key.
+
+### Options for generated files
+
+When generating preview files, some options are provided by default.
+Some values for the options can be modified on command line.
+For video preview, the whole set of options can be overridden with option `reencode_ffmpeg`: it is a Hash with two keys: `in` and `out`, each is an array of strings with the native options to `ffmpeg`.
 
 ### Execution
 
@@ -5361,8 +5370,8 @@ For instance to filter out files beginning with `._` do:
 
 Two types of preview can be generated:
 
-- png: thumbnail
-- mp4: video preview (only for video)
+- `png`: thumbnail
+- `mp4`: video preview (only for video)
 
 Use option `skip_format` to skip generation of a format.
 
@@ -5427,7 +5436,7 @@ yum install shared-mime-info
 brew install shared-mime-info
 ```
 
-### Access to original files and preview creation
+### Generation: Read source files and write preview
 
 Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.

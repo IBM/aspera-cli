@@ -14,9 +14,9 @@ module Aspera
       # shell exit code when command is not found
       BASH_EXIT_NOT_FOUND = 127
       # external binaries used
-      EXPERNAL_TOOLS = %i[ffmpeg ffprobe convert composite optipng unoconv].freeze
-      TMPFMT = 'img%04d.jpg'
-      private_constant :BASH_SPECIAL_CHARACTERS, :BASH_EXIT_NOT_FOUND, :EXPERNAL_TOOLS, :TMPFMT
+      EXTERNAL_TOOLS = %i[ffmpeg ffprobe convert composite optipng unoconv].freeze
+      TEMP_FORMAT = 'img%04d.jpg'
+      private_constant :BASH_SPECIAL_CHARACTERS, :BASH_EXIT_NOT_FOUND, :EXTERNAL_TOOLS, :TEMP_FORMAT
 
       class << self
         # returns string with single quotes suitable for bash if there is any bash metacharacter
@@ -27,7 +27,7 @@ module Aspera
 
         # check that external tools can be executed
         def check_tools(skip_types=[])
-          tools_to_check = EXPERNAL_TOOLS.dup
+          tools_to_check = EXTERNAL_TOOLS.dup
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
           tools_to_check.each do |command_symb|
@@ -39,7 +39,7 @@ module Aspera
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
         def external_command(command_symb, command_args)
-          raise "unexpected command #{command_symb}" unless EXPERNAL_TOOLS.include?(command_symb)
+          raise "unexpected command #{command_symb}" unless EXTERNAL_TOOLS.include?(command_symb)
           # build command line, and quote special characters
           command = command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
           Log.log.debug{"cmd=#{command}".blue}
@@ -69,7 +69,7 @@ module Aspera
           # input_file,input_args,output_file,output_args
           a[:gl_p] ||= [
             '-y', # overwrite output without asking
-            '-loglevel', 'error' # show only errors and up]
+            '-loglevel', 'error' # show only errors and up
           ]
           a[:in_p] ||= []
           a[:out_p] ||= []
@@ -88,11 +88,11 @@ module Aspera
         end
 
         def ffmpeg_fmt(temp_folder)
-          return File.join(temp_folder, TMPFMT)
+          return File.join(temp_folder, TEMP_FORMAT)
         end
 
         def get_tmp_num_filepath(temp_folder, file_number)
-          return File.join(temp_folder, format(TMPFMT, file_number))
+          return File.join(temp_folder, format(TEMP_FORMAT, file_number))
         end
 
         def video_dupe_frame(temp_folder, index, count)

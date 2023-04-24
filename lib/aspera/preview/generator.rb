@@ -16,6 +16,8 @@ module Aspera
       # values for preview_format : output format
       PREVIEW_FORMATS = %i[png mp4].freeze
 
+      FFMPEG_OPTIONS_LIST = %w[in out].freeze
+
       # CLI needs to know conversion type to know if need skip it
       attr_reader :conversion_type
 
@@ -73,7 +75,7 @@ module Aspera
           # check that generated size does not exceed maximum
           result_size = File.size(@destination_file_path)
           if result_size > @options.max_size
-            Log.log.warn{"preview size exceeds maximum #{result_size} > #{@options.max_size}"}
+            Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"}
           end
         rescue StandardError => e
           Log.log.error{"Ignoring: #{e.message}"}
@@ -159,10 +161,17 @@ module Aspera
 
       # do a simple re-encoding
       def convert_video_to_mp4_using_reencode
+        options = @options.reencode_ffmpeg
+        raise 'reencode_ffmpeg must be a Hash' unless options.is_a?(Hash)
+        options.each do |k, v|
+          raise "Key not supported: #{k}. Use keys: #{FFMPEG_OPTIONS_LIST.join(',')}" unless FFMPEG_OPTIONS_LIST.include?(k)
+          raise "Value for #{k} must be Array" unless v.is_a?(Array)
+        end
         Utils.ffmpeg(
           in_f: @source_file_path,
+          in_p: options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9],
           out_f: @destination_file_path,
-          out_p: [
+          out_p: options['out'] || [
             '-t', '60',
             '-codec:v', 'libx264',
             '-profile:v', 'high',
