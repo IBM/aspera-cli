@@ -4955,7 +4955,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 >
 > **Note:** Most, but not all, native `ascp` arguments are available as standard <%=trspec%> parameters.
 >
-> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided option `transfer_info` parameter `ascp_args`.
+> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 
 #### server side and configuration
 

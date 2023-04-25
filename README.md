@@ -19,9 +19,9 @@ Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/asper
 
 Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
 
-Minimum required Ruby version: >= 2.4.
+Minimum required Ruby version: >= 2.6.
 
-> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -189,9 +189,9 @@ The direct installation is recommended and consists in installing:
 - [aspera-cli](#the_gem)
 - [Aspera SDK (`ascp`)](#fasp_prot)
 
-Ruby version: >= 2.4.
+Ruby version: >= 2.6.
 
-> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
 
 The following sections provide information on the various installation methods.
 
@@ -336,9 +336,9 @@ Use this method to install on the native host.
 
 A Ruby interpreter is required to run the tool or to use the gem and tool.
 
-Required Ruby version: >= 2.4.
+Required Ruby version: >= 2.6.
 
-> **Deprecation notice**: the minimum Ruby version will be 2.7 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
@@ -2233,9 +2233,9 @@ Columns:
 Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct). (only in `ascli`).
 
 | Field | Type | D | N | C | Description |
-|-------|------|---|---|---|-------------|
-| EX_ascp_args | array | Y | &nbsp; | &nbsp; | Add native command line arguments to ascp |
-| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: Prefer to use standard parameter: content_protection_password<br/>(env:ASPERA_SCP_FILEPASS) |
+| ----- | ---- | - | - | - | ----------- |
+| EX_ascp_args | array | Y | &nbsp; | &nbsp; | DEPRECATED: Use parameter ascp_args in option transfer_info<br/>Add native command line arguments to ascp |
+| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
 | EX_file_list | string | Y | &nbsp; | &nbsp; | source file list |
 | EX_file_pair_list | string | Y | &nbsp; | &nbsp; | source file pair list |
 | EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
@@ -2304,7 +2304,7 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 | source_root_id | string | &nbsp; | Y | &nbsp; | The file ID of the source root directory. Required when using Bearer token auth for the source node. |
 | src_base | string | Y | Y | &nbsp; | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64 (conversion){string}) |
 | ssh_port | int | Y | Y | Y | Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P {int}) |
-| ssh_private_key | string | Y | &nbsp; | &nbsp; | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&sol;nMII...<br/>Note the JSON encoding: &sol;n for newlines.<br/>(env:ASPERA_SCP_KEY) |
+| ssh_private_key | string | Y | &nbsp; | &nbsp; | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY) |
 | ssh_private_key_passphrase | string | Y | &nbsp; | &nbsp; | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS) |
 | sshfp | string | Y | Y | Y | Check it against server SSH host key fingerprint<br/>(--check-sshfp {string}) |
 | symlink_policy | string | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links {enum}) |
@@ -5691,7 +5691,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 >
 > **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters.
 >
-> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided option `transfer_info` parameter `ascp_args`.
+> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 
 #### server side and configuration
 
