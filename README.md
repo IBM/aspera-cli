@@ -330,6 +330,21 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 > **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
+For an offline installation of the container:
+
+- First create the image archive:
+
+```bash
+docker pull martinlaurent/ascli
+docker save martinlaurent/ascli|gzip>ascli_image_latest.tar.gz
+```
+
+- Then, on air-gapped system:
+
+```bash
+docker load -i ascli_image_latest.tar.gz
+```
+
 ### <a id="ruby"></a>Ruby
 
 Use this method to install on the native host.
@@ -342,9 +357,14 @@ Required Ruby version: >= 2.6.
 
 *Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
 
-Refer to the following sections for a proposed method for specific operating systems.
+In priority, refer to the official Ruby documentation:
 
-The recommended installation method is `rvm` for systems with "bash-like" shell (Linux, macOS, Windows with cygwin, etc...).
+- [Download Ruby](https://www.ruby-lang.org/en/downloads/)
+- [Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+
+Else, refer to the following sections for a proposed method for specific operating systems.
+
+The recommended installation method is `rvm` for Unix-like systems (Linux, AIX, macOS, Windows with cygwin, etc...).
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
 If you have a simpler better way to install Ruby : use it !
 
@@ -352,7 +372,7 @@ If you have a simpler better way to install Ruby : use it !
 
 Use this method which provides more flexibility.
 
-Install "rvm": follow [https://rvm.io/](https://rvm.io/) :
+Install `rvm`: follow [https://rvm.io/](https://rvm.io/) :
 
 Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
 
@@ -377,10 +397,10 @@ rvm list --remote
 Install the chosen pre-compiled Ruby version:
 
 ```bash
-rvm install 2.7.2 --binary
+rvm install 3.2.2
 ```
 
-Ruby is now installed for the user, go on to Gem installation.
+Ruby is now installed for the user, go to [Gem installation](#the_gem).
 
 #### Generic: RVM: global installation (as root)
 
