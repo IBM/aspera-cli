@@ -9,6 +9,8 @@ RUN gem install grpc mimemagic <%=arg_gem%> && \
 USER cliuser
 # The default dir when starting the docker container.
 WORKDIR /home/cliuser
+# set SDK location in container, must be outside /home/cliuser/.aspera/ascli which will be a volume
+ENV ASCLI_SDK_FOLDER=/home/cliuser/.aspera/sdk
 # SDK
 <%=arg_copy_sdk%>
 # install SDK, create key files and check that ascp works
