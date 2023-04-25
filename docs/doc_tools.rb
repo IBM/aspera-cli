@@ -42,29 +42,29 @@ def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@
 # if version contains other characters than digit and dot, it is pre-release
 def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
+# Generate markdown from the provided table
+def markdown_table(table)
+  headings=table.shift
+  table.unshift(headings.map{|h|'-' * h.length})
+  table.unshift(headings)
+  return table.map {|l| '| '+l.join(' | ')+" |\n"}.join.chomp
+end
+
 # transfer spec description generation
 def spec_table
-  r = []
-  r << '| Field | Type |'
-  Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
-    r << ' ' << c.to_s.upcase << ' |'
-  end
-  r << ' Description |' << "\n"
-  r << r.join.gsub(/[^\|\n]/, '-')
-  Aspera::Fasp::Parameters.man_table(to_text: false).sort_by { |a| a[:name] }.each do |p|
+  # list of fields to display (column titles and key in source table)
+  fields=[:name,:type,Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT,:description].flatten.freeze
+  # Headings
+  table= [fields.map{|f|f.capitalize}]
+  table.first[0]='Field'
+  Aspera::Fasp::Parameters.man_table.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
-    p.delete(:cli)
     p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')
     p[:type] = p[:type].gsub(',', '<br/>')
-    r << '| ' << p[:name] << ' | ' << p[:type] << ' |'
-    Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT.each do |c|
-      r << ' ' << p[c] << ' |'
-    end
-    r << ' ' << p[:description] << ' |' << "\n"
+    table.push(fields.map{|f|p[f]})
   end
-  r << "\n"
-  return r.join.gsub(/\n+$/, '')
+  return markdown_table(table)
 end
 
 # @return the minimum ruby version from gemspec
