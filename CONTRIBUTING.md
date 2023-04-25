@@ -101,22 +101,32 @@ gem install -P HighSecurity aspera-cli
 
 ## Docker image build
 
-The default docker image build installs the official gem version directly from <rubygems.org>.
+The Dockerfile template allows customizing the optional copy of gem file , versus install from rubygems,org as well as customizing the retrieval of the SDK.
 
-By default it will build the image for the version in the current repository:
+### Default image build
+
+Build the image:
 
 ```bash
 make docker
 ```
 
+This does the following:
+
+- Install the official gem version directly from <rubygems.org>.
+- Build the image for the version number in the current repository
+- creates tags for both the version and `latest`
+
 > **Note:** This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template (Makefile target `dockerfile`).
 A template is used as it allows some level of customization to tell where to take the gem from, as as for the SDK file.
 
-Then, to push to the image registry:
+Then, to push to the image registry (both tags: version and `latest`):
 
 ```bash
 make dpush
 ```
+
+### Specific version image build
 
 It is possible to build a specific version by setting envvar `GEMVERS` and `make` with option `-e`:
 
@@ -125,6 +135,8 @@ GEMVERS=4.11.0 make -e docker
 GEMVERS=4.11.0 make -e dpush
 ```
 
+### Development version image build
+
 To build/push a beta/development container:
 
 ```bash
@@ -132,7 +144,7 @@ make dockerbeta
 make dpushversion
 ```
 
-The Dockerfile template allows customizing the optional copy of gem file , versus install from rubygems,org as well as customizing the retrieval of the SDK.
+This does not create the `latest` tag.
 
 ## Long Term Implementation and delivery improvements
 
