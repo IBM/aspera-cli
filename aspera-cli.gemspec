@@ -38,12 +38,12 @@ Gem::Specification.new do |spec|
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
   # see also Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION
-  spec.required_ruby_version = '>= 2.4'
+  spec.required_ruby_version = ">= #{Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION}"
   # dependency gems for runtime
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
-  spec.add_runtime_dependency('net-smtp', '>=0.1', '<0.4')
-  spec.add_runtime_dependency('net-ssh', '>= 6.0')
+  spec.add_runtime_dependency('net-smtp', '~> 0.3')
+  spec.add_runtime_dependency('net-ssh', '~> 7.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
   spec.add_runtime_dependency('rubyzip', '~> 2.0')
   spec.add_runtime_dependency('symmetric-encryption', '~> 4.6')
