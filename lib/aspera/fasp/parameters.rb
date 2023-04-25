@@ -38,8 +38,9 @@ module Aspera
           return @param_description_cache
         end
 
+        # @param to_text [bool] replace HTML entities with text equivalent
         # @return a table suitable to display in manual
-        def man_table(to_text: true)
+        def man_table()
           result = []
           description.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
@@ -70,10 +71,11 @@ module Aspera
             if options.key?(:enum)
               param[:description] += "\nAllowed values: #{options[:enum].join(', ')}"
             end
-            param[:description] = param[:description].gsub('&sol;', '/') if to_text
+            # replace "solidus" HTML entity with its text value
+            param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
           end
-          return result
+          return result.sort_by { |a| a[:name] }
         end
 
         # special encoding methods used in YAML (key: :convert)

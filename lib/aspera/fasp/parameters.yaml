@@ -559,7 +559,8 @@ remove_empty_source_directory:
   :cli:
     :type: :opt_without_arg
 EX_at_rest_password:
-  :desc: "DEPRECATED: Prefer to use standard parameter: content_protection_password"
+  :desc: Content protection password
+  :deprecation: "Use standard spec parameter: content_protection_password"
   :agents:
   - :direct
   :cli:
@@ -703,6 +704,7 @@ EX_file_pair_list:
     :switch: "--file-pair-list"
 EX_ascp_args:
   :desc: Add native command line arguments to ascp
+  :deprecation: Use parameter ascp_args in option transfer_info
   :accepted_types: :array
   :agents:
   - :direct

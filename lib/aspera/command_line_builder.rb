@@ -9,7 +9,7 @@ module Aspera
     # parameter with one of those tags is a command line option with --
     CLI_OPTION_TYPE_SWITCH = %i[opt_without_arg opt_with_arg].freeze
     CLI_OPTION_TYPES = %i[special ignore envvar].concat(CLI_OPTION_TYPE_SWITCH).freeze
-    OPTIONS_KEYS = %i[desc accepted_types default enum agents required cli ts].freeze
+    OPTIONS_KEYS = %i[desc accepted_types default enum agents required cli ts deprecation].freeze
     CLI_KEYS = %i[type switch convert variable].freeze
 
     private_constant :CLI_OPTION_TYPE_SWITCH, :OPTIONS_KEYS, :CLI_KEYS
@@ -37,6 +37,7 @@ module Aspera
           # by default : optional
           options[:mandatory] ||= false
           options[:desc] ||= ''
+          options[:desc] = "DEPRECATED: #{options[:deprecation]}\n#{options[:desc]}" if options.key?(:deprecation)
           cli = options[:cli]
           unsupported_cli_keys = cli.keys - CLI_KEYS
           raise "Unsupported cli keys: #{unsupported_cli_keys}" unless unsupported_cli_keys.empty?
