@@ -2,7 +2,10 @@
 
 * 4.13.0
 
-  * <TBD>
+  * change(break): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
+  * fix: cos: do not use refresh token when not supported
+  * fix: container: SDK installed in other folder than `ascli`
+  * new: preview: option `reencode_ffmpeg` allows overriding all re-encoding options
 
 * 4.12.0
 
