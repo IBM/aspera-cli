@@ -44,19 +44,19 @@ def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
 # Generate markdown from the provided table
 def markdown_table(table)
-  headings=table.shift
+  headings = table.shift
   table.unshift(headings.map{|h|'-' * h.length})
   table.unshift(headings)
-  return table.map {|l| '| '+l.join(' | ')+" |\n"}.join.chomp
+  return table.map {|l| '| ' + l.join(' | ') + " |\n"}.join.chomp
 end
 
 # transfer spec description generation
 def spec_table
   # list of fields to display (column titles and key in source table)
-  fields=[:name,:type,Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT,:description].flatten.freeze
+  fields = [:name, :type, Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT, :description].flatten.freeze
   # Headings
-  table= [fields.map{|f|f.capitalize}]
-  table.first[0]='Field'
+  table = [fields.map(&:capitalize)]
+  table.first[0] = 'Field'
   Aspera::Fasp::Parameters.man_table.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}

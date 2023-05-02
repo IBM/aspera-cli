@@ -40,7 +40,7 @@ module Aspera
 
         # @param to_text [bool] replace HTML entities with text equivalent
         # @return a table suitable to display in manual
-        def man_table()
+        def man_table
           result = []
           description.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
