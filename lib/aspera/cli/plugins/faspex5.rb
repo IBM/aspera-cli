@@ -181,7 +181,7 @@ module Aspera
           when :bearer_token
             return {type: :text, data: @api_v5.oauth_token}
           when :package
-            command = options.get_next_command(%i[list show send receive status])
+            command = options.get_next_command(%i[list show status delete send receive])
             case command
             when :list
               parameters = options.get_option(:value)
@@ -196,6 +196,13 @@ module Aspera
             when :status
               status = wait_for_complete_upload(instance_identifier)
               return {type: :single_object, data: status}
+            when :delete
+              ids = instance_identifier
+              ids = [ids] unless ids.is_a?(Array)
+              raise "Identifier must be a single id or an array (#{ids.class}, #{ids.first.class})" unless ids.is_a?(Array) && ids.all?(String)
+              # APU returns 204, empty on success
+              @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
+              return Main.result_status('Package(s) deleted')
             when :send
               parameters = options.get_option(:value, is_type: :mandatory)
               raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
