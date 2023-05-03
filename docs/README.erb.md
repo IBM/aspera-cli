@@ -4113,6 +4113,20 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 <%=cmd%> faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=3 /folder/file
 ```
 
+- receive all packages (cargo)
+
+To receive all packages, only once, through persistency of already received packages:
+
+```bash
+ascli faspex5 packages receive ALL --once-only=yes
+```
+
+To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:
+
+```bash
+ascli faspex5 packages receive INIT --once-only=yes
+```
+
 ### Faspex 4-style postprocessing script with Faspex 5
 
 <%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.

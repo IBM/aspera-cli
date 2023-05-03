@@ -2869,7 +2869,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health package postprocessing shared_folders user version
+SUBCOMMANDS: admin bearer_token gateway health packages postprocessing shared_folders user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2878,6 +2878,7 @@ OPTIONS:
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
         --auth=ENUM                  OAuth type of authentication: boot, web, jwt
+        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
         --shared-folder=VALUE        Shared folder source for package files
@@ -4749,6 +4750,20 @@ ascli faspex5 shared_folders br 3 /folder
 
 ```bash
 ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=3 /folder/file
+```
+
+- receive all packages (cargo)
+
+To receive all packages, only once, through persistency of already received packages:
+
+```bash
+ascli faspex5 packages receive ALL --once-only=yes
+```
+
+To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:
+
+```bash
+ascli faspex5 packages receive INIT --once-only=yes
 ```
 
 ### Faspex 4-style postprocessing script with Faspex 5
