@@ -4057,6 +4057,9 @@ Then <%=tool%> will lookup existing contacts, and if a single match is found wil
 
 > **Note:** The lookup is case insensitive and on partial matches.
 
+On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
+If the value `ALL` is provided to option `box`, then all packages are selected.
+
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.

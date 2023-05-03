@@ -1305,27 +1305,29 @@ $(T)f5_nagios: $(T).exists
 	@touch $@
 $(T)f5_p1: $(T).exists
 	@echo $@
+	$(EXE_MAN) faspex5 packages receive INIT --once-only=yes
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5_jwt username)&&\
 	f5_meta=$$($(EXE_NOMAN) config preset get misc faspex5_meta)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+	$(EXE_MAN) faspex5 packages send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
+	$(EXE_MAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"]}'
 	@touch $@
 $(T)f5_p3: $(T).exists
 	@echo $@
 	set -x&&\
-	package_id=$$($(EXE_NOMAN) faspex5 pack list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) faspex5 package show "$${package_id}"&&\
-	$(EXE_MAN) faspex5 package receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
+	package_id=$$($(EXE_NOMAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
+	$(EXE_MAN) faspex5 packages show "$${package_id}"&&\
+	$(EXE_MAN) faspex5 packages receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
 $(T)f5_p4: $(T).exists
 	@echo $@
 	set -x&&\
 	shinbox=$$($(EXE_NOMAN) config preset get misc faspex5_shinbox)&&\
-	$(EXE_MAN) faspex5 package send --value=@json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 packages send --value=@json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)f5_a1: $(T).exists
 	@echo $@

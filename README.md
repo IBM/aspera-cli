@@ -4676,6 +4676,9 @@ Then `ascli` will lookup existing contacts, and if a single match is found will 
 
 > **Note:** The lookup is case insensitive and on partial matches.
 
+On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
+If the value `ALL` is provided to option `box`, then all packages are selected.
+
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
@@ -4698,11 +4701,13 @@ faspex5 admin res workgroups list
 faspex5 bearer_token
 faspex5 gateway --value=https://localhost:12345/aspera/faspex &\
 faspex5 health
-faspex5 package list --value=@json:'{"mailbox":"inbox","state":["released"]}'
-faspex5 package receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
-faspex5 package send --value=@json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
-faspex5 package send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
-faspex5 package show "my_package_id"
+faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"]}'
+faspex5 packages receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
+faspex5 packages receive ALL --once-only=yes --to-folder=.
+faspex5 packages receive INIT --once-only=yes
+faspex5 packages send --value=@json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
+faspex5 packages send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+faspex5 packages show "my_package_id"
 faspex5 postprocessing --value=@json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show

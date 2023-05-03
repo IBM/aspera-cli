@@ -158,14 +158,14 @@ module Aspera
         def list_packages
           parameters = options.get_option(:value)
           box = options.get_option(:box)
-          query_path = case box
-          when '', nil then 'packages'
-          when *API_MAILBOXES then "#{box}/packages"
+          inbox_prefix = case box
+          when VAL_ALL then ''
+          when *API_MAILBOXES then "#{box}/"
           else
             shared_inbox = lookup_entity('shared_inboxes', 'name', box)
-            "shared_inboxes/#{shared_inbox['id']}/packages"
+            "shared_inboxes/#{shared_inbox['id']}/"
           end
-          return @api_v5.read(query_path, parameters)[:data]['packages']
+          return @api_v5.read("#{inbox_prefix}packages", parameters)[:data]['packages']
         end
 
         ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing].freeze
