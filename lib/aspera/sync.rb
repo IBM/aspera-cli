@@ -8,6 +8,13 @@ require 'base64'
 module Aspera
   # builds command line arg for async
   class Sync
+    # default is push
+    DIRECTIONS = %i[push pull bidi].freeze
+    DIRECTION_TO_REQUEST_TYPE = {
+      push: :sync_upload,
+      pull: :sync_download,
+      bidi: :sync
+    }.freeze
     PARAMS_VX_INSTANCE =
       {
         'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
