@@ -203,6 +203,8 @@ To use the container, ensure that you have `docker` (or `podman`) installed.
 docker --version
 ```
 
+#### Container quick start
+
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
 ```bash
@@ -223,6 +225,8 @@ That is simple, but there are limitations:
 - Everything happens in the container
 - Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
 - No possibility to upload files located on the host system
+
+#### Details on the container
 
 The container image is built from this [Dockerfile](Dockerfile): the entry point is <%=tool%> and the default command is `help`.
 
@@ -289,6 +293,8 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 <%=cmd%>sh
 ```
 
+#### Sample container script
+
 A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
 
 > **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
@@ -326,7 +332,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 > **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
-For an offline installation of the container:
+#### Offline installation of the container
 
 - First create the image archive:
 

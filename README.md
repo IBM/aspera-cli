@@ -207,6 +207,8 @@ To use the container, ensure that you have `docker` (or `podman`) installed.
 docker --version
 ```
 
+#### Container quick start
+
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
 ```bash
@@ -227,6 +229,8 @@ That is simple, but there are limitations:
 - Everything happens in the container
 - Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
 - No possibility to upload files located on the host system
+
+#### Details on the container
 
 The container image is built from this [Dockerfile](Dockerfile): the entry point is `ascli` and the default command is `help`.
 
@@ -293,6 +297,8 @@ mkdir -p $HOME/.aspera/ascli
 asclish
 ```
 
+#### Sample container script
+
 A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 > **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli ascli`
@@ -330,7 +336,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 > **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 
-For an offline installation of the container:
+#### Offline installation of the container
 
 - First create the image archive:
 
@@ -2814,7 +2820,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space stream sync transfer upload watch_folder
+SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -2823,7 +2829,8 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
-        --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
+        --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
+        --sync-direction=ENUM        direction of synchronization (sync command): push, pull, bidi
         --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
@@ -2975,13 +2982,14 @@ OPTIONS:
         --validate-metadata=ENUM     Validate shared inbox metadata: [no], yes
 
 COMMAND: node
-SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space stream sync transfer upload watch_folder
+SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --validator=VALUE            identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
-        --token-type=ENUM            Type of token used for transfers: aspera, basic, hybrid
+        --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
+        --sync-direction=ENUM        direction of synchronization (sync command): push, pull, bidi
         --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
