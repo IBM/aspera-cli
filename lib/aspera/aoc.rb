@@ -252,25 +252,30 @@ module Aspera
       return @cache_user_info
     end
 
-    # @returns [Aspera::Node] a node API for access key
     # @param node_id [String] identifier of node in AoC
+    # @param workspace_id [String] workspace identifier
+    # @param workspace_name [String] workspace name
     # @param scope e.g. SCOPE_NODE_USER, or nil (requires secret)
-    def node_api_from(node_id: nil, workspace_info: nil, package_info: nil, scope: nil)
-      if node_id.nil?
-        if package_info.nil?
-          raise 'INTERNAL ERROR: either node_id or package_info is required'
-        else
-          node_id = package_info['node_id']
-        end
-      end
-      if workspace_info.nil?
-        if package_info.nil?
-          raise 'INTERNAL ERROR: either workspace_info or package_info is required'
-        else
-          workspace_info = package_info['workspace_id']
-        end
-      end
+    # @param package_info [Hash] created package information
+    # @returns [Aspera::Node] a node API for access key
+    def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: SCOPE_NODE_USER, package_info: nil)
+      raise 'invalid type for node_id' unless node_id.is_a?(String)
       node_info = read("nodes/#{node_id}")[:data]
+      app_info = {
+        api:            self, # for callback
+        app:            package_info.nil? ? FILES_APP : PACKAGES_APP,
+        node_info:      node_info,
+        workspace_id:   workspace_id,
+        workspace_name: workspace_name
+      }
+      if PACKAGES_APP.eql?(app_info[:app])
+        raise 'package info required' if package_info.nil?
+        app_info[:package_id] = package_info['id']
+        app_info[:package_name] = package_info['name']
+      end
+      if workspace_name.nil? && !workspace_id.nil?
+        workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
+      end
       node_rest_params = {base_url: node_info['url']}
       # if secret is available
       if scope.nil?
@@ -286,13 +291,6 @@ module Aspera
         # special header required for bearer token only
         node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
       end
-      app_info = {
-        node_info:      node_info,
-        workspace_info: workspace_info,
-        app:            package_info.nil? ? FILES_APP : PACKAGES_APP,
-        api:            self # for callback
-      }
-      app_info[:package_info] = package_info unless package_info.nil?
       return Node.new(params: node_rest_params, app_info: app_info)
     end
 
@@ -433,7 +431,10 @@ module Aspera
       #  create a new package container
       created_package = create('packages', package_data)[:data]
 
-      package_node_api = node_api_from(package_info: created_package, scope: AoC::SCOPE_NODE_USER)
+      package_node_api = node_api_from(
+        node_id: created_package['node_id'],
+        workspace_id: created_package['workspace_id'],
+        package_info: created_package)
 
       # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
       # TODO: if multi session was used we should probably tell
@@ -454,15 +455,14 @@ module Aspera
       transfer_type = Fasp::TransferSpec.action(transfer_spec)
       # Analytics tags
       ################
-      ws_info = app_info[:workspace_info]
       transfer_spec.deep_merge!({
         'tags' => {
           'aspera' => {
-            'usage_id' => "aspera.files.workspace.#{ws_info['id']}", # activity tracking
+            'usage_id' => "aspera.files.workspace.#{app_info[:workspace_id]}", # activity tracking
             'files'    => {
               'files_transfer_action' => "#{transfer_type}_#{app_info[:app].gsub(/s$/, '')}",
-              'workspace_name'        => ws_info['name'], # activity tracking
-              'workspace_id'          => ws_info['id']
+              'workspace_name'        => app_info[:workspace_name], # activity tracking
+              'workspace_id'          => app_info[:workspace_id]
             }
           }
         }
@@ -485,8 +485,8 @@ module Aspera
           'tags' => {
             'aspera' => {
               'files' => {
-                'package_id'        => app_info[:package_info]['id'],
-                'package_name'      => app_info[:package_info]['name'],
+                'package_id'        => app_info[:package_id],
+                'package_name'      => app_info[:package_name],
                 'package_operation' => transfer_type
               }}}})
       end
@@ -498,7 +498,7 @@ module Aspera
     # Callback from Plugins::Node
     def permissions_create_params(create_param:, app_info:)
       # workspace shared folder:
-      # access_id = "#{ID_AK_ADMIN}_WS_#{ app_info[:workspace_info]['id']}"
+      # access_id = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
       default_params = {
         # 'access_type'   => 'user', # mandatory: user or group
         # 'access_id'     => access_id, # id of user or group
@@ -506,8 +506,8 @@ module Aspera
           'aspera' => {
             'files' => {
               'workspace' => {
-                'id'                => app_info[:workspace_info]['id'],
-                'workspace_name'    => app_info[:workspace_info]['name'],
+                'id'                => app_info[:workspace_id],
+                'workspace_name'    => app_info[:workspace_name],
                 'user_name'         => current_user_info['name'],
                 'shared_by_user_id' => current_user_info['id'],
                 'shared_by_name'    => current_user_info['name'],
@@ -520,7 +520,7 @@ module Aspera
         contact_info = lookup_entity_by_name(
           'contacts',
           create_param['with'],
-          {'current_workspace_id' => app_info[:workspace_info]['id'], 'context' => 'share_folder'})
+          {'current_workspace_id' => app_info[:workspace_id], 'context' => 'share_folder'})
         create_param.delete('with')
         create_param['access_type'] = contact_info['source_type']
         create_param['access_id'] = contact_info['source_id']
@@ -535,7 +535,7 @@ module Aspera
       event_creation = {
         'types'        => ['permission.created'],
         'node_id'      => app_info[:node_info]['id'],
-        'workspace_id' => app_info[:workspace_info]['id'],
+        'workspace_id' => app_info[:workspace_id],
         'data'         => created_data # Response from previous step
       }
       # (optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.

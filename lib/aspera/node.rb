@@ -40,7 +40,9 @@ module Aspera
       end
     end
 
-    REQUIRED_APP_INFO_FIELDS = %i[node_info app api workspace_info].freeze
+    # fields in @app_info
+    REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
+    # methods of @app_info[:api]
     REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
     private_constant :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
@@ -71,8 +73,13 @@ module Aspera
 
     # @returns [Aspera::Node] a Node or nil
     def node_id_to_node(node_id)
-      return self if !@app_info.nil? && @app_info[:node_info]['id'].eql?(node_id)
-      return @app_info[:api].node_api_from(node_id: node_id, workspace_info: @app_info[workspace_info]) unless @app_info.nil?
+      if !@app_info.nil?
+        return self if node_id.eql?(@app_info[:node_info]['id'])
+        return @app_info[:api].node_api_from(
+          node_id: node_id,
+          workspace_id: @app_info[:workspace_id],
+          workspace_name: @app_info[:workspace_name])
+      end
       Log.log.warn{"cannot resolve link with node id #{node_id}"}
       return nil
     end

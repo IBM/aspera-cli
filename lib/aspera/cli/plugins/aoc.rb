@@ -142,6 +142,13 @@ module Aspera
           end
           home_node_id ||= current_workspace_info['home_node_id'] || current_workspace_info['node_id']
           home_file_id ||= current_workspace_info['home_file_id']
+          if home_node_id.to_s.empty?
+            # not part of any workspace, but has some folder shared
+            user_info = aoc_api.current_user_info(exception: true)
+            home_node_id = user_info['read_only_home_node_id']
+            home_file_id = user_info['read_only_home_file_id']
+          end
+
           raise "Cannot get user's home node id, check your default workspace or specify one" if home_node_id.to_s.empty?
           @cache_home_node_file = {
             node_id: home_node_id,
@@ -214,7 +221,12 @@ module Aspera
         # @param file_id [String] root file id for the operation (can be AK root, or other, e.g. package, or link)
         # @param scope [String] node scope, or nil (admin)
         def execute_nodegen4_command(command_repo, node_id, file_id: nil, scope: nil)
-          top_node_api = aoc_api.node_api_from(node_id: node_id, workspace_info: current_workspace_info, scope: scope)
+          top_node_api = aoc_api.node_api_from(
+            node_id: node_id,
+            workspace_id: current_workspace_info['id'],
+            workspace_name: current_workspace_info['name'],
+            scope: scope
+          )
           file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")[:data]['root_file_id'] if file_id.nil?
           node_plugin = Node.new(@agents.merge(
             skip_basic_auth_options: true,
@@ -588,7 +600,11 @@ module Aspera
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
                 formatter.display_status("downloading package: #{package_info['name']}")
-                package_node_api = aoc_api.node_api_from(package_info: package_info, scope: AoC::SCOPE_NODE_USER)
+                package_node_api = aoc_api.node_api_from(
+                  node_id: package_info['node_id'],
+                  workspace_id: current_workspace_info['id'],
+                  workspace_name: current_workspace_info['name'],
+                  package_info: package_info)
                 statuses = transfer.start(
                   package_node_api.transfer_spec_gen4(
                     package_info['contents_file_id'],
@@ -653,7 +669,10 @@ module Aspera
               create_params = nil
               shared_apfid = nil
               if !folder_dest.nil?
-                home_node_api = aoc_api.node_api_from(node_id: home_info[:node_id], workspace_info: current_workspace_info, scope: AoC::SCOPE_NODE_USER)
+                home_node_api = aoc_api.node_api_from(
+                  node_id: home_info[:node_id],
+                  workspace_id: current_workspace_info['id'],
+                  workspace_name: current_workspace_info['name'])
                 shared_apfid = home_node_api.resolve_api_fid(home_info[:file_id], folder_dest)
                 create_params = {
                   file_id:      shared_apfid[:file_id],
