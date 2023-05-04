@@ -13,6 +13,16 @@ module Aspera
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
+      class SyncSpecServer
+        def initialize(transfer_spec)
+          @transfer_spec = transfer_spec
+        end
+
+        def transfer_spec(direction, local_path, remote_path)
+          return @transfer_spec
+        end
+      end
+
       class Server < Aspera::Cli::BasicAuthPlugin
         SSH_SCHEME = 'ssh'
         URI_SCHEMES = %w[https local].push(SSH_SCHEME).freeze
@@ -121,7 +131,7 @@ module Aspera
             Fasp::TransferSpec.action_to_direction(transfer_spec, command)
             return Main.result_transfer(transfer.start(transfer_spec))
           when :sync
-            sync_plugin = Sync.new(@agents, transfer_spec: transfer_spec)
+            sync_plugin = Plugins::Sync.new(@agents, sync_spec: SyncSpecServer.new(transfer_spec))
             return sync_plugin.execute_action
           end
         end

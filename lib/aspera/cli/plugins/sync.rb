@@ -11,14 +11,14 @@ module Aspera
     module Plugins
       # Execute Aspera Sync
       class Sync < Aspera::Cli::Plugin
-        def initialize(env, transfer_spec: nil)
+        def initialize(env, sync_spec: nil)
           super(env)
           options.add_opt_simple(:sync_info, 'Information for sync instance and sessions (Hash)')
           options.add_opt_simple(:sync_session, 'Name of session to use for admin commands. default: first in parameters')
           options.parse_options!
           return if env[:man_only]
           @params = options.get_option(:sync_info, is_type: :mandatory)
-          Aspera::Sync.update_parameters_with_transfer_spec(@params, transfer_spec) unless transfer_spec.nil?
+          @sync_spec = sync_spec
         end
 
         ACTIONS = %i[start admin].freeze
@@ -27,7 +27,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :start
-            Aspera::Sync.new(@params).start
+            Aspera::Sync.new(@params, @sync_spec).start
             return Main.result_success
           when :admin
             sync_admin = Aspera::SyncAdmin.new(@params, options.get_option(:sync_session))

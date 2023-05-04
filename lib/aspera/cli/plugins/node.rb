@@ -7,6 +7,7 @@ require 'aspera/hash_ext'
 require 'aspera/id_generator'
 require 'aspera/node'
 require 'aspera/aoc'
+require 'aspera/sync'
 require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'zlib'
@@ -14,6 +15,51 @@ require 'zlib'
 module Aspera
   module Cli
     module Plugins
+      class SyncSpecGen3
+        def initialize(api_node)
+          @api_node = api_node
+        end
+
+        def transfer_spec(direction, local_path, remote_path)
+          # empty transfer spec for authorization request
+          direction_sym = direction.to_sym
+          request_transfer_spec = {
+            type:  Aspera::Sync::DIRECTION_TO_REQUEST_TYPE[direction_sym],
+            paths: {
+              source:      remote_path,
+              destination: local_path
+            }
+          }
+          # add fixed parameters if any (for COS)
+          @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+          # prepare payload for single request
+          setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+          # only one request, so only one answer
+          transfer_spec = @api_node.create('files/sync_setup', setup_payload)[:data]['transfer_specs'].first['transfer_spec']
+          # API returns null tag... but async does not like it
+          transfer_spec.delete_if{ |_k, v| v.nil? }
+          # delete this part, as the returned value contains only destination, and not sources
+          # transfer_spec.delete('paths') if command.eql?(:upload)
+          Log.dump(:ts, transfer_spec)
+          return transfer_spec
+        end
+      end
+
+      class SyncSpecGen4
+        def initialize(api_node, top_file_id)
+          @api_node = api_node
+          @top_file_id = top_file_id
+        end
+
+        def transfer_spec(direction, local_path, remote_path)
+          # remote is specified by option to_folder
+          apifid = @api_node.resolve_api_fid(@top_file_id, remote_path)
+          transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)
+          Log.dump(:ts, transfer_spec)
+          return transfer_spec
+        end
+      end
+
       class Node < Aspera::Cli::BasicAuthPlugin
         class << self
           def detect(base_url)
@@ -30,7 +76,7 @@ module Aspera
             env[:options].add_opt_simple(:asperabrowserurl, 'URL for simple aspera web ui')
             env[:options].add_opt_simple(:sync_name, 'sync name')
             env[:options].add_opt_simple(:path, 'file or folder path for gen4 operation "file"')
-            env[:options].add_opt_list(:token_type, %i[aspera basic hybrid], 'Type of token used for transfers')
+            env[:options].add_opt_list(:token_type, %i[aspera basic hybrid], 'type of token used for transfers')
             env[:options].add_opt_boolean(:default_ports, 'use standard FASP ports or get from node api (gen4)')
             env[:options].set_option(:asperabrowserurl, 'https://asperabrowser.mybluemix.net')
             env[:options].set_option(:token_type, :aspera)
@@ -53,7 +99,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download sync]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -235,6 +281,9 @@ module Aspera
               # raise "unknown type: #{send_result['self']['type']}"
             end
             return c_result_remove_prefix_path(result, 'path', prefix_path)
+          when :sync
+            node_sync = SyncSpecGen3.new(@api_node)
+            return Plugins::Sync.new(@agents, sync_spec: node_sync).execute_action
           when :upload, :download
             token_type = options.get_option(:token_type)
             # nil if Shares 1.x
@@ -244,7 +293,11 @@ module Aspera
               # empty transfer spec for authorization request
               request_transfer_spec = {}
               # set requested paths depending on direction
-              request_transfer_spec[:paths] = command.eql?(:download) ? transfer.ts_source_paths : [{ destination: transfer.destination_folder('send') }]
+              request_transfer_spec[:paths] = if command.eql?(:download)
+                transfer.ts_source_paths
+              else
+                [{ destination: transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND) }]
+              end
               # add fixed parameters if any (for COS)
               @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
               # prepare payload for single request
@@ -446,12 +499,8 @@ module Aspera
               {'path' => l_path}
             end
           when :sync
-            # remote is specified by option to_folder
-            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
-            transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)
-            Log.dump(:ts, transfer_spec)
-            sync_plugin = Plugins::Sync.new(@agents, transfer_spec: transfer_spec)
-            return sync_plugin.execute_action
+            node_sync = SyncSpecGen4.new(@api_node, top_file_id)
+            return Plugins::Sync.new(@agents, sync_spec: node_sync).execute_action
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)))
@@ -586,7 +635,7 @@ module Aspera
 
         ACTIONS = %i[
           async
-          sync
+          ssync
           stream
           transfer
           service
@@ -599,9 +648,9 @@ module Aspera
           command ||= options.get_next_command(ACTIONS)
           case command
           when *COMMON_ACTIONS then return execute_simple_common(command, prefix_path)
-          when :async then return execute_async
-          when :sync
-            # newer api
+          when :async then return execute_async # former API
+          when :ssync
+            # newer API
             sync_command = options.get_next_command(%i[bandwidth counters files start state stop summary].concat(Plugin::ALL_OPS) - %i[modify])
             case sync_command
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')

@@ -30,7 +30,7 @@ EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
-CF_LOCAL_SYNC_DIR=$(DIR_TMP)testsync123
+CF_LOCAL_SYNC_DIR=$(shell realpath $(DIR_TMP)testsync123)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) config preset get misc upload_folder 2> /dev/null || echo error)
 CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
@@ -543,12 +543,19 @@ $(T)aocfv3inf: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files v3 info
 	@touch $@
-$(T)aocfsync: $(T).exists
+$(T)aocfsync1: $(T).exists
 	@echo $@
 	rm -fr $(CF_LOCAL_SYNC_DIR)
 	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	$(EXE_MAN) aoc files sync start --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
-	$(EXE_MAN) aoc files sync admin status --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/testdst","reset":true}]}'
+	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/testdst","reset":true}]}'
+	@touch $@
+$(T)aocfsync2: $(T).exists
+	@echo $@
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	-$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/testdst"}}'
+	-$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/testdst"}}'
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
@@ -580,7 +587,7 @@ $(T)aocshlk3: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
 	@touch $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists
 	@echo $@
 	set -x&&\
@@ -976,7 +983,21 @@ $(T)sy5: $(T).exists
 	@echo $@
 	$(EXE_MAN) node async files 1
 	@touch $@
-tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5
+$(T)ndsyncv1: $(T).exists
+	@echo $@
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	$(EXE_MAN) node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	@touch $@
+$(T)ndsyncv2: $(T).exists
+	@echo $@
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	-$(EXE_MAN) node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	-$(EXE_MAN) node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	@touch $@
+tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2
 
 $(T)sync_create: $(T).exists
 	@echo $@
@@ -988,22 +1009,22 @@ $(T)sync_create: $(T).exists
 	port=$${hostport#*:}&&\
 	username=$$($(EXE_NOMAN) config preset get tst_server username)&&\
 	password=$$($(EXE_NOMAN) config preset get tst_server password)&&\
-	$(EXE_MAN) node sync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
-	$(EXE_MAN) node sync list
+	$(EXE_MAN) node ssync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
+	$(EXE_MAN) node ssync list
 	@touch $@
 $(T)sync_other: $(T).exists
 	@echo $@
 	set -x&&\
-	syncid=$$($(EXE_NOMAN) node sync list --format=csv|tail -n1)&&\
-	$(EXE_MAN) node sync start $${syncid}&&\
-	$(EXE_MAN) node sync show $${syncid}&&\
-	$(EXE_MAN) node sync bandwidth $${syncid}&&\
-	$(EXE_MAN) node sync counters $${syncid}&&\
-	$(EXE_MAN) node sync files $${syncid}&&\
-	$(EXE_MAN) node sync state $${syncid}&&\
-	$(EXE_MAN) node sync stop $${syncid}&&\
-	$(EXE_MAN) node sync summary $${syncid}&&\
-	$(EXE_MAN) node sync delete $${syncid}
+	syncid=$$($(EXE_NOMAN) node ssync list --format=csv|tail -n1)&&\
+	$(EXE_MAN) node ssync start $${syncid}&&\
+	$(EXE_MAN) node ssync show $${syncid}&&\
+	$(EXE_MAN) node ssync bandwidth $${syncid}&&\
+	$(EXE_MAN) node ssync counters $${syncid}&&\
+	$(EXE_MAN) node ssync files $${syncid}&&\
+	$(EXE_MAN) node ssync state $${syncid}&&\
+	$(EXE_MAN) node ssync stop $${syncid}&&\
+	$(EXE_MAN) node ssync summary $${syncid}&&\
+	$(EXE_MAN) node ssync delete $${syncid}
 	@touch $@
 tnsyncs: $(T)sync_create $(T)sync_other
 
