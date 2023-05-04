@@ -84,6 +84,7 @@ module Aspera
           response['Content-Type'] = 'application/json'
           response.body = {error: e.message}.to_json
           Log.log.error(e.message)
+          Log.log.debug{e.backtrace.join("\n")}
         end
       else
         response.status = 400
