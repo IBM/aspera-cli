@@ -4120,10 +4120,10 @@ aoc files rename /somefolder testdst
 aoc files short_link create --to-folder=/testdst --value=private
 aoc files short_link create --to-folder=/testdst --value=public
 aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
-aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/testdst"}}'
-aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/testdst","reset":true}]}'
-aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/testdst"}}'
-aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/testdst","reset":true}]}'
+aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
+aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
+aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
+aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
@@ -4327,10 +4327,10 @@ server md5sum NEW_SERVER_FOLDER/testfile.bin
 server mkdir NEW_SERVER_FOLDER --logger=stdout
 server mkdir folder_1/target_hot
 server mv folder_1/200KB.2 folder_1/to.delete
-server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"syncdir"}}'
-server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"syncdir"}]}'
-server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"syncdir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
-server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"syncdir","reset":true}]}'
+server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"}}'
+server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
+server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
+server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER 
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
 server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=NEW_SERVER_FOLDER
@@ -4599,10 +4599,10 @@ node ssync start my_syncid
 node ssync state my_syncid
 node ssync stop my_syncid
 node ssync summary my_syncid
-node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --value=@json:'{"active_only":true}'
 node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
@@ -5187,19 +5187,29 @@ cos node upload testfile.bin
 
 ## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
 
-A basic plugin to start an "async" using `ascli`.
-The main advantage over bare `async` command line is the possibility to use a configuration file, using `ascli` standard options.
+A basic plugin to start an `async` using `ascli`.
+The main advantage over bare `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
 
-Also, the `sync` command is also made available through the `server sync` and `aoc files sync` commands.
-In this case, some of the `sync` parameters are fill from parameters of the related plugin.
+The `sync` command is also made available through the `server sync`, `aoc files sync` and `node sync` commands.
+In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
->
-> **Note:** Two JSON syntax are supported for option `sync_info`.
-> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the preferred syntax and allows a single session definition.
-> The second (legacy) is specific to `ascli` and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+Two JSON syntax are supported for option `sync_info`.
+
+### async native JSON
+
+It is the same payload as specified on the `async` option `--conf` or in the latest node API.
+This is the preferred syntax and allows a single session definition.
+But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
+
+### async options as JSON
+
+This is specific to `ascli`.
+It is based on a JSON representation of `async` command line options.
+It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
 ### Sync sample commands
 

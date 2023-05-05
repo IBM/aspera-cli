@@ -30,7 +30,6 @@ EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
-CF_LOCAL_SYNC_DIR=$(shell realpath $(DIR_TMP)testsync123)
 CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) config preset get misc upload_folder 2> /dev/null || echo error)
 CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
@@ -143,12 +142,13 @@ $(T)serv_upload: $(T)serv_mkdir
 	@touch $@
 $(T)serv_sync: $(T)serv_upload 
 	@echo $@
-	rm -fr $(CF_LOCAL_SYNC_DIR)
-	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	$(EXE_MAN) server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","reset":true}]}'
-	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'"}]}'
-	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'
-	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"}}'
+	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	rm -fr $${local_sync_dir}&&\
+	mkdir -p $${local_sync_dir}&&\
+	$(EXE_MAN) server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
+	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
+	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'&&\
+	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"}}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
@@ -545,17 +545,20 @@ $(T)aocfv3inf: $(T).exists
 	@touch $@
 $(T)aocfsync1: $(T).exists
 	@echo $@
-	rm -fr $(CF_LOCAL_SYNC_DIR)
-	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/testdst","reset":true}]}'
-	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/testdst","reset":true}]}'
+	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	rm -fr $${local_sync_dir}&&\
+	mkdir -p $${local_sync_dir}&&\
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/testdst","reset":true}]}'&&\
+	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/testdst","reset":true}]}'
 	@touch $@
 $(T)aocfsync2: $(T).exists
 	@echo $@
-	rm -fr $(CF_LOCAL_SYNC_DIR)
-	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	-$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/testdst"}}'
-	-$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/testdst"}}'
+	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	rm -fr $${local_sync_dir}&&\
+	mkdir -p $${local_sync_dir}&&\
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/testdst"}}'
+	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/testdst"}}'
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
@@ -985,17 +988,20 @@ $(T)sy5: $(T).exists
 	@touch $@
 $(T)ndsyncv1: $(T).exists
 	@echo $@
-	rm -fr $(CF_LOCAL_SYNC_DIR)
-	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-	$(EXE_MAN) node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$(CF_LOCAL_SYNC_DIR)"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	rm -fr $${local_sync_dir}&&\
+	mkdir -p $${local_sync_dir}&&\
+	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'&&\
+	$(EXE_MAN) node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 	@touch $@
 $(T)ndsyncv2: $(T).exists
 	@echo $@
-	rm -fr $(CF_LOCAL_SYNC_DIR)
-	mkdir -p $(CF_LOCAL_SYNC_DIR)
-	-$(EXE_MAN) node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	-$(EXE_MAN) node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$(CF_LOCAL_SYNC_DIR)"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	rm -fr $${local_sync_dir}&&\
+	mkdir -p $${local_sync_dir}&&\
+	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	$(EXE_MAN) node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	@touch $@
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2
 

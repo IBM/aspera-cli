@@ -4474,19 +4474,29 @@ Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man
 
 ## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
 
-A basic plugin to start an "async" using <%=tool%>.
-The main advantage over bare `async` command line is the possibility to use a configuration file, using <%=tool%> standard options.
+A basic plugin to start an `async` using <%=tool%>.
+The main advantage over bare `async` command line is the possibility to use a configuration file, using standard options of <%=tool%>.
 
-Also, the `sync` command is also made available through the `server sync` and `aoc files sync` commands.
-In this case, some of the `sync` parameters are fill from parameters of the related plugin.
+The `sync` command is also made available through the `server sync`, `aoc files sync` and `node sync` commands.
+In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
->
-> **Note:** Two JSON syntax are supported for option `sync_info`.
-> The first is same sync payload as specified on the `async` option `--conf` or in the latest node API, this is the preferred syntax and allows a single session definition.
-> The second (legacy) is specific to <%=tool%> and allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+Two JSON syntax are supported for option `sync_info`.
+
+### async native JSON
+
+It is the same payload as specified on the `async` option `--conf` or in the latest node API.
+This is the preferred syntax and allows a single session definition.
+But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
+
+### async options as JSON
+
+This is specific to <%=tool%>.
+It is based on a JSON representation of `async` command line options.
+It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
 ### Sync sample commands
 
