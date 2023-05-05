@@ -68,6 +68,8 @@ module Aspera
       end
       # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { super(webrick_options) }
+      # kill -USR1 for graceful shutdown
+      Kernel.trap('USR1') { shutdown }
     end
 
     # log web server access ( option AccessLog )
