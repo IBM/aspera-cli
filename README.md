@@ -4704,7 +4704,7 @@ faspex5 admin res accounts list
 faspex5 admin res contacts list
 faspex5 admin res jobs list
 faspex5 admin res metadata_profiles list
-faspex5 admin res node list --value=@json:'{"type":"received","subtype":"mypackages"}'
+faspex5 admin res node list 
 faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
 faspex5 admin res saml_configs list
