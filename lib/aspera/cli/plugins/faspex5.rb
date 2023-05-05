@@ -103,7 +103,7 @@ module Aspera
             # if just a string, assume it is the name
             if recipient_data.is_a?(String)
               result = @api_v5.read('contacts', {q: recipient_data, context: 'packages', type: [Rest::ARRAY_PARAMS, *RECIPIENT_TYPES]})[:data]
-              raise "No matching contact for #{recipient_data}" if result.empty?
+              raise "No matching contact for #{recipient_data}" if 0.eql?(result['total_count'])
               raise "Multiple matching contact for #{recipient_data} : #{result['contacts'].map{|i|i['name']}.join(', ')}" unless 1.eql?(result['total_count'])
               matched = result['contacts'].first
               recipient_data = {
