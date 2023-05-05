@@ -1353,17 +1353,17 @@ $(T)f5_p4: $(T).exists
 $(T)f5_a1: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 bearer_token
-	$(EXE_MAN) faspex5 admin res accounts list
 	$(EXE_MAN) faspex5 admin res contacts list
-	$(EXE_MAN) faspex5 admin res jobs list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res shared_inboxes list
 	$(EXE_MAN) faspex5 admin res workgroups list
-	$(EXE_MAN) faspex5 admin res node list --value=@json:'{"type":"received","subtype":"mypackages"}'
-	$(EXE_MAN) faspex5 admin res oauth_clients list
-	$(EXE_MAN) faspex5 admin res registrations list
 	$(EXE_MAN) faspex5 admin res saml_configs list
 	$(EXE_MAN) faspex5 admin res metadata_profiles list
+	$(EXE_MAN) -Pf5_admin faspex5 admin res accounts list
+	$(EXE_MAN) -Pf5_admin faspex5 admin res jobs list
+	$(EXE_MAN) -Pf5_admin faspex5 admin res node list 
+	$(EXE_MAN) -Pf5_admin faspex5 admin res oauth_clients list
+	$(EXE_MAN) -Pf5_admin faspex5 admin res registrations list
 	@touch $@
 $(T)f5_user: $(T).exists
 	@echo $@
@@ -1388,7 +1388,8 @@ $(T)f5_fxgw: $(T).exists
 	jobs -p > $(T)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
-	kill -INT $$(cat $(T)server_pid)
+	sleep 3
+	kill -USR1 $$(cat $(T)server_pid)
 	@touch $@
 $(T)f5_postproc: $(T).exists
 	@echo $@
