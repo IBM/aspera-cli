@@ -2830,7 +2830,6 @@ OPTIONS:
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
         --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
-        --sync-direction=ENUM        direction of synchronization (sync command): push, pull, bidi
         --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
@@ -2989,7 +2988,6 @@ OPTIONS:
         --sync-name=VALUE            sync name
         --path=VALUE                 file or folder path for gen4 operation "file"
         --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
-        --sync-direction=ENUM        direction of synchronization (sync command): push, pull, bidi
         --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
 
 
@@ -4122,8 +4120,10 @@ aoc files rename /somefolder testdst
 aoc files short_link create --to-folder=/testdst --value=private
 aoc files short_link create --to-folder=/testdst --value=public
 aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
-aoc files sync admin status --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"syncdir","reset":true}]}'
-aoc files sync start --to-folder=/testdst --sync-info=@json:'{"sessions":[{"name":"s2","direction":"pull","local_dir":"syncdir","reset":true}]}'
+aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/testdst"}}'
+aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/testdst","reset":true}]}'
+aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/testdst"}}'
+aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/testdst","reset":true}]}'
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
@@ -4588,17 +4588,21 @@ node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"us
 node service delete service1
 node service list
 node space /
-node sync bandwidth my_syncid
-node sync counters my_syncid
-node sync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
-node sync delete my_syncid
-node sync files my_syncid
-node sync list
-node sync show my_syncid
-node sync start my_syncid
-node sync state my_syncid
-node sync stop my_syncid
-node sync summary my_syncid
+node ssync bandwidth my_syncid
+node ssync counters my_syncid
+node ssync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
+node ssync delete my_syncid
+node ssync files my_syncid
+node ssync list
+node ssync show my_syncid
+node ssync start my_syncid
+node ssync state my_syncid
+node ssync stop my_syncid
+node ssync summary my_syncid
+node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"syncdir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"syncdir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --value=@json:'{"active_only":true}'
 node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
