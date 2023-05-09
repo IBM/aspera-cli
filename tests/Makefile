@@ -206,7 +206,7 @@ $(T)serv_nagios_transfer: $(T).exists
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
-	$(EXE_MAN) server -N -Ptst_server_bykey -Plocal_user br /
+	$(EXE_MAN) server -N -Ptst_server_bykey -Plocal_user browse /
 	@touch $@
 $(T)asession: $(T).exists
 	@echo $@
@@ -221,7 +221,7 @@ $(T)fx_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex health
 	$(EXE_NOMAN) faspex health --url=https://wrong.example.com
-	$(EXE_NOMAN) config detect --url=@preset:tst_faspex.url
+	$(EXE_NOMAN) config detect --url=@preset:tst_faspex4.url
 	@touch $@
 $(T)fx_plst: $(T).exists
 	@echo $@
@@ -230,7 +230,7 @@ $(T)fx_plst: $(T).exists
 $(T)fx_psnd: $(T).exists
 	@echo $@
 	set -x&&\
-	faspex_username=$$($(EXE_NOMAN) config preset get tst_faspex username)&&\
+	faspex_username=$$($(EXE_NOMAN) config preset get tst_faspex4 username)&&\
 	email_internal_user=$$($(EXE_NOMAN) config preset get misc email_internal)&&\
 	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
@@ -252,9 +252,7 @@ $(T)fx_pri: $(T).exists
 	@touch $@
 $(T)fx_prl: $(T).exists
 	@echo $@
-	set -x&&\
-	faspex_publink_recv_from_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_recv_from_fxuser)&&\
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --link="$${faspex_publink_recv_from_fxuser}"
+	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --link=@preset:faspex4_publink.link_recv_from_user
 	@touch $@
 $(T)fx_prall: $(T).exists
 	@echo $@
@@ -262,23 +260,17 @@ $(T)fx_prall: $(T).exists
 	@touch $@
 $(T)fx_pslu: $(T).exists
 	@echo $@
-	set -x&&\
-	faspex_publink_send_to_fxuser=$$($(EXE_NOMAN) config preset get misc faspex_publink_send_to_fxuser)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_fxuser}" --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --link=@preset:faspex4_publink.link_send_to_user --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_psld: $(T).exists
 	@echo $@
-	set -x&&\
-	faspex_publink_send_to_dropbox=$$($(EXE_NOMAN) config preset get misc faspex_publink_send_to_dropbox)&&\
-	$(EXE_MAN) faspex package send --link="$${faspex_publink_send_to_dropbox}" --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --link=@preset:faspex4_publink.link_send_to_dropbox --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)fx_storage: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex source list
-	set -x&&\
-	source_name=$$($(EXE_NOMAN) config preset get misc faspex_src)&&\
-	$(EXE_MAN) faspex source name "$${source_name}" info&&\
-	$(EXE_MAN) faspex source name "$${source_name}" node br /
+	$(EXE_MAN) faspex -Ptst_faspex4_storage source name @preset:misc.faspex_src info
+	$(EXE_MAN) faspex -Ptst_faspex4_storage source name @preset:misc.faspex_src node br /
 	@touch $@
 $(T)fx_misc: $(T).exists
 	@echo $@
@@ -288,8 +280,8 @@ $(T)fx_misc: $(T).exists
 	@touch $@
 $(T)fx_v4: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex v4 dropbox list
-	$(EXE_MAN) faspex v4 dmembership list
+	$(EXE_MAN) -Ptst_faspex4_admin faspex v4 dropbox list
+	$(EXE_MAN) -Ptst_faspex4_admin faspex v4 dmembership list
 	$(EXE_MAN) faspex v4 workgroup list
 	$(EXE_MAN) faspex v4 wmembership list
 	$(EXE_MAN) faspex v4 user list
@@ -1135,11 +1127,9 @@ $(T)conf_detect: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_org=$$($(EXE_NOMAN) config preset get misc aoc_org)&&\
-	faspex_url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
-	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
-	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com&&\
-	$(EXE_MAN) config detect --url=$${faspex_url}&&\
-	$(EXE_MAN) config detect --url=$${node_url}
+	$(EXE_MAN) config detect --url=https://$${aoc_org}.ibmaspera.com
+	$(EXE_MAN) config detect --url=@preset:tst_faspex4.url
+	$(EXE_MAN) config detect --url=@preset:tst_node_simple.url
 	@touch $@
 $(T)conf_genkey: $(T).exists
 	@echo $@
@@ -1298,9 +1288,9 @@ $(T)sdk_aoc: $(T).exists
 $(T)sdk_faspex4: $(T).exists
 	@echo $@
 	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_faspex url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_faspex username)&&\
-	pass=$$($(EXE_NOMAN) config preset get tst_faspex password)&&\
+	url=$$($(EXE_NOMAN) config preset get tst_faspex4 url)&&\
+	user=$$($(EXE_NOMAN) config preset get tst_faspex4_admin username)&&\
+	pass=$$($(EXE_NOMAN) config preset get tst_faspex4_admin password)&&\
 	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
 	@touch $@
 tsample: $(T)sdk_server $(T)sdk_node $(T)sdk_aoc $(T)sdk_faspex4

@@ -77,7 +77,7 @@ result.reject{|i|i.eql?(:success)}.each do |e|
   Aspera::Log.log.error{"A transfer error occurred: #{e.message}"}
 end
 
-# 3: Faspex 4 API v4
+# 3: Faspex 4 API v4 (Requires admin privilege)
 #---------------
 api_v4 = Aspera::Rest.new({
   base_url: faspex_url + '/api',

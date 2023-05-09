@@ -115,7 +115,6 @@ REPLACEMENTS = [
   ['$$', '$'],
   # hidden parameters to make test work
   [/OPTST_[A-Z0-5]+/, ''],
-  ['@preset:misc.', 'my_'],
   ['LOCAL_SAMPLE_FILENAME', 'testfile.bin'],
   ['LOCAL_SAMPLE_FILEPATH', 'testfile.bin'],
   ['HSTS_UPLOADED_FILE', 'testfile.bin'],
@@ -126,7 +125,14 @@ REPLACEMENTS = [
   ['EMAIL_ADDR', 'internal.user@example.com'],
   ['CF_', ''],
   ['$@', 'test'],
-  ['my_f5_meta', '']
+  ['my_f5_meta', ''],
+  # remove special configs
+  ['-N ', ''],
+  [/-P[0-9a-z_]+ /, '\1'],
+  # URLs for doc
+  [/@preset:tst_([^ ]+)\.url/, 'https://\1.example.com/path'],
+  [/@preset:[a-z0-9_]+\./, 'my_'],
+  [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path']
 ].freeze
 
 def all_test_commands_by_plugin
@@ -137,8 +143,6 @@ def all_test_commands_by_plugin
         next unless line.match?(/\$\(EXE_MAN.?\) +/)
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
-        # remove special configs
-        line = line.gsub(/-P[^ ]+ /, '').gsub('-N ', '')
         # plugin name shall be the first argument: command
         plugin = line.split(/ +/).first
         commands[plugin] ||= []

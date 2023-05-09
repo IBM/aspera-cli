@@ -1286,9 +1286,9 @@ config ascp products list
 config ascp show
 config ascp spec
 config check_update
+config detect --url=https://faspex4.example.com/path
 config detect --url=https://my_aoc_org.ibmaspera.com
-config detect --url=my_faspex_url
-config detect --url=my_node_url
+config detect --url=https://node_simple.example.com/path
 config doc
 config doc transfer-parameters
 config echo 'hello'
@@ -4309,7 +4309,6 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 ### Server sample commands
 
 ```bash
-server br /
 server browse /
 server browse NEW_SERVER_FOLDER/testfile.bin
 server browse folder_1/target_hot
@@ -4994,18 +4993,18 @@ faspex package list --recipient="*my_faspex_dbx" --format=csv --fields=package_i
 faspex package list --recipient="*my_faspex_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
 faspex package recv "my_package_id" --to-folder=.
 faspex package recv "my_package_id" --to-folder=. --box=sent
-faspex package recv --to-folder=. --link="my_faspex_publink_recv_from_fxuser"
+faspex package recv --to-folder=. --link=https://app.example.com/recv_from_user_path
 faspex package recv ALL --to-folder=. --once-only=yes
 faspex package recv my_pkgid --recipient="*my_faspex_dbx" --to-folder=.
 faspex package recv my_pkgid --recipient="*my_faspex_wkg" --to-folder=.
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_wkg"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal_user","my_faspex_username"]}' testfile.bin
-faspex package send --link="my_faspex_publink_send_to_dropbox" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
-faspex package send --link="my_faspex_publink_send_to_fxuser" --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
+faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
+faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 faspex source list
-faspex source name "my_source_name" info
-faspex source name "my_source_name" node br /
+faspex source name my_faspex_src info
+faspex source name my_faspex_src node br /
 faspex v4 dmembership list
 faspex v4 dropbox list
 faspex v4 metadata_profile list
