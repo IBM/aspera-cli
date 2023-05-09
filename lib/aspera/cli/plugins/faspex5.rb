@@ -28,7 +28,10 @@ module Aspera
             api = Rest.new(base_url: base_url, redirect_max: 1)
             result = api.read(API_DETECT)
             if result[:http].code.start_with?('2') && result[:http].body.strip.empty?
-              return {version: '5', url: result[:http].uri.to_s[0..-(API_DETECT.length + 2)]}
+              suffix_length = -2 - API_DETECT.length
+              return {
+                version: result[:http]['x-ibm-aspera'] || '5',
+                url:     result[:http].uri.to_s[0..suffix_length]}
             end
             return nil
           end
