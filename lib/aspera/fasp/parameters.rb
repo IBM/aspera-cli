@@ -75,7 +75,13 @@ module Aspera
             param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
           end
-          return result.sort_by { |a| a[:name] }
+          return result.sort do |a, b|
+            if a[:name].start_with?('EX_').eql?(b[:name].start_with?('EX_'))
+              a[:name] <=> b[:name]
+            else
+              b[:name] <=> a[:name]
+            end
+          end
         end
 
         # special encoding methods used in YAML (key: :convert)

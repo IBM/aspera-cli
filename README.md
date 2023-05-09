@@ -2260,17 +2260,6 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 
 | Field | Type | D | N | C | Description |
 | ----- | ---- | - | - | - | ----------- |
-| EX_ascp_args | array | Y | &nbsp; | &nbsp; | DEPRECATED: Use parameter ascp_args in option transfer_info<br/>Add native command line arguments to ascp |
-| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
-| EX_file_list | string | Y | &nbsp; | &nbsp; | source file list |
-| EX_file_pair_list | string | Y | &nbsp; | &nbsp; | source file pair list |
-| EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
-| EX_http_transfer_jpeg | int | Y | &nbsp; | &nbsp; | HTTP transfers as JPEG file<br/>(-j {int}) |
-| EX_license_text | string | Y | &nbsp; | &nbsp; | License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
-| EX_no_read | bool | Y | &nbsp; | &nbsp; | no read source<br/>(--no-read) |
-| EX_no_write | bool | Y | &nbsp; | &nbsp; | no write on destination<br/>(--no-write) |
-| EX_proxy_password | string | Y | &nbsp; | &nbsp; | Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS) |
-| EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
 | apply_local_docroot | bool | Y | &nbsp; | &nbsp; | (--apply-local-docroot) |
 | authentication | string | &nbsp; | &nbsp; | Y | value=token for SSH bypass keys, else password asked if not provided. |
 | cipher | string | Y | Y | Y | In transit encryption type.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum}) |
@@ -2343,6 +2332,17 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 | use_ascp4 | bool | Y | Y | &nbsp; | specify version of protocol |
 | wss_enabled | bool | Y | Y | Y | Server has Web Socket service enabled |
 | wss_port | int | Y | Y | Y | TCP port used for websocket service feed |
+| EX_ascp_args | array | Y | &nbsp; | &nbsp; | DEPRECATED: Use parameter ascp_args in option transfer_info<br/>Add native command line arguments to ascp |
+| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
+| EX_file_list | string | Y | &nbsp; | &nbsp; | source file list |
+| EX_file_pair_list | string | Y | &nbsp; | &nbsp; | source file pair list |
+| EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
+| EX_http_transfer_jpeg | int | Y | &nbsp; | &nbsp; | HTTP transfers as JPEG file<br/>(-j {int}) |
+| EX_license_text | string | Y | &nbsp; | &nbsp; | License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
+| EX_no_read | bool | Y | &nbsp; | &nbsp; | no read source<br/>(--no-read) |
+| EX_no_write | bool | Y | &nbsp; | &nbsp; | no write on destination<br/>(--no-write) |
+| EX_proxy_password | string | Y | &nbsp; | &nbsp; | Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS) |
+| EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
 
 #### Destination folder for transfers
 
