@@ -227,7 +227,7 @@ module Aspera
         end
       end
 
-      # get an option value by name
+      # Get an option value by name
       # either return value or call handler, can return nil
       # ask interactively if requested/required
       def get_option(option_symbol, is_type: :optional)

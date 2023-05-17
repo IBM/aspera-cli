@@ -5,6 +5,7 @@
   * new: preview: option `reencode_ffmpeg` allows overriding all re-encoding options
   * new: faspex5: package delete (#107)
   * new: faspex5: package recv for inboxes and regular users (#108)
+  * new: faspex5: smtp management
   * new: aoc: files operations with workspace-less user (#109)
   * new: node: async with gen3 token (#110)
   * change(break): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.

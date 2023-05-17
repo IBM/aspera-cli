@@ -1360,6 +1360,8 @@ $(T)f5_a1: $(T).exists
 	$(EXE_MAN) -Pf5_admin faspex5 admin res node list 
 	$(EXE_MAN) -Pf5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) -Pf5_admin faspex5 admin res registrations list
+	$(EXE_MAN) -Pf5_admin faspex5 admin smtp show
+	$(EXE_MAN) -Pf5_admin faspex5 admin smtp test @preset:misc.email_external
 	@touch $@
 $(T)f5_user: $(T).exists
 	@echo $@

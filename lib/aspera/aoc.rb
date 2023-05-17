@@ -261,6 +261,9 @@ module Aspera
     def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: SCOPE_NODE_USER, package_info: nil)
       raise 'invalid type for node_id' unless node_id.is_a?(String)
       node_info = read("nodes/#{node_id}")[:data]
+      if workspace_name.nil? && !workspace_id.nil?
+        workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
+      end
       app_info = {
         api:            self, # for callback
         app:            package_info.nil? ? FILES_APP : PACKAGES_APP,
@@ -272,9 +275,6 @@ module Aspera
         raise 'package info required' if package_info.nil?
         app_info[:package_id] = package_info['id']
         app_info[:package_name] = package_info['name']
-      end
-      if workspace_name.nil? && !workspace_id.nil?
-        workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
       end
       node_rest_params = {base_url: node_info['url']}
       # if secret is available

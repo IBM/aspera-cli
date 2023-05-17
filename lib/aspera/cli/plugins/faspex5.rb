@@ -342,7 +342,7 @@ module Aspera
               end
             end
           when :admin
-            case options.get_next_command(%i[resource])
+            case options.get_next_command(%i[resource smtp])
             when :resource
               res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
                                                      email_notifications])
@@ -366,6 +366,22 @@ module Aspera
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
               end
               return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
+            when :smtp
+              smtp_path = 'configuration/smtp'
+              case options.get_next_command(%i[show create modify delete test])
+              when :show
+                return { type: :single_object, data: @api_v5.read(smtp_path)[:data] }
+              when :create
+                return { type: :single_object, data: @api_v5.create(smtp_path, options.get_option(:value, is_type: :mandatory))[:data] }
+              when :modify
+                return { type: :single_object, data: @api_v5.modify(smtp_path, options.get_option(:value, is_type: :mandatory))[:data] }
+              when :delete
+                return { type: :single_object, data: @api_v5.delete(smtp_path)[:data] }
+              when :test
+                test_data = options.get_next_argument('Email or test data, see API')
+                test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
+                return { type: :single_object, data: @api_v5.create(File.join(smtp_path, 'test'), test_data)[:data] }
+              end
             end
           when :gateway
             require 'aspera/faspex_gw'

@@ -4709,6 +4709,8 @@ faspex5 admin res registrations list
 faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes list
 faspex5 admin res workgroups list
+faspex5 admin smtp show
+faspex5 admin smtp test my_email_external
 faspex5 bearer_token
 faspex5 gateway --value=https://localhost:12345/aspera/faspex &\
 faspex5 health
