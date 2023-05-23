@@ -85,7 +85,7 @@ module Aspera
         env_args = Parameters.ts_to_env_args(transfer_spec, wss: @options[:wss], ascp_args: @options[:ascp_args])
 
         # add fallback cert and key as arguments if needed
-        if %w[1 force].include?(transfer_spec['http_fallback'])
+        if [1, true, 'force'].include?(transfer_spec['http_fallback'])
           env_args[:args].unshift('-Y', Installation.instance.path(:fallback_key))
           env_args[:args].unshift('-I', Installation.instance.path(:fallback_cert))
         end
