@@ -1,8 +1,7 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted -->
-<!-- cSpell:ignoreRegExp /-P[a-z]+/g -->
-<!-- cSpell:ignoreRegExp /my[a-z]+/g -->
+<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted schtasks taskschd -->
+
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
 ##
@@ -4819,6 +4818,7 @@ If the preview generator does not have access to files on the file system (it is
 
 The `smtp` option is a hash table (extended value) with the following fields:
 
+<!-- markdownlint-disable MD034 -->
 | field        | default             | example                    | description                      |
 |--------------|---------------------|----------------------------|----------------------------------|
 | `server`     | -                   | smtp.gmail.com             | SMTP server address              |
@@ -4829,6 +4829,7 @@ The `smtp` option is a hash table (extended value) with the following fields:
 | `password`   | -                   | my_password_here           | password for above username      |
 | `from_email` | username if defined | johnny@example.com         | address used if receiver replies |
 | `from_name`  | same as email       | John Wayne                 | display name of sender           |
+<!-- markdownlint-enable MD034 -->
 
 ### Example of configuration
 

@@ -32,10 +32,18 @@ ignoreRegExpList:
 patterns:
   - name: markdown_code_block
     pattern: "/^\\s*```(.|\\n)+?^\\s*```/gm"
+  - name: markdown_code_inline
+    pattern: "/`[^`]+`/g"
+  - name: preset_samples
+    pattern: "/-P[a-z]+/g"
+  - name: my_var_names
+    pattern: "/my[a-z]+/g"
 languageSettings:
   - languageId: markdown
     ignoreRegExpList:
       - markdown_code_block
+      - markdown_code_inline
+      - preset_samples
 ignoreWords:
   - containerimage
   - cygwin
