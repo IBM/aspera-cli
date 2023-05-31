@@ -126,9 +126,9 @@ module Aspera
           # read correct file (set @config_presets)
           read_config_file
           # add preset handler (needed for smtp)
-          ExtendedValue.instance.set_handler(EXTV_PRESET, :reader, lambda{|v|preset_by_name(v)})
-          ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS, :decoder, lambda{|v|expanded_with_preset_includes(v)})
-          ExtendedValue.instance.set_handler(EXTV_VAULT, :decoder, lambda{|v|vault_value(v)})
+          ExtendedValue.instance.set_handler(EXTV_PRESET, lambda{|v|preset_by_name(v)})
+          ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS, lambda{|v|expanded_with_preset_includes(v)})
+          ExtendedValue.instance.set_handler(EXTV_VAULT, lambda{|v|vault_value(v)})
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!

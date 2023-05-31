@@ -39,38 +39,32 @@ module Aspera
 
       def initialize
         @handlers = {
-          decoder: {
-            base64: lambda{|v|Base64.decode64(v)},
-            json:   lambda{|v|JSON.parse(v)},
-            zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
-            ruby:   lambda{|v|Environment.secure_eval(v)},
-            csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
-            lines:  lambda{|v|v.split("\n")},
-            list:   lambda{|v|v[1..-1].split(v[0])}
-          },
-          reader:  {
-            val:   lambda{|v|v},
-            file:  lambda{|v|File.read(File.expand_path(v))},
-            path:  lambda{|v|File.expand_path(v)},
-            env:   lambda{|v|ENV[v]},
-            uri:   lambda{|v|UriReader.read(v)},
-            stdin: lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read} # rubocop:disable Style/Semicolon
-          }
+          base64: lambda{|v|Base64.decode64(v)},
+          json:   lambda{|v|JSON.parse(v)},
+          zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
+          ruby:   lambda{|v|Environment.secure_eval(v)},
+          csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
+          lines:  lambda{|v|v.split("\n")},
+          list:   lambda{|v|v[1..-1].split(v[0])},
+          val:    lambda{|v|v},
+          file:   lambda{|v|File.read(File.expand_path(v))},
+          path:   lambda{|v|File.expand_path(v)},
+          env:    lambda{|v|ENV[v]},
+          uri:    lambda{|v|UriReader.read(v)},
+          stdin:  lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read} # rubocop:disable Style/Semicolon
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
 
       public
 
-      def modifiers; @handlers.keys.map{|i|@handlers[i].keys}.flatten.map(&:to_s); end
+      def modifiers; @handlers.keys; end
 
-      # add a new :reader or :decoder
-      # decoder can be chained, reader is last one on right
-      def set_handler(name, type, method)
-        Log.log.debug{"setting #{type} handler for #{name}"}
+      # add a new handler
+      def set_handler(name, method)
+        Log.log.debug{"setting handler for #{name}"}
         raise 'name must be Symbol' unless name.is_a?(Symbol)
-        raise "type #{type} must be one of #{@handlers.keys}" unless @handlers.key?(type)
-        @handlers[type][name] = method
+        @handlers[name] = method
       end
 
       # parse an option value if it is a String using supported extended value modifiers
@@ -78,20 +72,13 @@ module Aspera
       def evaluate(value)
         return value if !value.is_a?(String)
         # first determine decoders, in reversed order
-        decoders_reversed = []
-        while (m = value.match(/^@([^:]+):(.*)/)) && @handlers[:decoder].include?(m[1].to_sym)
-          decoders_reversed.unshift(m[1].to_sym)
+        handlers_reversed = []
+        while (m = value.match(/^@([^:]+):(.*)/)) && @handlers.include?(m[1].to_sym)
+          handlers_reversed.unshift(m[1].to_sym)
           value = m[2]
         end
-        # then read value
-        @handlers[:reader].each do |reader, method|
-          if (m = value.match(/^@#{reader}:(.*)/))
-            value = method.call(m[1])
-            break
-          end
-        end
-        decoders_reversed.each do |decoder|
-          value = @handlers[:decoder][decoder].call(value)
+        handlers_reversed.each do |handler|
+          value = @handlers[handler].call(value)
         end
         return value
       end # parse

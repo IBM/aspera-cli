@@ -1027,38 +1027,37 @@ By default, a table output will display one line per entry, and columns for each
 
 ### <a id="extended"></a>Extended Value Syntax
 
-Usually, values of options and arguments are specified by a simple string. But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
+Some options and arguments are specified by a simple string.
+But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
 
 The extended value syntax is:
 
 ```bash
-<0 or more decoders><0 or 1 reader><nothing or some text value>
+<0 or more decoders><nothing or some text value>
 ```
 
-The difference between reader and decoder is order and cardinality.
-Both act like a function of value on right hand side.
-Decoders are at the beginning of the value, followed by a single optional reader, followed by the optional value.
+Decoders act like a function of value on right hand side.
+Decoders are recognized by the prefix: `@` and suffix `:`
 
-The following "readers" are supported (returns value in []):
+The following decoders are supported:
 
-- @val:VALUE   : [String] prevent further special prefix processing, e.g. `--username=@val:laurent` sets the option `username` to value `laurent`.
-- @file:PATH   : [String] read value from a URL, e.g. `--fpac=@uri:http://serv/f.pac`
-- @uri:URL     : [String] read value from a file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-- @path:PATH   : [String] performs path expansion (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
-- @env:ENVVAR  : [String] read from a named env var, e.g.--password=@env:MYPASSVAR
-- @stdin:      : [String] read from stdin (no value on right)
-- @preset:NAME : [Hash] get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
-
-In addition it is possible to decode a value, using one or multiple decoders :
-
-- @base64: [String] decode a base64 encoded string
-- @json: [any] decode JSON values (convenient to provide complex structures)
-- @zlib: [String] un-compress data
-- @ruby: [any] execute Ruby code
-- @csvt: [Array] decode a titled CSV value
-- @lines: [Array] split a string in multiple lines and return an array
-- @list: [Array] split a string in multiple items taking first character as separator and return an array
-- @incps: [Hash] include values of presets specified by key `incps` in input hash
+| decoder | parameter | returns | description |
+|---------|-----------|---------|-------------|
+| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
+| stdin   | ignored   | String  | read from stdin (no value on right)
+| preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+| base64  | String    | String  | decode a base64 encoded string
+| json    | String    | any     | decode JSON values (convenient to provide complex structures)
+| zlib    | String    | String  | un-compress data
+| ruby    | String    | any     | execute specified Ruby code
+| csvt    | String    | Array   | decode a titled CSV value
+| lines   | String    | Array   | split a string in multiple lines and return an array
+| list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
+| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -1689,7 +1688,7 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 If the server does not provide a valid certificate, use option: `--insecure=yes`.
 
-Ruby HTTP socket parameters can be adjusted.
+HTTP socket parameters can be adjusted using option `http_options`:
 
 | parameter            | default |
 |----------------------|---------|
@@ -1699,8 +1698,8 @@ Ruby HTTP socket parameters can be adjusted.
 | `keep_alive_timeout` | 2       |
 
 Values are in set *seconds* and can be of type either integer or float.
-Default values are the ones of Ruby.
-For details refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
+Default values are the ones of Ruby:
+refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
 Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
 
@@ -2163,8 +2162,8 @@ On Windows the compilation may fail for various reasons (3.1.1):
 
 ### <a id="transferspec"></a>Transfer Specification
 
-Some commands lead to file transfer (upload/download), all parameters necessary for this transfer
-is described in a <%=trspec%> (Transfer Specification), such as:
+Some commands lead to file transfer (upload/download).
+All parameters necessary for this transfer are described in a <%=trspec%> (Transfer Specification), such as:
 
 - server address
 - transfer user name
@@ -2172,9 +2171,13 @@ is described in a <%=trspec%> (Transfer Specification), such as:
 - file list
 - etc...
 
-<%=tool%> builds a default <%=trspec%> internally, so it is not necessary to provide additional parameters on the command line for this transfer.
+<%=tool%> builds the <%=trspec%> internally, so it is not necessary to provide additional parameters on the command line for this transfer.
 
-If needed, it is possible to modify or add any of the supported <%=trspec%> parameter using the `ts` option. The `ts` option accepts a [Structured Value](#native) containing one or several <%=trspec%> parameters. Multiple `ts` options on command line are cumulative.
+The <%=trspec%> is a Hash (dictionary), so it is described on the command line with the [Extended Value Syntax](#extended).
+
+It is possible to modify or add any of the supported <%=trspec%> parameter using the `ts` option.
+The `ts` option accepts a [Structured Value](#native) containing one or several <%=trspec%> parameters in a `Hash`.
+Multiple `ts` options on command line are cumulative.
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
@@ -2184,8 +2187,6 @@ The use of a <%=trspec%> instead of `ascp` parameters has the advantage of:
 
 - common to all [Transfer Agent](#agents)
 - not dependent on command line limitations (special characters...)
-
-A <%=trspec%> is a Hash table, so it is described on the command line with the [Extended Value Syntax](#extended).
 
 ### <a id="transferparams"></a>Transfer Parameters
 
@@ -2395,11 +2396,22 @@ It is useful to configure automated scheduled execution.
 <%=tool%> does not provide an internal scheduler.
 Instead, use the service provided by the Operating system:
 
-- Windows: [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page)
-- Unix-like (Linux, ...): [cron](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
+#### Windows Scheduler
 
-  Linux also provides `anacron`, if tasks are hourly or daily.
-- etc...
+Windows provides the [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page).
+It can be configured:
+
+- Using utility [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
+
+- Using powershell function [scheduletasks](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
+
+- Using `taskschd.msc` (UI)
+
+#### Unix-like Scheduler
+
+Unix-like systems (Linux, ...) provide cron, configured using a [crontab](https://www.man7.org/linux/man-pages/man5/crontab.5.html)
+
+Linux also provides `anacron`, if tasks are hourly or daily.
 
 For example, on Linux it is convenient to create a wrapping script, e.g. `cron_<%=cmd%>` that will setup the environment (e.g. Ruby) to properly start <%=tool%>:
 
