@@ -1165,7 +1165,7 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @base64:SGVsbG8gV29ybGQK
 	$(EXE_MAN) config echo @list:,1,2,3
 	$(EXE_MAN) config echo @env:USER
-	$(EXE_MAN) config echo @val:@file:yo
+	-$(EXE_MAN) config echo @val:@file:no_such_file
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) config echo @zlib:@stdin:
