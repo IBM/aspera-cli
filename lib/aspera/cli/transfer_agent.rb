@@ -70,7 +70,10 @@ module Aspera
       def option_transfer_spec; @transfer_spec_cmdline; end
 
       # multiple option are merged
-      def option_transfer_spec=(value); @transfer_spec_cmdline.merge!(value); end
+      def option_transfer_spec=(value)
+        raise 'option ts shall be a Hash' unless value.is_a?(Hash)
+        @transfer_spec_cmdline.merge!(value)
+      end
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
 
@@ -196,7 +199,7 @@ module Aspera
           # init default if required in any case
           @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Fasp::TransferSpec::DIRECTION_SEND
-          if transfer_spec.dig('tags', 'aspera', 'node', 'access_key')
+          if transfer_spec.dig('tags', Fasp::TransferSpec::TAG_RESERVED, 'node', 'access_key')
             # gen4
             @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.key?('destination_root_id')
           elsif transfer_spec.key?('token')
