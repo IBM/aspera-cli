@@ -15,7 +15,9 @@ module Aspera
         'ssh_port'    => SSH_PORT,
         'fasp_port'   => UDP_PORT
       }.freeze
-      # define constants for enums of parameters: <paramater>_<enum>, e.g. CIPHER_AES_128
+      # reserved tag for Aspera
+      TAG_RESERVED = 'aspera'
+      # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128
       Aspera::Fasp::Parameters.description.each do |k, v|
         next unless v[:enum].is_a?(Array)
         v[:enum].each do |enum|

@@ -66,7 +66,7 @@ module Aspera
           }]}
         # asynchronous anyway
         res = @connect_api.create('transfers/start', connect_transfer_args)[:data]
-        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags']['aspera']['xfer_id']
+        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
       end
 
       def wait_for_transfers_completion

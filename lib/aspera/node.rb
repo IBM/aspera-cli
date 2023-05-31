@@ -223,7 +223,7 @@ module Aspera
         'direction' => direction,
         'token'     => ak_token,
         'tags'      => {
-          'aspera' => {
+          Fasp::TransferSpec::TAG_RESERVED => {
             'node' => {
               'access_key' => ak_name,
               'file_id'    => file_id

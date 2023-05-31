@@ -457,7 +457,7 @@ module Aspera
       ################
       transfer_spec.deep_merge!({
         'tags' => {
-          'aspera' => {
+          Fasp::TransferSpec::TAG_RESERVED => {
             'usage_id' => "aspera.files.workspace.#{app_info[:workspace_id]}", # activity tracking
             'files'    => {
               'files_transfer_action' => "#{transfer_type}_#{app_info[:app].gsub(/s$/, '')}",
@@ -477,21 +477,21 @@ module Aspera
       ##################
       case app_info[:app]
       when FILES_APP
-        file_id = transfer_spec['tags']['aspera']['node']['file_id']
-        transfer_spec.deep_merge!({'tags' => {'aspera' => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
+        file_id = transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['node']['file_id']
+        transfer_spec.deep_merge!({'tags' => {Fasp::TransferSpec::TAG_RESERVED => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
           unless transfer_spec.key?('remote_access_key')
       when PACKAGES_APP
         transfer_spec.deep_merge!({
           'tags' => {
-            'aspera' => {
+            Fasp::TransferSpec::TAG_RESERVED => {
               'files' => {
                 'package_id'        => app_info[:package_id],
                 'package_name'      => app_info[:package_name],
                 'package_operation' => transfer_type
               }}}})
       end
-      transfer_spec['tags']['aspera']['files']['node_id'] = app_info[:node_info]['id']
-      transfer_spec['tags']['aspera']['app'] = app_info[:app]
+      transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['files']['node_id'] = app_info[:node_info]['id']
+      transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['app'] = app_info[:app]
     end
 
     ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
@@ -503,7 +503,7 @@ module Aspera
         # 'access_type'   => 'user', # mandatory: user or group
         # 'access_id'     => access_id, # id of user or group
         'tags' => {
-          'aspera' => {
+          Fasp::TransferSpec::TAG_RESERVED => {
             'files' => {
               'workspace' => {
                 'id'                => app_info[:workspace_id],
@@ -524,7 +524,7 @@ module Aspera
         create_param.delete('with')
         create_param['access_type'] = contact_info['source_type']
         create_param['access_id'] = contact_info['source_id']
-        create_param['tags']['aspera']['files']['workspace']['shared_with_name'] = contact_info['email']
+        create_param['tags'][Fasp::TransferSpec::TAG_RESERVED]['files']['workspace']['shared_with_name'] = contact_info['email']
       end
       # optional
       app_info[:opt_link_name] = create_param.delete('link_name')

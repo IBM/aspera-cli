@@ -149,8 +149,8 @@ module Aspera
             if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) &&
                 event['data']['status'].eql?('completed') &&
                 event['data']['error_code'].eql?(0) &&
-                event['data'].dig('tags', 'aspera', PREV_GEN_TAG).nil?
-              folder_id = event.dig('data', 'tags', 'aspera', 'node', 'file_id')
+                event['data'].dig('tags', Fasp::TransferSpec::TAG_RESERVED, PREV_GEN_TAG).nil?
+              folder_id = event.dig('data', 'tags', Fasp::TransferSpec::TAG_RESERVED, 'node', 'file_id')
               folder_id ||= event.dig('data', 'file_id')
               if !folder_id.nil?
                 folder_entry = @api_node.read("files/#{folder_id}")[:data] rescue nil
@@ -226,7 +226,7 @@ module Aspera
             'direction' => direction,
             'paths'     => [{'source' => source_filename}],
             'tags'      => {
-              'aspera' => {
+              Fasp::TransferSpec::TAG_RESERVED => {
                 PREV_GEN_TAG => true,
                 'node'       => {
                   'access_key' => @access_key_self['id'],

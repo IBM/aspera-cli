@@ -37,15 +37,15 @@ module Aspera
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
         # if there is aspera tags
-        if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags']['aspera'].is_a?(Hash)
+        if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED].is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
-          transfer_spec['tags']['aspera']['xfer_id'] ||= SecureRandom.uuid
+          transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
           Log.log.debug{"xfer id=#{transfer_spec['xfer_id']}"}
           # TODO: useful ? node only ?
-          transfer_spec['tags']['aspera']['xfer_retry'] ||= 3600
+          transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
         Log.dump('ts', transfer_spec)
 
@@ -85,7 +85,7 @@ module Aspera
         env_args = Parameters.ts_to_env_args(transfer_spec, wss: @options[:wss], ascp_args: @options[:ascp_args])
 
         # add fallback cert and key as arguments if needed
-        if [1, true, 'force'].include?(transfer_spec['http_fallback'])
+        if ['1', 1, true, 'force'].include?(transfer_spec['http_fallback'])
           env_args[:args].unshift('-Y', Installation.instance.path(:fallback_key))
           env_args[:args].unshift('-I', Installation.instance.path(:fallback_cert))
         end
@@ -183,20 +183,20 @@ module Aspera
           end
           # (optional) check it exists
           raise Fasp::Error, "no such file: #{ascp_path}" unless File.exist?(ascp_path)
-          # open random local TCP port for listening for ascp management
+          # open an available (0) local TCP port as ascp management
           mgt_sock = TCPServer.new('127.0.0.1', 0)
           # clone arguments as we eed to modify with mgt port
           ascp_arguments = env_args[:args].clone
-          # add management port
+          # add management port on the selected local port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
           # start ascp in sub process
           Log.log.debug do
-            'execute: ' +
-              env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"}.join(' ') +
-              ' ' +
-              Shellwords.shellescape(ascp_path) +
-              ' ' +
-              ascp_arguments.map{|a|Shellwords.shellescape(a)}.join(' ')
+            [
+              'execute:',
+              env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
+              Shellwords.shellescape(ascp_path),
+              ascp_arguments.map{|a|Shellwords.shellescape(a)}
+            ].flatten.join(' ')
           end
           # start process
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments)
