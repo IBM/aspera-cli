@@ -132,6 +132,7 @@ module Aspera
         return dest_folder
       end
 
+      # @return [Array] list of source files
       def source_list
         return ts_source_paths.map do |i|
           i['source']
