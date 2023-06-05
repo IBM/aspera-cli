@@ -119,9 +119,16 @@ module Aspera
             else
               notify_progress(@transfer_id, transfer_data['bytes_transferred'])
             end
+          when 'failed'
+            # Bug in HSTS ? transfer is marked failed, but there is no reason
+            if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
+              notify_end(@transfer_id)
+              break
+            end
+            raise Fasp::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
           else
             Log.log.warn{"transfer_data -> #{transfer_data}"}
-            raise Fasp::Error, "node status: #{transfer_data['status']}. description: #{transfer_data['error_desc']}"
+            raise Fasp::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
           end
           sleep(1)
         end
