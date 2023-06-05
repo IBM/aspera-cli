@@ -233,7 +233,7 @@ module Aspera
             result = { type: :object_list, data: resp[:data]['items']}
             return Main.result_empty if result[:data].empty?
             result[:fields] = result[:data].first.keys.reject{|i|SEARCH_REMOVE_FIELDS.include?(i)}
-            formatter.display_status("Items: #{resp[:data]['item_count']}/#{resp[:data]['total_count']}")
+            formatter.display_item_count(resp[:data]['item_count'], resp[:data]['total_count'])
             formatter.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :space
@@ -274,7 +274,7 @@ module Aspera
             case send_result['self']['type']
             when 'directory', 'container' # directory: node, container: shares
               result = { data: send_result['items'], type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
-              formatter.display_status("Items: #{send_result['item_count']}/#{send_result['total_count']}")
+              formatter.display_item_count(send_result['item_count'], send_result['total_count'])
             else # 'file','symbolic_link'
               result = { data: send_result['self'], type: :single_object}
               # result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
@@ -470,7 +470,7 @@ module Aspera
             if file_info['type'].eql?('folder')
               result = apifid[:api].read("files/#{apifid[:file_id]}/files", options.get_option(:value))
               items = result[:data]
-              formatter.display_status("Items: #{result[:data].length}/#{result[:http]['X-Total-Count']}")
+              formatter.display_item_count(result[:data].length, result[:http]['X-Total-Count'])
             else
               items = [file_info]
             end

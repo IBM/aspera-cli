@@ -452,9 +452,7 @@ module Aspera
               when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
               end
               items = read_with_paging(resource_class_path, option_url_query(default_query))
-              count_msg = "Items: #{items[:list].length}/#{items[:total]}"
-              count_msg = count_msg.bg_red unless items[:list].length.eql?(items[:total].to_i)
-              formatter.display_status(count_msg)
+              formatter.display_item_count(items[:list].length, items[:total])
               return {type: :object_list, data: items[:list], fields: default_fields}
             when :show
               object = aoc_api.read(resource_instance_path)[:data]

@@ -140,11 +140,7 @@ module Aspera
           if item_list_key
             item_list = data[item_list_key]
             total_count = data['total_count']
-            if !total_count.nil?
-              count_msg = "Items: #{item_list.length}/#{total_count}"
-              count_msg = count_msg.bg_red unless item_list.length.eql?(total_count.to_i)
-              formatter.display_status(count_msg)
-            end
+            formatter.display_item_count(item_list.length, total_count) unless total_count.nil?
             data = item_list
           end
           case data

@@ -116,6 +116,12 @@ module Aspera
         display_message(:info, status)
       end
 
+      def display_item_count(number, total)
+        count_msg = "Items: #{number}/#{total}"
+        count_msg = count_msg.bg_red unless number.to_i.eql?(total.to_i)
+        display_status(count_msg)
+      end
+
       def result_default_fields(results, table_rows_hash_val)
         unless results[:fields].nil?
           raise "internal error: [fields] must be Array, not #{results[:fields].class}" unless results[:fields].is_a?(Array)
