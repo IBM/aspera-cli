@@ -44,21 +44,39 @@ module Aspera
           options.add_opt_simple(:client_id, 'OAuth client identifier')
           options.add_opt_simple(:client_secret, 'OAuth client secret')
           options.add_opt_simple(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.add_opt_list(:auth, [:boot].concat(Oauth::STD_AUTH_TYPES), 'OAuth type of authentication')
+          options.add_opt_list(:auth, %i[boot link].concat(Oauth::STD_AUTH_TYPES), 'OAuth type of authentication')
           options.add_opt_simple(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}")
           options.add_opt_simple(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.add_opt_simple(:passphrase, 'RSA private key passphrase')
           options.add_opt_simple(:shared_folder, 'Shared folder source for package files')
+          options.add_opt_simple(:link, 'public link for specific operation')
           options.set_option(:auth, :jwt)
           options.set_option(:box, 'inbox')
           options.parse_options!
         end
 
         def set_api
-          @faspex5_api_base_url = options.get_option(:url, is_type: :mandatory).gsub(%r{/+$}, '')
+          public_link = options.get_option(:link)
+          unless public_link.nil?
+            @faspex5_api_base_url = public_link.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
+            options.set_option(:auth, :link)
+          end
+          @faspex5_api_base_url ||= options.get_option(:url, is_type: :mandatory).gsub(%r{/+$}, '')
           @faspex5_api_auth_url = "#{@faspex5_api_base_url}/auth"
           faspex5_api_v5_url = "#{@faspex5_api_base_url}/api/v5"
           case options.get_option(:auth, is_type: :mandatory)
+          when :link
+            uri = URI.parse(public_link)
+            args = URI.decode_www_form(uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
+            Log.dump(:args, args)
+            context = args['context']
+            raise 'missing context' if context.nil?
+            @pub_link_context = JSON.parse(Base64.decode64(context))
+            Log.dump(:@pub_link_context, @pub_link_context)
+            @api_v5 = Rest.new({
+              base_url: faspex5_api_v5_url,
+              headers:  {'Passcode' => @pub_link_context['passcode']}
+            })
           when :boot
             # the password here is the token copied directly from browser in developer mode
             @api_v5 = Rest.new({
@@ -96,6 +114,7 @@ module Aspera
                   headers:         {typ: 'JWT'}
                 }
               }})
+          else raise 'Unexpected case for auth'
           end
         end
 
@@ -204,7 +223,7 @@ module Aspera
           when :bearer_token
             return {type: :text, data: @api_v5.oauth_token}
           when :packages
-            command = options.get_next_command(%i[list show status delete send receive])
+            command = options.get_next_command(%i[list show browse status delete send receive])
             case command
             when :list
               return {
@@ -213,8 +232,26 @@ module Aspera
                 fields: %w[id title release_date total_bytes total_files created_time state]
               }
             when :show
-              id = instance_identifier
+              id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+              id ||= instance_identifier
               return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
+            when :browse
+              id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+              id ||= instance_identifier
+              path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
+              params = {
+                # recipient_user_id: 25,
+                # offset:            0,
+                # limit:             25
+              }
+              result = @api_v5.call({
+                operation:   'POST',
+                subpath:     "packages/#{id}/files/received",
+                headers:     {'Accept' => 'application/json'},
+                url_params:  params,
+                json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
+              formatter.display_item_count(result['item_count'], result['total_count'])
+              return {type: :object_list, data: result['items']}
             when :status
               status = wait_for_complete_upload(instance_identifier)
               return {type: :single_object, data: status}
@@ -271,7 +308,8 @@ module Aspera
                     PACKAGE_TYPE_RECEIVED]))
               end
               # one or several packages
-              package_ids = instance_identifier
+              package_ids = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+              package_ids ||= instance_identifier
               case package_ids
               when PACKAGE_ALL_INIT
                 raise 'Only with option once_only' unless skip_ids_persistency
@@ -294,7 +332,7 @@ module Aspera
                 formatter.display_status("Receiving package #{pkg_id}")
                 param_file_list = {}
                 begin
-                  param_file_list['paths'] = transfer.source_list
+                  param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
                 rescue Aspera::Cli::CliBadArgument
                   # paths is optional
                 end

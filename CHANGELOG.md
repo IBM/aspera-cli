@@ -6,9 +6,11 @@
   * new: faspex5: package delete (#107)
   * new: faspex5: package recv for inboxes and regular users (#108)
   * new: faspex5: smtp management
+  * new: faspex5: use public link for authorization of package download, using option `link`
+  * new: faspex5: list content of package, and allow partial download of package
   * new: aoc: files operations with workspace-less user (#109)
   * new: node: async with gen3 token (#110)
-  * change(break): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
+  * change(deprecation): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
   * fix: cos: do not use refresh token when not supported
   * fix: container: SDK installed in other folder than `ascli` (#106)
 
