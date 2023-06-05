@@ -2901,11 +2901,12 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: boot, web, jwt
+        --auth=ENUM                  OAuth type of authentication: boot, link, web, jwt
         --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
         --shared-folder=VALUE        Shared folder source for package files
+        --link=VALUE                 public link for specific operation
 
 
 COMMAND: cos

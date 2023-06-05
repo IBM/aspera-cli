@@ -36,8 +36,8 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 $(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)doc_tools.rb
 	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DIR_DOC)README.erb.md $(EXETESTB) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC) > $@
 
-clean::
-	rm -f $(MANUAL_PDF) $(MANUAL_HTML)
+#clean::
+#	rm -f $(MANUAL_PDF) $(MANUAL_HTML)
 
 ##################################
 # UML Diagram : requires tools: graphviz and gem xumlidot
