@@ -74,7 +74,7 @@ dockerfile:
 		arg_sdk='--sdk-url=file:///sdk.zip' \
 		Dockerfile.tmpl.erb > Dockerfile
 docker: dockerfile $(LOCAL_SDK_FILE)
-	docker build --tag $(DOCKER_TAG_VERSION) .
+	docker build --squash --tag $(DOCKER_TAG_VERSION) .
 	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
 dockerfilebeta:
 	erb \
@@ -84,7 +84,7 @@ dockerfilebeta:
 		arg_sdk='--sdk-url=file:///sdk.zip' \
 		Dockerfile.tmpl.erb > Dockerfile
 dockerbeta: dockerfilebeta $(LOCAL_SDK_FILE)
-	docker build --tag $(DOCKER_TAG_VERSION) .
+	docker build --squash --tag $(DOCKER_TAG_VERSION) .
 dockertest:
 	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
 dpush: dpushversion dpushlatest

@@ -121,7 +121,7 @@ module Aspera
             end
           else
             Log.log.warn{"transfer_data -> #{transfer_data}"}
-            raise Fasp::Error, "#{transfer_data['status']}: #{transfer_data['error_desc']}"
+            raise Fasp::Error, "node status: #{transfer_data['status']}. description: #{transfer_data['error_desc']}"
           end
           sleep(1)
         end

@@ -2,8 +2,6 @@
 /aspera-cli-*.gem
 /coverage/
 /simplecov.log
-/docs/Manual*.html
-/docs/Manual*.pdf
 /tmp/
 /.*_checked
 /nameversion.mak

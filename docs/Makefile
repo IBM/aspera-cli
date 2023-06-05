@@ -6,7 +6,7 @@ include $(DIR_TOP)common.mak
 # "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
 
-MANUAL_BASE=$(DIR_DOC)Manual_$(EXENAME)_$(GEMVERS)
+MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 

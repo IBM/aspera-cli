@@ -178,7 +178,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 ## <a id="installation"></a>Installation
 
-It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a docker container.
+It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a container (`docker`).
 
 The direct installation is recommended and consists in installing:
 
@@ -196,10 +196,10 @@ An internet connection is required for the installation. If you don't have inter
 
 The image is: [<%=containerimage%>](https://hub.docker.com/r/<%=containerimage%>).
 The container contains: Ruby, <%=tool%> and the Aspera Transfer SDK.
-To use the container, ensure that you have `docker` (or `podman`) installed.
+To use the container, ensure that you have `podman` (or `docker`) installed.
 
 ```bash
-docker --version
+podman --version
 ```
 
 #### Container quick start
@@ -207,7 +207,7 @@ docker --version
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
 ```bash
-docker run --tty --interactive --entrypoint bash <%=containerimage%>:latest
+podman run --tty --interactive --entrypoint bash <%=containerimage%>:latest
 ```
 
 Then, execute individual <%=tool%> commands such as:
@@ -229,16 +229,18 @@ That is simple, but there are limitations:
 
 The container image is built from this [Dockerfile](Dockerfile): the entry point is <%=tool%> and the default command is `help`.
 
+If you want to run the image with a shell, execute with option: `--entrypoint bash`, and give argument `-l` (bash login to override the `help` default argument)
+
 The container can also be execute for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
-docker run --rm --tty --interactive <%=containerimage%>:latest
+podman run --rm --tty --interactive <%=containerimage%>:latest
 ```
 
 For more convenience, you may define a shell alias:
 
 ```bash
-alias <%=cmd%>='docker run --rm --tty --interactive <%=containerimage%>:latest'
+alias <%=cmd%>='podman run --rm --tty --interactive <%=containerimage%>:latest'
 ```
 
 Then, you can execute the container like a local command:
@@ -281,7 +283,7 @@ In this case you need also to mount the shared transfer folder:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias <%=cmd%>sh="docker run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=containerimage%>:latest"
+alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=containerimage%>:latest"
 ```
 
 ```bash
@@ -303,7 +305,7 @@ Some environment variables can be set for this script to adapt its behavior:
 | env var      | description                        | default                  | example                  |
 |--------------|------------------------------------|--------------------------|--------------------------|
 | <%=evp%>HOME | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>config`     |
-| docker_args  | additional options to `docker`     | &lt;empty&gt;            | `--volume /Users:/Users` |
+| docker_args  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
 | image        | container image name               | <%=containerimage%>      |                          |
 | version      | container image version            | latest                   | `4.8.0.pre`              |
 
@@ -330,20 +332,22 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 ```
 
 > **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
+>
+> **Note:** Do not use too many volumes, as the AUFS limits the number.
 
 #### Offline installation of the container
 
 - First create the image archive:
 
 ```bash
-docker pull <%=containerimage%>
-docker save <%=containerimage%>|gzip>ascli_image_latest.tar.gz
+podman pull <%=containerimage%>
+podman save <%=containerimage%>|gzip>ascli_image_latest.tar.gz
 ```
 
 - Then, on air-gapped system:
 
 ```bash
-docker load -i ascli_image_latest.tar.gz
+podman load -i ascli_image_latest.tar.gz
 ```
 
 ### <a id="ruby"></a>Ruby
@@ -1506,19 +1510,21 @@ Some applications allow the user to be authenticated using a private key (Server
 It consists in using a pair of keys: the private key and its associated public key.
 The same key can be used for multiple applications.
 Technically, a private key contains the public key, which can be extracted from it.
-The private key can be protected by a passphrase or not.
-If the key is protected by a passphrase, then it will be prompted.
+The file containing the private key can optionally be protected by a passphrase.
+If the key is protected by a passphrase, then it will be prompted when used.
 (some plugins support option `passphrase`)
 
 The following commands use the shell variable `PRIVKEYFILE`.
 Set it to the desired safe location of the private key.
-Typically, in `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`:
+Typically, located in folder `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`:
 
 ```bash
 PRIVKEYFILE=~/.aspera/<%=cmd%>/my_private_key
 ```
 
 Several methods can be used to generate a key pair.
+
+The format expected for private keys is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail).
 
 #### <%=tool%> for key generation
 
@@ -1543,7 +1549,7 @@ ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 To generate a private key pair with a passphrase the following can be used on any system:
 
 ```bash
-openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE}.protected 4096
+openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE} 4096
 openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
 ```
 
@@ -1553,14 +1559,15 @@ In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` t
 If option `-nodes` is not available, the passphrase can be removed using this method:
 
 ```bash
-openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE}.protected -out ${PRIVKEYFILE}
-rm -f ${PRIVKEYFILE}.protected
+openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.no_des
+mv ${PRIVKEYFILE}.no_des ${PRIVKEYFILE}
 ```
 
 To change (or add) the passphrase for a key do:
 
 ```bash
-openssl rsa -des3 -in old_file -out new_file
+openssl rsa -des3 -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.with_des
+mv ${PRIVKEYFILE}.with_des ${PRIVKEYFILE}
 ```
 
 ### <a id="certificates"></a>SSL CA certificate bundle
