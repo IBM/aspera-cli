@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/config'
 require 'aspera/uri_reader'
 require 'aspera/environment'
 require 'json'
@@ -40,18 +39,19 @@ module Aspera
       def initialize
         @handlers = {
           base64: lambda{|v|Base64.decode64(v)},
-          json:   lambda{|v|JSON.parse(v)},
-          zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
-          ruby:   lambda{|v|Environment.secure_eval(v)},
           csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
+          env:    lambda{|v|ENV[v]},
+          file:   lambda{|v|File.read(File.expand_path(v))},
+          json:   lambda{|v|JSON.parse(v)},
           lines:  lambda{|v|v.split("\n")},
           list:   lambda{|v|v[1..-1].split(v[0])},
-          val:    lambda{|v|v},
-          file:   lambda{|v|File.read(File.expand_path(v))},
           path:   lambda{|v|File.expand_path(v)},
-          env:    lambda{|v|ENV[v]},
+          ruby:   lambda{|v|Environment.secure_eval(v)},
+          secret: lambda{|v|raise 'no value allowed for secret' unless v.empty?; $stdin.getpass('secret> ')}, # rubocop:disable Style/Semicolon
+          stdin:  lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read}, # rubocop:disable Style/Semicolon
           uri:    lambda{|v|UriReader.read(v)},
-          stdin:  lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read} # rubocop:disable Style/Semicolon
+          val:    lambda{|v|v},
+          zlib:   lambda{|v|Zlib::Inflate.inflate(v)}
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end

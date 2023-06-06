@@ -1046,21 +1046,22 @@ The following decoders are supported:
 
 | decoder | parameter | returns | description |
 |---------|-----------|---------|-------------|
-| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
-| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
-| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
-| stdin   | ignored   | String  | read from stdin (no value on right)
-| preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | base64  | String    | String  | decode a base64 encoded string
-| json    | String    | any     | decode JSON values (convenient to provide complex structures)
-| zlib    | String    | String  | un-compress data
-| ruby    | String    | any     | execute specified Ruby code
 | csvt    | String    | Array   | decode a titled CSV value
+| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
+| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
+| json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
-| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
+| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+| ruby    | String    | any     | execute specified Ruby code
+| secret  | None      | String  | Ask password interactively (hides input)
+| stdin   | None      | String  | read from stdin (no value on right)
+| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
 

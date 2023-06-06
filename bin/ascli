@@ -1,8 +1,9 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -E UTF-8:UTF-8
 # frozen_string_literal: true
 
 require 'rubygems'
 require 'securerandom'
+# compute gem root based on  this script location
 GEM_ROOT = File.realpath(File.join(File.dirname(File.realpath(__FILE__)), '..'))
 # coverage for tests
 if ENV.key?('ENABLE_COVERAGE')
@@ -20,10 +21,9 @@ if ENV.key?('ENABLE_COVERAGE')
   end
   SimpleCov.start
 end
+# if in development, add path to gem
 $LOAD_PATH.unshift(File.join(GEM_ROOT, 'lib'))
 require 'aspera/cli/main'
 require 'aspera/environment'
-Encoding.default_internal = Encoding::UTF_8
-Encoding.default_external = Encoding::UTF_8
 Aspera::Environment.fix_home
 Aspera::Cli::Main.new(ARGV).process_command_line

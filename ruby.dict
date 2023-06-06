@@ -20,3 +20,5 @@ extname
 readline
 upto
 lstrip
+realpath
+simplecov
