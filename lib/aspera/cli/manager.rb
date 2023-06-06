@@ -52,9 +52,9 @@ module Aspera
       # option name separator on command line
       OPTION_SEP_LINE = '-'
       # option name separator in code (symbol)
-      OPTION_SEP_NAME = '_'
+      OPTION_SEP_SYMB = '_'
 
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_NAME
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMB
 
       class << self
         def enum_to_bool(enum)
@@ -82,8 +82,13 @@ module Aspera
           return [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n")
         end
 
-        def normalize_name(name)
-          return name.gsub(OPTION_SEP_LINE, OPTION_SEP_NAME)
+        # change option name with dash to name with underscore
+        def option_line_to_name(name)
+          return name.gsub(OPTION_SEP_LINE, OPTION_SEP_SYMB)
+        end
+
+        def option_name_to_line(name)
+          return "--#{name.to_s.gsub(OPTION_SEP_SYMB, OPTION_SEP_LINE)}"
         end
       end
 
@@ -112,7 +117,7 @@ module Aspera
         @parser = OptionParser.new
         @parser.program_name = program_name
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
-        env_prefix = program_name.upcase + OPTION_SEP_NAME
+        env_prefix = program_name.upcase + OPTION_SEP_SYMB
         ENV.each do |k, v|
           if k.start_with?(env_prefix)
             @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym, v])
@@ -351,7 +356,7 @@ module Aspera
           when /^--([^=]+)=(.*)$/
             name = Regexp.last_match(1)
             value = Regexp.last_match(2)
-            name.gsub!(OPTION_SEP_LINE, OPTION_SEP_NAME)
+            name.gsub!(OPTION_SEP_LINE, OPTION_SEP_SYMB)
             value = ExtendedValue.instance.evaluate(value)
             Log.log.debug{"option #{name}=#{value}"}
             result[name] = value
@@ -433,7 +438,7 @@ module Aspera
 
       # generate command line option from option symbol
       def symbol_to_option(symbol, opt_val)
-        result = '--' + symbol.to_s.gsub(OPTION_SEP_NAME, OPTION_SEP_LINE)
+        result = '--' + symbol.to_s.gsub(OPTION_SEP_SYMB, OPTION_SEP_LINE)
         result = result + '=' + opt_val unless opt_val.nil?
         return result
       end

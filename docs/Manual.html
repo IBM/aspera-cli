@@ -1122,35 +1122,16 @@ are recognized by the prefix: <code>@</code> and suffix
 </thead>
 <tbody>
 <tr class="odd">
-<td>val</td>
+<td>base64</td>
 <td>String</td>
 <td>String</td>
-<td>prevent decoders on the right to be decoded.
-e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
-to value <code>@file:foo</code>.</td>
+<td>decode a base64 encoded string</td>
 </tr>
 <tr class="even">
-<td>uri</td>
+<td>csvt</td>
 <td>String</td>
-<td>String</td>
-<td>read value from specified URL,
-e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
-</tr>
-<tr class="odd">
-<td>file</td>
-<td>String</td>
-<td>String</td>
-<td>read value from specified file (prefix <code>~/</code> is replaced
-with the users home folder),
-e.g. <code>--key=@file:~/.ssh/mykey</code></td>
-</tr>
-<tr class="even">
-<td>path</td>
-<td>String</td>
-<td>String</td>
-<td>performs path expansion on specified path (prefix <code>~/</code> is
-replaced with the users home folder),
-e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
+<td>Array</td>
+<td>decode a titled CSV value</td>
 </tr>
 <tr class="odd">
 <td>env</td>
@@ -1160,48 +1141,25 @@ e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 data-cites="env:MYPASSVAR">@env:MYPASSVAR</span></td>
 </tr>
 <tr class="even">
-<td>stdin</td>
-<td>ignored</td>
+<td>file</td>
 <td>String</td>
-<td>read from stdin (no value on right)</td>
+<td>String</td>
+<td>read value from specified file (prefix <code>~/</code> is replaced
+with the users home folder),
+e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 </tr>
 <tr class="odd">
-<td>preset</td>
-<td>String</td>
+<td>incps</td>
 <td>Hash</td>
-<td>get whole option preset value by name. Sub-values can also be used
-using <code>.</code> as separator. e.g. <code>foo.bar</code> is
-<code>conf[foo][bar]</code></td>
+<td>Hash</td>
+<td>include values of presets specified by key <code>incps</code> in
+input hash</td>
 </tr>
 <tr class="even">
-<td>base64</td>
-<td>String</td>
-<td>String</td>
-<td>decode a base64 encoded string</td>
-</tr>
-<tr class="odd">
 <td>json</td>
 <td>String</td>
 <td>any</td>
 <td>decode JSON values (convenient to provide complex structures)</td>
-</tr>
-<tr class="even">
-<td>zlib</td>
-<td>String</td>
-<td>String</td>
-<td>un-compress data</td>
-</tr>
-<tr class="odd">
-<td>ruby</td>
-<td>String</td>
-<td>any</td>
-<td>execute specified Ruby code</td>
-</tr>
-<tr class="even">
-<td>csvt</td>
-<td>String</td>
-<td>Array</td>
-<td>decode a titled CSV value</td>
 </tr>
 <tr class="odd">
 <td>lines</td>
@@ -1217,11 +1175,59 @@ using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 and return an array</td>
 </tr>
 <tr class="odd">
-<td>incps</td>
+<td>path</td>
+<td>String</td>
+<td>String</td>
+<td>performs path expansion on specified path (prefix <code>~/</code> is
+replaced with the users home folder),
+e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
+</tr>
+<tr class="even">
+<td>preset</td>
+<td>String</td>
 <td>Hash</td>
-<td>Hash</td>
-<td>include values of presets specified by key <code>incps</code> in
-input hash</td>
+<td>get whole option preset value by name. Sub-values can also be used
+using <code>.</code> as separator. e.g. <code>foo.bar</code> is
+<code>conf[foo][bar]</code></td>
+</tr>
+<tr class="odd">
+<td>ruby</td>
+<td>String</td>
+<td>any</td>
+<td>execute specified Ruby code</td>
+</tr>
+<tr class="even">
+<td>secret</td>
+<td>None</td>
+<td>String</td>
+<td>Ask password interactively (hides input)</td>
+</tr>
+<tr class="odd">
+<td>stdin</td>
+<td>None</td>
+<td>String</td>
+<td>read from stdin (no value on right)</td>
+</tr>
+<tr class="even">
+<td>uri</td>
+<td>String</td>
+<td>String</td>
+<td>read value from specified URL,
+e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
+</tr>
+<tr class="odd">
+<td>val</td>
+<td>String</td>
+<td>String</td>
+<td>prevent decoders on the right to be decoded.
+e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
+to value <code>@file:foo</code>.</td>
+</tr>
+<tr class="even">
+<td>zlib</td>
+<td>String</td>
+<td>String</td>
+<td>un-compress data</td>
 </tr>
 </tbody>
 </table>
@@ -3774,7 +3780,7 @@ COMMANDS
 OPTIONS
         Options begin with a &#39;-&#39; (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        base64, json, zlib, ruby, csvt, lines, list, val, file, path, env, uri, stdin, preset, incps, vault
+        base64, csvt, env, file, json, lines, list, path, ruby, secret, stdin, uri, val, zlib, preset, incps, vault
         Dates format is &#39;DD-MM-YY HH:MM:SS&#39;, or &#39;now&#39; or &#39;-&lt;num&gt;h&#39;
 
 ARGS
@@ -3843,7 +3849,7 @@ OPTIONS:
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: list, pair
         --transfer=ENUM              Type of transfer agent: direct, node, connect, httpgw, trsdk
-        --transfer-info=VALUE        Parameters for transfer agent
+        --transfer-info=VALUE        Parameters for transfer agent (Hash)
         --progress=ENUM              Type of progress bar: none, native, multi
 
 
@@ -5583,7 +5589,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb344-1"><a href
 <span id="cb344-55"><a href="#cb344-55" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;syncv2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_sync_dir&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb344-56"><a href="#cb344-56" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;syncv1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;my_local_sync_dir&quot;,&quot;remote_dir&quot;:&quot;/aspera-test-dir-tiny&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb344-57"><a href="#cb344-57" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer list <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
-<span id="cb344-58"><a href="#cb344-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span><span class="st">&quot;folder_1&quot;</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.1&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_node_url&quot;,&quot;username&quot;:&quot;my_node_user&quot;,&quot;password&quot;:&quot;my_node_pass_here&quot;}&#39;</span></span>
+<span id="cb344-58"><a href="#cb344-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.1&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_node_url&quot;,&quot;username&quot;:&quot;my_node_user&quot;,&quot;password&quot;:&quot;my_node_pass_here&quot;}&#39;</span></span>
 <span id="cb344-59"><a href="#cb344-59" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--username</span><span class="op">=</span>my_aoc_ak_name <span class="at">--password</span><span class="op">=</span>my_aoc_ak_secret testfile.bin <span class="at">--token-type</span><span class="op">=</span>basic</span>
 <span id="cb344-60"><a href="#cb344-60" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
 <span id="cb344-61"><a href="#cb344-61" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span> <span class="at">--token-type</span><span class="op">=</span>hybrid</span></code></pre></div>

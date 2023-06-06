@@ -1052,21 +1052,22 @@ The following decoders are supported:
 
 | decoder | parameter | returns | description |
 |---------|-----------|---------|-------------|
-| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
-| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
-| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
-| stdin   | ignored   | String  | read from stdin (no value on right)
-| preset  | String    | Hash    | get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | base64  | String    | String  | decode a base64 encoded string
-| json    | String    | any     | decode JSON values (convenient to provide complex structures)
-| zlib    | String    | String  | un-compress data
-| ruby    | String    | any     | execute specified Ruby code
 | csvt    | String    | Array   | decode a titled CSV value
+| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
+| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
+| json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
-| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
+| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| preset  | String    | Hash    | get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+| ruby    | String    | any     | execute specified Ruby code
+| secret  | None      | String  | Ask password interactively (hides input)
+| stdin   | None      | String  | read from stdin (no value on right)
+| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -2755,7 +2756,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        base64, json, zlib, ruby, csvt, lines, list, val, file, path, env, uri, stdin, preset, incps, vault
+        base64, csvt, env, file, json, lines, list, path, ruby, secret, stdin, uri, val, zlib, preset, incps, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -2824,7 +2825,7 @@ OPTIONS:
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: list, pair
         --transfer=ENUM              Type of transfer agent: direct, node, connect, httpgw, trsdk
-        --transfer-info=VALUE        Parameters for transfer agent
+        --transfer-info=VALUE        Parameters for transfer agent (Hash)
         --progress=ENUM              Type of progress bar: none, native, multi
 
 
@@ -4622,7 +4623,7 @@ node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pu
 node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --value=@json:'{"active_only":true}'
-node upload --to-folder="folder_1" --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
+node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid

@@ -48,18 +48,20 @@ module Aspera
         @config = config
         # command line can override transfer spec
         @transfer_spec_cmdline = {'create_dir' => true}
+        @transfer_info = {}
         # the currently selected transfer agent
         @agent = nil
         @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
         @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
+        @opt_mgr.set_obj_attr(:transfer_info, self, :option_transfer_info)
         @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
         @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.add_opt_simple(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.add_opt_list(:src_type, %i[list pair], 'Type of file list')
         @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'Type of transfer agent')
-        @opt_mgr.add_opt_simple(:transfer_info, 'Parameters for transfer agent')
+        @opt_mgr.add_opt_simple(:transfer_info, 'Parameters for transfer agent (Hash)')
         @opt_mgr.add_opt_list(:progress, %i[none native multi], 'Type of progress bar')
         @opt_mgr.set_option(:transfer, :direct)
         @opt_mgr.set_option(:src_type, :list)
@@ -73,6 +75,14 @@ module Aspera
       def option_transfer_spec=(value)
         raise 'option ts shall be a Hash' unless value.is_a?(Hash)
         @transfer_spec_cmdline.merge!(value)
+      end
+
+      def option_transfer_info; @transfer_info; end
+
+      # multiple option are merged
+      def option_transfer_info=(value)
+        raise 'option transfer_info shall be a Hash' unless value.is_a?(Hash)
+        @transfer_info.merge!(value)
       end
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
@@ -95,19 +105,19 @@ module Aspera
         require "aspera/fasp/agent_#{agent_type}"
         agent_options = @opt_mgr.get_option(:transfer_info)
         raise CliBadArgument, "the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), "\
-          'use either @json:<json> or @preset:<parameter set name>' unless [Hash, NilClass].include?(agent_options.class)
-        # special case
-        if agent_type.eql?(:node) && agent_options.nil?
+          'e.g. use @json:<json>' unless agent_options.is_a?(Hash)
+        # special case: use default node
+        if agent_type.eql?(:node) && agent_options.empty?
           param_set_name = @config.get_plugin_default_config_name(:node)
-          raise CliBadArgument, "No default node configured, Please specify --#{:transfer_info.to_s.tr('_', '-')}" if param_set_name.nil?
+          raise CliBadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
           agent_options = @config.preset_by_name(param_set_name)
         end
-        # special case
+        # special case: native progress bar
         if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:native)
-          agent_options = {} if agent_options.nil?
           agent_options[:quiet] = false
         end
-        agent_options = agent_options.symbolize_keys if agent_options.is_a?(Hash)
+        # normalize after getting from user or default node
+        agent_options = agent_options.symbolize_keys
         # get agent instance
         new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
         self.agent_instance = new_agent
