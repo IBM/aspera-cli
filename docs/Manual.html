@@ -2109,7 +2109,8 @@ href="#transferspec"><em>transfer-spec</em></a> has been internally
 prepared. This <a href="#transferspec"><em>transfer-spec</em></a> will
 be executed by a transfer client, here called <strong>Transfer
 Agent</strong>.</p>
-<p>There are currently 3 agents:</p>
+<p>There are currently 3 agents, set with option
+<code>transfer</code>:</p>
 <ul>
 <li><a href="#agt_direct"><code>direct</code></a> : a local execution of
 <code>ascp</code></li>
@@ -2133,6 +2134,8 @@ href="#transferspec"><em>transfer-spec</em></a> instead of
 <em>native</em> <code>ascp</code> options to provide parameters for a
 transfer session, as a common method for those three Transfer
 Agents.</p>
+<p>Specific options for agents are provided with option
+<code>transfer_info</code>, cumulatively.</p>
 <h3 data-number="7.23.1" id="direct"><span
 class="header-section-number">7.23.1</span>
 <a id="agt_direct"></a>Direct</h3>
@@ -5557,7 +5560,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb344-1"><a href
 <span id="cb344-23"><a href="#cb344-23" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> browse / <span class="at">-r</span></span>
 <span id="cb344-24"><a href="#cb344-24" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete /todelete</span>
 <span id="cb344-25"><a href="#cb344-25" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete @list:,folder_1/todelete,folder_1/tdlink,folder_1/delfile</span>
-<span id="cb344-26"><a href="#cb344-26" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete folder_1/10MB.1</span>
+<span id="cb344-26"><a href="#cb344-26" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete folder_1/10MB.2</span>
 <span id="cb344-27"><a href="#cb344-27" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete testfile.bin</span>
 <span id="cb344-28"><a href="#cb344-28" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download testfile.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb344-29"><a href="#cb344-29" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download testfile.bin <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--token-type</span><span class="op">=</span>hybrid</span>
@@ -5589,7 +5592,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb344-1"><a href
 <span id="cb344-55"><a href="#cb344-55" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;syncv2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_sync_dir&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb344-56"><a href="#cb344-56" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;syncv1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;my_local_sync_dir&quot;,&quot;remote_dir&quot;:&quot;/aspera-test-dir-tiny&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb344-57"><a href="#cb344-57" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer list <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
-<span id="cb344-58"><a href="#cb344-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.1&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_node_url&quot;,&quot;username&quot;:&quot;my_node_user&quot;,&quot;password&quot;:&quot;my_node_pass_here&quot;}&#39;</span></span>
+<span id="cb344-58"><a href="#cb344-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_node_url&quot;,&quot;username&quot;:&quot;my_node_user&quot;,&quot;password&quot;:&quot;my_node_pass_here&quot;}&#39;</span></span>
 <span id="cb344-59"><a href="#cb344-59" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--username</span><span class="op">=</span>my_aoc_ak_name <span class="at">--password</span><span class="op">=</span>my_aoc_ak_secret testfile.bin <span class="at">--token-type</span><span class="op">=</span>basic</span>
 <span id="cb344-60"><a href="#cb344-60" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span>
 <span id="cb344-61"><a href="#cb344-61" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>folder_1 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span> <span class="at">--token-type</span><span class="op">=</span>hybrid</span></code></pre></div>

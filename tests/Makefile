@@ -362,8 +362,8 @@ $(T)nd_2_nd_xfer: $(T).exists
 	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
 	node_user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
 	node_pass_here=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
-	$(EXE_MAN) node upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass_here}"'"}'
-	$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.1
+	$(EXE_MAN) node upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass_here}"'"}'
+	-$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.2
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@

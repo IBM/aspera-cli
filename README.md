@@ -1996,7 +1996,7 @@ Some of the actions on Aspera Applications lead to file transfers (upload and do
 When a transfer needs to be started, a [*transfer-spec*](#transferspec) has been internally prepared.
 This [*transfer-spec*](#transferspec) will be executed by a transfer client, here called **Transfer Agent**.
 
-There are currently 3 agents:
+There are currently 3 agents, set with option `transfer`:
 
 - [`direct`](#agt_direct) : a local execution of `ascp`
 - [`connect`](#agt_connect) : use of a local Connect Client
@@ -2009,6 +2009,8 @@ For example, a node agent executing an "upload", or "package send" operation
 will effectively push files to the related server from the agent node.
 
 `ascli` standardizes on the use of a [*transfer-spec*](#transferspec) instead of *native* `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+
+Specific options for agents are provided with option `transfer_info`, cumulatively.
 
 #### <a id="agt_direct"></a>Direct
 
@@ -4591,7 +4593,7 @@ node basic_token
 node browse / -r
 node delete /todelete
 node delete @list:,folder_1/todelete,folder_1/tdlink,folder_1/delfile
-node delete folder_1/10MB.1
+node delete folder_1/10MB.2
 node delete testfile.bin
 node download testfile.bin --to-folder=.
 node download testfile.bin --to-folder=. --token-type=hybrid
@@ -4623,7 +4625,7 @@ node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pu
 node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --value=@json:'{"active_only":true}'
-node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.1"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
+node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid

@@ -1953,7 +1953,7 @@ Some of the actions on Aspera Applications lead to file transfers (upload and do
 When a transfer needs to be started, a <%=trspec%> has been internally prepared.
 This <%=trspec%> will be executed by a transfer client, here called **Transfer Agent**.
 
-There are currently 3 agents:
+There are currently 3 agents, set with option `transfer`:
 
 - [`direct`](#agt_direct) : a local execution of `ascp`
 - [`connect`](#agt_connect) : use of a local Connect Client
@@ -1966,6 +1966,8 @@ For example, a node agent executing an "upload", or "package send" operation
 will effectively push files to the related server from the agent node.
 
 <%=tool%> standardizes on the use of a <%=trspec%> instead of *native* `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+
+Specific options for agents are provided with option `transfer_info`, cumulatively.
 
 #### <a id="agt_direct"></a>Direct
 
