@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -E UTF-8:UTF-8
+#!/usr/bin/env ruby -EUTF-8:UTF-8
 # frozen_string_literal: true
 
 require 'rubygems'
