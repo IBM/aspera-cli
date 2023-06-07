@@ -224,8 +224,9 @@ module Aspera
       begin
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
-        tries_remain_redirect ||= call_data[:redirect_max].nil? ? 0 : call_data[:redirect_max].to_i
-        Log.log.debug('send request')
+        # initialize with number of initial retries allowed, nil gives zero
+        tries_remain_redirect = call_data[:redirect_max].to_i if tries_remain_redirect.nil?
+        Log.log.debug("send request (retries=#{tries_remain_redirect})")
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
@@ -286,8 +287,8 @@ module Aspera
           Log.log.debug{"using new token=#{call_data[:headers]['Authorization']}"}
           retry unless (oauth_tries -= 1).zero?
         end # if oauth
-        # moved ?
-        if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
+        # redirect ? (any code beginning with 3)
+        if tries_remain_redirect.positive? && e.response.is_a?(Net::HTTPRedirection)
           tries_remain_redirect -= 1
           current_uri = URI.parse(call_data[:base_url])
           new_url = e.response['location']
