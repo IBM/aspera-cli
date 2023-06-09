@@ -66,27 +66,24 @@ SDK_URL=https://ibm.biz/aspera_transfer_sdk
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
 # Refer to section "build" in CONTRIBUTING.md
-dockerfile:
-	erb \
-		arg_copy_gem= \
+# no dependency: always re-generate
+dockerfilerel:
+	erb -T 2 \
 		arg_gem=$(GEMNAME):$(GEMVERS) \
-		arg_copy_sdk='COPY $(LOCAL_SDK_FILE) .' \
-		arg_sdk='--sdk-url=file:///sdk.zip' \
+		arg_sdk=$(LOCAL_SDK_FILE) \
 		Dockerfile.tmpl.erb > Dockerfile
-docker: dockerfile $(LOCAL_SDK_FILE)
+docker: dockerfilerel $(LOCAL_SDK_FILE)
 	docker build --squash --tag $(DOCKER_TAG_VERSION) .
 	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
 dockerfilebeta:
-	erb \
-		arg_copy_gem="COPY $(PATH_GEMFILE) aspera-cli.gem" \
-		arg_gem=aspera-cli.gem \
-		arg_copy_sdk='COPY $(LOCAL_SDK_FILE) .' \
-		arg_sdk='--sdk-url=file:///sdk.zip' \
+	erb -T 2 \
+		arg_gem=$(PATH_GEMFILE) \
+		arg_sdk=$(LOCAL_SDK_FILE) \
 		Dockerfile.tmpl.erb > Dockerfile
-dockerbeta: dockerfilebeta $(LOCAL_SDK_FILE)
+dockerbeta: dockerfilebeta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
 	docker build --squash --tag $(DOCKER_TAG_VERSION) .
 dockertest:
-	docker run --tty --interactive --rm $(DOCKER_TAG_LATEST) ascli -h
+	docker run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
 dpush: dpushversion dpushlatest
 dpushversion:
 	docker push $(DOCKER_TAG_VERSION)
