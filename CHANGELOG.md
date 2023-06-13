@@ -8,6 +8,7 @@
   * new: faspex5: smtp management
   * new: faspex5: use public link for authorization of package download, using option `link`
   * new: faspex5: list content of package, and allow partial download of package
+  * new: faspex5: list packages support multiple pages and items limitations (`max` and `pmax`)
   * new: aoc: files operations with workspace-less user (#109)
   * new: node: async with gen3 token (#110)
   * change: option `transfer_info` is now cumulative, setting several times merge values

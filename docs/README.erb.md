@@ -4101,6 +4101,16 @@ Usually using JSON format with prefix `@json:`.
 
 Other examples:
 
+- list packages
+
+  The following parameters in option `value` are supported:
+
+  - `q` : a filter on name (case insensitive, matches if value is contained in name)
+  - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
+  - `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
+  - `offset` : native api parameter, in general do not use (added by <%=tool%>)
+  - `limit` : native api parameter, number of items par api call, in general do not use (added by <%=tool%>)
+
 - Send a package with metadata
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):

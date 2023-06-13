@@ -1335,7 +1335,7 @@ $(T)f5_p2: $(T).exists
 $(T)f5_p3: $(T).exists
 	@echo $@
 	set -x&&\
-	package_id=$$($(EXE_NOMAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1}' --fields=id --format=csv --display=data)&&\
+	package_id=$$($(EXE_NOMAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 packages show "$${package_id}"&&\
 	$(EXE_MAN) faspex5 packages receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@

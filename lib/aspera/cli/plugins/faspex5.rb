@@ -106,15 +106,14 @@ module Aspera
                 jwt:          {
                   payload:         {
                     iss: app_client_id,    # issuer
-                    aud: app_client_id,    # audience TODO: ???
-                    sub: "user:#{options.get_option(:username, is_type: :mandatory)}" # subject also "client:#{app_client_id}" + auth user/pass
+                    aud: app_client_id,    # audience (this field is not clear...)
+                    sub: "user:#{options.get_option(:username, is_type: :mandatory)}" # subject is a user
                   },
-                  # auth:                {type: :basic, options.get_option(:username,is_type: :mandatory), options.get_option(:password,is_type: :mandatory),
                   private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, is_type: :mandatory), options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
                 }
               }})
-          else raise 'Unexpected case for auth'
+          else raise 'Unexpected case for option: auth'
           end
         end
 
@@ -178,22 +177,32 @@ module Aspera
         def list_entities(entity_type, query: {}, prefix: nil)
           path = entity_type
           path = "#{prefix}/#{path}" unless prefix.nil? || prefix.empty?
-          found = []
+          result = []
           offset = 0
-          # merge default parameters, by default 100 at a time max
-          query = {limit: 100}.merge(query)
+          max_items = query.delete(MAX_ITEMS)
+          remain_pages = query.delete(MAX_PAGES)
+          # merge default parameters, by default 100 per page
+          query = {'limit'=> 100}.merge(query)
           loop do
-            result = @api_v5.read(path, query.merge({offset: offset}))[:data]
-            found.concat(result[entity_type])
-            offset += result[entity_type].length
-            break if found.length >= result['total_count']
+            query['offset'] = offset
+            page = @api_v5.read(path, query)[:data]
+            result.concat(page[entity_type])
+            # reach the limit set by user ?
+            if !max_items.nil? && (result.length >= max_items)
+              result = result.slice(0, max_items)
+              break
+            end
+            break if result.length >= page['total_count']
+            remain_pages -= 1 unless remain_pages.nil?
+            break if remain_pages == 0
+            offset += page[entity_type].length
           end
-          return found
+          return result
         end
 
         # lookup an entity id from its name
         def lookup_name_to_id(entity_type, name)
-          found = list_entities(entity_type, query: {q: name}).select{|i|i['name'].eql?(name)}
+          found = list_entities(entity_type, query: {'q'=> name}).select{|i|i['name'].eql?(name)}
           case found.length
           when 0 then raise "No #{entity_type} with name = #{name}"
           when 1 then return found.first['id']
@@ -266,6 +275,7 @@ module Aspera
               id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
               id ||= instance_identifier
               path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
+              # TODO: support multi-page listing ?
               params = {
                 # recipient_user_id: 25,
                 # offset:            0,
@@ -304,6 +314,7 @@ module Aspera
                   url_params:  {transfer_type: TRANSFER_CONNECT},
                   json_params: {paths: transfer.source_list}
                 )[:data]
+                # well, we asked a TS for connect, but we actually want a generic one
                 transfer_spec.delete('authentication')
                 return Main.result_transfer(transfer.start(transfer_spec))
               else
