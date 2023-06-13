@@ -18,7 +18,7 @@ module Aspera
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         PACKAGE_TERMINATED = %w[completed failed].freeze
         API_DETECT = 'api/v5/configuration/ping'
-        # list of supported atoms
+        # list of supported mailbox types
         API_MAILBOXES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
         PACKAGE_TYPE_RECEIVED = 'received'
         PACKAGE_ALL_INIT = 'INIT'
@@ -118,6 +118,7 @@ module Aspera
           end
         end
 
+        # if recipient is just an email, then convert to expected API hash : name and type
         def normalize_recipients(parameters)
           return unless parameters.key?('recipients')
           raise 'Field recipients must be an Array' unless parameters['recipients'].is_a?(Array)
@@ -138,7 +139,8 @@ module Aspera
           end
         end
 
-        def wait_for_complete_upload(id)
+        # wait for package status to be in provided list
+        def wait_package_status(id, status_list=PACKAGE_TERMINATED)
           parameters = options.get_option(:value)
           spinner = nil
           progress = nil
@@ -162,32 +164,57 @@ module Aspera
             else
               progress.progress = status['bytes_written'].to_i
             end
-            break if PACKAGE_TERMINATED.include?(status['upload_status'])
+            break if status_list.include?(status['upload_status'])
             sleep(0.5)
           end
           status['id'] = id
           return status
         end
 
-        def lookup_entity(entity_type, property, value)
-          # TODO: what if too many, use paging ?
-          all = @api_v5.read(entity_type)[:data][entity_type]
-          found = all.find{|i|i[property].eql?(value)}
-          raise "No #{entity_type} with #{property} = #{value}" if found.nil?
+        # get a list of all entities of a given type
+        # @param entity_type [String] the type of entity to list
+        # @param query [Hash] additional query parameters
+        # @param prefix [String] optional prefix to add to the path (nil or empty string: no prefix)
+        def list_entities(entity_type, query: {}, prefix: nil)
+          path = entity_type
+          path = "#{prefix}/#{path}" unless prefix.nil? || prefix.empty?
+          found = []
+          offset = 0
+          # merge default parameters, by default 100 at a time max
+          query = {limit: 100}.merge(query)
+          loop do
+            result = @api_v5.read(path, query.merge({offset: offset}))[:data]
+            found.concat(result[entity_type])
+            offset += result[entity_type].length
+            break if found.length >= result['total_count']
+          end
           return found
         end
 
-        def list_packages
-          parameters = options.get_option(:value)
-          box = options.get_option(:box)
-          inbox_prefix = case box
-          when VAL_ALL then ''
-          when *API_MAILBOXES then "#{box}/"
-          else
-            shared_inbox = lookup_entity('shared_inboxes', 'name', box)
-            "shared_inboxes/#{shared_inbox['id']}/"
+        # lookup an entity id from its name
+        def lookup_name_to_id(entity_type, name)
+          found = list_entities(entity_type, query: {q: name}).select{|i|i['name'].eql?(name)}
+          case found.length
+          when 0 then raise "No #{entity_type} with name = #{name}"
+          when 1 then return found.first['id']
+          else raise "Multiple #{entity_type} with name = #{name}"
           end
-          return @api_v5.read("#{inbox_prefix}packages", parameters)[:data]['packages']
+        end
+
+        # translate box name to API prefix (with ending slash)
+        def box_to_prefix(box)
+          return \
+          case box
+          when VAL_ALL then ''
+          when *API_MAILBOXES then box
+          else "shared_inboxes/#{lookup_name_to_id('shared_inboxes', box)}"
+          end
+        end
+
+        # list all packages with optional filter
+        def list_packages
+          parameters = options.get_option(:value) || {}
+          return list_entities('packages', query: parameters, prefix: box_to_prefix(options.get_option(:box)))
         end
 
         ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing].freeze
@@ -253,7 +280,7 @@ module Aspera
               formatter.display_item_count(result['item_count'], result['total_count'])
               return {type: :object_list, data: result['items']}
             when :status
-              status = wait_for_complete_upload(instance_identifier)
+              status = wait_package_status(instance_identifier)
               return {type: :single_object, data: status}
             when :delete
               ids = instance_identifier
@@ -281,7 +308,7 @@ module Aspera
                 return Main.result_transfer(transfer.start(transfer_spec))
               else
                 if !shared_folder.to_i.to_s.eql?(shared_folder)
-                  shared_folder = lookup_entity('shared_folders', 'name', shared_folder)['id']
+                  shared_folder = lookup_name_to_id('shared_folders', shared_folder)
                 end
                 transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
                 # start remote transfer and get first status
@@ -289,7 +316,7 @@ module Aspera
                 result['id'] = package['id']
                 unless result['status'].eql?('completed')
                   formatter.display_status("Package #{package['id']}")
-                  result = wait_for_complete_upload(package['id'])
+                  result = wait_package_status(package['id'])
                 end
                 return {type: :single_object, data: result}
               end
