@@ -335,6 +335,7 @@ module Aspera
           # finish
           @plugin_env[:transfer].shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
+        rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue CliBadArgument => e;                 exception_info = {e: e, t: 'Argument', usage: true}
         rescue CliNoSuchId => e;                    exception_info = {e: e, t: 'Identifier'}
         rescue CliError => e;                       exception_info = {e: e, t: 'Tool', usage: true}
@@ -351,9 +352,14 @@ module Aspera
           Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           @formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           @formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
+          # Provide hint on FASP errors
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
             @formatter.display_message(:error, "For this specific error, refer to:\n"\
               "#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
+          end
+          # Provide hint on SSL errors
+          if exception_info[:e].is_a?(OpenSSL::SSL::SSLError) && ['does not match the server certificate'].any?{|m|exception_info[:e].message.include?(m)}
+            @formatter.display_message(:error, "You can ignore SSL errors with option:\n--insecure=yes")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
