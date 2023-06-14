@@ -34,6 +34,20 @@ If you want to contribute, please:
 - Send a pull request on GitHub.
 - run Rubocop to comply for coding standards
 
+## Architecture
+
+A list of classes are provided in <docs/ml.png>
+
+Architecture:
+
+![Architecture](docs/architecture.png)
+
+The entry point is lib/aspera/cli/main.rb
+
+Plugins are located in lib/aspera/cli/plugins
+
+Transfer agents: lib/aspera/fasp
+
 ## Running Tests
 
 First, a testing environment must be created:
@@ -137,14 +151,12 @@ GEMVERS=4.11.0 make -e dpush
 
 ### Development version image build
 
-To build/push a beta/development container:
+To build/push a beta/development container (does not create the `latest` tag):
 
 ```bash
 make dockerbeta
 make dpushversion
 ```
-
-This does not create the `latest` tag.
 
 ## Long Term Implementation and delivery improvements
 
