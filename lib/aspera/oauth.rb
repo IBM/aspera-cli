@@ -87,6 +87,7 @@ module Aspera
       # @param lambda_create called to create token
       # @param id_create called to generate unique id for token, for cache
       def register_token_creator(id, lambda_create, id_create)
+        Log.log.debug{"registering token creator #{id}"}
         raise 'ERROR: requites Symbol and 2 lambdas' unless id.is_a?(Symbol) && lambda_create.is_a?(Proc) && id_create.is_a?(Proc)
         @create_handlers[id] = lambda_create
         @id_handlers[id] = id_create
@@ -94,7 +95,7 @@ module Aspera
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token grant method unknown: #{id}/#{id.class}" unless @create_handlers.key?(id)
+        raise "token grant method unknown: '#{id}' (#{id.class})" unless @create_handlers.key?(id)
         @create_handlers[id]
       end
 

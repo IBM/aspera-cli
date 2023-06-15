@@ -62,6 +62,7 @@ module Aspera
 
       # location of SDK files
       def sdk_folder=(v)
+        Log.log.debug{"sdk_folder=#{v}"}
         @sdk_dir = v
         sdk_folder
       end
