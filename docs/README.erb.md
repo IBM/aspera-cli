@@ -5134,30 +5134,7 @@ Main components:
 - `Aspera::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
 - `Aspera::Cli`: <%=tool%>.
 
-A working example can be found in the gem, example:
-
-```bash
-<%=cmd%> config gem path
-```
-
-```bash
-cat $(<%=cmd%> config gem path)/../examples/transfer.rb
-```
-
-This sample code shows some example of use of the API as well as REST API.
-Note: although nice, it's probably a good idea to use RestClient for REST.
-
-Example of use of the API of Aspera on Cloud:
-
-```ruby
-require 'aspera/aoc'
-
-aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/<%=cmd%>/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
-
-aoc.read('self')
-```
-
-<https://github.com/IBM/aspera-cli/blob/main/examples/aoc.rb>
+Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
 
 ## Changes (Release notes)
 
