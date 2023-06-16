@@ -74,6 +74,7 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
         DEFAULT_PRIVKEY_LENGTH = 4096
+        COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -99,7 +100,8 @@ module Aspera
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
           :DEFAULT_PRIV_KEY_FILENAME,
           :SERVER_COMMAND,
-          :PRESET_DIG_SEPARATOR
+          :PRESET_DIG_SEPARATOR,
+          :COFFEE_IMAGE
         def initialize(env, params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'missing param' unless %i[name help version gem].sort.eql?(params.keys.sort)
@@ -975,7 +977,11 @@ module Aspera
             BasicAuthPlugin.register_options(@agents)
             return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url, is_type: :mandatory))}
           when :coffee
-            OpenApplication.instance.uri('https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg')
+            if OpenApplication.instance.url_method.eql?(:text)
+              require 'aspera/preview/terminal'
+              return Main.result_status(Preview::Terminal.build(Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body, reserved_lines: 3))
+            end
+            OpenApplication.instance.uri(COFFEE_IMAGE)
             return Main.result_nothing
           when :ascp
             execute_action_ascp

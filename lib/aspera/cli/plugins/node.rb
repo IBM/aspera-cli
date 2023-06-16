@@ -383,7 +383,7 @@ module Aspera
             return { type: :single_object, data: @api_node.params }
           end
         end
-
+        GEN4_FILE_COMMANDS = %i[show modify permission thumbnail].freeze
         def execute_node_gen4_file_command(command_node_file, top_file_id)
           file_path = options.get_option(:path)
           apifid =
@@ -400,6 +400,14 @@ module Aspera
             update_param = options.get_next_argument('update data', type: Hash)
             apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
             return Main.result_status('Done')
+          when :thumbnail
+            result = apifid[:api].call(
+              operation: 'GET',
+              subpath: "files/#{apifid[:file_id]}/preview",
+              headers: {'Accept' => 'image/png'}
+            )
+            require 'aspera/preview/terminal'
+            return Main.result_status(Preview::Terminal.build(result[:http].body, reserved_lines: 3))
           when :permission
             command_perm = options.get_next_command(%i[list create delete])
             case command_perm
@@ -548,7 +556,7 @@ module Aspera
               save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
           when :file
-            command_node_file = options.get_next_command(%i[show modify permission])
+            command_node_file = options.get_next_command(GEN4_FILE_COMMANDS)
             return execute_node_gen4_file_command(command_node_file, top_file_id)
           else raise "INTERNAL ERROR: no case for #{command_repo}"
           end # command_repo

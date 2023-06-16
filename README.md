@@ -1289,6 +1289,8 @@ config ascp products list
 config ascp show
 config ascp spec
 config check_update
+config coffee
+config coffee --ui=text
 config detect --url=https://faspex4.example.com/path
 config detect --url=https://my_aoc_org.ibmaspera.com
 config detect --url=https://node_simple.example.com/path
@@ -4457,6 +4459,8 @@ ascli server download /aspera-test-dir-large/200MB
 
 This plugin gives access to capabilities provided by HSTS node API.
 
+> **Note:** capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`.
+
 ### File Operations
 
 It is possible to:
@@ -4485,7 +4489,8 @@ For transfers, it is possible to control how transfer is authorized using option
 
 ### Central
 
-The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transferred files.
+The central subcommand uses the "reliable query" API (session and file).
+It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
 
@@ -4559,6 +4564,28 @@ ascli node download /share/sourcefile --to-folder=/destination_folder --preset=a
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
 
+### node file information
+
+When node api is used with an **Access key**, extra information can be retrieved, such as preview.
+
+> **Note:** Display of preview on terminal requires installation of extra gem: `rmagick`
+
+```bash
+gem install rmagick
+```
+
+For example it is possible to display the preview of a file, if it exists, using:
+
+```bash
+ascli aoc files file thumbnail --path=/preview_samples/Aspera.mpg
+```
+
+Using direct node access and an access key , one can do:
+
+```bash
+ascli node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
+```
+
 ### Create access key
 
 ```bash
@@ -4576,6 +4603,7 @@ node access_key do my_aoc_ak_name delete testfile1
 node access_key do my_aoc_ak_name download testfile1 --to-folder=.
 node access_key do my_aoc_ak_name file show --path=/testfile1
 node access_key do my_aoc_ak_name file show 1
+node access_key do my_aoc_ak_name file thumbnail --path=/testfile1
 node access_key do my_aoc_ak_name find /
 node access_key do my_aoc_ak_name mkdir /folder1
 node access_key do my_aoc_ak_name node_info /
@@ -4749,6 +4777,16 @@ faspex5 user profile show
 ```
 
 Other examples:
+
+- list packages
+
+  The following parameters in option `value` are supported:
+
+  - `q` : a filter on name (case insensitive, matches if value is contained in name)
+  - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
+  - `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
+  - `offset` : native api parameter, in general do not use (added by `ascli`)
+  - `limit` : native api parameter, number of items par api call, in general do not use (added by `ascli`)
 
 - Send a package with metadata
 
@@ -5871,30 +5909,7 @@ Main components:
 - `Aspera::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
 - `Aspera::Cli`: `ascli`.
 
-A working example can be found in the gem, example:
-
-```bash
-ascli config gem path
-```
-
-```bash
-cat $(ascli config gem path)/../examples/transfer.rb
-```
-
-This sample code shows some example of use of the API as well as REST API.
-Note: although nice, it's probably a good idea to use RestClient for REST.
-
-Example of use of the API of Aspera on Cloud:
-
-```ruby
-require 'aspera/aoc'
-
-aoc=Aspera::AoC.new(url: 'https://sedemo.ibmaspera.com',auth: :jwt, scope: 'user:all', private_key: File.read(File.expand_path('~/.aspera/ascli/aspera_on_cloud_key')),username: 'laurent.martin.aspera@fr.ibm.com',subpath: 'api/v1')
-
-aoc.read('self')
-```
-
-<https://github.com/IBM/aspera-cli/blob/main/examples/aoc.rb>
+Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
 
 ## Changes (Release notes)
 
@@ -5921,6 +5936,13 @@ So, it evolved into `ascli`:
 
 Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
 It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
+
+Enjoy a coffee on me:
+
+```bash
+ascli conf coffee
+ascli conf coffee --ui=text
+```
 
 ## Common problems
 

@@ -9,7 +9,7 @@ include $(DIR_TOP)common.mak
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
 
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tats tsample tcos tf5 tprev
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tcon tnsync tnsyncs tconf tats tcos tf5 tprev
 # tnagios: already included
 
 # tests that require user interaction
@@ -418,6 +418,7 @@ $(T)nd_ak3: $(T).exists
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file show --path=/testfile1
+	-$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file thumbnail --path=/testfile1
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete testfile1
 	@touch $@
 $(T)nd_ak4: $(T).exists
@@ -1086,6 +1087,8 @@ $(T)conf_help: $(T).exists
 	@echo $@
 	$(EXE_NOMAN) -h
 	$(EXE_NOMAN) --bash-comp
+	$(EXE_MAN) config coffee
+	$(EXE_MAN) config coffee --ui=text
 	@touch $@
 $(T)conf_open_err: $(T).exists
 	@echo $@
@@ -1261,39 +1264,6 @@ $(T)sync1: $(T).exists
 	-$(EXE_NOMAN) sync admin status --sync-info=@json:'{"sessions":[{"name":"test"}]}'
 	@touch $@
 tsync: $(T)sync1
-$(T)sdk_server: $(T).exists
-	@echo $@
-	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_server url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_server username)&&\
-	pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
-	tmp=$(DIR_TMP). PASSWORD=$${pass} ruby -I $(DIR_LIB). $(DIR_TOP)examples/server.rb $${url} $${user}
-	@touch $@
-$(T)sdk_node: $(T).exists
-	@echo $@
-	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
-	pass=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
-	tmp=$(DIR_TMP). PASSWORD=$${pass} ruby -I $(DIR_LIB). $(DIR_TOP)examples/node.rb $${url} $${user}
-	@touch $@
-$(T)sdk_aoc: $(T).exists
-	@echo $@
-	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_aoc_jwt url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_aoc_jwt username)&&\
-	keypath=$$($(EXE_NOMAN) config preset get tst_aoc_jwt private_key)&&\
-	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/aoc.rb $${url} $${user} "$${keypath}"
-	@touch $@
-$(T)sdk_faspex4: $(T).exists
-	@echo $@
-	set -x&&\
-	url=$$($(EXE_NOMAN) config preset get tst_faspex4 url)&&\
-	user=$$($(EXE_NOMAN) config preset get tst_faspex4_admin username)&&\
-	pass=$$($(EXE_NOMAN) config preset get tst_faspex4_admin password)&&\
-	tmp=$(DIR_TMP). ruby -I $(DIR_LIB). $(DIR_TOP)examples/faspex4.rb $${url} $${user} $${pass}
-	@touch $@
-tsample: $(T)sdk_server $(T)sdk_node $(T)sdk_aoc $(T)sdk_faspex4
 
 $(T)tcos: $(T).exists
 	@echo $@

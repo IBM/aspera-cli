@@ -11,6 +11,7 @@
   * new: faspex5: list packages support multiple pages and items limitations (`max` and `pmax`)
   * new: aoc: files operations with workspace-less user (#109)
   * new: node: async with gen3 token (#110)
+  * new: node: display of preview of file in terminal for access keys
   * change: option `transfer_info` is now cumulative, setting several times merge values
   * change(deprecation): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
   * fix: cos: do not use refresh token when not supported

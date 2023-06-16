@@ -3892,6 +3892,8 @@ One can test the `server` application using the well known demo server:
 
 This plugin gives access to capabilities provided by HSTS node API.
 
+> **Note:** capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`.
+
 ### File Operations
 
 It is possible to:
@@ -3920,7 +3922,8 @@ For transfers, it is possible to control how transfer is authorized using option
 
 ### Central
 
-The central subcommand uses the "reliable query" API (session and file). It allows listing transfer sessions and transferred files.
+The central subcommand uses the "reliable query" API (session and file).
+It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
 
@@ -3993,6 +3996,28 @@ Then execute the following command:
 ```
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
+
+### node file information
+
+When node api is used with an **Access key**, extra information can be retrieved, such as preview.
+
+> **Note:** Display of preview on terminal requires installation of extra gem: `rmagick`
+
+```bash
+gem install rmagick
+```
+
+For example it is possible to display the preview of a file, if it exists, using:
+
+```bash
+ascli aoc files file thumbnail --path=/preview_samples/Aspera.mpg
+```
+
+Using direct node access and an access key , one can do:
+
+```bash
+ascli node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
+```
 
 ### Create access key
 
@@ -5161,6 +5186,13 @@ So, it evolved into <%=tool%>:
 
 Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
 It had the advantage of being relatively easy to installed, as a single executable (well, still using `ascp`), but it was too limited IMHO, and lacked a lot of the features of this CLI.
+
+Enjoy a coffee on me:
+
+```bash
+ascli conf coffee
+ascli conf coffee --ui=text
+```
 
 ## Common problems
 
