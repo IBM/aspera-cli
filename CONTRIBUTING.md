@@ -151,7 +151,8 @@ GEMVERS=4.11.0 make -e dpush
 
 ### Development version image build
 
-To build/push a beta/development container (does not create the `latest` tag):
+To build/push a beta/development container:
+it does not create the `latest` tag, it uses the gem file generated locally.
 
 ```bash
 make dockerbeta
