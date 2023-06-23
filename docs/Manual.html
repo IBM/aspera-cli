@@ -2,7 +2,7 @@
 <!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted schtasks taskschd -->
 <h1 data-number="1" id="section"><span
 class="header-section-number">1</span> </h1>
-<p>Version : 4.13.0</p>
+<p>Version : 4.14.0.pre</p>
 <p>Laurent/2016-2023</p>
 <p>This gem provides the <code>ascli</code> Command Line Interface to
 IBM Aspera software.</p>
@@ -100,7 +100,7 @@ accessible:</p>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--version</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">4.13.0</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">4.14.0.pre</span></span></code></pre></div>
 <h2 data-number="5.1" id="first-use"><span
 class="header-section-number">5.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
@@ -231,7 +231,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href=
 <p>Then, you can execute the container like a local command:</p>
 <div class="sourceCode" id="cb19"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
-<pre class="text"><code>4.13.0</code></pre>
+<pre class="text"><code>4.14.0.pre</code></pre>
 <p>In order to keep persistency of configuration on the host, you should
 mount your user’s config folder to the container. To enable write
 access, a possibility is to run as <code>root</code> in the container
@@ -459,7 +459,7 @@ class="header-section-number">6.2.4</span> macOS: pre-installed or
 it directly. You will need to install aspera-cli using <code>sudo</code>
 :</p>
 <div class="sourceCode" id="cb36"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> gem install aspera-cli</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> gem install aspera-cli <span class="at">--pre</span></span></code></pre></div>
 <p>Alternatively, if you use <a href="https://brew.sh/">Homebrew</a>
 already you can install Ruby with it:</p>
 <div class="sourceCode" id="cb37"><pre
@@ -532,7 +532,7 @@ class="header-section-number">6.3</span>
 <p>Once you have Ruby and rights to install gems: Install the gem and
 its dependencies:</p>
 <div class="sourceCode" id="cb44"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli <span class="at">--pre</span></span></code></pre></div>
 <p>To upgrade to the latest version:</p>
 <div class="sourceCode" id="cb45"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> update aspera-cli</span></code></pre></div>
@@ -3762,7 +3762,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb209-1"><a href
 class="header-section-number">7.30</span> <a id="usage"></a>Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.13.0)
+        ascli -- a command line tool for Aspera Applications (v4.14.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
