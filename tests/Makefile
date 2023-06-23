@@ -381,9 +381,9 @@ $(T)nd4: $(T).exists
 # test creation of access key
 $(T)nd5: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"aoc_1","storage":{"type":"local","path":"/"}}'
+	$(EXE_MAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
 	sleep 2
-	$(EXE_MAN) node -N -Ptst_node_preview access_key delete aoc_1
+	$(EXE_MAN) node -N -Ptst_node_preview access_key delete testingAK1
 	@touch $@
 $(T)nd6: $(T).exists
 	@echo $@
