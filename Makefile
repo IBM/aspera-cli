@@ -27,6 +27,7 @@ $(PATH_GEMFILE): $(DIR_TOP).gems_checked
 gem_check_signing_key:
 	@echo "Checking env var: SIGNING_KEY"
 	@if test -z "$$SIGNING_KEY";then echo "Error: Missing env var SIGNING_KEY" 1>&2;exit 1;fi
+	@if test ! -e "$$SIGNING_KEY";then echo "Error: No such file: $$SIGNING_KEY" 1>&2;exit 1;fi
 # force rebuild of gem and sign it, then check signature
 signed_gem: gemclean gem_check_signing_key $(PATH_GEMFILE)
 	@tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
@@ -38,6 +39,8 @@ gemclean:
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean:: gemclean
+update-cert: gem_check_signing_key
+	gem cert --re-sign --certificate $(DIR_TOP)certs/aspera-cli-public-cert.pem --private-key $$SIGNING_KEY --days 1100
 
 ##################################
 # Gem publish
