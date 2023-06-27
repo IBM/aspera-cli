@@ -43,10 +43,10 @@ clean:: gemclean
 # Gem certificate
 # updates the existing certificate, keeping the maintainer email
 update-cert: gem_check_signing_key
-	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
 	gem cert \
 	--re-sign \
-	--certificate $(DIR_TOP)$$cert_chain \
+	--certificate $$cert_chain \
 	--private-key $$SIGNING_KEY \
 	--days 1100
 # creates a new certificate, taking the maintainer email from gemspec
@@ -56,12 +56,16 @@ new-cert: gem_check_signing_key
 	--build $$maintainer_email \
 	--private-key $$SIGNING_KEY \
 	--days 1100
-	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
-	mv gem-public_cert.pem $(DIR_TOP)$$cert_chain
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	mv gem-public_cert.pem $$cert_chain
 show-cert:
-	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
-	openssl x509 -noout -text -in $(DIR_TOP)$$cert_chain|head -n 13
-
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	openssl x509 -noout -text -in $$cert_chain|head -n 13
+check-cert-key: $(DIR_TMP).exists gem_check_signing_key
+	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	openssl x509 -noout -pubkey -in $$cert_chain > $(DIR_TMP)cert.pub
+	@openssl rsa -pubout -passin pass:_value_ -in $$SIGNING_KEY > $(DIR_TMP)sign.pub
+	@if cmp -s $(DIR_TMP)cert.pub $(DIR_TMP)sign.pub;then echo "Ok: certificate and key match";else echo "Error: certificate and key do not match" 1>&2;exit 1;fi
 ##################################
 # Gem publish
 release: all

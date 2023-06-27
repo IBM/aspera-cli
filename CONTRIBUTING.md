@@ -109,6 +109,8 @@ Then procedure is as follows:
   - `gem-private_key.pem` : This file shall be kept secret in a vault.
   - `gem-public_cert.pem` : This file is copied to a public place, here in folder `certs`
 
+  > **Note:** Alternatively, use an existing key or generate one, and then `make new-cert`
+
 - The maintainer build the signed gem.
 
   The gem is signed with the public certificate found in `certs` and the private key (kept secret by maintainer).
@@ -141,40 +143,24 @@ Then procedure is as follows:
   SIGNING_KEY=/path/to/vault/gem-private_key.pem make update-cert
   ```
 
-  This re-generate the certificate with the same email and key but a new validity period, like this:
-
-  ```bash
-  cd /path/to/vault
-  gem cert --re-sign --certificate certs/aspera-cli-public-cert.pem --private-key /path/to/vault/gem-private_key.pem --days 1100
-  ```
-
   Alternatively, to generate a new certificate with the same key:
 
   ```bash
-  cd /path/to/vault
-  gem cert --build maintainer@example.com --private-key /path/to/vault/gem-private_key.pem
+  SIGNING_KEY=/path/to/vault/gem-private_key.pem make new-cert
   ```
 
-  - other operations:
-
-  Display the public key from private key:
+  - Show the current certificate contents
 
   ```bash
-  openssl rsa -pubout -in /path/to/vault/gem-private_key.pem
+  make show-cert
   ```
 
-  > Note: to provide a passphrase add argument: `-passin pass:_value_`
+  > Note: to provide a passphrase add argument: `-passin pass:_value_` to `openssl`
 
-  Display the public key from certificate:
-
-  ```bash
-  openssl x509 -noout -pubkey -in certs/aspera-cli-public-cert.pem
-  ```
-
-  To compage both:
+  - Check that the signing key is the same as used to sign the certificate:
 
   ```bash
-  diff <(openssl rsa -pubout -passin pass:_value_ -in /path/to/vault/gem-private_key.pem) <(openssl x509 -noout -pubkey -in certs/aspera-cli-public-cert.pem) 
+  SIGNING_KEY=/path/to/vault/gem-private_key.pem make check-cert-key
   ```
 
 ## Docker image build
