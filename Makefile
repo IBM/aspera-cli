@@ -39,8 +39,28 @@ gemclean:
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean:: gemclean
+##################################
+# Gem certificate
+# updates the existing certificate, keeping the maintainer email
 update-cert: gem_check_signing_key
-	gem cert --re-sign --certificate $(DIR_TOP)certs/aspera-cli-public-cert.pem --private-key $$SIGNING_KEY --days 1100
+	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	gem cert \
+	--re-sign \
+	--certificate $(DIR_TOP)$$cert_chain \
+	--private-key $$SIGNING_KEY \
+	--days 1100
+# creates a new certificate, taking the maintainer email from gemspec
+new-cert: gem_check_signing_key
+	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	gem cert \
+	--build $$maintainer_email \
+	--private-key $$SIGNING_KEY \
+	--days 1100
+	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	mv gem-public_cert.pem $(DIR_TOP)$$cert_chain
+show-cert:
+	cert_chain=$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	openssl x509 -noout -text -in $(DIR_TOP)$$cert_chain|head -n 13
 
 ##################################
 # Gem publish
