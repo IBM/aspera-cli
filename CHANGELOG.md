@@ -2,7 +2,7 @@
 
 * 4.13.0
 
-  * new: server: option `passphrase` for simpler command line
+  * new: server: option `passphrase` for simpler command line (#114)
 
 * 4.13.0
 
