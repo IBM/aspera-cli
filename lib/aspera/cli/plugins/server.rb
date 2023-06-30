@@ -50,6 +50,7 @@ module Aspera
         def initialize(env)
           super(env)
           options.add_opt_simple(:ssh_keys, 'SSH key path list (Array or single)')
+          options.add_opt_simple(:passphrase, 'SSH private key passphrase')
           options.add_opt_simple(:ssh_options, 'SSH options (Hash)')
           options.parse_options!
           @ssh_opts = nil
@@ -118,6 +119,11 @@ module Aspera
               end
               cred_set = true
             end
+          end
+          ssh_passphrase = options.get_option(:passphrase)
+          if !ssh_passphrase.nil?
+            @ssh_opts[:passphrase] = ssh_passphrase
+            server_transfer_spec['ssh_private_key_passphrase'] = ssh_passphrase
           end
           # if user provided transfer spec has a token, we will use bypass keys
           cred_set = true if transfer.option_transfer_spec['token'].is_a?(String)

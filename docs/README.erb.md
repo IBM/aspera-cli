@@ -2358,11 +2358,10 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server
-which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both
-using a passphrase, only known by users sharing files. Files stay encrypted on server side.
+Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both using a passphrase, only known by users sharing files.
+Files stay encrypted on server side.
 
-activating CSEAR consists in using transfer spec parameters:
+Activating CSEAR consists in using transfer spec parameters:
 
 - `content_protection` : activate encryption (`encrypt` for upload) or decryption (`decrypt` for download)
 - `content_protection_password` : the passphrase to be used.
@@ -3866,6 +3865,9 @@ This means that your environment suggests to use an agent but you don't have suc
 
 > **Note:** This can also be set using a preset.
 
+If one of the SSH private keys is passphrase-protected, then option `passphrase` can be used.
+It is equivalent to setting both options `ssh_options.passphrase` and `ts.ssh_private_key_passphrase`.
+
 ### Other session channels for `server`
 
 URL schemes `local` and `https` are also supported (mainly for testing purpose).
@@ -3891,7 +3893,7 @@ One can test the `server` application using the well known demo server:
 If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options`, for browsing, and `ts` for transfers:
 
 ```bash
-<%=cmd%> server --url=ssh://_server_address_here_:33001 --username=_user_here_ --ssh_keys=_private_key_path_here_ --ssh-options=@json:'{"passphrase":"_passphrase_here_"}' --ts=@json:'{"ssh_private_key_passphrase":"_passphrase_here_"}'
+<%=cmd%> server --url=ssh://_server_address_here_:33001 --username=_user_here_ --ssh_keys=_private_key_path_here_ --passphrase=_passphrase_here_
 ```
 
 ## <a id="node"></a>Plugin: `node`: IBM Aspera High Speed Transfer Server Node

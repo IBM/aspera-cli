@@ -2487,11 +2487,10 @@ When multi-session is used, one separate UDP port is used per session (refer to 
 
 #### Content protection
 
-Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server
-which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both
-using a passphrase, only known by users sharing files. Files stay encrypted on server side.
+Also known as Client-side encryption at rest (CSEAR), content protection allows a client to send files to a server which will store them encrypted (upload), and decrypt files as they are being downloaded from a server, both using a passphrase, only known by users sharing files.
+Files stay encrypted on server side.
 
-activating CSEAR consists in using transfer spec parameters:
+Activating CSEAR consists in using transfer spec parameters:
 
 - `content_protection` : activate encryption (`encrypt` for upload) or decryption (`decrypt` for download)
 - `content_protection_password` : the passphrase to be used.
@@ -3022,6 +3021,7 @@ OPTIONS:
         --username=VALUE             username to log in
         --password=VALUE             user's password
         --ssh-keys=VALUE             SSH key path list (Array or single)
+        --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
 
 
@@ -4384,7 +4384,7 @@ ascli server --url=ssh://_server_address_:33001 ... --ts=@json:'{"token":"Basic 
 
 > **Note:** If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
 
-The value of the `ssh_keys` option can be a single value or an array.
+The value of the `ssh_keys` option can be a single value or an `Array`.
 Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
@@ -4433,6 +4433,9 @@ ascli server --ssh-options=@json:'{"use_agent": false}' ...
 
 > **Note:** This can also be set using a preset.
 
+If one of the SSH private keys is passphrase-protected, then option `passphrase` can be used.
+It is equivalent to setting both options `ssh_options.passphrase` and `ts.ssh_private_key_passphrase`.
+
 ### Other session channels for `server`
 
 URL schemes `local` and `https` are also supported (mainly for testing purpose).
@@ -4454,6 +4457,12 @@ ascli server download /aspera-test-dir-large/200MB
 ```
 
 `initdemo` creates a [option preset](#lprt) `demoserver` and set it as default for plugin `server`.
+
+If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options`, for browsing, and `ts` for transfers:
+
+```bash
+ascli server --url=ssh://_server_address_here_:33001 --username=_user_here_ --ssh_keys=_private_key_path_here_ --passphrase=_passphrase_here_
+```
 
 ## <a id="node"></a>Plugin: `node`: IBM Aspera High Speed Transfer Server Node
 

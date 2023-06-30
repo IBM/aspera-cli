@@ -2,6 +2,10 @@
 
 * 4.13.0
 
+  * new: server: option `passphrase` for simpler command line
+
+* 4.13.0
+
   * new: preview: option `reencode_ffmpeg` allows overriding all re-encoding options
   * new: faspex5: package delete (#107)
   * new: faspex5: package recv for inboxes and regular users (#108)
