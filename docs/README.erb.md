@@ -3817,7 +3817,7 @@ Example:
 
 > **Note:** If you need to use the Aspera public keys, then specify an empty token: `--ts=@json:'{"token":""}'` : Aspera public SSH keys will be used, but the protocol will ignore the empty token.
 
-The value of the `ssh_keys` option can be a single value or an array.
+The value of the `ssh_keys` option can be a single value or an `Array`.
 Each value is a **path** to a private key and is expanded (`~` is replaced with the user's home folder).
 
 Examples:
@@ -3887,6 +3887,12 @@ One can test the `server` application using the well known demo server:
 ```
 
 `initdemo` creates a <%=prst%> `demoserver` and set it as default for plugin `server`.
+
+If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options`, for browsing, and `ts` for transfers:
+
+```bash
+<%=cmd%> server --url=ssh://_server_address_here_:33001 --username=_user_here_ --ssh_keys=_private_key_path_here_ --ssh-options=@json:'{"passphrase":"_passphrase_here_"}' --ts=@json:'{"ssh_private_key_passphrase":"_passphrase_here_"}'
+```
 
 ## <a id="node"></a>Plugin: `node`: IBM Aspera High Speed Transfer Server Node
 
