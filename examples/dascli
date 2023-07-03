@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # set env var image to specify another docker image
-: "${image:=martinlaurent/ascli}"
+: "${image:=docker.io/martinlaurent/ascli}"
 # set env var version to specify another image version (default: latest version)
 : "${version:=latest}"
 # set env var imgtag to specify a specific image/version
