@@ -453,26 +453,36 @@ brew install ruby
 
 #### Linux: package
 
-If your Linux distribution provides a standard Ruby package, you can use it provided that the version is compatible (check at beginning of section).
+If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-Example: RHEL 8 and 9: basic installation
+**Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
 
-```bash
-yum module install ruby:3.1
-```
+- Check available ruby versions:
 
-Example: RHEL 8, Centos 8 Stream: with extensions to compile native gems
+  ```bash
+  dnf module list ruby
+  ```
 
-```bash
-dnf install -y make automake gcc gcc-c++ kernel-devel
-dnf install -y redhat-rpm-config
-dnf module list ruby
-dnf module -y reset ruby
-dnf module -y enable ruby:3.1
-dnf module -y install ruby:3.1/common
-```
+- If ruby was already installed with an older version, remove it:
 
-Other examples:
+  ```bash
+  dnf module -y reset ruby
+  ```
+
+- Install packages needed to build native gems:
+  
+    ```bash
+    dnf install -y make automake gcc gcc-c++ kernel-devel
+    ```
+
+- Enable the Ruby version you want:
+
+  ```bash
+  dnf module -y enable ruby:3.1
+  dnf install -y ruby-devel
+  ```
+
+**Other examples:**
 
 ```bash
 yum install -y ruby ruby-devel rubygems ruby-json
@@ -4013,7 +4023,8 @@ When node api is used with an **Access key**, extra information can be retrieved
 > **Note:** Display of preview on terminal requires installation of extra gem: `rmagick`
 
 ```bash
-gem install rmagick
+dnf install -y ImageMagick-devel
+gem install rmagick rainbow
 ```
 
 For example it is possible to display the preview of a file, if it exists, using:
@@ -4664,7 +4675,7 @@ To check if all tools are found properly, execute:
 #### Image: ImageMagick and optipng
 
 ```bash
-yum install -y ImageMagick optipng
+dnf install -y ImageMagick optipng
 ```
 
 You may also install `ghostscript` which adds fonts to ImageMagick.
@@ -4864,10 +4875,10 @@ If the `mimemagic` gem complains about missing mime info file:
 
   - Close the `cmd` and restart a new one if needed to get refreshed env vars
 
-- Linux:
+- Linux RHEL 8+:
 
 ```bash
-yum install shared-mime-info
+dnf install shared-mime-info
 ```
 
 - macOS:
