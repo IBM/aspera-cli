@@ -424,6 +424,8 @@ module Aspera
               return do_bulk_operation(perm_id, 'deleted') do |one_id|
                 # TODO: notify event ?
                 apifid[:api].delete("permissions/#{perm_id}")
+                # notify application of deletion
+                the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app, types: ['permission.deleted']) unless the_app.nil?
                 {'id' => one_id}
               end
             when :create
@@ -433,11 +435,11 @@ module Aspera
               create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
               # add application specific tags (AoC)
               the_app = apifid[:api].app_info
-              the_app[:api].permissions_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
+              the_app[:api].permissions_set_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
               # create permission
               created_data = apifid[:api].create('permissions', create_param)[:data]
               # notify application of creation
-              the_app[:api].permissions_create_event(created_data: created_data, app_info: the_app) unless the_app.nil?
+              the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app) unless the_app.nil?
               return { type: :single_object, data: created_data}
             else raise "internal error:shall not reach here (#{command_perm})"
             end

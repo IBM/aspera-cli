@@ -42,6 +42,9 @@ module Aspera
     OAUTH_API_SUBPATH = 'api/v1/oauth2'
     # minimum fields for user info if retrieval fails
     USER_INFO_FIELDS_MIN = %w[name email id default_workspace_id organization_id].freeze
+    # types of events for shared folder creation
+    # Node events: permission.created permission.modified permission.deleted
+    PERMISSIONS_CREATED = ['permission.created'].freeze
 
     private_constant :MAX_REDIRECT,
       :GLOBAL_CLIENT_APPS,
@@ -50,7 +53,8 @@ module Aspera
       :PUBLIC_LINK_PATHS,
       :JWT_AUDIENCE,
       :OAUTH_API_SUBPATH,
-      :USER_INFO_FIELDS_MIN
+      :USER_INFO_FIELDS_MIN,
+      :PERMISSIONS_CREATED
 
     # various API scopes supported
     SCOPE_FILES_SELF = 'self'
@@ -496,7 +500,10 @@ module Aspera
 
     ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
     # Callback from Plugins::Node
-    def permissions_create_params(create_param:, app_info:)
+    # add application specific tags to permissions creation
+    # @param create_param [Hash] parameters for creating permissions
+    # @param app_info [Hash] application information
+    def permissions_set_create_params(create_param:, app_info:)
       # workspace shared folder:
       # access_id = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
       default_params = {
@@ -531,14 +538,20 @@ module Aspera
     end
 
     # Callback from Plugins::Node
-    def permissions_create_event(created_data:, app_info:)
+    # send shared folder event to AoC
+    # @param created_data [Hash] response from permission creation
+    # @param app_info [Hash] hash with app info
+    # @param types [Array] event types
+    def permissions_send_event(created_data:, app_info:, types: PERMISSIONS_CREATED)
+      raise "INTERNAL: (assert) Invalid event types: #{types}" unless types.is_a?(Array) && !types.empty?
       event_creation = {
-        'types'        => ['permission.created'],
+        'types'        => types,
         'node_id'      => app_info[:node_info]['id'],
         'workspace_id' => app_info[:workspace_id],
-        'data'         => created_data # Response from previous step
+        'data'         => created_data
       }
-      # (optional). The name of the folder to be displayed to the destination user. Use it if its value is different from the "share_as" field.
+      # (optional). The name of the folder to be displayed to the destination user.
+      # Use it if its value is different from the "share_as" field.
       event_creation['link_name'] = app_info[:opt_link_name] unless app_info[:opt_link_name].nil?
       create('events', event_creation)
     end

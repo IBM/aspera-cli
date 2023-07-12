@@ -103,6 +103,7 @@ REPLACEMENTS = [
   [/\$\(([^)]*)\)/, '\1'],
   # remove multi command mark
   [/\)?&&\\$/, ''],
+  [/ &\\$/, ''],
   # remove redirection
   [/ [>|] .*$/, ''],
   # remove folder macro

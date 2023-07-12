@@ -464,10 +464,11 @@ yum module install ruby:3.1
 Example: RHEL 8, Centos 8 Stream: with extensions to compile native gems
 
 ```bash
-yum install make automake gcc gcc-c++ kernel-devel
-yum install redhat-rpm-config
-dnf module reset ruby
-dnf module enable ruby:3.1
+dnf install -y make automake gcc gcc-c++ kernel-devel
+dnf install -y redhat-rpm-config
+dnf module list ruby
+dnf module -y reset ruby
+dnf module -y enable ruby:3.1
 dnf module -y install ruby:3.1/common
 ```
 
@@ -3538,10 +3539,10 @@ If a single file or folder is to be downloaded, then a single argument can be pr
 
 #### Shared folders
 
-Shared folder by users are managed through **permissions**.
+Shared folder created by users are managed through **permissions**.
 For creation, parameters are the same as for node api [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
-<%=tool%> expects the same payload for creation, but it will automatically populated required tags if needed.
-Also, the pseudo key `with` is added: it will lookup the name in the contacts and fill the proper type and id.
+<%=tool%> expects the same payload for creation, but it will automatically populate required tags if needed.
+Also, the pseudo key `with` is available: it will lookup the name in the contacts and fill the proper type and id.
 The pseudo parameter `link_name` allows changing default "shared as" name.
 
 - List permissions on a shared folder as user
@@ -4045,22 +4046,37 @@ IBM Aspera's newer self-managed application.
 
 3 authentication methods are supported:
 
-- jwt
-- web
-- boot
+- jwt : general purpose, private-key based authentication
+- link : public link authentication
+- web : requires authentication with web browser
+- boot : use authentication token copied from browser (experimental)
 
 ### Faspex 5 JWT authentication
 
-This is the **recommended** method to use.
+This is the general purpose and **recommended** method to use.
 
-For `jwt`, create an API client in Faspex with JWT support:
+Activation is in two steps:
 
-- Select a private key file: if you don't have any refer to section [Private Key](#private_key)
-- Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
-- Activate JWT
-- Paste **public** key in the appropriate section
-- Click on Create Button
-- Take note of Client Id (and Client Secret, but not used in current version)
+- The admninistrator must create an API client in Faspex with JWT support
+
+  This operation is generally done only once:
+
+  - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
+  - Give a name, like `ascli`
+  - Activate JWT
+  - There is an option to set a general public key allowing the owner of the private key to impersonate any user. Unless you want to do this, leave this field empty.
+  - Click on `Create` Button
+  - Take note of Client Id (and Client Secret, but not used in current version)
+
+- The user uses a private key and sets the public key in his faspex 5 profile
+
+  This operation is done by each user using the CLI.
+
+  - As user, click on the user logo, left to the app switcher on top right.
+  - Select `Account Settings`
+  - on the bottom in the text field: `Public key in PEM format` paste the **public** key corresponding to the private key used by the user.
+
+  **Note:** If you don't have any refer to section [Private Key](#private_key)
 
 Then use these options:
 
@@ -4072,19 +4088,31 @@ Then use these options:
 --private-key=@file:.../path/to/key.pem
 ```
 
-> **Note:** The `private_key` option must contain the PEM value of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+> **Note:** The `private_key` option must contain the PEM **value** (not file path) of the private key which can be read from a file using the modifier: `@file:`, e.g. `@file:/path/to/key.pem`.
+
+As usual, typically a user will create preset to avoid having to type these options each time.
+
+Example:
+
+```bash
+<%=cmd%> conf preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
+
+<%=cmd%> conf preset set default faspx5 myf5
+
+<%=cmd%> faspex5 user profile show
+```
 
 ### Faspex 5 web authentication
 
-For `web` method, create an API client in Faspex without JWT:
+The admninistrator must create an API client in Faspex for an external web app support:
 
-- Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
+- As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 - Do not Activate JWT
 - Set **Redirect URI** to `https://127.0.0.1:8888`
-- Click on Create Button
+- Click on `Create` Button
 - Take note of Client Id (and Client Secret, but not used in current version)
 
-Then use options:
+The user will use the following options:
 
 ```text
 --auth=web
@@ -4097,7 +4125,7 @@ Then use options:
 
 For `boot` method: (will be removed in future)
 
-- Open a Web Browser
+- As user: Open a Web Browser
 - Start developer mode
 - Login to Faspex 5
 - Find the first API call with `Authorization` header, and copy the value of the token (series of base64 values with dots)
@@ -4105,7 +4133,7 @@ For `boot` method: (will be removed in future)
 Use this token as password and use `--auth=boot`.
 
 ```bash
-<%=cmd%> conf id f5boot update --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
+<%=cmd%> conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
 ### Faspex 5 packages
@@ -4124,7 +4152,7 @@ If the value `ALL` is provided to option `box`, then all packages are selected.
 
 Most commands are directly REST API calls.
 Parameters to commands are carried through option `value`, as extended value.
-Usually using JSON format with prefix `@json:`.
+One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
 
@@ -4449,8 +4477,8 @@ If you have those parameters already, then following options shall be provided:
 For example, let us create a default configuration:
 
 ```bash
-<%=cmd%> conf id mycos update --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-<%=cmd%> conf id default set cos mycos
+<%=cmd%> conf preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+<%=cmd%> conf preset set default cos mycos
 ```
 
 Then, jump to the transfer example.
@@ -4513,8 +4541,8 @@ The required options for this method are:
 For example, let us create a default configuration:
 
 ```bash
-<%=cmd%> conf id mycos update --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-<%=cmd%> conf id default set cos mycos
+<%=cmd%> conf preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+<%=cmd%> conf preset set default cos mycos
 ```
 
 ### Operations, transfers
