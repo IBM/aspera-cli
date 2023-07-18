@@ -18,9 +18,10 @@ module Aspera
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
       CONF_OVERVIEW_KEYS = %w[config parameter value].freeze
+      KEY_VALUE = %w[key value].freeze
 
       private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR,
-        :CONF_OVERVIEW_KEYS
+        :CONF_OVERVIEW_KEYS, :KEY_VALUE
 
       class << self
         # special for Aspera on Cloud display node
@@ -195,7 +196,7 @@ module Aspera
           when :single_object # goes to table display
             # :single_object is a simple hash table  (can be nested)
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
-            final_table_columns = results[:columns] || %w[key value]
+            final_table_columns = results[:columns] || KEY_VALUE
             if @option_flat_hash
               res_data = self.class.flattened_object(res_data, expand_last: results[:option_expand_last])
               self.class.flatten_name_value_list(res_data)
@@ -207,6 +208,11 @@ module Aspera
               else user_asked_fields_list_str.split(',')
               end
             table_rows_hash_val = asked_fields.map { |i| { final_table_columns.first => i, final_table_columns.last => res_data[i] } }
+            # if only one row, and columns are key/value, then display the value only
+            if table_rows_hash_val.length == 1 && final_table_columns.eql?(KEY_VALUE)
+              display_message(:data, res_data.values.first)
+              return
+            end
           when :value_list # goes to table display
             # :value_list is a simple array of values, name of column provided in the :name
             final_table_columns = [results[:name]]
@@ -235,7 +241,7 @@ module Aspera
           # here we expect: table_rows_hash_val and final_table_columns
           raise 'no field specified' if final_table_columns.nil?
           if table_rows_hash_val.empty?
-            display_message(:info, 'empty'.gray) unless @option_format.eql?(:csv)
+            display_message(:info, 'empty'.gray) if @option_format.eql?(:table)
             return
           end
           # convert to string with special function. here table_rows_hash_val is an array of hash
@@ -252,12 +258,6 @@ module Aspera
           when :table
             style = @option_table_style.chars
             # display the table !
-            # display_message(:data,Text::Table.new(
-            # head:  final_table_columns,
-            # rows:  final_table_rows,
-            # horizontal_boundary:    style[0],
-            # vertical_boundary:      style[1],
-            # boundary_intersection:  style[2]))
             display_message(:data, Terminal::Table.new(
               headings:  final_table_columns,
               rows:      final_table_rows,
