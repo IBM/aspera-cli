@@ -2512,7 +2512,8 @@ href="#transferspec"><em>transfer-spec</em></a> parameter using the
 href="#native">Structured Value</a> containing one or several <a
 href="#transferspec"><em>transfer-spec</em></a> parameters in a
 <code>Hash</code>. Multiple <code>ts</code> options on command line are
-cumulative.</p>
+cumulative, and Hash is deeply merged. To remove a (deep) key from
+transfer spec, set the value to <code>null</code>.</p>
 <p>It is possible to specify <code>ascp</code> options when the
 <code>transfer</code> option is set to <a
 href="#agt_direct"><code>direct</code></a> using

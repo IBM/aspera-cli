@@ -74,7 +74,7 @@ module Aspera
       # multiple option are merged
       def option_transfer_spec=(value)
         raise 'option ts shall be a Hash' unless value.is_a?(Hash)
-        @transfer_spec_cmdline.merge!(value)
+        @transfer_spec_cmdline.deep_merge!(value)
       end
 
       def option_transfer_info; @transfer_info; end
@@ -82,7 +82,7 @@ module Aspera
       # multiple option are merged
       def option_transfer_info=(value)
         raise 'option transfer_info shall be a Hash' unless value.is_a?(Hash)
-        @transfer_info.merge!(value)
+        @transfer_info.deep_merge!(value)
       end
 
       def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
@@ -225,14 +225,14 @@ module Aspera
         end
         # update command line paths, unless destination already has one
         @transfer_spec_cmdline['paths'] = transfer_spec['paths'] || ts_source_paths
-        transfer_spec.merge!(@transfer_spec_cmdline)
-        # remove values that are nil (user wants to delete)
-        transfer_spec.delete_if { |_key, value| value.nil? }
+        transfer_spec.deep_merge!(@transfer_spec_cmdline)
+        # recursively remove values that are nil (user wants to delete)
+        transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # create transfer agent
         set_agent_by_options
         Log.log.debug{"transfer agent is a #{@agent.class}"}
         @agent.start_transfer(transfer_spec, token_regenerator: rest_token)
-        # list of : :success or error message
+        # list of: :success or "error message string"
         result = @agent.wait_for_transfers_completion
         @progress_listener.reset
         Fasp::AgentBase.validate_status_list(result)

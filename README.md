@@ -2242,7 +2242,8 @@ The [*transfer-spec*](#transferspec) is a Hash (dictionary), so it is described 
 
 It is possible to modify or add any of the supported [*transfer-spec*](#transferspec) parameter using the `ts` option.
 The `ts` option accepts a [Structured Value](#native) containing one or several [*transfer-spec*](#transferspec) parameters in a `Hash`.
-Multiple `ts` options on command line are cumulative.
+Multiple `ts` options on command line are cumulative, and Hash is deeply merged.
+To remove a (deep) key from transfer spec, set the value to `null`.
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.

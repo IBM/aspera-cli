@@ -3,6 +3,7 @@
 * 4.13.0
 
   * new: server: option `passphrase` for simpler command line (#114)
+  * fix: option `ts`: deep add and remove of keys. (#117)
 
 * 4.13.0
 
