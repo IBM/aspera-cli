@@ -15,6 +15,7 @@ module Aspera
       MAX_PAGES = 'pmax'
       # used when all resources are selected
       VAL_ALL = 'ALL'
+      REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 
       # global for inherited classes
       @@options_created = false # rubocop:disable Style/ClassVars
@@ -43,10 +44,14 @@ module Aspera
         @@options_created = true # rubocop:disable Style/ClassVars
       end
 
-      # must be called AFTER the instance action
-      def instance_identifier
+      # must be called AFTER the instance action, ... folder browse <call instance_identifier>
+      # @param block [Proc] block to search for identifier based on attribute value
+      def instance_identifier(&block)
         res_id = options.get_option(:id)
         res_id = options.get_next_argument('identifier') if res_id.nil?
+        if block && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
+          res_id = yield(m[1], m[2])
+        end
         return res_id
       end
 

@@ -4218,13 +4218,24 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 <%=cmd%> faspex5 shared_folders list
 ```
 
-```bash
-<%=cmd%> faspex5 shared_folders br 3 /folder
+```markdown
++----+----------+---------+-----+
+| id | name     | node_id | ... |
++----+----------+---------+-----+
+| 3  | partages | 2       | ... |
++----+----------+---------+-----+
 ```
 
 ```bash
-<%=cmd%> faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=3 /folder/file
+<%=cmd%> faspex5 shared_folders br %name:partages /folder
 ```
+
+
+```bash
+<%=cmd%> faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
+```
+
+> **Note:** The shared folder can be identified by its numerical `id` using selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
 - receive all packages (cargo)
 

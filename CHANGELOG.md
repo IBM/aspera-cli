@@ -4,6 +4,7 @@
 
   * new: server: option `passphrase` for simpler command line (#114)
   * fix: option `ts`: deep add and remove of keys. (#117)
+  * new: add % selector for entities
 
 * 4.13.0
 

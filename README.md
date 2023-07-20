@@ -4871,13 +4871,24 @@ ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox",
 ascli faspex5 shared_folders list
 ```
 
-```bash
-ascli faspex5 shared_folders br 3 /folder
+```markdown
++----+----------+---------+-----+
+| id | name     | node_id | ... |
++----+----------+---------+-----+
+| 3  | partages | 2       | ... |
++----+----------+---------+-----+
 ```
 
 ```bash
-ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=3 /folder/file
+ascli faspex5 shared_folders br %name:partages /folder
 ```
+
+
+```bash
+ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
+```
+
+> **Note:** The shared folder can be identified by its numerical `id` using selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
 - receive all packages (cargo)
 

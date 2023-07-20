@@ -22,7 +22,8 @@ module Aspera
         API_MAILBOXES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
         PACKAGE_TYPE_RECEIVED = 'received'
         PACKAGE_ALL_INIT = 'INIT'
-        private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_MAILBOXES PACKAGE_TYPE_RECEIVED])
+        PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
+        private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_MAILBOXES PACKAGE_TYPE_RECEIVED PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)
@@ -226,6 +227,144 @@ module Aspera
           return list_entities('packages', query: parameters, prefix: box_to_prefix(options.get_option(:box)))
         end
 
+        def package_action
+          command = options.get_next_command(%i[list show browse status delete send receive])
+          case command
+          when :list
+            return {
+              type:   :object_list,
+              data:   list_packages,
+              fields: %w[id title release_date total_bytes total_files created_time state]
+            }
+          when :show
+            id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+            id ||= instance_identifier
+            return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
+          when :browse
+            id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+            id ||= instance_identifier
+            path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
+            # TODO: support multi-page listing ?
+            params = {
+              # recipient_user_id: 25,
+              # offset:            0,
+              # limit:             25
+            }
+            result = @api_v5.call({
+              operation:   'POST',
+              subpath:     "packages/#{id}/files/received",
+              headers:     {'Accept' => 'application/json'},
+              url_params:  params,
+              json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
+            formatter.display_item_count(result['item_count'], result['total_count'])
+            return {type: :object_list, data: result['items']}
+          when :status
+            status = wait_package_status(instance_identifier)
+            return {type: :single_object, data: status}
+          when :delete
+            ids = instance_identifier
+            ids = [ids] unless ids.is_a?(Array)
+            raise 'Package identifier must be a single id or an Array' unless ids.is_a?(Array) && ids.all?(String)
+            # API returns 204, empty on success
+            @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
+            return Main.result_status('Package(s) deleted')
+          when :send
+            parameters = options.get_option(:value, is_type: :mandatory)
+            raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
+            normalize_recipients(parameters)
+            package = @api_v5.create('packages', parameters)[:data]
+            shared_folder = options.get_option(:shared_folder)
+            if shared_folder.nil?
+              # TODO: option to send from remote source or httpgw
+              transfer_spec = @api_v5.call(
+                operation:   'POST',
+                subpath:     "packages/#{package['id']}/transfer_spec/upload",
+                headers:     {'Accept' => 'application/json'},
+                url_params:  {transfer_type: TRANSFER_CONNECT},
+                json_params: {paths: transfer.source_list}
+              )[:data]
+              # well, we asked a TS for connect, but we actually want a generic one
+              transfer_spec.delete('authentication')
+              return Main.result_transfer(transfer.start(transfer_spec))
+            else
+              if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
+                shared_folder = lookup_name_to_id('shared_folders', m[2])
+              end
+              transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
+              # start remote transfer and get first status
+              result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)[:data]
+              result['id'] = package['id']
+              unless result['status'].eql?('completed')
+                formatter.display_status("Package #{package['id']}")
+                result = wait_package_status(package['id'])
+              end
+              return {type: :single_object, data: result}
+            end
+          when :receive
+            # prepare persistency if needed
+            skip_ids_persistency = nil
+            if options.get_option(:once_only, is_type: :mandatory)
+              # read ids from persistency
+              skip_ids_persistency = PersistencyActionOnce.new(
+                manager: @agents[:persistency],
+                data:    [],
+                id:      IdGenerator.from_list([
+                  'faspex_recv',
+                  options.get_option(:url, is_type: :mandatory),
+                  options.get_option(:username, is_type: :mandatory),
+                  PACKAGE_TYPE_RECEIVED]))
+            end
+            # one or several packages
+            package_ids = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
+            package_ids ||= instance_identifier
+            case package_ids
+            when PACKAGE_ALL_INIT
+              raise 'Only with option once_only' unless skip_ids_persistency
+              skip_ids_persistency.data.clear.concat(list_packages.map{|p|p['id']})
+              skip_ids_persistency.save
+              return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+            when VAL_ALL
+              # TODO: if packages have same name, they will overwrite ?
+              package_ids = list_packages.map{|p|p['id']}
+              Log.dump(:package_ids, package_ids)
+              Log.dump(:package_ids, skip_ids_persistency.data)
+              package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
+              Log.dump(:package_ids, package_ids)
+            end
+            # a single id was provided
+            # TODO: check package_ids is a list of strings
+            package_ids = [package_ids] if package_ids.is_a?(String)
+            result_transfer = []
+            package_ids.each do |pkg_id|
+              formatter.display_status("Receiving package #{pkg_id}")
+              param_file_list = {}
+              begin
+                param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
+              rescue Aspera::Cli::CliBadArgument
+                # paths is optional
+              end
+              # TODO: allow from sent as well ?
+              transfer_spec = @api_v5.call(
+                operation:   'POST',
+                subpath:     "packages/#{pkg_id}/transfer_spec/download",
+                headers:     {'Accept' => 'application/json'},
+                url_params:  {transfer_type: TRANSFER_CONNECT, type: PACKAGE_TYPE_RECEIVED},
+                json_params: param_file_list
+              )[:data]
+              # delete flag for Connect Client
+              transfer_spec.delete('authentication')
+              statuses = transfer.start(transfer_spec)
+              result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
+              # skip only if all sessions completed
+              if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
+                skip_ids_persistency.data.push(pkg_id)
+                skip_ids_persistency.save
+              end
+            end
+            return Main.result_transfer_multiple(result_transfer)
+          end # case package
+        end
+
         ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing].freeze
 
         def execute_action
@@ -259,148 +398,19 @@ module Aspera
           when :bearer_token
             return {type: :text, data: @api_v5.oauth_token}
           when :packages
-            command = options.get_next_command(%i[list show browse status delete send receive])
-            case command
-            when :list
-              return {
-                type:   :object_list,
-                data:   list_packages,
-                fields: %w[id title release_date total_bytes total_files created_time state]
-              }
-            when :show
-              id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-              id ||= instance_identifier
-              return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
-            when :browse
-              id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-              id ||= instance_identifier
-              path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
-              # TODO: support multi-page listing ?
-              params = {
-                # recipient_user_id: 25,
-                # offset:            0,
-                # limit:             25
-              }
-              result = @api_v5.call({
-                operation:   'POST',
-                subpath:     "packages/#{id}/files/received",
-                headers:     {'Accept' => 'application/json'},
-                url_params:  params,
-                json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
-              formatter.display_item_count(result['item_count'], result['total_count'])
-              return {type: :object_list, data: result['items']}
-            when :status
-              status = wait_package_status(instance_identifier)
-              return {type: :single_object, data: status}
-            when :delete
-              ids = instance_identifier
-              ids = [ids] unless ids.is_a?(Array)
-              raise 'Package identifier must be a single id or an Array' unless ids.is_a?(Array) && ids.all?(String)
-              # API returns 204, empty on success
-              @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
-              return Main.result_status('Package(s) deleted')
-            when :send
-              parameters = options.get_option(:value, is_type: :mandatory)
-              raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
-              normalize_recipients(parameters)
-              package = @api_v5.create('packages', parameters)[:data]
-              shared_folder = options.get_option(:shared_folder)
-              if shared_folder.nil?
-                # TODO: option to send from remote source or httpgw
-                transfer_spec = @api_v5.call(
-                  operation:   'POST',
-                  subpath:     "packages/#{package['id']}/transfer_spec/upload",
-                  headers:     {'Accept' => 'application/json'},
-                  url_params:  {transfer_type: TRANSFER_CONNECT},
-                  json_params: {paths: transfer.source_list}
-                )[:data]
-                # well, we asked a TS for connect, but we actually want a generic one
-                transfer_spec.delete('authentication')
-                return Main.result_transfer(transfer.start(transfer_spec))
-              else
-                if !shared_folder.to_i.to_s.eql?(shared_folder)
-                  shared_folder = lookup_name_to_id('shared_folders', shared_folder)
-                end
-                transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
-                # start remote transfer and get first status
-                result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)[:data]
-                result['id'] = package['id']
-                unless result['status'].eql?('completed')
-                  formatter.display_status("Package #{package['id']}")
-                  result = wait_package_status(package['id'])
-                end
-                return {type: :single_object, data: result}
-              end
-            when :receive
-              # prepare persistency if needed
-              skip_ids_persistency = nil
-              if options.get_option(:once_only, is_type: :mandatory)
-                # read ids from persistency
-                skip_ids_persistency = PersistencyActionOnce.new(
-                  manager: @agents[:persistency],
-                  data:    [],
-                  id:      IdGenerator.from_list([
-                    'faspex_recv',
-                    options.get_option(:url, is_type: :mandatory),
-                    options.get_option(:username, is_type: :mandatory),
-                    PACKAGE_TYPE_RECEIVED]))
-              end
-              # one or several packages
-              package_ids = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-              package_ids ||= instance_identifier
-              case package_ids
-              when PACKAGE_ALL_INIT
-                raise 'Only with option once_only' unless skip_ids_persistency
-                skip_ids_persistency.data.clear.concat(list_packages.map{|p|p['id']})
-                skip_ids_persistency.save
-                return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-              when VAL_ALL
-                # TODO: if packages have same name, they will overwrite ?
-                package_ids = list_packages.map{|p|p['id']}
-                Log.dump(:package_ids, package_ids)
-                Log.dump(:package_ids, skip_ids_persistency.data)
-                package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
-                Log.dump(:package_ids, package_ids)
-              end
-              # a single id was provided
-              # TODO: check package_ids is a list of strings
-              package_ids = [package_ids] if package_ids.is_a?(String)
-              result_transfer = []
-              package_ids.each do |pkg_id|
-                formatter.display_status("Receiving package #{pkg_id}")
-                param_file_list = {}
-                begin
-                  param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
-                rescue Aspera::Cli::CliBadArgument
-                  # paths is optional
-                end
-                # TODO: allow from sent as well ?
-                transfer_spec = @api_v5.call(
-                  operation:   'POST',
-                  subpath:     "packages/#{pkg_id}/transfer_spec/download",
-                  headers:     {'Accept' => 'application/json'},
-                  url_params:  {transfer_type: TRANSFER_CONNECT, type: PACKAGE_TYPE_RECEIVED},
-                  json_params: param_file_list
-                )[:data]
-                # delete flag for Connect Client
-                transfer_spec.delete('authentication')
-                statuses = transfer.start(transfer_spec)
-                result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
-                # skip only if all sessions completed
-                if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
-                  skip_ids_persistency.data.push(pkg_id)
-                  skip_ids_persistency.save
-                end
-              end
-              return Main.result_transfer_multiple(result_transfer)
-            end # case package
+            return package_action
           when :shared_folders
             all_shared_folders = @api_v5.read('shared_folders')[:data]['shared_folders']
             case options.get_next_command(%i[list browse])
             when :list
               return {type: :object_list, data: all_shared_folders}
             when :browse
-              shared_folder_id = instance_identifier
+              shared_folder_id = instance_identifier do |field, value|
+                matches = all_shared_folders.select{|i|i[field].eql?(value)}
+                raise "no match for #{field} = #{value}" if matches.empty?
+                raise "multiple matches for #{field} = #{value}" if matches.length > 1
+                matches.first['id']
+              end
               path = options.get_next_argument('folder path', mandatory: false) || '/'
               node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
               raise "No such shared folder id #{shared_folder_id}" if node.nil?
