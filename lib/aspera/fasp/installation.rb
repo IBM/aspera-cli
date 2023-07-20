@@ -145,12 +145,7 @@ module Aspera
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
         when :aspera_license
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
-            clear = [
-              Zlib::Inflate.inflate(DataRepository.instance.data(6)),
-              "==SIGNATURE==\n",
-              Base64.strict_encode64(DataRepository.instance.data(7))
-            ]
-            Base64.strict_encode64(clear.join)
+            Zlib::Inflate.inflate(DataRepository.instance.data(6))
           end
         when :aspera_conf
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
