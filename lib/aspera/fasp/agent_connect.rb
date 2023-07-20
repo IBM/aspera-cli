@@ -9,7 +9,9 @@ require 'tty-spinner'
 module Aspera
   module Fasp
     class AgentConnect < Aspera::Fasp::AgentBase
+      # try twice the main init url in sequence
       CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/']
+      # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 3
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(_options)
@@ -106,6 +108,9 @@ module Aspera
               when 'failed'
                 spinner&.error
                 raise Fasp::Error, transfer['error_desc']
+              when 'cancelled'
+                spinner&.error
+                raise Fasp::Error, 'Transfer cancelled by user'
               else
                 raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
