@@ -1036,18 +1036,24 @@ module Aspera
 
         # @return email server setting with defaults if not defined
         def email_settings
-          smtp = options.get_option(:smtp, is_type: :mandatory)
+          smtp = options.get_option(:smtp, is_type: :mandatory, allowed_types: [Hash])
           # change string keys into symbol keys
-          smtp = smtp.keys.each_with_object({}){|v, m|m[v.to_sym] = smtp[v]; }
+          smtp = smtp.symbolize_keys
           # defaults
-          smtp[:tls] ||= true
-          smtp[:port] ||= smtp[:tls] ? 587 : 25
+          smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
+          smtp[:port] ||= if smtp[:tls]
+            587
+          elsif smtp[:ssl]
+            465
+          else
+            25
+          end
           smtp[:from_email] ||= smtp[:username] if smtp.key?(:username)
           smtp[:from_name] ||= smtp[:from_email].gsub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
           smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/, '') if smtp.key?(:from_email)
           # check minimum required
           %i[server port domain].each do |n|
-            raise "Missing smtp parameter: #{n}" unless smtp.key?(n)
+            raise "Missing mandatory smtp parameter: #{n}" unless smtp.key?(n)
           end
           Log.log.debug{"smtp=#{smtp}"}
           return smtp
@@ -1081,6 +1087,7 @@ module Aspera
           Log.dump(:msg_with_headers, msg_with_headers)
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
           smtp.enable_starttls if mail_conf[:tls]
+          smtp.enable_tls if mail_conf[:ssl]
           smtp.start(*start_options) do |smtp_session|
             smtp_session.send_message(msg_with_headers, values[:from_email], values[:to])
           end

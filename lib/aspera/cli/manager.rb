@@ -233,9 +233,10 @@ module Aspera
       end
 
       # Get an option value by name
-      # either return value or call handler, can return nil
+      # either return value or calls handler, can return nil
       # ask interactively if requested/required
-      def get_option(option_symbol, is_type: :optional)
+      # @param is_type :mandatory or :optional
+      def get_option(option_symbol, is_type: :optional, allowed_types: nil)
         result = nil
         if @declared_options.key?(option_symbol)
           case @declared_options[option_symbol][:type]
@@ -265,6 +266,7 @@ module Aspera
             set_option(option_symbol, result, 'interactive')
           end
         end
+        raise "option #{option_symbol} is #{result.class} but must be one of #{allowed_types}" unless allowed_types.nil? || allowed_types.any?{|t|result.is_a?(t)}
         return result
       end
 

@@ -4883,7 +4883,6 @@ ascli faspex5 shared_folders list
 ascli faspex5 shared_folders br %name:partages /folder
 ```
 
-
 ```bash
 ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
@@ -5657,8 +5656,9 @@ The `smtp` option is a hash table (extended value) with the following fields:
 | field        | default             | example                    | description                      |
 |--------------|---------------------|----------------------------|----------------------------------|
 | `server`     | -                   | smtp.gmail.com             | SMTP server address              |
-| `tls`        | true                | false                      | use of TLS                       |
-| `port`       | TLS: 587<br/>25     | 587                        | port for service                 |
+| `tls`        | true                | true                       | enable STARTTLS (port 587)       |
+| `ssl`        | false               | false                      | enable TLS (port 465)            |
+| `port`       | 587 or 465 or 25    | 587                        | port for service                 |
 | `domain`     | domain of server    | gmail.com                  | email domain of user             |
 | `username`   | -                   | john@example.com           | user to authenticate on SMTP server, leave empty for open auth. |
 | `password`   | -                   | my_password_here           | password for above username      |

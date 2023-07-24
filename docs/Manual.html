@@ -6728,40 +6728,46 @@ the following fields:</p>
 <tr class="even">
 <td><code>tls</code></td>
 <td>true</td>
-<td>false</td>
-<td>use of TLS</td>
+<td>true</td>
+<td>enable STARTTLS (port 587)</td>
 </tr>
 <tr class="odd">
+<td><code>ssl</code></td>
+<td>false</td>
+<td>false</td>
+<td>enable TLS (port 465)</td>
+</tr>
+<tr class="even">
 <td><code>port</code></td>
-<td>TLS: 587<br/>25</td>
+<td>587 or 465 or 25</td>
 <td>587</td>
 <td>port for service</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>domain</code></td>
 <td>domain of server</td>
 <td>gmail.com</td>
 <td>email domain of user</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>username</code></td>
 <td>-</td>
 <td>john@example.com</td>
 <td>user to authenticate on SMTP server, leave empty for open auth.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>password</code></td>
 <td>-</td>
 <td>my_password_here</td>
 <td>password for above username</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>from_email</code></td>
 <td>username if defined</td>
 <td>johnny@example.com</td>
 <td>address used if receiver replies</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>from_name</code></td>
 <td>same as email</td>
 <td>John Wayne</td>
