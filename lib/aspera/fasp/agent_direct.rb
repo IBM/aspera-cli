@@ -86,8 +86,8 @@ module Aspera
 
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(transfer_spec['http_fallback'])
-          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_key))
-          env_args[:args].unshift('-I', Installation.instance.path(:fallback_cert))
+          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_cert_privkey))
+          env_args[:args].unshift('-I', Installation.instance.path(:fallback_certificate))
         end
 
         env_args[:args].unshift('-q') if @options[:quiet]

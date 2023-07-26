@@ -126,7 +126,7 @@ module Aspera
       end
 
       # all ascp files (in SDK)
-      FILES = %i[ascp ascp4 ssh_bypass_key_dsa ssh_bypass_key_rsa aspera_license aspera_conf fallback_cert fallback_key].freeze
+      FILES = %i[ascp ascp4 ssh_bypass_dsa_privkey ssh_bypass_rsa_privkey aspera_license aspera_conf fallback_certificate fallback_cert_privkey].freeze
 
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independent)
@@ -139,9 +139,9 @@ module Aspera
           file = file.gsub('ascp', 'ascp4') if k.eql?(:ascp4)
         when :transferd
           file = transferd_filepath
-        when :ssh_bypass_key_dsa
+        when :ssh_bypass_dsa_privkey
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_dsa.pem')) {get_key('dsa', 1)}
-        when :ssh_bypass_key_rsa
+        when :ssh_bypass_rsa_privkey
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
         when :aspera_license
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
@@ -149,8 +149,8 @@ module Aspera
           end
         when :aspera_conf
           file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
-        when :fallback_cert, :fallback_key
-          file_key = File.join(sdk_folder, 'aspera_fallback_key.pem')
+        when :fallback_certificate, :fallback_cert_privkey
+          file_key = File.join(sdk_folder, 'aspera_fallback_cert_private_key.pem')
           file_cert = File.join(sdk_folder, 'aspera_fallback_cert.pem')
           if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
@@ -167,7 +167,7 @@ module Aspera
             Environment.write_file_restricted(file_key, force: true) {private_key.to_pem}
             Environment.write_file_restricted(file_cert, force: true) {cert.to_pem}
           end
-          file = k.eql?(:fallback_cert) ? file_cert : file_key
+          file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else
           raise "INTERNAL ERROR: #{k}"
         end
@@ -201,7 +201,7 @@ module Aspera
       end
 
       def bypass_keys
-        return %i[ssh_bypass_key_dsa ssh_bypass_key_rsa].map{|i|Installation.instance.path(i)}
+        return %i[ssh_bypass_dsa_privkey ssh_bypass_rsa_privkey].map{|i|Installation.instance.path(i)}
       end
 
       # use in plugin `config`

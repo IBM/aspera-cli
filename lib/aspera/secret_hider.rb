@@ -12,6 +12,7 @@ module Aspera
     # keys in hash that contain secrets
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS].flatten.freeze
+    FALSE_POSITIVES = [/^access_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # CLI manager get/set options
@@ -48,7 +49,11 @@ module Aspera
       def secret?(keyword, value)
         keyword = keyword.to_s if keyword.is_a?(Symbol)
         # only Strings can be secrets, not booleans, or hash, arrays
-        keyword.is_a?(String) && ALL_SECRETS.any?{|kw|keyword.include?(kw)} && value.is_a?(String)
+        return false unless keyword.is_a?(String) && value.is_a?(String)
+        # those are not secrets
+        return false if FALSE_POSITIVES.any?{|f|f.match?(keyword)}
+        # check if keyword (name) contains an element that designate it as a secret
+        ALL_SECRETS.any?{|kw|keyword.include?(kw)}
       end
 
       def deep_remove_secret(obj, is_name_value: false)
