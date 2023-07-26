@@ -35,6 +35,8 @@ module Aspera
         SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
         ACTIONS = %i[health repository admin].freeze
+        # common to users and groups
+        USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
@@ -72,7 +74,9 @@ module Aspera
               case entities_location
               when :any
                 entities_path = "data/#{entity_type}s"
-                entity_action = %i[list show delete share_permissions app_authorizations].freeze
+                entity_action = %i[list show delete].freeze
+                entity_action = [*entity_action, *USR_GRP_SETTINGS].freeze
+                entity_action = [*entity_action, 'users'].freeze if entity_type.eql?(:group)
               when :local
                 entity_action = %i[list show create modify delete].freeze
               when :ldap
@@ -80,28 +84,13 @@ module Aspera
               when :saml
                 entity_action = %i[import].freeze
               end
-              entity_command = options.get_next_command(entity_action)
-              entity_path = "#{entities_path}/#{instance_identifier}" if %i[app_authorizations share_permissions].include?(entity_command)
-              case entity_command
+              entity_verb = options.get_next_command(entity_action)
+              # entity_path = "#{entities_path}/#{instance_identifier}" if %i[app_authorizations share_permissions].include?(entity_verb)
+              case entity_verb
               when :list, :show, :create, :delete, :modify
                 display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:any)
-                return entity_command(entity_command, api_shares_admin, entities_path, display_fields: display_fields)
-              when :app_authorizations
-                case options.get_next_command(%i[modify show])
-                when :show
-                  return {type: :single_object, data: api_shares_admin.read("#{entity_path}/app_authorizations")[:data]}
-                when :modify
-                  parameters = options.get_option(:value, is_type: :mandatory)
-                  return {type: :single_object, data: api_shares_admin.update("#{entity_path}/app_authorizations", parameters)[:data]}
-                end
-              when :share_permissions
-                case options.get_next_command(%i[list show])
-                when :list
-                  return {type: :object_list, data: api_shares_admin.read("#{entity_path}/share_permissions")[:data]}
-                when :show
-                  return {type: :single_object, data: api_shares_admin.read("#{entity_path}/share_permissions/#{instance_identifier}")[:data]}
-                end
+                return entity_command(entity_verb, api_shares_admin, entities_path, display_fields: display_fields)
               when :import
                 parameters = options.get_option(:value, is_type: :mandatory)
                 return do_bulk_operation(parameters, 'created') do |entity_parameters|
@@ -119,6 +108,10 @@ module Aspera
                   raise "expecting string (name), have #{entity_name.class}" unless entity_name.is_a?(String)
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
                 end
+              when *USR_GRP_SETTINGS
+                group_id = instance_identifier
+                entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
+                return entity_action(api_shares_admin, entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
               end
             when :share
               share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))

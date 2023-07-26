@@ -737,7 +737,7 @@ Example: The shell parses three arguments (as strings: `1`, `2` and `3`), so the
 ERROR: Argument: unprocessed values: ["2", "3"]
 ```
 
-`config echo` displays the value of the first argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
+`config echo` displays the value of the **first** argument using Ruby syntax: it surrounds a string with `"` and add `\` before special characters.
 
 > **Note:** It gets its value after shell command line parsing and <%=tool%> extended value parsing.
 
@@ -765,7 +765,7 @@ Hello World
 To be evaluated by shell, the shell variable must not be in single quotes.
 Even if the variable contains spaces it makes only one argument to <%=tool%> because word parsing is made before variable expansion by shell.
 
-> **Note:** we use a simple variable here: the variable is not necessarily an environment variable.
+> **Note:** we use a shell variable here: the variable is not necessarily an environment variable (`export`).
 
 ```bash
 MYVAR="Hello World"
@@ -847,6 +847,22 @@ If <%=tool%> is used interactively (a user typing on terminal), it is easy to re
 ```
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
+
+#### command line arguments from a file
+
+If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
+
+```bash
+xargs -a lines.txt -d \\n <%=cmd%> conf echo
+```
+
+This is equivalent to execution of:
+
+```bash
+<%=cmd%> conf echo [line1] [line2] [line3] ...
+```
+
+If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
 
 #### Extended value using special characters read from environmental variables or files
 
@@ -1343,7 +1359,7 @@ Some options are global, some options are available only for some plugins. (the 
 
 Options are loaded using this algorithm:
 
-- If option `--no-default` (or `-N`) is specified, then no default value is loaded is loaded for the plugin
+- If option `--no-default` (or `-N`) is specified, then no default value is loaded for the plugin
 - else it looks for the name of the plugin as key in section `default`, the value is the name of the default <%=prst%> for it, and loads it.
 - If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the <%=prst%> specified from the configuration file, or of the value is a Hash, it uses it as options values.
 - Environment variables are evaluated

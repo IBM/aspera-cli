@@ -101,9 +101,12 @@ module Aspera
       # @param id_default [String] default identifier to use for existing entity commands (show, modify)
       # @param item_list_key [String] result is in a sub key of the json
       # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
+      # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false)
-        if INSTANCE_OPS.include?(command)
+      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false, is_singleton: false)
+        if is_singleton
+          one_res_path = res_class_path
+        elsif INSTANCE_OPS.include?(command)
           begin
             one_res_id = instance_identifier
           rescue StandardError => e
@@ -123,11 +126,13 @@ module Aspera
         end
         case command
         when :create
+          raise 'cannot create singleton' if is_singleton
           return do_bulk_operation(parameters, 'created', fields: display_fields) do |params|
             raise 'expecting Hash' unless params.is_a?(Hash)
             rest_api.create(res_class_path, params)[:data]
           end
         when :delete
+          raise 'cannot delete singleton' if is_singleton
           return do_bulk_operation(one_res_id, 'deleted') do |one_id|
             rest_api.delete("#{res_class_path}/#{one_id}", parameters)
             {'id' => one_id}
