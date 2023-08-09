@@ -695,9 +695,9 @@ module Aspera
               raise 'error'
             end
           when :transfer
-            command = options.get_next_command(%i[list cancel show])
+            command = options.get_next_command(%i[list cancel show modify])
             res_class_path = 'ops/transfers'
-            if %i[cancel show].include?(command)
+            if %i[cancel show modify].include?(command)
               one_res_id = instance_identifier
               one_res_path = "#{res_class_path}/#{one_res_id}"
             end
@@ -717,6 +717,9 @@ module Aspera
               return { type: :other_struct, data: resp[:data] }
             when :show
               resp = @api_node.read(one_res_path)
+              return { type: :other_struct, data: resp[:data] }
+            when :modify
+              resp = @api_node.update(one_res_path, options.get_next_argument('update value', type: Hash))
               return { type: :other_struct, data: resp[:data] }
             else
               raise 'error'
