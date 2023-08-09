@@ -32,7 +32,9 @@ module Aspera
               suffix_length = -2 - API_DETECT.length
               return {
                 version: result[:http]['x-ibm-aspera'] || '5',
-                url:     result[:http].uri.to_s[0..suffix_length]}
+                url:     result[:http].uri.to_s[0..suffix_length],
+                name:    'Faspex 5'
+              }
             end
             return nil
           end
@@ -500,6 +502,36 @@ module Aspera
             return Main.result_status('Gateway terminated')
           end # case command
         end # action
+
+        def wizard(params)
+          if params[:prepare]
+            # if not defined by user, generate unique name
+            params[:preset_name] ||= [params[:plugin_sym]].concat(URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/, '').split('.')).join('_')
+            params[:need_private_key] = true
+            return
+          end
+          formatter.display_status('Ask the ascli client id and secret to your Administrator, or ask them to go to:'.red)
+          OpenApplication.instance.uri(params[:instance_url])
+          formatter.display_status('Then: 𓃑  → Admin → Configurations → API clients')
+          formatter.display_status('Create an API client with:')
+          formatter.display_status('- name: ascli')
+          formatter.display_status('- JWT: enabled')
+          formatter.display_status('Then, logged in as user go to your profile:')
+          formatter.display_status('👤 → Account Settings → Preferences -> Public Key in PEM:')
+          formatter.display_status(params[:pub_key_pem])
+          formatter.display_status('Once set, fill in the parameters:')
+          return {
+            preset_value: {
+              url:           params[:instance_url],
+              username:      options.get_option(:username, is_type: :mandatory),
+              auth:          :jwt.to_s,
+              private_key:   '@file:' + params[:private_key_path],
+              client_id:     options.get_option(:client_id, is_type: :mandatory),
+              client_secret: options.get_option(:client_secret, is_type: :mandatory)
+            },
+            test_args:    "#{params[:plugin_sym]} user profile show"
+          }
+        end
       end # Faspex5
     end # Plugins
   end # Cli
