@@ -1027,6 +1027,16 @@ Table output can be filtered using the `select` parameter. Example:
 
 > **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
+#### entity identifier
+
+When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command: e.g. `<%=cmd%> aoc admin res user show 1234` where `1234` is the user identifier.
+
+> **Note:** The legacy option `id` is deprecated: `--id=1234` as it does not provide the possibility to have sub-entities.
+
+Only some commands provide the following capability: If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin res user show %name:john` where `john` is the user name.
+
+Syntax: `%<field>:<value>`
+
 #### Verbosity of output
 
 Output messages are categorized in 3 types:
@@ -2170,7 +2180,7 @@ Parameters provided in option `transfer_info` are:
 Example:
 
 ```bash
-<%=cmd%> faspex package recv --id=323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
+<%=cmd%> faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
 ```
 
 > **Note:** The gateway only supports transfers authorized with a token.
@@ -2952,7 +2962,7 @@ To execute an action on a specific resource, select it using one of those method
 
 - *recommended*: give id directly on command line *after the action*: `aoc admin res node show 123`
 - give name on command line *after the action*: `aoc admin res node show name abc`
-- provide option `id` : `aoc admin res node show --id=123`
+- provide option `id` : `aoc admin res node show 123`
 - provide option `name` : `aoc admin res node show --name=abc`
 
 #### <a id="res_create"></a>Creating a resource
@@ -3007,7 +3017,7 @@ The secret is provided using the `secret` option.
 For example in a command like:
 
 ```bash
-<%=cmd%> aoc admin res node --id=123 --secret="my_secret_here" v3 info
+<%=cmd%> aoc admin res node 123 --secret="my_secret_here" v3 info
 ```
 
 It is also possible to store secrets in the [secret vault](#vault) and then automatically find the related secret using the [config finder](#config_finder).
@@ -3108,7 +3118,7 @@ echo $thelist
 ```
 
 ```bash
-<%=cmd%> aoc admin res user --bulk=yes --id=@json:"$thelist" delete
+<%=cmd%> aoc admin res user delete @json:"$thelist" --bulk=yes
 ```
 
 ```output
@@ -3353,7 +3363,7 @@ jfqslfdjlfdjfhdjklqfhdkl
 #### Example: delete all registration keys
 
 ```bash
-<%=cmd%> aoc admin res client list --fields=id --format=csv|<%=cmd%> aoc admin res client delete --bulk=yes --id=@lines:@stdin:
+<%=cmd%> aoc admin res client list --fields=id --format=csv|<%=cmd%> aoc admin res client delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
@@ -3534,10 +3544,10 @@ Let's send a package with the file `10M.dat` from subfolder /src_folder in a pac
 It is possible to automatically download new packages, like using Aspera Cargo:
 
 ```bash
-<%=cmd%> aoc packages recv --id=ALL --once-only=yes --lock-port=12345
+<%=cmd%> aoc packages recv ALL --once-only=yes --lock-port=12345
 ```
 
-- `--id=ALL` (case sensitive) will download all packages
+- `ALL` (case sensitive) will download all packages
 - `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
 - `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
 
@@ -3588,24 +3598,6 @@ The pseudo parameter `link_name` allows changing default "shared as" name.
 
 ```bash
 <%=cmd%> aoc files file --path=/shared_folder_test1 perm delete 6161
-```
-
-- List shared folders in node
-
-```bash
-<%=cmd%> aoc admin res node --id=8669 shared_folders
-```
-
-- List shared folders in workspace
-
-```bash
-<%=cmd%> aoc admin res workspace --id=10818 shared_folders
-```
-
-- List members of shared folder
-
-```bash
-<%=cmd%> aoc admin res node --id=8669 v4 perm 82 show
 ```
 
 #### Cross Organization transfers
@@ -4274,7 +4266,7 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 <%=cmd%> faspex5 packages send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
-> **Note:** The shared folder can be identified by its numerical `id` using selector: `%<field>:<value>`. e.g. `--shared-folder=3`
+> **Note:** The shared folder can be identified by its numerical `id` using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
 ### Faspex5: receive all packages (cargo)
 
@@ -4393,7 +4385,7 @@ The command is `package recv`, possible methods are:
 - provide a `faspe:` URI with option `link`
 
 ```bash
-<%=cmd%> faspex package recv --id=12345
+<%=cmd%> faspex package recv 12345
 <%=cmd%> faspex package recv --link=faspe://...
 ```
 
@@ -4444,7 +4436,7 @@ Example:
 ```bash
 <%=cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
 <%=cmd%> faspex v4 dropbox list
-<%=cmd%> faspex v4 dropbox delete --id=36
+<%=cmd%> faspex v4 dropbox delete 36
 ```
 
 ### Remote sources
@@ -4482,7 +4474,7 @@ It is possible to tell <%=tool%> to download newly received packages, much like 
 cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on Cloud plugin:
 
 ```bash
-<%=cmd%> faspex packages recv --id=ALL --once-only=yes --lock-port=12345
+<%=cmd%> faspex packages recv ALL --once-only=yes --lock-port=12345
 ```
 
 ### Faspex 4 sample commands

@@ -4,7 +4,8 @@
 
   * new: server: option `passphrase` for simpler command line (#114)
   * fix: option `ts`: deep add and remove of keys. (#117)
-  * new: add % selector for entities
+  * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
+  * new: percent selector for entities identifier
 
 * 4.13.0
 
