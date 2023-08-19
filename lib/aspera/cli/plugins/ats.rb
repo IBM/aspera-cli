@@ -7,7 +7,6 @@ module Aspera
   module Cli
     module Plugins
       # Access Aspera Transfer Service
-      # https://52.44.83.163/docs/
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Aspera::Cli::Plugin
         def initialize(env)
