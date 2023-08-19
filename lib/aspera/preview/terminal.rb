@@ -10,18 +10,21 @@ module Aspera
       # quantum depth is 8 or 16: convert xc: -format "%q" info:
       # Rainbow only supports 8-bit colors
       SHIFT_FOR_8_BIT = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
-      private_constant :SHIFT_FOR_8_BIT
+      ITERM_NAMES = %w[iTerm WezTerm mintty].freeze
+      TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
+      private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS
       class << self
         def build(blob, reserved_lines: 0, double_precision: true)
+          return iterm_display_image(blob) if iterm_supported?
+          image = Magick::ImageList.new.from_blob(blob)
+          (term_rows, term_columns) = IO.console.winsize
+          term_rows -= reserved_lines
+          # compute scaling to fit terminal
+          fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
           # TODO: retrieve terminal font ratio using some termcap ?
           font_ratio = 1.7
           height_ratio = double_precision ? 2.0 : 1.0
-          (term_rows, term_columns) = IO.console.winsize
-          term_rows -= reserved_lines
-          image = Magick::ImageList.new.from_blob(blob)
-          # compute scaling to fit terminal
-          chosen_factor = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
-          image = image.scale((image.columns * chosen_factor * font_ratio).to_i, (image.rows * chosen_factor * height_ratio).to_i)
+          image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
           # get all pixel colors, adjusted for Rainbow
           pixel_colors = []
           image.each_pixel do |pixel, col, row|
@@ -46,7 +49,28 @@ module Aspera
           end
           return text_pixels.join
         end
-    end # class << self
+
+        # https://iterm2.com/documentation-images.html
+        def iterm_display_image(blob)
+          image = Magick::ImageList.new.from_blob(blob)
+          arguments = {
+            inline:              1,
+            preserveAspectRatio: 1,
+            size:                blob.length
+            # width:               image.columns,
+            # height:              image.rows
+          }.map { |k, v| "#{k}=#{v}" }.join(';')
+          # https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
+          return "\e]1337;File=#{arguments}:#{Base64.encode64(blob)}\a"
+        end
+
+        def iterm_supported?
+          TERM_ENV_VARS.each do |env_var|
+            return true if ITERM_NAMES.any? { |term| ENV[env_var]&.include?(term) }
+          end
+          false
+        end
+      end # class << self
     end # class Terminal
   end # module Preview
 end # module Aspera
