@@ -413,7 +413,7 @@ module Aspera
             case command_perm
             when :list
               # generic options : TODO: as arg ? option_url_query
-              list_options ||= {'include' => [Rest::ARRAY_PARAMS, 'access_level', 'permission_count']}
+              list_options ||= {'include' => Rest.array_params(%w[access_level permission_count])}
               # add which one to get
               list_options['file_id'] = apifid[:file_id]
               list_options['inherited'] ||= false

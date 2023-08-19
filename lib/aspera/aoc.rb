@@ -67,8 +67,6 @@ module Aspera
     FILES_APP = 'files'
     PACKAGES_APP = 'packages'
     API_V1 = 'api/v1'
-    # error message when entity not found
-    ENTITY_NOT_FOUND = 'No such'
 
     # class static methods
     class << self
@@ -298,28 +296,6 @@ module Aspera
       return Node.new(params: node_rest_params, app_info: app_info)
     end
 
-    # Query entity type by name and returns the id if a single entry only
-    # @param entity_type path of entity in API
-    # @param entity_name name of searched entity
-    # @param options additional search options
-    def lookup_entity_by_name(entity_type, entity_name, options={})
-      # returns entities whose name contains value (case insensitive)
-      matching_items = read(entity_type, options.merge({'q' => CGI.escape(entity_name)}))[:data]
-      case matching_items.length
-      when 1 then return matching_items.first
-      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{entity_type}: "#{entity_name}"}
-      else
-        # multiple case insensitive partial matches, try case insensitive full match
-        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        name_matches = matching_items.select{|i|i['name'].casecmp?(entity_name)}
-        case name_matches.length
-        when 1 then return name_matches.first
-        when 0 then raise %Q(#{entity_type}: multiple case insensitive partial match for: "#{entity_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
-        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{|i|i['name']}}"
-        end
-      end
-    end
-
     # Check metadata: remove when validation is done server side
     def validate_metadata(pkg_data)
       # validate only for shared inboxes
@@ -371,7 +347,7 @@ module Aspera
           # email: user, else dropbox
           entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
           begin
-            full_recipient_info = lookup_entity_by_name(entity_type, short_recipient_info, {'current_workspace_id' => ws_id})
+            full_recipient_info = lookup_by_name(entity_type, short_recipient_info, {'current_workspace_id' => ws_id})
           rescue RuntimeError => e
             raise e unless e.message.start_with?(ENTITY_NOT_FOUND)
             # dropboxes cannot be created on the fly
@@ -524,7 +500,7 @@ module Aspera
                 'node'              => app_info[:node_info]['name']}}}}}
       create_param.deep_merge!(default_params)
       if create_param.key?('with')
-        contact_info = lookup_entity_by_name(
+        contact_info = lookup_by_name(
           'contacts',
           create_param['with'],
           {'current_workspace_id' => app_info[:workspace_id], 'context' => 'share_folder'})

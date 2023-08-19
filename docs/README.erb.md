@@ -341,13 +341,13 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 ```bash
 podman pull <%=containerimage%>
-podman save <%=containerimage%>|gzip>ascli_image_latest.tar.gz
+podman save <%=containerimage%>|gzip><%=cmd%>_image_latest.tar.gz
 ```
 
 - Then, on air-gapped system:
 
 ```bash
-podman load -i ascli_image_latest.tar.gz
+podman load -i <%=cmd%>_image_latest.tar.gz
 ```
 
 ### <a id="ruby"></a>Ruby
@@ -1910,7 +1910,7 @@ Locally installed Aspera products can be listed with:
 +---------------------------------------+----------------------------------------+
 | name                                  | app_root                               |
 +---------------------------------------+----------------------------------------+
-| IBM Aspera SDK                        | /Users/laurent/.aspera/ascli/sdk       |
+| IBM Aspera SDK                        | /Users/laurent/.aspera/<%=cmd%>/sdk       |
 | Aspera Connect                        | /Applications/Aspera Connect.app       |
 | IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
 | IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
@@ -2081,7 +2081,7 @@ asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```
 
-But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli conf ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
+But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `<%=cmd%> conf ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
 
 ```xml
 <?xml version='1.0' encoding='UTF-8'?>
@@ -3501,7 +3501,7 @@ shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show name 'My Shared Inbox'
 #### Example: Receive all packages from a given shared inbox
 
 ```bash
-ascli aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+<%=cmd%> aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 ```
 
 #### Example: Send a package with files from the Files app
@@ -4047,13 +4047,13 @@ gem install rmagick rainbow
 For example it is possible to display the preview of a file, if it exists, using:
 
 ```bash
-ascli aoc files file thumbnail --path=/preview_samples/Aspera.mpg
+<%=cmd%> aoc files file thumbnail --path=/preview_samples/Aspera.mpg
 ```
 
 Using direct node access and an access key , one can do:
 
 ```bash
-ascli node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
+<%=cmd%> node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
 ```
 
 ### Create access key
@@ -4090,7 +4090,7 @@ Activation is in two steps:
   This operation is generally done only once:
 
   - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
-  - Give a name, like `ascli`
+  - Give a name, like `<%=cmd%>`
   - Activate JWT
   - There is an option to set a general public key allowing the owner of the private key to impersonate any user. Unless you want to do this, leave this field empty.
   - Click on `Create` Button
@@ -4164,18 +4164,6 @@ Use this token as password and use `--auth=boot`.
 <%=cmd%> conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
-### Faspex 5 packages
-
-The `value` option provided to command `faspex5 package send` is the same as for the Faspex 5 API: `POST /packages`.
-
-In addition, <%=tool%> adds some convenience: the field `recipients` is normally an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
-Then <%=tool%> will lookup existing contacts, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly.
-
-> **Note:** The lookup is case insensitive and on partial matches.
-
-On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
-If the value `ALL` is provided to option `box`, then all packages are selected.
-
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
@@ -4188,47 +4176,83 @@ One can conveniently use the JSON format with prefix `@json:`.
 <%=include_commands_for_plugin('faspex5')%>
 ```
 
-Other examples:
+### Faspex 5: Send a package
 
-- list packages
+The `value` option provided to command `faspex5 packages send` is the same as for the Faspex 5 API: `POST /packages`.
 
-  The following parameters in option `value` are supported:
+The minimum is to provide the `title` and `recipients` fields:
 
-  - `q` : a filter on name (case insensitive, matches if value is contained in name)
-  - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
-  - `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
-  - `offset` : native api parameter, in general do not use (added by <%=tool%>)
-  - `limit` : native api parameter, number of items par api call, in general do not use (added by <%=tool%>)
+```bash
+--value=@json:'{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}'
+```
 
-- Send a package with metadata
+`recipient_type` is one of (Refer to API):
+
+- user
+- workgroup
+- external_user
+- distribution_list
+- shared_inbox
+
+<%=tool%> adds some convenience: The API expects the field `recipients` to be an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
+Then <%=tool%> will lookup existing contacts among all possible types, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly. Else an exception is sent.
+
+> **Note:** The lookup is case insensitive and on partial matches.
+
+```json
+{"title":"some title","recipients":["user@example.com"]}
+```
+
+If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an Array of values (from the list above). e.g. :
+
+```json
+{"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
+```
+
+### Faspex 5: Receive a package
+
+On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
+If the value `ALL` is provided to option `box`, then all packages are selected.
+
+### Faspex5: List packages
+
+The following parameters in option `value` are supported:
+
+- `q` : a filter on name (case insensitive, matches if value is contained in name)
+- `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
+- `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
+- `offset` : native api parameter, in general do not use (added by <%=tool%>)
+- `limit` : native api parameter, number of items par api call, in general do not use (added by <%=tool%>)
+
+### Faspex5:  Send a package with metadata
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
 ```bash
-<%=cmd%> faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+<%=cmd%> faspex5 packages send --value=@json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
 ```
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
 
-- List all shared inboxes
+### Faspex5: List all shared inboxes
 
 ```bash
 <%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
-- Create Metadata profile
+### Faspex5: Create Metadata profile
 
 ```bash
 <%=cmd%> faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
-- Create a Shared inbox with specific metadata profile
+### Faspex5: Create a Shared inbox with specific metadata profile
 
 ```bash
 <%=cmd%> faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
-- List content in Shared folder and send package from remote source
+### Faspex5: List content in Shared folder and send package from remote source
 
 ```bash
 <%=cmd%> faspex5 shared_folders list
@@ -4247,23 +4271,23 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 ```
 
 ```bash
-<%=cmd%> faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
+<%=cmd%> faspex5 packages send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
 > **Note:** The shared folder can be identified by its numerical `id` using selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
-- receive all packages (cargo)
+### Faspex5: receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 
 ```bash
-ascli faspex5 packages receive ALL --once-only=yes
+<%=cmd%> faspex5 packages receive ALL --once-only=yes
 ```
 
 To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:
 
 ```bash
-ascli faspex5 packages receive INIT --once-only=yes
+<%=cmd%> faspex5 packages receive INIT --once-only=yes
 ```
 
 ### Faspex 4-style postprocessing script with Faspex 5
@@ -5265,8 +5289,8 @@ It had the advantage of being relatively easy to installed, as a single executab
 Enjoy a coffee on me:
 
 ```bash
-ascli conf coffee
-ascli conf coffee --ui=text
+<%=cmd%> conf coffee
+<%=cmd%> conf coffee --ui=text
 ```
 
 ## Common problems

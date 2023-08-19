@@ -38,6 +38,11 @@ module Aspera
 
     ARRAY_PARAMS = '[]'
 
+    private_constant :ARRAY_PARAMS
+
+    # error message when entity not found
+    ENTITY_NOT_FOUND = 'No such'
+
     class << self
       # define accessors
       @@global.each_key do |p|
@@ -49,6 +54,12 @@ module Aspera
       end
 
       def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
+
+      # used to build a parameter list prefixed with "[]"
+      # @param values [Array] list of values
+      def array_params(values)
+        return [ARRAY_PARAMS].concat(values)
+      end
 
       # build URI from URL and parameters and check it is http or https
       def build_uri(url, params=nil)
@@ -336,6 +347,31 @@ module Aspera
 
     def cancel(subpath)
       return call({operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'}})
+    end
+
+    # Query by name and returns a single result, else it throws an exception (no or multiple results)
+    # @param subpath path of entity in API
+    # @param search_name name of searched entity
+    # @param options additional search options
+    def lookup_by_name(subpath, search_name, options={})
+      # returns entities whose name contains value (case insensitive)
+      matching_items = read(subpath, options.merge({'q' => CGI.escape(search_name)}))[:data]
+      # style: {totalcount:, ...}
+      matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
+      raise "Internal error: expecting array, have #{matching_items.class}" unless matching_items.is_a?(Array)
+      case matching_items.length
+      when 1 then return matching_items.first
+      when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{subpath}: "#{search_name}"}
+      else
+        # multiple case insensitive partial matches, try case insensitive full match
+        # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
+        name_matches = matching_items.select{|i|i['name'].casecmp?(search_name)}
+        case name_matches.length
+        when 1 then return name_matches.first
+        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
+        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{|i|i['name']}}"
+        end
+      end
     end
   end
 end # module Aspera

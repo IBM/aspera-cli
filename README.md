@@ -4793,18 +4793,6 @@ Use this token as password and use `--auth=boot`.
 ascli conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
-### Faspex 5 packages
-
-The `value` option provided to command `faspex5 package send` is the same as for the Faspex 5 API: `POST /packages`.
-
-In addition, `ascli` adds some convenience: the field `recipients` is normally an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
-Then `ascli` will lookup existing contacts, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly.
-
-> **Note:** The lookup is case insensitive and on partial matches.
-
-On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
-If the value `ALL` is provided to option `box`, then all packages are selected.
-
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
@@ -4841,47 +4829,83 @@ faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
 ```
 
-Other examples:
+### Faspex 5: Send a package
 
-- list packages
+The `value` option provided to command `faspex5 packages send` is the same as for the Faspex 5 API: `POST /packages`.
 
-  The following parameters in option `value` are supported:
+The minimum is to provide the `title` and `recipients` fields:
 
-  - `q` : a filter on name (case insensitive, matches if value is contained in name)
-  - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
-  - `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
-  - `offset` : native api parameter, in general do not use (added by `ascli`)
-  - `limit` : native api parameter, number of items par api call, in general do not use (added by `ascli`)
+```bash
+--value=@json:'{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}'
+```
 
-- Send a package with metadata
+`recipient_type` is one of (Refer to API):
+
+- user
+- workgroup
+- external_user
+- distribution_list
+- shared_inbox
+
+`ascli` adds some convenience: The API expects the field `recipients` to be an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
+Then `ascli` will lookup existing contacts among all possible types, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly. Else an exception is sent.
+
+> **Note:** The lookup is case insensitive and on partial matches.
+
+```json
+{"title":"some title","recipients":["user@example.com"]}
+```
+
+If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an Array of values (from the list above). e.g. :
+
+```json
+{"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
+```
+
+### Faspex 5: Receive a package
+
+On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
+If the value `ALL` is provided to option `box`, then all packages are selected.
+
+### Faspex5: List packages
+
+The following parameters in option `value` are supported:
+
+- `q` : a filter on name (case insensitive, matches if value is contained in name)
+- `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
+- `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
+- `offset` : native api parameter, in general do not use (added by `ascli`)
+- `limit` : native api parameter, number of items par api call, in general do not use (added by `ascli`)
+
+### Faspex5:  Send a package with metadata
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
 ```bash
-ascli faspex5 package send --value=@json:'{"title":"test title","recipients":["ascli shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+ascli faspex5 packages send --value=@json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
 ```
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
 
-- List all shared inboxes
+### Faspex5: List all shared inboxes
 
 ```bash
 ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
-- Create Metadata profile
+### Faspex5: Create Metadata profile
 
 ```bash
 ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
-- Create a Shared inbox with specific metadata profile
+### Faspex5: Create a Shared inbox with specific metadata profile
 
 ```bash
 ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
-- List content in Shared folder and send package from remote source
+### Faspex5: List content in Shared folder and send package from remote source
 
 ```bash
 ascli faspex5 shared_folders list
@@ -4900,12 +4924,12 @@ ascli faspex5 shared_folders br %name:partages /folder
 ```
 
 ```bash
-ascli faspex5 package send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
+ascli faspex5 packages send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
 > **Note:** The shared folder can be identified by its numerical `id` using selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
-- receive all packages (cargo)
+### Faspex5: receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 

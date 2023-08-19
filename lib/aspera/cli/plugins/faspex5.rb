@@ -124,13 +124,16 @@ module Aspera
         def normalize_recipients(parameters)
           return unless parameters.key?('recipients')
           raise 'Field recipients must be an Array' unless parameters['recipients'].is_a?(Array)
-          parameters['recipients'] = parameters['recipients'].map do |recipient_data|
+          recipient_types = RECIPIENT_TYPES
+          if parameters.key?('recipient_types')
+            recipient_types = parameters['recipient_types']
+            parameters.delete('recipient_types')
+            recipient_types = [recipient_types] unless recipient_types.is_a?(Array)
+          end
+          parameters['recipients'].map! do |recipient_data|
             # if just a string, assume it is the name
             if recipient_data.is_a?(String)
-              result = @api_v5.read('contacts', {q: recipient_data, context: 'packages', type: [Rest::ARRAY_PARAMS, *RECIPIENT_TYPES]})[:data]
-              raise "No matching contact for #{recipient_data}" if 0.eql?(result['total_count'])
-              raise "Multiple matching contact for #{recipient_data} : #{result['contacts'].map{|i|i['name']}.join(', ')}" unless 1.eql?(result['total_count'])
-              matched = result['contacts'].first
+              matched = @api_v5.lookup_by_name('contacts', recipient_data, {context: 'packages', type: Rest.array_params(recipient_types)})
               recipient_data = {
                 name:           matched['name'],
                 recipient_type: matched['type']

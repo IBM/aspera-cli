@@ -116,7 +116,7 @@ module Aspera
               Log.log.debug('Using default workspace'.green)
               raise CliError, 'No default workspace defined for user, please specify workspace' if default_workspace_id.nil?
               default_workspace_id
-            when String then aoc_api.lookup_entity_by_name('workspaces', ws_name)['id']
+            when String then aoc_api.lookup_by_name('workspaces', ws_name)['id']
             when NilClass then nil
             else raise CliError, 'unexpected value type for workspace'
             end
@@ -166,11 +166,11 @@ module Aspera
           l_res_name = options.get_option(:name)
           raise 'Provide either option id or name, not both' unless l_res_id.nil? || l_res_name.nil?
           # try to find item by name (single partial match or exact match)
-          l_res_id = aoc_api.lookup_entity_by_name(resource_class_path, l_res_name)['id'] unless l_res_name.nil?
+          l_res_id = aoc_api.lookup_by_name(resource_class_path, l_res_name)['id'] unless l_res_name.nil?
           # if no name or id option, taken on command line (after command)
           if l_res_id.nil?
             l_res_id = options.get_next_argument('identifier')
-            l_res_id = aoc_api.lookup_entity_by_name(resource_class_path, options.get_next_argument('identifier'))['id'] if l_res_id.eql?(ENTITY_NAME_SPECIFIER)
+            l_res_id = aoc_api.lookup_by_name(resource_class_path, options.get_next_argument('identifier'))['id'] if l_res_id.eql?(ENTITY_NAME_SPECIFIER)
           end
           return l_res_id
         end
@@ -582,7 +582,7 @@ module Aspera
                 if query.key?('dropbox_name')
                   # convenience: specify name instead of id
                   raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
-                  query['dropbox_id'] = aoc_api.lookup_entity_by_name('dropboxes', query['dropbox_name'])['id']
+                  query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
                   query.delete('dropbox_name')
                 end
                 query['workspace_id'] ||= current_workspace_info['id'] unless current_workspace_info['id'].eql?(:undefined)
@@ -630,7 +630,7 @@ module Aspera
               if query.key?('dropbox_name')
                 # convenience: specify name instead of id
                 raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
-                query['dropbox_id'] = aoc_api.lookup_entity_by_name('dropboxes', query['dropbox_name'])['id']
+                query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
                 query.delete('dropbox_name')
               end
               if current_workspace_info['id'].eql?(:undefined)
