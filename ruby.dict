@@ -22,3 +22,4 @@ upto
 lstrip
 realpath
 simplecov
+casecmp
