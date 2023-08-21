@@ -153,7 +153,7 @@ module Aspera
         Log.log.debug{"add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
 
-      def get_next_command(command_list); return get_next_argument('command', expected: command_list); end
+      def get_next_command(command_list, aliases: nil); return get_next_argument('command', expected: command_list, aliases: aliases); end
 
       # @param expected is
       #    - Array of allowed value (single value)
@@ -161,8 +161,9 @@ module Aspera
       #    - :single for a single unconstrained value
       # @param mandatory true/false
       # @param type expected class for result
+      # @param aliases list of aliases for the value
       # @return value, list or nil
-      def get_next_argument(descr, expected: :single, mandatory: true, type: nil)
+      def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil)
         unless type.nil?
           raise 'internal: type must be a Class' unless type.is_a?(Class)
           descr = "#{descr} (#{type})"
@@ -179,14 +180,20 @@ module Aspera
             if result.length.eql?(1) && result.first.is_a?(Array)
               result = result.first
             end
+          when Array
+            allowed_values = [].concat(expected)
+            allowed_values.concat(aliases.keys) unless aliases.nil?
+            raise 'internal error: only symbols allowed' unless allowed_values.all?(Symbol)
+            result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
           else
-            result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, expected)
+            raise 'internal error'
           end
         elsif mandatory
           # no value provided
           result = get_interactive(:argument, descr, expected: expected)
         end
         Log.log.debug{"#{descr}=#{result}"}
+        result = aliases[result] if !aliases.nil? && aliases.key?(result)
         raise "argument shall be #{type.name}" unless type.nil? || result.is_a?(type)
         return result
       end
