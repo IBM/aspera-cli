@@ -2871,7 +2871,7 @@ OPTIONS:
 
 
 COMMAND: shares
-SUBCOMMANDS: admin health repository
+SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -5184,13 +5184,13 @@ shares admin user import --type=saml --value=@json:'{"id":"the_id","name_id":"th
 shares admin user list
 shares admin user share_permissions 1 list
 shares admin user share_permissions 1 show 1
+shares files browse /
+shares files delete my_shares_upload/testfile.bin
+shares files download --to-folder=. my_shares_upload/testfile.bin
+shares files download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares files upload --to-folder=my_shares_upload testfile.bin
+shares files upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 shares health
-shares repository browse /
-shares repository delete my_shares_upload/testfile.bin
-shares repository download --to-folder=. my_shares_upload/testfile.bin
-shares repository download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
-shares repository upload --to-folder=my_shares_upload testfile.bin
-shares repository upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
 ```
 
 ## <a id="console"></a>Plugin: `console`: IBM Aspera Console

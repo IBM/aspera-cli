@@ -87,24 +87,24 @@ $(T)shadm: $(T).exists
 	@touch $@
 $(T)sh1: $(T).exists
 	@echo $@
-	$(EXE_MAN) shares repository browse /
+	$(EXE_MAN) shares files browse /
 	@touch $@
 $(T)sh2: $(T).exists
 	@echo $@
 	set -x&&\
 	shares_upload=$$($(EXE_NOMAN) config preset get misc shares_upload)&&\
-	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)&&\
-	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) shares files upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)&&\
+	$(EXE_MAN) shares files delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)sh3: $(T).exists
 	@echo $@
 	set -x&&\
 	shares_upload=$$($(EXE_NOMAN) config preset get misc shares_upload)&&\
 	http_gw_fqdn=$$($(EXE_NOMAN) config preset get misc http_gw_fqdn_port)&&\
-	$(EXE_MAN) shares repository upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
-	$(EXE_MAN) shares repository download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
-	$(EXE_MAN) shares repository delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) shares files upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
+	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:'{"url":"https://'"$${http_gw_fqdn}"'/aspera/http-gwy"}'&&\
+	$(EXE_MAN) shares files delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 tshares: $(T)sh_nagios $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 

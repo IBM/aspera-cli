@@ -3897,7 +3897,7 @@ OPTIONS:
 
 
 COMMAND: shares
-SUBCOMMANDS: admin health repository
+SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             username to log in
@@ -6224,13 +6224,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb378-1"><a href
 <span id="cb378-9"><a href="#cb378-9" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user list</span>
 <span id="cb378-10"><a href="#cb378-10" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user share_permissions 1 list</span>
 <span id="cb378-11"><a href="#cb378-11" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user share_permissions 1 show 1</span>
-<span id="cb378-12"><a href="#cb378-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span>
-<span id="cb378-13"><a href="#cb378-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository browse /</span>
-<span id="cb378-14"><a href="#cb378-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository delete my_shares_upload/testfile.bin</span>
-<span id="cb378-15"><a href="#cb378-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin</span>
-<span id="cb378-16"><a href="#cb378-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span>
-<span id="cb378-17"><a href="#cb378-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin</span>
-<span id="cb378-18"><a href="#cb378-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> repository upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span></code></pre></div>
+<span id="cb378-12"><a href="#cb378-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files browse /</span>
+<span id="cb378-13"><a href="#cb378-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_shares_upload/testfile.bin</span>
+<span id="cb378-14"><a href="#cb378-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin</span>
+<span id="cb378-15"><a href="#cb378-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb378-16"><a href="#cb378-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin</span>
+<span id="cb378-17"><a href="#cb378-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb378-18"><a href="#cb378-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span></code></pre></div>
 <h1 data-number="15" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">15</span> <a id="console"></a>Plugin:
 <code>console</code>: IBM Aspera Console</h1>

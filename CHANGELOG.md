@@ -3,9 +3,10 @@
 * 4.13.0
 
   * new: server: option `passphrase` for simpler command line (#114)
+  * new: percent selector for entities identifier
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
-  * new: percent selector for entities identifier
+  * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
 
 * 4.13.0
 

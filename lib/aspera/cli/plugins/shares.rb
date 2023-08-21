@@ -34,12 +34,12 @@ module Aspera
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
         SAML_IMPORT_ALLOWED = %w[email given_name surname].concat(SAML_IMPORT_MANDATORY).freeze
 
-        ACTIONS = %i[health repository admin].freeze
+        ACTIONS = %i[health files admin].freeze
         # common to users and groups
         USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze
 
         def execute_action
-          command = options.get_next_command(ACTIONS)
+          command = options.get_next_command(ACTIONS, aliases: {repository: :files})
           case command
           when :health
             nagios = Nagios.new
@@ -56,13 +56,13 @@ module Aspera
               nagios.add_critical('node api', e.to_s)
             end
             return nagios.result
-          when :repository
+          when :repository, :files
             api_shares_node = basic_auth_api('node_api')
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
             return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
-            admin_command = options.get_next_command(%i[user group share node])
+            admin_command = options.get_next_command(%i[user group share node].freeze)
             case admin_command
             when :node
               return entity_action(api_shares_admin, 'data/nodes')
