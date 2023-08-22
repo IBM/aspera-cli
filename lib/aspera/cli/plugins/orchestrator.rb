@@ -9,15 +9,11 @@ module Aspera
       class Orchestrator < Aspera::Cli::BasicAuthPlugin
         def initialize(env)
           super(env)
-          options.add_opt_simple(:params, 'parameters hash table, use @json:{"param":"value"}')
-          options.add_opt_simple(:result, "specify result value as: 'work step:parameter'")
-          options.add_opt_boolean(:synchronous, 'work step:parameter expected as result')
-          options.add_opt_list(:ret_style, %i[header arg ext], 'how return type is requested in api')
-          options.add_opt_list(:auth_style, %i[arg_pass head_basic apikey], 'authentication type')
-          options.set_option(:params, {})
-          options.set_option(:synchronous, :no)
-          options.set_option(:ret_style, :arg)
-          options.set_option(:auth_style, :head_basic)
+          options.declare(:params, 'parameters hash table, use @json:{"param":"value"}', default: {})
+          options.declare(:result, "specify result value as: 'work step:parameter'")
+          options.declare(:synchronous, 'work step:parameter expected as result', values: :bool, default: :no)
+          options.declare(:ret_style, 'how return type is requested in api', values: %i[header arg ext], default: :arg)
+          options.declare(:auth_style, 'authentication type', values: %i[arg_pass head_basic apikey], default: :head_basic)
           options.parse_options!
         end
 

@@ -2,6 +2,7 @@
 
 require 'aspera/colors'
 require 'aspera/log'
+require 'aspera/secret_hider'
 require 'aspera/cli/extended_value'
 require 'optparse'
 require 'io/console'
@@ -130,10 +131,8 @@ module Aspera
         unless argv.nil?
           @parser.separator('')
           @parser.separator('OPTIONS: global')
-          set_obj_attr(:interactive, self, :ask_missing_mandatory)
-          set_obj_attr(:ask_options, self, :ask_missing_optional)
-          add_opt_boolean(:interactive, 'use interactive input of missing params')
-          add_opt_boolean(:ask_options, 'ask even optional options')
+          declare(:interactive, 'use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
+          declare(:ask_options, 'ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
           parse_options!
           process_options = true
           until argv.empty?
@@ -152,8 +151,6 @@ module Aspera
         @initial_cli_options = @unprocessed_cmd_line_options.dup
         Log.log.debug{"add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
-
-      def get_next_command(command_list, aliases: nil); return get_next_argument('command', expected: command_list, aliases: aliases); end
 
       # @param expected is
       #    - Array of allowed value (single value)
@@ -183,7 +180,7 @@ module Aspera
           when Array
             allowed_values = [].concat(expected)
             allowed_values.concat(aliases.keys) unless aliases.nil?
-            raise 'internal error: only symbols allowed' unless allowed_values.all?(Symbol)
+            raise "internal error: only symbols allowed: #{allowed_values}" unless allowed_values.all?(Symbol)
             result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
           else
             raise 'internal error'
@@ -198,46 +195,7 @@ module Aspera
         return result
       end
 
-      # declare option of type :accessor, or :value
-      def declare_option(option_symbol, type)
-        Log.log.debug{"declare_option: #{option_symbol}: #{type}: skip=#{@declared_options.key?(option_symbol)}".green}
-        if @declared_options.key?(option_symbol)
-          raise "INTERNAL ERROR: option #{option_symbol} already declared. only accessor can be re-declared and ignored" \
-          unless @declared_options[option_symbol][:type].eql?(:accessor)
-          return
-        end
-        @declared_options[option_symbol] = {type: type}
-        # by default passwords and secrets are sensitive, else specify when declaring the option
-        @declared_options[option_symbol][:sensitive] = true if !%w[password secret key].select{|i| option_symbol.to_s.end_with?(i)}.empty?
-      end
-
-      # define option with handler
-      def set_obj_attr(option_symbol, object, attr_symb, default_value=nil)
-        Log.log.debug{"set attr obj #{option_symbol} (#{object},#{attr_symb})"}
-        declare_option(option_symbol, :accessor)
-        @declared_options[option_symbol][:accessor] = AttrAccessor.new(object, attr_symb)
-        set_option(option_symbol, default_value, 'default obj attr') if !default_value.nil?
-      end
-
-      # set an option value by name, either store value or call handler
-      def set_option(option_symbol, value, where='default')
-        if !@declared_options.key?(option_symbol)
-          Log.log.debug{"set unknown option: #{option_symbol}"}
-          raise 'ERROR: cannot set undeclared option'
-          # declare_option(option_symbol)
-        end
-        value = ExtendedValue.instance.evaluate(value)
-        value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug{"(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}"}
-        case @declared_options[option_symbol][:type]
-        when :accessor
-          @declared_options[option_symbol][:accessor].value = value
-        when :value
-          @declared_options[option_symbol][:value] = value
-        else # nil or other
-          raise 'error'
-        end
-      end
+      def get_next_command(command_list, aliases: nil); return get_next_argument('command', expected: command_list, aliases: aliases); end
 
       # Get an option value by name
       # either return value or calls handler, can return nil
@@ -277,69 +235,99 @@ module Aspera
         return result
       end
 
-      # param must be hash
+      # set an option value by name, either store value or call handler
+      def set_option(option_symbol, value, where='code override')
+        if !@declared_options.key?(option_symbol)
+          Log.log.debug{"set unknown option: #{option_symbol}"}
+          raise 'ERROR: cannot set undeclared option'
+        end
+        value = ExtendedValue.instance.evaluate(value)
+        value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
+        Log.log.debug{"(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}"}
+        case @declared_options[option_symbol][:type]
+        when :accessor
+          @declared_options[option_symbol][:accessor].value = value
+        when :value
+          @declared_options[option_symbol][:value] = value
+        else # nil or other
+          raise 'error'
+        end
+      end
+
+      # declare an option
+      # @param option_symbol [Symbol] option name
+      # @param description [String] description for help
+      # @param handler [Hash] handler for option value: keys: o (object) and m (method)
+      # @param default [Object] default value
+      # @param values [nil, Array, :bool, :date, :none] list of allowed values, :bool for true/false, :date for dates, :none for on/off switch
+      # @param short [String] short option name
+      # @param expect [Class] expected value type
+      # @param block [Proc] block to execute when option is found
+      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, expect: nil, &block)
+        raise "INTERNAL ERROR: option #{option_symbol} already declared" if @declared_options.key?(option_symbol)
+        opt = @declared_options[option_symbol] = {
+          type:      handler.nil? ? :value : :accessor,
+          # by default passwords and secrets are sensitive, else specify when declaring the option
+          sensitive: SecretHider.secret?(option_symbol, '')
+        }
+        Log.log.debug{"declare: #{option_symbol}: #{opt[:type]}".green}
+        if opt[:type].eql?(:accessor)
+          raise 'internal error' unless handler.is_a?(Hash)
+          raise 'internal error' unless handler.keys.sort.eql?(%i[m o])
+          Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
+          opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m])
+        end
+        set_option(option_symbol, default, 'default') unless default.nil?
+        on_args = [description]
+        case values
+        when nil
+          on_args.unshift(symbol_to_option(option_symbol, 'VALUE'))
+          on_args.unshift("-#{short}VALUE") unless short.nil?
+          on_args.push(expect) unless expect.nil?
+          @parser.on(*on_args) { |v| set_option(option_symbol, v, 'cmdline') }
+        when Array, :bool
+          if values.eql?(:bool)
+            values = BOOLEAN_VALUES
+            set_option(option_symbol, Manager.enum_to_bool(default), 'default') unless default.nil?
+          end
+          # this option value must be a symbol
+          opt[:values] = values
+          value = get_option(option_symbol)
+          help_values = values.map{|i|i.eql?(value) ? highlight_current(i) : i}.join(', ')
+          if values.eql?(BOOLEAN_VALUES)
+            help_values = BOOLEAN_SIMPLE.map{|i|(i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
+          end
+          on_args.unshift(symbol_to_option(option_symbol, 'ENUM'))
+          on_args.push(values)
+          on_args.push("#{description}: #{help_values}")
+          @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, description, values), 'cmdline')}
+        when :date
+          on_args.unshift(symbol_to_option(option_symbol, 'DATE'))
+          @parser.on(*on_args) do |v|
+            time_string = case v
+            when 'now' then Manager.time_to_string(Time.now)
+            when /^-([0-9]+)h/ then Manager.time_to_string(Time.now - (Regexp.last_match(1).to_i * 3600))
+            else v
+            end
+            set_option(option_symbol, time_string, 'cmdline')
+          end
+        when :none
+          raise "internal error: missing block for #{option_symbol}" if block.nil?
+          on_args.unshift(symbol_to_option(option_symbol, nil))
+          on_args.unshift("-#{short}") if short.is_a?(String)
+          @parser.on(*on_args, &block)
+        else raise 'internal error'
+        end
+        Log.log.debug{"on_args=#{on_args}"}
+      end
+
+      # Adds each of the keys of specified hash as an option
+      # @param preset_hash [Hash] hash of options to add
       def add_option_preset(preset_hash, op: :push)
         Log.log.debug{"add_option_preset=#{preset_hash}"}
-        raise "internal error: setting default with no hash: #{preset_hash.class}" if !preset_hash.is_a?(Hash)
+        raise "internal error: default expects Hash: #{preset_hash.class}" unless preset_hash.is_a?(Hash)
         # incremental override
         preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}
-      end
-
-      # define an option with restricted values
-      def add_opt_list(option_symbol, values, help, *on_args)
-        declare_option(option_symbol, :value)
-        Log.log.debug{"add_opt_list #{option_symbol}"}
-        on_args.unshift(symbol_to_option(option_symbol, 'ENUM'))
-        # this option value must be a symbol
-        @declared_options[option_symbol][:values] = values
-        value = get_option(option_symbol)
-        help_values = values.map{|i|i.eql?(value) ? highlight_current(i) : i}.join(', ')
-        if values.eql?(BOOLEAN_VALUES)
-          help_values = BOOLEAN_SIMPLE.map{|i|(i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
-        end
-        on_args.push(values)
-        on_args.push("#{help}: #{help_values}")
-        Log.log.debug{"on_args=#{on_args}"}
-        @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, help, values), 'cmdline')}
-      end
-
-      def add_opt_boolean(option_symbol, help, *on_args)
-        add_opt_list(option_symbol, BOOLEAN_VALUES, help, *on_args)
-        # if default was defined for obj, it may still be enum (yes/no) instead of boolean
-        default_value = get_option(option_symbol)
-        set_option(option_symbol, default_value, 'opt boolean') unless default_value.nil?
-      end
-
-      # define an option with open values
-      def add_opt_simple(option_symbol, *on_args)
-        declare_option(option_symbol, :value)
-        Log.log.debug{"add_opt_simple #{option_symbol}"}
-        on_args.unshift(symbol_to_option(option_symbol, 'VALUE'))
-        Log.log.debug{"on_args=#{on_args}"}
-        @parser.on(*on_args) { |v| set_option(option_symbol, v, 'cmdline') }
-      end
-
-      # define an option with date format
-      def add_opt_date(option_symbol, *on_args)
-        declare_option(option_symbol, :value)
-        Log.log.debug{"add_opt_date #{option_symbol}"}
-        on_args.unshift(symbol_to_option(option_symbol, 'DATE'))
-        Log.log.debug{"on_args=#{on_args}"}
-        @parser.on(*on_args) do |v|
-          case v
-          when 'now' then set_option(option_symbol, Manager.time_to_string(Time.now), 'cmdline')
-          when /^-([0-9]+)h/ then set_option(option_symbol, Manager.time_to_string(Time.now - (Regexp.last_match(1).to_i * 3600)), 'cmdline')
-          else set_option(option_symbol, v, 'cmdline')
-          end
-        end
-      end
-
-      # define an option without value
-      def add_opt_switch(option_symbol, *on_args, &block)
-        Log.log.debug{"add_opt_on #{option_symbol}"}
-        on_args.unshift(symbol_to_option(option_symbol, nil))
-        Log.log.debug{"on_args=#{on_args}"}
-        @parser.on(*on_args, &block)
       end
 
       # check if there were unprocessed values to generate error
@@ -355,7 +343,7 @@ module Aspera
         return result
       end
 
-      # get all original options  on command line used to generate a config in config file
+      # get all original options on command line used to generate a config in config file
       def get_options_table(remove_from_remaining: true)
         result = {}
         @initial_cli_options.each do |optionval|

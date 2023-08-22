@@ -54,38 +54,37 @@ module Aspera
           # used to trigger periodic processing
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # link CLI options to gen_info attributes
-          options.set_obj_attr(:skip_format, self, :option_skip_format, []) # no skip
-          options.set_obj_attr(:folder_reset_cache, self, :option_folder_reset_cache, :no)
-          options.set_obj_attr(:skip_types, self, :option_skip_types)
-          options.set_obj_attr(:previews_folder, self, :option_previews_folder, DEFAULT_PREVIEWS_FOLDER)
-          options.set_obj_attr(:skip_folders, self, :option_skip_folders, []) # no skip
-          options.set_obj_attr(:overwrite, self, :option_overwrite, :mtime)
-          options.set_obj_attr(:file_access, self, :option_file_access, :local)
-          options.add_opt_list(:skip_format, Aspera::Preview::Generator::PREVIEW_FORMATS, 'skip this preview format (multiple possible)')
-          options.add_opt_list(:folder_reset_cache, %i[no header read], 'force detection of generated preview by refresh cache')
-          options.add_opt_simple(:skip_types, 'skip types in comma separated list')
-          options.add_opt_simple(:previews_folder, 'preview folder in storage root')
-          options.add_opt_simple(:temp_folder, 'path to temp folder')
-          options.add_opt_simple(:skip_folders, 'list of folder to skip')
-          options.add_opt_simple(:case, 'basename of output for for test')
-          options.add_opt_simple(:scan_path, 'subpath in folder id to start scan in (default=/)')
-          options.add_opt_simple(:scan_id, 'folder id in storage to start scan in, default is access key main folder id')
-          options.add_opt_boolean(:mimemagic, 'use Mime type detection of gem mimemagic')
-          options.add_opt_list(:overwrite, %i[always never mtime], 'when to overwrite result file')
-          options.add_opt_list(:file_access, %i[local remote], 'how to read and write files in repository')
-          options.set_option(:temp_folder, Dir.tmpdir)
-          options.set_option(:mimemagic, false)
+          options.declare(
+            :skip_format, 'skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
+            handler: {o: self, m: :option_skip_format}, default: [])
+          options.declare(
+            :folder_reset_cache, 'force detection of generated preview by refresh cache',
+            values: %i[no header read],
+            handler: {o: self, m: :option_folder_reset_cache},
+            default: :no)
+          options.declare(:skip_types, 'skip types in comma separated list', handler: {o: self, m: :option_skip_types})
+          options.declare(:previews_folder, 'preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
+          options.declare(:temp_folder, 'path to temp folder', default: Dir.tmpdir)
+          options.declare(:skip_folders, 'list of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
+          options.declare(:case, 'basename of output for for test')
+          options.declare(:scan_path, 'subpath in folder id to start scan in (default=/)')
+          options.declare(:scan_id, 'folder id in storage to start scan in, default is access key main folder id')
+          options.declare(:mimemagic, 'use Mime type detection of gem mimemagic', values: :bool, default: false)
+          options.declare(:overwrite, 'when to overwrite result file', values: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
+          options.declare(
+            :file_access, 'how to read and write files in repository',
+            values: %i[local remote],
+            handler: {o: self, m: :option_file_access},
+            default: :local)
 
           # add other options for generator (and set default values)
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            options.set_obj_attr(opt[:name], @gen_options, opt[:name], opt[:default])
-            if opt.key?(:values)
-              options.add_opt_list(opt[:name], opt[:values], opt[:description])
+            values = if opt.key?(:values)
+              opt[:values]
             elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
-              options.add_opt_boolean(opt[:name], opt[:description])
-            else
-              options.add_opt_simple(opt[:name], opt[:description])
+              :bool
             end
+            options.declare(opt[:name], opt[:description], values: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
           end
 
           options.parse_options!

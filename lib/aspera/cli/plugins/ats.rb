@@ -11,13 +11,13 @@ module Aspera
       class Ats < Aspera::Cli::Plugin
         def initialize(env)
           super(env)
-          options.add_opt_simple(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
-          options.add_opt_simple(:instance, 'ATS instance in ibm cloud')
-          options.add_opt_simple(:ats_key, 'ATS key identifier (ats_xxx)')
-          options.add_opt_simple(:ats_secret, 'ATS key secret')
-          options.add_opt_simple(:params, 'Parameters access key creation (@json:)')
-          options.add_opt_simple(:cloud, 'Cloud provider')
-          options.add_opt_simple(:region, 'Cloud region')
+          options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
+          options.declare(:instance, 'ATS instance in ibm cloud')
+          options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
+          options.declare(:ats_secret, 'ATS key secret')
+          options.declare(:params, 'Parameters access key creation (@json:)')
+          options.declare(:cloud, 'Cloud provider')
+          options.declare(:region, 'Cloud region')
           options.parse_options!
         end
 

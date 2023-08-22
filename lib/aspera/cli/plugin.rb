@@ -32,14 +32,12 @@ module Aspera
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
         return if @@options_created
-        options.add_opt_simple(:query, 'additional filter for API calls (extended value) (some commands)')
-        options.add_opt_simple(:value, 'extended value for create, update, list filter')
-        options.add_opt_simple(:property, 'name of property to set')
-        options.add_opt_simple(:id, "resource identifier (#{INSTANCE_OPS.join(',')})")
-        options.add_opt_boolean(:bulk, 'Bulk operation (only some)')
-        options.add_opt_boolean(:bfail, 'Bulk operation error handling')
-        options.set_option(:bulk, :no)
-        options.set_option(:bfail, :yes)
+        options.declare(:query, 'additional filter for API calls (extended value) (some commands)')
+        options.declare(:value, 'extended value for create, update, list filter')
+        options.declare(:property, 'name of property to set')
+        options.declare(:id, "resource identifier (#{INSTANCE_OPS.join(',')})")
+        options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
+        options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
         options.parse_options!
         @@options_created = true # rubocop:disable Style/ClassVars
       end

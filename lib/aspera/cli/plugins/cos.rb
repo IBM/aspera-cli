@@ -11,14 +11,13 @@ module Aspera
         def initialize(env)
           super(env)
           @service_creds = nil
-          options.add_opt_simple(:bucket, 'Bucket name')
-          options.add_opt_simple(:endpoint, 'Storage endpoint url')
-          options.add_opt_simple(:apikey, 'Storage API key')
-          options.add_opt_simple(:crn, 'Resource instance id')
-          options.add_opt_simple(:service_credentials, 'IBM Cloud service credentials (Hash)')
-          options.add_opt_simple(:region, 'Storage region')
-          options.add_opt_simple(:identity, "Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})")
-          options.set_option(:identity, CosNode::IBM_CLOUD_TOKEN_URL)
+          options.declare(:bucket, 'Bucket name')
+          options.declare(:endpoint, 'Storage endpoint url')
+          options.declare(:apikey, 'Storage API key')
+          options.declare(:crn, 'Resource instance id')
+          options.declare(:service_credentials, 'IBM Cloud service credentials (Hash)')
+          options.declare(:region, 'Storage region')
+          options.declare(:identity, "Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})", default: CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!
         end
 

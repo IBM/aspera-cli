@@ -44,17 +44,15 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.add_opt_simple(:client_id, 'OAuth client identifier')
-          options.add_opt_simple(:client_secret, 'OAuth client secret')
-          options.add_opt_simple(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.add_opt_list(:auth, %i[boot link].concat(Oauth::STD_AUTH_TYPES), 'OAuth type of authentication')
-          options.add_opt_simple(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}")
-          options.add_opt_simple(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.add_opt_simple(:passphrase, 'RSA private key passphrase')
-          options.add_opt_simple(:shared_folder, 'Shared folder source for package files')
-          options.add_opt_simple(:link, 'public link for specific operation')
-          options.set_option(:auth, :jwt)
-          options.set_option(:box, 'inbox')
+          options.declare(:client_id, 'OAuth client identifier')
+          options.declare(:client_secret, 'OAuth client secret')
+          options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
+          options.declare(:auth, 'OAuth type of authentication', values: %i[boot link].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
+          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}", default: 'inbox')
+          options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
+          options.declare(:passphrase, 'RSA private key passphrase')
+          options.declare(:shared_folder, 'Shared folder source for package files')
+          options.declare(:link, 'public link for specific operation')
           options.parse_options!
         end
 

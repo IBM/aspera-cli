@@ -26,8 +26,7 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.add_opt_list(:type, %i[any local ldap saml], 'Type of user/group for operations')
-          options.set_option(:type, :any)
+          options.declare(:type, 'Type of user/group for operations', values: %i[any local ldap saml], default: :any)
           options.parse_options!
         end
 
@@ -74,9 +73,10 @@ module Aspera
               case entities_location
               when :any
                 entities_path = "data/#{entity_type}s"
-                entity_action = %i[list show delete].freeze
-                entity_action = [*entity_action, *USR_GRP_SETTINGS].freeze
-                entity_action = [*entity_action, 'users'].freeze if entity_type.eql?(:group)
+                entity_action = %i[list show delete]
+                entity_action.concat(USR_GRP_SETTINGS)
+                entity_action.push(:users) if entity_type.eql?(:group)
+                entity_action.freeze
               when :local
                 entity_action = %i[list show create modify delete].freeze
               when :ldap

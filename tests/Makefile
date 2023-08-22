@@ -302,8 +302,8 @@ $(T)fx_db1: $(T).exists
 	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_wkg}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}" --to-folder=$(DIR_TMP).
 	@touch $@
-tfaspex: $(T)fx_nagios $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_prl $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_misc $(T)fx_v4 $(T)fx_db1
-
+tfaspex: $(T)fx_nagios $(T)fx_plst $(T)fx_psnd $(T)fx_prs $(T)fx_pri $(T)fx_pslu $(T)fx_psld $(T)fx_storage $(T)fx_prall $(T)fx_misc $(T)fx_v4 $(T)fx_db1
+#  $(T)fx_prl
 $(T)cons_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) console health
@@ -325,8 +325,8 @@ $(T)cons3: $(T).exists
 	file_name=$$($(EXE_NOMAN) config preset get misc console_smart_file)&&\
 	$(EXE_MAN) console transfer smart sub $${job_id} @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
 	@touch $@
-tconsole: $(T)cons_nagios $(T)cons1 $(T)cons2 $(T)cons3
-
+tconsole: $(T)cons_nagios $(T)cons1 $(T)cons2
+#  $(T)cons3
 $(T)nd_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) node health

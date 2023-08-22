@@ -13,8 +13,8 @@ module Aspera
       class Sync < Aspera::Cli::Plugin
         def initialize(env, sync_spec: nil)
           super(env)
-          options.add_opt_simple(:sync_info, 'Information for sync instance and sessions (Hash)')
-          options.add_opt_simple(:sync_session, 'Name of session to use for admin commands. default: first in parameters')
+          options.declare(:sync_info, 'Information for sync instance and sessions (Hash)')
+          options.declare(:sync_session, 'Name of session to use for admin commands. default: first in parameters')
           options.parse_options!
           return if env[:man_only]
           @params = options.get_option(:sync_info, is_type: :mandatory)

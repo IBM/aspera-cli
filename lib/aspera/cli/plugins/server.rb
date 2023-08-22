@@ -49,9 +49,9 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.add_opt_simple(:ssh_keys, 'SSH key path list (Array or single)')
-          options.add_opt_simple(:passphrase, 'SSH private key passphrase')
-          options.add_opt_simple(:ssh_options, 'SSH options (Hash)')
+          options.declare(:ssh_keys, 'SSH key path list (Array or single)')
+          options.declare(:passphrase, 'SSH private key passphrase')
+          options.declare(:ssh_options, 'SSH options (Hash)')
           options.parse_options!
           @ssh_opts = nil
         end

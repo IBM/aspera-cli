@@ -187,31 +187,21 @@ module Aspera
       # define header for manual
       def init_global_options
         Log.log.debug('init_global_options')
-        @opt_mgr.add_opt_switch(:help, '-h', 'Show this message.') { @option_help = true }
-        @opt_mgr.add_opt_switch(:bash_comp, 'generate bash completion for command') { @bash_completion = true }
-        @opt_mgr.add_opt_switch(:show_config, 'Display parameters used for the provided action.') { @option_show_config = true }
-        @opt_mgr.add_opt_switch(:rest_debug, '-r', 'more debug for HTTP calls') { @option_rest_debug = true }
-        @opt_mgr.add_opt_switch(:version, '-v', 'display version') { @formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
-        @opt_mgr.add_opt_switch(:warnings, '-w', 'check for language warnings') { $VERBOSE = true }
-        # handler must be set before declaration
-        @opt_mgr.set_obj_attr(:log_level, Log.instance, :level)
-        @opt_mgr.set_obj_attr(:logger, Log.instance, :logger_type)
-        @opt_mgr.set_obj_attr(:insecure, self, :option_insecure, :no)
-        @opt_mgr.set_obj_attr(:ui, self, :option_ui)
-        @opt_mgr.set_obj_attr(:http_options, self, :option_http_options)
-        @opt_mgr.set_obj_attr(:log_secrets, SecretHider, :log_secrets)
-        @opt_mgr.set_obj_attr(:cache_tokens, self, :option_cache_tokens)
-        @opt_mgr.add_opt_list(:ui, OpenApplication.user_interfaces, 'method to start browser')
-        @opt_mgr.add_opt_list(:log_level, Log.levels, 'Log level')
-        @opt_mgr.add_opt_list(:logger, Log::LOG_TYPES, 'logging method')
-        @opt_mgr.add_opt_simple(:lock_port, 'prevent dual execution of a command, e.g. in cron')
-        @opt_mgr.add_opt_simple(:http_options, 'options for http socket (extended value)')
-        @opt_mgr.add_opt_boolean(:insecure, 'do not validate HTTPS certificate')
-        @opt_mgr.add_opt_boolean(:once_only, 'process only new items (some commands)')
-        @opt_mgr.add_opt_boolean(:log_secrets, 'show passwords in logs')
-        @opt_mgr.add_opt_boolean(:cache_tokens, 'save and reuse Oauth tokens')
-        @opt_mgr.set_option(:ui, OpenApplication.default_gui_mode)
-        @opt_mgr.set_option(:once_only, false)
+        @opt_mgr.declare(:help, 'Show this message', values: :none, short: 'h') { @option_help = true }
+        @opt_mgr.declare(:bash_comp, 'generate bash completion for command', values: :none) { @bash_completion = true }
+        @opt_mgr.declare(:show_config, 'Display parameters used for the provided action.', values: :none) { @option_show_config = true }
+        @opt_mgr.declare(:rest_debug, 'more debug for HTTP calls', values: :none, short: 'r') { @option_rest_debug = true }
+        @opt_mgr.declare(:version, 'display version', values: :none, short: 'v') { @formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
+        @opt_mgr.declare(:warnings, 'check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
+        @opt_mgr.declare(:ui, 'method to start browser', values: OpenApplication.user_interfaces, handler: {o: self, m: :option_ui}, default: OpenApplication.default_gui_mode)
+        @opt_mgr.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
+        @opt_mgr.declare(:logger, 'logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        @opt_mgr.declare(:lock_port, 'prevent dual execution of a command, e.g. in cron')
+        @opt_mgr.declare(:http_options, 'options for http socket (extended value)', handler: {o: self, m: :option_http_options})
+        @opt_mgr.declare(:insecure, 'do not validate HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
+        @opt_mgr.declare(:once_only, 'process only new items (some commands)', values: :bool, default: false)
+        @opt_mgr.declare(:log_secrets, 'show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
+        @opt_mgr.declare(:cache_tokens, 'save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
         # parse declared options
         @opt_mgr.parse_options!
       end

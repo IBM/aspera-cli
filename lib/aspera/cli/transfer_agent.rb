@@ -54,18 +54,13 @@ module Aspera
         @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
-        @opt_mgr.set_obj_attr(:ts, self, :option_transfer_spec)
-        @opt_mgr.set_obj_attr(:transfer_info, self, :option_transfer_info)
-        @opt_mgr.add_opt_simple(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}")
-        @opt_mgr.add_opt_simple(:to_folder, 'Destination folder for transferred files')
-        @opt_mgr.add_opt_simple(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
-        @opt_mgr.add_opt_list(:src_type, %i[list pair], 'Type of file list')
-        @opt_mgr.add_opt_list(:transfer, TRANSFER_AGENTS, 'Type of transfer agent')
-        @opt_mgr.add_opt_simple(:transfer_info, 'Parameters for transfer agent (Hash)')
-        @opt_mgr.add_opt_list(:progress, %i[none native multi], 'Type of progress bar')
-        @opt_mgr.set_option(:transfer, :direct)
-        @opt_mgr.set_option(:src_type, :list)
-        @opt_mgr.set_option(:progress, :native) # use native ascp progress bar as it is more reliable
+        @opt_mgr.declare(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}", handler: {o: self, m: :option_transfer_spec})
+        @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
+        @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
+        @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
+        @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
+        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent (Hash)', handler: {o: self, m: :option_transfer_info})
+        @opt_mgr.declare(:progress, 'Type of progress bar', values: %i[none native multi], default: :native)
         @opt_mgr.parse_options!
       end
 

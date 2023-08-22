@@ -9,9 +9,9 @@ module Aspera
     class BasicAuthPlugin < Aspera::Cli::Plugin
       class << self
         def register_options(env)
-          env[:options].add_opt_simple(:url, 'URL of application, e.g. https://org.asperafiles.com')
-          env[:options].add_opt_simple(:username, 'username to log in')
-          env[:options].add_opt_simple(:password, "user's password")
+          env[:options].declare(:url, 'URL of application, e.g. https://org.asperafiles.com')
+          env[:options].declare(:username, 'username to log in')
+          env[:options].declare(:password, "user's password")
           env[:options].parse_options!
         end
       end
