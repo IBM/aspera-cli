@@ -50,9 +50,9 @@ module Aspera
           return text_pixels.join
         end
 
-        # https://iterm2.com/documentation-images.html
+        # display image in iTerm2
         def iterm_display_image(blob)
-          image = Magick::ImageList.new.from_blob(blob)
+          # image = Magick::ImageList.new.from_blob(blob)
           arguments = {
             inline:              1,
             preserveAspectRatio: 1,
@@ -60,10 +60,12 @@ module Aspera
             # width:               image.columns,
             # height:              image.rows
           }.map { |k, v| "#{k}=#{v}" }.join(';')
-          # https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
+          # \a is BEL, \e is ESC : https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
+          # https://iterm2.com/documentation-images.html
           return "\e]1337;File=#{arguments}:#{Base64.encode64(blob)}\a"
         end
 
+        # @return [Boolean] true if the terminal supports iTerm2 image display
         def iterm_supported?
           TERM_ENV_VARS.each do |env_var|
             return true if ITERM_NAMES.any? { |term| ENV[env_var]&.include?(term) }
