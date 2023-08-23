@@ -2944,11 +2944,11 @@ OPTIONS:
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
         --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
-        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           RSA private key passphrase
-        --shared-folder=VALUE        Shared folder source for package files
-        --link=VALUE                 Public link for specific operation
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+        --link=VALUE                 Public link authorization (specific operations)
+        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
+        --shared-folder=VALUE        Send package with files from shared folder
 
 
 COMMAND: cos
@@ -4803,6 +4803,9 @@ faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
 faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes list
+faspex5 admin res shared_inboxes members %name:'ascli shinbox' create %name:john@example.com
+faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:john@example.com
+faspex5 admin res shared_inboxes members %name:'ascli shinbox' list
 faspex5 admin res workgroups list
 faspex5 admin smtp show
 faspex5 admin smtp test my_email_external

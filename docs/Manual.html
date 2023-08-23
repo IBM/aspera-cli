@@ -3970,11 +3970,11 @@ OPTIONS:
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
         --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
-        --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           RSA private key passphrase
-        --shared-folder=VALUE        Shared folder source for package files
-        --link=VALUE                 Public link for specific operation
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+        --link=VALUE                 Public link authorization (specific operations)
+        --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;]
+        --shared-folder=VALUE        Send package with files from shared folder
 
 
 COMMAND: cos
@@ -5777,22 +5777,25 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb354-1"><a href
 <span id="cb354-7"><a href="#cb354-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res registrations list</span>
 <span id="cb354-8"><a href="#cb354-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res saml_configs list</span>
 <span id="cb354-9"><a href="#cb354-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes list</span>
-<span id="cb354-10"><a href="#cb354-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res workgroups list</span>
-<span id="cb354-11"><a href="#cb354-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp show</span>
-<span id="cb354-12"><a href="#cb354-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp test my_email_external</span>
-<span id="cb354-13"><a href="#cb354-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> bearer_token</span>
-<span id="cb354-14"><a href="#cb354-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway <span class="at">--value</span><span class="op">=</span>https://localhost:12345/aspera/faspex</span>
-<span id="cb354-15"><a href="#cb354-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
-<span id="cb354-16"><a href="#cb354-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
-<span id="cb354-17"><a href="#cb354-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
-<span id="cb354-18"><a href="#cb354-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb354-19"><a href="#cb354-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb354-20"><a href="#cb354-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
-<span id="cb354-21"><a href="#cb354-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
-<span id="cb354-22"><a href="#cb354-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
-<span id="cb354-23"><a href="#cb354-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
-<span id="cb354-24"><a href="#cb354-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
-<span id="cb354-25"><a href="#cb354-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
+<span id="cb354-10"><a href="#cb354-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:<span class="st">&#39;ascli shinbox&#39;</span> create %name:john@example.com</span>
+<span id="cb354-11"><a href="#cb354-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:<span class="st">&#39;ascli shinbox&#39;</span> delete %name:john@example.com</span>
+<span id="cb354-12"><a href="#cb354-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:<span class="st">&#39;ascli shinbox&#39;</span> list</span>
+<span id="cb354-13"><a href="#cb354-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res workgroups list</span>
+<span id="cb354-14"><a href="#cb354-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp show</span>
+<span id="cb354-15"><a href="#cb354-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp test my_email_external</span>
+<span id="cb354-16"><a href="#cb354-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> bearer_token</span>
+<span id="cb354-17"><a href="#cb354-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway <span class="at">--value</span><span class="op">=</span>https://localhost:12345/aspera/faspex</span>
+<span id="cb354-18"><a href="#cb354-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
+<span id="cb354-19"><a href="#cb354-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
+<span id="cb354-20"><a href="#cb354-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
+<span id="cb354-21"><a href="#cb354-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb354-22"><a href="#cb354-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb354-23"><a href="#cb354-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
+<span id="cb354-24"><a href="#cb354-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
+<span id="cb354-25"><a href="#cb354-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb354-26"><a href="#cb354-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing <span class="at">--value</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
+<span id="cb354-27"><a href="#cb354-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
+<span id="cb354-28"><a href="#cb354-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
 <h2 data-number="12.5" id="faspex-5-send-a-package"><span
 class="header-section-number">12.5</span> Faspex 5: Send a package</h2>
 <p>The <code>value</code> option provided to command
