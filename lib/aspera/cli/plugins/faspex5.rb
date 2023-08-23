@@ -453,7 +453,7 @@ module Aspera
               when :oauth_clients
                 display_fields = [:all_but, 'public_key']
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
-              when :shared_inboxes
+              when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups)
               end
               res_command = options.get_next_command(available_commands)
@@ -461,8 +461,8 @@ module Aspera
               when *Plugin::ALL_OPS
                 return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
               when :members, :saml_groups
-                shd_bx_id = instance_identifier { |field, value| lookup_field_to_id(path: 'shared_inboxes', field: field, value: value)}
-                res_path = "shared_inboxes/#{shd_bx_id}/#{res_command}"
+                res_id = instance_identifier { |field, value| lookup_field_to_id(path: res_type.to_s, field: field, value: value)}
+                res_path = "#{res_type}/#{res_id}/#{res_command}"
                 list_key = res_command.to_s
                 list_key = 'groups' if res_command.eql?(:saml_groups)
                 sub_command = options.get_next_command(%i[create list modify delete])
