@@ -2804,52 +2804,52 @@ ARGS
         Some commands require mandatory arguments, e.g. a path.
 
 OPTIONS: global
-        --interactive=ENUM           use interactive input of missing params: [no], yes
-        --ask-options=ENUM           ask even optional options: [no], yes
-        --format=ENUM                output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
-        --display=ENUM               output only some information: [info], data, error
-        --fields=VALUE               comma separated list of fields, or ALL, or DEF
-        --select=VALUE               select only some items in lists, extended value: hash (column, value)
-        --table-style=VALUE          table display style
-        --flat-hash=ENUM             display hash values as additional keys: no, [yes]
-        --transpose-single=ENUM      single object fields output vertically: no, [yes]
-        --show-secrets=ENUM          show secrets on command output: [no], yes
-    -h, --help                       Show this message.
-        --bash-comp                  generate bash completion for command
-        --show-config                Display parameters used for the provided action.
-    -r, --rest-debug                 more debug for HTTP calls
-    -v, --version                    display version
-    -w, --warnings                   check for language warnings
-        --ui=ENUM                    method to start browser: text, [graphical]
+        --interactive=ENUM           Use interactive input of missing params: [no], yes
+        --ask-options=ENUM           Ask even optional options: [no], yes
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
+        --display=ENUM               Output only some information: [info], data, error
+        --fields=VALUE               Comma separated list of fields, or ALL, or DEF
+        --select=VALUE               Select only some items in lists: column, value (Hash)
+        --table-style=VALUE          Table display style
+        --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
+        --transpose-single=ENUM      Single object fields output vertically: no, [yes]
+        --show-secrets=ENUM          Show secrets on command output: [no], yes
+    -h, --help                       Show this message
+        --bash-comp                  Generate bash completion for command
+        --show-config                Display parameters used for the provided action
+    -r, --rest-debug                 More debug for HTTP calls (REST)
+    -v, --version                    Display version
+    -w, --warnings                   Check for language warnings
+        --ui=ENUM                    Method to start browser: text, [graphical]
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
-        --logger=ENUM                logging method: [stderr], stdout, syslog
-        --lock-port=VALUE            prevent dual execution of a command, e.g. in cron
-        --http-options=VALUE         options for http socket (extended value)
-        --insecure=ENUM              do not validate HTTPS certificate: no, [yes]
-        --once-only=ENUM             process only new items (some commands): [no], yes
-        --log-secrets=ENUM           show passwords in logs: [no], yes
-        --cache-tokens=ENUM          save and reuse Oauth tokens: no, [yes]
+        --logger=ENUM                Logging method: [stderr], stdout, syslog
+        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron
+        --http-options=VALUE         Options for http socket (Hash)
+        --insecure=ENUM              Do not validate HTTPS certificate: [no], yes
+        --once-only=ENUM             Process only new items (some commands): [no], yes
+        --log-secrets=ENUM           Show passwords in logs: [no], yes
+        --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test export_to_cli file flush_tokens folder gem genkey id initdemo list lookup open overview plugin preset proxy_check secure smtp_settings vault wizard
 OPTIONS:
-        --query=VALUE                additional filter for API calls (extended value) (some commands)
-        --value=VALUE                extended value for create, update, list filter
-        --property=VALUE             name of property to set
-        --id=VALUE                   resource identifier (modify,delete,show)
+        --query=VALUE                Additional filter for API calls for some commands (Hash)
+        --value=VALUE                Value for create, update, list filter (Hash)
+        --property=VALUE             Name of property to set
+        --id=VALUE                   Resource identifier (modify,delete,show)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
-        --bfail=ENUM                 Bulk operation error handling: [no], yes
-        --config-file=VALUE          read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
-    -N, --no-default                 do not load default configuration for plugin
+        --bfail=ENUM                 Bulk operation error handling: no, [yes]
+        --config-file=VALUE          Read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
+    -N, --no-default                 Do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: [no], yes
-        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: [no], yes
-        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): [no], yes
+        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
+        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
-    -P, --presetVALUE                load the named option preset from current config file
+    -P, --presetVALUE                Load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
-        --smtp=VALUE                 SMTP configuration (extended value: hash)
+        --smtp=VALUE                 SMTP configuration (Hash)
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials (Array with user and password)
         --secret=VALUE               Secret for access keys
@@ -2861,65 +2861,65 @@ OPTIONS:
         --notif-template=VALUE       Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
-        --ts=VALUE                   Override transfer spec values (Hash, e.g. use @json: prefix), current={"create_dir"=>true}
+        --ts=VALUE                   Override transfer spec values, current= (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
-        --src-type=ENUM              Type of file list: list, pair
-        --transfer=ENUM              Type of transfer agent: direct, node, connect, httpgw, trsdk
+        --src-type=ENUM              Type of file list: [list], pair
+        --transfer=ENUM              Type of transfer agent: [direct], node, connect, httpgw, trsdk
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
-        --progress=ENUM              Type of progress bar: none, native, multi
+        --progress=ENUM              Type of progress bar: none, [native], multi
 
 
 COMMAND: shares
 SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --type=ENUM                  Type of user/group for operations: any, local, ldap, saml
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --type=ENUM                  Type of user/group for operations: [any], local, ldap, saml
 
 
 COMMAND: node
 SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --validator=VALUE            identifier of validator (optional for central)
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --sync-name=VALUE            sync name
-        --path=VALUE                 file or folder path for gen4 operation "file"
-        --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
-        --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
+        --sync-name=VALUE            Sync name
+        --path=VALUE                 File or folder path for gen4 operation "file"
+        --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
+        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
 
 COMMAND: orchestrator
 SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --params=VALUE               parameters hash table, use @json:{"param":"value"}
-        --result=VALUE               specify result value as: 'work step:parameter'
-        --synchronous=ENUM           work step:parameter expected as result: [no], yes
-        --ret-style=ENUM             how return type is requested in api: header, arg, ext
-        --auth-style=ENUM            authentication type: arg_pass, head_basic, apikey
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --params=VALUE               Start parameters (Hash)
+        --result=VALUE               Specify result value as: 'work step:parameter'
+        --synchronous=ENUM           Work step:parameter expected as result: [no], yes
+        --ret-style=ENUM             How return type is requested in api: header, [arg], ext
+        --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
 
 
 COMMAND: bss
 SUBCOMMANDS: subscription
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
 
 
 COMMAND: alee
 SUBCOMMANDS: entitlement
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
 
 
 COMMAND: ats
@@ -2938,17 +2938,17 @@ COMMAND: faspex5
 SUBCOMMANDS: admin bearer_token gateway health packages postprocessing shared_folders user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: boot, link, web, jwt
+        --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
         --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           RSA private key passphrase
         --shared-folder=VALUE        Shared folder source for package files
-        --link=VALUE                 public link for specific operation
+        --link=VALUE                 Public link for specific operation
 
 
 COMMAND: cos
@@ -2967,50 +2967,50 @@ COMMAND: faspex
 SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --link=VALUE                 public link for specific operation
-        --delivery-info=VALUE        package delivery information (extended value)
-        --source-name=VALUE          create package from remote source (by name)
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --link=VALUE                 Public link for specific operation
+        --delivery-info=VALUE        Package delivery information (Hash)
+        --source-name=VALUE          Create package from remote source (by name)
         --storage=VALUE              Faspex local storage definition
-        --recipient=VALUE            use if recipient is a dropbox (with *)
-        --box=ENUM                   package box: inbox, archive, sent
+        --recipient=VALUE            Use if recipient is a dropbox (with *)
+        --box=ENUM                   Package box: [inbox], archive, sent
 
 
 COMMAND: preview
 SUBCOMMANDS: check events scan test trevents
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --skip-format=ENUM           skip this preview format (multiple possible): png, mp4
-        --folder-reset-cache=ENUM    force detection of generated preview by refresh cache: [no], header, read
-        --skip-types=VALUE           skip types in comma separated list
-        --previews-folder=VALUE      preview folder in storage root
-        --temp-folder=VALUE          path to temp folder
-        --skip-folders=VALUE         list of folder to skip
-        --case=VALUE                 basename of output for for test
-        --scan-path=VALUE            subpath in folder id to start scan in (default=/)
-        --scan-id=VALUE              folder id in storage to start scan in, default is access key main folder id
-        --mimemagic=ENUM             use Mime type detection of gem mimemagic: [no], yes
-        --overwrite=ENUM             when to overwrite result file: always, never, [mtime]
-        --file-access=ENUM           how to read and write files in repository: [local], remote
-        --max-size=VALUE             maximum size (in bytes) of preview file
-        --thumb-vid-scale=VALUE      png: video: size (ffmpeg scale argument)
-        --thumb-vid-fraction=VALUE   png: video: time percent position of snapshot
-        --thumb-img-size=VALUE       png: non-video: height (and width)
-        --thumb-text-font=VALUE      png: plaintext: font to render text with imagemagick convert (identify -list font)
-        --video-conversion=ENUM      mp4: method for preview generation: [reencode], blend, clips
-        --video-png-conv=ENUM        mp4: method for thumbnail generation: [fixed], animated
-        --video-scale=VALUE          mp4: all: video scale (ffmpeg)
-        --video-start-sec=VALUE      mp4: all: start offset (seconds) of video preview
-        --reencode-ffmpeg=VALUE      mp4: reencode: options to ffmpeg
-        --blend-keyframes=VALUE      mp4: blend: # key frames
-        --blend-pauseframes=VALUE    mp4: blend: # pause frames
-        --blend-transframes=VALUE    mp4: blend: # transition blend frames
-        --blend-fps=VALUE            mp4: blend: frame per second
-        --clips-count=VALUE          mp4: clips: number of clips
-        --clips-length=VALUE         mp4: clips: length in seconds of each clips
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
+        --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
+        --skip-types=VALUE           Skip types in comma separated list
+        --previews-folder=VALUE      Preview folder in storage root
+        --temp-folder=VALUE          Path to temp folder
+        --skip-folders=VALUE         List of folder to skip
+        --case=VALUE                 Basename of output for for test
+        --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
+        --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
+        --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
+        --overwrite=ENUM             When to overwrite result file: always, never, [mtime]
+        --file-access=ENUM           How to read and write files in repository: [local], remote
+        --max-size=VALUE             Maximum size (in bytes) of preview file
+        --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
+        --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
+        --thumb-img-size=VALUE       Png: non-video: height (and width)
+        --thumb-text-font=VALUE      Png: plaintext: font to render text with imagemagick convert (identify -list font)
+        --video-conversion=ENUM      Mp4: method for preview generation: [reencode], blend, clips
+        --video-png-conv=ENUM        Mp4: method for thumbnail generation: [fixed], animated
+        --video-scale=VALUE          Mp4: all: video scale (ffmpeg)
+        --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
+        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
+        --blend-keyframes=VALUE      Mp4: blend: # key frames
+        --blend-pauseframes=VALUE    Mp4: blend: # pause frames
+        --blend-transframes=VALUE    Mp4: blend: # transition blend frames
+        --blend-fps=VALUE            Mp4: blend: frame per second
+        --clips-count=VALUE          Mp4: clips: number of clips
+        --clips-length=VALUE         Mp4: clips: length in seconds of each clips
 
 
 COMMAND: sync
@@ -3024,10 +3024,10 @@ COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --auth=ENUM                  OAuth type of authentication: web, jwt
-        --operation=ENUM             client operation for transfers: push, pull
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: web, [jwt]
+        --operation=ENUM             Client operation for transfers: [push], pull
         --client-id=VALUE            OAuth API client identifier
         --client-secret=VALUE        OAuth API client secret
         --redirect-uri=VALUE         OAuth API client redirect URI
@@ -3039,25 +3039,25 @@ OPTIONS:
         --link=VALUE                 Public link to shared resource
         --new-user-option=VALUE      New user creation option for unknown package recipients
         --from-folder=VALUE          Source folder for Folder-to-Folder transfer
-        --validate-metadata=ENUM     Validate shared inbox metadata: [no], yes
+        --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
 
 COMMAND: node
 SUBCOMMANDS: access_key api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
-        --validator=VALUE            identifier of validator (optional for central)
+        --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --sync-name=VALUE            sync name
-        --path=VALUE                 file or folder path for gen4 operation "file"
-        --token-type=ENUM            type of token used for transfers: aspera, basic, hybrid
-        --default-ports=ENUM         use standard FASP ports or get from node api (gen4): [no], yes
+        --sync-name=VALUE            Sync name
+        --path=VALUE                 File or folder path for gen4 operation "file"
+        --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
+        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
 
 COMMAND: server
 SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
         --ssh-keys=VALUE             SSH key path list (Array or single)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
@@ -3067,10 +3067,10 @@ COMMAND: console
 SUBCOMMANDS: health transfer
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
-        --username=VALUE             username to log in
-        --password=VALUE             user's password
-        --filter-from=DATE           only after date
-        --filter-to=DATE             only before date
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --filter-from=DATE           Only after date
+        --filter-to=DATE             Only before date
 
 
 ```

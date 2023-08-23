@@ -18,7 +18,8 @@ clean::
 	cd $(DIR_DOC) && make clean
 	cd $(DIR_TST) && make clean
 	rm -f Gemfile.lock
-
+delgen::
+	cd $(DIR_DOC) && make delgen
 ##################################
 # Gem build
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked

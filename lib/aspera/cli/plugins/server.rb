@@ -51,9 +51,9 @@ module Aspera
           super(env)
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
           options.declare(:passphrase, 'SSH private key passphrase')
-          options.declare(:ssh_options, 'SSH options (Hash)')
+          options.declare(:ssh_options, 'SSH options', types: Hash, default: {})
           options.parse_options!
-          @ssh_opts = nil
+          @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end
 
         # Read command line options
@@ -90,10 +90,6 @@ module Aspera
             Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}"}
           end
           server_transfer_spec['remote_user'] = options.get_option(:username, is_type: :mandatory)
-          ssh_args = options.get_option(:ssh_options)
-          ssh_args = {} if ssh_args.nil?
-          raise 'expecting a Hash for ssh_options' unless ssh_args.is_a?(Hash)
-          @ssh_opts = ssh_args.symbolize_keys
           if !server_uri.port.nil?
             @ssh_opts[:port] = server_uri.port
             server_transfer_spec['ssh_port'] = server_uri.port

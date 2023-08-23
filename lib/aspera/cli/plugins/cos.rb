@@ -15,7 +15,7 @@ module Aspera
           options.declare(:endpoint, 'Storage endpoint url')
           options.declare(:apikey, 'Storage API key')
           options.declare(:crn, 'Resource instance id')
-          options.declare(:service_credentials, 'IBM Cloud service credentials (Hash)')
+          options.declare(:service_credentials, 'IBM Cloud service credentials', types: Hash)
           options.declare(:region, 'Storage region')
           options.declare(:identity, "Authentication url (#{CosNode::IBM_CLOUD_TOKEN_URL})", default: CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!

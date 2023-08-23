@@ -104,7 +104,7 @@ module Aspera
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
-        # option description: key = option symbol, value=hash, :type, :accessor, :value, :accepted
+        # option description: key = option symbol, value=hash, :read_write, :accessor, :value, :accepted
         @declared_options = {}
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
@@ -131,8 +131,8 @@ module Aspera
         unless argv.nil?
           @parser.separator('')
           @parser.separator('OPTIONS: global')
-          declare(:interactive, 'use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
-          declare(:ask_options, 'ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
+          declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
+          declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
           parse_options!
           process_options = true
           until argv.empty?
@@ -204,7 +204,7 @@ module Aspera
       def get_option(option_symbol, is_type: :optional, allowed_types: nil)
         result = nil
         if @declared_options.key?(option_symbol)
-          case @declared_options[option_symbol][:type]
+          case @declared_options[option_symbol][:read_write]
           when :accessor
             result = @declared_options[option_symbol][:accessor].value
           when :value
@@ -212,7 +212,7 @@ module Aspera
           else
             raise 'unknown type'
           end
-          Log.log.debug{"(#{@declared_options[option_symbol][:type]}) get #{option_symbol}=#{result}"}
+          Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}) get #{option_symbol}=#{result}"}
         end
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && is_type.eql?(:mandatory) && !@fail_on_missing_mandatory
@@ -243,8 +243,8 @@ module Aspera
         end
         value = ExtendedValue.instance.evaluate(value)
         value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug{"(#{@declared_options[option_symbol][:type]}/#{where}) set #{option_symbol}=#{value}"}
-        case @declared_options[option_symbol][:type]
+        Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}/#{where}) set #{option_symbol}=#{value}"}
+        case @declared_options[option_symbol][:read_write]
         when :accessor
           @declared_options[option_symbol][:accessor].value = value
         when :value
@@ -261,17 +261,27 @@ module Aspera
       # @param default [Object] default value
       # @param values [nil, Array, :bool, :date, :none] list of allowed values, :bool for true/false, :date for dates, :none for on/off switch
       # @param short [String] short option name
-      # @param expect [Class] expected value type
+      # @param coerce [Class] one of the coerce types accepted par option parser
+      # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
-      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, expect: nil, &block)
-        raise "INTERNAL ERROR: option #{option_symbol} already declared" if @declared_options.key?(option_symbol)
+      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, &block)
+        raise "INTERNAL ERROR: #{option_symbol} already declared" if @declared_options.key?(option_symbol)
+        raise "INTERNAL ERROR: #{option_symbol} ends with dot" unless description[-1] != '.'
+        raise "INTERNAL ERROR: #{option_symbol} does not start with capital" unless description[0] == description[0].upcase
+        raise "INTERNAL ERROR: #{option_symbol} shall use :types" if description.downcase.include?('hash') || description.downcase.include?('extended value')
         opt = @declared_options[option_symbol] = {
-          type:      handler.nil? ? :value : :accessor,
+          read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
-          sensitive: SecretHider.secret?(option_symbol, '')
+          sensitive:  SecretHider.secret?(option_symbol, '')
         }
-        Log.log.debug{"declare: #{option_symbol}: #{opt[:type]}".green}
-        if opt[:type].eql?(:accessor)
+        if !types.nil?
+          types = [types] unless types.is_a?(Array)
+          raise "INTERNAL ERROR: types must be classes: #{types}" unless types.all?(Class)
+          opt[:types] = types
+          description = "#{description} (#{types.map(&:name).join(', ')})"
+        end
+        Log.log.debug{"declare: #{option_symbol}: #{opt[:read_write]}".green}
+        if opt[:read_write].eql?(:accessor)
           raise 'internal error' unless handler.is_a?(Hash)
           raise 'internal error' unless handler.keys.sort.eql?(%i[m o])
           Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
@@ -281,9 +291,9 @@ module Aspera
         on_args = [description]
         case values
         when nil
-          on_args.unshift(symbol_to_option(option_symbol, 'VALUE'))
-          on_args.unshift("-#{short}VALUE") unless short.nil?
-          on_args.push(expect) unless expect.nil?
+          on_args.push(symbol_to_option(option_symbol, 'VALUE'))
+          on_args.push("-#{short}VALUE") unless short.nil?
+          on_args.push(coerce) unless coerce.nil?
           @parser.on(*on_args) { |v| set_option(option_symbol, v, 'cmdline') }
         when Array, :bool
           if values.eql?(:bool)
@@ -297,12 +307,12 @@ module Aspera
           if values.eql?(BOOLEAN_VALUES)
             help_values = BOOLEAN_SIMPLE.map{|i|(i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
           end
-          on_args.unshift(symbol_to_option(option_symbol, 'ENUM'))
+          on_args[0] = "#{description}: #{help_values}"
+          on_args.push(symbol_to_option(option_symbol, 'ENUM'))
           on_args.push(values)
-          on_args.push("#{description}: #{help_values}")
           @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, description, values), 'cmdline')}
         when :date
-          on_args.unshift(symbol_to_option(option_symbol, 'DATE'))
+          on_args.push(symbol_to_option(option_symbol, 'DATE'))
           @parser.on(*on_args) do |v|
             time_string = case v
             when 'now' then Manager.time_to_string(Time.now)
@@ -313,8 +323,8 @@ module Aspera
           end
         when :none
           raise "internal error: missing block for #{option_symbol}" if block.nil?
-          on_args.unshift(symbol_to_option(option_symbol, nil))
-          on_args.unshift("-#{short}") if short.is_a?(String)
+          on_args.push(symbol_to_option(option_symbol, nil))
+          on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
         else raise 'internal error'
         end

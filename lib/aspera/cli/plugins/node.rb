@@ -72,12 +72,12 @@ module Aspera
           end
 
           def register_node_options(env)
-            env[:options].declare(:validator, 'identifier of validator (optional for central)')
+            env[:options].declare(:validator, 'Identifier of validator (optional for central)')
             env[:options].declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
-            env[:options].declare(:sync_name, 'sync name')
-            env[:options].declare(:path, 'file or folder path for gen4 operation "file"')
-            env[:options].declare(:token_type, 'type of token used for transfers', values: %i[aspera basic hybrid], default: :aspera)
-            env[:options].declare(:default_ports, 'use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
+            env[:options].declare(:sync_name, 'Sync name')
+            env[:options].declare(:path, 'File or folder path for gen4 operation "file"')
+            env[:options].declare(:token_type, 'Type of token used for transfers', values: %i[aspera basic hybrid], default: :aspera)
+            env[:options].declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
             env[:options].parse_options!
             Aspera::Node.use_standard_ports = env[:options].get_option(:default_ports)
           end

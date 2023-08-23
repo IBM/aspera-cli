@@ -55,24 +55,24 @@ module Aspera
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # link CLI options to gen_info attributes
           options.declare(
-            :skip_format, 'skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
+            :skip_format, 'Skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
             handler: {o: self, m: :option_skip_format}, default: [])
           options.declare(
-            :folder_reset_cache, 'force detection of generated preview by refresh cache',
+            :folder_reset_cache, 'Force detection of generated preview by refresh cache',
             values: %i[no header read],
             handler: {o: self, m: :option_folder_reset_cache},
             default: :no)
-          options.declare(:skip_types, 'skip types in comma separated list', handler: {o: self, m: :option_skip_types})
-          options.declare(:previews_folder, 'preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
-          options.declare(:temp_folder, 'path to temp folder', default: Dir.tmpdir)
-          options.declare(:skip_folders, 'list of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
-          options.declare(:case, 'basename of output for for test')
-          options.declare(:scan_path, 'subpath in folder id to start scan in (default=/)')
-          options.declare(:scan_id, 'folder id in storage to start scan in, default is access key main folder id')
-          options.declare(:mimemagic, 'use Mime type detection of gem mimemagic', values: :bool, default: false)
-          options.declare(:overwrite, 'when to overwrite result file', values: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
+          options.declare(:skip_types, 'Skip types in comma separated list', handler: {o: self, m: :option_skip_types})
+          options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
+          options.declare(:temp_folder, 'Path to temp folder', default: Dir.tmpdir)
+          options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
+          options.declare(:case, 'Basename of output for for test')
+          options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
+          options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
+          options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', values: :bool, default: false)
+          options.declare(:overwrite, 'When to overwrite result file', values: %i[always never mtime], handler: {o: self, m: :option_overwrite}, default: :mtime)
           options.declare(
-            :file_access, 'how to read and write files in repository',
+            :file_access, 'How to read and write files in repository',
             values: %i[local remote],
             handler: {o: self, m: :option_file_access},
             default: :local)
@@ -84,7 +84,7 @@ module Aspera
             elsif Cli::Manager::BOOLEAN_SIMPLE.include?(opt[:default])
               :bool
             end
-            options.declare(opt[:name], opt[:description], values: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
+            options.declare(opt[:name], opt[:description].capitalize, values: values, handler: {o: @gen_options, m: opt[:name]}, default: opt[:default])
           end
 
           options.parse_options!

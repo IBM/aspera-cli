@@ -31,13 +31,14 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 
-# regenerate always, as it depends on sources
-.PHONY: $(DIR_TOP)README.md
-$(DIR_TOP)README.md: $(DIR_DOC)README.erb.md $(DIR_DOC)doc_tools.rb
-	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DIR_DOC)README.erb.md $(EXETESTB) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC) > $@
+# regenerate always, as it depends on sources (when a new option is added for example). instead do: make delgen doc
+#.PHONY: $(DIR_TOP)README.md
+DOC_FILES=$(DIR_DOC)README.erb.md $(EXETESTB) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC)
+$(DIR_TOP)README.md: $(DOC_FILES) $(DIR_DOC)doc_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(GEMSPEC)
+	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DOC_FILES) > $@
 
-#clean::
-#	rm -f $(MANUAL_PDF) $(MANUAL_HTML)
+delgen::
+	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(DIR_TOP)README.md
 
 ##################################
 # UML Diagram : requires tools: graphviz and gem xumlidot
@@ -47,5 +48,5 @@ $(DIR_DOC)uml.png: $(DIR_TOP)common.mak
 	xumlidot --dot --no-composition --usage $(DIR_LIB). > $(DIR_DOC)uml.dot
 	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
 	rm -f $(DIR_DOC)uml.dot
-clean::
+delgen::
 	rm -f $(DIR_DOC)uml.dot

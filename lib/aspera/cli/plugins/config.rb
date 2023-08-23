@@ -122,7 +122,7 @@ module Aspera
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           add_plugin_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
           # do file parameter first
-          options.declare(:config_file, "read parameters from file in YAML format, current=#{@option_config_file}", handler: {o: self, m: :option_config_file})
+          options.declare(:config_file, "Read parameters from file in YAML format, current=#{@option_config_file}", handler: {o: self, m: :option_config_file})
           options.parse_options!
           # read correct file (set @config_presets)
           read_config_file
@@ -133,16 +133,16 @@ module Aspera
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
-          options.declare(:no_default, 'do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
+          options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
           options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
           options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
           options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
           options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
-          options.declare(:preset, 'load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
+          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:pkeypath, 'Wizard: path to private key for JWT')
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
-          options.declare(:smtp, 'SMTP configuration (extended value: hash)')
+          options.declare(:smtp, 'SMTP configuration', types: Hash)
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials (Array with user and password)')
           options.declare(:secret, 'Secret for access keys')
@@ -152,7 +152,7 @@ module Aspera
           options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder}, default: File.join(@main_folder, 'sdk'))
           options.declare(:notif_to, 'Email recipient for notification of transfers')
           options.declare(:notif_template, 'Email ERB template for notification of transfers')
-          options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', expect: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
+          options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
           options.parse_options!
           pac_script = options.get_option(:fpac)

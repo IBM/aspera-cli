@@ -12,8 +12,8 @@ module Aspera
         def initialize(env)
           super(env)
           time_now = Time.now
-          options.declare(:filter_from, 'only after date', values: :date, default: Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS))
-          options.declare(:filter_to, 'only before date', values: :date, default: Manager.time_to_string(time_now))
+          options.declare(:filter_from, 'Only after date', values: :date, default: Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS))
+          options.declare(:filter_to, 'Only before date', values: :date, default: Manager.time_to_string(time_now))
           options.parse_options!
         end
 

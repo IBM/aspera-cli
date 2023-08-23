@@ -52,7 +52,7 @@ module Aspera
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:shared_folder, 'Shared folder source for package files')
-          options.declare(:link, 'public link for specific operation')
+          options.declare(:link, 'Public link for specific operation')
           options.parse_options!
         end
 

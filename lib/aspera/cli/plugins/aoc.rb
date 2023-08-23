@@ -62,7 +62,7 @@ module Aspera
           @cache_home_node_file = nil
           @cache_api_aoc = nil
           options.declare(:auth, 'OAuth type of authentication', values: Oauth::STD_AUTH_TYPES, default: :jwt)
-          options.declare(:operation, 'client operation for transfers', values: %i[push pull], default: :push)
+          options.declare(:operation, 'Client operation for transfers', values: %i[push pull], default: :push)
           options.declare(:client_id, 'OAuth API client identifier')
           options.declare(:client_secret, 'OAuth API client secret')
           options.declare(:redirect_uri, 'OAuth API client redirect URI')

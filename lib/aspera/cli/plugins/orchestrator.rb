@@ -9,11 +9,11 @@ module Aspera
       class Orchestrator < Aspera::Cli::BasicAuthPlugin
         def initialize(env)
           super(env)
-          options.declare(:params, 'parameters hash table, use @json:{"param":"value"}', default: {})
-          options.declare(:result, "specify result value as: 'work step:parameter'")
-          options.declare(:synchronous, 'work step:parameter expected as result', values: :bool, default: :no)
-          options.declare(:ret_style, 'how return type is requested in api', values: %i[header arg ext], default: :arg)
-          options.declare(:auth_style, 'authentication type', values: %i[arg_pass head_basic apikey], default: :head_basic)
+          options.declare(:params, 'Start parameters', types: Hash, default: {})
+          options.declare(:result, "Specify result value as: 'work step:parameter'")
+          options.declare(:synchronous, 'Work step:parameter expected as result', values: :bool, default: :no)
+          options.declare(:ret_style, 'How return type is requested in api', values: %i[header arg ext], default: :arg)
+          options.declare(:auth_style, 'Authentication type', values: %i[arg_pass head_basic apikey], default: :head_basic)
           options.parse_options!
         end
 
@@ -146,6 +146,7 @@ module Aspera
               call_params = {format: :json}
               override_accept = nil
               # set external parameters if any
+              # TODO: make not an option, but a parameter
               self.options.get_option(:params, is_type: :mandatory).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
               end

@@ -32,10 +32,10 @@ module Aspera
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
         return if @@options_created
-        options.declare(:query, 'additional filter for API calls (extended value) (some commands)')
-        options.declare(:value, 'extended value for create, update, list filter')
-        options.declare(:property, 'name of property to set')
-        options.declare(:id, "resource identifier (#{INSTANCE_OPS.join(',')})")
+        options.declare(:query, 'Additional filter for API calls for some commands', types: Hash)
+        options.declare(:value, 'Value for create, update, list filter', types: Hash)
+        options.declare(:property, 'Name of property to set')
+        options.declare(:id, "Resource identifier (#{INSTANCE_OPS.join(',')})")
         options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
         options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
         options.parse_options!

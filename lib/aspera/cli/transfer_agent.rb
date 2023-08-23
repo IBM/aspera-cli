@@ -54,12 +54,12 @@ module Aspera
         @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
-        @opt_mgr.declare(:ts, "Override transfer spec values (Hash, e.g. use @json: prefix), current=#{@opt_mgr.get_option(:ts)}", handler: {o: self, m: :option_transfer_spec})
+        @opt_mgr.declare(:ts, "Override transfer spec values, current=#{@opt_mgr.get_option(:ts)}", types: Hash, handler: {o: self, m: :option_transfer_spec})
         @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
         @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
-        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent (Hash)', handler: {o: self, m: :option_transfer_info})
+        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash,handler: {o: self, m: :option_transfer_info})
         @opt_mgr.declare(:progress, 'Type of progress bar', values: %i[none native multi], default: :native)
         @opt_mgr.parse_options!
       end

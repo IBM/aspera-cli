@@ -49,7 +49,7 @@ module Aspera
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
-              raise Fasp::Error, 'Maximum number of retry reached' if remaining_resumes <= 0
+              raise Fasp::Error, "Maximum number of retry reached (#{@parameters[:iter_max]})" if remaining_resumes <= 0
             else
               # give one chance only to non retryable errors
               unless remaining_resumes.eql?(@parameters[:iter_max])
@@ -61,7 +61,7 @@ module Aspera
 
           # take this retry in account
           remaining_resumes -= 1
-          Log.log.warn{"resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
+          Log.log.warn{"Resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

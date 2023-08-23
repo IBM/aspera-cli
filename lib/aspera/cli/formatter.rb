@@ -82,14 +82,14 @@ module Aspera
         @option_flat_hash = true
         @option_transpose_single = true
         @option_show_secrets = false
-        opt_mgr.declare(:format, 'output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format})
-        opt_mgr.declare(:display, 'output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display})
-        opt_mgr.declare(:fields, "comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields})
-        opt_mgr.declare(:select, 'select only some items in lists, extended value: hash (column, value)', handler: {o: self, m: :option_select})
-        opt_mgr.declare(:table_style, 'table display style', handler: {o: self, m: :option_table_style})
-        opt_mgr.declare(:flat_hash, 'display hash values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash})
-        opt_mgr.declare(:transpose_single, 'single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single})
-        opt_mgr.declare(:show_secrets, 'show secrets on command output', values: :bool, handler: {o: self, m: :option_show_secrets})
+        opt_mgr.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format})
+        opt_mgr.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display})
+        opt_mgr.declare(:fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields})
+        opt_mgr.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
+        opt_mgr.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style})
+        opt_mgr.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash})
+        opt_mgr.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single})
+        opt_mgr.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_show_secrets})
       end
 
       # main output method

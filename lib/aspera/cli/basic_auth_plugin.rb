@@ -10,8 +10,8 @@ module Aspera
       class << self
         def register_options(env)
           env[:options].declare(:url, 'URL of application, e.g. https://org.asperafiles.com')
-          env[:options].declare(:username, 'username to log in')
-          env[:options].declare(:password, "user's password")
+          env[:options].declare(:username, 'Username to log in')
+          env[:options].declare(:password, "User's password")
           env[:options].parse_options!
         end
       end
