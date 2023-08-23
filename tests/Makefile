@@ -1322,6 +1322,7 @@ $(T)f5_a1: $(T).exists
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res shared_inboxes list
+	$(EXE_MAN) faspex5 admin res shared_inboxes members %name:'ascli shinbox' list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res saml_configs list
 	$(EXE_MAN) faspex5 admin res metadata_profiles list
@@ -1330,6 +1331,8 @@ $(T)f5_a1: $(T).exists
 	$(EXE_MAN) -Pf5_admin faspex5 admin res node list 
 	$(EXE_MAN) -Pf5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) -Pf5_admin faspex5 admin res registrations list
+	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' create %name:john@example.com
+	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:john@example.com
 	$(EXE_MAN) -Pf5_admin faspex5 admin smtp show
 	$(EXE_MAN) -Pf5_admin faspex5 admin smtp test @preset:misc.email_external
 	@touch $@

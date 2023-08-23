@@ -23,6 +23,8 @@ module Aspera
         PACKAGE_TYPE_RECEIVED = 'received'
         PACKAGE_ALL_INIT = 'INIT'
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
+        ADMIN_RESOURCES = %i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
+                             email_notifications].freeze
         private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_MAILBOXES PACKAGE_TYPE_RECEIVED PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
           def detect(base_url)
@@ -48,11 +50,11 @@ module Aspera
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
           options.declare(:auth, 'OAuth type of authentication', values: %i[boot link].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
-          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}", default: 'inbox')
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'RSA private key passphrase')
-          options.declare(:shared_folder, 'Shared folder source for package files')
-          options.declare(:link, 'Public link for specific operation')
+          options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
+          options.declare(:link, 'Public link authorization (specific operations)')
+          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}", default: 'inbox')
+          options.declare(:shared_folder, 'Send package with files from shared folder')
           options.parse_options!
         end
 
@@ -189,28 +191,28 @@ module Aspera
           query = {'limit'=> 100}.merge(query)
           loop do
             query['offset'] = offset
-            page = @api_v5.read(path, query)[:data]
-            result.concat(page[entity_type])
+            page_result = @api_v5.read(path, query)[:data]
+            result.concat(page_result[entity_type.to_s])
             # reach the limit set by user ?
             if !max_items.nil? && (result.length >= max_items)
               result = result.slice(0, max_items)
               break
             end
-            break if result.length >= page['total_count']
+            break if result.length >= page_result['total_count']
             remain_pages -= 1 unless remain_pages.nil?
             break if remain_pages == 0
-            offset += page[entity_type].length
+            offset += page_result[entity_type].length
           end
           return result
         end
 
         # lookup an entity id from its name
-        def lookup_name_to_id(entity_type, name)
-          found = list_entities(entity_type, query: {'q'=> name}).select{|i|i['name'].eql?(name)}
+        def lookup_field_to_id(path:, value:, field: 'name', id: 'id')
+          found = list_entities(path, query: {'q'=> value}).select{|i|i[field].eql?(value)}
           case found.length
-          when 0 then raise "No #{entity_type} with name = #{name}"
+          when 0 then raise "No #{path} with #{field} = #{value}"
           when 1 then return found.first['id']
-          else raise "Multiple #{entity_type} with name = #{name}"
+          else raise "Found #{found.length} #{path} with #{field} = #{value}"
           end
         end
 
@@ -220,7 +222,7 @@ module Aspera
           case box
           when VAL_ALL then ''
           when *API_MAILBOXES then box
-          else "shared_inboxes/#{lookup_name_to_id('shared_inboxes', box)}"
+          else "shared_inboxes/#{lookup_field_to_id(path: 'shared_inboxes', value: box)}"
           end
         end
 
@@ -291,7 +293,7 @@ module Aspera
               return Main.result_transfer(transfer.start(transfer_spec))
             else
               if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
-                shared_folder = lookup_name_to_id('shared_folders', m[2])
+                shared_folder = lookup_field_to_id(path: 'shared_folders', value: m[2])
               end
               transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
               # start remote transfer and get first status
@@ -431,12 +433,14 @@ module Aspera
               end
             end
           when :admin
-            case options.get_next_command(%i[resource smtp])
+            case options.get_next_command(%i[resource smtp].freeze)
             when :resource
-              res_type = options.get_next_command(%i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
-                                                     email_notifications])
+              res_type = options.get_next_command(ADMIN_RESOURCES)
               res_path = list_key = res_type.to_s
               id_as_arg = false
+              display_fields = nil
+              adm_api = @api_v5
+              available_commands = [].concat(Plugin::ALL_OPS)
               case res_type
               when :metadata_profiles
                 res_path = 'configuration/metadata_profiles'
@@ -444,17 +448,44 @@ module Aspera
               when :email_notifications
                 list_key = false
                 id_as_arg = 'type'
-              end
-              display_fields =
-                case res_type
-                when :accounts then [:all_but, 'user_profile_data_attributes']
-                when :oauth_clients then [:all_but, 'public_key']
-                end
-              adm_api = @api_v5
-              if res_type.eql?(:oauth_clients)
+              when :accounts
+                display_fields = [:all_but, 'user_profile_data_attributes']
+              when :oauth_clients
+                display_fields = [:all_but, 'public_key']
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
+              when :shared_inboxes
+                available_commands.push(:members, :saml_groups)
               end
-              return entity_action(adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
+              res_command = options.get_next_command(available_commands)
+              case res_command
+              when *Plugin::ALL_OPS
+                return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
+              when :members, :saml_groups
+                shd_bx_id = instance_identifier { |field, value| lookup_field_to_id(path: 'shared_inboxes', field: field, value: value)}
+                res_path = "shared_inboxes/#{shd_bx_id}/#{res_command}"
+                list_key = res_command.to_s
+                list_key = 'groups' if res_command.eql?(:saml_groups)
+                sub_command = options.get_next_command(%i[create list modify delete])
+                if sub_command.eql?(:create) && options.get_option(:value).nil?
+                  raise "use option 'value' to provide saml group_id and access (refer to API)" unless res_command.eql?(:members)
+                  # first arg is one user name or list of users
+                  users = options.get_next_argument('user id, or email, or list of')
+                  users = [users] unless users.is_a?(Array)
+                  users = users.map do |user|
+                    if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
+                      lookup_field_to_id(path: 'contacts', field: m[1], value: m[2])
+                    else
+                      # it's the id
+                      user
+                    end
+                  end
+                  access = options.get_next_argument('level', mandatory: false, expected: %i[submit_only standard shared_inbox_admin], default: :standard)
+                  options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
+                end
+                return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
+                         lookup_field_to_id(path: 'contacts', field: field, value: value)
+                       end
+              end
             when :smtp
               smtp_path = 'configuration/smtp'
               case options.get_next_command(%i[show create modify delete test])
