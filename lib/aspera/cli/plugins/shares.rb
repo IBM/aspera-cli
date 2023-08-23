@@ -87,7 +87,7 @@ module Aspera
               entity_verb = options.get_next_command(entity_action)
               # entity_path = "#{entities_path}/#{instance_identifier}" if %i[app_authorizations share_permissions].include?(entity_verb)
               case entity_verb
-              when :list, :show, :create, :delete, :modify
+              when *Plugin::ALL_OPS
                 display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:any)
                 return entity_command(entity_verb, api_shares_admin, entities_path, display_fields: display_fields)
