@@ -15,6 +15,7 @@ module Aspera
       MAX_PAGES = 'pmax'
       # used when all resources are selected
       VAL_ALL = 'ALL'
+      # look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 
       # global for inherited classes
@@ -101,12 +102,12 @@ module Aspera
       # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
       # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false, is_singleton: false)
+      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false, is_singleton: false, &block)
         if is_singleton
           one_res_path = res_class_path
         elsif INSTANCE_OPS.include?(command)
           begin
-            one_res_id = instance_identifier
+            one_res_id = instance_identifier(&block)
           rescue StandardError => e
             raise e if id_default.nil?
             one_res_id = id_default
