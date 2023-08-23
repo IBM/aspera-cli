@@ -39,6 +39,7 @@ module Aspera
         end
       end
 
+      # Capture the output of $stderr and log it at debug level
       def capture_stderr
         real_stderr = $stderr
         $stderr = StringIO.new
