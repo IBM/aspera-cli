@@ -53,6 +53,7 @@ module Aspera
           client_registration_token
           client_access_key
           kms_profile].freeze
+        # TODO: remove this and use %name: instead
         ENTITY_NAME_SPECIFIER = 'name'
         PACKAGE_QUERY_DEFAULT = {'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true}.freeze
 
@@ -70,13 +71,14 @@ module Aspera
           options.declare(:scope, 'OAuth scope for AoC API calls', default: AoC::SCOPE_FILES_USER)
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:workspace, 'Name of workspace', default: :default)
+          # TODO: remove this and use %name: instead
           options.declare(:name, "Resource name (prefer to use keyword #{ENTITY_NAME_SPECIFIER})")
           options.declare(:link, 'Public link to shared resource')
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
           options.declare(:from_folder, 'Source folder for Folder-to-Folder transfer')
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
           options.parse_options!
-          # add node plugin options
+          # add node plugin options (TODO: check needed ? if yes, tell why)
           Node.new(env.merge({man_only: true, skip_basic_auth_options: true}))
         end
 
