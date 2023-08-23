@@ -160,12 +160,12 @@ module Aspera
       # @param type expected class for result
       # @param aliases list of aliases for the value
       # @return value, list or nil
-      def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil)
+      def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
         unless type.nil?
           raise 'internal: type must be a Class' unless type.is_a?(Class)
           descr = "#{descr} (#{type})"
         end
-        result = nil
+        result = default
         if !@unprocessed_cmd_line_arguments.empty?
           # there are values
           case expected
