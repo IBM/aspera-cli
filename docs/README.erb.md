@@ -350,6 +350,22 @@ podman save <%=containerimage%>|gzip><%=cmd%>_image_latest.tar.gz
 podman load -i <%=cmd%>_image_latest.tar.gz
 ```
 
+#### Container: `aspera.conf`
+
+`ascp`'s configuration file `aspera.conf` is located in the container at: `/home/cliuser/.aspera/sdk/aspera.conf` (see Dockerfile).
+As the container is immutable, it is not possible to modify this file.
+If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
+
+```bash
+echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
+```
+
+Then, tell `ascp` to use that other conf file:
+
+```bash
+--transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
+```
+
 ### <a id="ruby"></a>Ruby
 
 Use this method to install on the native host.
@@ -848,7 +864,7 @@ If <%=tool%> is used interactively (a user typing on terminal), it is easy to re
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
 
-#### command line arguments from a file
+#### Command line arguments from a file
 
 If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
 
@@ -897,24 +913,49 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 {"title":"Test \" ' & \\"}
 ```
 
-### Arguments : Commands and options
+### Commands, Options, Positional Values
 
-Arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
+Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
 
-There are two types of command line arguments: Commands and Options. Example :
+<%=tool%> considers three types of command line arguments:
+
+- Commands
+- Options
+- Positional Values
 
 ```bash
 <%=cmd%> command subcommand --option-name=VAL1 VAL2
 ```
 
 - executes *command*: `command subcommand`
-- with one *option*: `option_name`
-- this option is given a *value* of: `VAL1`
-- the command has one additional *argument*: `VAL2`
+- with one *option*: `option_name`and its *value*: `VAL1`
+- the command has one additional mandatory *argument*: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `<%=cmd%> conf ov` is the same as `<%=cmd%> config overview`.
+When the value of a command, option or argument is constrained by a fixed list of values.
+It is possible to use the first letters of the value only, provided that it uniquely identifies a value.
+For example `<%=cmd%> conf ov` is the same as `<%=cmd%> config overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
+
+#### Commands
+
+Commands are typically entity types or verbs to act on those entities.
+
+Example:
+
+```bash
+<%=cmd%> conf ascp info
+```
+
+- <%=tool%> is the executable executed by the shell
+- `conf` is the first level command, and is also the name f the plugin to be used
+- `ascp` is the second level command, and is also the name of the component (singleton)
+- `info` is the third level command, and is also the action to be performed
+
+Typically, commands are located at the beginning of the command line.
+Order is significant.
+The provided command must match one of the supported commands in the given context.
+If a wrong , or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
 #### Options
 
@@ -923,7 +964,7 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 - start with `--`
 - have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
 - have a value, separated from name with a `=`
-- can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
+- can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug` (avoid)
 
 Exceptions:
 
@@ -931,17 +972,24 @@ Exceptions:
 - some options (flags) don't take a value, e.g. `-r`
 - the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
-```bash
-<%=cmd%> config echo -- --sample
-```
+  ```bash
+  <%=cmd%> config echo -- --sample
+  ```
 
-```bash
-"--sample"
-```
+  ```bash
+  "--sample"
+  ```
 
 > **Note:** Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
-Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on command line and evaluated in order.
+Options may have an (hardcoded) default value.
+
+Options can be placed anywhere on command line and evaluated in order.
+
+Options are typically either:
+
+- optional : typically to change the default behavior
+- mandatory : typically, connection information are options that are mandatory (so they can be placed in a config file)
 
 The value for *any* options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -953,9 +1001,16 @@ Environment variable starting with prefix: <%=evp%> are taken as option values, 
 
 Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
 
-#### Commands and Arguments
+#### Positional Values
 
-Command line arguments that are not options are either commands or arguments. If an argument must begin with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+Positional Values are typically mandatory values for a command, such as entity creation data.
+
+If a Positional Values begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+
+The advantages of using a positional value instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
+
+The disadvantage is that it is not possible to define a default value in a config file or environment variable like for options.
+Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the config file or environment variable.
 
 ### Interactive Input
 
