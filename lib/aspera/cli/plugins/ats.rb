@@ -89,7 +89,7 @@ module Aspera
             res = ats_api_pub_v1.read("access_keys/#{access_key_id}")
             return {type: :single_object, data: res[:data]}
           when :modify
-            params = options.get_option(:value, is_type: :mandatory)
+            params = value_create_modify(command: command)
             params['id'] = access_key_id
             ats_api_pub_v1.update("access_keys/#{access_key_id}", params)
             return Main.result_status('modified')
@@ -186,8 +186,7 @@ module Aspera
             Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
             return {type: :value_list, data: instances['data'], name: 'instance'}
           when :create
-            create_value = options.get_option(:value) || {}
-            created_key = ats_ibm_api.create('api_keys', create_value)[:data]
+            created_key = ats_ibm_api.create('api_keys', value_create_modify(command: command, default: {}))[:data]
             return {type: :single_object, data: created_key}
           when :list # list known api keys in ATS (this require an api_key ...)
             res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})

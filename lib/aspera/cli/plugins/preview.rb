@@ -357,7 +357,7 @@ module Aspera
             scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
             scan_start = "#{scan_start}/" # unless scan_start.end_with?('/')
           end
-          filter_block = Aspera::Node.file_matcher(options.get_option(:value))
+          filter_block = Aspera::Node.file_matcher(value_or_query)
           Log.log.debug{"scan: #{top_entry} : #{scan_start}".green}
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]

@@ -386,7 +386,7 @@ module Aspera
                 filter['start_time'] = start_date_time unless start_date_time.nil?
                 filter['stop_time'] = stop_date_time
               end
-              events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", option_url_query(filter))[:data][event_type]
+              events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", query_read_delete(default: filter))[:data][event_type]
               start_date_persistency&.save
               if !options.get_option(:notif_to).nil?
                 events.each do |tr_event|
@@ -450,7 +450,7 @@ module Aspera
               when :group_membership then default_fields.push(*%w[group_id member_type member_id])
               when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
               end
-              items = read_with_paging(resource_class_path, option_url_query(default_query))
+              items = read_with_paging(resource_class_path, query_read_delete(default: default_query))
               formatter.display_item_count(items[:list].length, items[:total])
               return {type: :object_list, data: items[:list], fields: default_fields}
             when :show
@@ -527,7 +527,7 @@ module Aspera
             when :shared_inboxes
               case options.get_next_command(%i[list show])
               when :list
-                query = option_url_query(nil)
+                query = query_read_delete
                 if query.nil?
                   query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
                   query['workspace_id'] = current_workspace_info['id'] unless current_workspace_info['id'].eql?(:undefined)
@@ -537,7 +537,7 @@ module Aspera
                 return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)[:data]}
               end
             when :send
-              package_data = options.get_option(:value, is_type: :mandatory)
+              package_data = value_create_modify(command: package_command)
               raise CliBadArgument, 'value must be hash, refer to doc' unless package_data.is_a?(Hash)
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
@@ -574,7 +574,7 @@ module Aspera
                                              current_workspace_info['id']].concat(aoc_api.additional_persistence_ids)))
               end
               if VAL_ALL.eql?(ids_to_download)
-                query = option_url_query(PACKAGE_QUERY_DEFAULT)
+                query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
                 raise 'option query must be Hash' unless query.is_a?(Hash)
                 if query.key?('dropbox_name')
                   # convenience: specify name instead of id
@@ -622,7 +622,7 @@ module Aspera
               return { type: :single_object, data: package_info }
             when :list
               display_fields = %w[id name bytes_transferred]
-              query = option_url_query(PACKAGE_QUERY_DEFAULT)
+              query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
               raise 'option query must be Hash' unless query.is_a?(Hash)
               if query.key?('dropbox_name')
                 # convenience: specify name instead of id
@@ -759,7 +759,7 @@ module Aspera
             return execute_admin_action
           when :gateway
             require 'aspera/faspex_gw'
-            url = options.get_option(:value, is_type: :mandatory)
+            url = value_create_modify
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, aoc_api, current_workspace_info['id'])

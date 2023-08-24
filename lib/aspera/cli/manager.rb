@@ -237,18 +237,17 @@ module Aspera
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol, value, where='code override')
-        if !@declared_options.key?(option_symbol)
-          Log.log.debug{"set unknown option: #{option_symbol}"}
-          raise 'ERROR: cannot set undeclared option'
-        end
+        raise CliBadArgument, "Unknown option: #{option_symbol}" unless @declared_options.key?(option_symbol)
+        attributes = @declared_options[option_symbol]
+        Log.log.warn("#{option_symbol}: Option is deprecated: #{attributes[:deprecation]}") if attributes[:deprecation]
         value = ExtendedValue.instance.evaluate(value)
-        value = Manager.enum_to_bool(value) if @declared_options[option_symbol][:values].eql?(BOOLEAN_VALUES)
-        Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}/#{where}) set #{option_symbol}=#{value}"}
-        case @declared_options[option_symbol][:read_write]
+        value = Manager.enum_to_bool(value) if attributes[:values].eql?(BOOLEAN_VALUES)
+        Log.log.debug{"(#{attributes[:read_write]}/#{where}) set #{option_symbol}=#{value}"}
+        case attributes[:read_write]
         when :accessor
-          @declared_options[option_symbol][:accessor].value = value
+          attributes[:accessor].value = value
         when :value
-          @declared_options[option_symbol][:value] = value
+          attributes[:value] = value
         else # nil or other
           raise 'error'
         end
@@ -264,7 +263,7 @@ module Aspera
       # @param coerce [Class] one of the coerce types accepted par option parser
       # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
-      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, &block)
+      def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
         raise "INTERNAL ERROR: #{option_symbol} already declared" if @declared_options.key?(option_symbol)
         raise "INTERNAL ERROR: #{option_symbol} ends with dot" unless description[-1] != '.'
         raise "INTERNAL ERROR: #{option_symbol} does not start with capital" unless description[0] == description[0].upcase
@@ -279,6 +278,10 @@ module Aspera
           raise "INTERNAL ERROR: types must be classes: #{types}" unless types.all?(Class)
           opt[:types] = types
           description = "#{description} (#{types.map(&:name).join(', ')})"
+        end
+        if deprecation
+          opt[:deprecation] = deprecation
+          description = "#{description} (#{'deprecated'.blue}: #{deprecation})"
         end
         Log.log.debug{"declare: #{option_symbol}: #{opt[:read_write]}".green}
         if opt[:read_write].eql?(:accessor)

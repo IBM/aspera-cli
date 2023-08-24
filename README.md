@@ -354,6 +354,22 @@ podman save martinlaurent/ascli|gzip>ascli_image_latest.tar.gz
 podman load -i ascli_image_latest.tar.gz
 ```
 
+#### Container: `aspera.conf`
+
+`ascp`'s configuration file `aspera.conf` is located in the container at: `/home/cliuser/.aspera/sdk/aspera.conf` (see Dockerfile).
+As the container is immutable, it is not possible to modify this file.
+If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
+
+```bash
+echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
+```
+
+Then, tell `ascp` to use that other conf file:
+
+```bash
+--transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
+```
+
 ### <a id="ruby"></a>Ruby
 
 Use this method to install on the native host.
@@ -854,7 +870,7 @@ ascli conf echo @ruby:"{'title'=>gets.chomp}" --format=json
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
 
-#### command line arguments from a file
+#### Command line arguments from a file
 
 If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
 
@@ -903,24 +919,49 @@ ascli conf echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
 {"title":"Test \" ' & \\"}
 ```
 
-### Arguments : Commands and options
+### Commands, Options, Positional Values
 
-Arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
+Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
 
-There are two types of command line arguments: Commands and Options. Example :
+`ascli` considers three types of command line arguments:
+
+- Commands
+- Options
+- Positional Values
 
 ```bash
 ascli command subcommand --option-name=VAL1 VAL2
 ```
 
 - executes *command*: `command subcommand`
-- with one *option*: `option_name`
-- this option is given a *value* of: `VAL1`
-- the command has one additional *argument*: `VAL2`
+- with one *option*: `option_name`and its *value*: `VAL1`
+- the command has one additional mandatory *argument*: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values, it is possible to use the first letters of the value only, provided that it uniquely identifies a value. For example `ascli conf ov` is the same as `ascli config overview`.
+When the value of a command, option or argument is constrained by a fixed list of values.
+It is possible to use the first letters of the value only, provided that it uniquely identifies a value.
+For example `ascli conf ov` is the same as `ascli config overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
+
+#### Commands
+
+Commands are typically entity types or verbs to act on those entities.
+
+Example:
+
+```bash
+ascli conf ascp info
+```
+
+- `ascli` is the executable executed by the shell
+- `conf` is the first level command, and is also the name f the plugin to be used
+- `ascp` is the second level command, and is also the name of the component (singleton)
+- `info` is the third level command, and is also the action to be performed
+
+Typically, commands are located at the beginning of the command line.
+Order is significant.
+The provided command must match one of the supported commands in the given context.
+If a wrong , or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
 #### Options
 
@@ -929,7 +970,7 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 - start with `--`
 - have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
 - have a value, separated from name with a `=`
-- can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
+- can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug` (avoid)
 
 Exceptions:
 
@@ -937,17 +978,24 @@ Exceptions:
 - some options (flags) don't take a value, e.g. `-r`
 - the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
-```bash
-ascli config echo -- --sample
-```
+  ```bash
+  ascli config echo -- --sample
+  ```
 
-```bash
-"--sample"
-```
+  ```bash
+  "--sample"
+  ```
 
 > **Note:** Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
-Options can be optional or mandatory, with or without (hardcoded) default value. Options can be placed anywhere on command line and evaluated in order.
+Options may have an (hardcoded) default value.
+
+Options can be placed anywhere on command line and evaluated in order.
+
+Options are typically either:
+
+- optional : typically to change the default behavior
+- mandatory : typically, connection information are options that are mandatory (so they can be placed in a config file)
 
 The value for *any* options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -959,9 +1007,16 @@ Environment variable starting with prefix: ASCLI_ are taken as option values, e.
 
 Options values can be displayed for a given command by providing the `--show-config` option: `ascli node --show-config`
 
-#### Commands and Arguments
+#### Positional Values
 
-Command line arguments that are not options are either commands or arguments. If an argument must begin with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+Positional Values are typically mandatory values for a command, such as entity creation data.
+
+If a Positional Values begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+
+The advantages of using a positional value instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
+
+The disadvantage is that it is not possible to define a default value in a config file or environment variable like for options.
+Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the config file or environment variable.
 
 ### Interactive Input
 
@@ -2833,10 +2888,10 @@ OPTIONS: global
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test export_to_cli file flush_tokens folder gem genkey id initdemo list lookup open overview plugin preset proxy_check secure smtp_settings vault wizard
 OPTIONS:
-        --query=VALUE                Additional filter for API calls for some commands (Hash)
-        --value=VALUE                Value for create, update, list filter (Hash)
+        --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
+        --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set
-        --id=VALUE                   Resource identifier (modify,delete,show)
+        --id=VALUE                   Resource identifier (deprecated: Use identifier after verb (modify,delete,show))
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
         --config-file=VALUE          Read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
@@ -4133,18 +4188,18 @@ aoc admin res workspace_membership list
 aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do browse /
 aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do delete /folder1
 aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do mkdir /folder1
-aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 aoc admin resource node --name=my_aoc_ak_name --secret=my_aoc_ak_secret do v3 events
 aoc admin resource node do name my_aoc_ak_name --secret=my_aoc_ak_secret v3 access_key delete testsub1
 aoc admin resource workspace list
 aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 aoc admin subscription
-aoc automation workflow action my_wf_id create --value=@json:'{"name":"toto"}'
-aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
+aoc automation workflow action my_wf_id create @json:'{"name":"toto"}' \
+aoc automation workflow create @json:'{"name":"test_workflow"}'
 aoc automation workflow delete my_wf_id
 aoc automation workflow list
+aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
-aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 aoc bearer_token --display=data --scope=user:all
 aoc faspex
 aoc files bearer /
@@ -4157,13 +4212,13 @@ aoc files file modify --path=my_aoc_test_folder
 aoc files file permission --path=my_aoc_test_folder list
 aoc files file show --path=/200KB.1
 aoc files file show my_file_id
-aoc files find / --value='\.partial$'
+aoc files find / --query='\.partial$'
 aoc files http_node_download --to-folder=. /200KB.1
 aoc files mkdir /testsrc
 aoc files rename /somefolder testdst
 aoc files short_link create --to-folder=/testdst --value=private
 aoc files short_link create --to-folder=/testdst --value=public
-aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+aoc files short_link list --query=@json:'{"purpose":"shared_folder_auth_link"}'
 aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
 aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
 aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
@@ -4173,7 +4228,7 @@ aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
 aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
-aoc gateway --value=https://localhost:12345/aspera/faspex & jobs -p
+aoc gateway https://localhost:12345/aspera/faspex
 aoc org --link=my_aoc_publink_recv_from_aocuser
 aoc organization
 aoc packages browse "my_package_id" /contents
@@ -4182,13 +4237,13 @@ aoc packages list --query=@json:'{"dropbox_name":"my_aoc_shbx_name","sort":"-rec
 aoc packages recv "my_package_id" --to-folder=.
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"my_aoc_shbx_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
-aoc packages send --value=@json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
-aoc packages send --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
-aoc packages send --value=@json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
-aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
-aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
-aoc packages send --workspace="my_aoc_shbx_ws" --value=@json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
+aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
+aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
+aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
+aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
+aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
+aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
+aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
 aoc packages shared_inboxes list
 aoc remind --username=my_aoc_user_email
 aoc servers
@@ -4625,7 +4680,7 @@ ascli node access_key create --value=@json:'{"id":"myaccesskey","secret":"my_sec
 ### Node sample commands
 
 ```bash
-node access_key create --value=@json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
+node access_key create @json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
 node access_key delete testingAK1
 node access_key do my_aoc_ak_name browse /
 node access_key do my_aoc_ak_name delete /folder2
@@ -4662,14 +4717,14 @@ node mkdir folder_1/todelete
 node mkfile folder_1/delfile1 "hello world"
 node mklink folder_1/todelete folder_1/tdlink
 node rename folder_1 delfile1 delfile
-node search / --value=@json:'{"sort":"mtime"}'
+node search / --query=@json:'{"sort":"mtime"}'
 node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 node service delete service1
 node service list
 node space /
 node ssync bandwidth my_syncid
 node ssync counters my_syncid
-node ssync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
+node ssync create @json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
 node ssync delete my_syncid
 node ssync files my_syncid
 node ssync list
@@ -4682,7 +4737,7 @@ node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pu
 node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node transfer list --value=@json:'{"active_only":true}'
+node transfer list --query=@json:'{"active_only":true}'
 node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
@@ -4810,16 +4865,16 @@ faspex5 admin res workgroups list
 faspex5 admin smtp show
 faspex5 admin smtp test my_email_external
 faspex5 bearer_token
-faspex5 gateway --value=https://localhost:12345/aspera/faspex
+faspex5 gateway https://localhost:12345/aspera/faspex
 faspex5 health
-faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"]}'
+faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 packages receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
-faspex5 packages send --value=@json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
-faspex5 packages send --value=@json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
+faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 faspex5 packages show "my_package_id"
-faspex5 postprocessing --value=@json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
+faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
 ```
@@ -5180,10 +5235,10 @@ shares admin group list
 shares admin node list
 shares admin share list --fields=-status,status_message
 shares admin share user_permissions 1 list
-shares admin user add --type=ldap --value=the_name
-shares admin user app_authorizations 1 modify --value=@json:'{"app_login":true}'
+shares admin user add --type=ldap the_name
+shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
 shares admin user app_authorizations 1 show
-shares admin user import --type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
+shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
 shares admin user list
 shares admin user share_permissions 1 list
 shares admin user share_permissions 1 show 1

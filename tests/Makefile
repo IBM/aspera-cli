@@ -77,11 +77,11 @@ $(T)shadm: $(T).exists
 	$(EXE_MAN) shares admin group list
 	$(EXE_MAN) shares admin user list
 	$(EXE_MAN) shares admin user app_authorizations 1 show
-	$(EXE_MAN) shares admin user app_authorizations 1 modify --value=@json:'{"app_login":true}'
+	$(EXE_MAN) shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
 	$(EXE_MAN) shares admin user share_permissions 1 list
 	$(EXE_MAN) shares admin user share_permissions 1 show 1
-	$(EXE_MAN) shares admin user import --type=saml --value=@json:'{"id":"the_id","name_id":"the_name"}'
-	-$(EXE_MAN) shares admin user add --type=ldap --value=the_name
+	$(EXE_MAN) shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
+	-$(EXE_MAN) shares admin user add --type=ldap the_name
 	$(EXE_MAN) shares admin share list --fields=-status,status_message
 	$(EXE_MAN) shares admin share user_permissions 1 list
 	@touch $@
@@ -339,7 +339,7 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node license
 	$(EXE_MAN) node api_details
 	$(EXE_MAN) node browse / -r
-	$(EXE_MAN) node search / --value=@json:'{"sort":"mtime"}'
+	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
 	-$(EXE_MAN) node delete /todelete
 	$(EXE_MAN) node mkdir $(CF_HSTS_FOLDER_UPLOAD)/todelete
@@ -381,13 +381,13 @@ $(T)nd4: $(T).exists
 # test creation of access key
 $(T)nd5: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -N -Ptst_node_preview access_key create --value=@json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
+	$(EXE_MAN) node -N -Ptst_node_preview access_key create @json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
 	sleep 2
 	$(EXE_MAN) node -N -Ptst_node_preview access_key delete testingAK1
 	@touch $@
 $(T)nd6: $(T).exists
 	@echo $@
-	$(EXE_MAN) node transfer list --value=@json:'{"active_only":true}'
+	$(EXE_MAN) node transfer list --query=@json:'{"active_only":true}'
 	@touch $@
 $(T)nd7: $(T).exists
 	@echo $@
@@ -430,7 +430,8 @@ tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 
 
 $(T)aocfxgw: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc gateway --value=https://localhost:12345/aspera/faspex & jobs -p > $(T)server_pid
+	$(EXE_MAN) aoc gateway https://localhost:12345/aspera/faspex &\
+		jobs -p > $(T)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -INT $$(cat $(T)server_pid)
@@ -485,7 +486,7 @@ $(T)aocfbt: $(T).exists
 	@touch $@
 $(T)aocffin: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files find / --value='\.partial$$'
+	$(EXE_MAN) aoc files find / --query='\.partial$$'
 	@touch $@
 $(T)aocfmkd: $(T).exists
 	@echo $@
@@ -573,7 +574,7 @@ $(T)aocfpub: $(T).exists
 	@touch $@
 $(T)aocshlk1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files short_link list --value=@json:'{"purpose":"shared_folder_auth_link"}'
+	$(EXE_MAN) aoc files short_link list --query=@json:'{"purpose":"shared_folder_auth_link"}'
 	@touch $@
 $(T)aocshlk2: $(T).exists
 	@echo $@
@@ -589,8 +590,8 @@ $(T)aocp1: $(T).exists
 	set -x&&\
 	email_internal_user=$$($(EXE_NOMAN) config preset get misc email_internal)&&\
 	email_external_user=$$($(EXE_NOMAN) config preset get misc email_external)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) aoc packages send --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
@@ -617,29 +618,29 @@ $(T)aocp6: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_shd_inbox=$$($(EXE_NOMAN) config preset get misc aoc_publink_send_shd_inbox)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
+	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_shd_inbox}
 	@touch $@
 $(T)aocp7: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_publink_send_aoc_user=$$($(EXE_NOMAN) config preset get misc aoc_publink_send_aoc_user)&&\
 	aoc_publink_send_use_pass=$$($(EXE_NOMAN) config preset get misc aoc_publink_send_use_pass)&&\
-	$(EXE_MAN) aoc packages send -N --value=@json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
+	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=$${aoc_publink_send_aoc_user} --password=$${aoc_publink_send_use_pass}
 	@touch $@
 $(T)aocp8: $(T).exists
 	@echo $@
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) config preset get misc aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) config preset get misc aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
 	aoc_shbx_ws=$$($(EXE_NOMAN) config preset get misc aoc_shbx_ws)&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" --value=@json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace="$${aoc_shbx_ws}" @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
 	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
 	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
@@ -667,7 +668,7 @@ $(T)aoc9: $(T).exists
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 access_key create --value=@json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
@@ -776,18 +777,19 @@ $(DIR_TMP)wf_id.txt: $(T)aocauto1
 	$(EXE_MAN) aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > $@
 $(T)aocauto1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc automation workflow create --value=@json:'{"name":"test_workflow"}'
+	$(EXE_MAN) aoc automation workflow create @json:'{"name":"test_workflow"}'
 	@touch $@
 $(T)aocauto2: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc automation workflow list
-	$(EXE_MAN) aoc automation workflow list --value=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+	$(EXE_MAN) aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 	@touch $@
 $(T)aocauto3: $(DIR_TMP)wf_id.txt
 	@echo $@
 	set -x&&\
 	wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
-	$(EXE_MAN) aoc automation workflow action $${wf_id} create --value=@json:'{"name":"toto"}' | tee action.info
+	$(EXE_MAN) aoc automation workflow action $${wf_id} create @json:'{"name":"toto"}' \
+		| tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
@@ -1008,7 +1010,7 @@ $(T)sync_create: $(T).exists
 	port=$${hostport#*:}&&\
 	username=$$($(EXE_NOMAN) config preset get tst_server username)&&\
 	password=$$($(EXE_NOMAN) config preset get tst_server password)&&\
-	$(EXE_MAN) node ssync create --value=@json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
+	$(EXE_MAN) node ssync create @json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
 	$(EXE_MAN) node ssync list
 	@touch $@
 $(T)sync_other: $(T).exists
@@ -1296,16 +1298,16 @@ $(T)f5_p1: $(T).exists
 	set -x&&\
 	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5_jwt username)&&\
 	f5_meta=$$($(EXE_NOMAN) config preset get misc faspex5_meta)&&\
-	$(EXE_MAN) faspex5 packages send --value=@json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+	$(EXE_MAN) faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"]}'
+	$(EXE_MAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
 	@touch $@
 $(T)f5_p3: $(T).exists
 	@echo $@
 	set -x&&\
-	package_id=$$($(EXE_NOMAN) faspex5 packages list --value=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
+	package_id=$$($(EXE_NOMAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 packages show "$${package_id}"&&\
 	$(EXE_MAN) faspex5 packages receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	@touch $@
@@ -1313,7 +1315,7 @@ $(T)f5_p4: $(T).exists
 	@echo $@
 	set -x&&\
 	shinbox=$$($(EXE_NOMAN) config preset get misc faspex5_shinbox)&&\
-	$(EXE_MAN) faspex5 packages send --value=@json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 packages send @json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	@touch $@
 $(T)f5_a1: $(T).exists
@@ -1355,8 +1357,8 @@ $(T)f5_detect: $(T).exists
 	@touch $@
 $(T)f5_fxgw: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 gateway --value=https://localhost:12345/aspera/faspex &\
-	jobs -p > $(T)server_pid
+	$(EXE_MAN) faspex5 gateway https://localhost:12345/aspera/faspex &\
+		jobs -p > $(T)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
 	sleep 3
@@ -1364,7 +1366,7 @@ $(T)f5_fxgw: $(T).exists
 	@touch $@
 $(T)f5_postproc: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex5 postprocessing --value=@json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
+	$(EXE_MAN) faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
 	jobs -p > $(T)server_pid
 	sleep 10
 	kill -INT $$(cat $(T)server_pid)

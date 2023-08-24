@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.13.0
+* 4.14.0.pre
 
   * new: server: option `passphrase` for simpler command line (#114)
   * new: percent selector for entities identifier
@@ -8,6 +8,7 @@
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
+  * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
 
 * 4.13.0
 

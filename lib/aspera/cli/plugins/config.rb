@@ -912,7 +912,7 @@ module Aspera
             # allow user to tell the preset name
             params[:preset_name] = options.get_option(:id)
             # allow user to specify type of application (symbol)
-            params[:plugin_sym] = options.get_option(:value)
+            params[:plugin_sym] = value_or_query
             if params[:plugin_sym].nil?
               identification = identify_plugin_for_url(params[:instance_url])
               Log.log.debug("Detected: #{identification}")

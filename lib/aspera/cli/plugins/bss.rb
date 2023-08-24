@@ -36,7 +36,7 @@ module Aspera
             case command
             when :find
               query = options.get_option(:query, is_type: :mandatory) # AOC_ORGANIZATION_QUERY AOC_USER_EMAIL
-              value = options.get_option(:value, is_type: :mandatory)
+              value = value_create_modify(command: command)
               request = {
                 'variables' => {'filter' => {'key' => query, 'value' => value}},
                 'query'     => "query($filter: BssSubscriptionFilter!) {#{object}(filter: $filter) { #{all_fields('bssSubscriptions')} } }"

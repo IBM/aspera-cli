@@ -145,14 +145,13 @@ module Aspera
         end
 
         # wait for package status to be in provided list
-        def wait_package_status(id, status_list=PACKAGE_TERMINATED)
-          parameters = options.get_option(:value)
+        def wait_package_status(id, status_list: PACKAGE_TERMINATED)
           spinner = nil
           progress = nil
           while true
             status = @api_v5.read("packages/#{id}/upload_details")[:data]
             # user asked to not follow
-            break unless parameters
+            break if status_list.nil? || status_list.include?(status['upload_status'])
             if status['upload_status'].eql?('submitted')
               if spinner.nil?
                 spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
@@ -169,7 +168,6 @@ module Aspera
             else
               progress.progress = status['bytes_written'].to_i
             end
-            break if status_list.include?(status['upload_status'])
             sleep(0.5)
           end
           status['id'] = id
@@ -177,11 +175,11 @@ module Aspera
         end
 
         # get a list of all entities of a given type
-        # @param entity_type [String] the type of entity to list
+        # @param entity [String] the type of entity to list
         # @param query [Hash] additional query parameters
         # @param prefix [String] optional prefix to add to the path (nil or empty string: no prefix)
-        def list_entities(entity_type, query: {}, prefix: nil)
-          path = entity_type
+        def list_entities(entity:, query: {}, prefix: nil)
+          path = entity
           path = "#{prefix}/#{path}" unless prefix.nil? || prefix.empty?
           result = []
           offset = 0
@@ -192,7 +190,7 @@ module Aspera
           loop do
             query['offset'] = offset
             page_result = @api_v5.read(path, query)[:data]
-            result.concat(page_result[entity_type.to_s])
+            result.concat(page_result[entity.to_s])
             # reach the limit set by user ?
             if !max_items.nil? && (result.length >= max_items)
               result = result.slice(0, max_items)
@@ -201,14 +199,14 @@ module Aspera
             break if result.length >= page_result['total_count']
             remain_pages -= 1 unless remain_pages.nil?
             break if remain_pages == 0
-            offset += page_result[entity_type].length
+            offset += page_result[entity].length
           end
           return result
         end
 
         # lookup an entity id from its name
         def lookup_field_to_id(path:, value:, field: 'name', id: 'id')
-          found = list_entities(path, query: {'q'=> value}).select{|i|i[field].eql?(value)}
+          found = list_entities(entity: path, query: {'q'=> value}).select{|i|i[field].eql?(value)}
           case found.length
           when 0 then raise "No #{path} with #{field} = #{value}"
           when 1 then return found.first['id']
@@ -228,8 +226,10 @@ module Aspera
 
         # list all packages with optional filter
         def list_packages
-          parameters = options.get_option(:value) || {}
-          return list_entities('packages', query: parameters, prefix: box_to_prefix(options.get_option(:box)))
+          return list_entities(
+            entity: 'packages',
+            query:  query_read_delete(default: {}),
+            prefix: box_to_prefix(options.get_option(:box)))
         end
 
         def package_action
@@ -264,7 +264,7 @@ module Aspera
             formatter.display_item_count(result['item_count'], result['total_count'])
             return {type: :object_list, data: result['items']}
           when :status
-            status = wait_package_status(instance_identifier)
+            status = wait_package_status(instance_identifier, status_list: nil)
             return {type: :single_object, data: status}
           when :delete
             ids = instance_identifier
@@ -274,7 +274,7 @@ module Aspera
             @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
             return Main.result_status('Package(s) deleted')
           when :send
-            parameters = options.get_option(:value, is_type: :mandatory)
+            parameters = value_create_modify(command: command)
             raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
             normalize_recipients(parameters)
             package = @api_v5.create('packages', parameters)[:data]
@@ -488,13 +488,14 @@ module Aspera
               end
             when :smtp
               smtp_path = 'configuration/smtp'
-              case options.get_next_command(%i[show create modify delete test])
+              smtp_cmd = options.get_next_command(%i[show create modify delete test])
+              case smtp_cmd
               when :show
                 return { type: :single_object, data: @api_v5.read(smtp_path)[:data] }
               when :create
-                return { type: :single_object, data: @api_v5.create(smtp_path, options.get_option(:value, is_type: :mandatory))[:data] }
+                return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
               when :modify
-                return { type: :single_object, data: @api_v5.modify(smtp_path, options.get_option(:value, is_type: :mandatory))[:data] }
+                return { type: :single_object, data: @api_v5.modify(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
               when :delete
                 return { type: :single_object, data: @api_v5.delete(smtp_path)[:data] }
               when :test
@@ -505,7 +506,7 @@ module Aspera
             end
           when :gateway
             require 'aspera/faspex_gw'
-            url = options.get_option(:value, is_type: :mandatory)
+            url = value_create_modify
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
@@ -517,7 +518,7 @@ module Aspera
             return Main.result_status('Gateway terminated')
           when :postprocessing
             require 'aspera/faspex_postproc'
-            parameters = options.get_option(:value, is_type: :mandatory)
+            parameters = value_create_modify
             raise 'parameters must be Hash' unless parameters.is_a?(Hash)
             parameters = parameters.symbolize_keys
             raise 'Missing key: url' unless parameters.key?(:url)

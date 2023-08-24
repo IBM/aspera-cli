@@ -33,10 +33,12 @@ module Aspera
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
         return if @@options_created
-        options.declare(:query, 'Additional filter for API calls for some commands', types: Hash)
-        options.declare(:value, 'Value for create, update, list filter', types: Hash)
+        options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
+        options.declare(
+          :value, 'Value for create, update, list filter', types: Hash,
+          deprecation: 'Use positional value for create/modify or option: query for list/delete')
         options.declare(:property, 'Name of property to set')
-        options.declare(:id, "Resource identifier (#{INSTANCE_OPS.join(',')})")
+        options.declare(:id, 'Resource identifier', deprecation: "Use identifier after verb (#{INSTANCE_OPS.join(',')})")
         options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
         options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
         options.parse_options!
@@ -54,14 +56,11 @@ module Aspera
         return res_id
       end
 
-      # TODO
-      # def get_next_id_command(instance_ops: INSTANCE_OPS,global_ops: GLOBAL_OPS)
-      #  return get_next_argument('command',expected: command_list)
-      # end
-
       # For create and delete operations: execute one actin or multiple if bulk is yes
-      # @param params either single id or hash, or array for bulk
+      # @param single_or_array [Object] single hash, or array of hash for bulk
       # @param success_msg deleted or created
+      # @param id_result [String] key in result hash to use as identifier
+      # @param fields [Array] fields to display
       def do_bulk_operation(single_or_array, success_msg, id_result: 'id', fields: :default)
         raise 'programming error: missing block' unless block_given?
         params = options.get_option(:bulk) ? single_or_array : [single_or_array]
@@ -115,31 +114,24 @@ module Aspera
           one_res_path = "#{res_class_path}/#{one_res_id}"
           one_res_path = "#{res_class_path}?#{id_as_arg}=#{one_res_id}" if id_as_arg
         end
-        # parameters mandatory for create/modify
-        if %i[create modify].include?(command)
-          parameters = options.get_option(:value, is_type: :mandatory)
-        end
-        # parameters optional for list
-        if %i[list delete].include?(command)
-          parameters = options.get_option(:value)
-        end
+
         case command
         when :create
           raise 'cannot create singleton' if is_singleton
-          return do_bulk_operation(parameters, 'created', fields: display_fields) do |params|
+          return do_bulk_operation(value_create_modify(command: command), 'created', fields: display_fields) do |params|
             raise 'expecting Hash' unless params.is_a?(Hash)
             rest_api.create(res_class_path, params)[:data]
           end
         when :delete
           raise 'cannot delete singleton' if is_singleton
           return do_bulk_operation(one_res_id, 'deleted') do |one_id|
-            rest_api.delete("#{res_class_path}/#{one_id}", parameters)
+            rest_api.delete("#{res_class_path}/#{one_id}", old_query_read_delete)
             {'id' => one_id}
           end
         when :show
           return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
-          resp = rest_api.read(res_class_path, parameters)
+          resp = rest_api.read(res_class_path, old_query_read_delete)
           data = resp[:data]
           # TODO: not generic : which application is this for ?
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
@@ -162,6 +154,7 @@ module Aspera
             raise "An error occurred: unexpected result type for list: #{data.class}"
           end
         when :modify
+          parameters = value_create_modify(command: command)
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path, parameters)
@@ -178,8 +171,8 @@ module Aspera
         return entity_command(command, rest_api, res_class_path, **opts)
       end
 
-      # query for list operation
-      def option_url_query(default)
+      # query parameters in URL suitable for REST list/GET and delete/DELETE
+      def query_read_delete(default: nil)
         query = options.get_option(:query)
         # dup default, as it could be frozen
         query = default.dup if query.nil?
@@ -188,9 +181,31 @@ module Aspera
           # check it is suitable
           URI.encode_www_form(query) unless query.nil?
         rescue StandardError => e
-          raise CliBadArgument, "query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+          raise CliBadArgument, "Query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
         end
         return query
+      end
+
+      # TODO: when deprecation of `value` is completed: remove this method, replace with query_read_delete
+      def old_query_read_delete
+        query = options.get_option(:value) # legacy, deprecated, remove, one day...
+        query = query_read_delete if query.nil?
+        return query
+      end
+
+      # TODO: when deprecation of `value` is completed: remove this method, replace with options.get_option(:query)
+      def value_or_query
+        value = options.get_option(:value)
+        value = options.get_option(:query) if value.nil?
+        return value
+      end
+
+      # TODO: when deprecation of `value` is completed: remove line with :value
+      def value_create_modify(default: nil, command: 'command')
+        value = options.get_option(:value)
+        value = options.get_next_argument("parameters for #{command}", mandatory: default.nil?) if value.nil?
+        value = default if value.nil?
+        return value
       end
 
       # shortcuts helpers for plugin environment
