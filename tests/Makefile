@@ -574,15 +574,15 @@ $(T)aocfpub: $(T).exists
 	@touch $@
 $(T)aocshlk1: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files short_link list --query=@json:'{"purpose":"shared_folder_auth_link"}'
+	$(EXE_MAN) aoc files short_link list /testdst private
 	@touch $@
 $(T)aocshlk2: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=private
+	$(EXE_MAN) aoc files short_link create /testdst private
 	@touch $@
 $(T)aocshlk3: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files short_link create --to-folder=/testdst --value=public
+	$(EXE_MAN) aoc files short_link create testdst public
 	@touch $@
 taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists

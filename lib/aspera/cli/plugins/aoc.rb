@@ -654,75 +654,111 @@ module Aspera
             when *NODE4_EXT_COMMANDS
               return execute_nodegen4_command(command_repo, home_info[:node_id], file_id: home_info[:file_id], scope: AoC::SCOPE_NODE_USER)
             when :short_link
-              # TODO: move to permissions ?
-              folder_dest = options.get_option(:to_folder)
-              value_option = options.get_option(:value)
-              case value_option
-              when 'public'  then value_option = {'purpose' => 'token_auth_redirection'}
-              when 'private' then value_option = {'purpose' => 'shared_folder_auth_link'}
-              when NilClass, Hash then nil # keep value
-              else raise 'value must be either: public, private, Hash or nil'
+              # execute action on AoC API
+              short_link_command = options.get_next_command(%i[create delete list])
+              folder_dest = options.get_next_argument('path')
+              link_type = options.get_next_argument('link type', expected: %i[public private])
+              home_node_api = aoc_api.node_api_from(
+                node_id: home_info[:node_id],
+                workspace_id: current_workspace_info['id'],
+                workspace_name: current_workspace_info['name'])
+              shared_apfid = home_node_api.resolve_api_fid(home_info[:file_id], folder_dest)
+              folder_info = {
+                node_id:      shared_apfid[:api].app_info[:node_info]['id'],
+                file_id:      shared_apfid[:file_id],
+                workspace_id: current_workspace_info['id']
+              }
+              purpose = case link_type
+              when :public  then 'token_auth_redirection'
+              when :private then 'shared_folder_auth_link'
+              else raise 'internal error'
               end
-              create_params = nil
-              shared_apfid = nil
-              if !folder_dest.nil?
-                home_node_api = aoc_api.node_api_from(
-                  node_id: home_info[:node_id],
-                  workspace_id: current_workspace_info['id'],
-                  workspace_name: current_workspace_info['name'])
-                shared_apfid = home_node_api.resolve_api_fid(home_info[:file_id], folder_dest)
-                create_params = {
-                  file_id:      shared_apfid[:file_id],
-                  node_id:      shared_apfid[:api].app_info[:node_info]['id'],
-                  workspace_id: current_workspace_info['id']
+              case short_link_command
+              when :delete
+                one_id = instance_identifier
+                folder_info.delete(:workspace_id)
+                delete_params = {
+                  edit_access: true,
+                  json_query:  folder_info.to_json
                 }
-              end
-              if !value_option.nil? && !create_params.nil?
-                case value_option['purpose']
-                when 'shared_folder_auth_link'
-                  value_option['data'] = create_params
-                  value_option['user_selected_name'] = nil
-                when 'token_auth_redirection'
-                  create_params['name'] = ''
-                  value_option['data'] = {
-                    aoc:            true,
+                aoc_api.delete("short_links/#{one_id}", delete_params)
+                if link_type.eql?(:public)
+                  # TODO: get permission id..
+                  # shared_apfid[:api].delete('permissions', {ids: })[:data]
+                end
+                return Main.result_status('deleted')
+              when :list
+                query = if link_type.eql?(:private)
+                  folder_info
+                else
+                  {
                     url_token_data: {
-                      data:    create_params,
+                      data:    folder_info,
                       purpose: 'view_shared_file'
                     }
                   }
-                  value_option['user_selected_name'] = nil
-                else
-                  raise 'purpose must be one of: token_auth_redirection or shared_folder_auth_link'
                 end
-                options.set_option(:value, value_option)
-              end
-              result = entity_action(aoc_api, 'short_links', id_default: 'self')
-              if result[:data].is_a?(Hash) && result[:data].key?('created_at') && result[:data]['resource_type'].eql?('UrlToken')
-                # TODO: access level as arg
-                access_levels = Aspera::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
-                perm_data = {
-                  'file_id'       => shared_apfid[:file_id],
-                  'access_type'   => 'user',
-                  'access_id'     => result[:data]['resource_id'],
-                  'access_levels' => access_levels,
-                  'tags'          => {
-                    'url_token'        => true,
-                    'workspace_id'     => current_workspace_info['id'],
-                    'workspace_name'   => current_workspace_info['name'],
-                    'folder_name'      => 'my folder',
-                    'created_by_name'  => aoc_api.current_user_info['name'],
-                    'created_by_email' => aoc_api.current_user_info['email'],
-                    'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
-                    'node'             => shared_apfid[:api].app_info[:node_info]['host']
-                  }
+                list_params = {
+                  json_query:  query.to_json,
+                  edit_access: true,
+                  purpose:     purpose,
+                  # embed: 'updated_by_user',
+                  sort:        '-created_at'
                 }
-                shared_apfid[:api].create("permissions?file_id=#{shared_apfid[:file_id]}", perm_data)
-                # TODO: event ?
-              end
-              return result
+                result = aoc_api.read('short_links', list_params)[:data]
+                result.each{|i|i.delete('data')}
+                return {type: :object_list, data: result}
+              when :create
+                creation_params = {
+                  purpose:            purpose,
+                  user_selected_name: nil
+                }
+                case link_type
+                when :private
+                  creation_params[:data] = folder_info
+                when :public
+                  creation_params[:expires_at]       = nil
+                  creation_params[:password_enabled] = false
+                  folder_info[:name] = ''
+                  creation_params[:data] = {
+                    aoc:            true,
+                    url_token_data: {
+                      data:    folder_info,
+                      purpose: 'view_shared_file'
+                    }
+                  }
+                end
+                result_create_short_link = aoc_api.create('short_links', creation_params)[:data]
+                # public: Creation: permission on node
+                if link_type.eql?(:public)
+                  # TODO: merge with node permissions ?
+                  # TODO: access level as arg
+                  access_levels = Aspera::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
+                  folder_name = File.basename(folder_dest)
+                  perm_data = {
+                    'file_id'       => shared_apfid[:file_id],
+                    'access_id'     => result_create_short_link['resource_id'],
+                    'access_type'   => 'user',
+                    'access_levels' => access_levels,
+                    'tags'          => {
+                      'url_token'        => true,
+                      'workspace_id'     => current_workspace_info['id'],
+                      'workspace_name'   => current_workspace_info['name'],
+                      'folder_name'      => folder_name,
+                      'created_by_name'  => aoc_api.current_user_info['name'],
+                      'created_by_email' => aoc_api.current_user_info['email'],
+                      'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
+                      'node'             => shared_apfid[:api].app_info[:node_info]['host']
+                    }
+                  }
+                  created_data = shared_apfid[:api].create('permissions', perm_data)[:data]
+                  aoc_api.permissions_send_event(created_data: created_data, app_info: shared_apfid[:api].app_info)
+                  # TODO: event ?
+                end
+                return {type: :single_object, data: result_create_short_link}
+              end # short_link command
             end # files command
-            throw('Error: shall not reach this line')
+            raise 'Error: shall not reach this line'
           when :automation
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
