@@ -21,13 +21,29 @@ $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
 
 #wkhtmltopdf toc $(MANUAL_HTML) $@
 # +pipe_tables
+# Date in PDF header is either the last checked in date or today if file has been modified
 $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
-	pandoc --standalone --from=gfm --to=pdf --pdf-engine=xelatex --toc --number-sections \
-	  --shift-heading-level-by=-1 --resource-path=. \
-	  --variable=include-before:'\newpage' --variable=documentclass:report \
-	  --variable=date:$$(date '+%Y/%m/%d') --variable=author:'Laurent MARTIN' \
-	  --variable=mainfont:Arial --variable=urlcolor:blue --variable=geometry:margin=15mm \
-	  -o $@ $(DIR_TOP)README.md
+	set -x &&\
+	if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
+	date=$$(date $$ref '+%Y/%m/%d') &&\
+	pandoc \
+		--standalone \
+		--from=gfm \
+		--to=pdf \
+		--pdf-engine=xelatex \
+		--toc \
+		--number-sections \
+		--shift-heading-level-by=-1 \
+		--resource-path=. \
+		--variable=include-before:'\newpage' \
+		--variable=documentclass:report \
+		--variable=date:$$date \
+		--variable=author:'Laurent MARTIN' \
+		--variable=mainfont:Arial \
+		--variable=urlcolor:blue \
+		--variable=geometry:margin=15mm \
+		-o $@ \
+		$(DIR_TOP)README.md
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 

@@ -49,6 +49,7 @@ $(TEST_CONF_FILE_PATH):
 	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
 # ensure required ruby gems are installed
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
+	cd $(DIR_TOP). && bundle config set --local without $(GEMNAME)
 	cd $(DIR_TOP). && bundle install
 	rm -f $$HOME/.rvm/gems/*/bin/as{cli,ession}
 	rm -f $$HOME/.rvm/rubies/*/bin/as{cli,ession}
