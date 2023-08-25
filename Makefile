@@ -37,6 +37,7 @@ signed_gem: gemclean gem_check_signing_key $(PATH_GEMFILE)
 unsigned_gem: $(PATH_GEMFILE)
 gemclean:
 	rm -f $(PATH_GEMFILE)
+	rm -f $(DIR_TOP)$(GEMNAME)-*.gem
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean:: gemclean
