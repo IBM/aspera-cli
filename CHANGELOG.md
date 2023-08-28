@@ -8,7 +8,9 @@
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
+  * change: aoc: better handling of shared links
   * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
+  * change: config: remove deprecated command: export_to_cli
 
 * 4.13.0
 

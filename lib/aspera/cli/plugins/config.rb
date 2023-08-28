@@ -788,7 +788,6 @@ module Aspera
           flush_tokens
           echo
           wizard
-          export_to_cli
           detect
           coffee
           ascp
@@ -945,41 +944,6 @@ module Aspera
             formatter.display_status('Saving config file.')
             save_presets_to_config_file
             return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{params[:test_args]}")
-          when :export_to_cli # this method shall be deprecated in the future: it was used to export configuration to "aspera.exe" CLI
-            formatter.display_status('Exporting: Aspera on Cloud')
-            require 'aspera/cli/plugins/aoc'
-            # need url / username
-            add_plugin_default_preset(AOC_COMMAND.to_sym)
-            # instantiate AoC plugin
-            self.class.plugin_class(AOC_COMMAND).new(@agents) # TODO: is this line needed ? get options ?
-            url = options.get_option(:url, is_type: :mandatory)
-            cli_conf_file = Fasp::Installation.instance.cli_conf_file
-            data = JSON.parse(File.read(cli_conf_file))
-            organization, instance_domain = AoC.parse_url(url)
-            key_basename = 'org_' + organization + '.pem'
-            key_file = File.join(File.dirname(File.dirname(cli_conf_file)), 'etc', key_basename)
-            File.write(key_file, options.get_option(:private_key, is_type: :mandatory))
-            new_conf = {
-              'organization'       => organization,
-              'hostname'           => [organization, instance_domain].join('.'),
-              'privateKeyFilename' => key_basename,
-              'username'           => options.get_option(:username, is_type: :mandatory)
-            }
-            new_conf['clientId'] = options.get_option(:client_id)
-            new_conf['clientSecret'] = options.get_option(:client_secret)
-            if new_conf['clientId'].nil?
-              new_conf['clientId'], new_conf['clientSecret'] = AoC.get_client_info
-            end
-            entry = data['AoCAccounts'].find{|i|i['organization'].eql?(organization)}
-            if entry.nil?
-              data['AoCAccounts'].push(new_conf)
-              formatter.display_status("Creating new aoc entry: #{organization}")
-            else
-              formatter.display_status("Updating existing aoc entry: #{organization}")
-              entry.merge!(new_conf)
-            end
-            File.write(cli_conf_file, JSON.pretty_generate(data))
-            return Main.result_status("Updated: #{cli_conf_file}")
           when :detect
             # need url / username
             BasicAuthPlugin.register_options(@agents)
