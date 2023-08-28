@@ -450,7 +450,7 @@ module Aspera
             raise 'No version found in config section.'
           end
           Log.log.debug{"conf version: #{version}"}
-          # if there are any cnversion needed, those happen here.
+          # if there are any conversion needed, those happen here.
           # Place new compatibility code here
           if save_required
             Log.log.warn('Saving automatic conversion.')
@@ -778,7 +778,6 @@ module Aspera
         end
 
         ACTIONS = %i[
-          id
           preset
           open
           documentation
@@ -798,19 +797,12 @@ module Aspera
           file
           check_update
           initdemo
-          vault].concat(PRESET_GBL_ACTIONS).freeze
+          vault].freeze
 
         # "config" plugin
         def execute_action
           action = options.get_next_command(ACTIONS)
           case action
-          when *PRESET_GBL_ACTIONS # older syntax
-            Log.log.warn{"This syntax is deprecated, use command: preset #{action}"}
-            return execute_preset(action: action)
-          when :id # older syntax
-            identifier = options.get_next_argument('config name')
-            Log.log.warn{"This syntax is deprecated, use command: preset <verb> #{identifier}"}
-            return execute_preset(name: identifier)
           when :preset # newer syntax
             return execute_preset
           when :open

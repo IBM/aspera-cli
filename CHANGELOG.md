@@ -11,6 +11,7 @@
   * change: aoc: better handling of shared links
   * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
   * change: config: remove deprecated command: export_to_cli
+  * change; config: removed all legacy preset command, newer command `preset` shall be used now.
 
 * 4.13.0
 
