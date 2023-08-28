@@ -40,18 +40,13 @@ module Aspera
         CONF_PRESET_GLOBAL = 'global_common_defaults'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
-        # old tool name
-        PROGRAM_NAME_V1 = 'aslmcli'
-        PROGRAM_NAME_V2 = 'mlia'
         # default redirect for AoC web auth
         DEFAULT_REDIRECT = 'http://localhost:12345'
         # folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         RUBY_FILE_EXT = '.rb'
-        AOC_COMMAND_V1 = 'files'
-        AOC_COMMAND_V2 = 'aspera'
-        AOC_COMMAND_V3 = 'aoc'
-        AOC_COMMAND_CURRENT = AOC_COMMAND_V3
+        ASPERA = 'aspera'
+        AOC_COMMAND = 'aoc'
         SERVER_COMMAND = 'server'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
@@ -80,15 +75,11 @@ module Aspera
           :CONF_PRESET_VERSION,
           :CONF_PRESET_DEFAULT,
           :CONF_PRESET_GLOBAL,
-          :PROGRAM_NAME_V1,
-          :PROGRAM_NAME_V2,
           :DEFAULT_REDIRECT,
           :ASPERA_PLUGINS_FOLDERNAME,
           :RUBY_FILE_EXT,
-          :AOC_COMMAND_V1,
-          :AOC_COMMAND_V2,
-          :AOC_COMMAND_V3,
-          :AOC_COMMAND_CURRENT,
+          :ASPERA,
+          :AOC_COMMAND,
           :DEMO,
           :TRANSFER_SDK_ARCHIVE_URL,
           :AOC_PATH_API_CLIENTS,
@@ -404,6 +395,8 @@ module Aspera
           end
         end
 
+        # Converts path to former main config folder to new path, finds files to copy
+        # used in case a version of the tool changes the main folder path
         def convert_preset_path(old_name, new_name, files_to_copy)
           old_subpath = File.join('', ASPERA_HOME_FOLDER_NAME, old_name, '')
           new_subpath = File.join('', ASPERA_HOME_FOLDER_NAME, new_name, '')
@@ -431,16 +424,12 @@ module Aspera
         # tries to convert from older version if possible and required
         def read_config_file
           Log.log.debug{"config file is: #{@option_config_file}".red}
-          conf_file_v1 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V1, DEFAULT_CONFIG_FILENAME)
-          conf_file_v2 = File.join(Dir.home, ASPERA_HOME_FOLDER_NAME, PROGRAM_NAME_V2, DEFAULT_CONFIG_FILENAME)
           # files search for configuration, by default the one given by user
           search_files = [@option_config_file]
-          # if default file, then also look for older versions
-          search_files.push(conf_file_v2, conf_file_v1) if @option_config_file.eql?(@conf_file_default)
           # find first existing file (or nil)
           conf_file_to_load = search_files.find{|f| File.exist?(f)}
           # require save if old version of file
-          save_required = !@option_config_file.eql?(conf_file_to_load)
+          save_required = false
           # if no file found, create default config
           if conf_file_to_load.nil?
             Log.log.warn{"No config file found. Creating empty configuration file: #{@option_config_file}"}
@@ -460,32 +449,8 @@ module Aspera
           if version.nil?
             raise 'No version found in config section.'
           end
-          # oldest compatible conf file format, update to latest version when an incompatible change is made
-          # check compatibility of version of conf file
-          config_tested_version = '0.4.5'
-          if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-            raise "Unsupported config file version #{version}. Expecting min version #{config_tested_version}"
-          end
-          config_tested_version = '0.6.15'
-          if Gem::Version.new(version) < Gem::Version.new(config_tested_version)
-            convert_preset_plugin_name(AOC_COMMAND_V1, AOC_COMMAND_V2)
-            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-            save_required = true
-          end
-          config_tested_version = '0.8.10'
-          if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-            convert_preset_path(PROGRAM_NAME_V1, PROGRAM_NAME_V2, files_to_copy)
-            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-            save_required = true
-          end
-          config_tested_version = '1.0'
-          if Gem::Version.new(version) <= Gem::Version.new(config_tested_version)
-            convert_preset_plugin_name(AOC_COMMAND_V2, AOC_COMMAND_V3)
-            convert_preset_path(PROGRAM_NAME_V2, @info[:name], files_to_copy)
-            version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = config_tested_version
-            save_required = true
-          end
           Log.log.debug{"conf version: #{version}"}
+          # if there are any cnversion needed, those happen here.
           # Place new compatibility code here
           if save_required
             Log.log.warn('Saving automatic conversion.')
@@ -984,9 +949,9 @@ module Aspera
             formatter.display_status('Exporting: Aspera on Cloud')
             require 'aspera/cli/plugins/aoc'
             # need url / username
-            add_plugin_default_preset(AOC_COMMAND_V3.to_sym)
+            add_plugin_default_preset(AOC_COMMAND.to_sym)
             # instantiate AoC plugin
-            self.class.plugin_class(AOC_COMMAND_CURRENT).new(@agents) # TODO: is this line needed ? get options ?
+            self.class.plugin_class(AOC_COMMAND).new(@agents) # TODO: is this line needed ? get options ?
             url = options.get_option(:url, is_type: :mandatory)
             cli_conf_file = Fasp::Installation.instance.cli_conf_file
             data = JSON.parse(File.read(cli_conf_file))
@@ -1057,8 +1022,8 @@ module Aspera
               Log.log.info{"Creating Demo server preset: #{DEMO_SERVER_PRESET}"}
               @config_presets[DEMO_SERVER_PRESET] = {
                 'url'                                    => 'ssh://' + DEMO + '.asperasoft.com:33001',
-                'username'                               => AOC_COMMAND_V2,
-                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + AOC_COMMAND_V2
+                'username'                               => ASPERA,
+                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA
               }
             end
             @config_presets[CONF_PRESET_DEFAULT] ||= {}
