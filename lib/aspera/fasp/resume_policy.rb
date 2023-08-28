@@ -53,7 +53,7 @@ module Aspera
             else
               # give one chance only to non retryable errors
               unless remaining_resumes.eql?(@parameters[:iter_max])
-                Log.log.error('non-retryable error')
+                Log.log.error('non-retryable error'.red.blink)
                 raise e
               end
             end
@@ -61,7 +61,7 @@ module Aspera
 
           # take this retry in account
           remaining_resumes -= 1
-          Log.log.warn{"Resuming in  #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
+          Log.log.warn{"Resuming in #{sleep_seconds} seconds (retry left:#{remaining_resumes})"}
 
           # wait a bit before retrying, maybe network condition will be better
           sleep(sleep_seconds)

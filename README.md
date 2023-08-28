@@ -4216,9 +4216,9 @@ aoc files find / --query='\.partial$'
 aoc files http_node_download --to-folder=. /200KB.1
 aoc files mkdir /testsrc
 aoc files rename /somefolder testdst
-aoc files short_link create --to-folder=/testdst --value=private
-aoc files short_link create --to-folder=/testdst --value=public
-aoc files short_link list --query=@json:'{"purpose":"shared_folder_auth_link"}'
+aoc files short_link create /testdst private
+aoc files short_link create testdst public
+aoc files short_link list /testdst private
 aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
 aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
 aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'

@@ -18,6 +18,8 @@ doc: all
 # generate template configuration file for tests, remove own secrets
 $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
 	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
+delgen::
+	rm -f $(TMPL_CONF_FILE_PATH)
 
 #wkhtmltopdf toc $(MANUAL_HTML) $@
 # +pipe_tables
