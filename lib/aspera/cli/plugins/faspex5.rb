@@ -42,6 +42,7 @@ module Aspera
           end
         end
 
+        # Faspex API v5: get transfer spec for connect
         TRANSFER_CONNECT = 'connect'
 
         def initialize(env)

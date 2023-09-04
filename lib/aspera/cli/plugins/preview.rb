@@ -505,6 +505,7 @@ module Aspera
             raise 'error'
           end
         ensure
+          Log.log.debug{"cleaning up temp folder #{@tmp_folder}"}
           FileUtils.rm_rf(@tmp_folder)
         end # execute_action
       end # Preview

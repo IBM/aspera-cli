@@ -59,7 +59,7 @@ module Aspera
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
         @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
-        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash,handler: {o: self, m: :option_transfer_info})
+        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash, handler: {o: self, m: :option_transfer_info})
         @opt_mgr.declare(:progress, 'Type of progress bar', values: %i[none native multi], default: :native)
         @opt_mgr.parse_options!
       end
