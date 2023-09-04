@@ -564,9 +564,10 @@ To upgrade to the latest version:
 gem update <%=gemspec.name%>
 ```
 
-<%=tool%> checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
+<%=tool%> checks every week if a new version is available and notify the user in a WARN log.
+To de-activate this feature, globally set the option `version_check_days` to `0`, or specify a different period in days.
 
-To check manually:
+To check if a new version is available (independently of `version_check_days`):
 
 ```bash
 <%=cmd%> conf check_update
@@ -1354,13 +1355,37 @@ Operations on this preset are done using regular `config` operations:
 
 #### <a id="config"></a>Plugin: `config`: Configuration
 
-Plugin `config` is used to configure <%=tool%> and also contains global options.
+Plugin `config` provides general commands for <%=tool%>:
 
-When <%=tool%> starts, it looks for the `default` <%=prstt%> and if there is a value for `config`, if so, it loads the option values for any plugin used.
+- <%=prstt%>, config file operations
+- wizard
+- vault
+- ascp
 
-If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+The default configuration for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
+When <%=tool%> starts, it looks for the `default` <%=prstt%> and checks the value for `config`.
+If set, it loads the option values for any plugin used.
 
-Sample commands
+> **Note:** If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+
+Show current default (global) <%=prstt%> (`config` plugin):
+
+```console
+$ ascli conf preset get default config
+global_common_defaults
+```
+
+```bash
+ascli conf preset set global_common_defaults version_check_days 0
+```
+
+If the default global <%=prstt%> is not set:
+
+```bash
+ascli conf preset set default config global_common_defaults
+```
+
+#### Config sample commands
 
 ```bash
 <%=include_commands_for_plugin('config')%>

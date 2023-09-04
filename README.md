@@ -570,9 +570,10 @@ To upgrade to the latest version:
 gem update aspera-cli
 ```
 
-`ascli` checks every week if a new version is available and notify the user in a WARN log. To de-activate this feature set the option `version_check_days` to `0`, or specify a different period in days.
+`ascli` checks every week if a new version is available and notify the user in a WARN log.
+To de-activate this feature, globally set the option `version_check_days` to `0`, or specify a different period in days.
 
-To check manually:
+To check if a new version is available (independently of `version_check_days`):
 
 ```bash
 ascli conf check_update
@@ -1360,13 +1361,37 @@ ascli config preset get default _plugin_name_
 
 #### <a id="config"></a>Plugin: `config`: Configuration
 
-Plugin `config` is used to configure `ascli` and also contains global options.
+Plugin `config` provides general commands for `ascli`:
 
-When `ascli` starts, it looks for the `default` Option preset and if there is a value for `config`, if so, it loads the option values for any plugin used.
+- Option preset, config file operations
+- wizard
+- vault
+- ascp
 
-If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+The default configuration for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
+When `ascli` starts, it looks for the `default` Option preset and checks the value for `config`.
+If set, it loads the option values for any plugin used.
 
-Sample commands
+> **Note:** If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+
+Show current default (global) Option preset (`config` plugin):
+
+```console
+$ ascli conf preset get default config
+global_common_defaults
+```
+
+```bash
+ascli conf preset set global_common_defaults version_check_days 0
+```
+
+If the default global Option preset is not set:
+
+```bash
+ascli conf preset set default config global_common_defaults
+```
+
+#### Config sample commands
 
 ```bash
 config ascp connect info 'Aspera Connect for Windows'
@@ -2886,7 +2911,7 @@ OPTIONS: global
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test export_to_cli file flush_tokens folder gem genkey id initdemo list lookup open overview plugin preset proxy_check secure smtp_settings vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugin preset proxy_check smtp_settings vault wizard
 OPTIONS:
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
