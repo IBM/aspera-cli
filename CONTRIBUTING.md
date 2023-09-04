@@ -209,6 +209,16 @@ make dockerbeta
 make dpushversion
 ```
 
+## Single executable build
+
+It is possible to build `ascli` as a single native executable using `rubyc` (gem `ruby-packer`).
+
+```bash
+make single
+```
+
+This is based on tool `rubyc` (gem `ruby-packer`): either place the executable in folder `tmp`, or the architecture-specific version will be automatically downloaded.
+
 ## Long Term Implementation and delivery improvements
 
 - replace rest and oauth classes with ruby standard gems:

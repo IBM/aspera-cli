@@ -1,0 +1,24 @@
+#!/bin/bash
+# https://github.com/you54f/ruby-packer
+# https://github.com/YOU54F/ruby-packer/releases
+set -e
+FOLDER="$(dirname $0)/../tmp"
+RUBYC="$FOLDER/rubyc"
+if test ! -e "$RUBYC"; then
+    mkdir -p "$FOLDER"
+    case $(uname -sm|tr ' ' -) in
+        Darwin-arm64)
+            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Darwin-arm64.tar.gz | tar -xz -C "$FOLDER"
+            mv "$FOLDER/rubyc-Darwin-arm64" "$RUBYC"
+            ;;
+        Linux-x86_64)
+            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Linux-x86_64.tar.gz | tar -xz -C "$FOLDER"
+            mv "$FOLDER/rubyc-Linux-x86_64" "$RUBYC"
+            ;;
+        *)
+            echo "This architecture is not supported." >&2
+            exit 1
+            ;;
+    esac
+fi
+exec "$RUBYC" "$@"

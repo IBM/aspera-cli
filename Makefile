@@ -123,9 +123,15 @@ clean::
 ##################################
 # Single executable using https://github.com/pmq20/ruby-packer
 CLIEXEC=$(EXENAME).exe
+RUBY_PACKER=$(DIR_TOP)examples/rubyc
 single:$(CLIEXEC)
-$(CLIEXEC):
-	rubyc -o $(CLIEXEC) $(EXETESTB)
+.PHONY: check-ruby-packer
+check-ruby-packer:
+	@set -e && for v in '' -ruby -ruby-api;do\
+		echo "Version ($$v): $$($(RUBY_PACKER) -$$v-version)";\
+	done
+$(CLIEXEC): check-ruby-packer
+	$(RUBY_PACKER) -o $(CLIEXEC) $(EXETESTB)
 clean::
 	rm -f $(CLIEXEC)
 ##################################
