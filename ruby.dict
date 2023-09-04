@@ -23,3 +23,8 @@ lstrip
 realpath
 simplecov
 casecmp
+execjs
+rubyzip
+solargraph
+bindir
+chdir
