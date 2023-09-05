@@ -4286,7 +4286,7 @@ If the lookup needs to be only on certain types, you can specify the field: `rec
 On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
 If the value `ALL` is provided to option `box`, then all packages are selected.
 
-### Faspex5: List packages
+### Faspex 5: List packages
 
 The following parameters in option `value` are supported:
 
@@ -4296,7 +4296,7 @@ The following parameters in option `value` are supported:
 - `offset` : native api parameter, in general do not use (added by <%=tool%>)
 - `limit` : native api parameter, number of items par api call, in general do not use (added by <%=tool%>)
 
-### Faspex5:  Send a package with metadata
+### Faspex 5:  Send a package with metadata
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
@@ -4306,25 +4306,25 @@ The interface is the one of the API (Refer to API documentation, or look at requ
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
 
-### Faspex5: List all shared inboxes
+### Faspex 5: List all shared inboxes
 
 ```bash
 <%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
-### Faspex5: Create Metadata profile
+### Faspex 5: Create Metadata profile
 
 ```bash
 <%=cmd%> faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
-### Faspex5: Create a Shared inbox with specific metadata profile
+### Faspex 5: Create a Shared inbox with specific metadata profile
 
 ```bash
 <%=cmd%> faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
-### Faspex5: List content in Shared folder and send package from remote source
+### Faspex 5: List content in Shared folder and send package from remote source
 
 ```bash
 <%=cmd%> faspex5 shared_folders list
@@ -4348,7 +4348,7 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 
 > **Note:** The shared folder can be identified by its numerical `id` using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
-### Faspex5: receive all packages (cargo)
+### Faspex 5: receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 
@@ -4362,7 +4362,7 @@ To initialize, and skip all current package so that next time `ALL` is used, onl
 <%=cmd%> faspex5 packages receive INIT --once-only=yes
 ```
 
-### Faspex 4-style postprocessing script with Faspex 5
+### Faspex 5: Faspex 4-style postprocessing
 
 <%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
 It implements Faspex 5 web hooks, and calls a local script with the same environment as Faspex 4.
