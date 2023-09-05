@@ -219,6 +219,12 @@ make single
 
 This is based on tool `rubyc` (gem `ruby-packer`): either place the executable in folder `tmp`, or the architecture-specific version will be automatically downloaded.
 
+> **Note:** Perl Findbin is needed, install on Linux with:
+
+```bash
+sudo dnf install -y perl perl-FindBin perl-IPC-Cmd
+```
+
 ## Long Term Implementation and delivery improvements
 
 - replace rest and oauth classes with ruby standard gems:
