@@ -677,13 +677,13 @@ module Aspera
               resp = @api_node.read('ops/transfers', old_query_read_delete)
               return { type: :object_list, data: resp[:data], fields: %w[id status] } # TODO: useful?
             when :create
-              resp = @api_node.create('streams', value_create_modify(command: command))
+              resp = @api_node.create('streams', value_create_modify(command: command, type: Hash))
               return { type: :single_object, data: resp[:data] }
             when :show
               resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
               return { type: :other_struct, data: resp[:data] }
             when :modify
-              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command))
+              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command, type: Hash))
               return { type: :other_struct, data: resp[:data] }
             when :cancel
               resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
@@ -751,7 +751,7 @@ module Aspera
             @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
             case command
             when :create
-              resp = @api_node.create(res_class_path, value_create_modify(command: command))
+              resp = @api_node.create(res_class_path, value_create_modify(command: command, type: Hash))
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
               resp = @api_node.read(res_class_path, old_query_read_delete)
@@ -771,8 +771,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = value_create_modify
-            request_data ||= {}
+            request_data = value_create_modify(default: {}, type: Hash)
             case command
             when :session
               command = options.get_next_command([:list])

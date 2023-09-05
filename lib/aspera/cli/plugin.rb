@@ -118,7 +118,7 @@ module Aspera
         case command
         when :create
           raise 'cannot create singleton' if is_singleton
-          return do_bulk_operation(value_create_modify(command: command), 'created', fields: display_fields) do |params|
+          return do_bulk_operation(value_create_modify(command: command, type: :bulk_hash), 'created', fields: display_fields) do |params|
             raise 'expecting Hash' unless params.is_a?(Hash)
             rest_api.create(res_class_path, params)[:data]
           end
@@ -154,7 +154,7 @@ module Aspera
             raise "An error occurred: unexpected result type for list: #{data.class}"
           end
         when :modify
-          parameters = value_create_modify(command: command)
+          parameters = value_create_modify(command: command, type: Hash)
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path, parameters)
@@ -200,11 +200,24 @@ module Aspera
         return value
       end
 
+      # Retrieves an extended value from command line, used for creation or modification of entities
+      # @param default [Object] default value if not provided
+      # @param command [String] command name for error message
+      # @param type [Class] expected type of value
       # TODO: when deprecation of `value` is completed: remove line with :value
-      def value_create_modify(default: nil, command: 'command')
+      def value_create_modify(default: nil, command: 'command', type: nil)
         value = options.get_option(:value)
         value = options.get_next_argument("parameters for #{command}", mandatory: default.nil?) if value.nil?
         value = default if value.nil?
+        if type.nil?
+          # nothing to do
+        elsif type.is_a?(Class)
+          raise CliBadArgument, "Value must be a #{type}" unless value.is_a?(type)
+        elsif type.eql?(:bulk_hash)
+          raise CliBadArgument, 'Value must be a Hash or Array of Hash' unless value.is_a?(Hash) || (value.is_a?(Array) && value.all?(Hash))
+        else
+          raise "Internal error: #{type}"
+        end
         return value
       end
 

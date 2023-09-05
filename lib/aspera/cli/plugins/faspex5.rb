@@ -275,8 +275,7 @@ module Aspera
             @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
             return Main.result_status('Package(s) deleted')
           when :send
-            parameters = value_create_modify(command: command)
-            raise CliBadArgument, 'Value must be Hash, refer to API' unless parameters.is_a?(Hash)
+            parameters = value_create_modify(command: command, type: Hash)
             normalize_recipients(parameters)
             package = @api_v5.create('packages', parameters)[:data]
             shared_folder = options.get_option(:shared_folder)
@@ -494,9 +493,9 @@ module Aspera
               when :show
                 return { type: :single_object, data: @api_v5.read(smtp_path)[:data] }
               when :create
-                return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
+                return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd, type: Hash))[:data] }
               when :modify
-                return { type: :single_object, data: @api_v5.modify(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
+                return { type: :single_object, data: @api_v5.modify(smtp_path, value_create_modify(command: smtp_cmd, type: Hash))[:data] }
               when :delete
                 return { type: :single_object, data: @api_v5.delete(smtp_path)[:data] }
               when :test
@@ -507,7 +506,7 @@ module Aspera
             end
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify
+            url = value_create_modify(type: String)
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
@@ -519,8 +518,7 @@ module Aspera
             return Main.result_status('Gateway terminated')
           when :postprocessing
             require 'aspera/faspex_postproc'
-            parameters = value_create_modify
-            raise 'parameters must be Hash' unless parameters.is_a?(Hash)
+            parameters = value_create_modify(type: Hash)
             parameters = parameters.symbolize_keys
             raise 'Missing key: url' unless parameters.key?(:url)
             uri = URI.parse(parameters[:url])

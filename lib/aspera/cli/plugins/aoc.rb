@@ -537,8 +537,7 @@ module Aspera
                 return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)[:data]}
               end
             when :send
-              package_data = value_create_modify(command: package_command)
-              raise CliBadArgument, 'value must be hash, refer to doc' unless package_data.is_a?(Hash)
+              package_data = value_create_modify(command: package_command, type: Hash)
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
               # works for both normal usr auth and link auth
@@ -795,7 +794,7 @@ module Aspera
             return execute_admin_action
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify
+            url = value_create_modify(type: String)
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, aoc_api, current_workspace_info['id'])

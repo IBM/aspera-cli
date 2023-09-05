@@ -92,8 +92,7 @@ module Aspera
                 display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:any)
                 return entity_command(entity_verb, api_shares_admin, entities_path, display_fields: display_fields)
               when :import
-                parameters = value_create_modify
-                return do_bulk_operation(parameters, 'created') do |entity_parameters|
+                return do_bulk_operation(value_create_modify(type: :bulk_hash), 'created') do |entity_parameters|
                   entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
                   raise 'expecting Hash' unless entity_parameters.is_a?(Hash)
                   SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
@@ -103,8 +102,7 @@ module Aspera
                   api_shares_admin.create("#{entities_path}/import", entity_parameters)[:data]
                 end
               when :add
-                parameters = value_create_modify
-                return do_bulk_operation(parameters, 'created') do |entity_name|
+                return do_bulk_operation(value_create_modify(type: :bulk_hash), 'created') do |entity_name|
                   raise "expecting string (name), have #{entity_name.class}" unless entity_name.is_a?(String)
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
                 end
