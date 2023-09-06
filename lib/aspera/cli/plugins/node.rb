@@ -75,7 +75,6 @@ module Aspera
             env[:options].declare(:validator, 'Identifier of validator (optional for central)')
             env[:options].declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             env[:options].declare(:sync_name, 'Sync name')
-            env[:options].declare(:path, 'File or folder path for gen4 operation "file"')
             env[:options].declare(:token_type, 'Type of token used for transfers', values: %i[aspera basic hybrid], default: :aspera)
             env[:options].declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
             env[:options].parse_options!
@@ -114,7 +113,7 @@ module Aspera
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
 
         # commands for execute_command_gen4
-        COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download file v3].concat(NODE4_READ_ACTIONS).freeze
+        COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
 
         COMMANDS_COS = %i[upload download info access_key api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
@@ -380,68 +379,17 @@ module Aspera
             return { type: :single_object, data: @api_node.params }
           end
         end
-        GEN4_FILE_COMMANDS = %i[show modify permission thumbnail].freeze
-        def execute_node_gen4_file_command(command_node_file, top_file_id)
-          file_path = options.get_option(:path)
-          apifid =
-            if file_path.nil?
-              {api: @api_node, file_id: instance_identifier}
-            else
-              @api_node.resolve_api_fid(top_file_id, file_path) # TODO: allow follow link ?
-            end
-          case command_node_file
-          when :show
-            items = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
-            return {type: :single_object, data: items}
-          when :modify
-            update_param = options.get_next_argument('update data', type: Hash)
-            apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
-            return Main.result_status('Done')
-          when :thumbnail
-            result = apifid[:api].call(
-              operation: 'GET',
-              subpath: "files/#{apifid[:file_id]}/preview",
-              headers: {'Accept' => 'image/png'}
-            )
-            require 'aspera/preview/terminal'
-            return Main.result_status(Preview::Terminal.build(result[:http].body, reserved_lines: 3))
-          when :permission
-            command_perm = options.get_next_command(%i[list create delete])
-            case command_perm
-            when :list
-              # generic options : TODO: as arg ? query_read_delete
-              list_options ||= {'include' => Rest.array_params(%w[access_level permission_count])}
-              # add which one to get
-              list_options['file_id'] = apifid[:file_id]
-              list_options['inherited'] ||= false
-              items = apifid[:api].read('permissions', list_options)[:data]
-              return {type: :object_list, data: items}
-            when :delete
-              perm_id = instance_identifier
-              return do_bulk_operation(perm_id, 'deleted') do |one_id|
-                # TODO: notify event ?
-                apifid[:api].delete("permissions/#{perm_id}")
-                # notify application of deletion
-                the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app, types: ['permission.deleted']) unless the_app.nil?
-                {'id' => one_id}
-              end
-            when :create
-              create_param = options.get_next_argument('creation data', type: Hash)
-              raise 'no file_id' if create_param.key?('file_id')
-              create_param['file_id'] = apifid[:file_id]
-              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
-              # add application specific tags (AoC)
-              the_app = apifid[:api].app_info
-              the_app[:api].permissions_set_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
-              # create permission
-              created_data = apifid[:api].create('permissions', create_param)[:data]
-              # notify application of creation
-              the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app) unless the_app.nil?
-              return { type: :single_object, data: created_data}
-            else raise "internal error:shall not reach here (#{command_perm})"
-            end
-          else raise "internal error:shall not reach here (#{command_node_file})"
+
+        # @return [Hash] api and main file id for given path or id
+        # Allows to specify a file by its path or by its id on the node
+        def apifid_from_next_arg(top_file_id)
+          file_path = instance_identifier(description: 'path or id') do |attribute, value|
+            raise 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
+            # directly return result for method
+            return {api: @api_node, file_id: value}
           end
+          # there was no selector, so it is a path
+          return @api_node.resolve_api_fid(top_file_id, file_path)
         end
 
         def execute_command_gen4(command_repo, top_file_id)
@@ -494,10 +442,10 @@ module Aspera
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
             file_path = options.get_next_argument('source path')
-            newname = options.get_next_argument('new name')
             apifid = @api_node.resolve_api_fid(top_file_id, file_path)
+            newname = options.get_next_argument('new name')
             result = apifid[:api].update("files/#{apifid[:file_id]}", {name: newname})[:data]
-            return Main.result_status("renamed #{file_path} to #{newname}")
+            return Main.result_status("renamed to #{newname}")
           when :delete
             return do_bulk_operation(options.get_next_argument('path'), 'deleted', id_result: 'path') do |l_path|
               raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
@@ -554,9 +502,60 @@ module Aspera
               subpath: "files/#{apifid[:file_id]}/content",
               save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
-          when :file
-            command_node_file = options.get_next_command(GEN4_FILE_COMMANDS)
-            return execute_node_gen4_file_command(command_node_file, top_file_id)
+          when :show
+            apifid = apifid_from_next_arg(top_file_id)
+            items = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
+            return {type: :single_object, data: items}
+          when :modify
+            apifid = apifid_from_next_arg(top_file_id)
+            update_param = options.get_next_argument('update data', type: Hash)
+            apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
+            return Main.result_status('Done')
+          when :thumbnail
+            apifid = apifid_from_next_arg(top_file_id)
+            result = apifid[:api].call(
+              operation: 'GET',
+              subpath: "files/#{apifid[:file_id]}/preview",
+              headers: {'Accept' => 'image/png'}
+            )
+            require 'aspera/preview/terminal'
+            return Main.result_status(Preview::Terminal.build(result[:http].body, reserved_lines: 3))
+          when :permission
+            apifid = apifid_from_next_arg(top_file_id)
+            command_perm = options.get_next_command(%i[list create delete])
+            case command_perm
+            when :list
+              # generic options : TODO: as arg ? query_read_delete
+              list_options ||= {'include' => Rest.array_params(%w[access_level permission_count])}
+              # add which one to get
+              list_options['file_id'] = apifid[:file_id]
+              list_options['inherited'] ||= false
+              items = apifid[:api].read('permissions', list_options)[:data]
+              return {type: :object_list, data: items}
+            when :delete
+              perm_id = instance_identifier
+              return do_bulk_operation(perm_id, 'deleted') do |one_id|
+                # TODO: notify event ?
+                apifid[:api].delete("permissions/#{perm_id}")
+                # notify application of deletion
+                the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app, types: ['permission.deleted']) unless the_app.nil?
+                {'id' => one_id}
+              end
+            when :create
+              create_param = options.get_next_argument('creation data', type: Hash)
+              raise 'no file_id' if create_param.key?('file_id')
+              create_param['file_id'] = apifid[:file_id]
+              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
+              # add application specific tags (AoC)
+              the_app = apifid[:api].app_info
+              the_app[:api].permissions_set_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
+              # create permission
+              created_data = apifid[:api].create('permissions', create_param)[:data]
+              # notify application of creation
+              the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app) unless the_app.nil?
+              return { type: :single_object, data: created_data}
+            else raise "internal error:shall not reach here (#{command_perm})"
+            end
           else raise "INTERNAL ERROR: no case for #{command_repo}"
           end # command_repo
           # raise 'INTERNAL ERROR: missing return'

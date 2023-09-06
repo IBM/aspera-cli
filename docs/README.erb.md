@@ -1322,9 +1322,9 @@ If necessary, the configuration file can opened in a text editor with:
 Older format for commands are still supported:
 
 ```bash
-<%=cmd%> config id <name> set|delete|show|initialize|update
-<%=cmd%> config over
-<%=cmd%> config list
+<%=cmd%> config preset set|delete|show|initialize|update <name>
+<%=cmd%> config preset over
+<%=cmd%> config preset list
 ```
 
 #### <a id="lprtconf"></a>Special <%=prstt%>: config
@@ -1531,7 +1531,7 @@ or
 - Display the content of configuration file in table format
 
 ```bash
-<%=cmd%> config overview
+<%=cmd%> config preset overview
 ```
 
 - Execute a command on the shares application using default parameters
@@ -1790,13 +1790,13 @@ Examples:
 - display debugging log on `stdout`:
 
 ```bash
-<%=cmd%> conf over --log-level=debug --logger=stdout
+<%=cmd%> conf pre over --log-level=debug --logger=stdout
 ```
 
 - log errors to `syslog`:
 
 ```bash
-<%=cmd%> conf over --log-level=error --logger=syslog
+<%=cmd%> conf pre over --log-level=error --logger=syslog
 ```
 
 When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file.
@@ -2305,6 +2305,8 @@ It is possible to modify or add any of the supported <%=trspec%> parameter using
 The `ts` option accepts a [Structured Value](#native) containing one or several <%=trspec%> parameters in a `Hash`.
 Multiple `ts` options on command line are cumulative, and Hash is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
+
+> **Note:** Default transfer spec values can be displayed with command: `config ascp info --flat-hash=no` under field `ts`.
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
@@ -3665,19 +3667,19 @@ The pseudo parameter `link_name` allows changing default "shared as" name.
 - List permissions on a shared folder as user
 
 ```bash
-<%=cmd%> aoc files file --path=/shared_folder_test1 perm list
+<%=cmd%> aoc files perm /shared_folder_test1 list
 ```
 
 - Share a personal folder with other users
 
 ```bash
-<%=cmd%> aoc files file --path=/shared_folder_test1 perm create @json:'{"with":"laurent"}'
+<%=cmd%> aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
 - Revoke shared access
 
 ```bash
-<%=cmd%> aoc files file --path=/shared_folder_test1 perm delete 6161
+<%=cmd%> aoc files perm /shared_folder_test1 delete 6161
 ```
 
 #### Cross Organization transfers
@@ -4119,14 +4121,18 @@ gem install rmagick rainbow
 For example it is possible to display the preview of a file, if it exists, using:
 
 ```bash
-<%=cmd%> aoc files file thumbnail --path=/preview_samples/Aspera.mpg
+<%=cmd%> aoc files thumbnail /preview_samples/Aspera.mpg
 ```
 
 Using direct node access and an access key , one can do:
 
 ```bash
-<%=cmd%> node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
+<%=cmd%> node access_key do self thumbnail /preview_samples/Aspera.mpg
 ```
+
+> **Note:** To specify the file by its file id, use the selector syntax: `%id:_file_id_here_`
+>
+> **Note:** To force textual display of the preview on iTerm, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
 
 ### Create access key
 
@@ -5233,7 +5239,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 - `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
 - `--src-base` (`src_base`) if top level folder name shall not be created on destination
 
-> **Note:** <%=tool%> takes transfer parameters exclusively as a <%=trspec%>, with `--ts` parameter.
+> **Note:** <%=tool%> takes transfer parameters exclusively as a <%=trspec%>, with `ts` option.
 >
 > **Note:** Most, but not all, native `ascp` arguments are available as standard <%=trspec%> parameters.
 >

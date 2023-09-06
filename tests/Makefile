@@ -417,13 +417,13 @@ $(T)nd_ak3: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file show --path=/testfile1
-	-$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file thumbnail --path=/testfile1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show /testfile1
+	-$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name thumbnail /testfile1
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete testfile1
 	@touch $@
 $(T)nd_ak4: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name file show 1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show %id:1
 	@touch $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
 tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios tndak
@@ -558,11 +558,13 @@ $(T)aocffid: $(T).exists
 	@echo $@
 	set -x&&\
 	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) aoc files file show $${file_id}
-	$(EXE_MAN) aoc files file show --path=/200KB.1
-	$(EXE_MAN) aoc files file permission --path=@preset:misc.aoc_test_folder list
+	$(EXE_MAN) aoc files show %id:$${file_id}
+	$(EXE_MAN) aoc files show /200KB.1
+	$(EXE_MAN) aoc files permission @preset:misc.aoc_test_folder list
+	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file
 	@touch $@
-#	$(EXE_MAN) aoc files file modify --path=@preset:misc.aoc_test_folder
+#	$(EXE_MAN) aoc files modify @preset:misc.aoc_test_folder
 $(T)aocfpub: $(T).exists
 	@echo $@
 	set -x&&\
@@ -1063,11 +1065,11 @@ $(T)conf_open: $(T).exists
 	@touch $@
 $(T)conf_list: $(T).exists
 	@echo $@
-	$(EXETESTC) config list
+	$(EXETESTC) config preset list
 	@touch $@
 $(T)conf_over: $(T).exists
 	@echo $@
-	$(EXETESTC) config overview
+	$(EXETESTC) config preset overview
 	$(EXETESTC) config ascp use /usr/bin/ascp
 	@touch $@
 $(T)conf_vault: $(T).exists

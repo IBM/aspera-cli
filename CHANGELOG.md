@@ -5,13 +5,15 @@
   * new: server: option `passphrase` for simpler command line (#114)
   * new: percent selector for entities identifier
   * new: faspex5: shared inbox and workgroup membership management
+  * new: config: Command `ascp info` shows default transfer spec.
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
   * change: aoc: better handling of shared links
   * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
   * change: config: remove deprecated command: export_to_cli
-  * change; config: removed all legacy preset command, newer command `preset` shall be used now.
+  * change: config: removed all legacy preset command, newer command `preset` shall be used now.
+  * change(break): aoc/node: Simplification: gen4 operations: show modify permission thumbnail are now directly under node gen 4 command. Command `file` is suppressed. Option `path` is suppressed. The default expected argument is a path. To provide a file id, use selector syntax: %id:_file_id_
 
 * 4.13.0
 

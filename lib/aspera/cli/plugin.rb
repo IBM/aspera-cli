@@ -47,9 +47,9 @@ module Aspera
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
       # @param block [Proc] block to search for identifier based on attribute value
-      def instance_identifier(&block)
+      def instance_identifier(description: 'identifier', &block)
         res_id = options.get_option(:id)
-        res_id = options.get_next_argument('identifier') if res_id.nil?
+        res_id = options.get_next_argument(description) if res_id.nil?
         if block && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
           res_id = yield(m[1], m[2])
         end

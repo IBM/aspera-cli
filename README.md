@@ -1328,9 +1328,9 @@ ascli config open
 Older format for commands are still supported:
 
 ```bash
-ascli config id <name> set|delete|show|initialize|update
-ascli config over
-ascli config list
+ascli config preset set|delete|show|initialize|update <name>
+ascli config preset over
+ascli config preset list
 ```
 
 #### <a id="lprtconf"></a>Special Option preset: config
@@ -1576,7 +1576,7 @@ ascli config preset set default shares shares06
 - Display the content of configuration file in table format
 
 ```bash
-ascli config overview
+ascli config preset overview
 ```
 
 - Execute a command on the shares application using default parameters
@@ -1835,13 +1835,13 @@ Examples:
 - display debugging log on `stdout`:
 
 ```bash
-ascli conf over --log-level=debug --logger=stdout
+ascli conf pre over --log-level=debug --logger=stdout
 ```
 
 - log errors to `syslog`:
 
 ```bash
-ascli conf over --log-level=error --logger=syslog
+ascli conf pre over --log-level=error --logger=syslog
 ```
 
 When `ascli` is used interactively in a shell, the shell itself will usually log executed commands in the history file.
@@ -2350,6 +2350,8 @@ It is possible to modify or add any of the supported [*transfer-spec*](#transfer
 The `ts` option accepts a [Structured Value](#native) containing one or several [*transfer-spec*](#transferspec) parameters in a `Hash`.
 Multiple `ts` options on command line are cumulative, and Hash is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
+
+> **Note:** Default transfer spec values can be displayed with command: `config ascp info --flat-hash=no` under field `ts`.
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agt_direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
@@ -2941,7 +2943,7 @@ OPTIONS:
         --notif-template=VALUE       Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
-        --ts=VALUE                   Override transfer spec values, current= (Hash)
+        --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
@@ -2968,7 +2970,6 @@ OPTIONS:
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
-        --path=VALUE                 File or folder path for gen4 operation "file"
         --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
@@ -3127,7 +3128,6 @@ OPTIONS:
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
-        --path=VALUE                 File or folder path for gen4 operation "file"
         --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
@@ -4092,19 +4092,19 @@ The pseudo parameter `link_name` allows changing default "shared as" name.
 - List permissions on a shared folder as user
 
 ```bash
-ascli aoc files file --path=/shared_folder_test1 perm list
+ascli aoc files perm /shared_folder_test1 list
 ```
 
 - Share a personal folder with other users
 
 ```bash
-ascli aoc files file --path=/shared_folder_test1 perm create @json:'{"with":"laurent"}'
+ascli aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
 - Revoke shared access
 
 ```bash
-ascli aoc files file --path=/shared_folder_test1 perm delete 6161
+ascli aoc files perm /shared_folder_test1 delete 6161
 ```
 
 #### Cross Organization transfers
@@ -4233,21 +4233,22 @@ aoc files browse /
 aoc files browse / --link=my_aoc_publink_folder
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
-aoc files file modify --path=my_aoc_test_folder
-aoc files file permission --path=my_aoc_test_folder list
-aoc files file show --path=/200KB.1
-aoc files file show my_file_id
 aoc files find / --query='\.partial$'
 aoc files http_node_download --to-folder=. /200KB.1
 aoc files mkdir /testsrc
+aoc files modify my_aoc_test_folder
+aoc files permission my_aoc_test_folder list
 aoc files rename /somefolder testdst
 aoc files short_link create /testdst private
 aoc files short_link create testdst public
 aoc files short_link list /testdst private
+aoc files show %id:my_file_id
+aoc files show /200KB.1
 aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
 aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
 aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
 aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
+aoc files thumbnail my_aoc_media_file
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
 aoc files upload --to-folder=/testsrc testfile.bin
@@ -4687,14 +4688,18 @@ gem install rmagick rainbow
 For example it is possible to display the preview of a file, if it exists, using:
 
 ```bash
-ascli aoc files file thumbnail --path=/preview_samples/Aspera.mpg
+ascli aoc files thumbnail /preview_samples/Aspera.mpg
 ```
 
 Using direct node access and an access key , one can do:
 
 ```bash
-ascli node access_key do self file thumbnail --path=/preview_samples/Aspera.mpg
+ascli node access_key do self thumbnail /preview_samples/Aspera.mpg
 ```
+
+> **Note:** To specify the file by its file id, use the selector syntax: `%id:_file_id_here_`
+>
+> **Note:** To force textual display of the preview on iTerm, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
 
 ### Create access key
 
@@ -4711,13 +4716,13 @@ node access_key do my_aoc_ak_name browse /
 node access_key do my_aoc_ak_name delete /folder2
 node access_key do my_aoc_ak_name delete testfile1
 node access_key do my_aoc_ak_name download testfile1 --to-folder=.
-node access_key do my_aoc_ak_name file show --path=/testfile1
-node access_key do my_aoc_ak_name file show 1
-node access_key do my_aoc_ak_name file thumbnail --path=/testfile1
 node access_key do my_aoc_ak_name find /
 node access_key do my_aoc_ak_name mkdir /folder1
 node access_key do my_aoc_ak_name node_info /
 node access_key do my_aoc_ak_name rename /folder1 folder2
+node access_key do my_aoc_ak_name show %id:1
+node access_key do my_aoc_ak_name show /testfile1
+node access_key do my_aoc_ak_name thumbnail /testfile1
 node access_key do my_aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 node access_key list
 node api_details
@@ -4942,7 +4947,7 @@ If the lookup needs to be only on certain types, you can specify the field: `rec
 On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
 If the value `ALL` is provided to option `box`, then all packages are selected.
 
-### Faspex5: List packages
+### Faspex 5: List packages
 
 The following parameters in option `value` are supported:
 
@@ -4952,7 +4957,7 @@ The following parameters in option `value` are supported:
 - `offset` : native api parameter, in general do not use (added by `ascli`)
 - `limit` : native api parameter, number of items par api call, in general do not use (added by `ascli`)
 
-### Faspex5:  Send a package with metadata
+### Faspex 5:  Send a package with metadata
 
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
@@ -4962,25 +4967,25 @@ ascli faspex5 packages send --value=@json:'{"title":"test title","recipients":["
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
 
-### Faspex5: List all shared inboxes
+### Faspex 5: List all shared inboxes
 
 ```bash
 ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
-### Faspex5: Create Metadata profile
+### Faspex 5: Create Metadata profile
 
 ```bash
 ascli faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
-### Faspex5: Create a Shared inbox with specific metadata profile
+### Faspex 5: Create a Shared inbox with specific metadata profile
 
 ```bash
 ascli faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
-### Faspex5: List content in Shared folder and send package from remote source
+### Faspex 5: List content in Shared folder and send package from remote source
 
 ```bash
 ascli faspex5 shared_folders list
@@ -5004,7 +5009,7 @@ ascli faspex5 packages send --value=@json:'{"title":"hello","recipients":[{"name
 
 > **Note:** The shared folder can be identified by its numerical `id` using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
-### Faspex5: receive all packages (cargo)
+### Faspex 5: receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 
@@ -5018,7 +5023,7 @@ To initialize, and skip all current package so that next time `ALL` is used, onl
 ascli faspex5 packages receive INIT --once-only=yes
 ```
 
-### Faspex 4-style postprocessing script with Faspex 5
+### Faspex 5: Faspex 4-style postprocessing
 
 `ascli` provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
 It implements Faspex 5 web hooks, and calls a local script with the same environment as Faspex 4.
@@ -5987,7 +5992,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 - `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
 - `--src-base` (`src_base`) if top level folder name shall not be created on destination
 
-> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `--ts` parameter.
+> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `ts` option.
 >
 > **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters.
 >
