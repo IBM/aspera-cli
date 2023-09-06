@@ -72,6 +72,17 @@ module Aspera
         @transfer_spec_cmdline.deep_merge!(value)
       end
 
+      # add other transfer spec parameters
+      def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
+
+      # @return [Hash] transfer spec with updated values from command line, including removed values
+      def updated_ts(transfer_spec={})
+        transfer_spec.deep_merge!(@transfer_spec_cmdline)
+        # recursively remove values that are nil (user wants to delete)
+        transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil?}
+        return transfer_spec
+      end
+
       def option_transfer_info; @transfer_info; end
 
       # multiple option are merged
@@ -79,8 +90,6 @@ module Aspera
         raise 'option transfer_info shall be a Hash' unless value.is_a?(Hash)
         @transfer_info.deep_merge!(value)
       end
-
-      def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
 
       def agent_instance=(instance)
         @agent = instance
@@ -220,9 +229,8 @@ module Aspera
         end
         # update command line paths, unless destination already has one
         @transfer_spec_cmdline['paths'] = transfer_spec['paths'] || ts_source_paths
-        transfer_spec.deep_merge!(@transfer_spec_cmdline)
-        # recursively remove values that are nil (user wants to delete)
-        transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil?}
+        # updated transfer spec with command line
+        updated_ts(transfer_spec)
         # create transfer agent
         set_agent_by_options
         Log.log.debug{"transfer agent is a #{@agent.class}"}

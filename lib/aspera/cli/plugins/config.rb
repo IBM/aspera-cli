@@ -631,6 +631,10 @@ module Aspera
               end
             end
             data['keypass'] = Fasp::Installation.instance.bypass_pass
+            # log is "-" no need to display
+            data.delete('log')
+            # show command line transfer spec
+            data['ts'] = transfer.updated_ts
             return {type: :single_object, data: data}
           when :products
             command = options.get_next_command(%i[list use])
