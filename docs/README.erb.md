@@ -4318,6 +4318,24 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 <%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
 ```
 
+Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
+
+```bash
+<%=cmd%> faspex5 admin res shared_inboxes invite '%name:ascli shinbox' john@example.com
+```
+
+It is equivalent to:
+
+```bash
+<%=cmd%> faspex5 admin res shared_inboxes invite '%name:ascli shinbox' @json:'{"email_address":"john@example.com"}'
+```
+
+Other payload parameters are possible in Hash format:
+
+```json
+{"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3
+```
+
 ### Faspex 5: Create Metadata profile
 
 ```bash

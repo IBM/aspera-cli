@@ -1337,6 +1337,8 @@ $(T)f5_a1: $(T).exists
 	$(EXE_MAN) -Pf5_admin faspex5 admin res registrations list
 	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' create %name:john@example.com
 	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:john@example.com
+	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes invite %name:'ascli shinbox' johnny@example.com
+	$(EXE_MAN) -Pf5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:johnny@example.com
 	$(EXE_MAN) -Pf5_admin faspex5 admin smtp show
 	$(EXE_MAN) -Pf5_admin faspex5 admin smtp test @preset:misc.email_external
 	@touch $@

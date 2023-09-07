@@ -4887,9 +4887,11 @@ faspex5 admin res node list
 faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
 faspex5 admin res saml_configs list
+faspex5 admin res shared_inboxes invite %name:'ascli shinbox' johnny@example.com
 faspex5 admin res shared_inboxes list
 faspex5 admin res shared_inboxes members %name:'ascli shinbox' create %name:john@example.com
 faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:john@example.com
+faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:johnny@example.com
 faspex5 admin res shared_inboxes members %name:'ascli shinbox' list
 faspex5 admin res workgroups list
 faspex5 admin smtp show
@@ -4971,6 +4973,24 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 
 ```bash
 ascli faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
+```
+
+Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
+
+```bash
+ascli faspex5 admin res shared_inboxes invite '%name:ascli shinbox' john@example.com
+```
+
+It is equivalent to:
+
+```bash
+ascli faspex5 admin res shared_inboxes invite '%name:ascli shinbox' @json:'{"email_address":"john@example.com"}'
+```
+
+Other payload parameters are possible in Hash format:
+
+```json
+{"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3
 ```
 
 ### Faspex 5: Create Metadata profile

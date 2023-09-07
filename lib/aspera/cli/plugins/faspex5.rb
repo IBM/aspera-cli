@@ -175,13 +175,18 @@ module Aspera
           return status
         end
 
-        # get a list of all entities of a given type
-        # @param entity [String] the type of entity to list
-        # @param query [Hash] additional query parameters
-        # @param prefix [String] optional prefix to add to the path (nil or empty string: no prefix)
-        def list_entities(entity:, query: {}, prefix: nil)
-          path = entity
-          path = "#{prefix}/#{path}" unless prefix.nil? || prefix.empty?
+        # get a (full or partial) list of all entities of a given type
+        # @param type [String] the type of entity to list (just a name)
+        # @param query [Hash,nil] additional query parameters
+        # @param path [String] optional prefix to add to the path (nil or empty string: no prefix)
+        # @param item_list_key [String] key in the result to get the list of items
+        def list_entities(type:, path: nil, query: nil, item_list_key: nil)
+          query = {} if query.nil?
+          type = type.to_s if type.is_a?(Symbol)
+          item_list_key = type if item_list_key.nil?
+          raise "internal error: Invalid type #{type.class}" unless type.is_a?(String)
+          full_path = type
+          full_path = "#{path}/#{full_path}" unless path.nil? || path.empty?
           result = []
           offset = 0
           max_items = query.delete(MAX_ITEMS)
@@ -190,8 +195,8 @@ module Aspera
           query = {'limit'=> 100}.merge(query)
           loop do
             query['offset'] = offset
-            page_result = @api_v5.read(path, query)[:data]
-            result.concat(page_result[entity.to_s])
+            page_result = @api_v5.read(full_path, query)[:data]
+            result.concat(page_result[item_list_key])
             # reach the limit set by user ?
             if !max_items.nil? && (result.length >= max_items)
               result = result.slice(0, max_items)
@@ -200,17 +205,18 @@ module Aspera
             break if result.length >= page_result['total_count']
             remain_pages -= 1 unless remain_pages.nil?
             break if remain_pages == 0
-            offset += page_result[entity].length
+            offset += page_result[item_list_key].length
           end
           return result
         end
 
         # lookup an entity id from its name
-        def lookup_field_to_id(path:, value:, field: 'name', id: 'id')
-          found = list_entities(entity: path, query: {'q'=> value}).select{|i|i[field].eql?(value)}
+        def lookup_entity_by_field(type:, value:, field: 'name', query: :default, path: nil, item_list_key: nil)
+          query = {'q'=> value} if query.eql?(:default)
+          found = list_entities(type: type, path: path, query: query, item_list_key: item_list_key).select{|i|i[field].eql?(value)}
           case found.length
-          when 0 then raise "No #{path} with #{field} = #{value}"
-          when 1 then return found.first['id']
+          when 0 then raise "No #{type} with #{field} = #{value}"
+          when 1 then return found.first
           else raise "Found #{found.length} #{path} with #{field} = #{value}"
           end
         end
@@ -221,16 +227,16 @@ module Aspera
           case box
           when VAL_ALL then ''
           when *API_MAILBOXES then box
-          else "shared_inboxes/#{lookup_field_to_id(path: 'shared_inboxes', value: box)}"
+          else "shared_inboxes/#{lookup_entity_by_field(type: 'shared_inboxes', value: box)['id']}"
           end
         end
 
         # list all packages with optional filter
         def list_packages
           return list_entities(
-            entity: 'packages',
+            type: 'packages',
             query:  query_read_delete(default: {}),
-            prefix: box_to_prefix(options.get_option(:box)))
+            path: box_to_prefix(options.get_option(:box)))
         end
 
         def package_action
@@ -293,7 +299,7 @@ module Aspera
               return Main.result_transfer(transfer.start(transfer_spec))
             else
               if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
-                shared_folder = lookup_field_to_id(path: 'shared_folders', value: m[2])
+                shared_folder = lookup_entity_by_field(type: 'shared_folders', value: m[2])['id']
               end
               transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
               # start remote transfer and get first status
@@ -454,15 +460,25 @@ module Aspera
                 display_fields = [:all_but, 'public_key']
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
               when :shared_inboxes, :workgroups
-                available_commands.push(:members, :saml_groups)
+                available_commands.push(:members, :saml_groups, :invite_external_collaborator)
               end
               res_command = options.get_next_command(available_commands)
               case res_command
               when *Plugin::ALL_OPS
                 return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
+              when :invite_external_collaborator
+                shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']}
+                creation_payload = value_create_modify(command: res_command, type: [Hash, String])
+                creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
+                res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
+                result = adm_api.create(res_path, creation_payload)[:data]
+                formatter.display_status(result['message'])
+                result = lookup_entity_by_field(type: 'members', path: "#{res_type}/#{shared_inbox_id}", value: creation_payload['email_address'], query: {})
+                return {type: :single_object, data: result}
               when :members, :saml_groups
-                res_id = instance_identifier { |field, value| lookup_field_to_id(path: res_type.to_s, field: field, value: value)}
-                res_path = "#{res_type}/#{res_id}/#{res_command}"
+                res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']}
+                res_prefix = "#{res_type}/#{res_id}"
+                res_path = "#{res_prefix}/#{res_command}"
                 list_key = res_command.to_s
                 list_key = 'groups' if res_command.eql?(:saml_groups)
                 sub_command = options.get_next_command(%i[create list modify delete])
@@ -473,17 +489,22 @@ module Aspera
                   users = [users] unless users.is_a?(Array)
                   users = users.map do |user|
                     if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
-                      lookup_field_to_id(path: 'contacts', field: m[1], value: m[2])
+                      lookup_entity_by_field(
+                        type: 'accounts', field: m[1], value: m[2],
+                        query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
                     else
-                      # it's the id
+                      # it's the user id (not member id...)
                       user
                     end
                   end
                   access = options.get_next_argument('level', mandatory: false, expected: %i[submit_only standard shared_inbox_admin], default: :standard)
+                  # TODO: unshift to command line parameters instead of using deprecated option "value"
                   options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
                 end
                 return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
-                         lookup_field_to_id(path: 'contacts', field: field, value: value)
+                         lookup_entity_by_field(
+                           type: 'accounts', field: field, value: value,
+                           query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
                        end
               end
             when :smtp
@@ -510,8 +531,9 @@ module Aspera
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
+            # on ctrl-c, tell server main loop to exit
             trap('INT') { server.shutdown }
-            formatter.display_status("Faspex 4 gateway listening on #{url}")
+            formatter.display_status("Gateway for Faspex 4-style API listening on #{url}")
             Log.log.info("Listening on #{url}")
             # this is blocking until server exits
             server.start
@@ -526,8 +548,9 @@ module Aspera
             parameters[:processing][:root] = uri.path
             server = WebServerSimple.new(uri, certificate: parameters[:certificate])
             server.mount(uri.path, Faspex4PostProcServlet, parameters[:processing])
+            # on ctrl-c, tell server main loop to exit
             trap('INT') { server.shutdown }
-            formatter.display_status("Faspex 4 post processing listening on #{uri.port}")
+            formatter.display_status("Web-hook for Faspex 4-style post processing listening on #{uri.port}")
             Log.log.info("Listening on #{uri.port}")
             # this is blocking until server exits
             server.start

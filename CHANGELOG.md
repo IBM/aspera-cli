@@ -5,6 +5,7 @@
   * new: server: option `passphrase` for simpler command line (#114)
   * new: percent selector for entities identifier
   * new: faspex5: shared inbox and workgroup membership management
+  * new: faspex5: invite external user to shared inbox
   * new: config: Command `ascp info` shows default transfer spec.
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
