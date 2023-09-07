@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/extended_value'
+
 module Aspera
   module Cli
     # base class for plugins modules
@@ -51,7 +53,7 @@ module Aspera
         res_id = options.get_option(:id)
         res_id = options.get_next_argument(description) if res_id.nil?
         if block && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
-          res_id = yield(m[1], m[2])
+          res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
         end
         return res_id
       end
@@ -213,6 +215,8 @@ module Aspera
           # nothing to do
         elsif type.is_a?(Class)
           raise CliBadArgument, "Value must be a #{type}" unless value.is_a?(type)
+        elsif type.is_a?(Array)
+          raise CliBadArgument, "Value must be one of #{type.join(', ')}" unless type.any?{|t| value.is_a?(t)}
         elsif type.eql?(:bulk_hash)
           raise CliBadArgument, 'Value must be a Hash or Array of Hash' unless value.is_a?(Hash) || (value.is_a?(Array) && value.all?(Hash))
         else
