@@ -1920,7 +1920,7 @@ Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallb
 
 ### FASP proxy (forward) for transfers
 
-To specify a FASP proxy (forward), set the <%=trspec%> parameter: `EX_fasp_proxy_url` (only supported with the `direct` agent).
+To specify a FASP proxy (forward), set the <%=trspec%> parameter: `proxy` (only supported with the `direct` agent).
 
 ### <a id="client"></a>FASP configuration
 

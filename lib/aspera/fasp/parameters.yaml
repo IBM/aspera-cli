@@ -569,7 +569,7 @@ EX_at_rest_password:
 EX_proxy_password:
   :desc: |-
     Password used for Aspera proxy server authentication.
-    May be overridden by password in URL EX_fasp_proxy_url.
+    May be overridden by password in URL provided in parameter: proxy.
 
 
   :agents:

@@ -1965,7 +1965,7 @@ Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallb
 
 ### FASP proxy (forward) for transfers
 
-To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) parameter: `EX_fasp_proxy_url` (only supported with the `direct` agent).
+To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) parameter: `proxy` (only supported with the `direct` agent).
 
 ### <a id="client"></a>FASP configuration
 
@@ -2473,7 +2473,7 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct).
 | EX_license_text | string | Y | &nbsp; | &nbsp; | License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
 | EX_no_read | bool | Y | &nbsp; | &nbsp; | no read source<br/>(--no-read) |
 | EX_no_write | bool | Y | &nbsp; | &nbsp; | no write on destination<br/>(--no-write) |
-| EX_proxy_password | string | Y | &nbsp; | &nbsp; | Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL EX_fasp_proxy_url.<br/>(env:ASPERA_PROXY_PASS) |
+| EX_proxy_password | string | Y | &nbsp; | &nbsp; | Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL provided in parameter: proxy.<br/>(env:ASPERA_PROXY_PASS) |
 | EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
 
 #### Destination folder for transfers
