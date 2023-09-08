@@ -266,7 +266,7 @@ module Aspera
           raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           @options[k] = v
         end
-        raise 'missing param: url' if @options[:url].nil?
+        raise "Missing mandatory parameter for HTTP GW in transfer_info: url (allowed parameters: #{DEFAULT_OPTIONS.keys.join(', ')})" if @options[:url].nil?
         # remove /v1 from end
         @options[:url].gsub(%r{/v1/*$}, '')
         super()
