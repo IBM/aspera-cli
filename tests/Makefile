@@ -1353,7 +1353,7 @@ $(T)f5_error: $(T).exists
 	@touch $@
 $(T)f5_webauth: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) -N -Ptst_faspex5_web faspex5 version
+	$(EXE_NOMAN) -N -Pf5_web faspex5 version
 	@touch $@
 $(T)f5_detect: $(T).exists
 	@echo $@
