@@ -9,6 +9,7 @@
   * new: config: Command `ascp info` shows default transfer spec.
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
+  * change: using `aoc files` or node gen4 operations (`browse`, `delete`) on a link will follow the link only if path ends with /
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
   * change: aoc: better handling of shared links
   * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.

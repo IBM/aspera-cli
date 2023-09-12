@@ -84,15 +84,16 @@ module Aspera
       return nil
     end
 
-    # recursively browse in a folder (with non-recursive method)
+    # Recursively browse in a folder (with non-recursive method)
     # sub folders are processed if the processing method returns true
     # @param state [Object] state object sent to processing method
-    # @param method [Symbol] processing method name
     # @param top_file_id [String] file id to start at (default = access key root file id)
     # @param top_file_path [String] path of top folder (default = /)
-    def process_folder_tree(state:, method:, top_file_id:, top_file_path: '/')
+    # @param block [Proc] processing method, args: entry, path, state
+    def process_folder_tree(state:, top_file_id:, top_file_path: '/', &block)
       raise 'INTERNAL ERROR: top_file_path not set' if top_file_path.nil?
-      raise "INTERNAL ERROR: Missing method #{method}" unless respond_to?(method)
+      raise 'INTERNAL ERROR: Missing block' unless block
+      # start at top folder
       folders_to_explore = [{id: top_file_id, path: top_file_path}]
       Log.dump(:folders_to_explore, folders_to_explore)
       until folders_to_explore.empty?
@@ -109,9 +110,9 @@ module Aspera
         Log.dump(:folder_contents, folder_contents)
         folder_contents.each do |entry|
           relative_path = File.join(current_item[:path], entry['name'])
-          Log.log.debug{"looking #{relative_path}".bg_green}
+          Log.log.debug{"process_folder_tree checking #{relative_path}"}
           # continue only if method returns true
-          next unless send(method, entry, relative_path, state)
+          next unless yield(entry, relative_path, state)
           # entry type is file, folder or link
           case entry['type']
           when 'folder'
@@ -119,48 +120,13 @@ module Aspera
           when 'link'
             node_id_to_node(entry['target_node_id'])&.process_folder_tree(
               state:         state,
-              method:        method,
               top_file_id:   entry['target_id'],
-              top_file_path: relative_path)
+              top_file_path: relative_path,
+              &block)
           end
         end
       end
     end # process_folder_tree
-
-    # processing method to resolve a file path to id
-    # @returns true if processing need to continue
-    def process_resolve_node_path(entry, _path, state)
-      # stop digging here if not in right path
-      return false unless entry['name'].eql?(state[:path].first)
-      # ok it matches, so we remove the match
-      state[:path].shift
-      case entry['type']
-      when 'file'
-        # file must be terminal
-        raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless state[:path].empty?
-        # it's terminal, we found it
-        state[:result] = {api: self, file_id: entry['id']}
-        return false
-      when 'folder'
-        if state[:path].empty?
-          # we found it
-          state[:result] = {api: self, file_id: entry['id']}
-          return false
-        end
-      when 'link'
-        if state[:path].empty?
-          # we found it
-          other_node = node_id_to_node(entry['target_node_id'])
-          raise 'cannot resolve link' if other_node.nil?
-          state[:result] = {api: other_node, file_id: entry['target_id']}
-          return false
-        end
-      else
-        Log.log.warn{"Unknown element type: #{entry['type']}"}
-      end
-      # continue to dig folder
-      return true
-    end
 
     # Navigate the path from given file id
     # @param top_file_id [String] id initial file id
@@ -168,10 +134,48 @@ module Aspera
     # @return [Hash] {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
       raise 'file id shall be String' unless top_file_id.is_a?(String)
+      process_last_link = path.end_with?(PATH_SEPARATOR)
       path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
       resolve_state = {path: path_elements, result: nil}
-      process_folder_tree(state: resolve_state, method: :process_resolve_node_path, top_file_id: top_file_id)
+      process_folder_tree(state: resolve_state, top_file_id: top_file_id) do |entry, _path, state|
+        # this block is called recursively for each entry in folder
+        # stop digging here if not in right path
+        next false unless entry['name'].eql?(state[:path].first)
+        # ok it matches, so we remove the match
+        state[:path].shift
+        case entry['type']
+        when 'file'
+          # file must be terminal
+          raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless state[:path].empty?
+          # it's terminal, we found it
+          state[:result] = {api: self, file_id: entry['id']}
+          next false
+        when 'folder'
+          if state[:path].empty?
+            # we found it
+            state[:result] = {api: self, file_id: entry['id']}
+            next false
+          end
+        when 'link'
+          if state[:path].empty?
+            if process_last_link
+              # we found it
+              other_node = node_id_to_node(entry['target_node_id'])
+              raise 'cannot resolve link' if other_node.nil?
+              state[:result] = {api: other_node, file_id: entry['target_id']}
+            else
+              # we found it but we do not process the link
+              state[:result] = {api: self, file_id: entry['id']}
+            end
+            next false
+          end
+        else
+          Log.log.warn{"Unknown element type: #{entry['type']}"}
+        end
+        # continue to dig folder
+        next true
+      end
       raise "entry not found: #{resolve_state[:path]}" if resolve_state[:result].nil?
       return resolve_state[:result]
     end
@@ -185,7 +189,9 @@ module Aspera
         # process link
         if entry[:type].eql?('link')
           other_node = node_id_to_node(entry['target_node_id'])
-          other_node.process_folder_tree(state: state, method: process_find_files, top_file_id: entry['target_id'], top_file_path: path)
+          other_node.process_folder_tree(state: state, top_file_id: entry['target_id'], top_file_path: path) do |entry2, path2, state2|
+            other_node.process_find_files(entry2, path2, state2)
+          end
         end
       rescue StandardError => e
         Log.log.error{"#{path}: #{e.message}"}
@@ -197,7 +203,9 @@ module Aspera
     def find_files(top_file_id, test_block)
       Log.log.debug{"find_files: file id=#{top_file_id}"}
       find_state = {found: [], test_block: test_block}
-      process_folder_tree(state: find_state, method: :process_find_files, top_file_id: top_file_id)
+      process_folder_tree(state: find_state, top_file_id: top_file_id) do |entry, path, state|
+        process_find_files(entry, path, state)
+      end
       return find_state[:found]
     end
 

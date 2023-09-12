@@ -2301,11 +2301,13 @@ Parameters provided in option `transfer_info` are:
 | url                    | string | URL of the HTTP GW</br>Mandatory      |
 | upload_bar_refresh_sec | float  | Refresh rate for upload progress bar  |
 | upload_chunk_size      | int    | Size in bytes of chunks for upload    |
+| api_version            | string | v1 or v2, for force use of version    |
+| synchronous            | bool   | wait for each message acknowledgment  |
 
 Example:
 
 ```bash
-ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy/v1"}'
+ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"https://asperagw.example.com:9443/aspera/http-gwy"}'
 ```
 
 > **Note:** The gateway only supports transfers authorized with a token.
@@ -3581,6 +3583,36 @@ The option `default_ports` ([yes]/no) allows ascli to retrieve the server ports 
 #### Using ATS
 
 Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
+
+#### Files with type `link`
+
+Aspera on Cloud Shared folders are implemented through a special type of file: `link`.
+A `link` is the equivalent of a symbolic link on a file system: it points to another folder (not file).
+
+Listing a link will show the link itself, not the content of the folder it points to.
+To list the target folder content, add a `/` a the end of the path.
+
+Examples:
+
+```console
+$ ascli aoc files br the_link
+Current Workspace: Default (default)
++------------+------+----------------+------+----------------------+--------------+
+| name       | type | recursive_size | size | modified_time        | access_level |
++------------+------+----------------+------+----------------------+--------------+
+| the_link   | link |                |      | 2021-04-28T09:17:14Z | edit         |
++------------+------+----------------+------+----------------------+--------------+
+```
+
+```console
+$ ascli aoc files br the_link/
+Current Workspace: Default (default)
++-------------+------+----------------+------+----------------------+--------------+
+| name        | type | recursive_size | size | modified_time        | access_level |
++-------------+------+----------------+------+----------------------+--------------+
+| file_inside | file |                |      | 2021-04-26T09:00:00Z | edit         |
++-------------+------+----------------+------+----------------------+--------------+
+```
 
 #### Example: Bulk creation of users
 
