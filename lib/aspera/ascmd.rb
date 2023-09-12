@@ -127,6 +127,7 @@ module Aspera
           byte_array = buffer.shift(num_bytes)
           byte_array = [byte_array] unless byte_array.is_a?(Array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
+          result.force_encoding('UTF-8') if type_name.eql?(:zstr)
           Log.log.debug{"#{'   .' * indent_level}-> base:#{byte_array} -> #{result}"}
           result = Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list

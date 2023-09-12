@@ -25,7 +25,9 @@ module Aspera
 
       class Server < Aspera::Cli::BasicAuthPlugin
         SSH_SCHEME = 'ssh'
-        URI_SCHEMES = %w[https local].push(SSH_SCHEME).freeze
+        LOCAL_SCHEME = 'local'
+        HTTPS_SCHEME = 'https'
+        URI_SCHEMES = [SSH_SCHEME, LOCAL_SCHEME, HTTPS_SCHEME].freeze
         ASCMD_ALIASES = {
           browse: :ls,
           delete: :rm,
@@ -41,7 +43,7 @@ module Aspera
             cmd = cmd.map{|v|%Q("#{v}")}.join(' ') if cmd.is_a?(Array)
             Log.log.debug{"Executing: #{cmd} with '#{line}'"}
             stdout_str, stderr_str, status = Open3.capture3(cmd, stdin_data: line, binmode: true)
-            Log.log.debug(">> #{status} -> #{stderr_str}")
+            Log.log.debug{"exec status: #{status} -> #{stderr_str}"}
             raise "command #{cmd} failed with code #{status.exitstatus} #{stderr_str}" unless status.success?
             return stdout_str
           end
@@ -62,16 +64,19 @@ module Aspera
           url = options.get_option(:url, is_type: :mandatory)
           server_transfer_spec = {}
           server_uri = URI.parse(url)
-          Log.log.debug{"URI : #{server_uri}, port=#{server_uri.port}, scheme:#{server_uri.scheme}"}
+          Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
           server_transfer_spec['remote_host'] = server_uri.hostname
           unless URI_SCHEMES.include?(server_uri.scheme)
             Log.log.warn{"Scheme [#{server_uri.scheme}] not supported in #{url}, use one of: #{URI_SCHEMES.join(', ')}. Defaulting to #{SSH_SCHEME}."}
             server_uri.scheme = SSH_SCHEME
           end
-          if server_uri.scheme.eql?('local')
+          if server_uri.scheme.eql?(LOCAL_SCHEME)
             # Using local execution (mostly for testing)
+            server_transfer_spec['remote_host'] = 'localhost'
+            # simulate SSH environment, else ascp will fail
+            ENV['SSH_CLIENT'] = 'local 0 0'
             return server_transfer_spec
-          elsif transfer.option_transfer_spec['token'].is_a?(String) && server_uri.scheme.eql?('https')
+          elsif transfer.option_transfer_spec['token'].is_a?(String) && server_uri.scheme.eql?(HTTPS_SCHEME)
             server_transfer_spec['wss_enabled'] = true
             server_transfer_spec['wss_port'] = server_uri.port
             # Using WSS
@@ -145,7 +150,7 @@ module Aspera
 
         def execute_action
           server_transfer_spec = options_to_base_transfer_spec
-          ascmd_executor = if !@ssh_opts.nil?
+          ascmd_executor = if !@ssh_opts.empty?
             Ssh.new(server_transfer_spec['remote_host'], server_transfer_spec['remote_user'], @ssh_opts)
           elsif server_transfer_spec.key?('wss_enabled')
             nil
