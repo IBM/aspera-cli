@@ -3589,10 +3589,10 @@ Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `ao
 Aspera on Cloud Shared folders are implemented through a special type of file: `link`.
 A `link` is the equivalent of a symbolic link on a file system: it points to another folder (not file).
 
-Listing a link will show the link itself, not the content of the folder it points to.
+Listing a link (in terminal position of path) will information on the link itself, not the content of the folder it points to.
 To list the target folder content, add a `/` a the end of the path.
 
-Examples:
+Example:
 
 ```console
 $ ascli aoc files br the_link
