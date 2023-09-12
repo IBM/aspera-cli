@@ -68,7 +68,7 @@ module Aspera
         params = options.get_option(:bulk) ? single_or_array : [single_or_array]
         raise 'expecting Array for bulk operation' unless params.is_a?(Array)
         Log.log.warn('Empty list given for bulk operation') if params.empty?
-        Log.dump(:bulk_create, params)
+        Log.dump(:bulk_operation, params)
         result_list = []
         params.each do |param|
           # init for delete
