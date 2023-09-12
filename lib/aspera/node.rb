@@ -180,31 +180,13 @@ module Aspera
       return resolve_state[:result]
     end
 
-    # add entry to list if test block is success
-    # @return [TrueClass,FalseClass]
-    def process_find_files(entry, path, state)
-      begin
-        # add to result if match filter
-        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
-        # process link
-        if entry[:type].eql?('link')
-          other_node = node_id_to_node(entry['target_node_id'])
-          other_node.process_folder_tree(state: state, top_file_id: entry['target_id'], top_file_path: path) do |entry2, path2, state2|
-            other_node.process_find_files(entry2, path2, state2)
-          end
-        end
-      rescue StandardError => e
-        Log.log.error{"#{path}: #{e.message}"}
-      end
-      # process all folders
-      return true
-    end
-
     def find_files(top_file_id, test_block)
       Log.log.debug{"find_files: file id=#{top_file_id}"}
       find_state = {found: [], test_block: test_block}
       process_folder_tree(state: find_state, top_file_id: top_file_id) do |entry, path, state|
-        process_find_files(entry, path, state)
+        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
+        # test all files deeply
+        true
       end
       return find_state[:found]
     end
