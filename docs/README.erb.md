@@ -2778,7 +2778,7 @@ This will guide you through the steps to create.
 If the wizard does not detect the application but you know the application, you can force it using option `value`:
 
 ```bash
-<%=cmd%> config wizard --value=aoc
+<%=cmd%> config wizard --query=aoc
 ```
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
@@ -3273,13 +3273,13 @@ To delete them use the same method as before
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```bash
-<%=cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create --value=@json:'{"storage":{"path":"/folder1"}}'
+<%=cmd%> aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key create @json:'{"storage":{"path":"/folder1"}}'
 ```
 
 #### Example: Display transfer events (ops/transfer)
 
 ```bash
-<%=cmd%> aoc admin res node --secret=_secret_ v3 transfer list --value=@json:'[["q","*"],["count",5]]'
+<%=cmd%> aoc admin res node --secret=_secret_ v3 transfer list --query=@json:'[["q","*"],["count",5]]'
 ```
 
 Examples of query (TODO: cleanup):
@@ -3562,7 +3562,7 @@ The webmail-like application.
 General syntax:
 
 ```bash
-<%=cmd%> aoc packages send --value=[package extended value] [other parameters such as file list and transfer parameters]
+<%=cmd%> aoc packages send [package extended value] [other parameters such as file list and transfer parameters]
 ```
 
 Notes:
@@ -3579,19 +3579,19 @@ Notes:
 #### Example: Send a package with one file to two users, using their email
 
 ```bash
-<%=cmd%> aoc packages send --value=@json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
+<%=cmd%> aoc packages send @json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
 ```
 
 #### Example: Send a package to a shared inbox with metadata
 
 ```bash
-<%=cmd%> aoc packages send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace=eudemo @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```bash
-<%=cmd%> aoc packages send --workspace=eudemo --value=@json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+<%=cmd%> aoc packages send --workspace=eudemo @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 #### Example: List packages in a given shared inbox
@@ -3650,7 +3650,7 @@ Find files in Files app:
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
 
 ```bash
-<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send --value=@json:'{"name":"test","recipients":["laurent.martin.aspera@fr.ibm.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["laurent.martin.aspera@fr.ibm.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
 ```
 
 #### <a id="aoccargo"></a>Receive new packages only (Cargo)
@@ -3746,42 +3746,52 @@ Explanation:
 
 #### Find Files
 
-The command `aoc files find [--value=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
+The command `aoc files find [--query=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
 
 The expression can be of 3 formats:
 
 - empty (default) : all files, equivalent to value: `exec:true`
-- not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax. equivalent to value: `exec:f['name'].match(/expression/)`
+- not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax, equivalent to value: `exec:f['name'].match(/expression/)`
 
-For instance, to find files with a special extension, use `--value='\.myext$'`
+  For instance, to find files with a special extension, use `--query='\.myext$'`
 
-- starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true;
+- starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true.
 
-Examples of expressions: (using like this: `--value=exec:'<expression>'`)
+Examples of expressions: (using like this: `--query=exec:'<expression>'`)
 
 - Find files more recent than 100 days
 
-```bash
-f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
-```
+  ```ruby
+  f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
+  ```
 
 - Find files older than 1 year on a given node and store in file list
 
-```bash
-<%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 find / --fields=path --value='exec:f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100' --format=csv > my_file_list.txt
-```
+  ```ruby
+  f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
+  ```
+
+  ```bash
+  <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 find / --fields=path --query='exec:<above expression here>' --format=csv > my_file_list.txt
+  ```
+
+- Find files larger than 1MB
+
+  ```ruby
+  f["type"].eql?("file") and f["size"].to_i>1000000
+  ```
 
 - Delete the files, one by one
 
-```bash
-cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 delete "$path" ;done
-```
+  ```bash
+  cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 delete "$path" ;done
+  ```
 
 - Delete the files in bulk
 
-```bash
-cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v3 delete @lines:@stdin:
-```
+  ```bash
+  cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v3 delete @lines:@stdin:
+  ```
 
 ### AoC sample commands
 
@@ -4169,7 +4179,7 @@ Using direct node access and an access key , one can do:
 ### Create access key
 
 ```bash
-<%=cmd%> node access_key create --value=@json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
+<%=cmd%> node access_key create @json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 ### Node sample commands
@@ -4293,7 +4303,7 @@ The `value` option provided to command `faspex5 packages send` is the same as fo
 The minimum is to provide the `title` and `recipients` fields:
 
 ```bash
---value=@json:'{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}'
+@json:'{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}'
 ```
 
 `recipient_type` is one of (Refer to API):
@@ -4339,7 +4349,7 @@ The following parameters in option `value` are supported:
 The interface is the one of the API (Refer to API documentation, or look at request in browser):
 
 ```bash
-<%=cmd%> faspex5 packages send --value=@json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+<%=cmd%> faspex5 packages send @json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
 ```
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
@@ -4347,7 +4357,7 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 ### Faspex 5: List all shared inboxes
 
 ```bash
-<%=cmd%> faspex5 admin res shared list --value=@json:'{"all":true}' --fields=id,name
+<%=cmd%> faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,name
 ```
 
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
@@ -4371,13 +4381,13 @@ Other payload parameters are possible in Hash format:
 ### Faspex 5: Create Metadata profile
 
 ```bash
-<%=cmd%> faspex5 admin res metadata_profiles create --value=@json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
+<%=cmd%> faspex5 admin res metadata_profiles create @json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
 ### Faspex 5: Create a Shared inbox with specific metadata profile
 
 ```bash
-<%=cmd%> faspex5 admin res shared create --value=@json:'{"name":"the shared inbox","metadata_profile_id":1}'
+<%=cmd%> faspex5 admin res shared create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
 ### Faspex 5: List content in Shared folder and send package from remote source
@@ -4399,7 +4409,7 @@ Other payload parameters are possible in Hash format:
 ```
 
 ```bash
-<%=cmd%> faspex5 packages send --value=@json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
+<%=cmd%> faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
 > **Note:** The shared folder can be identified by its numerical `id` using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
@@ -4426,7 +4436,7 @@ It implements Faspex 5 web hooks, and calls a local script with the same environ
 It is invoked like this:
 
 ```bash
-<%=cmd%> faspex5 postprocessing --value=@json:'{"url":"http://localhost:8080/processing"}'
+<%=cmd%> faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing"}'
 ```
 
 The following parameters are supported:
@@ -4570,7 +4580,7 @@ In this example the notification template is directly provided on command line. 
 Example:
 
 ```bash
-<%=cmd%> faspex v4 dropbox create --value=@json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
+<%=cmd%> faspex v4 dropbox create @json:'{"dropbox":{"e_wg_name":"test1","e_wg_desc":"test1"}}'
 <%=cmd%> faspex v4 dropbox list
 <%=cmd%> faspex v4 dropbox delete 36
 ```
@@ -4993,7 +5003,7 @@ When scanning the option `value` has the same behavior as for the `node find` co
 For instance to filter out files beginning with `._` do:
 
 ```bash
-... --value='exec:!f["name"].start_with?("._") or f["name"].eql?(".DS_Store")'
+--query='exec:!f["name"].start_with?("._") or f["name"].eql?(".DS_Store")'
 ```
 
 ### Preview File types
