@@ -9,6 +9,17 @@ require 'websocket'
 require 'base64'
 require 'json'
 
+# HTTP GW Upload protocol
+# -----------------------
+# v1
+# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acked with "end upload"
+# 2.. - MessageType: String (Slice Upload start) JSON : type: slice_upload, acked with "end upload"
+# v2
+# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acked with "end upload"
+# 2 - MessageType: String (Slice Upload start) JSON : type: slice_upload, acked with "end_slice_upload"
+# 3.. - MessageType: ByteArray (File Size) Chunks : acked with "end upload"
+# last - MessageType: String (Slice Upload end) JSON : type: slice_upload, acked with "end_slice_upload"
+
 # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
 # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
 module Aspera
@@ -16,30 +27,61 @@ module Aspera
     # start a transfer using Aspera HTTP Gateway, using web socket session for uploads
     class AgentHttpgw < Aspera::Fasp::AgentBase
       # message returned by HTTP GW in case of success
-      MSG_END_UPLOAD = 'end upload'
-      MSG_END_SLICE = 'end_slice_upload'
+      MSG_RECV_DATA_RECEIVED_SIGNAL = 'end upload'
+      MSG_RECV_SLICE_UPLOAD_SIGNAL = 'end_slice_upload'
+      MSG_SEND_SLICE_UPLOAD = 'slice_upload'
+      MSG_SEND_TRANSFER_SPEC = 'transfer_spec'
+      # upload API versions
+      API_V1 = 'v1'
+      API_V2 = 'v2'
       # options available in CLI (transfer_info)
       DEFAULT_OPTIONS = {
         url:                    nil,
         upload_chunk_size:      64_000,
-        upload_bar_refresh_sec: 0.5
+        upload_bar_refresh_sec: 0.5,
+        api_version:            API_V2,
+        synchronous:            true
       }.freeze
       DEFAULT_BASE_PATH = '/aspera/http-gwy'
-      # upload endpoints
-      V1_UPLOAD = '/v1/upload'
-      V2_UPLOAD = '/v2/upload'
-      private_constant :DEFAULT_OPTIONS, :MSG_END_UPLOAD, :MSG_END_SLICE, :V1_UPLOAD, :V2_UPLOAD
+      LOG_WS_MAIN = 'ws: send: '.green
+      LOG_WS_THREAD = 'ws: ack: '.red
+      private_constant :DEFAULT_OPTIONS, :MSG_RECV_DATA_RECEIVED_SIGNAL, :MSG_RECV_SLICE_UPLOAD_SIGNAL, :API_V1, :API_V2
 
       # send message on http gw web socket
-      def ws_snd_json(data)
-        @slice_uploads += 1 if data.key?(:slice_upload)
-        Log.log.debug{JSON.generate(data)}
-        ws_send(JSON.generate(data))
+      def ws_snd_json(msg_type, payload)
+        if msg_type.eql?(MSG_SEND_SLICE_UPLOAD) && @options[:api_version].eql?(API_V2)
+          @shared_info[:count][:sent_v2_slice] += 1
+        else
+          @shared_info[:count][:sent_other] += 1
+        end
+        Log.log.debug do
+          log_data = payload.dup
+          log_data[:data] = "[data #{log_data[:data].length} bytes]" if log_data.key?(:data)
+          "send_txt: #{msg_type}: #{JSON.generate(log_data)}"
+        end
+        ws_send(JSON.generate({msg_type => payload}))
       end
 
-      def ws_send(data, type: :text)
-        frame = ::WebSocket::Frame::Outgoing::Client.new(data: data, type: type, version: @ws_handshake.version)
+      def ws_send(data_to_send, type: :text)
+        Log.log.debug{"#{LOG_WS_MAIN}send low: type: #{type}"}
+        @shared_info[:count][:sent_other] += 1 if type.eql?(:binary)
+        Log.log.debug{"#{LOG_WS_MAIN}counts: #{@shared_info[:count]}"}
+        frame = ::WebSocket::Frame::Outgoing::Client.new(data: data_to_send, type: type, version: @ws_handshake.version)
         @ws_io.write(frame.to_s)
+      end
+
+      # wait for all message sent to be acknowledged by HTTPGW server
+      def wait_for_sent_msg_ack_or_exception
+        return unless @options[:synchronous]
+        @shared_info[:mutex].synchronize do
+          while (@shared_info[:count][:received_data] != @shared_info[:count][:sent_other]) ||
+              (@shared_info[:count][:received_v2_slice] != @shared_info[:count][:sent_v2_slice])
+            Log.log.debug{"#{LOG_WS_MAIN}wait: counts: #{@shared_info[:count]}"}
+            @shared_info[:cond_var].wait(@shared_info[:mutex], 1.0)
+            raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
+          end
+        end
+        Log.log.debug{"#{LOG_WS_MAIN}sync ok: counts: #{@shared_info[:count]}"}
       end
 
       def upload(transfer_spec)
@@ -67,44 +109,62 @@ module Aspera
         end
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        @slice_uploads = 0
-        # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
-        upload_api_version = V2_UPLOAD
-        # is the latest supported? else revert to old api
-        upload_api_version = V1_UPLOAD unless @api_info['endpoints'].any?{|i|i.include?(upload_api_version)}
-        Log.log.debug{"api version: #{upload_api_version}"}
-        url = File.join(@gw_api.params[:base_url], upload_api_version)
-        # uri = URI.parse(url)
+        Log.log.debug{"api version: #{@options[:api_version]}"}
+        upload_url = File.join(@gw_api.params[:base_url], @options[:api_version], 'upload')
+        # uri = URI.parse(upload_url)
         # open web socket to end point (equivalent to Net::HTTP.start)
-        http_socket = Rest.start_http_session(url)
+        http_socket = Rest.start_http_session(upload_url)
+        # little hack to get the socket opened for HTTP, handy because HTTP debug will be available
         @ws_io = http_socket.instance_variable_get(:@socket)
         # @ws_io.debug_output = Log.log
-        @ws_handshake = ::WebSocket::Handshake::Client.new(url: url, headers: {})
+        @ws_handshake = ::WebSocket::Handshake::Client.new(url: upload_url, headers: {})
         @ws_io.write(@ws_handshake.to_s)
         sleep(0.1)
         @ws_handshake << @ws_io.readuntil("\r\n\r\n")
         raise 'Error in websocket handshake' unless @ws_handshake.finished?
-        Log.log.debug('ws: handshake success')
+        Log.log.debug{"#{LOG_WS_MAIN}handshake success"}
         # data shared between main thread and read thread
-        shared_info = {
+        @shared_info = {
           read_exception: nil, # error message if any in callback
-          end_uploads:    0 # number of files totally sent
-          # mutex: Mutex.new
-          # cond_var: ConditionVariable.new
+          count:          {
+            received_data:     0, # number of files received on other side
+            received_v2_slice: 0, # number of slices received on other side
+            sent_other:        0,
+            sent_v2_slice:     0
+          },
+          mutex:          Mutex.new,
+          cond_var:       ConditionVariable.new
         }
         # start read thread
         ws_read_thread = Thread.new do
-          Log.log.debug('ws: thread: started')
-          frame = ::WebSocket::Frame::Incoming::Client.new
+          Log.log.debug{"#{LOG_WS_THREAD}read started"}
+          frame = ::WebSocket::Frame::Incoming::Client.new(version: @ws_handshake.version)
           loop do
             begin # rubocop:disable Style/RedundantBegin
-              frame << @ws_io.readuntil("\n")
+              # unless (recv_data = @ws_io.getc)
+              #  sleep(0.1)
+              #  next
+              # end
+              # frame << recv_data
+              # frame << @ws_io.readuntil("\n")
+              # frame << @ws_io.read_all
+              # Log.log.debug{"#{LOG_WS_THREAD}before read".red}
+              frame << @ws_io.read(1)
+              # Log.log.debug{"#{LOG_WS_THREAD}after read".green}
               while (msg = frame.next)
-                Log.log.debug{"ws: thread: message: #{msg.data} #{shared_info[:end_uploads]}"}
+                Log.log.debug{"#{LOG_WS_THREAD}type: #{msg.class}"}
                 message = msg.data
-                if message.eql?(MSG_END_UPLOAD)
-                  shared_info[:end_uploads] += 1
-                elsif message.eql?(MSG_END_SLICE)
+                Log.log.debug{"#{LOG_WS_THREAD}message: [#{message}]"}
+                if message.eql?(MSG_RECV_DATA_RECEIVED_SIGNAL)
+                  @shared_info[:mutex].synchronize do
+                    @shared_info[:count][:received_data] += 1
+                    @shared_info[:cond_var].signal
+                  end
+                elsif message.eql?(MSG_RECV_SLICE_UPLOAD_SIGNAL)
+                  @shared_info[:mutex].synchronize do
+                    @shared_info[:count][:received_v2_slice] += 1
+                    @shared_info[:cond_var].signal
+                  end
                 else
                   message.chomp!
                   error_message =
@@ -117,19 +177,25 @@ module Aspera
                     end
                   raise error_message
                 end
-              end
+                Log.log.debug{"#{LOG_WS_THREAD}counts: #{@shared_info[:count]}"}
+              end # while
             rescue => e
-              shared_info[:read_exception] = e unless e.is_a?(EOFError)
+              Log.log.debug{"#{LOG_WS_THREAD}Exception: #{e}"}
+              @shared_info[:mutex].synchronize do
+                @shared_info[:read_exception] = e unless e.is_a?(EOFError)
+                @shared_info[:cond_var].signal
+              end
               break
-            end
-          end
-          Log.log.debug{"ws: thread: stopping (exc=#{shared_info[:read_exception]},cls=#{shared_info[:read_exception].class})"}
+            end # begin
+          end # loop
+          Log.log.debug{"#{LOG_WS_THREAD}stopping (exc=#{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"}
         end
         # notify progress bar
         notify_begin(session_id, total_size)
         # first step send transfer spec
         Log.dump(:ws_spec, transfer_spec)
-        ws_snd_json(transfer_spec: transfer_spec)
+        ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
+        wait_for_sent_msg_ack_or_exception
         # current file index
         file_index = 0
         # aggregate size sent
@@ -148,7 +214,7 @@ module Aspera
             # current slice index
             slice_index = 0
             until file.eof?
-              data = file.read(@options[:upload_chunk_size])
+              file_bin_data = file.read(@options[:upload_chunk_size])
               slice_data = {
                 name:         file_name,
                 type:         file_mime_type,
@@ -159,22 +225,26 @@ module Aspera
               }
               # Log.dump(:slice_data,slice_data) #if slice_index.eql?(0)
               # interrupt main thread if read thread failed
-              raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+              raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
               begin
-                if upload_api_version.eql?(V1_UPLOAD)
-                  slice_data[:data] = Base64.strict_encode64(data)
-                  ws_snd_json(slice_upload: slice_data)
+                if @options[:api_version].eql?(API_V1)
+                  slice_data[:data] = Base64.strict_encode64(file_bin_data)
+                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_data)
                 else
-                  ws_snd_json(slice_upload: slice_data) if slice_index.eql?(0)
-                  ws_send(data, type: :binary)
-                  Log.log.debug{"ws: sent buffer: #{file_index} / #{slice_index}"}
-                  ws_snd_json(slice_upload: slice_data) if slice_index.eql?(slice_total - 1)
+                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_data) if slice_index.eql?(0)
+                  ws_send(file_bin_data, type: :binary)
+                  Log.log.debug{"#{LOG_WS_MAIN}sent bin buffer: #{file_index} / #{slice_index}"}
+                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_data) if slice_index.eql?(slice_total - 1)
                 end
+                wait_for_sent_msg_ack_or_exception
               rescue Errno::EPIPE => e
-                raise shared_info[:read_exception] unless shared_info[:read_exception].nil?
+                raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
+                raise e
+              rescue Net::ReadTimeout => e
+                Log.log.warn{'A timeout condition using HTTPGW may signal a permission problem on destination. Check ascp logs on httpgw.'}
                 raise e
               end
-              sent_bytes += data.length
+              sent_bytes += file_bin_data.length
               current_time = Time.now
               if last_progress_time.nil? || ((current_time - last_progress_time) > @options[:upload_bar_refresh_sec])
                 notify_progress(session_id, sent_bytes)
@@ -186,9 +256,9 @@ module Aspera
           file_index += 1
         end
 
-        Log.log.debug('Finished upload')
+        Log.log.debug('Finished upload, waiting for end of read thread.')
         ws_read_thread.join
-        Log.log.debug{"result: #{shared_info[:end_uploads]} / #{@slice_uploads}"}
+        Log.log.debug{"Read thread joined, result: #{@shared_info[:count][:received_data]} / #{@shared_info[:count][:sent_other]}"}
         ws_send(nil, type: :close) unless @ws_io.nil?
         @ws_io = nil
         http_socket&.finish
@@ -266,13 +336,23 @@ module Aspera
           raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           @options[k] = v
         end
-        raise "Missing mandatory parameter for HTTP GW in transfer_info: url (allowed parameters: #{DEFAULT_OPTIONS.keys.join(', ')})" if @options[:url].nil?
+        if @options[:url].nil?
+          available = DEFAULT_OPTIONS.map { |k, v| "#{k}(#{v})"}.join(', ')
+          raise "Missing mandatory parameter for HTTP GW in transfer_info: url. Allowed parameters: #{available}."
+        end
         # remove /v1 from end
         @options[:url].gsub(%r{/v1/*$}, '')
         super()
         @gw_api = Rest.new({base_url: @options[:url]})
         @api_info = @gw_api.read('v1/info')[:data]
-        Log.log.info(@api_info.to_s)
+        Log.dump(:api_info, @api_info)
+        if @options[:api_version].nil?
+          # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
+          @options[:api_version] = API_V2
+          # is the latest supported? else revert to old api
+          @options[:api_version] = API_V1 unless @api_info['endpoints'].any?{|i|i.include?(@options[:api_version])}
+        end
+        Log.dump(:options, @options)
       end
     end # AgentHttpgw
   end
