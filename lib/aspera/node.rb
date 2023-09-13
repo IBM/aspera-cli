@@ -202,6 +202,8 @@ module Aspera
       case params[:auth][:type]
       when :basic
         ak_name = params[:auth][:username]
+        raise 'ERROR: no secret in node object' unless params[:auth][:password]
+        ak_token = Rest.basic_creds(params[:auth][:username], params[:auth][:password])
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
@@ -225,10 +227,7 @@ module Aspera
       add_tspec_info(transfer_spec)
       transfer_spec.deep_merge!(ts_merge) unless ts_merge.nil?
       # add application specific tags (AoC)
-      the_app = app_info
-      the_app[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: the_app) unless the_app.nil?
-      # add basic token
-      basic_token_and_xfer_user(transfer_spec) if transfer_spec['token'].nil?
+      app_info[:api].add_ts_tags(transfer_spec: transfer_spec, app_info: app_info) unless app_info.nil?
       # add remote host info
       if self.class.use_standard_ports
         # get default TCP/UDP ports and transfer user
@@ -247,15 +246,9 @@ module Aspera
         # copy some parts
         %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = @std_t_spec_cache[i] if @std_t_spec_cache.key?(i)}
       end
+      Log.log.warn{"Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
+        unless transfer_spec['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
       return transfer_spec
-    end
-
-    # set basic token in transfer spec and check transfer user
-    def basic_token_and_xfer_user(ts)
-      Log.log.warn{"Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{ts['remote_user']}"} \
-        unless ts['remote_user'].nil? || ts['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-      raise 'ERROR: no secret in node object' unless params[:auth][:password]
-      ts['token'] = Rest.basic_creds(params[:auth][:username], params[:auth][:password])
     end
   end
 end

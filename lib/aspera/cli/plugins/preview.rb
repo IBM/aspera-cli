@@ -206,34 +206,11 @@ module Aspera
 
         def do_transfer(direction, folder_id, source_filename, destination='/')
           raise 'Internal ERROR' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
-          # TODO: use @api_node.transfer_spec_gen4(folder_id, direction, nil)
-          if @default_transfer_spec.nil?
-            # make a dummy call to get some default transfer parameters
-            res = @api_node.create('files/upload_setup', {'transfer_requests' => [{'transfer_request' => {'paths' => [{}], 'destination_root' => '/'}}]})
-            template_ts = res[:data]['transfer_specs'].first['transfer_spec']
-            # get ports, anyway that should be 33001 for both. add remote_user ?
-            @default_transfer_spec = %w[ssh_port fasp_port].each_with_object({}){|e, h|h[e] = template_ts[e]; }
-            if !@default_transfer_spec['remote_user'].eql?(Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-              Log.log.warn('remote_user shall be xfer')
-              @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
-            end
-            @api_node.basic_token_and_xfer_user(@default_transfer_spec)
-            # NOTE: we use the same address for ascp than for node api instead of the one from upload_setup
-            # TODO: configurable ? useful ?
-            @default_transfer_spec['remote_host'] = @transfer_server_address
-          end
-          t_spec = @default_transfer_spec.merge({
-            'direction' => direction,
-            'paths'     => [{'source' => source_filename}],
-            'tags'      => {
-              Fasp::TransferSpec::TAG_RESERVED => {
-                PREV_GEN_TAG => true,
-                'node'       => {
-                  'access_key' => @access_key_self['id'],
-                  'file_id'    => folder_id }}}
+          t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
+            'paths' => [{'source' => source_filename}],
+            'tags'  => {Fasp::TransferSpec::TAG_RESERVED => {PREV_GEN_TAG => true}}
           })
-          # force destination
-          # t_spec['destination_root']=destination
+          # force destination, need to set this in transfer agent else it gets overwritten, not do: t_spec['destination_root']=destination
           transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
           Main.result_transfer(transfer.start(t_spec))
         end
