@@ -17,6 +17,7 @@ module Aspera
     MATCH_EXEC_PREFIX = 'exec:'
     HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
     PATH_SEPARATOR = '/'
+    TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
@@ -244,7 +245,7 @@ module Aspera
           {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
         )[:data]['transfer_specs'].first['transfer_spec']
         # copy some parts
-        %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].each {|i| transfer_spec[i] = @std_t_spec_cache[i] if @std_t_spec_cache.key?(i)}
+        TS_FIELDS_TO_COPY.each {|i| transfer_spec[i] = @std_t_spec_cache[i] if @std_t_spec_cache.key?(i)}
       end
       Log.log.warn{"Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
         unless transfer_spec['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
