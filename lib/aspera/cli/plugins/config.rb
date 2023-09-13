@@ -506,10 +506,12 @@ module Aspera
 
         # Find a plugin, and issue the "require"
         # @return [Hash] plugin info: { product: , url:, version: }
-        def identify_plugin_for_url(url)
+        def identify_plugin_for_url(url, check_only: nil)
+          check_only = check_only.to_sym unless check_only.nil?
           plugins.each do |plugin_name_sym, plugin_info|
             # no detection for internal plugin
             next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
+            next if check_only && !check_only.eql?(plugin_name_sym)
             # load plugin class
             require plugin_info[:require_stanza]
             c = self.class.plugin_class(plugin_name_sym)
@@ -872,21 +874,14 @@ module Aspera
             # allow user to tell the preset name
             params[:preset_name] = options.get_option(:id)
             # allow user to specify type of application (symbol)
-            params[:plugin_sym] = value_or_query
-            if params[:plugin_sym].nil?
-              identification = identify_plugin_for_url(params[:instance_url])
-              Log.log.debug("Detected: #{identification}")
-              formatter.display_status("Detected: #{identification[:name]}".bold)
-              # we detected application (not set by user)
-              params[:plugin_sym] = identification[:product]
-              # update the url option
-              params[:instance_url] = identification[:url]
-              options.set_option(:url, params[:instance_url])
-            else
-              params[:plugin_sym] = params[:plugin_sym].to_sym
-              raise "No such plugin: #{params[:plugin_sym]}" unless @plugins.key?(params[:plugin_sym])
-              require @plugins[params[:plugin_sym]][:require_stanza]
-            end
+            identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query)
+            Log.log.debug("Detected: #{identification}")
+            formatter.display_status("Detected: #{identification[:name]}".bold)
+            # we detected application (not set by user)
+            params[:plugin_sym] = identification[:product]
+            # update the url option
+            params[:instance_url] = identification[:url]
+            options.set_option(:url, params[:instance_url])
             # instantiate plugin: command line options are known and wizard can be called
             plugin_instance = self.class.plugin_class(params[:plugin_sym]).new(@agents.merge({skip_basic_auth_options: true}))
             raise CliBadArgument, "Detected: #{params[:plugin_sym]}, no wizard available for this application" unless plugin_instance.respond_to?(:wizard)
