@@ -884,6 +884,8 @@ module Aspera
               options.set_option(:url, params[:instance_url])
             else
               params[:plugin_sym] = params[:plugin_sym].to_sym
+              raise "No such plugin: #{params[:plugin_sym]}" unless @plugins.key?(params[:plugin_sym])
+              require @plugins[params[:plugin_sym]][:require_stanza]
             end
             # instantiate plugin: command line options are known and wizard can be called
             plugin_instance = self.class.plugin_class(params[:plugin_sym]).new(@agents.merge({skip_basic_auth_options: true}))
