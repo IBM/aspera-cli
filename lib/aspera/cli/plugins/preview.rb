@@ -205,7 +205,8 @@ module Aspera
         end
 
         def do_transfer(direction, folder_id, source_filename, destination='/')
-          raise 'error' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
+          raise 'Internal ERROR' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
+          # TODO: use @api_node.transfer_spec_gen4(folder_id, direction, nil)
           if @default_transfer_spec.nil?
             # make a dummy call to get some default transfer parameters
             res = @api_node.create('files/upload_setup', {'transfer_requests' => [{'transfer_request' => {'paths' => [{}], 'destination_root' => '/'}}]})
@@ -216,7 +217,7 @@ module Aspera
               Log.log.warn('remote_user shall be xfer')
               @default_transfer_spec['remote_user'] = Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER
             end
-            @api_node.ts_basic_token(@default_transfer_spec)
+            @api_node.basic_token_and_xfer_user(@default_transfer_spec)
             # NOTE: we use the same address for ascp than for node api instead of the one from upload_setup
             # TODO: configurable ? useful ?
             @default_transfer_spec['remote_host'] = @transfer_server_address

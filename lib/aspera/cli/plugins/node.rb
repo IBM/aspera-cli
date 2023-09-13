@@ -284,6 +284,7 @@ module Aspera
             token_type = options.get_option(:token_type)
             # nil if Shares 1.x
             token_type = :aspera if token_type.nil?
+            # TODO: remove token_type, for basic, use Gen4, anyway basic token not allowed for non access key
             case token_type
             when :aspera, :hybrid
               # empty transfer spec for authorization request
@@ -312,9 +313,7 @@ module Aspera
               @api_node.add_tspec_info(transfer_spec) if @api_node.respond_to?(:add_tspec_info)
             else raise "ERROR: token_type #{tt}"
             end
-            if %i[basic hybrid].include?(token_type)
-              @api_node.ts_basic_token(transfer_spec)
-            end
+            @api_node.basic_token_and_xfer_user(transfer_spec) if %i[basic hybrid].include?(token_type)
             return Main.result_transfer(transfer.start(transfer_spec))
           end
           raise 'INTERNAL ERROR'
