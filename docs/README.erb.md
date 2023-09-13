@@ -4054,24 +4054,6 @@ It is possible to:
 - transfer (upload / download)
 - ...
 
-For transfers, it is possible to control how transfer is authorized using option: `token_type`:
-
-- `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token, used as is.
-- `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
-- `basic` : transfer spec is created like this:
-
-```json
-{
-  "remote_host": "<address of node url>",
-  "remote_user": "xfer",
-  "ssh_port": 33001,
-  "token": "Basic <base 64 encoded user/pass>",
-  "direction": "[send|receive]"
-}
-```
-
-> **Note:** the port is assumed to be the default Aspera SSH port `33001` and transfer user is assumed to be `xfer`.
-
 ### Central
 
 The central subcommand uses the "reliable query" API (session and file).

@@ -351,9 +351,7 @@ $(T)nd1: $(T).exists
 $(T)nd2: $(T).exists
 	@echo $@
 	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}'
-	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 	$(EXE_MAN) node download $(CF_HSTS_UPLOADED_FILE) --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node download $(CF_HSTS_UPLOADED_FILE) --to-folder=$(DIR_TMP). --token-type=hybrid
 	$(EXE_MAN) node delete $(CF_HSTS_UPLOADED_FILE)
 	@touch $@
 $(T)nd_2_nd_xfer: $(T).exists
@@ -395,7 +393,7 @@ $(T)nd7: $(T).exists
 	@touch $@
 $(T)nd8: $(T).exists
 	@echo $@
-	$(EXE_MAN) node upload --username=@preset:misc.aoc_ak_name --password=@preset:misc.aoc_ak_secret $(CF_LOCAL_SAMPLE_FILEPATH) --token-type=basic
+	$(EXE_MAN) node upload --username=@preset:misc.aoc_ak_name --password=@preset:misc.aoc_ak_secret $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)nd_ak: $(T).exists
 	@echo $@
@@ -1221,7 +1219,7 @@ $(T)prev_mxf_clips: $(T).exists
 	@touch $@
 $(T)prev_events: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) -Ptst_ak_preview node upload @preset:misc.file_mxf @preset:misc.file_docx --ts=@json:'{"target_rate_kbps":1000000}' --token-type=hybrid
+	$(EXE_NOMAN) -Ptst_ak_preview node upload @preset:misc.file_mxf @preset:misc.file_docx --ts=@json:'{"target_rate_kbps":1000000}'
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@touch $@

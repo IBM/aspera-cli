@@ -75,7 +75,6 @@ module Aspera
             env[:options].declare(:validator, 'Identifier of validator (optional for central)')
             env[:options].declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             env[:options].declare(:sync_name, 'Sync name')
-            env[:options].declare(:token_type, 'Type of token used for transfers', values: %i[aspera basic hybrid], default: :aspera)
             env[:options].declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
             env[:options].parse_options!
             Aspera::Node.use_standard_ports = env[:options].get_option(:default_ports)
@@ -281,39 +280,22 @@ module Aspera
             node_sync = SyncSpecGen3.new(@api_node)
             return Plugins::Sync.new(@agents, sync_spec: node_sync).execute_action
           when :upload, :download
-            token_type = options.get_option(:token_type)
-            # nil if Shares 1.x
-            token_type = :aspera if token_type.nil?
-            # TODO: remove token_type, for basic, use Gen4, anyway basic token not allowed for non access key
-            case token_type
-            when :aspera, :hybrid
-              # empty transfer spec for authorization request
-              request_transfer_spec = {}
-              # set requested paths depending on direction
-              request_transfer_spec[:paths] = if command.eql?(:download)
-                transfer.ts_source_paths
-              else
-                [{ destination: transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND) }]
-              end
-              # add fixed parameters if any (for COS)
-              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-              # prepare payload for single request
-              setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-              # only one request, so only one answer
-              transfer_spec = @api_node.create("files/#{command}_setup", setup_payload)[:data]['transfer_specs'].first['transfer_spec']
-              # delete this part, as the returned value contains only destination, and not sources
-              transfer_spec.delete('paths') if command.eql?(:upload)
-            when :basic
-              raise 'shall have auth' unless @api_node.params[:auth].is_a?(Hash)
-              raise 'shall be basic auth' unless @api_node.params[:auth][:type].eql?(:basic)
-              transfer_spec = {}.merge(Aspera::Fasp::TransferSpec::AK_TSPEC_BASE)
-              transfer_spec['remote_host'] = URI.parse(@api_node.params[:base_url]).host
-              Fasp::TransferSpec.action_to_direction(transfer_spec, command)
-              transfer_spec['destination_root'] = transfer.destination_folder(transfer_spec['direction'])
-              @api_node.add_tspec_info(transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-            else raise "ERROR: token_type #{tt}"
+            # empty transfer spec for authorization request
+            request_transfer_spec = {}
+            # set requested paths depending on direction
+            request_transfer_spec[:paths] = if command.eql?(:download)
+              transfer.ts_source_paths
+            else
+              [{ destination: transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND) }]
             end
-            @api_node.basic_token_and_xfer_user(transfer_spec) if %i[basic hybrid].include?(token_type)
+            # add fixed parameters if any (for COS)
+            @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+            # prepare payload for single request
+            setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+            # only one request, so only one answer
+            transfer_spec = @api_node.create("files/#{command}_setup", setup_payload)[:data]['transfer_specs'].first['transfer_spec']
+            # delete this part, as the returned value contains only destination, and not sources
+            transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
           end
           raise 'INTERNAL ERROR'

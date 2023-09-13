@@ -2972,7 +2972,6 @@ OPTIONS:
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
-        --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
 
@@ -3130,7 +3129,6 @@ OPTIONS:
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
-        --token-type=ENUM            Type of token used for transfers: [aspera], basic, hybrid
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
 
 
@@ -4621,24 +4619,6 @@ It is possible to:
 - transfer (upload / download)
 - ...
 
-For transfers, it is possible to control how transfer is authorized using option: `token_type`:
-
-- `aspera` : api `<upload|download>_setup` is called to create the transfer spec including the Aspera token, used as is.
-- `hybrid` : same as `aspera`, but token is replaced with basic token like `basic`
-- `basic` : transfer spec is created like this:
-
-```json
-{
-  "remote_host": "<address of node url>",
-  "remote_user": "xfer",
-  "ssh_port": 33001,
-  "token": "Basic <base 64 encoded user/pass>",
-  "direction": "[send|receive]"
-}
-```
-
-> **Note:** the port is assumed to be the default Aspera SSH port `33001` and transfer user is assumed to be `xfer`.
-
 ### Central
 
 The central subcommand uses the "reliable query" API (session and file).
@@ -4781,7 +4761,6 @@ node delete @list:,folder_1/todelete,folder_1/tdlink,folder_1/delfile
 node delete folder_1/10MB.2
 node delete testfile.bin
 node download testfile.bin --to-folder=.
-node download testfile.bin --to-folder=. --token-type=hybrid
 node health
 node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 node license
@@ -4811,9 +4790,8 @@ node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pu
 node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
 node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
-node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin --token-type=basic
+node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin
 node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
-node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}' --token-type=hybrid
 ```
 
 ## <a id="faspex5"></a>Plugin: `faspex5`: IBM Aspera Faspex v5
