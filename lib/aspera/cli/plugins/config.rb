@@ -876,7 +876,7 @@ module Aspera
             # allow user to specify type of application (symbol)
             identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query)
             Log.log.debug("Detected: #{identification}")
-            formatter.display_status("Detected: #{identification[:name]}".bold)
+            formatter.display_status("Detected: #{identification[:name]} at #{identification[:url]}".bold)
             # we detected application (not set by user)
             params[:plugin_sym] = identification[:product]
             # update the url option
