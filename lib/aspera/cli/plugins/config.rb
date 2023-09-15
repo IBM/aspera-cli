@@ -48,6 +48,7 @@ module Aspera
         ASPERA = 'aspera'
         AOC_COMMAND = 'aoc'
         SERVER_COMMAND = 'server'
+        APP_NAME_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js'
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
@@ -108,6 +109,7 @@ module Aspera
           @conf_file_default = File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
           @option_config_file = @conf_file_default
           @pac_exec = nil
+          @sdk_default_location = false
           Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
           # set folder for FASP SDK
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
@@ -140,12 +142,30 @@ module Aspera
           options.declare(:vault, 'Vault for secrets')
           options.declare(:vault_password, 'Vault password')
           options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
-          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder}, default: File.join(@main_folder, 'sdk'))
+          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
           options.declare(:notif_to, 'Email recipient for notification of transfers')
           options.declare(:notif_template, 'Email ERB template for notification of transfers')
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
           options.parse_options!
+          # Check SDK folder is set or not, for compatibility, we check in two places
+          sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
+          if sdk_folder.nil?
+            @sdk_default_location = true
+            Log.log.error('SDK folder is not set, checking default')
+            # new location
+            sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK)
+            Log.log.error("checking: #{sdk_folder}")
+            if !Dir.exist?(sdk_folder)
+              Log.log.error("no such: #{sdk_folder}")
+              # former location
+              former_sdk_folder = File.join(default_app_main_folder, APP_NAME_SDK)
+              Log.log.error("checking: #{former_sdk_folder}")
+              sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
+            end
+            Log.log.error("using: #{sdk_folder}")
+            Fasp::Installation.instance.sdk_folder = sdk_folder
+          end
           pac_script = options.get_option(:fpac)
           # create PAC executor
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
@@ -164,15 +184,20 @@ module Aspera
           return "#{@info[:name]}_home".upcase
         end
 
-        def default_app_main_folder
+        # return product family folder (~/.aspera)
+        def module_family_folder
+          user_home_folder = Dir.home
+          raise CliError, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
+          return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
+        end
+
+        # return product config folder (~/.aspera/<name>)
+        def default_app_main_folder(app_name: nil)
+          app_name = @info[:name] if app_name.nil?
           # find out application main folder
           app_folder = ENV[conf_dir_env_var]
           # if env var undefined or empty
-          if app_folder.nil? || app_folder.empty?
-            user_home_folder = Dir.home
-            raise CliError, "Home folder does not exist: #{user_home_folder}. Check your user environment or use #{conf_dir_env_var}." unless Dir.exist?(user_home_folder)
-            app_folder = File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME, @info[:name])
-          end
+          app_folder = File.join(module_family_folder, app_name) if app_folder.nil? || app_folder.empty?
           return app_folder
         end
 
@@ -624,6 +649,8 @@ module Aspera
               return Main.result_status("Saved to default global preset #{preset_name}")
             end
           when :install
+            # reset to default location, if older default was used
+            Fasp::Installation.instance.sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
             v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url, is_type: :mandatory))
             return Main.result_status("Installed version #{v}")
           when :spec
