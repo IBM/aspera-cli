@@ -395,33 +395,7 @@ module Aspera
           end
         end
 
-        # Converts path to former main config folder to new path, finds files to copy
-        # used in case a version of the tool changes the main folder path
-        def convert_preset_path(old_name, new_name, files_to_copy)
-          old_subpath = File.join('', ASPERA_HOME_FOLDER_NAME, old_name, '')
-          new_subpath = File.join('', ASPERA_HOME_FOLDER_NAME, new_name, '')
-          # convert possible keys located in config folder
-          @config_presets.values.select{|p|p.is_a?(Hash)}.each do |preset|
-            preset.values.select{|v|v.is_a?(String) && v.include?(old_subpath)}.each do |value|
-              old_val = value.clone
-              included_path = File.expand_path(old_val.gsub(/^@file:/, ''))
-              files_to_copy.push(included_path) unless files_to_copy.include?(included_path) || !File.exist?(included_path)
-              value.gsub!(old_subpath, new_subpath)
-              Log.log.warn{"Converted config value: #{old_val} -> #{value}"}
-            end
-          end
-        end
-
-        def convert_preset_plugin_name(old_name, new_name)
-          default_preset = @config_presets[CONF_PRESET_DEFAULT]
-          return unless default_preset.is_a?(Hash) && default_preset.key?(old_name)
-          default_preset[new_name] = default_preset[old_name]
-          default_preset.delete(old_name)
-          Log.log.warn{"Converted plugin default: #{old_name} -> #{new_name}"}
-        end
-
         # read config file and validate format
-        # tries to convert from older version if possible and required
         def read_config_file
           Log.log.debug{"config file is: #{@option_config_file}".red}
           # files search for configuration, by default the one given by user
