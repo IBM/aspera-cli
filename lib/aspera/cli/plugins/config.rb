@@ -152,18 +152,18 @@ module Aspera
           sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
           if sdk_folder.nil?
             @sdk_default_location = true
-            Log.log.error('SDK folder is not set, checking default')
+            Log.log.debug('SDK folder is not set, checking default')
             # new location
             sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK)
-            Log.log.error("checking: #{sdk_folder}")
+            Log.log.debug{"checking: #{sdk_folder}"}
             if !Dir.exist?(sdk_folder)
-              Log.log.error("no such: #{sdk_folder}")
+              Log.log.debug{"not exists: #{sdk_folder}"}
               # former location
               former_sdk_folder = File.join(default_app_main_folder, APP_NAME_SDK)
-              Log.log.error("checking: #{former_sdk_folder}")
+              Log.log.debug{"checking: #{former_sdk_folder}"}
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
-            Log.log.error("using: #{sdk_folder}")
+            Log.log.debug{"using: #{sdk_folder}"}
             Fasp::Installation.instance.sdk_folder = sdk_folder
           end
           pac_script = options.get_option(:fpac)
@@ -876,7 +876,7 @@ module Aspera
             params[:preset_name] = options.get_option(:id)
             # allow user to specify type of application (symbol)
             identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query)
-            Log.log.debug("Detected: #{identification}")
+            Log.log.debug{"Detected: #{identification}"}
             formatter.display_status("Detected: #{identification[:name]} at #{identification[:url]}".bold)
             # we detected application (not set by user)
             params[:plugin_sym] = identification[:product]
