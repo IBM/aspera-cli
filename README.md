@@ -2774,9 +2774,12 @@ One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo
 
 ### <a id="faux_testing"></a>`faux:` for testing
 
-This is an extract of the man page of `ascp`. This feature is a feature of `ascp`, not `ascli`.
+This is an extract of the man page of `ascp`.
+This feature is a feature of `ascp`, not `ascli`.
 
 This adapter can be used to simulate a file or a directory.
+
+To discard data at the destination, the destination argument is set to `faux://`.
 
 To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form:
 
@@ -2830,8 +2833,6 @@ The sequence parameter is applied as follows:
   - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less then 8*2<sup>60</sup>.
 
 Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
-
-To discard data at the destination, the destination argument is set to `faux://` .
 
 Examples:
 
@@ -3198,7 +3199,7 @@ For this, specify the option: `--use-generic-client=no`.
 
 This will guide you through the steps to create.
 
-If the wizard does not detect the application but you know the application, you can force it using option `value`:
+If the wizard does not detect the application but you know the application, you can force it using option `query`:
 
 ```bash
 ascli config wizard --query=aoc
@@ -3990,7 +3991,8 @@ ascli aoc packages send [package extended value] [other parameters such as file 
 
 Notes:
 
-- The `value` option can contain any supported package creation parameter. Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
+- Package creation parameter are sent as positional mandatory parameter.
+  Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
 - List allowed shared inbox destinations with: `ascli aoc packages shared_inboxes list`
 - Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox.
   - Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
@@ -4436,7 +4438,7 @@ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":
 delete all my access keys:
 
 ```bash
-for k in $(ascli ats access_key list --field=id --format=csv);do ascli ats access_key id $k delete;done
+ascli ats access_key list --field=id --format=csv | ascli ats access_key delete @lines:@stdin: --bulk=yes
 ```
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
@@ -4893,7 +4895,7 @@ ascli conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boo
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
-Parameters to commands are carried through option `value`, as extended value.
+Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional parameter for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
@@ -4995,7 +4997,7 @@ The (numeric) identifier of the package t receive is given as argument to comman
 
 ### Faspex 5: List packages
 
-The following parameters in option `value` are supported:
+The following parameters in option `query` are supported:
 
 - `q` : a filter on name (case insensitive, matches if value is contained in name)
 - `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
@@ -5716,7 +5718,7 @@ ascli preview scan --skip-folders=@json:'["/not_here"]'
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
 
-When scanning the option `value` has the same behavior as for the `node find` command.
+When scanning the option `query` has the same behavior as for the `node find` command.
 
 For instance to filter out files beginning with `._` do:
 

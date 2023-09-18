@@ -3761,6 +3761,8 @@ class="header-section-number">7.29</span>
 <p>This is an extract of the man page of <code>ascp</code>. This feature
 is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
 <p>This adapter can be used to simulate a file or a directory.</p>
+<p>To discard data at the destination, the destination argument is set
+to <code>faux://</code>.</p>
 <p>To send uninitialized data in place of an actual source file, the
 source file is replaced with an argument of the form:</p>
 <div class="sourceCode" id="cb215"><pre
@@ -3869,8 +3871,6 @@ bytes, etc.</li>
 </ul>
 <p>Filenames generated are of the form:
 <code>&lt;file&gt;_&lt;00000 ... count&gt;_&lt;filesize&gt;</code></p>
-<p>To discard data at the destination, the destination argument is set
-to <code>faux://</code> .</p>
 <p>Examples:</p>
 <ul>
 <li>Upload 20 gibibytes of random data to file myfile to directory
@@ -4239,7 +4239,7 @@ ascli aoc user profile show</code></pre>
 the option: <code>--use-generic-client=no</code>.</p>
 <p>This will guide you through the steps to create.</p>
 <p>If the wizard does not detect the application but you know the
-application, you can force it using option <code>value</code>:</p>
+application, you can force it using option <code>query</code>:</p>
 <div class="sourceCode" id="cb222"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard <span class="at">--query</span><span class="op">=</span>aoc</span></code></pre></div>
 <h2 data-number="8.2" id="configuration-using-manual-setup"><span
@@ -4970,9 +4970,9 @@ class="header-section-number">8.6.1</span> Send a Package</h3>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb297-1"><a href="#cb297-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc packages send [package extended value] [other parameters such as file list and transfer parameters]</span></code></pre></div>
 <p>Notes:</p>
 <ul>
-<li>The <code>value</code> option can contain any supported package
-creation parameter. Refer to the AoC package creation API, or display an
-existing package in JSON to list attributes.</li>
+<li>Package creation parameter are sent as positional mandatory
+parameter. Refer to the AoC package creation API, or display an existing
+package in JSON to list attributes.</li>
 <li>List allowed shared inbox destinations with:
 <code>ascli aoc packages shared_inboxes list</code></li>
 <li>Use fields: <code>recipients</code> and/or
@@ -5398,7 +5398,7 @@ parameters. and that parameter sr=c is mandatory.)</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb335-1"><a href="#cb335-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>azure <span class="at">--region</span><span class="op">=</span>eastus <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;myaccesskey&quot;,&quot;name&quot;:&quot;laurent key azure&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;azure&quot;,&quot;credentials&quot;:{&quot;account&quot;:&quot;myaccount&quot;,&quot;key&quot;:&quot;myaccesskey&quot;,&quot;storage_endpoint&quot;:&quot;myblob&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span></code></pre></div>
 <p>delete all my access keys:</p>
 <div class="sourceCode" id="cb336"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb336-1"><a href="#cb336-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="va">$(</span><span class="ex">ascli</span> ats access_key list <span class="at">--field</span><span class="op">=</span>id <span class="at">--format</span><span class="op">=</span>csv<span class="va">)</span><span class="kw">;</span><span class="cf">do</span> <span class="ex">ascli</span> ats access_key id <span class="va">$k</span> delete<span class="kw">;</span><span class="cf">done</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb336-1"><a href="#cb336-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ats access_key list <span class="at">--field</span><span class="op">=</span>id <span class="at">--format</span><span class="op">=</span>csv <span class="kw">|</span> <span class="ex">ascli</span> ats access_key delete @lines:@stdin: <span class="at">--bulk</span><span class="op">=</span>yes</span></code></pre></div>
 <p>The parameters provided to ATS for access key creation are the ones
 of <a
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22">ATS
@@ -5857,7 +5857,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb362-1"><a href
 <h2 data-number="12.4" id="faspex-5-sample-commands"><span
 class="header-section-number">12.4</span> Faspex 5 sample commands</h2>
 <p>Most commands are directly REST API calls. Parameters to commands are
-carried through option <code>value</code>, as extended value. One can
+carried through option <code>query</code>, as extended value, for
+<code>list</code>, or through positional parameter for creation. One can
 conveniently use the JSON format with prefix <code>@json:</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> The API is listed in <a
@@ -5962,7 +5963,7 @@ argument to command <code>faspex5 packages receive</code>.</p>
 </blockquote>
 <h2 data-number="12.9" id="faspex-5-list-packages"><span
 class="header-section-number">12.9</span> Faspex 5: List packages</h2>
-<p>The following parameters in option <code>value</code> are
+<p>The following parameters in option <code>query</code> are
 supported:</p>
 <ul>
 <li><code>q</code> : a filter on name (case insensitive, matches if
@@ -6746,7 +6747,7 @@ example:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb411-1"><a href="#cb411-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview scan <span class="at">--skip-folders</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;/not_here&quot;]&#39;</span></span></code></pre></div>
 <p>The option <code>folder_reset_cache</code> forces the node service to
 refresh folder contents using various methods.</p>
-<p>When scanning the option <code>value</code> has the same behavior as
+<p>When scanning the option <code>query</code> has the same behavior as
 for the <code>node find</code> command.</p>
 <p>For instance to filter out files beginning with <code>._</code>
 do:</p>
