@@ -44,7 +44,7 @@ module Aspera
             nagios = Nagios.new
             begin
               Rest
-                .new(base_url: options.get_option(:url, is_type: :mandatory) + '/node_api')
+                .new(base_url: options.get_option(:url, mandatory: true) + '/node_api')
                 .call(
                   operation: 'GET',
                   subpath: 'ping',
@@ -67,7 +67,7 @@ module Aspera
               return entity_action(api_shares_admin, 'data/nodes')
             when :user, :group
               entity_type = admin_command
-              entities_location = options.get_option(:type, is_type: :mandatory)
+              entities_location = options.get_option(:type, mandatory: true)
               entities_path = "data/#{entities_location}_#{entity_type}s"
               entity_action = nil
               case entities_location

@@ -17,7 +17,7 @@ module Aspera
           options.declare(:sync_session, 'Name of session to use for admin commands. default: first in parameters')
           options.parse_options!
           return if env[:man_only]
-          @params = options.get_option(:sync_info, is_type: :mandatory)
+          @params = options.get_option(:sync_info, mandatory: true)
           @sync_spec = sync_spec
         end
 

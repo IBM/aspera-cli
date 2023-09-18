@@ -200,8 +200,11 @@ module Aspera
       # Get an option value by name
       # either return value or calls handler, can return nil
       # ask interactively if requested/required
-      # @param is_type :mandatory or :optional
-      def get_option(option_symbol, is_type: :optional, allowed_types: nil)
+      # @param mandatory [Boolean] if true, raise error if option not set
+      # @param allowed_types [Array] list of allowed types
+      def get_option(option_symbol, mandatory: false, allowed_types: nil)
+        allowed_types = [allowed_types] if allowed_types.is_a?(Class)
+        raise 'Internal Error: allowed_types must be an Array of Class or a Class' unless allowed_types.nil? || allowed_types.is_a?(Array)
         result = nil
         if @declared_options.key?(option_symbol)
           case @declared_options[option_symbol][:read_write]
@@ -215,12 +218,12 @@ module Aspera
           Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}) get #{option_symbol}=#{result}"}
         end
         # do not fail for manual generation if option mandatory but not set
-        result = '' if result.nil? && is_type.eql?(:mandatory) && !@fail_on_missing_mandatory
+        result = '' if result.nil? && mandatory && !@fail_on_missing_mandatory
         # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory
-            raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if is_type.eql?(:mandatory)
-          elsif @ask_missing_optional || is_type.eql?(:mandatory)
+            raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
+          elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
             expected = :single
             # print "please enter: #{option_symbol.to_s}"

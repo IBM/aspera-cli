@@ -27,22 +27,22 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           case command
           when :node
-            bucket_name = options.get_option(:bucket, is_type: :mandatory)
+            bucket_name = options.get_option(:bucket, mandatory: true)
             # get service credentials, Hash, e.g. @json:@file:...
             service_credentials = options.get_option(:service_credentials)
             storage_endpoint = options.get_option(:endpoint)
             raise CliBadArgument, 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
             raise CliBadArgument, 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
             if service_credentials.nil?
-              service_api_key = options.get_option(:apikey, is_type: :mandatory)
-              instance_id = options.get_option(:crn, is_type: :mandatory)
+              service_api_key = options.get_option(:apikey, mandatory: true)
+              instance_id = options.get_option(:crn, mandatory: true)
             else
-              params = CosNode.parameters_from_svc_creds(service_credentials, options.get_option(:region, is_type: :mandatory))
+              params = CosNode.parameters_from_svc_creds(service_credentials, options.get_option(:region, mandatory: true))
               storage_endpoint = params[:storage_endpoint]
               service_api_key = params[:service_api_key]
               instance_id = params[:instance_id]
             end
-            api_node = CosNode.new(bucket_name, storage_endpoint, instance_id, service_api_key, options.get_option(:identity, is_type: :mandatory))
+            api_node = CosNode.new(bucket_name, storage_endpoint, instance_id, service_api_key, options.get_option(:identity, mandatory: true))
             node_plugin = Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node))
             command = options.get_next_command(Node::COMMANDS_COS)
             return node_plugin.execute_action(command)

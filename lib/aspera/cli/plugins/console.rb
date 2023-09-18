@@ -52,8 +52,8 @@ module Aspera
                 return {
                   type:   :object_list,
                   data:   api_console.read('transfers', {
-                    'from' => options.get_option(:filter_from, is_type: :mandatory),
-                    'to'   => options.get_option(:filter_to, is_type: :mandatory)
+                    'from' => options.get_option(:filter_from, mandatory: true),
+                    'to'   => options.get_option(:filter_to, mandatory: true)
                   })[:data],
                   fields: %w[id contact name status]}
               end

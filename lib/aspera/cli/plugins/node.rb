@@ -126,23 +126,23 @@ module Aspera
             if env.key?(:node_api)
               # this can be Aspera::Node or Aspera::Rest (shares)
               env[:node_api]
-            elsif options.get_option(:password, is_type: :mandatory).start_with?('Bearer ')
+            elsif options.get_option(:password, mandatory: true).start_with?('Bearer ')
               # info is provided like node_info of aoc
               Aspera::Node.new(params: {
-                base_url: options.get_option(:url, is_type: :mandatory),
+                base_url: options.get_option(:url, mandatory: true),
                 headers:  {
-                  Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => options.get_option(:username, is_type: :mandatory),
-                  'Authorization'                          => options.get_option(:password, is_type: :mandatory)
+                  Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => options.get_option(:username, mandatory: true),
+                  'Authorization'                          => options.get_option(:password, mandatory: true)
                 }
               })
             else
               # this is normal case
               Aspera::Node.new(params: {
-                base_url: options.get_option(:url, is_type: :mandatory),
+                base_url: options.get_option(:url, mandatory: true),
                 auth:     {
                   type:     :basic,
-                  username: options.get_option(:username, is_type: :mandatory),
-                  password: options.get_option(:password, is_type: :mandatory)
+                  username: options.get_option(:username, mandatory: true),
+                  password: options.get_option(:password, mandatory: true)
                 }})
             end
         end
@@ -596,14 +596,14 @@ module Aspera
             data = data.first[async_id] unless data.empty?
             iteration_data = []
             skip_ids_persistency = nil
-            if options.get_option(:once_only, is_type: :mandatory)
+            if options.get_option(:once_only, mandatory: true)
               skip_ids_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    iteration_data,
                 id:      IdGenerator.from_list([
                   'sync_files',
-                  options.get_option(:url, is_type: :mandatory),
-                  options.get_option(:username, is_type: :mandatory),
+                  options.get_option(:url, mandatory: true),
+                  options.get_option(:username, mandatory: true),
                   async_id]))
               unless iteration_data.first.nil?
                 data.select!{|l| l['fnid'].to_i > iteration_data.first}
@@ -827,16 +827,16 @@ module Aspera
             end
           when :asperabrowser
             browse_params = {
-              'nodeUser' => options.get_option(:username, is_type: :mandatory),
-              'nodePW'   => options.get_option(:password, is_type: :mandatory),
-              'nodeURL'  => options.get_option(:url, is_type: :mandatory)
+              'nodeUser' => options.get_option(:username, mandatory: true),
+              'nodePW'   => options.get_option(:password, mandatory: true),
+              'nodeURL'  => options.get_option(:url, mandatory: true)
             }
             # encode parameters so that it looks good in url
             encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
             OpenApplication.instance.uri(options.get_option(:asperabrowserurl) + '?goto=' + encoded_params)
             return Main.result_status('done')
           when :basic_token
-            return Main.result_status(Rest.basic_creds(options.get_option(:username, is_type: :mandatory), options.get_option(:password, is_type: :mandatory)))
+            return Main.result_status(Rest.basic_creds(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action

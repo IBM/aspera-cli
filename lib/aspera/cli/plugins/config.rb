@@ -225,7 +225,7 @@ module Aspera
 
         def periodic_check_newer_gem_version
           # get verification period
-          delay_days = options.get_option(:version_check_days, is_type: :mandatory)
+          delay_days = options.get_option(:version_check_days, mandatory: true)
           Log.log.info{"check days: #{delay_days}"}
           # check only if not zero day
           return if delay_days.eql?(0)
@@ -651,7 +651,7 @@ module Aspera
           when :install
             # reset to default location, if older default was used
             Fasp::Installation.instance.sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
-            v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url, is_type: :mandatory))
+            v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
             return Main.result_status("Installed version #{v}")
           when :spec
             return {
@@ -751,8 +751,8 @@ module Aspera
             return Main.result_status("Updated: #{name}")
           when :lookup
             BasicAuthPlugin.register_options(@agents)
-            url = options.get_option(:url, is_type: :mandatory)
-            user = options.get_option(:username, is_type: :mandatory)
+            url = options.get_option(:url, mandatory: true)
+            user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)
             raise 'no such config found' if result.nil?
             return {type: :single_object, data: result}
@@ -865,7 +865,7 @@ module Aspera
             BasicAuthPlugin.register_options(@agents)
             params = {}
             # get from option, or ask
-            params[:instance_url] = options.get_option(:url, is_type: :mandatory)
+            params[:instance_url] = options.get_option(:url, mandatory: true)
             # check it is a well formatted url: starts with scheme
             if !params[:instance_url].match?(%r{^[a-z]{1,6}://})
               new_url = "https://#{params[:instance_url]}"
@@ -897,7 +897,7 @@ module Aspera
               # give a chance to provide
               if private_key_path.nil?
                 formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
-                private_key_path = options.get_option(:pkeypath, is_type: :mandatory).to_s
+                private_key_path = options.get_option(:pkeypath, mandatory: true).to_s
                 # private_key_path = File.expand_path(private_key_path)
               end
               # else generate path
@@ -919,9 +919,9 @@ module Aspera
             formatter.display_status("Preparing preset: #{params[:preset_name]}")
             # init defaults if necessary
             @config_presets[CONF_PRESET_DEFAULT] ||= {}
-            option_override = options.get_option(:override, is_type: :mandatory)
+            option_override = options.get_option(:override, mandatory: true)
             raise CliError, "A default configuration already exists for plugin '#{params[:plugin_sym]}' (use --override=yes or --default=no)" \
-              if !option_override && options.get_option(:default, is_type: :mandatory) && @config_presets[CONF_PRESET_DEFAULT].key?(params[:plugin_sym])
+              if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULT].key?(params[:plugin_sym])
             raise CliError, "Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
               if !option_override && @config_presets.key?(params[:preset_name])
             wizard_result = plugin_instance.send(:wizard, params)
@@ -929,7 +929,7 @@ module Aspera
             raise "Internal error: missing keys in wizard result: #{wizard_result.keys}" unless %i[preset_value test_args].eql?(wizard_result.keys.sort)
             @config_presets[params[:preset_name]] = wizard_result[:preset_value].stringify_keys
             params[:test_args] = wizard_result[:test_args]
-            if options.get_option(:default, is_type: :mandatory)
+            if options.get_option(:default, mandatory: true)
               formatter.display_status("Setting config preset as default for #{params[:plugin_sym]}")
               @config_presets[CONF_PRESET_DEFAULT][params[:plugin_sym].to_s] = params[:preset_name]
             else
@@ -941,7 +941,7 @@ module Aspera
           when :detect
             # need url / username
             BasicAuthPlugin.register_options(@agents)
-            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url, is_type: :mandatory))}
+            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url, mandatory: true))}
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
               require 'aspera/preview/terminal'
@@ -968,7 +968,7 @@ module Aspera
             return {type: :single_object, data: email_settings}
           when :proxy_check
             # ensure fpac was provided
-            options.get_option(:fpac, is_type: :mandatory)
+            options.get_option(:fpac, mandatory: true)
             server_url = options.get_next_argument('server url')
             return Main.result_status(@pac_exec.find_proxy_for_url(server_url))
           when :check_update
@@ -1002,7 +1002,7 @@ module Aspera
 
         # @return email server setting with defaults if not defined
         def email_settings
-          smtp = options.get_option(:smtp, is_type: :mandatory, allowed_types: [Hash])
+          smtp = options.get_option(:smtp, mandatory: true, allowed_types: [Hash])
           # change string keys into symbol keys
           smtp = smtp.symbolize_keys
           # defaults
@@ -1031,8 +1031,8 @@ module Aspera
         end
 
         def send_email_template(email_template_default: nil, values: {})
-          values[:to] ||= options.get_option(:notif_to, is_type: :mandatory)
-          notif_template = options.get_option(:notif_template, is_type: email_template_default.nil? ? :mandatory : :optional) || email_template_default
+          values[:to] ||= options.get_option(:notif_to, mandatory: true)
+          notif_template = options.get_option(:notif_template, mandatory: email_template_default.nil?) || email_template_default
           mail_conf = email_settings
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
@@ -1133,7 +1133,7 @@ module Aspera
         def vault
           if @vault.nil?
             vault_info = options.get_option(:vault) || {'type' => 'file', 'name' => 'vault.bin'}
-            vault_password = options.get_option(:vault_password, is_type: :mandatory)
+            vault_password = options.get_option(:vault_password, mandatory: true)
             raise 'vault must be Hash' unless vault_info.is_a?(Hash)
             vault_type = vault_info['type'] || 'file'
             vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)

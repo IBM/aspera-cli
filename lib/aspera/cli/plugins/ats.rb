@@ -23,8 +23,8 @@ module Aspera
 
         def server_by_cloud_region
           # TODO: provide list ?
-          cloud = options.get_option(:cloud, is_type: :mandatory).upcase
-          region = options.get_option(:region, is_type: :mandatory)
+          cloud = options.get_option(:cloud, mandatory: true).upcase
+          region = options.get_option(:region, mandatory: true)
           return @ats_api_pub.read("servers/#{cloud}/#{region}")[:data]
         end
 
@@ -35,8 +35,8 @@ module Aspera
             base_url: AtsApi.base_url + '/pub/v1',
             auth:     {
               type:     :basic,
-              username: options.get_option(:ats_key, is_type: :mandatory),
-              password: options.get_option(:ats_secret, is_type: :mandatory)}
+              username: options.get_option(:ats_key, mandatory: true),
+              password: options.get_option(:ats_secret, mandatory: true)}
           })
         end
 
@@ -137,7 +137,7 @@ module Aspera
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show
-            if options.get_option(:cloud) || options.get_option(:region, is_type: :optional)
+            if options.get_option(:cloud) || options.get_option(:region)
               server_data = server_by_cloud_region
             else
               server_id = instance_identifier
@@ -160,7 +160,7 @@ module Aspera
               generic:      {
                 grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
                 response_type: 'cloud_iam',
-                apikey:        options.get_option(:ibm_api_key, is_type: :mandatory)
+                apikey:        options.get_option(:ibm_api_key, mandatory: true)
               }}})
         end
 
@@ -219,7 +219,7 @@ module Aspera
           when :api_key # manage credential to access ATS API
             return execute_action_api_key
           when :aws_trust_policy
-            res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, is_type: :mandatory)})[:data]
+            res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})[:data]
             return {type: :single_object, data: res}
           else raise 'ERROR'
           end

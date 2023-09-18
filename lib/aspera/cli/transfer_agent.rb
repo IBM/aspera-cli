@@ -95,8 +95,8 @@ module Aspera
         @agent = instance
         @agent.add_listener(Listener::Logger.new)
         # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
-        if @opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:multi) ||
-            (@opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
+        if @opt_mgr.get_option(:progress, mandatory: true).eql?(:multi) ||
+            (@opt_mgr.get_option(:progress, mandatory: true).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
           @agent.add_listener(@progress_listener)
         end
       end
@@ -104,7 +104,7 @@ module Aspera
       # analyze options and create new agent if not already created or set
       def set_agent_by_options
         return nil unless @agent.nil?
-        agent_type = @opt_mgr.get_option(:transfer, is_type: :mandatory)
+        agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
         # agent plugin is loaded on demand to avoid loading unnecessary dependencies
         require "aspera/fasp/agent_#{agent_type}"
         agent_options = @opt_mgr.get_option(:transfer_info)
@@ -117,7 +117,7 @@ module Aspera
           agent_options = @config.preset_by_name(param_set_name)
         end
         # special case: native progress bar
-        if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress, is_type: :mandatory).eql?(:native)
+        if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress, mandatory: true).eql?(:native)
           agent_options[:quiet] = false
         end
         # normalize after getting from user or default node
@@ -174,7 +174,7 @@ module Aspera
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
-            @opt_mgr.get_option(:transfer, is_type: :mandatory).eql?(:direct) &&
+            @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
             Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline, @opt_mgr.get_option(:transfer_info))
           raise CliBadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
@@ -189,7 +189,7 @@ module Aspera
         if !@transfer_paths.nil?
           Log.log.warn('--sources overrides paths from --ts')
         end
-        case @opt_mgr.get_option(:src_type, is_type: :mandatory)
+        case @opt_mgr.get_option(:src_type, mandatory: true)
         when :list
           # when providing a list, just specify source
           @transfer_paths = file_list.map{|i|{'source' => i}}

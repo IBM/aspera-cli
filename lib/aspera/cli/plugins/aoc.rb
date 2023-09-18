@@ -239,15 +239,15 @@ module Aspera
             # server side is protocol server
             # in same workspace
             # default is push
-            case options.get_option(:operation, is_type: :mandatory)
+            case options.get_option(:operation, mandatory: true)
             when :push
               client_direction = Fasp::TransferSpec::DIRECTION_SEND
-              client_folder = options.get_option(:from_folder, is_type: :mandatory)
+              client_folder = options.get_option(:from_folder, mandatory: true)
               server_folder = transfer.destination_folder(client_direction)
             when :pull
               client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_direction)
-              server_folder = options.get_option(:from_folder, is_type: :mandatory)
+              server_folder = options.get_option(:from_folder, mandatory: true)
             end
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
@@ -370,12 +370,12 @@ module Aspera
               filter = options.get_option(:query) || {}
               raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit'] ||= 100
-              if options.get_option(:once_only, is_type: :mandatory)
+              if options.get_option(:once_only, mandatory: true)
                 saved_date = []
                 start_date_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: saved_date,
-                  ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, is_type: :mandatory), current_workspace_info['name']].push(
+                  ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, mandatory: true), current_workspace_info['name']].push(
                     filter_resource,
                     filter_id)))
                 start_date_time = saved_date.first
@@ -490,7 +490,7 @@ module Aspera
           case command
           when :reminder
             # send an email reminder with list of orgs
-            user_email = options.get_option(:username, is_type: :mandatory)
+            user_email = options.get_option(:username, mandatory: true)
             Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").create('organization_reminders', {email: user_email})[:data]
             return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
@@ -565,11 +565,11 @@ module Aspera
               ids_to_download = instance_identifier
               skip_ids_data = []
               skip_ids_persistency = nil
-              if options.get_option(:once_only, is_type: :mandatory)
+              if options.get_option(:once_only, mandatory: true)
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: skip_ids_data,
-                  id: IdGenerator.from_list(['aoc_recv', options.get_option(:url, is_type: :mandatory),
+                  id: IdGenerator.from_list(['aoc_recv', options.get_option(:url, mandatory: true),
                                              current_workspace_info['id']].concat(aoc_api.additional_persistence_ids)))
               end
               if VAL_ALL.eql?(ids_to_download)
@@ -822,7 +822,7 @@ module Aspera
           end
           options.set_option(:private_key, '@file:' + params[:private_key_path])
           # make username mandatory for jwt, this triggers interactive input
-          options.get_option(:username, is_type: :mandatory)
+          options.get_option(:username, mandatory: true)
           auto_set_pub_key = false
           auto_set_jwt = false
           use_browser_authentication = false
@@ -839,7 +839,7 @@ module Aspera
             end
           else
             formatter.display_status('Using organization specific client_id.')
-            if options.get_option(:client_id).nil? || options.get_option(:client_secret, is_type: :optional).nil?
+            if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
               formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
               formatter.display_status('Go to: Apps->Admin->Organization->Integrations')
               formatter.display_status('Create or check if there is an existing integration named:')
@@ -850,8 +850,8 @@ module Aspera
               formatter.display_status('Please enter:'.red)
             end
             OpenApplication.instance.uri("#{params[:instance_url]}/#{AOC_PATH_API_CLIENTS}")
-            options.get_option(:client_id, is_type: :mandatory)
-            options.get_option(:client_secret, is_type: :mandatory)
+            options.get_option(:client_id, mandatory: true)
+            options.get_option(:client_secret, mandatory: true)
             use_browser_authentication = true
           end
           if use_browser_authentication

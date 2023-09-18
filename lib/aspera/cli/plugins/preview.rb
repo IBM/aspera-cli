@@ -89,7 +89,7 @@ module Aspera
 
           options.parse_options!
           raise 'skip_folder shall be an Array, use @json:[...]' unless @option_skip_folders.is_a?(Array)
-          @tmp_folder = File.join(options.get_option(:temp_folder, is_type: :mandatory), "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
+          @tmp_folder = File.join(options.get_option(:temp_folder, mandatory: true), "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
         end
@@ -335,7 +335,7 @@ module Aspera
             scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
             scan_start = "#{scan_start}/" # unless scan_start.end_with?('/')
           end
-          filter_block = Aspera::Node.file_matcher(value_or_query)
+          filter_block = Aspera::Node.file_matcher(value_or_query(allowed_types: String))
           Log.log.debug{"scan: #{top_entry} : #{scan_start}".green}
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
@@ -432,7 +432,7 @@ module Aspera
               end
             end
           end
-          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, is_type: :mandatory)
+          Aspera::Preview::FileTypes.instance.use_mimemagic = options.get_option(:mimemagic, mandatory: true)
           # check tools that are anyway required for all cases
           Aspera::Preview::Utils.check_tools(@skip_types)
           case command
@@ -454,15 +454,15 @@ module Aspera
             return Main.result_status('scan finished')
           when :events, :trevents
             iteration_persistency = nil
-            if options.get_option(:once_only, is_type: :mandatory)
+            if options.get_option(:once_only, mandatory: true)
               iteration_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    [],
                 id:      IdGenerator.from_list([
                   'preview_iteration',
                   command.to_s,
-                  options.get_option(:url, is_type: :mandatory),
-                  options.get_option(:username, is_type: :mandatory)
+                  options.get_option(:url, mandatory: true),
+                  options.get_option(:username, mandatory: true)
                 ]))
             end
             # call processing method specified by command line command

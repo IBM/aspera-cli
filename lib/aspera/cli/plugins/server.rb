@@ -61,7 +61,7 @@ module Aspera
         # Read command line options
         # @return [Hash] transfer specification
         def options_to_base_transfer_spec
-          url = options.get_option(:url, is_type: :mandatory)
+          url = options.get_option(:url, mandatory: true)
           server_transfer_spec = {}
           server_uri = URI.parse(url)
           Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
@@ -94,7 +94,7 @@ module Aspera
             options.set_option(:username, Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
             Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}"}
           end
-          server_transfer_spec['remote_user'] = options.get_option(:username, is_type: :mandatory)
+          server_transfer_spec['remote_user'] = options.get_option(:username, mandatory: true)
           if !server_uri.port.nil?
             @ssh_opts[:port] = server_uri.port
             server_transfer_spec['ssh_port'] = server_uri.port

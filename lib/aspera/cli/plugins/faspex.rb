@@ -120,13 +120,13 @@ module Aspera
 
         def api_v4
           if @api_v4.nil?
-            faspex_api_base = options.get_option(:url, is_type: :mandatory)
+            faspex_api_base = options.get_option(:url, mandatory: true)
             @api_v4 = Rest.new({
               base_url: faspex_api_base + '/api',
               auth:     {
                 type:         :oauth2,
                 base_url:     faspex_api_base + '/auth/oauth2',
-                auth:         {type: :basic, username: options.get_option(:username, is_type: :mandatory), password: options.get_option(:password, is_type: :mandatory)},
+                auth:         {type: :basic, username: options.get_option(:username, mandatory: true), password: options.get_option(:password, mandatory: true)},
                 grant_method: :generic,
                 generic:      {grant_type: 'password'},
                 scope:        'admin'
@@ -137,11 +137,11 @@ module Aspera
 
         # query supports : {"startIndex":10,"count":1,"page":109,"max":2,"pmax":1}
         def mailbox_filtered_entries(stop_at_id: nil)
-          recipient_names = [options.get_option(:recipient) || options.get_option(:username, is_type: :mandatory)]
+          recipient_names = [options.get_option(:recipient) || options.get_option(:username, mandatory: true)]
           # some workgroup messages have no star in recipient name
           recipient_names.push(recipient_names.first[1..-1]) if recipient_names.first.start_with?('*')
           # mailbox is in ATOM_MAILBOXES
-          mailbox = options.get_option(:box, is_type: :mandatory)
+          mailbox = options.get_option(:box, mandatory: true)
           # parameters
           mailbox_query = options.get_option(:query)
           max_items = nil
@@ -264,7 +264,7 @@ module Aspera
                 textify: lambda {|table_data|Faspex.textify_package_list(table_data)}
               }
             when :send
-              delivery_info = options.get_option(:delivery_info, is_type: :mandatory)
+              delivery_info = options.get_option(:delivery_info, mandatory: true)
               raise CliBadArgument, 'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
               # actual parameter to faspex API
               package_create_params = {'delivery' => delivery_info}
@@ -307,15 +307,15 @@ module Aspera
               skip_ids_persistency = nil
               case link_url
               when nil # usual case: no link
-                if options.get_option(:once_only, is_type: :mandatory)
+                if options.get_option(:once_only, mandatory: true)
                   skip_ids_persistency = PersistencyActionOnce.new(
                     manager: @agents[:persistency],
                     data:    skip_ids_data,
                     id:      IdGenerator.from_list([
                       'faspex_recv',
-                      options.get_option(:url, is_type: :mandatory),
-                      options.get_option(:username, is_type: :mandatory),
-                      options.get_option(:box, is_type: :mandatory).to_s
+                      options.get_option(:url, mandatory: true),
+                      options.get_option(:username, mandatory: true),
+                      options.get_option(:box, mandatory: true).to_s
                     ]))
                 end
                 # get command line parameters
@@ -331,7 +331,7 @@ module Aspera
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
                   endpoint =
-                    case options.get_option(:box, is_type: :mandatory)
+                    case options.get_option(:box, mandatory: true)
                     when :inbox, :archive then'received'
                     when :sent then 'sent'
                     end
@@ -411,7 +411,7 @@ module Aspera
               # get id and name
               source_name = source_ids.first['name']
               # source_id=source_ids.first['id']
-              source_hash = options.get_option(:storage, is_type: :mandatory)
+              source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
               raise CliError, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name, storage|

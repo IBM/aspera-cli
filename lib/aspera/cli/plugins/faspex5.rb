@@ -65,10 +65,10 @@ module Aspera
             @faspex5_api_base_url = public_link.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             options.set_option(:auth, :link)
           end
-          @faspex5_api_base_url ||= options.get_option(:url, is_type: :mandatory).gsub(%r{/+$}, '')
+          @faspex5_api_base_url ||= options.get_option(:url, mandatory: true).gsub(%r{/+$}, '')
           @faspex5_api_auth_url = "#{@faspex5_api_base_url}/auth"
           faspex5_api_v5_url = "#{@faspex5_api_base_url}/api/v5"
-          case options.get_option(:auth, is_type: :mandatory)
+          case options.get_option(:auth, mandatory: true)
           when :link
             uri = URI.parse(public_link)
             args = URI.decode_www_form(uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
@@ -85,7 +85,7 @@ module Aspera
             # the password here is the token copied directly from browser in developer mode
             @api_v5 = Rest.new({
               base_url: faspex5_api_v5_url,
-              headers:  {'Authorization' => options.get_option(:password, is_type: :mandatory)}
+              headers:  {'Authorization' => options.get_option(:password, mandatory: true)}
             })
           when :web
             # opens a browser and ask user to auth using web
@@ -95,11 +95,11 @@ module Aspera
                 type:         :oauth2,
                 base_url:     @faspex5_api_auth_url,
                 grant_method: :web,
-                client_id:    options.get_option(:client_id, is_type: :mandatory),
-                web:          {redirect_uri: options.get_option(:redirect_uri, is_type: :mandatory)}
+                client_id:    options.get_option(:client_id, mandatory: true),
+                web:          {redirect_uri: options.get_option(:redirect_uri, mandatory: true)}
               }})
           when :jwt
-            app_client_id = options.get_option(:client_id, is_type: :mandatory)
+            app_client_id = options.get_option(:client_id, mandatory: true)
             @api_v5 = Rest.new({
               base_url: faspex5_api_v5_url,
               auth:     {
@@ -111,9 +111,9 @@ module Aspera
                   payload:         {
                     iss: app_client_id,    # issuer
                     aud: app_client_id,    # audience (this field is not clear...)
-                    sub: "user:#{options.get_option(:username, is_type: :mandatory)}" # subject is a user
+                    sub: "user:#{options.get_option(:username, mandatory: true)}" # subject is a user
                   },
-                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, is_type: :mandatory), options.get_option(:passphrase)),
+                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
                 }
               }})
@@ -325,15 +325,15 @@ module Aspera
           when :receive
             # prepare persistency if needed
             skip_ids_persistency = nil
-            if options.get_option(:once_only, is_type: :mandatory)
+            if options.get_option(:once_only, mandatory: true)
               # read ids from persistency
               skip_ids_persistency = PersistencyActionOnce.new(
                 manager: @agents[:persistency],
                 data:    [],
                 id:      IdGenerator.from_list([
                   'faspex_recv',
-                  options.get_option(:url, is_type: :mandatory),
-                  options.get_option(:username, is_type: :mandatory),
+                  options.get_option(:url, mandatory: true),
+                  options.get_option(:username, mandatory: true),
                   PACKAGE_TYPE_RECEIVED]))
             end
             # one or several packages
@@ -591,11 +591,11 @@ module Aspera
           return {
             preset_value: {
               url:           params[:instance_url],
-              username:      options.get_option(:username, is_type: :mandatory),
+              username:      options.get_option(:username, mandatory: true),
               auth:          :jwt.to_s,
               private_key:   '@file:' + params[:private_key_path],
-              client_id:     options.get_option(:client_id, is_type: :mandatory),
-              client_secret: options.get_option(:client_secret, is_type: :mandatory)
+              client_id:     options.get_option(:client_id, mandatory: true),
+              client_secret: options.get_option(:client_secret, mandatory: true)
             },
             test_args:    "#{params[:plugin_sym]} user profile show"
           }
