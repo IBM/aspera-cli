@@ -672,7 +672,7 @@ module Aspera
               raise 'error'
             end
           when :transfer
-            command = options.get_next_command(%i[list cancel show modify])
+            command = options.get_next_command(%i[list cancel show modify bandwidth_average])
             res_class_path = 'ops/transfers'
             if %i[cancel show modify].include?(command)
               one_res_id = instance_identifier
@@ -683,10 +683,10 @@ module Aspera
               # could use ? subpath: 'transfers'
               query = query_read_delete
               raise 'Query must be a Hash' unless query.nil? || query.is_a?(Hash)
-              resp = @api_node.read(res_class_path, query)
+              transfers_data = @api_node.read(res_class_path, query)[:data]
               return {
                 type:   :object_list,
-                data:   resp[:data],
+                data:   transfers_data,
                 fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
               }
             when :cancel
@@ -698,6 +698,51 @@ module Aspera
             when :modify
               resp = @api_node.update(one_res_path, options.get_next_argument('update value', type: Hash))
               return { type: :other_struct, data: resp[:data] }
+            when :bandwidth_average
+              transfers_data = @api_node.read(res_class_path, query)[:data]
+              # collect all key dates
+              bandwidth_period = {}
+              dir_info = %i[avg_kbps sessions].freeze
+              transfers_data.each do |transfer|
+                session = transfer
+                # transfer['sessions'].each do |session|
+                next if session['avg_rate_kbps'].zero?
+                bandwidth_period[session['start_time_usec']] = 0
+                bandwidth_period[session['end_time_usec']] = 0
+                # end
+              end
+              result = []
+              # all dates sorted numerically
+              all_dates = bandwidth_period.keys.sort
+              all_dates.each_with_index do |start_date, index|
+                end_date = all_dates[index + 1]
+                # do not process last one
+                break if end_date.nil?
+                # init data for this period
+                period_bandwidth = Fasp::TransferSpec::DIRECTION_ENUM_VALUES.map(&:to_sym).each_with_object({}) do |direction, h|
+                  h[direction] = dir_info.each_with_object({}) do |k2, h2|
+                    h2[k2] = 0
+                  end
+                end
+                # find all transfers that were active at this time
+                transfers_data.each do |transfer|
+                  session = transfer
+                  # transfer['sessions'].each do |session|
+                  # skip if not information for this period
+                  next if session['avg_rate_kbps'].zero?
+                  # skip if not in this period
+                  next if session['start_time_usec'] >= end_date || session['end_time_usec'] <= start_date
+                  info = period_bandwidth[transfer['start_spec']['direction'].to_sym]
+                  info[:avg_kbps] += session['avg_rate_kbps']
+                  info[:sessions] += 1
+                  # end
+                end
+                next if Fasp::TransferSpec::DIRECTION_ENUM_VALUES.map(&:to_sym).all? do |dir|
+                  period_bandwidth[dir][:sessions].zero?
+                end
+                result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
+              end
+              return { type: :object_list, data: result }
             else
               raise 'error'
             end

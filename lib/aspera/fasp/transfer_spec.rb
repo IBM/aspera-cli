@@ -17,11 +17,12 @@ module Aspera
       }.freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
-      # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128
-      Aspera::Fasp::Parameters.description.each do |k, v|
-        next unless v[:enum].is_a?(Array)
-        v[:enum].each do |enum|
-          TransferSpec.const_set("#{k.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
+      # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
+      Aspera::Fasp::Parameters.description.each do |name, description|
+        next unless description[:enum].is_a?(Array)
+        TransferSpec.const_set("#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
+        description[:enum].each do |enum|
+          TransferSpec.const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
       class << self

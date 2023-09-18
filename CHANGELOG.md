@@ -8,6 +8,7 @@
   * new: faspex5: invite external user to shared inbox
   * new: config: Command `ascp info` shows default transfer spec.
   * new: httpgw: synchronous and asynchronous upload modes
+  * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
   * change: using `aoc files` or node gen4 operations (`browse`, `delete`) on a link will follow the link only if path ends with /
