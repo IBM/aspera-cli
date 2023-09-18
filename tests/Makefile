@@ -1091,6 +1091,7 @@ $(T)conf_help: $(T).exists
 	$(EXE_NOMAN) --bash-comp
 	$(EXE_MAN) config coffee
 	$(EXE_MAN) config coffee --ui=text
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) config coffee --ui=text
 	@touch $@
 $(T)conf_open_err: $(T).exists
 	@echo $@
