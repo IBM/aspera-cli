@@ -643,10 +643,13 @@ module Aspera
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
             else
               asyncs_id = instance_identifier
-              parameters = value_or_query(mandatory: true, allowed_types: Hash)
+              parameters = nil
               if %i[start stop].include?(sync_command)
                 @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)
-                return Main.result_status('ok')
+                return Main.result_status('Done')
+              end
+              if %i[bandwidth counters files].include?(sync_command)
+                parameters = value_or_query(allowed_types: Hash, mandatory: false) || {}
               end
               return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters)[:data] }
             end
