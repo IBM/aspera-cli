@@ -5895,15 +5895,26 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb363-1"><a href
 <span id="cb363-28"><a href="#cb363-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
 <span id="cb363-29"><a href="#cb363-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
 <span id="cb363-30"><a href="#cb363-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
-<h2 data-number="12.5" id="faspex-5-send-a-package"><span
-class="header-section-number">12.5</span> Faspex 5: Send a package</h2>
-<p>The <code>value</code> option provided to command
-<code>faspex5 packages send</code> is the same as for the Faspex 5 API:
+<h2 data-number="12.5" id="faspex-5-inbox-selection"><span
+class="header-section-number">12.5</span> Faspex 5: inbox selection</h2>
+<p>By default, package operations (send, receive, list) are done on the
+user’s inbox.</p>
+<p>To select another inbox, use option <code>box</code> with one of the
+following values:</p>
+<ul>
+<li><code>inbox</code> : user’s inbox</li>
+<li><code>outbox</code> : user’s sent packages</li>
+<li>name of a shared inbox</li>
+</ul>
+<h2 data-number="12.6" id="faspex-5-send-a-package"><span
+class="header-section-number">12.6</span> Faspex 5: Send a package</h2>
+<p>The <code>Hash</code> creation parameter provided to command
+<code>faspex5 packages send</code> corresponds to the Faspex 5 API:
 <code>POST /packages</code>.</p>
-<p>The minimum is to provide the <code>title</code> and
-<code>recipients</code> fields:</p>
+<p>Required fields are <code>title</code> and <code>recipients</code>.
+Example using <code>@json:</code> format:</p>
 <div class="sourceCode" id="cb364"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb364-1"><a href="#cb364-1" aria-hidden="true" tabindex="-1"></a><span class="ex">@json:</span><span class="st">&#39;{&quot;title&quot;:&quot;some title&quot;,&quot;recipients&quot;:[{&quot;recipient_type&quot;:&quot;user&quot;,&quot;name&quot;:&quot;user@example.com&quot;}]}&#39;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb364-1"><a href="#cb364-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;some title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;recipient_type&quot;</span><span class="fu">:</span><span class="st">&quot;user&quot;</span><span class="fu">,</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;user@example.com&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <p><code>recipient_type</code> is one of (Refer to API):</p>
 <ul>
 <li>user</li>
@@ -5913,13 +5924,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb364-1"><a href
 <li>shared_inbox</li>
 </ul>
 <p><code>ascli</code> adds some convenience: The API expects the field
-<code>recipients</code> to be an Array of Hash, each with field
-<code>name</code> and optionally <code>recipient_type</code>, but it is
-also possible to provide an Array of String, with simply a recipient
-name. Then <code>ascli</code> will lookup existing contacts among all
-possible types, and if a single match is found will use it, and set the
-<code>name</code> and <code>recipient_type</code> accordingly. Else an
-exception is sent.</p>
+<code>recipients</code> to be an <code>Array</code> of
+<code>Hash</code>, each with field <code>name</code> and optionally
+<code>recipient_type</code>. It is also possible to provide an
+<code>Array</code> of <code>String</code>, with simply a recipient name.
+Then <code>ascli</code> will lookup existing contacts among all possible
+types, use it if a single match is found, and set the <code>name</code>
+and <code>recipient_type</code> accordingly. Else an exception is
+sent.</p>
 <blockquote>
 <p><strong>Note:</strong> The lookup is case insensitive and on partial
 matches.</p>
@@ -5931,15 +5943,25 @@ field: <code>recipient_types</code> with either a single value or an
 Array of values (from the list above). e.g. :</p>
 <div class="sourceCode" id="cb366"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb366-1"><a href="#cb366-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;test title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipient_types&quot;</span><span class="fu">:</span><span class="st">&quot;user&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;user1@example.com&quot;</span><span class="ot">,</span><span class="st">&quot;user2@example.com&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
-<h2 data-number="12.6" id="faspex-5-receive-a-package"><span
-class="header-section-number">12.6</span> Faspex 5: Receive a
+<h2 data-number="12.7" id="faspex-5-send-a-package-with-metadata"><span
+class="header-section-number">12.7</span> Faspex 5: Send a package with
+metadata</h2>
+<p>The interface is the one of the API (Refer to API documentation, or
+look at request in browser):</p>
+<div class="sourceCode" id="cb367"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb367-1"><a href="#cb367-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my shared inbox&quot;],&quot;metadata&quot;:{&quot;Confidential&quot;:&quot;Yes&quot;,&quot;Drop menu&quot;:&quot;Option 1&quot;}}&#39;</span> <span class="st">&#39;faux:///test1?k1&#39;</span></span></code></pre></div>
+<p>Basically, add the field <code>metadata</code>, with one key per
+metadata and the value is directly the metadata value.</p>
+<h2 data-number="12.8" id="faspex-5-receive-a-package"><span
+class="header-section-number">12.8</span> Faspex 5: Receive a
 package</h2>
-<p>On reception, option <code>box</code> (default to <code>inbox</code>)
-can be set to the same values as API accepts, or to the name of a shared
-inbox. If the value <code>ALL</code> is provided to option
-<code>box</code>, then all packages are selected.</p>
-<h2 data-number="12.7" id="faspex-5-list-packages"><span
-class="header-section-number">12.7</span> Faspex 5: List packages</h2>
+<p>The (numeric) identifier of the package t receive is given as
+argument to command <code>faspex5 packages receive</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> option <code>box</code> applies.</p>
+</blockquote>
+<h2 data-number="12.9" id="faspex-5-list-packages"><span
+class="header-section-number">12.9</span> Faspex 5: List packages</h2>
 <p>The following parameters in option <code>value</code> are
 supported:</p>
 <ul>
@@ -5954,17 +5976,10 @@ when the maximum is passed)</li>
 <li><code>limit</code> : native api parameter, number of items par api
 call, in general do not use (added by <code>ascli</code>)</li>
 </ul>
-<h2 data-number="12.8" id="faspex-5-send-a-package-with-metadata"><span
-class="header-section-number">12.8</span> Faspex 5: Send a package with
-metadata</h2>
-<p>The interface is the one of the API (Refer to API documentation, or
-look at request in browser):</p>
-<div class="sourceCode" id="cb367"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb367-1"><a href="#cb367-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my shared inbox&quot;],&quot;metadata&quot;:{&quot;Confidential&quot;:&quot;Yes&quot;,&quot;Drop menu&quot;:&quot;Option 1&quot;}}&#39;</span> <span class="st">&#39;faux:///test1?k1&#39;</span></span></code></pre></div>
-<p>Basically, add the field <code>metadata</code>, with one key per
-metadata and the value is directly the metadata value.</p>
-<h2 data-number="12.9" id="faspex-5-list-all-shared-inboxes"><span
-class="header-section-number">12.9</span> Faspex 5: List all shared
+<p>Admin only: If the value <code>ALL</code> is provided to option
+<code>box</code>, then all packages are selected.</p>
+<h2 data-number="12.10" id="faspex-5-list-all-shared-inboxes"><span
+class="header-section-number">12.10</span> Faspex 5: List all shared
 inboxes</h2>
 <div class="sourceCode" id="cb368"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb368-1"><a href="#cb368-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;all&quot;:true}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,name</span></code></pre></div>
@@ -5978,20 +5993,20 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb370-1"><a href
 <p>Other payload parameters are possible in Hash format:</p>
 <div class="sourceCode" id="cb371"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb371-1"><a href="#cb371-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span></span></code></pre></div>
-<h2 data-number="12.10" id="faspex-5-create-metadata-profile"><span
-class="header-section-number">12.10</span> Faspex 5: Create Metadata
+<h2 data-number="12.11" id="faspex-5-create-metadata-profile"><span
+class="header-section-number">12.11</span> Faspex 5: Create Metadata
 profile</h2>
 <div class="sourceCode" id="cb372"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb372-1"><a href="#cb372-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res metadata_profiles create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the profile&quot;,&quot;default&quot;:false,&quot;title&quot;:{&quot;max_length&quot;:200,&quot;illegal_chars&quot;:[]},&quot;note&quot;:{&quot;max_length&quot;:400,&quot;illegal_chars&quot;:[],&quot;enabled&quot;:false},&quot;fields&quot;:[{&quot;ordering&quot;:0,&quot;name&quot;:&quot;field1&quot;,&quot;type&quot;:&quot;text_area&quot;,&quot;require&quot;:true,&quot;illegal_chars&quot;:[],&quot;max_length&quot;:100},{&quot;ordering&quot;:1,&quot;name&quot;:&quot;fff2&quot;,&quot;type&quot;:&quot;option_list&quot;,&quot;require&quot;:false,&quot;choices&quot;:[&quot;opt1&quot;,&quot;opt2&quot;]}]}&#39;</span></span></code></pre></div>
-<h2 data-number="12.11"
+<h2 data-number="12.12"
 id="faspex-5-create-a-shared-inbox-with-specific-metadata-profile"><span
-class="header-section-number">12.11</span> Faspex 5: Create a Shared
+class="header-section-number">12.12</span> Faspex 5: Create a Shared
 inbox with specific metadata profile</h2>
 <div class="sourceCode" id="cb373"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb373-1"><a href="#cb373-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the shared inbox&quot;,&quot;metadata_profile_id&quot;:1}&#39;</span></span></code></pre></div>
-<h2 data-number="12.12"
+<h2 data-number="12.13"
 id="faspex-5-list-content-in-shared-folder-and-send-package-from-remote-source"><span
-class="header-section-number">12.12</span> Faspex 5: List content in
+class="header-section-number">12.13</span> Faspex 5: List content in
 Shared folder and send package from remote source</h2>
 <div class="sourceCode" id="cb374"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb374-1"><a href="#cb374-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders list</span></code></pre></div>
@@ -6007,12 +6022,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb376-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb377-1"><a href="#cb377-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;hello&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;_recipient_here_&quot;}]}&#39;</span> <span class="at">--shared-folder</span><span class="op">=</span>%name:partages /folder/file</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> The shared folder can be identified by its
-numerical <code>id</code> using percent selector:
+numerical <code>id</code> or by name using percent selector:
 <code>%&lt;field&gt;:&lt;value&gt;</code>.
 e.g. <code>--shared-folder=3</code></p>
 </blockquote>
-<h2 data-number="12.13" id="faspex-5-receive-all-packages-cargo"><span
-class="header-section-number">12.13</span> Faspex 5: receive all
+<h2 data-number="12.14" id="faspex-5-receive-all-packages-cargo"><span
+class="header-section-number">12.14</span> Faspex 5: receive all
 packages (cargo)</h2>
 <p>To receive all packages, only once, through persistency of already
 received packages:</p>
@@ -6022,9 +6037,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb378-1"><a href
 <code>ALL</code> is used, only newer packages are downloaded:</p>
 <div class="sourceCode" id="cb379"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb379-1"><a href="#cb379-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span></code></pre></div>
-<h2 data-number="12.14"
+<h2 data-number="12.15"
 id="faspex-5-faspex-4-style-postprocessing"><span
-class="header-section-number">12.14</span> Faspex 5: Faspex 4-style
+class="header-section-number">12.15</span> Faspex 5: Faspex 4-style
 postprocessing</h2>
 <p><code>ascli</code> provides command <code>postprocessing</code> in
 plugin <code>faspex5</code> to emulate Faspex 4 postprocessing. It

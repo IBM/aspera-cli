@@ -4278,14 +4278,25 @@ One can conveniently use the JSON format with prefix `@json:`.
 <%=include_commands_for_plugin('faspex5')%>
 ```
 
+### Faspex 5: inbox selection
+
+By default, package operations (send, receive, list) are done on the user's inbox.
+
+To select another inbox, use option `box` with one of the following values:
+
+- `inbox` : user's inbox
+- `outbox` : user's sent packages
+- name of a shared inbox
+
 ### Faspex 5: Send a package
 
-The `value` option provided to command `faspex5 packages send` is the same as for the Faspex 5 API: `POST /packages`.
+The `Hash` creation parameter provided to command `faspex5 packages send` corresponds to the Faspex 5 API: `POST /packages`.
 
-The minimum is to provide the `title` and `recipients` fields:
+Required fields are `title` and `recipients`.
+Example using `@json:` format:
 
-```bash
-@json:'{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}'
+```json
+{"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}
 ```
 
 `recipient_type` is one of (Refer to API):
@@ -4296,8 +4307,10 @@ The minimum is to provide the `title` and `recipients` fields:
 - distribution_list
 - shared_inbox
 
-<%=tool%> adds some convenience: The API expects the field `recipients` to be an Array of Hash, each with field `name` and optionally `recipient_type`, but it is also possible to provide an Array of String, with simply a recipient name.
-Then <%=tool%> will lookup existing contacts among all possible types, and if a single match is found will use it, and set the `name` and `recipient_type` accordingly. Else an exception is sent.
+<%=tool%> adds some convenience: The API expects the field `recipients` to be an `Array` of `Hash`, each with field `name` and optionally `recipient_type`.
+It is also possible to provide an `Array` of `String`, with simply a recipient name.
+Then <%=tool%> will lookup existing contacts among all possible types, use it if a single match is found, and set the `name` and `recipient_type` accordingly.
+Else an exception is sent.
 
 > **Note:** The lookup is case insensitive and on partial matches.
 
@@ -4311,10 +4324,21 @@ If the lookup needs to be only on certain types, you can specify the field: `rec
 {"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
 ```
 
+### Faspex 5:  Send a package with metadata
+
+The interface is the one of the API (Refer to API documentation, or look at request in browser):
+
+```bash
+<%=cmd%> faspex5 packages send @json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+```
+
+Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
+
 ### Faspex 5: Receive a package
 
-On reception, option `box` (default to `inbox`) can be set to the same values as API accepts, or to the name of a shared inbox.
-If the value `ALL` is provided to option `box`, then all packages are selected.
+The (numeric) identifier of the package t receive is given as argument to command `faspex5 packages receive`.
+
+> **Note:** option `box` applies.
 
 ### Faspex 5: List packages
 
@@ -4326,15 +4350,7 @@ The following parameters in option `value` are supported:
 - `offset` : native api parameter, in general do not use (added by <%=tool%>)
 - `limit` : native api parameter, number of items par api call, in general do not use (added by <%=tool%>)
 
-### Faspex 5:  Send a package with metadata
-
-The interface is the one of the API (Refer to API documentation, or look at request in browser):
-
-```bash
-<%=cmd%> faspex5 packages send @json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
-```
-
-Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
+Admin only: If the value `ALL` is provided to option `box`, then all packages are selected.
 
 ### Faspex 5: List all shared inboxes
 
@@ -4394,7 +4410,7 @@ Other payload parameters are possible in Hash format:
 <%=cmd%> faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_recipient_here_"}]}' --shared-folder=%name:partages /folder/file
 ```
 
-> **Note:** The shared folder can be identified by its numerical `id` using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
+> **Note:** The shared folder can be identified by its numerical `id` or by name using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
 ### Faspex 5: receive all packages (cargo)
 

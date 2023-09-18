@@ -239,6 +239,17 @@ module Aspera
             path: box_to_prefix(options.get_option(:box)))
         end
 
+        def add_box_type_for_receive(params)
+          box = options.get_option(:box)
+          case box
+          when 'inbox' then params[:type] = PACKAGE_TYPE_RECEIVED
+          when 'outbox' then params[:type] = 'sent'
+          else # shared inbox
+            params[:type] = PACKAGE_TYPE_RECEIVED
+            params[:recipient_workgroup_id] = lookup_entity_by_field(type: 'shared_inboxes', value: box)['id']
+          end
+        end
+
         def package_action
           command = options.get_next_command(%i[list show browse status delete send receive])
           case command
@@ -354,12 +365,14 @@ module Aspera
               rescue Aspera::Cli::CliBadArgument
                 # paths is optional
               end
+              download_params = {transfer_type: TRANSFER_CONNECT}
+              add_box_type_for_receive(download_params)
               # TODO: allow from sent as well ?
               transfer_spec = @api_v5.call(
                 operation:   'POST',
                 subpath:     "packages/#{pkg_id}/transfer_spec/download",
                 headers:     {'Accept' => 'application/json'},
-                url_params:  {transfer_type: TRANSFER_CONNECT, type: PACKAGE_TYPE_RECEIVED},
+                url_params:  download_params,
                 json_params: param_file_list
               )[:data]
               # delete flag for Connect Client
