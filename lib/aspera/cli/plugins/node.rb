@@ -222,7 +222,7 @@ module Aspera
           when :search
             search_root = get_next_arg_add_prefix(prefix_path, 'search root')
             parameters = {'path' => search_root}
-            other_options = value_or_query
+            other_options = value_or_query(allowed_types: Hash)
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search', parameters)
             result = { type: :object_list, data: resp[:data]['items']}
@@ -413,7 +413,7 @@ module Aspera
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
-            test_block = Aspera::Node.file_matcher(value_or_query)
+            test_block = Aspera::Node.file_matcher(value_or_query(allowed_types: String))
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
             containing_folder_path = options.get_next_argument('path').split(Aspera::Node::PATH_SEPARATOR)
@@ -589,7 +589,7 @@ module Aspera
             # filename str
             # skip int
             # status int
-            filter = value_or_query
+            filter = value_or_query(allowed_types: Hash)
             post_data.merge!(filter) unless filter.nil?
             resp = @api_node.create('async/files', post_data)[:data]
             data = resp['sync_files']
@@ -643,7 +643,7 @@ module Aspera
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
             else
               asyncs_id = instance_identifier
-              parameters = value_or_query
+              parameters = value_or_query(mandatory: true, allowed_types: Hash)
               if %i[start stop].include?(sync_command)
                 @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)
                 return Main.result_status('ok')
@@ -784,7 +784,7 @@ module Aspera
             when :show
               return { type: :single_object, data: @api_node.read(one_res_path)[:data]}
             when :modify
-              @api_node.update(one_res_path, value_or_query)
+              @api_node.update(one_res_path, value_or_query(mandatory: true, allowed_types: Hash))
               return Main.result_status("#{one_res_id} updated")
             when :delete
               @api_node.delete(one_res_path)

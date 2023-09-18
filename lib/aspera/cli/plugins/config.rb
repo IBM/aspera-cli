@@ -875,7 +875,7 @@ module Aspera
             # allow user to tell the preset name
             params[:preset_name] = options.get_option(:id)
             # allow user to specify type of application (symbol)
-            identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query)
+            identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query(allowed_types: String))
             Log.log.debug{"Detected: #{identification}"}
             formatter.display_status("Detected: #{identification[:name]} at #{identification[:url]}".bold)
             # we detected application (not set by user)

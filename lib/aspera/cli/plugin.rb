@@ -196,9 +196,9 @@ module Aspera
       end
 
       # TODO: when deprecation of `value` is completed: remove this method, replace with options.get_option(:query)
-      def value_or_query(allowed_types: nil)
-        value = options.get_option(:value, allowed_types: allowed_types)
-        value = options.get_option(:query, allowed_types: allowed_types) if value.nil?
+      def value_or_query(mandatory: false, allowed_types: nil)
+        value = options.get_option(:value, mandatory: mandatory, allowed_types: allowed_types)
+        value = options.get_option(:query, mandatory: mandatory, allowed_types: allowed_types) if value.nil?
         return value
       end
 

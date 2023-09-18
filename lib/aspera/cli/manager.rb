@@ -234,7 +234,8 @@ module Aspera
             set_option(option_symbol, result, 'interactive')
           end
         end
-        raise "option #{option_symbol} is #{result.class} but must be one of #{allowed_types}" unless allowed_types.nil? || allowed_types.any?{|t|result.is_a?(t)}
+        raise "option #{option_symbol} is #{result.class} but must be one of #{allowed_types}" unless \
+          !mandatory || allowed_types.nil? || allowed_types.any? { |t|result.is_a?(t)}
         return result
       end
 
