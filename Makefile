@@ -96,20 +96,19 @@ $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
-dockerfilerel:
+dockerfile_release:
 	erb -T 2 \
 		arg_gem=$(GEMNAME):$(GEMVERS) \
 		arg_sdk=$(LOCAL_SDK_FILE) \
 		Dockerfile.tmpl.erb > Dockerfile
-docker: dockerfilerel $(LOCAL_SDK_FILE)
-	docker build --squash --tag $(DOCKER_TAG_VERSION) .
-	docker tag $(DOCKER_TAG_VERSION) $(DOCKER_TAG_LATEST)
-dockerfilebeta:
+docker: dockerfile_release $(LOCAL_SDK_FILE)
+	docker build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
+dockerfile_beta:
 	erb -T 2 \
 		arg_gem=$(PATH_GEMFILE) \
 		arg_sdk=$(LOCAL_SDK_FILE) \
 		Dockerfile.tmpl.erb > Dockerfile
-dockerbeta: dockerfilebeta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
+dockerbeta: dockerfile_beta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
 	docker build --squash --tag $(DOCKER_TAG_VERSION) .
 dockertest:
 	docker run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h

@@ -1,39 +1,44 @@
-# Embedded Ruby template
-# arg: arg_gem: specify a gemfile or a gem version
-# arg: arg_sdk: specify a sdk file or empty (download from default url)
-# Based on latest stable ruby : https://hub.docker.com/_/ruby
-FROM ruby:latest
+<%# Embedded Ruby template -%>
+<%# arg: arg_gem: specify a gemfile or a gem version -%>
+<%# arg: arg_sdk: specify a sdk file or empty (download from default url) -%>
+<%# Review this version periodically from : https://hub.docker.com/_/ruby -%>
+FROM ruby:3.2.2
 <% if arg_gem.end_with?('.gem') %>
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .
 # if a gem file was provided, once copied in container: use the basename only
 <% arg_gem=File.basename(arg_gem) %>
 <% end %>
-# Install aspera-cli gem (beta or release), optional gems and other packages
-RUN \
-  gem install grpc mimemagic rmagick <%=arg_gem%> && \
-  useradd -m -u 1000 -s /bin/bash cliuser && \
-  rm -f <%=arg_gem%> && \
-  apt-get update && \
-  apt-get install -y imagemagick optipng && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
-# rootless execution
-USER cliuser
-# The default dir when starting the docker container.
-WORKDIR /home/cliuser
-# set SDK location in container, must be outside /home/cliuser/.aspera/ascli which will be a volume
-ENV ASCLI_SDK_FOLDER=/home/cliuser/.aspera/sdk
+# install globally, does not need to be in user's home, must be outside /home/cliuser/.aspera/ascli which will be a volume
+ARG sdk_install_dir=/aspera_sdk
+# set SDK location in container
+ENV ASCLI_SDK_FOLDER=$sdk_install_dir
 <% unless arg_sdk.empty? %>
 # SDK file is available locally, then copy it
 COPY <%=arg_sdk%> .
 # if a sdk file was provided, once copied in container: use the basename only with file url
 <% arg_sdk='--sdk-url=file:///'+File.basename(arg_sdk) %>
 <% end %>
-# Install SDK, create key files and check that ascp works
+# Install aspera-cli gem (beta or release), optional gems and other packages
 RUN \
+  apt-get update && \
+  apt-get install -y imagemagick optipng && \
+  apt-get clean && \
+  rm -fr /var/lib/apt/lists/* && \
+  gem install grpc mimemagic rmagick <%=arg_gem%> && \
+  useradd -m -u 1000 -s /bin/bash cliuser && \
+  mkdir -p /home/cliuser/.aspera/ascli && \
+  chown -R cliuser: /home/cliuser && \
+  rm -f <%=arg_gem%> && \
+  mkdir -p $sdk_install_dir && \
+  chmod 755 $sdk_install_dir && \
   ascli conf ascp install <%=arg_sdk%> && \
   rm -f sdk.zip && \
   ascli conf ascp info
+# rootless execution
+USER cliuser
+# The default dir when starting the docker container.
+WORKDIR /home/cliuser
+# Install SDK, create key files and check that ascp works
 ENTRYPOINT ["ascli"]
 CMD ["help"]
