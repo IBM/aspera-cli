@@ -48,12 +48,18 @@ module Aspera
       end
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
+      # @param description [String] description of the identifier
       # @param block [Proc] block to search for identifier based on attribute value
+      # @return [String] identifier
       def instance_identifier(description: 'identifier', &block)
         res_id = options.get_option(:id)
         res_id = options.get_next_argument(description) if res_id.nil?
-        if block && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
-          res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
+        if (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
+          if block
+            res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
+          else
+            raise CliBadArgument, "Percent syntax for #{description} not supported in this context"
+          end
         end
         return res_id
       end
