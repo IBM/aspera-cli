@@ -103,10 +103,6 @@ module Aspera
             ts.key?('EX_file_pair_list')
         end
 
-        def ts_to_env_args(transfer_spec, wss:, ascp_args:)
-          return Parameters.new(transfer_spec, wss: wss, ascp_args: ascp_args).ascp_args
-        end
-
         # temp file list files are created here
         def file_list_folder=(v)
           @file_list_folder = v
@@ -120,19 +116,19 @@ module Aspera
       end # self
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
-      def initialize(job_spec, wss:, ascp_args:)
+      def initialize(job_spec, options)
+        raise 'Internal: missing or extra keys' unless options.keys.sort.eql?(%i[ascp_args keep_src_dirs wss])
         @job_spec = job_spec
-        @opt_wss = wss
-        @opt_args = ascp_args
-        Log.log.debug{"agent options: #{@opt_wss} #{@opt_args}"}
-        raise 'ascp args must be an Array' unless @opt_args.is_a?(Array)
-        raise 'ascp args must be an Array of String' if @opt_args.any?{|i|!i.is_a?(String)}
+        @options = options
+        Log.log.debug{"agent options: #{@options[:wss]} #{@options[:ascp_args]}"}
+        raise 'ascp args must be an Array' unless @options[:ascp_args].is_a?(Array)
+        raise 'ascp args must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
       def process_file_list
         # is the file list provided through EX_ parameters?
-        ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @opt_args)
+        ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @options[:ascp_args])
         # set if paths is mandatory in ts
         @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided
         # get paths in transfer spec (after setting if it is mandatory)
@@ -154,12 +150,12 @@ module Aspera
               Log.log.debug('placing source file list on command line (no file list file)')
               @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
             else
+              raise "All elements of paths must have a 'source' key" unless ts_paths_array.all?{|i|i.key?('source')}
               # safer option: generate a file list file if there is storage defined for it
-              # if there is destination in paths, then use file-pair-list
-              # TODO: well, we test only the first one, but anyway it shall be consistent
-              if ts_paths_array.first.key?('destination')
+              # if there is one destination in paths, then use file-pair-list
+              if ts_paths_array.any?{|i|i.key?('destination')} || @options[:keep_src_dirs]
                 option = '--file-pair-list'
-                lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination']); }
+                lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination'] || e['source']); }
               else
                 option = '--file-list'
                 lines = ts_paths_array.map{|i|i['source']}
@@ -194,7 +190,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # use web socket session initiation ?
-        if @builder.read_param('wss_enabled') && (@opt_wss || !@job_spec.key?('fasp_port'))
+        if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
@@ -226,7 +222,7 @@ module Aspera
         process_file_list
         # optional args, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
-        @builder.add_command_line_options(@opt_args)
+        @builder.add_command_line_options(@options[:ascp_args])
         # process destination folder
         destination_folder = @builder.read_param('destination_root') || '/'
         # ascp4 does not support base64 encoding of destination

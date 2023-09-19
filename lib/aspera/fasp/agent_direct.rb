@@ -25,7 +25,8 @@ module Aspera
         multi_incr_udp:    true,
         resume:            {},
         ascp_args:         [],
-        quiet:             true # by default no interactive progress bar
+        quiet:             true, # by default no native progress bar
+        keep_src_dirs:     false
       }.freeze
       private_constant :DEFAULT_OPTIONS
 
@@ -82,7 +83,7 @@ module Aspera
         end
 
         # compute known args
-        env_args = Parameters.ts_to_env_args(transfer_spec, wss: @options[:wss], ascp_args: @options[:ascp_args])
+        env_args =  Parameters.new(transfer_spec, %i[ascp_args keep_src_dirs wss].each_with_object({}){|k, r| r[k] = @options[k]}).ascp_args
 
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(transfer_spec['http_fallback'])
