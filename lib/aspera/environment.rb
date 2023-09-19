@@ -84,12 +84,14 @@ module Aspera
       end
 
       # value is provided in block
-      def write_file_restricted(path, force: false)
+      def write_file_restricted(path, force: false, mode: nil)
         raise 'coding error, missing content block' unless block_given?
         if force || !File.exist?(path)
-          File.unlink(path) rescue nil # Windows may give error
+          # Windows may give error
+          File.unlink(path) rescue nil
+          # content provided by block
           File.write(path, yield)
-          restrict_file_access(path)
+          restrict_file_access(path, mode: mode)
         end
         return path
       end

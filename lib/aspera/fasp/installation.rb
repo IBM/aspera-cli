@@ -128,6 +128,10 @@ module Aspera
       # all ascp files (in SDK)
       FILES = %i[ascp ascp4 ssh_bypass_dsa_privkey ssh_bypass_rsa_privkey aspera_license aspera_conf fallback_certificate fallback_cert_privkey].freeze
 
+      def check_or_create_sdk_file(filename, force: false, &block)
+        return Environment.write_file_restricted(File.join(sdk_folder, filename), force: force, mode: 0o644, &block)
+      end
+
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independent)
       def path(k)
@@ -140,15 +144,15 @@ module Aspera
         when :transferd
           file = transferd_filepath
         when :ssh_bypass_dsa_privkey
-          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_dsa.pem')) {get_key('dsa', 1)}
+          file = check_or_create_sdk_file('aspera_bypass_dsa.pem') {get_key('dsa', 1)}
         when :ssh_bypass_rsa_privkey
-          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera_bypass_rsa.pem')) {get_key('rsa', 2)}
+          file = check_or_create_sdk_file('aspera_bypass_rsa.pem') {get_key('rsa', 2)}
         when :aspera_license
-          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera-license')) do
+          file = check_or_create_sdk_file('aspera-license') do
             Zlib::Inflate.inflate(DataRepository.instance.data(6))
           end
         when :aspera_conf
-          file = Environment.write_file_restricted(File.join(sdk_folder, 'aspera.conf')) {DEFAULT_ASPERA_CONF}
+          file = check_or_create_sdk_file('aspera.conf') {DEFAULT_ASPERA_CONF}
         when :fallback_certificate, :fallback_cert_privkey
           file_key = File.join(sdk_folder, 'aspera_fallback_cert_private_key.pem')
           file_cert = File.join(sdk_folder, 'aspera_fallback_cert.pem')
@@ -164,8 +168,8 @@ module Aspera
             cert.serial = 0x0
             cert.version = 2
             cert.sign(private_key, OpenSSL::Digest.new('SHA1'))
-            Environment.write_file_restricted(file_key, force: true) {private_key.to_pem}
-            Environment.write_file_restricted(file_cert, force: true) {cert.to_pem}
+            check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true) {private_key.to_pem}
+            check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) {cert.to_pem}
           end
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else
