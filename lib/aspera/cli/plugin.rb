@@ -10,14 +10,15 @@ module Aspera
       GLOBAL_OPS = %i[create list].freeze
       # operations with id
       INSTANCE_OPS = %i[modify delete show].freeze
+      # all standard operations
       ALL_OPS = [GLOBAL_OPS, INSTANCE_OPS].flatten.freeze
-      # max number of items for list command
+      # special query parameter: max number of items for list command
       MAX_ITEMS = 'max'
-      # max number of pages for list command
+      # special query parameter: max number of pages for list command
       MAX_PAGES = 'pmax'
       # used when all resources are selected
       VAL_ALL = 'ALL'
-      # look for this name to find where supported
+      # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 
       # global for inherited classes
@@ -28,7 +29,7 @@ module Aspera
         # env.each_key {|k| raise "wrong agent key #{k}" unless AGENTS.include?(k)}
         @agents = env
         # check presence in descendant of mandatory method and constant
-        raise StandardError, "missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
+        raise StandardError, "Missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
         raise StandardError, 'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
@@ -39,7 +40,7 @@ module Aspera
         options.declare(
           :value, 'Value for create, update, list filter', types: Hash,
           deprecation: 'Use positional value for create/modify or option: query for list/delete')
-        options.declare(:property, 'Name of property to set')
+        options.declare(:property, 'Name of property to set (modify operation)')
         options.declare(:id, 'Resource identifier', deprecation: "Use identifier after verb (#{INSTANCE_OPS.join(',')})")
         options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
         options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
