@@ -55,7 +55,8 @@ module Aspera
       def instance_identifier(description: 'identifier', &block)
         res_id = options.get_option(:id)
         res_id = options.get_next_argument(description) if res_id.nil?
-        if (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
+        # cab be an Array
+        if res_id.is_a?(String) && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
           if block
             res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
           else
