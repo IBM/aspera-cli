@@ -192,9 +192,9 @@ The following sections provide information on the various installation methods.
 
 An internet connection is required for the installation. If you don't have internet for the installation, refer to section [Installation without internet access](#offline_install).
 
-### Docker container
+### Container
 
-The image is: [<%=containerimage%>](https://hub.docker.com/r/<%=containerimage%>).
+The container image is: [<%=containerimage%>](https://hub.docker.com/r/<%=containerimage%>).
 The container contains: Ruby, <%=tool%> and the Aspera Transfer SDK.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
@@ -202,7 +202,7 @@ To use the container, ensure that you have `podman` (or `docker`) installed.
 podman --version
 ```
 
-#### Container quick start
+#### Container: quick start
 
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
@@ -225,13 +225,13 @@ That is simple, but there are limitations:
 - Any generated file in the container will be lost on container (shell) exit. Including configuration files and downloaded files.
 - No possibility to upload files located on the host system
 
-#### Details on the container
+#### Container: Details
 
-The container image is built from this [Dockerfile](Dockerfile): the entry point is <%=tool%> and the default command is `help`.
+The container image is built from this [Dockerfile](Dockerfile.tmpl.erb): the entry point is <%=tool%> and the default command is `help`.
 
-If you want to run the image with a shell, execute with option: `--entrypoint bash`, and give argument `-l` (bash login to override the `help` default argument)
+If you want to run the image with a shell, execute with option: `--entrypoint bash`, and give argument `-l` (`bash` login option to override the `help` default argument)
 
-The container can also be execute for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
+The container can also be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
 podman run --rm --tty --interactive <%=containerimage%>:latest
@@ -254,7 +254,7 @@ Then, you can execute the container like a local command:
 ```
 
 In order to keep persistency of configuration on the host,
-you should mount your user's config folder to the container.
+you should specify your user's config folder as a volume for the container.
 To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/<%=cmd%>`).
 Add options:
 
@@ -271,8 +271,8 @@ you can change the entry point, add option:
 --entrypoint bash
 ```
 
-You may also probably want that files downloaded in the container are in fact placed on the host.
-In this case you need also to mount the shared transfer folder:
+You may also probably want that files downloaded in the container are directed to the host.
+In this case you need also to specify the shared transfer folder as a volume:
 
 ```bash
 --volume $HOME/xferdir:/xferfiles
@@ -294,7 +294,7 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 <%=cmd%>sh
 ```
 
-#### Sample container script
+#### Container: Sample start script
 
 A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
 
@@ -335,7 +335,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 >
 > **Note:** Do not use too many volumes, as the AUFS limits the number.
 
-#### Offline installation of the container
+#### Container: Offline installation
 
 - First create the image archive:
 
@@ -352,8 +352,8 @@ podman load -i <%=cmd%>_image_latest.tar.gz
 
 #### Container: `aspera.conf`
 
-`ascp`'s configuration file `aspera.conf` is located in the container at: `/home/cliuser/.aspera/sdk/aspera.conf` (see Dockerfile).
-As the container is immutable, it is not possible to modify this file.
+`ascp`'s configuration file `aspera.conf` is located in the container at: `/aspera_sdk/aspera.conf` (see Dockerfile).
+As the container is immutable, it is not recommended to modify this file.
 If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
 
 ```bash
@@ -364,6 +364,34 @@ Then, tell `ascp` to use that other conf file:
 
 ```bash
 --transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
+```
+
+#### Container: Singularity
+
+Singularity is another type of use of container.
+
+On Linux install:
+
+```console
+dnf install singularity-ce
+```
+
+Build an image like this:
+
+```bash
+sudo singularity build <%=cmd%>.sif docker://<%=containerimage%>
+```
+
+The use like this:
+
+```bash
+singularity run <%=cmd%>.sif
+```
+
+Or get a shell with access to the tool like this:
+
+```bash
+singularity shell <%=cmd%>.sif
 ```
 
 ### <a id="ruby"></a>Ruby
