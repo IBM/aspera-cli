@@ -2454,6 +2454,50 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 
 > **Note:** There are some specific rules to specify a file list when using **Aspera on Cloud**, refer to the AoC plugin section.
 
+#### Source directory structure on destination
+
+This section is not specific to `ascli`, it is `ascp` behaviour.
+
+The transfer destination is normally expected to designate a destination folder.
+
+But there is one exception: The destination specifies the new item name when the following are met:
+
+- there is a single source item (file or folder)
+- transfer spec `create_dir` is not set to `true` (`ascp` option `-d` not provided)
+- destination is not an existing folder
+- the `dirname` of destination is an existing folder
+
+For this reason it is recommended to set `create_dir` to `true` for consistent behaviour between single and multiple items transfer, this is the default in <%=tool%>.
+
+If a simple source file list is provided (no `destination` in `paths`, i.e. no `file_pair_list` provided), the destination folder is used as destination folder for each source file, and source file folder names are not preserved.
+
+The inner structure of source items that are folder is preserved on destination.
+
+A leading `/` on destination is ignored (relative to docroot) unless docroot is not set (relative to home).
+
+In the following table source folder `d3` contains 2 files: `f1` and `d4/f2`.
+
+| Source files | Destination | Folders on Dest.  |`create_dir`| Destination Files           |
+|--------------|-------------|-------------------|------------|-----------------------------|
+| f1           | d/f         | -                 | false      | Error: `d` does not exist.  |
+| f1           | d/f         | d                 | false      | d/f    (renamed)            |
+| f1           | d/f/.       | d                 | false      | d/f    (renamed)            |
+| f1           | d/f         | d/f               | false      | d/f/f1                      |
+| f1 f2        | d           | d                 | false      | d/f1 d/f2                   |
+| d3           | d           | -                 | false      | d/f1 d/f2  (renamed)        |
+| f1           | d           | -                 | true       | d/f1                        |
+| f1 f2        | d           | -                 | true       | d/f1 d/f2                   |
+| d1/f1 d2/f2  | d           | -                 | true       | d/f1 d/f2                   |
+| d3           | d           | -                 | true       | d/d3/f1 d/d3/d4/f2          |
+
+If a file par list is provided then it is possible to rename or specify a different destination folder for each source (relative to the destination).
+
+If transfer spec has a `src_base`, it has the side effect that the simple source file list is considered as a file pair list, and so the lower structure of source folders is preserved on destination.
+
+| Source files      | Destination |`src_base`| Destination Files           |
+|-------------------|-------------|----------|-----------------------------|
+| d1/d2/f2 d1/d3/f3 | d           | d1       | d/d2/f2 d/d3/f3             |
+
 #### <a id="multisession"></a>Support of multi-session
 
 Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on `direct` and `node` agents, not yet on connect.

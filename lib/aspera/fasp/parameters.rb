@@ -19,6 +19,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -117,10 +118,11 @@ module Aspera
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(job_spec, options)
-        raise 'Internal: missing or extra keys' unless options.keys.sort.eql?(%i[ascp_args keep_src_dirs wss])
         @job_spec = job_spec
-        @options = options
-        Log.log.debug{"agent options: #{@options[:wss]} #{@options[:ascp_args]}"}
+        # check necessary options
+        raise 'Internal: missing options' unless (SUPPORTED_OPTIONS - options.keys).empty?
+        @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
+        Log.dump(:options, @options)
         raise 'ascp args must be an Array' unless @options[:ascp_args].is_a?(Array)
         raise 'ascp args must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
@@ -151,9 +153,11 @@ module Aspera
               @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
             else
               raise "All elements of paths must have a 'source' key" unless ts_paths_array.all?{|i|i.key?('source')}
+              is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
+              raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
               # safer option: generate a file list file if there is storage defined for it
               # if there is one destination in paths, then use file-pair-list
-              if ts_paths_array.any?{|i|i.key?('destination')} || @options[:keep_src_dirs]
+              if is_pair_list
                 option = '--file-pair-list'
                 lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination'] || e['source']); }
               else

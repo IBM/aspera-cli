@@ -11,7 +11,7 @@
   * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
   * fix: option `ts`: deep add and remove of keys. (#117)
   * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
-  * fix: direct: if transfer spec contains "paths" and elements with "destination", but first element has only "source", then destinations were ignored. new direct agent option `keep_src_dirs`
+  * fix: direct: if transfer spec contains "paths" and elements with "destination", but first element has only "source", then destinations were ignored. Now "destination" all or none is enforced.
   * change: using `aoc files` or node gen4 operations (`browse`, `delete`) on a link will follow the link only if path ends with /
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
   * change: aoc: better handling of shared links

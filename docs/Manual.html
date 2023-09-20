@@ -3562,8 +3562,160 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb199-1"><a href
 file list when using <strong>Aspera on Cloud</strong>, refer to the AoC
 plugin section.</p>
 </blockquote>
-<h3 data-number="7.25.3" id="support-of-multi-session"><span
-class="header-section-number">7.25.3</span>
+<h3 data-number="7.25.3"
+id="source-directory-structure-on-destination"><span
+class="header-section-number">7.25.3</span> Source directory structure
+on destination</h3>
+<p>This section is not specific to <code>ascli</code>, it is
+<code>ascp</code> behaviour.</p>
+<p>The transfer destination is normally expected to designate a
+destination folder.</p>
+<p>But there is one exception: The destination specifies the new item
+name when the following are met:</p>
+<ul>
+<li>there is a single source item (file or folder)</li>
+<li>transfer spec <code>create_dir</code> is not set to
+<code>true</code> (<code>ascp</code> option <code>-d</code> not
+provided)</li>
+<li>destination is not an existing folder</li>
+<li>the <code>dirname</code> of destination is an existing folder</li>
+</ul>
+<p>For this reason it is recommended to set <code>create_dir</code> to
+<code>true</code> for consistent behaviour between single and multiple
+items transfer, this is the default in <code>ascli</code>.</p>
+<p>If a simple source file list is provided (no <code>destination</code>
+in <code>paths</code>, i.e. no <code>file_pair_list</code> provided),
+the destination folder is used as destination folder for each source
+file, and source file folder names are not preserved.</p>
+<p>The inner structure of source items that are folder is preserved on
+destination.</p>
+<p>A leading <code>/</code> on destination is ignored (relative to
+docroot) unless docroot is not set (relative to home).</p>
+<p>In the following table source folder <code>d3</code> contains 2
+files: <code>f1</code> and <code>d4/f2</code>.</p>
+<table>
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 14%" />
+<col style="width: 21%" />
+<col style="width: 13%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source files</th>
+<th>Destination</th>
+<th>Folders on Dest.</th>
+<th><code>create_dir</code></th>
+<th>Destination Files</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>f1</td>
+<td>d/f</td>
+<td>-</td>
+<td>false</td>
+<td>Error: <code>d</code> does not exist.</td>
+</tr>
+<tr class="even">
+<td>f1</td>
+<td>d/f</td>
+<td>d</td>
+<td>false</td>
+<td>d/f (renamed)</td>
+</tr>
+<tr class="odd">
+<td>f1</td>
+<td>d/f/.</td>
+<td>d</td>
+<td>false</td>
+<td>d/f (renamed)</td>
+</tr>
+<tr class="even">
+<td>f1</td>
+<td>d/f</td>
+<td>d/f</td>
+<td>false</td>
+<td>d/f/f1</td>
+</tr>
+<tr class="odd">
+<td>f1 f2</td>
+<td>d</td>
+<td>d</td>
+<td>false</td>
+<td>d/f1 d/f2</td>
+</tr>
+<tr class="even">
+<td>d3</td>
+<td>d</td>
+<td>-</td>
+<td>false</td>
+<td>d/f1 d/f2 (renamed)</td>
+</tr>
+<tr class="odd">
+<td>f1</td>
+<td>d</td>
+<td>-</td>
+<td>true</td>
+<td>d/f1</td>
+</tr>
+<tr class="even">
+<td>f1 f2</td>
+<td>d</td>
+<td>-</td>
+<td>true</td>
+<td>d/f1 d/f2</td>
+</tr>
+<tr class="odd">
+<td>d1/f1 d2/f2</td>
+<td>d</td>
+<td>-</td>
+<td>true</td>
+<td>d/f1 d/f2</td>
+</tr>
+<tr class="even">
+<td>d3</td>
+<td>d</td>
+<td>-</td>
+<td>true</td>
+<td>d/d3/f1 d/d3/d4/f2</td>
+</tr>
+</tbody>
+</table>
+<p>If a file par list is provided then it is possible to rename or
+specify a different destination folder for each source (relative to the
+destination).</p>
+<p>If transfer spec has a <code>src_base</code>, it has the side effect
+that the simple source file list is considered as a file pair list, and
+so the lower structure of source folders is preserved on
+destination.</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 18%" />
+<col style="width: 14%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source files</th>
+<th>Destination</th>
+<th><code>src_base</code></th>
+<th>Destination Files</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>d1/d2/f2 d1/d3/f3</td>
+<td>d</td>
+<td>d1</td>
+<td>d/d2/f2 d/d3/f3</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="7.25.4" id="support-of-multi-session"><span
+class="header-section-number">7.25.4</span>
 <a id="multisession"></a>Support of multi-session</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
@@ -3587,8 +3739,8 @@ preferred.</p>
 Multi-session using <code>direct</code> agent.</p>
 <p>When multi-session is used, one separate UDP port is used per session
 (refer to <code>ascp</code> manual page).</p>
-<h3 data-number="7.25.4" id="content-protection"><span
-class="header-section-number">7.25.4</span> Content protection</h3>
+<h3 data-number="7.25.5" id="content-protection"><span
+class="header-section-number">7.25.5</span> Content protection</h3>
 <p>Also known as Client-side encryption at rest (CSEAR), content
 protection allows a client to send files to a server which will store
 them encrypted (upload), and decrypt files as they are being downloaded
@@ -3606,8 +3758,8 @@ used.</li>
 fly</p>
 <div class="sourceCode" id="cb202"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="7.25.5" id="transfer-spec-examples"><span
-class="header-section-number">7.25.5</span> Transfer Spec Examples</h3>
+<h3 data-number="7.25.6" id="transfer-spec-examples"><span
+class="header-section-number">7.25.6</span> Transfer Spec Examples</h3>
 <ul>
 <li>Change target rate</li>
 </ul>
@@ -3957,7 +4109,7 @@ SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file 
 OPTIONS:
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
-        --property=VALUE             Name of property to set
+        --property=VALUE             Name of property to set (modify operation)
         --id=VALUE                   Resource identifier (deprecated: Use identifier after verb (modify,delete,show))
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
@@ -5886,16 +6038,19 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb363-1"><a href
 <span id="cb363-18"><a href="#cb363-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> bearer_token</span>
 <span id="cb363-19"><a href="#cb363-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway https://localhost:12345/aspera/faspex</span>
 <span id="cb363-20"><a href="#cb363-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
-<span id="cb363-21"><a href="#cb363-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
-<span id="cb363-22"><a href="#cb363-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
-<span id="cb363-23"><a href="#cb363-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb363-24"><a href="#cb363-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb363-25"><a href="#cb363-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
-<span id="cb363-26"><a href="#cb363-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
-<span id="cb363-27"><a href="#cb363-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
-<span id="cb363-28"><a href="#cb363-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
-<span id="cb363-29"><a href="#cb363-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
-<span id="cb363-30"><a href="#cb363-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
+<span id="cb363-21"><a href="#cb363-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox</span>
+<span id="cb363-22"><a href="#cb363-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
+<span id="cb363-23"><a href="#cb363-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
+<span id="cb363-24"><a href="#cb363-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb363-25"><a href="#cb363-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb363-26"><a href="#cb363-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb363-27"><a href="#cb363-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
+<span id="cb363-28"><a href="#cb363-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
+<span id="cb363-29"><a href="#cb363-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb363-30"><a href="#cb363-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb363-31"><a href="#cb363-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
+<span id="cb363-32"><a href="#cb363-32" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
+<span id="cb363-33"><a href="#cb363-33" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
 <h2 data-number="12.5" id="faspex-5-inbox-selection"><span
 class="header-section-number">12.5</span> Faspex 5: inbox selection</h2>
 <p>By default, package operations (send, receive, list) are done on the
