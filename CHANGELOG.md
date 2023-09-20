@@ -212,7 +212,7 @@
   * new: agent `http_gw` now supports upload
   * new: added option `sdk_url` to install SDK from local file for offline install
   * new: check new gem version periodically
-  * new: the --fields= option, support -_fieldname_ to remove a field from default fields
+  * new: the --fields= option, support -_field_name_ to remove a field from default fields
   * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
   * new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
   * new: AoC a password can be provided for a public link
@@ -232,7 +232,7 @@
 
 * 0.11.8
 
-  * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using Xvfb)
+  * Simplified to use `unoconv` instead of bare `libreoffice` for office conversion, as `unoconv` does not require a X server (previously using `Xvfb`)
 
 * 0.11.7
 
@@ -353,7 +353,7 @@
 * 0.10.4
 
   * new options for AoC : `secrets`
-  * ACLI-533 temp file list folder to use file lists is set by default, and used by `asession`
+  * `ACLI-533` temp file list folder to use file lists is set by default, and used by `asession`
 
 * 0.10.3
 
@@ -393,13 +393,13 @@
 
   * new command to display basic token of node
   * new command to display bearer token of node in AoC
-  * the --fields= option, support +_fieldname_ to add a field to default fields
+  * the --fields= option, support +_field_name_ to add a field to default fields
   * many small changes
 
 * 0.9.32
 
   * all Faspex public links are now supported
-  * removed faspex operation recv_publink
+  * removed faspex operation `recv_publink`
   * replaced with option `link` (consistent with AoC)
 
 * 0.9.31

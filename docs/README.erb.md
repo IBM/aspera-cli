@@ -2498,6 +2498,14 @@ If transfer spec has a `src_base`, it has the side effect that the simple source
 |-------------------|-------------|----------|-----------------------------|
 | d1/d2/f2 d1/d3/f3 | d           | d1       | d/d2/f2 d/d3/f3             |
 
+Advanced Example: Send files `./file1` and `./folder2/files2` to server (e.g. `/Upload`) and keep the original file names and folders, i.e. send `file1` to `/Upload/file1` and `files2` to `/Upload/folder2/files2`.
+
+- If files are specified as `./file1 ./folder2/files2`, then destination will be: `/Upload/file1 /Upload/files2`
+- One possibility is to specify a file pair list: `--src-type=pair file1 file1 folder2/files2 folder2/files2`
+- Another possibility is to specify a source base: `--src-base=$PWD $PWD/file1 $PWD/folder2/files2` (note that `.` cannot be used as source base)
+- Similarly, create a temporary soft link (Linux): `ln -s . tmp_base` and use `--src-base=tmp_base tmp_base/file1 tmp_base/folder2/files2`
+- One can also similarly use `--sources=@ts` and specify the list of files in the `paths` field of transfer spec with both `source` and `destination` for each file.
+
 #### <a id="multisession"></a>Support of multi-session
 
 Multi session, i.e. starting a transfer of a file set using multiple sessions (one `ascp` process per session) is supported on `direct` and `node` agents, not yet on connect.
