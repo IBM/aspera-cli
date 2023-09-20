@@ -383,7 +383,7 @@ dnf install singularity-ce
 Build an image like this:
 
 ```bash
-sudo singularity build ascli.sif docker://martinlaurent/ascli
+singularity build ascli.sif docker://martinlaurent/ascli
 ```
 
 The use like this:

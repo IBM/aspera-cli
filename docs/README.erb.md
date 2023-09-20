@@ -379,7 +379,7 @@ dnf install singularity-ce
 Build an image like this:
 
 ```bash
-sudo singularity build <%=cmd%>.sif docker://<%=containerimage%>
+singularity build <%=cmd%>.sif docker://<%=containerimage%>
 ```
 
 The use like this:
