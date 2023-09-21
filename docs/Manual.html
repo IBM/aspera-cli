@@ -4300,8 +4300,9 @@ OPTIONS:
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
         --link=VALUE                 Public link authorization (specific operations)
-        --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;]
+        --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
+        --group-type=ENUM            Shared inbox or workgroup: [shared_inboxes], workgroups
 
 
 COMMAND: cos
@@ -6120,18 +6121,22 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb370-1"><a href
 <span id="cb370-19"><a href="#cb370-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway https://localhost:12345/aspera/faspex</span>
 <span id="cb370-20"><a href="#cb370-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
 <span id="cb370-21"><a href="#cb370-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox</span>
-<span id="cb370-22"><a href="#cb370-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
-<span id="cb370-23"><a href="#cb370-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
-<span id="cb370-24"><a href="#cb370-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb370-25"><a href="#cb370-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb370-26"><a href="#cb370-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb370-27"><a href="#cb370-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
-<span id="cb370-28"><a href="#cb370-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
-<span id="cb370-29"><a href="#cb370-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
-<span id="cb370-30"><a href="#cb370-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span></span>
-<span id="cb370-31"><a href="#cb370-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
-<span id="cb370-32"><a href="#cb370-32" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
-<span id="cb370-33"><a href="#cb370-33" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
+<span id="cb370-22"><a href="#cb370-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_faspex5_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups</span>
+<span id="cb370-23"><a href="#cb370-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
+<span id="cb370-24"><a href="#cb370-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.  <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
+<span id="cb370-25"><a href="#cb370-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb370-26"><a href="#cb370-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_faspex5_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb370-27"><a href="#cb370-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb370-28"><a href="#cb370-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
+<span id="cb370-29"><a href="#cb370-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
+<span id="cb370-30"><a href="#cb370-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_workgroup&quot;]}&#39;</span> testfile.bin</span>
+<span id="cb370-31"><a href="#cb370-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
+<span id="cb370-32"><a href="#cb370-32" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb370-33"><a href="#cb370-33" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb370-34"><a href="#cb370-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span></span>
+<span id="cb370-35"><a href="#cb370-35" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
+<span id="cb370-36"><a href="#cb370-36" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
+<span id="cb370-37"><a href="#cb370-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
 <h2 data-number="12.5" id="faspex-5-inbox-selection"><span
 class="header-section-number">12.5</span> Faspex 5: inbox selection</h2>
 <p>By default, package operations (send, receive, list) are done on the
@@ -6139,10 +6144,23 @@ user’s inbox.</p>
 <p>To select another inbox, use option <code>box</code> with one of the
 following values:</p>
 <ul>
-<li><code>inbox</code> : user’s inbox</li>
-<li><code>outbox</code> : user’s sent packages</li>
-<li>name of a shared inbox</li>
+<li>inbox</li>
+<li>inbox_history</li>
+<li>inbox_all</li>
+<li>inbox_all_history</li>
+<li>outbox</li>
+<li>outbox_history</li>
+<li>pending</li>
+<li>pending_history</li>
+<li>all</li>
+<li>ALL (only admin)</li>
+<li>name of a shared inbox or workgroup</li>
 </ul>
+<blockquote>
+<p><strong>Note:</strong> specify if the box is a shared inbox or a
+workgroup using option <code>group_type</code> with either
+<code>shared_inboxes</code> or <code>workgroups</code></p>
+</blockquote>
 <h2 data-number="12.6" id="faspex-5-send-a-package"><span
 class="header-section-number">12.6</span> Faspex 5: Send a package</h2>
 <p>The <code>Hash</code> creation parameter provided to command

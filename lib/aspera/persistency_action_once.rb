@@ -8,7 +8,7 @@ module Aspera
   class PersistencyActionOnce
     # @param :manager  Mandatory Database
     # @param :data     Mandatory object to persist, must be same object from begin to end (assume array by default)
-    # @param :id      Mandatory identifiers
+    # @param :id       Mandatory identifiers
     # @param :delete   Optional  delete persistency condition
     # @param :parse    Optional  parse method (default to JSON)
     # @param :format   Optional  dump method (default to JSON)

@@ -18,14 +18,13 @@ module Aspera
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         PACKAGE_TERMINATED = %w[completed failed].freeze
         API_DETECT = 'api/v5/configuration/ping'
-        # list of supported mailbox types
-        API_MAILBOXES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
-        PACKAGE_TYPE_RECEIVED = 'received'
+        # list of supported mailbox types (to list packages)
+        API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
         PACKAGE_ALL_INIT = 'INIT'
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
         ADMIN_RESOURCES = %i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
                              email_notifications].freeze
-        private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_MAILBOXES PACKAGE_TYPE_RECEIVED PACKAGE_SEND_FROM_REMOTE_SOURCE])
+        private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
           def detect(base_url)
             api = Rest.new(base_url: base_url, redirect_max: 1)
@@ -54,8 +53,9 @@ module Aspera
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
           options.declare(:link, 'Public link authorization (specific operations)')
-          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_MAILBOXES}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{VAL_ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
+          options.declare(:group_type, 'Shared inbox or workgroup', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
         end
 
@@ -221,33 +221,101 @@ module Aspera
           end
         end
 
-        # translate box name to API prefix (with ending slash)
-        def box_to_prefix(box)
-          return \
-          case box
-          when VAL_ALL then ''
-          when *API_MAILBOXES then box
-          else "shared_inboxes/#{lookup_entity_by_field(type: 'shared_inboxes', value: box)['id']}"
-          end
-        end
-
         # list all packages with optional filter
-        def list_packages
+        def list_packages_with_filter
+          filter = options.get_next_argument('filter', mandatory: false, type: Proc, default: ->(_x){true})
+          # translate box name to API prefix (with ending slash)
+          box = options.get_option(:box)
+          api_path =
+            case box
+            when VAL_ALL then '' # only admin can list all packages globally
+            when *API_LIST_MAILBOX_TYPES then box
+            else
+              group_type = options.get_option(:group_type)
+              "#{group_type}/#{lookup_entity_by_field(type: group_type, value: box)['id']}"
+            end
           return list_entities(
             type: 'packages',
             query:  query_read_delete(default: {}),
-            path: box_to_prefix(options.get_option(:box)))
+            path: api_path).select(&filter)
         end
 
-        def add_box_type_for_receive(params)
-          box = options.get_option(:box)
-          case box
-          when 'inbox' then params[:type] = PACKAGE_TYPE_RECEIVED
-          when 'outbox' then params[:type] = 'sent'
-          else # shared inbox
-            params[:type] = PACKAGE_TYPE_RECEIVED
-            params[:recipient_workgroup_id] = lookup_entity_by_field(type: 'shared_inboxes', value: box)['id']
+        def package_receive
+          # prepare persistency if needed
+          skip_ids_persistency = nil
+          if options.get_option(:once_only, mandatory: true)
+            # read ids from persistency
+            skip_ids_persistency = PersistencyActionOnce.new(
+              manager: @agents[:persistency],
+              data:    [],
+              id:      IdGenerator.from_list([
+                'faspex_recv',
+                options.get_option(:url, mandatory: true),
+                options.get_option(:username, mandatory: true)]))
           end
+          package_ids =
+            if @pub_link_context&.key?('package_id')
+              @pub_link_context['package_id']
+            else
+              # one or several packages
+              instance_identifier
+            end
+          case package_ids
+          when PACKAGE_ALL_INIT
+            raise 'Only with option once_only' unless skip_ids_persistency
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
+            skip_ids_persistency.save
+            return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+          when VAL_ALL
+            # TODO: if packages have same name, they will overwrite ?
+            package_ids = list_packages_with_filter.map{|p|p['id']}
+            Log.dump(:package_ids, package_ids)
+            Log.dump(:package_ids, skip_ids_persistency.data)
+            package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
+            Log.dump(:package_ids, package_ids)
+          end
+          # a single id was provided
+          # TODO: check package_ids is a list of strings
+          package_ids = [package_ids] if package_ids.is_a?(String)
+          result_transfer = []
+          package_ids.each do |pkg_id|
+            formatter.display_status("Receiving package #{pkg_id}")
+            param_file_list = {}
+            begin
+              param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
+            rescue Aspera::Cli::CliBadArgument
+              # paths is optional
+            end
+            download_params = {
+              type:          'received',
+              transfer_type: TRANSFER_CONNECT
+            }
+            box = options.get_option(:box)
+            case box
+            when /outbox/ then download_params[:type] = 'sent'
+            when *API_LIST_MAILBOX_TYPES then nil # nothing to do
+            else # shared inbox / workgroup
+              download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
+            end
+            # TODO: allow from sent as well ?
+            transfer_spec = @api_v5.call(
+              operation:   'POST',
+              subpath:     "packages/#{pkg_id}/transfer_spec/download",
+              headers:     {'Accept' => 'application/json'},
+              url_params:  download_params,
+              json_params: param_file_list
+            )[:data]
+            # delete flag for Connect Client
+            transfer_spec.delete('authentication')
+            statuses = transfer.start(transfer_spec)
+            result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
+            # skip only if all sessions completed
+            if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
+              skip_ids_persistency.data.push(pkg_id)
+              skip_ids_persistency.save
+            end
+          end
+          return Main.result_transfer_multiple(result_transfer)
         end
 
         def package_action
@@ -256,7 +324,7 @@ module Aspera
           when :list
             return {
               type:   :object_list,
-              data:   list_packages,
+              data:   list_packages_with_filter,
               fields: %w[id title release_date total_bytes total_files created_time state]
             }
           when :show
@@ -323,69 +391,7 @@ module Aspera
               return {type: :single_object, data: result}
             end
           when :receive
-            # prepare persistency if needed
-            skip_ids_persistency = nil
-            if options.get_option(:once_only, mandatory: true)
-              # read ids from persistency
-              skip_ids_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
-                data:    [],
-                id:      IdGenerator.from_list([
-                  'faspex_recv',
-                  options.get_option(:url, mandatory: true),
-                  options.get_option(:username, mandatory: true),
-                  PACKAGE_TYPE_RECEIVED]))
-            end
-            # one or several packages
-            package_ids = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-            package_ids ||= instance_identifier
-            case package_ids
-            when PACKAGE_ALL_INIT
-              raise 'Only with option once_only' unless skip_ids_persistency
-              skip_ids_persistency.data.clear.concat(list_packages.map{|p|p['id']})
-              skip_ids_persistency.save
-              return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-            when VAL_ALL
-              # TODO: if packages have same name, they will overwrite ?
-              package_ids = list_packages.map{|p|p['id']}
-              Log.dump(:package_ids, package_ids)
-              Log.dump(:package_ids, skip_ids_persistency.data)
-              package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
-              Log.dump(:package_ids, package_ids)
-            end
-            # a single id was provided
-            # TODO: check package_ids is a list of strings
-            package_ids = [package_ids] if package_ids.is_a?(String)
-            result_transfer = []
-            package_ids.each do |pkg_id|
-              formatter.display_status("Receiving package #{pkg_id}")
-              param_file_list = {}
-              begin
-                param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
-              rescue Aspera::Cli::CliBadArgument
-                # paths is optional
-              end
-              download_params = {transfer_type: TRANSFER_CONNECT}
-              add_box_type_for_receive(download_params)
-              # TODO: allow from sent as well ?
-              transfer_spec = @api_v5.call(
-                operation:   'POST',
-                subpath:     "packages/#{pkg_id}/transfer_spec/download",
-                headers:     {'Accept' => 'application/json'},
-                url_params:  download_params,
-                json_params: param_file_list
-              )[:data]
-              # delete flag for Connect Client
-              transfer_spec.delete('authentication')
-              statuses = transfer.start(transfer_spec)
-              result_transfer.push({'package' => pkg_id, Main::STATUS_FIELD => statuses})
-              # skip only if all sessions completed
-              if TransferAgent.session_status(statuses).eql?(:success) && skip_ids_persistency
-                skip_ids_persistency.data.push(pkg_id)
-                skip_ids_persistency.save
-              end
-            end
-            return Main.result_transfer_multiple(result_transfer)
+            return package_receive
           end # case package
         end
 

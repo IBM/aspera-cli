@@ -3,6 +3,7 @@
 require 'aspera/log'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
+require 'aspera/fasp/error'
 require 'securerandom'
 require 'base64'
 require 'json'

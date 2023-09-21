@@ -4411,9 +4411,19 @@ By default, package operations (send, receive, list) are done on the user's inbo
 
 To select another inbox, use option `box` with one of the following values:
 
-- `inbox` : user's inbox
-- `outbox` : user's sent packages
-- name of a shared inbox
+- inbox
+- inbox_history
+- inbox_all
+- inbox_all_history
+- outbox
+- outbox_history
+- pending
+- pending_history
+- all
+- ALL (only admin)
+- name of a shared inbox or workgroup
+
+> **Note:** specify if the box is a shared inbox or a workgroup using option `group_type` with either `shared_inboxes` or `workgroups`
 
 ### Faspex 5: Send a package
 

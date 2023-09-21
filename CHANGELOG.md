@@ -6,6 +6,7 @@
   * new: percent selector for entities identifier
   * new: faspex5: shared inbox and workgroup membership management
   * new: faspex5: invite external user to shared inbox
+  * new: faspex5: package list and receive from workgroups and shared inboxes
   * new: config: Command `ascp info` shows default transfer spec.
   * new: httpgw: synchronous and asynchronous upload modes
   * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
@@ -16,12 +17,11 @@
   * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
   * change: aoc: better handling of shared links
   * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
-  * change: config: remove deprecated command: export_to_cli
+  * change: config: remove deprecated command: `export_to_cli`
   * change: config: removed all legacy preset command, newer command `preset` shall be used now.
   * change: config: SDK is now installed in $HOME/.aspera/sdk instead of $HOME/.aspera/ascli/sdk
   * change(break): aoc/node: Simplification: gen4 operations: show modify permission thumbnail are now directly under node gen 4 command. Command `file` is suppressed. Option `path` is suppressed. The default expected argument is a path. To provide a file id, use selector syntax: %id:_file_id_
-  * change(break): node: option `token_type` is removed, as starting with 4.3 basic token is only allowed with access keys, so use gen4 operations: `acc do self`
-  * fix: faspex5: Receive package from shared inbox
+  * change(break): node: option `token_type` is removed, as starting with HSTS 4.3 basic token is only allowed with access keys, so use gen4 operations: `acc do self`
 
 * 4.13.0
 

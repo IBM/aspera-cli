@@ -3155,8 +3155,9 @@ OPTIONS:
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
         --link=VALUE                 Public link authorization (specific operations)
-        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"]
+        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
+        --group-type=ENUM            Shared inbox or workgroup: [shared_inboxes], workgroups
 
 
 COMMAND: cos
@@ -5047,15 +5048,19 @@ faspex5 bearer_token
 faspex5 gateway https://localhost:12345/aspera/faspex
 faspex5 health
 faspex5 packages list --box=my_faspex5_shinbox
+faspex5 packages list --box=my_faspex5_workgroup --group-type=workgroups
 faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
 faspex5 packages receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 packages receive --box=my_faspex5_shinbox "my_package_id" --to-folder=.
+faspex5 packages receive --box=my_faspex5_workgroup --group-type=workgroups "my_package_id" --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
 faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
+faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 faspex5 packages show "my_package_id"
 faspex5 packages show --box=my_faspex5_shinbox "my_package_id"
+faspex5 packages show --box=my_faspex5_workgroup --group-type=workgroups "my_package_id"
 faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
@@ -5067,9 +5072,19 @@ By default, package operations (send, receive, list) are done on the user's inbo
 
 To select another inbox, use option `box` with one of the following values:
 
-- `inbox` : user's inbox
-- `outbox` : user's sent packages
-- name of a shared inbox
+- inbox
+- inbox_history
+- inbox_all
+- inbox_all_history
+- outbox
+- outbox_history
+- pending
+- pending_history
+- all
+- ALL (only admin)
+- name of a shared inbox or workgroup
+
+> **Note:** specify if the box is a shared inbox or a workgroup using option `group_type` with either `shared_inboxes` or `workgroups`
 
 ### Faspex 5: Send a package
 
