@@ -750,44 +750,21 @@ Linux command line parsing is easy: It is fully documented in the shell's docume
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...
-see [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
-Then it builds a list of arguments and then <%=tool%> (Ruby) is executed.
+See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
+The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
 Ruby receives a list parameters from shell and gives it to <%=tool%>.
-So special character handling (quotes, spaces, env vars, ...) is first done in the shell.
+So special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not easy: It is not done by the shell, not done by the operating system, but fully handled by the application.
+MS Windows command line parsing is not easy: It is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application (here Ruby).
 
-On Windows, `cmd.exe` is typically used to start <%tool%>.
-`cmd.exe` handles some special characters: `^"<>|%&`.
-Basically it find I/O redirections (`<>|`) , shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
-Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
-`"` are kept and given to the program.
-
-Then, Windows `CreateProcess` is called with just the whole command line as a single string, unlike Unix-like systems where the command line is split into arguments by the shell.
-
-It's up to the program to parse arguments:
-
-- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
-
-<%tool%> is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
-Ruby globally follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) :
-
-- space characters split arguments (space, tab, newline)
-- backslash is used to escape special characters
-- globbing characters: `*?[]{}`
-- quotes: `"'` (single quote prevents globbing)
+As far as <%=tool%> is concerned: it is close to a Linux shell parsing.
 
 Thanksfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
 One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
 
-The main caveat is about double quotes.
-In fact, ruby will handle single quotes pretty much like on Linux.
-
-The following example give the same result:
+The following examples give the same result on Windows:
 
 - single quote protects the double quote
 
@@ -801,11 +778,34 @@ The following example give the same result:
   <%cmd%> conf echo @json:{"""url""":"""https://..."""}
   ```
 
-- double quote is escaped with backslash
+- double quote is escaped with backslash within double quotes
 
   ```cmd
   <%cmd%> conf echo @json:"{\"url\":\"https://...\"}"
   ```
+
+On Windows, `cmd.exe` is typically used to start <%tool%>.
+`cmd.exe` handles some special characters: `^"<>|%&`.
+Basically it handles I/O redirections (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
+Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
+`"` are kept and given to the program.
+
+Then, Windows `CreateProcess` is called with just the whole command line as a single string, unlike Unix-like systems where the command line is split into arguments by the shell.
+
+It's up to the program to split arguments:
+
+- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+<%tool%> is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
+Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) :
+
+- space characters: split arguments (space, tab, newline)
+- backslash: `\` escape single special character
+- globbing characters: `*?[]{}` for file globbing
+- double quotes: `"`
+- single quotes: `'`
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -822,7 +822,7 @@ Example: The shell parses three arguments (as strings: `1`, `2` and `3`), so the
 <%=cmd%> conf echo 1 2 3
 ```
 
-```bash
+```ruby
 "1"
 ERROR: Argument: unprocessed values: ["2", "3"]
 ```
@@ -838,7 +838,7 @@ Depending on the case, a different `format` is used to display the actual value.
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
 
 Double quotes are processed by the shell to create a single string argument.
-For POSIX shells, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
+For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
 ```bash
 <%=cmd%> conf echo "Hello World" --format=text

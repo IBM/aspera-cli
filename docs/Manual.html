@@ -744,22 +744,41 @@ systems: Linux, macOS, AIX</h3>
 shell’s documentation.</p>
 <p>On Unix-like environments, this is typically a POSIX shell (bash,
 zsh, ksh, sh). In this environment the shell parses the command line,
-possibly replacing variables, etc… see <a
+possibly replacing variables, etc… See <a
 href="https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation">bash
-shell operation</a>. Then it builds a list of arguments and then
-<code>ascli</code> (Ruby) is executed. Ruby receives a list parameters
-from shell and gives it to <code>ascli</code>. So special character
-handling (quotes, spaces, env vars, …) is first done in the shell.</p>
+shell operation</a>. The shell builds the list of arguments and then
+<code>fork</code>/<code>exec</code> Ruby with that list. Ruby receives a
+list parameters from shell and gives it to <code>ascli</code>. So
+special character handling (quotes, spaces, env vars, …) is handled by
+the shell for any command executed.</p>
 <h3 data-number="7.2.2" id="shell-parsing-for-windows"><span
 class="header-section-number">7.2.2</span> Shell parsing for
 Windows</h3>
-<p>MS Windows command line parsing is not easy: It is not done by the
-shell, not done by the operating system, but fully handled by the
-application.</p>
+<p>MS Windows command line parsing is not easy: It is not hasndled by
+the shell (<code>cmd.exe</code>), not handled by the operating system,
+but it is handled by the application (here Ruby).</p>
+<p>As far as <code>ascli</code> is concerned: it is close to a Linux
+shell parsing.</p>
+<p>Thanksfully, <code>ascli</code> provides a command to check the value
+of an argument after parsing: <code>config echo</code>. One can also run
+<code>ascli</code> with option <code>--log-level=debug</code> to display
+the command line after parsing.</p>
+<p>The following examples give the same result on Windows:</p>
+<ul>
+<li><p>single quote protects the double quote</p>
+<div class="sourceCode" id="cb64"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:&#39;{<span class="st">&quot;url&quot;</span>:<span class="st">&quot;https://...&quot;</span>}&#39;</span></code></pre></div></li>
+<li><p>triple double quotes are replaced with a single double quote</p>
+<div class="sourceCode" id="cb65"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:{<span class="st">&quot;&quot;&quot;url&quot;&quot;&quot;</span>:<span class="st">&quot;&quot;&quot;https://...&quot;&quot;&quot;</span>}</span></code></pre></div></li>
+<li><p>double quote is escaped with backslash within double quotes</p>
+<div class="sourceCode" id="cb66"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:<span class="st">&quot;{</span><span class="sc">\&quot;</span><span class="st">url</span><span class="sc">\&quot;</span><span class="st">:</span><span class="sc">\&quot;</span><span class="st">https://...</span><span class="sc">\&quot;</span><span class="st">}&quot;</span></span></code></pre></div></li>
+</ul>
 <p>On Windows, <code>cmd.exe</code> is typically used to start .
 <code>cmd.exe</code> handles some special characters:
-<code>^"&lt;&gt;|%&amp;</code>. Basically it find I/O redirections
-(<code>&lt;&gt;|</code>) , shell variables (<code>%</code>), multiple
+<code>^"&lt;&gt;|%&amp;</code>. Basically it handles I/O redirections
+(<code>&lt;&gt;|</code>), shell variables (<code>%</code>), multiple
 commands (<code>&amp;</code>) and handles those special characters from
 the command line. Eventually, all those special characters are removed
 from the command line unless escaped with <code>^</code> or
@@ -767,7 +786,7 @@ from the command line unless escaped with <code>^</code> or
 <p>Then, Windows <code>CreateProcess</code> is called with just the
 whole command line as a single string, unlike Unix-like systems where
 the command line is split into arguments by the shell.</p>
-<p>It’s up to the program to parse arguments:</p>
+<p>It’s up to the program to split arguments:</p>
 <ul>
 <li><a
 href="https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY">Windows:
@@ -777,33 +796,17 @@ href="https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/
 Quoting and Escaping of Windows Command Line Arguments</a></li>
 </ul>
 <p>is a Ruby program, so Ruby parses the command line into arguments and
-provides them to the program. Ruby globally follows the Microsoft C/C++
-parameter parsing rules. (See <code>w32_cmdvector</code> in <a
+provides them to the program. Ruby vaguely follows the Microsoft C/C++
+parameter parsing rules. (See <code>w32_cmdvector</code> in Ruby source
+<a
 href="https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766"><code>win32.c</code></a>)
 :</p>
 <ul>
-<li>space characters split arguments (space, tab, newline)</li>
-<li>backslash is used to escape special characters</li>
-<li>globbing characters: <code>*?[]{}</code></li>
-<li>quotes: <code>"'</code> (single quote prevents globbing)</li>
-</ul>
-<p>Thanksfully, <code>ascli</code> provides a command to check the value
-of an argument after parsing: <code>config echo</code>. One can also run
-<code>ascli</code> with option <code>--log-level=debug</code> to display
-the command line after parsing.</p>
-<p>The main caveat is about double quotes. In fact, ruby will handle
-single quotes pretty much like on Linux.</p>
-<p>The following example give the same result:</p>
-<ul>
-<li><p>single quote protects the double quote</p>
-<div class="sourceCode" id="cb64"><pre
-class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:&#39;{<span class="st">&quot;url&quot;</span>:<span class="st">&quot;https://...&quot;</span>}&#39;</span></code></pre></div></li>
-<li><p>triple double quotes are replaced with a single double quote</p>
-<div class="sourceCode" id="cb65"><pre
-class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:{<span class="st">&quot;&quot;&quot;url&quot;&quot;&quot;</span>:<span class="st">&quot;&quot;&quot;https://...&quot;&quot;&quot;</span>}</span></code></pre></div></li>
-<li><p>double quote is escaped with backslash</p>
-<div class="sourceCode" id="cb66"><pre
-class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a> conf echo @json:<span class="st">&quot;{</span><span class="sc">\&quot;</span><span class="st">url</span><span class="sc">\&quot;</span><span class="st">:</span><span class="sc">\&quot;</span><span class="st">https://...</span><span class="sc">\&quot;</span><span class="st">}&quot;</span></span></code></pre></div></li>
+<li>space characters: split arguments (space, tab, newline)</li>
+<li>backslash: <code>\</code> escape single special character</li>
+<li>globbing characters: <code>*?[]{}</code> for file globbing</li>
+<li>double quotes: <code>"</code></li>
+<li>single quotes: <code>'</code></li>
 </ul>
 <h3 data-number="7.2.3" id="extended-values-json-ruby"><span
 class="header-section-number">7.2.3</span> Extended Values (JSON, Ruby,
@@ -826,8 +829,8 @@ two arguments are not processed by the <code>echo</code> command.</p>
 <div class="sourceCode" id="cb67"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf echo 1 2 3</span></code></pre></div>
 <div class="sourceCode" id="cb68"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;1&quot;</span></span>
-<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ERROR:</span> Argument: unprocessed values: [<span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span>]</span></code></pre></div>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;1&quot;</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="cn">ERROR</span>: <span class="dt">Argument</span>: unprocessed <span class="wa">values: </span><span class="kw">[</span><span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span><span class="kw">]</span></span></code></pre></div>
 <p><code>config echo</code> displays the value of the
 <strong>first</strong> argument using Ruby syntax: it surrounds a string
 with <code>"</code> and add <code>\</code> before special
@@ -846,9 +849,9 @@ shell , JSON, etc… Depending on the case, a different
 character is special for the shell, so it must be escaped so that a
 single value is represented.</p>
 <p>Double quotes are processed by the shell to create a single string
-argument. For POSIX shells, single quotes can also be used in this case,
-or protect the special character <code></code> (space) with a backslash.
-<!-- markdownlint-disable-line --></p>
+argument. For <strong>POSIX shells</strong>, single quotes can also be
+used in this case, or protect the special character <code></code>
+(space) with a backslash. <!-- markdownlint-disable-line --></p>
 <div class="sourceCode" id="cb69"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf echo <span class="st">&quot;Hello World&quot;</span> <span class="at">--format</span><span class="op">=</span>text</span>
 <span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf echo <span class="st">&#39;Hello World&#39;</span> <span class="at">--format</span><span class="op">=</span>text</span>
