@@ -3,11 +3,11 @@
 # https://github.com/fastlane-community/security
 require 'aspera/cli/info'
 
-# enhance the gem to support other keychains
+# enhance the gem to support other key chains
 module Aspera
   module Keychain
     module MacosSecurity
-      # keychain based on macOS keychain, using `security` cmmand line
+      # keychain based on macOS keychain, using `security` command line
       class Keychain
         DOMAINS = %i[user system common dynamic].freeze
         LIST_OPTIONS = {
@@ -32,12 +32,12 @@ module Aspera
           getpass:  :g
         }.freeze
         class << self
-          def execute(command, options=nil, supported=nil, lastopt=nil)
+          def execute(command, options=nil, supported=nil, last_opt=nil)
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
               raise 'only https' unless uri.scheme.eql?('https')
-              options[:protocol] = 'htps'
+              options[:protocol] = 'htps' # cspell: disable-line
               raise 'host required in URL' if uri.host.nil?
               options[:server] = uri.host
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
@@ -50,28 +50,28 @@ module Aspera
               cmd.push("-#{supported[k]}")
               cmd.push(v.shellescape) unless v.empty?
             end
-            cmd.push(lastopt) unless lastopt.nil?
+            cmd.push(last_opt) unless last_opt.nil?
             Log.log.debug{"executing>>#{cmd.join(' ')}"}
             result = %x(#{cmd.join(' ')} 2>&1)
             Log.log.debug{"result>>[#{result}]"}
             return result
           end
 
-          def keychains(output)
+          def key_chains(output)
             output.split("\n").collect { |line| new(line.strip.gsub(/^"|"$/, '')) }
           end
 
           def default
-            keychains(execute('default-keychain')).first
+            key_chains(execute('default-keychain')).first
           end
 
           def login
-            keychains(execute('login-keychain')).first
+            key_chains(execute('login-keychain')).first
           end
 
           def list(options={})
             raise ArgumentError, "Invalid domain #{options[:domain]}, expected one of: #{DOMAINS}" unless options[:domain].nil? || DOMAINS.include?(options[:domain])
-            keychains(execute('list-keychains', options, LIST_OPTIONS))
+            key_chains(execute('list-key_chains', options, LIST_OPTIONS))
           end
 
           def by_name(name)
@@ -88,14 +88,14 @@ module Aspera
           [string].pack('H*').force_encoding('UTF-8')
         end
 
-        def password(operation, passtype, options)
+        def password(operation, pass_type, options)
           raise "wrong operation: #{operation}" unless %i[add find delete].include?(operation)
-          raise "wrong passtype: #{passtype}" unless %i[generic internet].include?(passtype)
+          raise "wrong pass_type: #{pass_type}" unless %i[generic internet].include?(pass_type)
           raise 'options shall be Hash' unless options.is_a?(Hash)
           missing = (operation.eql?(:add) ? %i[account service password] : %i[label]) - options.keys
           raise "missing options: #{missing}" unless missing.empty?
           options[:getpass] = '' if operation.eql?(:find)
-          output = self.class.execute("#{operation}-#{passtype}-password", options, ADD_PASS_OPTIONS, @path)
+          output = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path)
           raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
           return nil unless operation.eql?(:find)
           attributes = {}
@@ -143,7 +143,7 @@ module Aspera
         raise 'not found' if info.nil?
         result = options.clone
         result[:secret] = info['password']
-        result[:description] = info['icmt']
+        result[:description] = info['icmt'] # cspell: disable-line
         return result
       end
 

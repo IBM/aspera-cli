@@ -552,7 +552,7 @@ module Aspera
             server.start
             return Main.result_status('Gateway terminated')
           when :postprocessing
-            require 'aspera/faspex_postproc'
+            require 'aspera/faspex_postproc' # cspell:disable-line
             parameters = value_create_modify(type: Hash)
             parameters = parameters.symbolize_keys
             raise 'Missing key: url' unless parameters.key?(:url)

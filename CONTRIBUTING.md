@@ -1,5 +1,5 @@
 # Contributing
-
+<!-- cspell:words passin GEMVERS -->
 ## Reporting Issues and Vulnerabilities
 
 You can report issues at <https://github.com/IBM/aspera-cli/issues>

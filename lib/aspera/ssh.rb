@@ -44,7 +44,7 @@ module Aspera
             end
             raise error_message
           end
-          # send command to SSH channel (execute)
+          # send command to SSH channel (execute) cspell: disable-next-line
           channel.send('cexe'.reverse, cmd){|_ch, _success|channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)

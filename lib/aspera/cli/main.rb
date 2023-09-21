@@ -31,7 +31,7 @@ module Aspera
       STATUS_FIELD = 'status'
 
       # for testing only
-      SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse)
+      SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
 
       class << self
         # expect some list, but nothing to display

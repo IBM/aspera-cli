@@ -13,7 +13,7 @@ module Aspera
     def initialize(server, parameters)
       raise 'parameters must be Hash' unless parameters.is_a?(Hash)
       @parameters = parameters.symbolize_keys
-      Log.dump(:postproc_parameters, @parameters)
+      Log.dump(:post_proc_parameters, @parameters)
       raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{|k|!ALLOWED_PARAMETERS.include?(k)}
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false

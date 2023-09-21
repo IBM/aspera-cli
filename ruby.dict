@@ -30,3 +30,14 @@ bindir
 chdir
 rmagick
 usec
+basenames
+shellwords
+shellescape
+getc
+EPIPE
+xdigit
+urlsafe_encode64
+getlogin
+getpwuid
+systmpdir
+stringio

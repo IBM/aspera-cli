@@ -12,13 +12,13 @@ require 'json'
 # HTTP GW Upload protocol
 # -----------------------
 # v1
-# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acked with "end upload"
-# 2.. - MessageType: String (Slice Upload start) JSON : type: slice_upload, acked with "end upload"
+# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acknowledged with "end upload"
+# 2.. - MessageType: String (Slice Upload start) JSON : type: slice_upload, acknowledged with "end upload"
 # v2
-# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acked with "end upload"
-# 2 - MessageType: String (Slice Upload start) JSON : type: slice_upload, acked with "end_slice_upload"
-# 3.. - MessageType: ByteArray (File Size) Chunks : acked with "end upload"
-# last - MessageType: String (Slice Upload end) JSON : type: slice_upload, acked with "end_slice_upload"
+# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acknowledged with "end upload"
+# 2 - MessageType: String (Slice Upload start) JSON : type: slice_upload, acknowledged with "end_slice_upload"
+# 3.. - MessageType: ByteArray (File Size) Chunks : acknowledged with "end upload"
+# last - MessageType: String (Slice Upload end) JSON : type: slice_upload, acknowledged with "end_slice_upload"
 
 # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
 # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
@@ -86,7 +86,7 @@ module Aspera
 
       def upload(transfer_spec)
         # total size of all files
-        total_size = 0
+        total_bytes_to_transfer = 0
         # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
         source_paths = []
         # get source root or nil
@@ -103,13 +103,12 @@ module Aspera
           # GW expects a simple file name in 'source' but if user wants to change the name, we take it
           item['source'] = File.basename(item['destination'].nil? ? item['source'] : item['destination'])
           item['file_size'] = File.size(full_src_filepath)
-          total_size += item['file_size']
+          total_bytes_to_transfer += item['file_size']
           # save so that we can actually read the file later
           source_paths.push(full_src_filepath)
         end
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        Log.log.debug{"api version: #{@options[:api_version]}"}
         upload_url = File.join(@gw_api.params[:base_url], @options[:api_version], 'upload')
         # uri = URI.parse(upload_url)
         # open web socket to end point (equivalent to Net::HTTP.start)
@@ -148,9 +147,7 @@ module Aspera
               # frame << recv_data
               # frame << @ws_io.readuntil("\n")
               # frame << @ws_io.read_all
-              # Log.log.debug{"#{LOG_WS_THREAD}before read".red}
               frame << @ws_io.read(1)
-              # Log.log.debug{"#{LOG_WS_THREAD}after read".green}
               while (msg = frame.next)
                 Log.log.debug{"#{LOG_WS_THREAD}type: #{msg.class}"}
                 message = msg.data
@@ -191,7 +188,7 @@ module Aspera
           Log.log.debug{"#{LOG_WS_THREAD}stopping (exc=#{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"}
         end
         # notify progress bar
-        notify_begin(session_id, total_size)
+        notify_begin(session_id, total_bytes_to_transfer)
         # first step send transfer spec
         Log.dump(:ws_spec, transfer_spec)
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
@@ -328,7 +325,7 @@ module Aspera
       private
 
       def initialize(opts)
-        Log.log.debug{"local options= #{opts}"}
+        Log.dump(:in_options, opts)
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
         raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)
@@ -352,7 +349,8 @@ module Aspera
           # is the latest supported? else revert to old api
           @options[:api_version] = API_V1 unless @api_info['endpoints'].any?{|i|i.include?(@options[:api_version])}
         end
-        Log.dump(:options, @options)
+        @options.freeze
+        Log.dump(:final_options, @options)
       end
     end # AgentHttpgw
   end

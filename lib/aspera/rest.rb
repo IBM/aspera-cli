@@ -356,7 +356,8 @@ module Aspera
     def lookup_by_name(subpath, search_name, options={})
       # returns entities whose name contains value (case insensitive)
       matching_items = read(subpath, options.merge({'q' => CGI.escape(search_name)}))[:data]
-      # style: {totalcount:, ...}
+      # API style: {totalcount:, ...} cspell: disable-line
+      # TODO: not generic enough ? move somewhere ? inheritance ?
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
       raise "Internal error: expecting array, have #{matching_items.class}" unless matching_items.is_a?(Array)
       case matching_items.length

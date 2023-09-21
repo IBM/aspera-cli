@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# cspell:words Magick MAGICKCORE ITERM mintty winsize termcap
+
 require 'rmagick' # https://rmagick.github.io/index.html
 require 'rainbow'
 require 'io/console'

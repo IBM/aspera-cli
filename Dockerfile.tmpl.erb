@@ -1,8 +1,8 @@
+FROM ruby:3.2.2
 <%# Embedded Ruby template -%>
 <%# arg: arg_gem: specify a gemfile or a gem version -%>
 <%# arg: arg_sdk: specify a sdk file or empty (download from default url) -%>
 <%# Review this version periodically from : https://hub.docker.com/_/ruby -%>
-FROM ruby:3.2.2
 <% if arg_gem.end_with?('.gem') %>
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .

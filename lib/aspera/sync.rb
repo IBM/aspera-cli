@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# cspell:words logdir
+
 require 'aspera/command_line_builder'
 require 'aspera/fasp/installation'
 require 'json'

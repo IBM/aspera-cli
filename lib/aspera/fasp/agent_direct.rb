@@ -334,7 +334,7 @@ module Aspera
       # @param options : keys(symbol): see DEFAULT_OPTIONS
       def initialize(options=nil)
         super()
-        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, condvar on change
+        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @jobs = {}
         # mutex protects global data accessed by threads
         @mutex = Mutex.new

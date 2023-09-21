@@ -19,7 +19,7 @@ module Aspera
       private_constant :BASH_SPECIAL_CHARACTERS, :BASH_EXIT_NOT_FOUND, :EXTERNAL_TOOLS, :TEMP_FORMAT
 
       class << self
-        # returns string with single quotes suitable for bash if there is any bash metacharacter
+        # returns string with single quotes suitable for bash if there is any bash meta-character
         def shell_quote(argument)
           return argument unless argument.chars.any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
           return "'" + argument.gsub(/'/){|_s| "'\"'\"'"} + "'"
@@ -55,7 +55,7 @@ module Aspera
             raise "Error: #{command_symb} is not in the PATH"
           end
           unless exit_status.success?
-            Log.log.error{"commandline: #{command}"}
+            Log.log.error{"command line: #{command}"}
             Log.log.error{"Error code: #{exit_status}"}
             Log.log.error{"stdout: #{stdout}"}
             Log.log.error{"stderr: #{stderr}"}
@@ -82,7 +82,7 @@ module Aspera
           result = external_command(:ffprobe, [
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
-            '-print_format', 'default=noprint_wrappers=1:nokey=1',
+            '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
             input_file])
           return result[:stdout].to_f
         end

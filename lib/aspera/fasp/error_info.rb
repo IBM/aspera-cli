@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# cspell:words mnemo PROTO RCVR NOLIC PMTU BRTT VLINK BWMEAS SSEAR FIPS
+
 module Aspera
   module Fasp
     # from https://www.google.com/search?q=FASP+error+codes

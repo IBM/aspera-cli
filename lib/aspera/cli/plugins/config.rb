@@ -981,7 +981,7 @@ module Aspera
               @config_presets[DEMO_SERVER_PRESET] = {
                 'url'                                    => 'ssh://' + DEMO + '.asperasoft.com:33001',
                 'username'                               => ASPERA,
-                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA
+                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA # cspell:disable-line
               }
             end
             @config_presets[CONF_PRESET_DEFAULT] ||= {}

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# cspell:words Transfersdk
+
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
 require 'json'

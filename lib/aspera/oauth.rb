@@ -192,7 +192,7 @@ module Aspera
       # replace default values
       @generic_parameters = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
       # legacy
-      @generic_parameters[:grant_method] ||= @generic_parameters.delete(:crtype) if @generic_parameters.key?(:crtype)
+      @generic_parameters[:grant_method] ||= @generic_parameters.delete(:crtype) if @generic_parameters.key?(:crtype) # cspell: disable-line
       # check that type is known
       self.class.token_creator(@generic_parameters[:grant_method])
       # specific parameters for the creation type

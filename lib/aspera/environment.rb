@@ -3,6 +3,8 @@
 require 'aspera/log'
 require 'rbconfig'
 
+# cspell:words MEBI mswin bccwin
+
 module Aspera
   # detect OS, architecture, and specific stuff
   class Environment

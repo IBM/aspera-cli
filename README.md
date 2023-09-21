@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cSpell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted schtasks taskschd -->
+<!-- cspell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted schtasks taskschd dascli -->
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
@@ -308,7 +308,7 @@ Some environment variables can be set for this script to adapt its behavior:
 
 | env var      | description                        | default                  | example                  |
 |--------------|------------------------------------|--------------------------|--------------------------|
-| ASCLI_HOME | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascliconfig`     |
+| ASCLI_HOME | configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascli_config` |
 | docker_args  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
 | image        | container image name               | martinlaurent/ascli      |                          |
 | version      | container image version            | latest                   | `4.8.0.pre`              |
@@ -805,7 +805,7 @@ It's up to the program to split arguments:
 
  is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) :
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
 
 - space characters: split arguments (space, tab, newline)
 - backslash: `\` escape single special character
