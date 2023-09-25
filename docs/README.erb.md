@@ -1780,6 +1780,19 @@ By default, `ascp` uses primarily certificates from hard-coded path (e.g. on mac
 
 To update <%=tool%> trusted root certificates, just update your system's root certificates or use env vars specified here above.
 
+An up-to-date version of the certificate bundle can be retrieved with:
+
+```bash
+ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+```
+
+Once can use this to update the default certificate store:
+
+```bash
+ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+export SSL_CERT_FILE=/tmp/cacert.pem
+```
+
 ### Plugins
 
 <%=tool%> uses a plugin mechanism.
