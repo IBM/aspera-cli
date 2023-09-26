@@ -303,7 +303,12 @@ module Aspera
           tries_remain_redirect -= 1
           current_uri = URI.parse(call_data[:base_url])
           new_url = e.response['location']
-          new_url = "#{current_uri.scheme}:#{new_url}" unless new_url.start_with?('http')
+          # special case: relative redirect
+          if URI.parse(new_url).host.nil?
+            # we don't manage relative redirects with non-absolute path
+            raise "Error: redirect location is relative: #{new_url}, but does not start with /." unless new_url.start_with?('/')
+            new_url = current_uri.scheme + '://' + current_uri.host + new_url
+          end
           Log.log.info{"URL is moved: #{new_url}"}
           redirection_uri = URI.parse(new_url)
           call_data[:base_url] = new_url

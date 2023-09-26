@@ -29,7 +29,7 @@ module Aspera
     # Production domain of AoC
     PROD_DOMAIN = 'ibmaspera.com'
     # to avoid infinite loop in pub link redirection
-    MAX_REDIRECT = 10
+    MAX_PUB_LINK_REDIRECT = 10
     # Well-known AoC globals client apps
     GLOBAL_CLIENT_APPS = %w[aspera.global-cli-client aspera.drive].freeze
     # index offset in data repository of client app
@@ -37,7 +37,7 @@ module Aspera
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
     # path in URL of public links
-    PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public].freeze
+    PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public /public/files].freeze
     JWT_AUDIENCE = 'https://api.asperafiles.com/api/v1/oauth2/token'
     OAUTH_API_SUBPATH = 'api/v1/oauth2'
     # minimum fields for user info if retrieval fails
@@ -46,7 +46,7 @@ module Aspera
     # Node events: permission.created permission.modified permission.deleted
     PERMISSIONS_CREATED = ['permission.created'].freeze
 
-    private_constant :MAX_REDIRECT,
+    private_constant :MAX_PUB_LINK_REDIRECT,
       :GLOBAL_CLIENT_APPS,
       :DATA_REPO_INDEX_START,
       :COOKIE_PREFIX_CONSOLE_AOC,
@@ -114,34 +114,25 @@ module Aspera
       def resolve_pub_link(a_auth, a_opt)
         public_link_url = a_opt[:link]
         return if public_link_url.nil?
-        raise 'do not use both link and url options' unless a_opt[:url].nil?
-        redirect_count = 0
-        while redirect_count <= MAX_REDIRECT
-          uri = URI.parse(public_link_url)
-          # detect if it's an expected format
-          if PUBLIC_LINK_PATHS.include?(uri.path)
-            url_param_token_pair = URI.decode_www_form(uri.query).find{|e|e.first.eql?('token')}
-            raise ArgumentError, 'link option must be URL with "token" parameter' if url_param_token_pair.nil?
-            # ok we get it !
-            a_opt[:url] = 'https://' + uri.host
-            a_auth[:grant_method] = :aoc_pub_link
-            a_auth[:aoc_pub_link] = {
-              url:  {grant_type: 'url_token'}, # URL args
-              json: {url_token: url_param_token_pair.last} # JSON body
-            }
-            # password protection of link
-            a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?
-            return # SUCCESS
-          end
-          Log.log.debug{"no expected format: #{public_link_url}"}
-          r = Net::HTTP.get_response(uri)
-          # not a redirection
-          raise ArgumentError, 'link option must be redirect or have token parameter' unless r.code.start_with?('3')
-          public_link_url = r['location']
-          raise 'no location in redirection' if public_link_url.nil?
-          Log.log.debug{"redirect to: #{public_link_url}"}
-        end # loop
-        raise "exceeded max redirection: #{MAX_REDIRECT}"
+        raise 'Do not use both link and url options' unless a_opt[:url].nil?
+        result = Rest.new({base_url: public_link_url, redirect_max: MAX_PUB_LINK_REDIRECT}).read('')
+        public_link_url = result[:http].uri.to_s
+        uri = URI.parse(public_link_url)
+        # detect if it's an expected format
+        url_param_token_pair = URI.decode_www_form(uri.query).find{|e|e.first.eql?('token')}
+        raise ArgumentError, 'link option must be redirect or have token parameter' if url_param_token_pair.nil?
+        Log.log.warn{"Unknown pub link path: #{uri.path}"} unless PUBLIC_LINK_PATHS.include?(uri.path)
+        # ok we get it !
+        a_opt[:url] = 'https://' + uri.host
+        a_auth[:grant_method] = :aoc_pub_link
+        a_auth[:aoc_pub_link] = {
+          url:  {grant_type: 'url_token'}, # URL args
+          json: {url_token: url_param_token_pair.last} # JSON body
+        }
+        # password protection of link
+        a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?
+        # SUCCESS
+        return nil
       end
     end # static methods
 
