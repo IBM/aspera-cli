@@ -3460,8 +3460,8 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>DEPRECATED: Use parameter ascp_args in option transfer_info<br/>Add
-native command line arguments to ascp</td>
+<td>DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native
+command line arguments to ascp</td>
 </tr>
 <tr class="even">
 <td>EX_at_rest_password</td>
@@ -3469,7 +3469,7 @@ native command line arguments to ascp</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>DEPRECATED: Use standard spec parameter:
+<td>DEPRECATED: (4.13) Use standard spec parameter:
 content_protection_password<br/>Content protection
 password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 </tr>
@@ -3479,7 +3479,8 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>source file list</td>
+<td>DEPRECATED: (4.14) Use command line file list, or option
+transfer_info.ascp_args<br/>source file list</td>
 </tr>
 <tr class="even">
 <td>EX_file_pair_list</td>
@@ -3487,7 +3488,8 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>source file pair list</td>
+<td>DEPRECATED: (4.14) Use command line file pair list, or option
+transfer_info.ascp_args<br/>source file pair list</td>
 </tr>
 <tr class="odd">
 <td>EX_http_proxy_url</td>
@@ -3495,8 +3497,8 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>Specify the proxy server address used by HTTP Fallback<br/>(-x
-{string})</td>
+<td>DEPRECATED: (4.14) TODO, use proxy option ?<br/>Specify the proxy
+server address used by HTTP Fallback<br/>(-x {string})</td>
 </tr>
 <tr class="even">
 <td>EX_http_transfer_jpeg</td>
@@ -3504,7 +3506,8 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>HTTP transfers as JPEG file<br/>(-j {int})</td>
+<td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>HTTP
+transfers as JPEG file<br/>(-j {int})</td>
 </tr>
 <tr class="odd">
 <td>EX_license_text</td>
@@ -3512,8 +3515,9 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>License file text override.<br/>By default ascp looks for license
-file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
+<td>DEPRECATED: (4.14) Use env var ASPERA_SCP_LICENSE<br/>License file
+text override.<br/>By default ascp looks for license file near
+executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 </tr>
 <tr class="even">
 <td>EX_no_read</td>
@@ -3521,7 +3525,8 @@ file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>no read source<br/>(–no-read)</td>
+<td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no read
+source<br/>(–no-read)</td>
 </tr>
 <tr class="odd">
 <td>EX_no_write</td>
@@ -3529,7 +3534,8 @@ file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>no write on destination<br/>(–no-write)</td>
+<td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no write
+on destination<br/>(–no-write)</td>
 </tr>
 <tr class="even">
 <td>EX_proxy_password</td>
@@ -3537,8 +3543,9 @@ file near executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>Password used for Aspera proxy server authentication.<br/>May be
-overridden by password in URL provided in parameter:
+<td>DEPRECATED: (4.14) Use env var ASPERA_PROXY_PASS<br/>Password used
+for Aspera proxy server authentication.<br/>May be overridden by
+password in URL provided in parameter:
 proxy.<br/>(env:ASPERA_PROXY_PASS)</td>
 </tr>
 <tr class="odd">
@@ -3547,8 +3554,9 @@ proxy.<br/>(env:ASPERA_PROXY_PASS)</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>Use public key authentication for SSH and specify the private key
-file paths<br/>(-i {array})</td>
+<td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>Use public
+key authentication for SSH and specify the private key file
+paths<br/>(-i {array})</td>
 </tr>
 </tbody>
 </table>
