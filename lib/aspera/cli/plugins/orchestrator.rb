@@ -44,7 +44,7 @@ module Aspera
               test_args:    'workflow list'
             }
           end
-         end
+        end
 
         def initialize(env)
           super(env)

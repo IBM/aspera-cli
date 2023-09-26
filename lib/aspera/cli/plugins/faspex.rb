@@ -63,6 +63,18 @@ module Aspera
             return nil
           end
 
+          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+            options = object.options
+            return {
+              preset_value: {
+                url:      options.get_option(:url, mandatory: true),
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'me'
+            }
+          end
+
           # extract elements from anonymous faspex link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)

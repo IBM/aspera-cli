@@ -319,7 +319,10 @@ $(T)cons_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) console health
 	$(EXE_NOMAN) console health --url=https://wrong.example.com
-	-$(EXE_NOMAN) config detect @preset:tst_console.url
+	@touch $@
+$(T)cons_wizard: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) config detect @preset:tst_console.url
 	@touch $@
 $(T)cons1: $(T).exists
 	@echo $@
@@ -336,13 +339,16 @@ $(T)cons3: $(T).exists
 	file_name=$$($(EXE_NOMAN) config preset get misc console_smart_file)&&\
 	$(EXE_MAN) console transfer smart sub $${job_id} @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
 	@touch $@
-tconsole: $(T)cons_nagios $(T)cons1 $(T)cons2
+tconsole: $(T)cons_nagios $(T)cons_wizard $(T)cons1 $(T)cons2
 #  $(T)cons3
 $(T)nd_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) node health
 	$(EXE_NOMAN) node health --url=https://wrong.example.com
-	$(EXE_NOMAN) config detect @preset:tst_node_simple.url
+	@touch $@
+$(T)nd_wizard: $(T).exists
+	@echo $@
+	$(EXE_MAN) config detect @preset:tst_node_simple.url
 	@touch $@
 $(T)nd1: $(T).exists
 	@echo $@
@@ -435,7 +441,7 @@ $(T)nd_ak4: $(T).exists
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show %id:1
 	@touch $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
-tnode: $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 $(T)nd_nagios tndak
+tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 tndak
 
 $(T)aocfxgw: $(T).exists
 	@echo $@
@@ -1387,9 +1393,5 @@ $(T)f5_postproc: $(T).exists
 
 tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
 
+# just to test nagios, but those are tested in the respective plugins
 tnagios: $(T)f4_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
-
-$(T)fxgw: $(T).exists
-	@echo $@
-	$(EXE_MAN) aoc faspex
-	@touch $@

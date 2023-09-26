@@ -92,6 +92,18 @@ module Aspera
             return nil
           end
 
+          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+            options = object.options
+            return {
+              preset_value: {
+                url:      options.get_option(:url, mandatory: true),
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'info'
+            }
+          end
+
           def register_node_options(env)
             env[:options].declare(:validator, 'Identifier of validator (optional for central)')
             env[:options].declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')

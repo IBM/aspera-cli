@@ -1441,9 +1441,9 @@ Plugin `config` provides general commands for `ascli`:
 - vault
 - ascp
 
-The default configuration for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
+The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
 When `ascli` starts, it looks for the `default` Option preset and checks the value for `config`.
-If set, it loads the option values for any plugin used.
+If set, it loads the options independently of the plugin used.
 
 > **Note:** If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
 
@@ -1579,7 +1579,7 @@ my_aoc_org:
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
 
-#### Options evaluation order
+#### Evaluation order of options
 
 Some options are global, some options are available only for some plugins. (the plugin is the first level command).
 
@@ -1626,7 +1626,19 @@ Example: Define options using a hash:
 ascli -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
 ```
 
-#### Shares Examples
+#### Wizard
+
+The wizard is a command that asks the user for information and creates a [option preset](#lprt) with the provided information.
+
+It takes an optional argument: the URL of the application, and an **option**: `query` which allows limiting the detection to a given plugin.
+
+The simplest invication is:
+
+```bash
+ascli config wizard
+```
+
+#### Example of configuration for a plugin
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
 only username/password and url are required (either on command line, or from config file).
@@ -3325,7 +3337,7 @@ This option is available only for some of the resources: if you need it: try and
 
 Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
-It is recommended to use the wizard to set it up, but manual configuration is also possible.
+It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
 ### <a id="aocwizard"></a>Configuration: using Wizard
 
@@ -3333,7 +3345,7 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
 
-The first 
+The first
 
 Here is a sample invocation :
 
@@ -3359,7 +3371,6 @@ ascli aoc user profile show
 
 Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
-
 
 If you already know the application, and want to limit the detection to it, use option `query`:
 
@@ -4430,7 +4441,6 @@ aoc automation workflow list
 aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
 aoc bearer_token --display=data --scope=user:all
-aoc faspex
 aoc files bearer /
 aoc files bearer_token_node / --cache-tokens=no
 aoc files browse /
