@@ -112,6 +112,7 @@ module Aspera
       # @return [Hash] information about public link, or nil if not a public link
       def public_link_info(url)
         pub_uri = URI.parse(url)
+        return nil if pub_uri.query.nil?
         # detect if it's an expected format
         url_param_token_pair = URI.decode_www_form(pub_uri.query).find{|e|e.first.eql?('token')}
         return nil if url_param_token_pair.nil?
