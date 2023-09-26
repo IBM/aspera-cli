@@ -2177,7 +2177,7 @@ Specific options for agents are provided with option `transfer_info`, cumulative
 The `direct` agent directly executes a local `ascp`.
 This is the default agent for <%=tool%>.
 This is equivalent to option `--transfer=direct`.
-<%=tool%> will detect locally installed Aspera products, including SDK, and use `ascp` from that component.
+<%=tool%> will search locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#client).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
@@ -2887,7 +2887,13 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 ### <a id="aocwizard"></a>Configuration: using Wizard
 
-<%=tool%> provides a configuration wizard. Here is a sample invocation :
+<%=tool%> provides a configuration wizard.
+
+The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
+
+The first 
+
+Here is a sample invocation :
 
 ```text
 <%=cmd%> config wizard
@@ -2912,9 +2918,8 @@ You can test with:
 Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-This will guide you through the steps to create.
 
-If the wizard does not detect the application but you know the application, you can force it using option `query`:
+If you already know the application, and want to limit the detection to it, use option `query`:
 
 ```bash
 <%=cmd%> config wizard --query=aoc

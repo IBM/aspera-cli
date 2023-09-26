@@ -309,7 +309,7 @@ module Aspera
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            @formatter.display_results({type: :single_object, data: @opt_mgr.declared_options(only_defined: true)})
+            @formatter.display_results({type: :single_object, data: @opt_mgr.known_options(only_defined: true).stringify_keys})
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)

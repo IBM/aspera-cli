@@ -7,6 +7,45 @@ module Aspera
   module Cli
     module Plugins
       class Orchestrator < Aspera::Cli::BasicAuthPlugin
+        class << self
+          def detect(address_or_url)
+            address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
+            urls = [address_or_url]
+            urls.push("#{address_or_url}/aspera/orchestrator") unless address_or_url.end_with?('/aspera/faspex')
+
+            urls.each do |base_url|
+              next unless base_url.match?('https?://')
+              api = Rest.new(base_url: base_url)
+              test_endpoint = 'api/remote_node_ping'
+              result = api.read(test_endpoint, {format: :json})
+              next unless result[:data]['remote_orchestrator_info']
+              url = result[:http].uri.to_s
+              return {
+                name:    'Orchestrator',
+                version: result[:data]['remote_orchestrator_info']['orchestrator-version'],
+                url:     url[0..url.index(test_endpoint) - 2]
+              }
+            rescue Errno::ECONNREFUSED
+              next
+            rescue Aspera::RestCallError => e
+              Log.log.debug{"detect error: #{e}"}
+            end
+            return nil
+          end
+
+          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+            options = object.options
+            return {
+              preset_value: {
+                url:      options.get_option(:url, mandatory: true),
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'workflow list'
+            }
+          end
+         end
+
         def initialize(env)
           super(env)
           options.declare(:params, 'Start parameters', types: Hash, default: {})

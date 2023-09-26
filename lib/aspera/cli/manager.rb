@@ -382,12 +382,13 @@ module Aspera
         return result
       end
 
-      # return options as taken from config file and command line just before command execution
-      def declared_options(only_defined: false)
+      # @param only_defined [Boolean] if true, only return options that were defined
+      # @return [Hash] options as taken from config file and command line just before command execution
+      def known_options(only_defined: false)
         result = {}
         @declared_options.each_key do |option_symb|
           v = get_option(option_symb)
-          result[option_symb.to_s] = v unless only_defined && v.nil?
+          result[option_symb] = v unless only_defined && v.nil?
         end
         return result
       end

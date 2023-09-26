@@ -129,6 +129,8 @@ REPLACEMENTS = [
   ['my_f5_meta', ''],
   # remove special configs
   ['-N ', ''],
+  ['TMP_CONF', ''],
+  ['WIZ_TEST', ''],
   [/-P[0-9a-z_]+ /, '\1'],
   # URLs for doc
   [/@preset:tst_([^ ]+)\.url/, 'https://\1.example.com/path'],
@@ -144,8 +146,9 @@ def all_test_commands_by_plugin
         next unless line.match?(/\$\(EXE_MAN.?\) +/)
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
+        line = line.strip.squeeze(' ')
         # plugin name shall be the first argument: command
-        plugin = line.split(/ +/).first
+        plugin = line.split(' ').first
         commands[plugin] ||= []
         commands[plugin].push(line)
       end
@@ -196,7 +199,7 @@ def generate_doc
   end
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
   if !all_test_commands_by_plugin.empty?
-    $stderr.puts("those plugins not included in doc #{all_test_commands_by_plugin.keys}".red)
+    $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
     raise 'Remediate: remove from doc using EXE_NOMAN or add section in doc'
   end
 end

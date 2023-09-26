@@ -22,27 +22,70 @@ module Aspera
         API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
         PACKAGE_ALL_INIT = 'INIT'
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
+        # Faspex API v5: get transfer spec for connect
+        TRANSFER_CONNECT = 'connect'
+
         ADMIN_RESOURCES = %i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
                              email_notifications].freeze
         private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
-          def detect(base_url)
-            api = Rest.new(base_url: base_url, redirect_max: 1)
-            result = api.read(API_DETECT)
-            if result[:http].code.start_with?('2') && result[:http].body.strip.empty?
-              suffix_length = -2 - API_DETECT.length
+          def detect(address_or_url)
+            address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
+            urls = [address_or_url]
+            urls.push("#{address_or_url}/aspera/faspex") unless address_or_url.end_with?('/aspera/faspex')
+
+            urls.each do |base_url|
+              next unless base_url.start_with?('https://')
+              api = Rest.new(base_url: base_url, redirect_max: 1)
+              result = api.read(API_DETECT)
+              next unless result[:http].code.start_with?('2') && result[:http].body.strip.empty?
+              url_length = -2 - API_DETECT.length
+              # take redirect if any
               return {
+                name:    'Faspex',
                 version: result[:http]['x-ibm-aspera'] || '5',
-                url:     result[:http].uri.to_s[0..suffix_length],
-                name:    'Faspex 5'
+                url:     result[:http].uri.to_s[0..url_length]
               }
+            rescue Errno::ECONNREFUSED
+              next
+            rescue Aspera::RestCallError => e
+              Log.log.debug{"detect error: #{e}"}
             end
             return nil
           end
-        end
 
-        # Faspex API v5: get transfer spec for connect
-        TRANSFER_CONNECT = 'connect'
+          def wizard(object:, private_key_path:, pub_key_pem:)
+            options = object.options
+            formatter = object.formatter
+            instance_url = options.get_option(:url, mandatory: true)
+            wiz_username = options.get_option(:username, mandatory: true)
+            raise "Username shall be an email in Faspex: #{wiz_username}" if !(wiz_username =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
+            if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
+              formatter.display_status('Ask the ascli client id and secret to your Administrator.'.red)
+              formatter.display_status("Admin should login to: #{instance_url}")
+              OpenApplication.instance.uri(instance_url)
+              formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
+              formatter.display_status('Create an API client with:')
+              formatter.display_status('- name: ascli')
+              formatter.display_status('- JWT: enabled')
+              formatter.display_status("Then, logged in as #{wiz_username.red} go to your profile:")
+              formatter.display_status('👤 → Account Settings → Preferences -> Public Key in PEM:')
+              formatter.display_status(pub_key_pem)
+              formatter.display_status('Once set, fill in the parameters:')
+            end
+            return {
+              preset_value: {
+                url:           instance_url,
+                username:      wiz_username,
+                auth:          :jwt.to_s,
+                private_key:   "@file:#{private_key_path}",
+                client_id:     options.get_option(:client_id, mandatory: true),
+                client_secret: options.get_option(:client_secret, mandatory: true)
+              },
+              test_args:    'user profile show'
+            }
+          end
+        end
 
         def initialize(env)
           super(env)
@@ -576,36 +619,6 @@ module Aspera
             return Main.result_status('Gateway terminated')
           end # case command
         end # action
-
-        def wizard(params)
-          if params[:prepare]
-            # if not defined by user, generate unique name
-            params[:preset_name] ||= [params[:plugin_sym]].concat(URI.parse(params[:instance_url]).host.gsub(/[^a-z0-9.]/, '').split('.')).join('_')
-            params[:need_private_key] = true
-            return
-          end
-          formatter.display_status('Ask the ascli client id and secret to your Administrator, or ask them to go to:'.red)
-          OpenApplication.instance.uri(params[:instance_url])
-          formatter.display_status('Then: 𓃑  → Admin → Configurations → API clients')
-          formatter.display_status('Create an API client with:')
-          formatter.display_status('- name: ascli')
-          formatter.display_status('- JWT: enabled')
-          formatter.display_status('Then, logged in as user go to your profile:')
-          formatter.display_status('👤 → Account Settings → Preferences -> Public Key in PEM:')
-          formatter.display_status(params[:pub_key_pem])
-          formatter.display_status('Once set, fill in the parameters:')
-          return {
-            preset_value: {
-              url:           params[:instance_url],
-              username:      options.get_option(:username, mandatory: true),
-              auth:          :jwt.to_s,
-              private_key:   '@file:' + params[:private_key_path],
-              client_id:     options.get_option(:client_id, mandatory: true),
-              client_secret: options.get_option(:client_secret, mandatory: true)
-            },
-            test_args:    "#{params[:plugin_sym]} user profile show"
-          }
-        end
       end # Faspex5
     end # Plugins
   end # Cli

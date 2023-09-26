@@ -71,6 +71,7 @@ module Aspera
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
         DEFAULT_PRIVKEY_LENGTH = 4096
         COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
+        WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -93,7 +94,8 @@ module Aspera
           :DEFAULT_PRIV_KEY_FILENAME,
           :SERVER_COMMAND,
           :PRESET_DIG_SEPARATOR,
-          :COFFEE_IMAGE
+          :COFFEE_IMAGE,
+          :WIZARD_RESULT_KEYS
         def initialize(env, params)
           raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'missing param' unless %i[name help version gem].sort.eql?(params.keys.sort)
@@ -131,8 +133,8 @@ module Aspera
           options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
           options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
           options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
-          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:pkeypath, 'Wizard: path to private key for JWT')
+          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:smtp, 'SMTP configuration', types: Hash)
@@ -505,8 +507,10 @@ module Aspera
 
         # Find a plugin, and issue the "require"
         # @return [Hash] plugin info: { product: , url:, version: }
-        def identify_plugin_for_url(url, check_only: nil)
+        def identify_plugins_for_url(app_url)
+          check_only = value_or_query(allowed_types: String)
           check_only = check_only.to_sym unless check_only.nil?
+          found_apps = []
           plugins.each do |plugin_name_sym, plugin_info|
             # no detection for internal plugin
             next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
@@ -516,34 +520,21 @@ module Aspera
             c = self.class.plugin_class(plugin_name_sym)
             # requires detection method
             next unless c.respond_to?(:detect)
-            current_url = url
-            detection_info = nil
-            # first try : direct
             begin
-              detection_info = c.detect(current_url)
+              detection_info = c.detect(app_url)
             rescue OpenSSL::SSL::SSLError => e
               Log.log.warn(e.message)
               Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
-            rescue StandardError => e
-              Log.log.debug{"Cannot detect #{plugin_name_sym} : #{e.class}/#{e.message}"}
-            end
-            # second try : is there a redirect ?
-            if detection_info.nil?
-              begin
-                # TODO: check if redirect ?
-                new_url = Rest.new(base_url: url).call(operation: 'GET', subpath: '', redirect_max: 1)[:http].uri.to_s
-                unless url.eql?(new_url)
-                  detection_info = c.detect(new_url)
-                  current_url = new_url
-                end
-              rescue StandardError => e
-                Log.log.debug{"Cannot detect #{plugin_name_sym} : #{e.message}"}
-              end
+            rescue Errno::ECONNREFUSED
+              next
+            rescue Aspera::RestCallError => e
+              Log.log.debug{"detect error: #{e}"}
             end
             # if there is a redirect, then the detector can override the url.
-            return {product: plugin_name_sym, url: current_url}.merge(detection_info) unless detection_info.nil?
+            found_apps.push({product: plugin_name_sym, url: app_url}.merge(detection_info)) unless detection_info.nil?
           end # loop
-          raise "No known application found at #{url}"
+          raise "No known application found at #{app_url}" if found_apps.empty?
+          return found_apps
         end
 
         def execute_connect_action
@@ -790,7 +781,7 @@ module Aspera
           documentation
           genkey
           gem
-          plugin
+          plugins
           flush_tokens
           echo
           wizard
@@ -806,7 +797,7 @@ module Aspera
           initdemo
           vault].freeze
 
-        # "config" plugin
+        # Main action procedure for plugin
         def execute_action
           action = options.get_next_command(ACTIONS)
           case action
@@ -834,10 +825,21 @@ module Aspera
           when :flush_tokens
             deleted_files = Oauth.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
-          when :plugin
+          when :plugins
             case options.get_next_command(%i[list create])
             when :list
-              return {type: :object_list, data: @plugins.keys.map { |i| { 'plugin' => i.to_s, 'path' => @plugins[i][:source] } }, fields: %w[plugin path]}
+              result = []
+              @plugins.each do |name, info|
+                require info[:require_stanza]
+                plugin_class = self.class.plugin_class(name)
+                result.push({
+                  plugin: name,
+                  detect: plugin_class.respond_to?(:detect) ? 'Y' : '',
+                  wizard: plugin_class.respond_to?(:wizard) ? 'Y' : '',
+                  path:   info[:source]
+                })
+              end
+              return {type: :object_list, data: result, fields: %w[plugin detect wizard path]}
             when :create
               plugin_name = options.get_next_argument('name', expected: :single).downcase
               plugin_folder = options.get_next_argument('folder', expected: :single, mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
@@ -859,89 +861,12 @@ module Aspera
               return Main.result_status("Created #{plugin_file}")
             end
           when :wizard
-            # interactive mode
-            options.ask_missing_mandatory = true
-            # register url option
-            BasicAuthPlugin.register_options(@agents)
-            params = {}
-            # get from option, or ask
-            params[:instance_url] = options.get_option(:url, mandatory: true)
-            # check it is a well formatted url: starts with scheme
-            if !params[:instance_url].match?(%r{^[a-z]{1,6}://})
-              new_url = "https://#{params[:instance_url]}"
-              Log.log.warn("URL #{params[:instance_url]} does not start with a scheme, using #{new_url}")
-              params[:instance_url] = new_url
-            end
-            # allow user to tell the preset name
-            params[:preset_name] = options.get_option(:id)
-            # allow user to specify type of application (symbol)
-            identification = identify_plugin_for_url(params[:instance_url], check_only: value_or_query(allowed_types: String))
-            Log.log.debug{"Detected: #{identification}"}
-            formatter.display_status("Detected: #{identification[:name]} at #{identification[:url]}".bold)
-            # we detected application (not set by user)
-            params[:plugin_sym] = identification[:product]
-            # update the url option
-            params[:instance_url] = identification[:url]
-            options.set_option(:url, params[:instance_url])
-            # instantiate plugin: command line options are known and wizard can be called
-            plugin_instance = self.class.plugin_class(params[:plugin_sym]).new(@agents.merge({skip_basic_auth_options: true}))
-            raise CliBadArgument, "Detected: #{params[:plugin_sym]}, no wizard available for this application" unless plugin_instance.respond_to?(:wizard)
-            # get default preset name if not set by user
-            params[:prepare] = true
-            plugin_instance.send(:wizard, params)
-            params[:prepare] = false
-
-            if params[:need_private_key]
-              # lets see if path to priv key is provided
-              private_key_path = options.get_option(:pkeypath)
-              # give a chance to provide
-              if private_key_path.nil?
-                formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
-                private_key_path = options.get_option(:pkeypath, mandatory: true).to_s
-                # private_key_path = File.expand_path(private_key_path)
-              end
-              # else generate path
-              if private_key_path.empty?
-                private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
-              end
-              if File.exist?(private_key_path)
-                formatter.display_status('Using existing key:')
-              else
-                formatter.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
-                Config.generate_rsa_private_key(path: private_key_path)
-                formatter.display_status('Created key:')
-              end
-              formatter.display_status(private_key_path)
-              params[:pub_key_pem] = OpenSSL::PKey::RSA.new(File.read(private_key_path)).public_key.to_s
-              params[:private_key_path] = private_key_path
-            end
-
-            formatter.display_status("Preparing preset: #{params[:preset_name]}")
-            # init defaults if necessary
-            @config_presets[CONF_PRESET_DEFAULT] ||= {}
-            option_override = options.get_option(:override, mandatory: true)
-            raise CliError, "A default configuration already exists for plugin '#{params[:plugin_sym]}' (use --override=yes or --default=no)" \
-              if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULT].key?(params[:plugin_sym])
-            raise CliError, "Preset already exists: #{params[:preset_name]}  (use --override=yes or --id=<name>)" \
-              if !option_override && @config_presets.key?(params[:preset_name])
-            wizard_result = plugin_instance.send(:wizard, params)
-            Log.log.debug{"wizard result: #{wizard_result}"}
-            raise "Internal error: missing keys in wizard result: #{wizard_result.keys}" unless %i[preset_value test_args].eql?(wizard_result.keys.sort)
-            @config_presets[params[:preset_name]] = wizard_result[:preset_value].stringify_keys
-            params[:test_args] = wizard_result[:test_args]
-            if options.get_option(:default, mandatory: true)
-              formatter.display_status("Setting config preset as default for #{params[:plugin_sym]}")
-              @config_presets[CONF_PRESET_DEFAULT][params[:plugin_sym].to_s] = params[:preset_name]
-            else
-              params[:test_args] = "-P#{params[:preset_name]} #{params[:test_args]}"
-            end
-            formatter.display_status('Saving config file.')
-            save_presets_to_config_file
-            return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{params[:test_args]}")
+            return wizard_find
           when :detect
-            # need url / username
-            BasicAuthPlugin.register_options(@agents)
-            return {type: :single_object, data: identify_plugin_for_url(options.get_option(:url, mandatory: true))}
+            return {
+              type: :object_list,
+              data: identify_plugins_for_url(options.get_next_argument('url', mandatory: true))
+            }
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
               require 'aspera/preview/terminal'
@@ -1000,7 +925,103 @@ module Aspera
           end
         end
 
-        # @return email server setting with defaults if not defined
+        def wizard_find
+          # interactive mode
+          options.ask_missing_mandatory = true
+          # detect plugins by url and optional query
+          apps = identify_plugins_for_url(options.get_next_argument('url', mandatory: true))
+          identification = if apps.length.eql?(1)
+            Log.log.debug{"Detected: #{identification}"}
+            apps.first
+          else
+            formatter.display_status('Multiple applications detected:')
+            apps.each_with_index do |app, index|
+              app[:num] = index
+            end
+            formatter.display_results({type: :object_list, data: apps, fields: %w[num product url version]})
+            exit(1)
+          end
+          Log.dump(:identification, identification)
+          wiz_url = identification[:url]
+          formatter.display_status("Detected: #{identification[:name]} at #{wiz_url}".bold)
+          # set url for instantiation of plugin
+          options.add_option_preset({url: wiz_url})
+          # instantiate plugin: command line options will be known and wizard can be called
+          wiz_plugin_class = self.class.plugin_class(identification[:product])
+          raise CliBadArgument, "Detected: #{identification[:product]}, but this application has no wizard" unless wiz_plugin_class.respond_to?(:wizard)
+          # instantiate plugin: command line options will be known, e.g. private_key
+          plugin_instance = wiz_plugin_class.new(@agents)
+          wiz_params = {
+            object: plugin_instance
+          }
+          # is private key needed ?
+          if options.known_options.key?(:private_key) &&
+              (!wiz_plugin_class.respond_to?(:private_key_required?) || wiz_plugin_class.private_key_required?(wiz_url))
+            # lets see if path to priv key is provided
+            private_key_path = options.get_option(:pkeypath)
+            # give a chance to provide
+            if private_key_path.nil?
+              formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
+              private_key_path = options.get_option(:pkeypath, mandatory: true).to_s
+              # private_key_path = File.expand_path(private_key_path)
+            end
+            # else generate path
+            if private_key_path.empty?
+              private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
+            end
+            if File.exist?(private_key_path)
+              formatter.display_status('Using existing key:')
+            else
+              formatter.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+              Config.generate_rsa_private_key(path: private_key_path)
+              formatter.display_status('Created key:')
+            end
+            formatter.display_status(private_key_path)
+            private_key_pem = File.read(private_key_path)
+            options.set_option(:private_key, private_key_pem)
+            wiz_params[:private_key_path] = private_key_path
+            wiz_params[:pub_key_pem] = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
+          end
+          Log.dump(:wiz_params, wiz_params)
+          # finally, call the wizard
+          wizard_result = wiz_plugin_class.wizard(**wiz_params)
+          Log.log.debug{"wizard result: #{wizard_result}"}
+          raise "Internal error: missing or extra keys in wizard result: #{wizard_result.keys}" unless WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)
+          # get preset name from user or default
+          wiz_preset_name = options.get_option(:id)
+          if wiz_preset_name.nil?
+            elements = [
+              identification[:product],
+              URI.parse(wiz_url).host
+            ]
+            elements.push(options.get_option(:username, mandatory: true)) unless wizard_result[:preset_value].key?(:link)
+            wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
+          end
+          # test mode does not change conf file
+          return {type: :single_object, data: wizard_result} if options.get_option(:test_mode)
+          # Write configuration file
+          formatter.display_status("Preparing preset: #{wiz_preset_name}")
+          # init defaults if necessary
+          @config_presets[CONF_PRESET_DEFAULT] ||= {}
+          option_override = options.get_option(:override, mandatory: true)
+          raise CliError, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
+            if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULT].key?(identification[:product])
+          raise CliError, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
+            if !option_override && @config_presets.key?(wiz_preset_name)
+          @config_presets[wiz_preset_name] = wizard_result[:preset_value].stringify_keys
+          test_args = wizard_result[:test_args]
+          if options.get_option(:default, mandatory: true)
+            formatter.display_status("Setting config preset as default for #{identification[:product]}")
+            @config_presets[CONF_PRESET_DEFAULT][identification[:product].to_s] = wiz_preset_name
+          else
+            test_args = "-P#{wiz_preset_name} #{test_args}"
+          end
+          formatter.display_status('Saving config file.')
+          save_presets_to_config_file
+          return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{identification[:product]} #{test_args}")
+        end
+
+        # @return [Hash] email server setting with defaults if not defined
         def email_settings
           smtp = options.get_option(:smtp, mandatory: true, allowed_types: [Hash])
           # change string keys into symbol keys
@@ -1025,11 +1046,12 @@ module Aspera
           return smtp
         end
 
-        # create a clean binding (ruby variable environment)
+        # Create a clean binding (ruby variable environment)
         def empty_binding
           Kernel.binding
         end
 
+        # send email using ERB template
         def send_email_template(email_template_default: nil, values: {})
           values[:to] ||= options.get_option(:notif_to, mandatory: true)
           notif_template = options.get_option(:notif_template, mandatory: email_template_default.nil?) || email_template_default
@@ -1057,15 +1079,17 @@ module Aspera
           smtp.start(*start_options) do |smtp_session|
             smtp_session.send_message(msg_with_headers, values[:from_email], values[:to])
           end
+          nil
         end
 
+        # Save current configuration to config file
         def save_presets_to_config_file
           raise 'no configuration loaded' if @config_presets.nil?
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
-          Log.log.debug{"Writing #{@option_config_file}"}
-          File.write(@option_config_file, @config_presets.to_yaml)
           Environment.restrict_file_access(@main_folder)
-          Environment.restrict_file_access(@option_config_file)
+          Log.log.debug{"Writing #{@option_config_file}"}
+          Environment.write_file_restricted(@option_config_file, force: true) {@config_presets.to_yaml}
+          nil
         end
 
         # returns [String] name if config_presets has default
@@ -1092,7 +1116,8 @@ module Aspera
           return nil
         end # get_plugin_default_config_name
 
-        ALLOWED_KEYS = %i[password username description].freeze
+        # TODO: delete: ALLOWED_KEYS = %i[password username description].freeze
+        # @return [Hash] result of execution of vault command
         def execute_vault
           command = options.get_next_command(%i[list show create delete password])
           case command
@@ -1120,6 +1145,7 @@ module Aspera
           end
         end
 
+        # @return [String] value from vault matching <name>.<param>
         def vault_value(name)
           m = name.match(/^(.+)\.(.+)$/)
           raise 'vault name shall match <name>.<param>' if m.nil?
@@ -1130,6 +1156,7 @@ module Aspera
           return value
         end
 
+        # @return [Object] vault, from options or cache
         def vault
           if @vault.nil?
             vault_info = options.get_option(:vault) || {'type' => 'file', 'name' => 'vault.bin'}

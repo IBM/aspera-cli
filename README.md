@@ -1478,15 +1478,17 @@ config ascp install --sdk-folder=Tsdk_test_dir
 config ascp products list
 config ascp show
 config ascp spec
+config ascp use /usr/bin/ascp
 config check_update
 config coffee
 config coffee --ui=text
-config detect --url=https://faspex4.example.com/path
-config detect --url=https://my_aoc_org.ibmaspera.com
-config detect --url=https://node_simple.example.com/path
+config detect https://faspex4.example.com/path
+config detect https://faspex5_jwt.example.com/path
+config detect https://node_simple.example.com/path
+config detect https://shares.example.com/path --query=shares
+config detect my_aoc_org --query=aoc
 config doc
 config doc transfer-parameters
-config echo 'hello'
 config echo @base64:SGVsbG8gV29ybGQK
 config echo @csvt:@stdin:
 config echo @env:USER
@@ -1494,19 +1496,35 @@ config echo @lines:@stdin:
 config echo @list:,1,2,3
 config echo @uri:/etc/hosts
 config echo @uri:file:/etc/hosts
-config echo @uri:http://www.ibm.com
-config echo @uri:https://www.ibm.com
+config echo @uri:http://ifconfig.me
+config echo @uri:https://ifconfig.me
 config echo @val:@file:no_such_file
 config echo @zlib:@stdin:
+config echo hello
 config email_test --notif-to=my_recipient_email
 config export
 config flush_tokens
 config genkey mykey
+config open
 config plugin create mycommand T
 config plugin list
+config preset delete conf_name
+config preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
+config preset list
+config preset overview
+config preset set conf_name param value
+config preset set default shares conf_name
+config preset show conf_name
+config preset update conf_name --p1=v1 --p2=v2
 config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com
-config wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes
-config wiz --url=https://my_aoc_org.ibmaspera.com --config-file=SAMPLE_CONFIG_FILE --pkeypath= --username=my_aoc_user_email --test-mode=yes --use-generic-client=yes
+config vault create mylabel @json:'{"password":"my_password_here","description":"super"}';\
+config vault delete mylabel
+config vault list;\
+config vault password my_new_pass;\
+config vault show mylabel;\
+config wizard https://shares.example.com/path --query=shares --username=test --password=test
+config wizard my_aoc_org --query=aoc --pkeypath= --username=my_aoc_user_email
+config wizard my_aoc_org --query=aoc --pkeypath= --username=my_aoc_user_email --use-generic-client=yes
 ```
 
 #### Format of file
@@ -1824,6 +1842,19 @@ By default, `ascp` uses primarily certificates from hard-coded path (e.g. on mac
 `ascli` overrides and sets the default Ruby certificate path as well for `ascp` using `-i` switch.
 
 To update `ascli` trusted root certificates, just update your system's root certificates or use env vars specified here above.
+
+An up-to-date version of the certificate bundle can be retrieved with:
+
+```bash
+ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+```
+
+Once can use this to update the default certificate store:
+
+```bash
+ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+export SSL_CERT_FILE=/tmp/cacert.pem
+```
 
 ### Plugins
 
@@ -2209,7 +2240,7 @@ Specific options for agents are provided with option `transfer_info`, cumulative
 The `direct` agent directly executes a local `ascp`.
 This is the default agent for `ascli`.
 This is equivalent to option `--transfer=direct`.
-`ascli` will detect locally installed Aspera products, including SDK, and use `ascp` from that component.
+`ascli` will search locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#client).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
@@ -3041,7 +3072,7 @@ OPTIONS: global
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugin preset proxy_check smtp_settings vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check smtp_settings vault wizard
 OPTIONS:
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
@@ -3055,8 +3086,8 @@ OPTIONS:
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
-    -P, --presetVALUE                Load the named option preset from current config file
         --pkeypath=VALUE             Wizard: path to private key for JWT
+    -P, --presetVALUE                Load the named option preset from current config file
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
         --smtp=VALUE                 SMTP configuration (Hash)
@@ -3298,7 +3329,13 @@ It is recommended to use the wizard to set it up, but manual configuration is al
 
 ### <a id="aocwizard"></a>Configuration: using Wizard
 
-`ascli` provides a configuration wizard. Here is a sample invocation :
+`ascli` provides a configuration wizard.
+
+The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
+
+The first 
+
+Here is a sample invocation :
 
 ```text
 ascli config wizard
@@ -3323,9 +3360,8 @@ ascli aoc user profile show
 Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-This will guide you through the steps to create.
 
-If the wizard does not detect the application but you know the application, you can force it using option `query`:
+If you already know the application, and want to limit the detection to it, use option `query`:
 
 ```bash
 ascli config wizard --query=aoc
@@ -4398,7 +4434,8 @@ aoc faspex
 aoc files bearer /
 aoc files bearer_token_node / --cache-tokens=no
 aoc files browse /
-aoc files browse / --link=my_aoc_publink_folder
+aoc files browse / --link=my_aoc_publink_folder_nopass
+aoc files browse / --link=my_aoc_publink_folder_pass --password=my_aoc_publink_password
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
 aoc files find / --query='\.partial$'
@@ -4418,7 +4455,7 @@ aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction
 aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_aoc_media_file
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
-aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder
+aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder_nopass
 aoc files upload --to-folder=/testsrc testfile.bin
 aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
@@ -4613,7 +4650,7 @@ server df
 server download NEW_SERVER_FOLDER/testfile.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 server download NEW_SERVER_FOLDER/testfile.bin --to-folder=folder_1 --transfer=node
 server du /
-server health transfer --to-folder=folder_1 --format=nagios 
+server health transfer --to-folder=folder_1 --format=nagios
 server info
 server md5sum NEW_SERVER_FOLDER/testfile.bin
 server mkdir NEW_SERVER_FOLDER --logger=stdout
@@ -4623,7 +4660,7 @@ server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"my_
 server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
 server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
-server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER 
+server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
 server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=NEW_SERVER_FOLDER
 server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
@@ -5031,7 +5068,7 @@ faspex5 admin res accounts list
 faspex5 admin res contacts list
 faspex5 admin res jobs list
 faspex5 admin res metadata_profiles list
-faspex5 admin res node list 
+faspex5 admin res node list
 faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
 faspex5 admin res saml_configs list
@@ -5050,7 +5087,7 @@ faspex5 health
 faspex5 packages list --box=my_faspex5_shinbox
 faspex5 packages list --box=my_faspex5_workgroup --group-type=workgroups
 faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
-faspex5 packages receive "my_package_id" --to-folder=.  --ts=@json:'{"content_protection_password":"abc123_yo"}'
+faspex5 packages receive "my_package_id" --to-folder=. --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 packages receive --box=my_faspex5_shinbox "my_package_id" --to-folder=.
 faspex5 packages receive --box=my_faspex5_workgroup --group-type=workgroups "my_package_id" --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
@@ -5428,15 +5465,15 @@ faspex dropbox list --recipient="*my_faspex_wkg"
 faspex health
 faspex login_methods
 faspex me
-faspex package list
 faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
+faspex package list --query=@json:'{"max":5}'
 faspex package list --recipient="*my_faspex_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
 faspex package list --recipient="*my_faspex_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
 faspex package recv "my_package_id" --to-folder=.
 faspex package recv "my_package_id" --to-folder=. --box=sent
 faspex package recv --to-folder=. --link=https://app.example.com/recv_from_user_path
-faspex package recv ALL --to-folder=. --once-only=yes
+faspex package recv ALL --to-folder=. --once-only=yes --query=@json:'{"max":10}'
 faspex package recv my_pkgid --recipient="*my_faspex_dbx" --to-folder=.
 faspex package recv my_pkgid --recipient="*my_faspex_wkg" --to-folder=.
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin

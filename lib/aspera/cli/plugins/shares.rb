@@ -8,19 +8,42 @@ module Aspera
       # Plugin for Aspera Shares v1
       class Shares < Aspera::Cli::BasicAuthPlugin
         class << self
-          def detect(base_url)
-            api = Rest.new({base_url: base_url})
-            # Shares
+          def detect(address_or_url)
+            address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
+            api = Rest.new(base_url: address_or_url, redirect_max: 1)
+            found = false
             begin
               # shall fail: shares requires auth, but we check error message
               # TODO: use ping instead ?
               api.read('node_api/app')
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
-                return {version: 'unknown'}
+                found = true
               end
             end
-            nil
+            return nil unless found
+            version = 'unknown'
+            main_page = api.call({ operation: 'GET', subpath: 'login' })
+            if (m = main_page[:http].body.match(/\(v(1\..*)\)/))
+              version = m[1]
+            end
+            return {
+              name:    'Shares',
+              version: version,
+              url:     address_or_url
+            }
+          end
+
+          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+            options = object.options
+            return {
+              preset_value: {
+                url:      options.get_option(:url, mandatory: true),
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'files br /'
+            }
           end
         end
 

@@ -2,6 +2,9 @@
 
 * 4.15.0.pre
 
+  * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`. Also they can detect multiple applications at the same address or url.
+  * new: aoc: wizard manages public links
+
 * 4.14.0
 
   * new: server: option `passphrase` for simpler command line (#114)

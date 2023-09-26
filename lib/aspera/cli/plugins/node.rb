@@ -62,11 +62,32 @@ module Aspera
 
       class Node < Aspera::Cli::BasicAuthPlugin
         class << self
-          def detect(base_url)
-            api = Rest.new({ base_url: base_url})
-            result = api.call({ operation: 'GET', subpath: 'ping'})
-            if result[:http].body.eql?('')
-              return { product: :node, version: 'unknown'}
+          def detect(address_or_url)
+            urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
+              [address_or_url]
+            else
+              [
+                "https://#{address_or_url}",
+                "https://#{address_or_url}:9092",
+                "http://#{address_or_url}:9091"
+              ]
+            end
+
+            urls.each do |base_url|
+              next unless base_url.match?('https?://')
+              api = Rest.new(base_url: base_url)
+              test_endpoint = 'ping'
+              result = api.call(operation: 'GET', subpath: test_endpoint)
+              next unless result[:http].body.eql?('')
+              url_length = -2 - test_endpoint.length
+              return {
+                product: :node,
+                url:     result[:http].uri.to_s[0..url_length],
+                version: 'unknown'}
+            rescue Errno::ECONNREFUSED
+              next
+            rescue Aspera::RestCallError => e
+              Log.log.debug{"detect error: #{e}"}
             end
             return nil
           end

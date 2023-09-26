@@ -108,26 +108,37 @@ module Aspera
         return "node.#{access_key}:#{scope}"
       end
 
+      # @param url [String] URL of AoC public link
+      # @return [Hash] information about public link, or nil if not a public link
+      def public_link_info(url)
+        pub_uri = URI.parse(url)
+        # detect if it's an expected format
+        url_param_token_pair = URI.decode_www_form(pub_uri.query).find{|e|e.first.eql?('token')}
+        return nil if url_param_token_pair.nil?
+        Log.log.warn{"Unknown pub link path: #{pub_uri.path}"} unless PUBLIC_LINK_PATHS.include?(pub_uri.path)
+        # ok we get it !
+        return {
+          url:   'https://' + pub_uri.host,
+          token: url_param_token_pair.last
+        }
+      end
+
       # check option "link"
       # if present try to get token value (resolve redirection if short links used)
       # then set options url/token/auth
       def resolve_pub_link(a_auth, a_opt)
         public_link_url = a_opt[:link]
-        return if public_link_url.nil?
+        return nil if public_link_url.nil?
         raise 'Do not use both link and url options' unless a_opt[:url].nil?
         result = Rest.new({base_url: public_link_url, redirect_max: MAX_PUB_LINK_REDIRECT}).read('')
         public_link_url = result[:http].uri.to_s
-        uri = URI.parse(public_link_url)
-        # detect if it's an expected format
-        url_param_token_pair = URI.decode_www_form(uri.query).find{|e|e.first.eql?('token')}
-        raise ArgumentError, 'link option must be redirect or have token parameter' if url_param_token_pair.nil?
-        Log.log.warn{"Unknown pub link path: #{uri.path}"} unless PUBLIC_LINK_PATHS.include?(uri.path)
-        # ok we get it !
-        a_opt[:url] = 'https://' + uri.host
+        pub_link_info = public_link_info(public_link_url)
+        raise ArgumentError, 'link option must be redirect or have token parameter' if pub_link_info.nil?
+        a_opt[:url] = pub_link_info[:url]
         a_auth[:grant_method] = :aoc_pub_link
         a_auth[:aoc_pub_link] = {
           url:  {grant_type: 'url_token'}, # URL args
-          json: {url_token: url_param_token_pair.last} # JSON body
+          json: {url_token: pub_link_info[:token]} # JSON body
         }
         # password protection of link
         a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?

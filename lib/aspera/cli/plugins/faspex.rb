@@ -35,18 +35,30 @@ module Aspera
         private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
 
         class << self
-          def detect(base_url)
-            api = Rest.new(base_url: base_url)
-            result = api.call(
-              operation:        'POST',
-              subpath:          'aspera/faspex',
-              headers:          {'Accept' => 'application/xrds+xml', 'Content-type' => 'text/plain'},
-              text_body_params: '')
-            # 4.x
-            if result[:http].body.start_with?('<?xml')
+          def detect(address_or_url)
+            address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
+            urls = [address_or_url]
+            urls.push("#{address_or_url}/aspera/faspex") unless address_or_url.end_with?('/aspera/faspex')
+
+            urls.each do |base_url|
+              next unless base_url.start_with?('https://')
+              api = Rest.new(base_url: base_url, redirect_max: 1)
+              result = api.call(
+                operation:        'POST',
+                subpath:          '',
+                headers:          {'Accept' => 'application/xrds+xml', 'Content-type' => 'text/plain'},
+                text_body_params: '')
+              # 4.x
+              next unless result[:http].body.start_with?('<?xml')
               res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
+              Log.log.debug{"version: #{result[:http]['X-IBM-Aspera']}"}
               version = res_s['XRD']['application']['version']
+              # take redirect if any
               return {version: version, url: result[:http].uri}
+            rescue Errno::ECONNREFUSED
+              next
+            rescue Aspera::RestCallError => e
+              Log.log.debug{"detect error: #{e}"}
             end
             return nil
           end

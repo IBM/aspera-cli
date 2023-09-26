@@ -33,7 +33,7 @@ module Aspera
             when :ruby
               PP.pp(object, +'')
             else
-              raise 'wrong parameter, expect pp or json'
+              raise 'wrong parameter, expect ruby or json'
             end
           "#{name.to_s.green} (#{format})=\n#{result}"
         end

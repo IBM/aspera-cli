@@ -49,6 +49,37 @@ module Aspera
           end
         end
 
+        class << self
+          def detect(address_or_url)
+            urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
+              [address_or_url]
+            else
+              [
+                "ssh://#{address_or_url}:33001",
+                "ssh://#{address_or_url}:22"
+              ]
+              # wss not practical as it requires a token
+            end
+
+            urls.each do |base_url|
+              server_uri = URI.parse(base_url)
+              Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
+              next unless server_uri.scheme.eql?(SSH_SCHEME)
+              begin
+                socket = TCPSocket.new(server_uri.hostname, server_uri.port)
+                socket.puts('SSH-2.0-Ascli_0.0')
+                version = socket.gets.chomp
+                if version.match?(/^SSH-2.0-/)
+                  return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url}
+                end
+              rescue Errno::ECONNREFUSED
+                next
+              end
+            end
+            return nil
+          end
+        end
+
         def initialize(env)
           super(env)
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
