@@ -3847,8 +3847,10 @@ If a single file or folder is to be downloaded, then a single argument can be pr
 #### Shared folders
 
 Shared folder created by users are managed through **permissions**.
-For creation, parameters are the same as for node api [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
+
+For creation, parameters are the same as for node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
 <%=tool%> expects the same payload for creation, but it will automatically populate required tags if needed.
+
 Also, the pseudo key `with` is available: it will lookup the name in the contacts and fill the proper type and id.
 The pseudo parameter `link_name` allows changing default "shared as" name.
 
@@ -3868,6 +3870,15 @@ The pseudo parameter `link_name` allows changing default "shared as" name.
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 delete 6161
+```
+
+Public and Private short links can be managed with command:
+
+```bash
+<%=cmd%> oc files short_link list _path_here_ private
+<%=cmd%> oc files short_link list _path_here_ public
+<%=cmd%> oc files short_link delete
+<%=cmd%> oc files short_link create
 ```
 
 #### Cross Organization transfers

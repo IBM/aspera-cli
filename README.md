@@ -4289,8 +4289,10 @@ ascli aoc files download <single file path>
 #### Shared folders
 
 Shared folder created by users are managed through **permissions**.
-For creation, parameters are the same as for node api [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
+
+For creation, parameters are the same as for node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
 `ascli` expects the same payload for creation, but it will automatically populate required tags if needed.
+
 Also, the pseudo key `with` is available: it will lookup the name in the contacts and fill the proper type and id.
 The pseudo parameter `link_name` allows changing default "shared as" name.
 
@@ -4310,6 +4312,15 @@ ascli aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 
 ```bash
 ascli aoc files perm /shared_folder_test1 delete 6161
+```
+
+Public and Private short links can be managed with command:
+
+```bash
+ascli oc files short_link list _path_here_ private
+ascli oc files short_link list _path_here_ public
+ascli oc files short_link delete
+ascli oc files short_link create
 ```
 
 #### Cross Organization transfers
