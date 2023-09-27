@@ -1046,11 +1046,6 @@ module Aspera
           return smtp
         end
 
-        # Create a clean binding (ruby variable environment)
-        def empty_binding
-          Kernel.binding
-        end
-
         # send email using ERB template
         def send_email_template(email_template_default: nil, values: {})
           values[:to] ||= options.get_option(:notif_to, mandatory: true)
@@ -1064,7 +1059,7 @@ module Aspera
           start_options = [mail_conf[:domain]]
           start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
           # create a binding with only variables defined in values
-          template_binding = empty_binding
+          template_binding = Environment.empty_binding
           # add variables to binding
           values.each do |k, v|
             raise "key (#{k.class}) must be Symbol" unless k.is_a?(Symbol)
