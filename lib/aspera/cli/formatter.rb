@@ -170,7 +170,7 @@ module Aspera
             table_rows_hash_val = res_data
             final_table_columns = nil
             if @option_flat_hash
-              table_rows_hash_val.map!{|obj|self.class.flattened_object(obj, expand_last: results[:option_expand_last])}
+              table_rows_hash_val = table_rows_hash_val.map{|obj|self.class.flattened_object(obj, expand_last: results[:option_expand_last])}
             end
             final_table_columns =
               case user_asked_fields_list_str
