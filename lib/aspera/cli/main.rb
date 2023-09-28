@@ -72,6 +72,11 @@ module Aspera
 
       private
 
+      # shortcuts helpers like in plugins
+      %i[options transfer config formatter persistency].each do |name|
+        define_method(name){@agents[name]}
+      end
+
       # =============================================================
       # Parameter handlers
       #
@@ -87,7 +92,7 @@ module Aspera
         if @option_insecure
           url = http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
           if !@ssl_warned_urls.include?(url)
-            @formatter.display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not deactivate certificate verification in production.")
+            formatter.display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not deactivate certificate verification in production.")
             @ssl_warned_urls.push(url)
           end
           http.verify_mode = SELF_SIGNED_CERT
@@ -107,46 +112,54 @@ module Aspera
         end
       end
 
-      # minimum initialization
+      # minimum initialization, no exception raised
       def initialize(argv)
         # first thing : manage debug level (allows debugging of option parser)
         early_debug_setup(argv)
-        # compare $0 with expected name
-        current_prog_name = File.basename($PROGRAM_NAME)
-        @formatter.display_message(:error, "#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
-          unless current_prog_name.eql?(PROGRAM_NAME)
         @option_help = false
-        @bash_completion = false
         @option_show_config = false
         @option_insecure = false
         @option_rest_debug = false
         @option_cache_tokens = true
         @option_http_options = {}
         @ssl_warned_urls = []
+        @bash_completion = false
         # environment provided to plugin for various capabilities
-        @plugin_env = {}
+        @agents = {
+          formatter: Formatter.new,
+          options:   Manager.new(PROGRAM_NAME)
+        }
+        @argv = argv
+      end
+
+      # This can throw exception if there is a problem with the environment
+      def init_agents_and_options
         # give command line arguments to option manager
-        @plugin_env[:options] = @opt_mgr = Manager.new(PROGRAM_NAME, argv: argv)
+        options.parse_command_line(@argv)
         # formatter adds options
-        @formatter = @plugin_env[:formatter] = Formatter.new(@plugin_env[:options])
+        formatter.declare_options(options)
+        # compare $0 with expected name
+        current_prog_name = File.basename($PROGRAM_NAME)
+        formatter.display_message(:error, "#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
+          unless current_prog_name.eql?(PROGRAM_NAME)
         Rest.user_agent = PROGRAM_NAME
         Rest.session_cb = lambda{|http|self.http_parameters = http}
         # declare and parse global options
-        init_global_options
+        declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @plugin_env[:config] = Plugins::Config.new(@plugin_env, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
+        @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
         # the TransferAgent plugin may use the @preset parser
-        @plugin_env[:transfer] = TransferAgent.new(@plugin_env[:options], @plugin_env[:config])
+        @agents[:transfer] = TransferAgent.new(options, config)
         # data persistency
-        @plugin_env[:persistency] = PersistencyFolder.new(File.join(@plugin_env[:config].main_folder, 'persist_store'))
+        @agents[:persistency] = PersistencyFolder.new(File.join(config.main_folder, 'persist_store'))
         Log.log.debug('plugin env created'.red)
-        Oauth.persist_mgr = @plugin_env[:persistency] if @option_cache_tokens
-        Fasp::Parameters.file_list_folder = File.join(@plugin_env[:config].main_folder, 'filelists')
-        Aspera::RestErrorAnalyzer.instance.log_file = File.join(@plugin_env[:config].main_folder, 'rest_exceptions.log')
+        Oauth.persist_mgr = persistency if @option_cache_tokens
+        Fasp::Parameters.file_list_folder = File.join(config.main_folder, 'filelists')
+        Aspera::RestErrorAnalyzer.instance.log_file = File.join(config.main_folder, 'rest_exceptions.log')
         # register aspera REST call error handlers
         Aspera::RestErrorsAspera.register_handlers
         # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
-        @opt_mgr.parser.banner = app_banner
+        options.parser.banner = app_banner
       end
 
       def app_banner
@@ -166,7 +179,7 @@ module Aspera
           #{t}source repo: #{SRC_URL}
 
           ENVIRONMENT VARIABLES
-          #{t}#{@plugin_env[:config].conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
+          #{t}#{config.conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
           #{t}Any option can be set as an environment variable, refer to the manual
 
           COMMANDS
@@ -185,38 +198,38 @@ module Aspera
       end
 
       # define header for manual
-      def init_global_options
-        Log.log.debug('init_global_options')
-        @opt_mgr.declare(:help, 'Show this message', values: :none, short: 'h') { @option_help = true }
-        @opt_mgr.declare(:bash_comp, 'Generate bash completion for command', values: :none) { @bash_completion = true }
-        @opt_mgr.declare(:show_config, 'Display parameters used for the provided action', values: :none) { @option_show_config = true }
-        @opt_mgr.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
-        @opt_mgr.declare(:version, 'Display version', values: :none, short: 'v') { @formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
-        @opt_mgr.declare(:warnings, 'Check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
-        @opt_mgr.declare(
+      def declare_global_options
+        Log.log.debug('declare_global_options')
+        options.declare(:help, 'Show this message', values: :none, short: 'h') { @option_help = true }
+        options.declare(:bash_comp, 'Generate bash completion for command', values: :none) { @bash_completion = true }
+        options.declare(:show_config, 'Display parameters used for the provided action', values: :none) { @option_show_config = true }
+        options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
+        options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
+        options.declare(:warnings, 'Check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
+        options.declare(
           :ui, 'Method to start browser',
           values: OpenApplication.user_interfaces,
           handler: {o: self, m: :option_ui},
           default: OpenApplication.default_gui_mode)
-        @opt_mgr.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
-        @opt_mgr.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @opt_mgr.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron')
-        @opt_mgr.declare(:http_options, 'Options for http socket', types: Hash, handler: {o: self, m: :option_http_options})
-        @opt_mgr.declare(:insecure, 'Do not validate HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
-        @opt_mgr.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
-        @opt_mgr.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
-        @opt_mgr.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
+        options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
+        options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
+        options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron')
+        options.declare(:http_options, 'Options for http socket', types: Hash, handler: {o: self, m: :option_http_options})
+        options.declare(:insecure, 'Do not validate HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
+        options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
+        options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
+        options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
         # parse declared options
-        @opt_mgr.parse_options!
+        options.parse_options!
       end
 
       # @return the plugin instance, based on name
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
       def get_plugin_instance_with_options(plugin_name_sym, env=nil)
-        env ||= @plugin_env
+        env ||= @agents
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
-        require @plugin_env[:config].plugins[plugin_name_sym][:require_stanza]
+        require config.plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instantiation
         env[:config].add_plugin_default_preset(plugin_name_sym)
         command_plugin = Plugins::Config.plugin_class(plugin_name_sym).new(env)
@@ -226,8 +239,8 @@ module Aspera
       end
 
       def generate_bash_completion
-        if @opt_mgr.get_next_argument('', expected: :multiple, mandatory: false).nil?
-          @plugin_env[:config].plugins.each_key{|p|puts p.to_s}
+        if options.get_next_argument('', expected: :multiple, mandatory: false).nil?
+          config.plugins.each_key{|p|puts p.to_s}
         else
           Log.log.warn('only first level completion so far')
         end
@@ -237,19 +250,19 @@ module Aspera
       def exit_with_usage(all_plugins)
         Log.log.debug('exit_with_usage'.bg_red)
         # display main plugin options
-        @formatter.display_message(:error, @opt_mgr.parser)
+        formatter.display_message(:error, options.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          @plugin_env[:config].plugins.each_key do |plugin_name_sym|
+          config.plugins.each_key do |plugin_name_sym|
             next if plugin_name_sym.eql?(Plugins::Config::CONF_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
-            plugin_env = @plugin_env.clone
+            plugin_env = @agents.clone
             plugin_env[:man_only] = true
             plugin_env[:options] = Manager.new(PROGRAM_NAME)
             plugin_env[:options].parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym, plugin_env)
             # display generated help for plugin options
-            @formatter.display_message(:error, plugin_env[:options].parser.help)
+            formatter.display_message(:error, plugin_env[:options].parser.help)
           end
         end
         Process.exit(0)
@@ -277,43 +290,45 @@ module Aspera
         Log.log.debug('process_command_line')
         # catch exception information , if any
         exception_info = nil
-        # false if command shall not be executed ("once_only")
+        # false if command shall not be executed (e.g. --show-config)
         execute_command = true
+        # catch exceptions
         begin
+          init_agents_and_options
           # find plugins, shall be after parse! ?
-          @plugin_env[:config].add_plugins_from_lookup_folders
+          config.add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
-          exit_with_usage(true) if @option_help && @opt_mgr.command_or_arg_empty?
+          exit_with_usage(true) if @option_help && options.command_or_arg_empty?
           generate_bash_completion if @bash_completion
-          @plugin_env[:config].periodic_check_newer_gem_version
+          config.periodic_check_newer_gem_version
           command_sym =
-            if @option_show_config && @opt_mgr.command_or_arg_empty?
+            if @option_show_config && options.command_or_arg_empty?
               Plugins::Config::CONF_PLUGIN_SYM
             else
-              @opt_mgr.get_next_command(@plugin_env[:config].plugins.keys.dup.unshift(:help))
+              options.get_next_command(config.plugins.keys.dup.unshift(:help))
             end
           # command will not be executed, but we need manual
-          @opt_mgr.fail_on_missing_mandatory = false if @option_help || @option_show_config
+          options.fail_on_missing_mandatory = false if @option_help || @option_show_config
           # main plugin is not dynamically instantiated
           case command_sym
           when :help
             exit_with_usage(true)
           when Plugins::Config::CONF_PLUGIN_SYM
-            command_plugin = @plugin_env[:config]
+            command_plugin = config
           else
             # get plugin, set options, etc
             command_plugin = get_plugin_instance_with_options(command_sym)
             # parse plugin specific options
-            @opt_mgr.parse_options!
+            options.parse_options!
           end
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            @formatter.display_results({type: :single_object, data: @opt_mgr.known_options(only_defined: true).stringify_keys})
+            formatter.display_results({type: :single_object, data: options.known_options(only_defined: true).stringify_keys})
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
-          lock_port = @opt_mgr.get_option(:lock_port)
+          lock_port = options.get_option(:lock_port)
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
@@ -325,9 +340,9 @@ module Aspera
             end
           end
           # execute and display (if not exclusive execution)
-          @formatter.display_results(command_plugin.execute_action) if execute_command
+          formatter.display_results(command_plugin.execute_action) if execute_command
           # finish
-          @plugin_env[:transfer].shutdown
+          transfer.shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
         rescue CliBadArgument => e;                 exception_info = {e: e, t: 'Argument', usage: true}
@@ -344,22 +359,22 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          @formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
-          @formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
+          formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Provide hint on FASP errors
           if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
-            @formatter.display_message(:error, "For this specific error, refer to:\n"\
+            formatter.display_message(:error, "For this specific error, refer to:\n"\
               "#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
           end
           # Provide hint on SSL errors
           if exception_info[:e].is_a?(OpenSSL::SSL::SSLError) && ['does not match the server certificate'].any?{|m|exception_info[:e].message.include?(m)}
-            @formatter.display_message(:error, "You can ignore SSL errors with option:\n--insecure=yes")
+            formatter.display_message(:error, "You can ignore SSL errors with option:\n--insecure=yes")
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
-          @opt_mgr.final_errors.each do |msg|
-            @formatter.display_message(:error, "#{ERROR_FLASH} Argument: #{msg}")
+          options.final_errors.each do |msg|
+            formatter.display_message(:error, "#{ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end
@@ -369,7 +384,7 @@ module Aspera
           # show stack trace in debug mode
           raise exception_info[:e] if Log.instance.level.eql?(:debug)
           # else give hint and exit
-          @formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
+          formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)
         end
         return nil

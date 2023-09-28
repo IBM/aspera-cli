@@ -73,7 +73,7 @@ module Aspera
         :option_select, :option_show_secrets
 
       # adds options but does not parse
-      def initialize(opt_mgr)
+      def initialize
         @option_format = :table
         @option_display = :info
         @option_fields = FIELDS_DEFAULT
@@ -82,6 +82,9 @@ module Aspera
         @option_flat_hash = true
         @option_transpose_single = true
         @option_show_secrets = false
+      end
+
+      def declare_options(opt_mgr)
         opt_mgr.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format})
         opt_mgr.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display})
         opt_mgr.declare(:fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields})

@@ -97,7 +97,7 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
-      def initialize(program_name, argv: nil)
+      def initialize(program_name)
         # command line values not starting with '-'
         @unprocessed_cmd_line_arguments = []
         # command line values starting with '-'
@@ -127,25 +127,25 @@ module Aspera
         Log.log.debug{"env=#{@unprocessed_env}".red}
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
-        # argv is nil when help is generated for every plugin
-        unless argv.nil?
-          @parser.separator('')
-          @parser.separator('OPTIONS: global')
-          declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
-          declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
-          parse_options!
-          process_options = true
-          until argv.empty?
-            value = argv.shift
-            if process_options && value.start_with?('-')
-              if value.eql?('--')
-                process_options = false
-              else
-                @unprocessed_cmd_line_options.push(value)
-              end
+      end
+
+      def parse_command_line(argv)
+        @parser.separator('')
+        @parser.separator('OPTIONS: global')
+        declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
+        declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
+        parse_options!
+        process_options = true
+        until argv.empty?
+          value = argv.shift
+          if process_options && value.start_with?('-')
+            if value.eql?('--')
+              process_options = false
             else
-              @unprocessed_cmd_line_arguments.push(value)
+              @unprocessed_cmd_line_options.push(value)
             end
+          else
+            @unprocessed_cmd_line_arguments.push(value)
           end
         end
         @initial_cli_options = @unprocessed_cmd_line_options.dup
