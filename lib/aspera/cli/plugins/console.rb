@@ -25,7 +25,6 @@ module Aspera
               end
               url = test_page[:http].uri.to_s
               return {
-                name:    'Console',
                 version: version,
                 url:     url[0..url.index(test_endpoint) - 2]
               }

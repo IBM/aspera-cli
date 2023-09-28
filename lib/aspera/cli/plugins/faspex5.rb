@@ -29,6 +29,10 @@ module Aspera
                              email_notifications].freeze
         private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
+          def application_name
+            'Faspex'
+          end
+
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
@@ -42,7 +46,6 @@ module Aspera
               url_length = -2 - API_DETECT.length
               # take redirect if any
               return {
-                name:    'Faspex',
                 version: result[:http]['x-ibm-aspera'] || '5',
                 url:     result[:http].uri.to_s[0..url_length]
               }

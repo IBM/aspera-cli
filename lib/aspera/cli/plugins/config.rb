@@ -517,11 +517,11 @@ module Aspera
             next if check_only && !check_only.eql?(plugin_name_sym)
             # load plugin class
             require plugin_info[:require_stanza]
-            c = self.class.plugin_class(plugin_name_sym)
+            detect_plugin_class = self.class.plugin_class(plugin_name_sym)
             # requires detection method
-            next unless c.respond_to?(:detect)
+            next unless detect_plugin_class.respond_to?(:detect)
             begin
-              detection_info = c.detect(app_url)
+              detection_info = detect_plugin_class.detect(app_url)
             rescue OpenSSL::SSL::SSLError => e
               Log.log.warn(e.message)
               Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
@@ -530,10 +530,12 @@ module Aspera
             rescue Aspera::RestCallError => e
               Log.log.debug{"detect error: #{e}"}
             end
+            app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
             # if there is a redirect, then the detector can override the url.
-            found_apps.push({product: plugin_name_sym, url: app_url}.merge(detection_info)) unless detection_info.nil?
+            found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info)) unless detection_info.nil?
           end # loop
           raise "No known application found at #{app_url}" if found_apps.empty?
+          raise 'Internal error' unless found_apps.all?{|a|a.keys.all?(Symbol)}
           return found_apps
         end
 
@@ -929,21 +931,19 @@ module Aspera
           # interactive mode
           options.ask_missing_mandatory = true
           # detect plugins by url and optional query
-          apps = identify_plugins_for_url(options.get_next_argument('url', mandatory: true))
+          apps = identify_plugins_for_url(options.get_next_argument('url', mandatory: true)).freeze
           identification = if apps.length.eql?(1)
             Log.log.debug{"Detected: #{identification}"}
             apps.first
           else
             formatter.display_status('Multiple applications detected:')
-            apps.each_with_index do |app, index|
-              app[:num] = index
-            end
-            formatter.display_results({type: :object_list, data: apps, fields: %w[num product url version]})
-            exit(1)
+            formatter.display_results({type: :object_list, data: apps, fields: %w[product url version]})
+            answer = options.prompt_user_input('product', false) until apps.any?{|a|answer&.to_sym.eql?(a[:product])}
+            apps.find{|a|a[:product].eql?(answer.to_sym)}
           end
-          Log.dump(:identification, identification)
           wiz_url = identification[:url]
-          formatter.display_status("Detected: #{identification[:name]} at #{wiz_url}".bold)
+          Log.dump(:identification, identification, :ruby)
+          formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
           # set url for instantiation of plugin
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called

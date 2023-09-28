@@ -62,6 +62,10 @@ module Aspera
 
       class Node < Aspera::Cli::BasicAuthPlugin
         class << self
+          def application_name
+            'HSTS Node API'
+          end
+
           def detect(address_or_url)
             urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
               [address_or_url]
@@ -81,9 +85,8 @@ module Aspera
               next unless result[:http].body.eql?('')
               url_length = -2 - test_endpoint.length
               return {
-                product: :node,
-                url:     result[:http].uri.to_s[0..url_length],
-                version: 'unknown'}
+                url: result[:http].uri.to_s[0..url_length]
+              }
             rescue Errno::ECONNREFUSED
               next
             rescue Aspera::RestCallError => e

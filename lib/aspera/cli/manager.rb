@@ -417,13 +417,13 @@ module Aspera
         @unprocessed_cmd_line_options = unknown_options
       end
 
-      private
-
       def prompt_user_input(prompt, sensitive)
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         return $stdin.gets.chomp
       end
+
+      private
 
       def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory

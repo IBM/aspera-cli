@@ -28,7 +28,6 @@ module Aspera
               version = m[1]
             end
             return {
-              name:    'Shares',
               version: version,
               url:     address_or_url
             }

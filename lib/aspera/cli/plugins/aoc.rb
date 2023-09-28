@@ -18,6 +18,10 @@ module Aspera
     module Plugins
       class Aoc < Aspera::Cli::BasicAuthPlugin
         class << self
+          def application_name
+            'Aspera on Cloud'
+          end
+
           def detect(base_url)
             # no protocol ?
             base_url = "https://#{base_url}" unless base_url.match?(%r{^[a-z]{1,6}://})
@@ -32,7 +36,6 @@ module Aspera
             base_url = result[:http].uri.to_s if result[:http].uri.path.include?('/public')
             # either in standard domain, or product name in page
             return {
-              name:    'Aspera on Cloud',
               version: 'SaaS',
               url:     base_url
             }

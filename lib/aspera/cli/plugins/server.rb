@@ -50,6 +50,10 @@ module Aspera
         end
 
         class << self
+          def application_name
+            'HSTS Fasp'
+          end
+
           def detect(address_or_url)
             urls = if address_or_url.match?(%r{^[a-z]{1,6}://})
               [address_or_url]

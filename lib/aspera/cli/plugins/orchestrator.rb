@@ -21,7 +21,6 @@ module Aspera
               next unless result[:data]['remote_orchestrator_info']
               url = result[:http].uri.to_s
               return {
-                name:    'Orchestrator',
                 version: result[:data]['remote_orchestrator_info']['orchestrator-version'],
                 url:     url[0..url.index(test_endpoint) - 2]
               }
