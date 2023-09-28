@@ -461,8 +461,7 @@ module Aspera
             result = apifid[:api].update("files/#{apifid[:file_id]}", {name: newname})[:data]
             return Main.result_status("renamed to #{newname}")
           when :delete
-            return do_bulk_operation(options.get_next_argument('path'), 'deleted', id_result: 'path') do |l_path|
-              raise "expecting String (path), got #{l_path.class.name} (#{l_path})" unless l_path.is_a?(String)
+            return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
               apifid = @api_node.resolve_api_fid(top_file_id, l_path)
               result = apifid[:api].delete("files/#{apifid[:file_id]}")[:data]
               {'path' => l_path}
@@ -547,10 +546,8 @@ module Aspera
               items = apifid[:api].read('permissions', list_options)[:data]
               return {type: :object_list, data: items}
             when :delete
-              perm_id = instance_identifier
-              return do_bulk_operation(perm_id, 'deleted') do |one_id|
-                # TODO: notify event ?
-                apifid[:api].delete("permissions/#{perm_id}")
+              return do_bulk_operation(command: command_perm, descr: 'identifier', values: :identifier) do |one_id|
+                apifid[:api].delete("permissions/#{one_id}")
                 # notify application of deletion
                 the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app, types: ['permission.deleted']) unless the_app.nil?
                 {'id' => one_id}
@@ -693,13 +690,13 @@ module Aspera
               resp = @api_node.read('ops/transfers', old_query_read_delete)
               return { type: :object_list, data: resp[:data], fields: %w[id status] } # TODO: useful?
             when :create
-              resp = @api_node.create('streams', value_create_modify(command: command, type: Hash))
+              resp = @api_node.create('streams', value_create_modify(command: command))
               return { type: :single_object, data: resp[:data] }
             when :show
               resp = @api_node.read("ops/transfers/#{options.get_next_argument('transfer id')}")
               return { type: :other_struct, data: resp[:data] }
             when :modify
-              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command, type: Hash))
+              resp = @api_node.update("streams/#{options.get_next_argument('transfer id')}", value_create_modify(command: command))
               return { type: :other_struct, data: resp[:data] }
             when :cancel
               resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
@@ -812,7 +809,7 @@ module Aspera
             @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
             case command
             when :create
-              resp = @api_node.create(res_class_path, value_create_modify(command: command, type: Hash))
+              resp = @api_node.create(res_class_path, value_create_modify(command: command))
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
               resp = @api_node.read(res_class_path, old_query_read_delete)
@@ -832,7 +829,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = value_create_modify(default: {}, type: Hash)
+            request_data = value_create_modify(command: command, default: {})
             case command
             when :session
               command = options.get_next_command([:list])

@@ -531,9 +531,7 @@ module Aspera
               id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
               # TODO: report inconsistency: creation url is !=, and does not return id.
               resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-              list_or_one = options.get_next_argument('creation data', type: Hash)
-              return do_bulk_operation(list_or_one, 'created', id_result: id_result) do |params|
-                raise 'expecting Hash' unless params.is_a?(Hash)
+              return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
                 aoc_api.create(resource_class_path, params)[:data]
               end
             when :list
@@ -565,7 +563,7 @@ module Aspera
               aoc_api.update(resource_instance_path, changes)
               return Main.result_status('modified')
             when :delete
-              return do_bulk_operation(res_id, 'deleted') do |one_id|
+              return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
                 aoc_api.delete("#{resource_class_path}/#{one_id}")
                 {'id' => one_id}
               end
@@ -640,7 +638,7 @@ module Aspera
                 return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)[:data]}
               end
             when :send
-              package_data = value_create_modify(command: package_command, type: Hash)
+              package_data = value_create_modify(command: package_command)
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
               # works for both normal usr auth and link auth
@@ -740,8 +738,7 @@ module Aspera
               packages = aoc_api.read('packages', query)[:data]
               return {type: :object_list, data: packages, fields: display_fields}
             when :delete
-              list_or_one = instance_identifier
-              return do_bulk_operation(list_or_one, 'deleted') do |id|
+              return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
                 raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
                 aoc_api.delete("packages/#{id}")[:data]
               end
@@ -897,7 +894,7 @@ module Aspera
             return execute_admin_action
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify(type: String)
+            url = value_create_modify(command: command, type: String)
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, aoc_api, current_workspace_info['id'])

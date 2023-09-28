@@ -67,14 +67,22 @@ module Aspera
       end
 
       # For create and delete operations: execute one actin or multiple if bulk is yes
-      # @param single_or_array [Object] single hash, or array of hash for bulk
-      # @param success_msg deleted or created
+      # @param command [Symbol] operation: :create, :delete, ...
+      # @param descr [String] description of the value
+      # @param values [Object] the value(s), or the type of value to get from user
       # @param id_result [String] key in result hash to use as identifier
       # @param fields [Array] fields to display
-      def do_bulk_operation(single_or_array, success_msg, id_result: 'id', fields: :default)
-        raise 'programming error: missing block' unless block_given?
-        params = options.get_option(:bulk) ? single_or_array : [single_or_array]
-        raise 'expecting Array for bulk operation' unless params.is_a?(Array)
+      def do_bulk_operation(command:, descr:, values: Hash, id_result: 'id', fields: :default)
+        is_bulk = options.get_option(:bulk)
+        case values
+        when :identifier
+          values = instance_identifier
+        when Class
+          values = value_create_modify(command: command, type: values, bulk: is_bulk)
+        end
+        raise 'Internal error: missing block' unless block_given?
+        # if not bulk, there is a single value
+        params = is_bulk ? values : [values]
         Log.log.warn('Empty list given for bulk operation') if params.empty?
         Log.dump(:bulk_operation, params)
         result_list = []
@@ -86,7 +94,8 @@ module Aspera
             res = yield(param)
             # if block returns a hash, let's use this (create)
             result = res if param.is_a?(Hash)
-            result['status'] = success_msg
+            # create -> created
+            result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d"
           rescue StandardError => e
             raise e if options.get_option(:bfail)
             result['status'] = e.to_s
@@ -94,7 +103,7 @@ module Aspera
           result_list.push(result)
         end
         display_fields = [id_result, 'status']
-        if options.get_option(:bulk)
+        if is_bulk
           return {type: :object_list, data: result_list, fields: display_fields}
         else
           display_fields = fields unless fields.eql?(:default)
@@ -128,13 +137,12 @@ module Aspera
         case command
         when :create
           raise 'cannot create singleton' if is_singleton
-          return do_bulk_operation(value_create_modify(command: command, type: :bulk_hash), 'created', fields: display_fields) do |params|
-            raise 'expecting Hash' unless params.is_a?(Hash)
+          return do_bulk_operation(command: command, descr: 'data', fields: display_fields) do |params|
             rest_api.create(res_class_path, params)[:data]
           end
         when :delete
           raise 'cannot delete singleton' if is_singleton
-          return do_bulk_operation(one_res_id, 'deleted') do |one_id|
+          return do_bulk_operation(command: command, descr: 'identifier', values: one_res_id) do |one_id|
             rest_api.delete("#{res_class_path}/#{one_id}", old_query_read_delete)
             {'id' => one_id}
           end
@@ -164,7 +172,7 @@ module Aspera
             raise "An error occurred: unexpected result type for list: #{data.class}"
           end
         when :modify
-          parameters = value_create_modify(command: command, type: Hash)
+          parameters = value_create_modify(command: command)
           property = options.get_option(:property)
           parameters = {property => parameters} unless property.nil?
           rest_api.update(one_res_path, parameters)
@@ -211,24 +219,24 @@ module Aspera
       end
 
       # Retrieves an extended value from command line, used for creation or modification of entities
+      # @param command [Symbol] command name for error message
+      # @param type [Class] expected type of value, either a Class, an Array of Class, or :bulk_hash
       # @param default [Object] default value if not provided
-      # @param command [String] command name for error message
-      # @param type [Class] expected type of value
       # TODO: when deprecation of `value` is completed: remove line with :value
-      def value_create_modify(default: nil, command: 'command', type: nil)
+      def value_create_modify(command:, type: Hash, bulk: false, default: nil)
         value = options.get_option(:value)
+        Log.log.warn("option `value` is deprecated. Use positional parameter for #{command}") unless value.nil?
         value = options.get_next_argument("parameters for #{command}", mandatory: default.nil?) if value.nil?
         value = default if value.nil?
-        if type.nil?
-          # nothing to do
-        elsif type.is_a?(Class)
-          raise CliBadArgument, "Value must be a #{type}" unless value.is_a?(type)
-        elsif type.is_a?(Array)
-          raise CliBadArgument, "Value must be one of #{type.join(', ')}" unless type.any?{|t| value.is_a?(t)}
-        elsif type.eql?(:bulk_hash)
-          raise CliBadArgument, 'Value must be a Hash or Array of Hash' unless value.is_a?(Hash) || (value.is_a?(Array) && value.all?(Hash))
-        else
-          raise "Internal error: #{type}"
+        unless type.nil?
+          type = [type] unless type.is_a?(Array)
+          raise "Internal error, check types must be a Class, not #{type.map(&:class).join(',')}" unless type.all?(Class)
+          if bulk
+            raise CliBadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
+            raise CliBadArgument, "Value must be a #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
+          else
+            raise CliBadArgument, "Value must be a #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
+          end
         end
         return value
       end
