@@ -16,9 +16,21 @@ module Aspera
       end
 
       def execute_sync_action(&block)
+        # options = Aspera::Cli::Manager.new
         raise 'Internal Error: No block given' unless block
-        async_params = options.get_option(:sync_info, mandatory: true)
         command = options.get_next_command(%i[start admin])
+        sync_direction = options.get_next_argument('sync direction', expected: Aspera::Sync::DIRECTIONS, mandatory: false)
+        local_path = options.get_next_argument('local path', type: String, mandatory: false) if sync_direction
+        remote_path = options.get_next_argument('remote path', type: String, mandatory: false) if local_path
+        async_params = if sync_direction && local_path && remote_path
+          additional = options.get_option(:sync_info, allowed_types: Hash, mandatory: false, default: {'sessions' => [{'name' => File.basename(local_path)}]})
+          raise "Bad sync_info: #{additional}" unless additional.is_a?(Hash) && additional['sessions']&.is_a?(Array) && additional['sessions'].first.is_a?(Hash)
+          additional['sessions'].first.merge!('direction' => sync_direction.to_s, 'local_dir' => local_path, 'remote_dir' => remote_path)
+          additional
+        else
+          raise 'provide zero or 3 arguments: direction, source, destination' if sync_direction && !remote_path
+          options.get_option(:sync_info, mandatory: true)
+        end
         case command
         when :start
           Aspera::Sync.start(async_params, &block)
