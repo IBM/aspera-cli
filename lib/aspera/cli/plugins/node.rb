@@ -277,10 +277,10 @@ module Aspera
                        when :pull then :sync_download
                        when :bidi then :sync
                        end,
-                paths: {
+                paths: [{
                   source:      remote_path,
                   destination: local_path
-                }
+                }]
               }
               # add fixed parameters if any (for COS)
               @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
