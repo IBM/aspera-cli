@@ -183,15 +183,17 @@ module Aspera
             raise "internal error: only symbols allowed: #{allowed_values}" unless allowed_values.all?(Symbol)
             result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
           else
-            raise 'internal error'
+            raise 'Internal error: expected: must be single, multiple, or value array'
           end
         elsif mandatory
-          # no value provided
+          # no value provided, either get value interactively, or exception
           result = get_interactive(:argument, descr, expected: expected)
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if !aliases.nil? && aliases.key?(result)
-        raise "argument shall be #{type.name}" unless type.nil? || result.is_a?(type)
+        # if nil here, it is because no value provided and not mandatory
+        return nil if result.nil? && !mandatory
+        raise "Argument shall be #{type.name}, not #{result.class}" if !type.nil? && !result.is_a?(type)
         return result
       end
 

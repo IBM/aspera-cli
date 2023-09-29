@@ -4939,12 +4939,17 @@ Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man
 <%=include_commands_for_plugin('cos')%>
 ```
 
-## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
+## <a id="async"></a>IBM Aspera Sync
 
-A basic plugin to start an `async` using <%=tool%>.
-The main advantage over bare `async` command line is the possibility to use a configuration file, using standard options of <%=tool%>.
+An interface for the `async` utility is provided in the following plugins:
 
-The `sync` command is also made available through the `server sync`, `aoc files sync` and `node sync` commands.
+- server sync
+- node sync
+- aoc files sync (uses node)
+- shares files sync (uses node)
+
+The main advantage over bare `async` command line when using `server` is the possibility to use a configuration file, using standard options of <%=tool%>.
+
 In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
@@ -4964,12 +4969,6 @@ Documentation on Async node API can be found on [IBM Developer Portal](https://d
 This is specific to <%=tool%>.
 It is based on a JSON representation of `async` command line options.
 It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
-
-### Sync sample commands
-
-```bash
-<%=include_commands_for_plugin('sync')%>
-```
 
 ## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
 

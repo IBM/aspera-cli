@@ -1501,10 +1501,13 @@ config echo @uri:https://ifconfig.me
 config echo @val:@file:no_such_file
 config echo @zlib:@stdin:
 config echo hello
-config email_test --notif-to=my_recipient_email
+config email_test --notif-to=my_email_external
 config export
 config flush_tokens
 config genkey mykey
+config hint Aspera::Fasp::Error 'Remote host is not who we expected'
+config hint Aspera::RestCallError 'Signature has expired'
+config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
 config open
 config plugin create mycommand T
 config plugin list
@@ -3084,7 +3087,7 @@ OPTIONS: global
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check smtp_settings vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey hint initdemo open plugins preset proxy_check smtp_settings vault wizard
 OPTIONS:
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
@@ -3142,6 +3145,8 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
+        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: orchestrator
@@ -3265,13 +3270,6 @@ OPTIONS:
         --clips-length=VALUE         Mp4: clips: length in seconds of each clips
 
 
-COMMAND: sync
-SUBCOMMANDS: admin start
-OPTIONS:
-        --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first in parameters
-
-
 COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
@@ -3300,6 +3298,8 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
+        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: server
@@ -3311,6 +3311,8 @@ OPTIONS:
         --ssh-keys=VALUE             SSH key path list (Array or single)
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
+        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: console
@@ -4405,7 +4407,7 @@ Examples of expressions: (using like this: `--query=exec:'<expression>'`)
 ### AoC sample commands
 
 ```bash
-aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_recipient_email --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key delete ak1ibmcloud
@@ -4489,9 +4491,9 @@ aoc packages list --query=@json:'{"dropbox_name":"my_aoc_shbx_name","sort":"-rec
 aoc packages recv "my_package_id" --to-folder=.
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"my_aoc_shbx_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
-aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
-aoc packages send --workspace="my_aoc_shbx_ws" @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
+aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
+aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
+aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
@@ -4678,16 +4680,17 @@ server mkdir NEW_SERVER_FOLDER --logger=stdout
 server mkdir folder_1/target_hot
 server mv folder_1/200KB.2 folder_1/to.delete
 server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"}}'
+server sync admin status --sync-info=@json:'{"name":"sync2"}'
 server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
+server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
-server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
 server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=NEW_SERVER_FOLDER
 server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
-server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_recipient_email --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
 server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
@@ -5548,7 +5551,7 @@ shares health
 console health
 console transfer current list
 console transfer smart list
-console transfer smart sub my_job_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
+console transfer smart sub my_console_smart_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
 ```
 
 ## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator
@@ -5684,12 +5687,17 @@ cos node info
 cos node upload testfile.bin
 ```
 
-## <a id="async"></a>Plugin: `async`: IBM Aspera Sync
+## <a id="async"></a>IBM Aspera Sync
 
-A basic plugin to start an `async` using `ascli`.
-The main advantage over bare `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
+An interface for the `async` utility is provided in the following plugins:
 
-The `sync` command is also made available through the `server sync`, `aoc files sync` and `node sync` commands.
+- server sync
+- node sync
+- aoc files sync (uses node)
+- shares files sync (uses node)
+
+The main advantage over bare `async` command line when using `server` is the possibility to use a configuration file, using standard options of `ascli`.
+
 In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
@@ -5709,13 +5717,6 @@ Documentation on Async node API can be found on [IBM Developer Portal](https://d
 This is specific to `ascli`.
 It is based on a JSON representation of `async` command line options.
 It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
-
-### Sync sample commands
-
-```bash
-sync admin status --sync-info=@json:'{"sessions":[{"name":"test","local_dir":"contents"}]}'
-sync start --sync-info=@json:'{"instance":{"quiet":true},"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"contents","host":"my_remote_host","tcp_port":33001,"user":"my_remote_user","private_key_paths":["my_local_user_key"]}]}'
-```
 
 ## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
 
