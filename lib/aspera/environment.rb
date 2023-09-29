@@ -52,7 +52,7 @@ module Aspera
           return CPU_PPC64
         when /s390/
           return CPU_S390
-        when /arm64/, /aarch64/
+        when /arm/, /aarch64/
           # arm on mac has rosetta 2
           return CPU_X86_64 if os.eql?(OS_X)
         end
