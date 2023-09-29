@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/basic_auth_plugin'
-require 'aspera/cli/plugins/sync'
+require 'aspera/cli/sync_actions'
 require 'aspera/ascmd'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/ssh'
@@ -13,17 +13,8 @@ module Aspera
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
-      class SyncSpecServer
-        def initialize(transfer_spec)
-          @transfer_spec = transfer_spec
-        end
-
-        def transfer_spec(direction, local_path, remote_path)
-          return @transfer_spec
-        end
-      end
-
       class Server < Aspera::Cli::BasicAuthPlugin
+        include SyncActions
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
         HTTPS_SCHEME = 'https'
@@ -89,6 +80,7 @@ module Aspera
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
           options.declare(:passphrase, 'SSH private key passphrase')
           options.declare(:ssh_options, 'SSH options', types: Hash, default: {})
+          declare_sync_options
           options.parse_options!
           @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end
@@ -173,8 +165,8 @@ module Aspera
             Fasp::TransferSpec.action_to_direction(transfer_spec, command)
             return Main.result_transfer(transfer.start(transfer_spec))
           when :sync
-            sync_plugin = Plugins::Sync.new(@agents, sync_spec: SyncSpecServer.new(transfer_spec))
-            return sync_plugin.execute_action
+            # lets ignore the arguments provided by execute_sync_action, we just give the transfer spec
+            return execute_sync_action {transfer_spec}
           end
         end
 

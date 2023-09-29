@@ -4,12 +4,15 @@
 
 require 'aspera/command_line_builder'
 require 'aspera/fasp/installation'
+require 'aspera/log'
 require 'json'
 require 'base64'
+require 'open3'
+require 'English'
 
 module Aspera
   # builds command line arg for async
-  class Sync
+  module Sync
     # default is push
     DIRECTIONS = %i[push pull bidi].freeze
     DIRECTION_TO_REQUEST_TYPE = {
@@ -85,89 +88,86 @@ module Aspera
 
     private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :ASYNC_EXECUTABLE, :TS_TO_PARAMS_V2
 
-    attr_reader :env_args
-
-    # @param sync_params [Hash] sync parameters, old or new format
-    # @param node_sync [Object|nil]
-    def initialize(sync_params, node_sync)
-      raise StandardError, 'parameter must be Hash' unless sync_params.is_a?(Hash)
-      raise 'node_sync misses method transfer_spec' unless node_sync.nil? || node_sync.respond_to?(:transfer_spec)
-      @env_args = {
-        args: [],
-        env:  {}
-      }
-      if sync_params.key?('local')
-        # async native JSON format (v2)
-        raise StandardError, 'remote must be Hash' unless sync_params['remote'].is_a?(Hash)
-        unless node_sync.nil?
-          transfer_spec = node_sync.transfer_spec(sync_params['direction'], sync_params['local']['path'], sync_params['remote']['path'])
-          # async native JSON format
-          raise StandardError, 'local must be Hash' unless sync_params['local'].is_a?(Hash)
-          TS_TO_PARAMS_V2.each do |ts_param, sy_path|
-            next unless transfer_spec.key?(ts_param)
-            sy_dig = sy_path.split('.')
-            param = sy_dig.pop
-            hash = sy_dig.empty? ? sync_params : sync_params[sy_dig.first]
-            hash = sync_params[sy_dig.first] = {} if hash.nil?
-            hash[param] = transfer_spec[ts_param]
-          end
-          # 'remote.path',
-          sync_params['remote']['connect_mode'] ||= sync_params['remote'].key?('ws_port') ? 'ws' : 'ssh'
-          sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
-          sync_params['remote']['path'] ||= '/' if transfer_spec.dig(*%w[tags aspera node file_id])
-        end
-        @env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
-      elsif sync_params.key?('sessions')
-        # ascli JSON format (v1)
-        unless node_sync.nil?
-          sync_params['sessions'].each do |session|
-            transfer_spec = node_sync.transfer_spec(session['direction'], session['local_dir'], session['remote_dir'])
-            PARAMS_VX_SESSION.each do |async_param, behavior|
-              if behavior.key?(:ts)
-                tspec_param = behavior[:ts].is_a?(TrueClass) ? async_param : behavior[:ts].to_s
-                session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
-              end
+    class << self
+      # @param sync_params [Hash] sync parameters, old or new format
+      # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
+      def start(sync_params, &block)
+        raise 'Internal Error: sync_params parameter must be Hash' unless sync_params.is_a?(Hash)
+        env_args = {
+          args: [],
+          env:  {}
+        }
+        if sync_params.key?('local')
+          # async native JSON format (v2)
+          raise StandardError, 'remote must be Hash' unless sync_params['remote'].is_a?(Hash)
+          if block
+            transfer_spec = yield(sync_params['direction'].to_sym, sync_params['local']['path'], sync_params['remote']['path'])
+            # async native JSON format
+            raise StandardError, 'local must be Hash' unless sync_params['local'].is_a?(Hash)
+            TS_TO_PARAMS_V2.each do |ts_param, sy_path|
+              next unless transfer_spec.key?(ts_param)
+              sy_dig = sy_path.split('.')
+              param = sy_dig.pop
+              hash = sy_dig.empty? ? sync_params : sync_params[sy_dig.first]
+              hash = sync_params[sy_dig.first] = {} if hash.nil?
+              hash[param] = transfer_spec[ts_param]
             end
-            session['private_key_paths'] = Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
-            session['remote_dir'] = '/' if transfer_spec.dig(*%w[tags aspera node file_id])
+            # 'remote.path',
+            sync_params['remote']['connect_mode'] ||= sync_params['remote'].key?('ws_port') ? 'ws' : 'ssh'
+            sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
+            sync_params['remote']['path'] ||= '/' if transfer_spec.dig(*%w[tags aspera node file_id])
           end
-        end
-        raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
-          sync_params.keys.push('instance').uniq.sort.eql?(PARAMS_VX_KEYS)
-        raise StandardError, 'sessions key must be Array' unless sync_params['sessions'].is_a?(Array)
-        raise StandardError, 'sessions key requires at least one Hash' unless sync_params['sessions'].first.is_a?(Hash)
+          env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
+        elsif sync_params.key?('sessions')
+          # ascli JSON format (v1)
+          if block
+            sync_params['sessions'].each do |session|
+              transfer_spec = yield(session['direction'].to_sym, session['local_dir'], session['remote_dir'])
+              PARAMS_VX_SESSION.each do |async_param, behavior|
+                if behavior.key?(:ts)
+                  tspec_param = behavior[:ts].is_a?(TrueClass) ? async_param : behavior[:ts].to_s
+                  session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
+                end
+              end
+              session['private_key_paths'] = Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
+              session['remote_dir'] = '/' if transfer_spec.dig(*%w[tags aspera node file_id])
+            end
+          end
+          raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
+            sync_params.keys.push('instance').uniq.sort.eql?(PARAMS_VX_KEYS)
+          raise StandardError, 'sessions key must be Array' unless sync_params['sessions'].is_a?(Array)
+          raise StandardError, 'sessions key requires at least one Hash' unless sync_params['sessions'].first.is_a?(Hash)
 
-        if sync_params.key?('instance')
-          raise StandardError, 'instance key must be Hash' unless sync_params['instance'].is_a?(Hash)
-          instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
-          instance_builder.process_params
-          instance_builder.add_env_args(@env_args[:env], @env_args[:args])
-        end
+          if sync_params.key?('instance')
+            raise StandardError, 'instance key must be Hash' unless sync_params['instance'].is_a?(Hash)
+            instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
+            instance_builder.process_params
+            instance_builder.add_env_args(env_args[:env], env_args[:args])
+          end
 
-        sync_params['sessions'].each do |session_params|
-          raise StandardError, 'sessions must contain hashes' unless session_params.is_a?(Hash)
-          raise StandardError, 'session must contain at least name' unless session_params.key?('name')
-          session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
-          session_builder.process_params
-          session_builder.add_env_args(@env_args[:env], @env_args[:args])
+          sync_params['sessions'].each do |session_params|
+            raise StandardError, 'sessions must contain hashes' unless session_params.is_a?(Hash)
+            raise StandardError, 'session must contain at least name' unless session_params.key?('name')
+            session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
+            session_builder.process_params
+            session_builder.add_env_args(env_args[:env], env_args[:args])
+          end
+        else
+          raise 'At least one of `local` or `sessions` must be present in async parameters'
         end
-      else
-        raise 'At least one of `local` or `sessions` must be present in async parameters'
+        Log.dump(:sync_params, sync_params)
+
+        Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{ASYNC_EXECUTABLE}\" \"#{env_args[:args].join('" "')}\""}
+        res = system(env_args[:env], [ASYNC_EXECUTABLE, ASYNC_EXECUTABLE], *env_args[:args])
+        Log.log.debug{"result=#{res}"}
+        case res
+        when true then return nil
+        when false then raise "failed: #{$CHILD_STATUS}"
+        when nil then raise "not started: #{$CHILD_STATUS}"
+        else raise 'internal error: unspecified case'
+        end
       end
-      Log.dump(:sync, sync_params)
-    end
-
-    def start
-      Log.log.debug{"execute: #{@env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{ASYNC_EXECUTABLE}\" \"#{@env_args[:args].join('" "')}\""}
-      res = system(@env_args[:env], [ASYNC_EXECUTABLE, ASYNC_EXECUTABLE], *@env_args[:args])
-      Log.log.debug{"result=#{res}"}
-      case res
-      when true then return nil
-      when false then raise "failed: #{$CHILD_STATUS}"
-      when nil then raise "not started: #{$CHILD_STATUS}"
-      else raise 'internal error: unspecified case'
-      end
-    end
+  end
   end # end Sync
 
   class SyncAdmin
@@ -210,4 +210,4 @@ module Aspera
       return stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
     end
   end
-end
+end # end Aspera

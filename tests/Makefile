@@ -9,7 +9,7 @@ include $(DIR_TOP)common.mak
 # folder where flag files for integration tests are generated
 T=$(DIR_TMP)t/
 
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver tsync torc tnsync tnsyncs tconfig tats tcos tf5 tprev
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver torc tnsync tnsyncs tconfig tats tcos tf5 tprev
 # tnagios: already included
 
 # tests that require user interaction
@@ -148,13 +148,15 @@ $(T)serv_upload: $(T)serv_mkdir
 	@touch $@
 $(T)serv_sync: $(T)serv_upload 
 	@echo $@
+	set -x&&\
 	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) server sync start --sync-info=@json:'{"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
+	$(EXE_MAN) server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
 	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
 	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'&&\
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"}}'
+	-$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2"}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
@@ -216,6 +218,7 @@ $(T)serv_key: $(T).exists
 	@touch $@
 $(T)asession: $(T).exists
 	@echo $@
+	set -x&&\
 	remote_host=$$($(EXE_NOMAN) config preset get tst_server url)&&remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NOMAN) config preset get tst_server username)&&\
 	remote_pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
@@ -547,6 +550,7 @@ $(T)aocfv3inf: $(T).exists
 	@touch $@
 $(T)aocfsync1: $(T).exists
 	@echo $@
+	set -x&&\
 	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
@@ -714,6 +718,7 @@ $(T)aoccltreg: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 	$(EXE_MAN) aoc admin res client_registration_token list
+	set -x&&\
 	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1)&&\
 	$(EXE_MAN) aoc admin res client_registration_token delete $${clt_reg_id}
 	@touch $@
@@ -935,6 +940,7 @@ $(T)sy5: $(T).exists
 	@touch $@
 $(T)ndsyncv1: $(T).exists
 	@echo $@
+	set -x&&\
 	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
@@ -944,6 +950,7 @@ $(T)ndsyncv1: $(T).exists
 $(T)ndsyncv2: $(T).exists
 	@echo $@
 	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
+	set -x&&\
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
 	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
@@ -1229,23 +1236,6 @@ thot:
 	ls -al source_hot
 	rm -fr source_hot
 	@touch $@
-$(T)sync1: $(T).exists
-	@echo $@
-	mkdir -p $(DIR_TMP)contents
-	cp $(CF_LOCAL_SAMPLE_FILEPATH) $(DIR_TMP)contents
-	set -x&&\
-	remote_host=$$($(EXE_NOMAN) config preset get tst_server_bykey url)&&\
-	remote_host=$${remote_host##*/}&&\
-	remote_port=$${remote_host#*:}&&\
-	remote_host=$${remote_host%:*}&&\
-	remote_user=$$($(EXE_NOMAN) config preset get misc syncuser)&&\
-	local_user_key=$$($(EXE_NOMAN) config preset get local_user ssh_keys)&&\
-	$(EXE_MAN) sync start --sync-info=@json:'{"instance":{"quiet":true},"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33001,"user":"'"$${remote_user}"'","private_key_paths":["'"$${local_user_key}"'"]}]}'
-	-$(EXE_NOMAN) sync start --sync-info=@json:'{"sessions":[{"name":"test","reset":true,"remote_dir":"/sync_test","local_dir":"$(DIR_TMP)contents","host":"'"$${remote_host}"'","tcp_port":33002,"user":"'"$${remote_user}"'","private_key_paths":["'"$${local_user_key}"'"]}]}'
-	$(EXE_MAN) sync admin status --sync-info=@json:'{"sessions":[{"name":"test","local_dir":"$(DIR_TMP)contents"}]}'
-	-$(EXE_NOMAN) sync admin status --sync-info=@json:'{"sessions":[{"name":"test"}]}'
-	@touch $@
-tsync: $(T)sync1
 
 $(T)tcos: $(T).exists
 	@echo $@

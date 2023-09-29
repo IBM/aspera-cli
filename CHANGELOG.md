@@ -3,7 +3,9 @@
 * 4.15.0.pre
 
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`. Also they can detect multiple applications at the same address or url.
+  * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * new: aoc: wizard manages public links
+  * new: added resolution hints for some known issues.
 
 * 4.14.0
 

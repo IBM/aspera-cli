@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/basic_auth_plugin'
-require 'aspera/cli/plugins/sync'
+require 'aspera/cli/sync_actions'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
@@ -15,52 +15,8 @@ require 'zlib'
 module Aspera
   module Cli
     module Plugins
-      class SyncSpecGen3
-        def initialize(api_node)
-          @api_node = api_node
-        end
-
-        def transfer_spec(direction, local_path, remote_path)
-          # empty transfer spec for authorization request
-          direction_sym = direction.to_sym
-          request_transfer_spec = {
-            type:  Aspera::Sync::DIRECTION_TO_REQUEST_TYPE[direction_sym],
-            paths: {
-              source:      remote_path,
-              destination: local_path
-            }
-          }
-          # add fixed parameters if any (for COS)
-          @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
-          # prepare payload for single request
-          setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-          # only one request, so only one answer
-          transfer_spec = @api_node.create('files/sync_setup', setup_payload)[:data]['transfer_specs'].first['transfer_spec']
-          # API returns null tag... but async does not like it
-          transfer_spec.delete_if{ |_k, v| v.nil? }
-          # delete this part, as the returned value contains only destination, and not sources
-          # transfer_spec.delete('paths') if command.eql?(:upload)
-          Log.dump(:ts, transfer_spec)
-          return transfer_spec
-        end
-      end
-
-      class SyncSpecGen4
-        def initialize(api_node, top_file_id)
-          @api_node = api_node
-          @top_file_id = top_file_id
-        end
-
-        def transfer_spec(direction, local_path, remote_path)
-          # remote is specified by option to_folder
-          apifid = @api_node.resolve_api_fid(@top_file_id, remote_path)
-          transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)
-          Log.dump(:ts, transfer_spec)
-          return transfer_spec
-        end
-      end
-
       class Node < Aspera::Cli::BasicAuthPlugin
+        include SyncActions
         class << self
           def application_name
             'HSTS Node API'
@@ -106,15 +62,6 @@ module Aspera
               test_args:    'info'
             }
           end
-
-          def register_node_options(env)
-            env[:options].declare(:validator, 'Identifier of validator (optional for central)')
-            env[:options].declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
-            env[:options].declare(:sync_name, 'Sync name')
-            env[:options].declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
-            env[:options].parse_options!
-            Aspera::Node.use_standard_ports = env[:options].get_option(:default_ports)
-          end
         end
 
         # spellchecker: disable
@@ -156,7 +103,15 @@ module Aspera
 
         def initialize(env)
           super(env)
-          self.class.register_node_options(env) unless env[:skip_node_options]
+          unless env[:skip_node_options]
+            options.declare(:validator, 'Identifier of validator (optional for central)')
+            options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
+            options.declare(:sync_name, 'Sync name')
+            options.declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
+            declare_sync_options
+            options.parse_options!
+            Aspera::Node.use_standard_ports = options.get_option(:default_ports)
+          end
           return if env[:man_only]
           @api_node =
             if env.key?(:node_api)
@@ -313,8 +268,29 @@ module Aspera
             end
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :sync
-            node_sync = SyncSpecGen3.new(@api_node)
-            return Plugins::Sync.new(@agents, sync_spec: node_sync).execute_action
+            return execute_sync_action do |sync_direction, local_path, remote_path|
+              # Gen3 API
+              # empty transfer spec for authorization request
+              request_transfer_spec = {
+                type:  Aspera::Sync::DIRECTION_TO_REQUEST_TYPE[sync_direction],
+                paths: {
+                  source:      remote_path,
+                  destination: local_path
+                }
+              }
+              # add fixed parameters if any (for COS)
+              @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+              # prepare payload for single request
+              setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
+              # only one request, so only one answer
+              transfer_spec = @api_node.create('files/sync_setup', setup_payload)[:data]['transfer_specs'].first['transfer_spec']
+              # API returns null tag... but async does not like it
+              transfer_spec.delete_if{ |_k, v| v.nil? }
+              # delete this part, as the returned value contains only destination, and not sources
+              # transfer_spec.delete('paths') if command.eql?(:upload)
+              Log.dump(:ts, transfer_spec)
+              transfer_spec
+            end
           when :upload, :download
             # empty transfer spec for authorization request
             request_transfer_spec = {}
@@ -470,8 +446,19 @@ module Aspera
               {'path' => l_path}
             end
           when :sync
-            node_sync = SyncSpecGen4.new(@api_node, top_file_id)
-            return Plugins::Sync.new(@agents, sync_spec: node_sync).execute_action
+            return execute_sync_action do |sync_direction, _local_path, remote_path|
+              # Gen4 API
+              # direction is push pull, bidi
+              ts_direction = case sync_direction
+              when :push, :bidi then Fasp::TransferSpec::DIRECTION_SEND
+              when :pull then Fasp::TransferSpec::DIRECTION_RECEIVE
+              end
+              # remote is specified by option to_folder
+              apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
+              transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], ts_direction)
+              Log.dump(:ts, transfer_spec)
+              transfer_spec
+            end
           when :upload
             apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)))
