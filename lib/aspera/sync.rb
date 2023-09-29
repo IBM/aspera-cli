@@ -96,7 +96,7 @@ module Aspera
           # async native JSON format (v2)
           raise StandardError, 'remote must be Hash' unless sync_params['remote'].is_a?(Hash)
           if block
-            transfer_spec = yield(sync_params['direction'].to_sym, sync_params['local']['path'], sync_params['remote']['path'])
+            transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], sync_params['remote']['path'])
             # async native JSON format
             raise StandardError, 'local must be Hash' unless sync_params['local'].is_a?(Hash)
             TS_TO_PARAMS_V2.each do |ts_param, sy_path|
@@ -117,7 +117,7 @@ module Aspera
           # ascli JSON format (v1)
           if block
             sync_params['sessions'].each do |session|
-              transfer_spec = yield(session['direction'].to_sym, session['local_dir'], session['remote_dir'])
+              transfer_spec = yield((session['direction'] || 'push').to_sym, session['local_dir'], session['remote_dir'])
               PARAMS_VX_SESSION.each do |async_param, behavior|
                 if behavior.key?(:ts)
                   tspec_param = behavior[:ts].is_a?(TrueClass) ? async_param : behavior[:ts].to_s
