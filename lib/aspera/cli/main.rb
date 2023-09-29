@@ -379,7 +379,7 @@ module Aspera
         rescue Fasp::Error => e;                    exception_info = {e: e, t: 'FASP(ascp)'}
         rescue Aspera::RestCallError => e;          exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
-        rescue StandardError => e;                  exception_info = {e: e, t: 'Other', debug: true}
+        rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}
         rescue Interrupt => e;                      exception_info = {e: e, t: 'Interruption', debug: true}
         end
         # cleanup file list files
