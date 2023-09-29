@@ -26,10 +26,6 @@ module Aspera
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_red.gray.blink.freeze
       HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
-      private_constant :ERROR_FLASH, :WARNING_FLASH
-
-      # store transfer result using this key and use result_transfer_multiple
-      STATUS_FIELD = 'status'
 
       # for testing only
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
@@ -38,15 +34,20 @@ module Aspera
         {
           exception:   Fasp::Error,
           match:       'Remote host is not who we expected',
-          remediation: "For this specific error, refer to:\n"\
-            "#{SRC_URL}#error-remote-host-is-not-who-we-expected\n"\
-            "Add this to arguments:\n--ts=@json:'{\"sshfp\":null}'"
+          remediation: [
+            'For this specific error, refer to:',
+            "#{SRC_URL}#error-remote-host-is-not-who-we-expected",
+            'Add this to arguments:',
+            %q{--ts=@json:'{"sshfp":null}'"}
+          ]
         },
         {
           exception:   OpenSSL::SSL::SSLError,
           match:       /does not match the server certificate/,
-          remediation: "You can ignore SSL errors with option:\n"\
+          remediation: [
+            'You can ignore SSL errors with option:',
             '--insecure=yes'
+          ]
         },
         {
           exception:   Aspera::RestCallError,
@@ -54,6 +55,11 @@ module Aspera
           remediation: 'Check your local time: is time synchronization enabled?'
         }
       ]
+
+      private_constant :ERROR_FLASH, :WARNING_FLASH, :HINT_FLASH, :SELF_SIGNED_CERT, :ERROR_HINTS
+
+      # Plugins store transfer result using this key and use result_transfer_multiple()
+      STATUS_FIELD = 'status'
 
       class << self
         # expect some list, but nothing to display
@@ -399,7 +405,9 @@ module Aspera
                 Log.log.warn("Internal error: hint is a #{m.class}")
                 next
               end
-              formatter.display_message(:error, "#{HINT_FLASH} #{hint[:remediation]}")
+              remediation = hint[:remediation]
+              remediation = [remediation] unless remediation.is_a?(Array)
+              remediation.each{|r|formatter.display_message(:error, "#{HINT_FLASH} #{r}")}
               break
             end
           end
