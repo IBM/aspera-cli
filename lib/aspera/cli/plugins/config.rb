@@ -797,7 +797,8 @@ module Aspera
           file
           check_update
           initdemo
-          vault].freeze
+          vault
+          hint].freeze
 
         # Main action procedure for plugin
         def execute_action
@@ -923,6 +924,14 @@ module Aspera
             save_presets_to_config_file
             return Main.result_status('Done')
           when :vault then execute_vault
+          when :hint
+            # :type [String]
+            options
+            exception_class_name = options.get_next_argument('exception class name', mandatory: true)
+            exception_text = options.get_next_argument('exception text', mandatory: true)
+            exception_class = Object.const_get(exception_class_name)
+            raise "#{exception_class} is not an exception: #{exception_class.class}" unless exception_class <= Exception
+            raise exception_class, exception_text
           else raise 'INTERNAL ERROR: wrong case'
           end
         end

@@ -8,7 +8,7 @@ module Aspera
     # @param req HTTP Request object
     # @param resp HTTP Response object
     # @param msg Error message
-    def initialize(req, resp, msg)
+    def initialize(msg, req=nil, resp=nil)
       @request = req
       @response = resp
       super(msg)

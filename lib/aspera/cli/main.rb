@@ -25,6 +25,7 @@ module Aspera
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_red.gray.blink.freeze
+      HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
       private_constant :ERROR_FLASH, :WARNING_FLASH
 
       # store transfer result using this key and use result_transfer_multiple
@@ -32,6 +33,27 @@ module Aspera
 
       # for testing only
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
+
+      ERROR_HINTS = [
+        {
+          exception:   Fasp::Error,
+          match:       'Remote host is not who we expected',
+          remediation: "For this specific error, refer to:\n"\
+            "#{SRC_URL}#error-remote-host-is-not-who-we-expected\n"\
+            "Add this to arguments:\n--ts=@json:'{\"sshfp\":null}'"
+        },
+        {
+          exception:   OpenSSL::SSL::SSLError,
+          match:       /does not match the server certificate/,
+          remediation: "You can ignore SSL errors with option:\n"\
+            '--insecure=yes'
+        },
+        {
+          exception:   Aspera::RestCallError,
+          match:       /Signature has expired/,
+          remediation: 'Check your local time: is time synchronization enabled?'
+        }
+      ]
 
       class << self
         # expect some list, but nothing to display
@@ -361,14 +383,25 @@ module Aspera
           Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
-          # Provide hint on FASP errors
-          if exception_info[:e].is_a?(Fasp::Error) && exception_info[:e].message.eql?('Remote host is not who we expected')
-            formatter.display_message(:error, "For this specific error, refer to:\n"\
-              "#{SRC_URL}#error-remote-host-is-not-who-we-expected\nAdd this to arguments:\n--ts=@json:'{\"sshfp\":null}'")
-          end
-          # Provide hint on SSL errors
-          if exception_info[:e].is_a?(OpenSSL::SSL::SSLError) && ['does not match the server certificate'].any?{|m|exception_info[:e].message.include?(m)}
-            formatter.display_message(:error, "You can ignore SSL errors with option:\n--insecure=yes")
+          # Is that a known error condition with proposal for remediation ?
+          ERROR_HINTS.each do |hint|
+            next unless exception_info[:e].is_a?(hint[:exception])
+            message = exception_info[:e].message
+            matches = hint[:match]
+            matches = [matches] unless matches.is_a?(Array)
+            matches.each do |m|
+              case m
+              when String
+                next unless message.eql?(m)
+              when Regexp
+                next unless message.match?(m)
+              else
+                Log.log.warn("Internal error: hint is a #{m.class}")
+                next
+              end
+              formatter.display_message(:error, "#{HINT_FLASH} #{hint[:remediation]}")
+              break
+            end
           end
         end
         # 2- processing of command not processed (due to exception or bad command line)
