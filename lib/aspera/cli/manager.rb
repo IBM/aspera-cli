@@ -202,7 +202,7 @@ module Aspera
       # ask interactively if requested/required
       # @param mandatory [Boolean] if true, raise error if option not set
       # @param allowed_types [Array] list of allowed types
-      def get_option(option_symbol, mandatory: false, allowed_types: nil)
+      def get_option(option_symbol, mandatory: false, allowed_types: nil, default: nil)
         allowed_types = [allowed_types] if allowed_types.is_a?(Class)
         raise 'Internal Error: allowed_types must be an Array of Class or a Class' unless allowed_types.nil? || allowed_types.is_a?(Array)
         result = nil
@@ -217,6 +217,7 @@ module Aspera
           end
           Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}) get #{option_symbol}=#{result}"}
         end
+        result = default if result.nil?
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && mandatory && !@fail_on_missing_mandatory
         # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
