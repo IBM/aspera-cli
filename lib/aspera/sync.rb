@@ -13,13 +13,8 @@ require 'English'
 module Aspera
   # builds command line arg for async
   module Sync
-    # default is push
+    # sync direction, default is push
     DIRECTIONS = %i[push pull bidi].freeze
-    DIRECTION_TO_REQUEST_TYPE = {
-      push: :sync_upload,
-      pull: :sync_download,
-      bidi: :sync
-    }.freeze
     PARAMS_VX_INSTANCE =
       {
         'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
@@ -167,7 +162,7 @@ module Aspera
         else raise 'internal error: unspecified case'
         end
       end
-  end
+    end
   end # end Sync
 
   class SyncAdmin

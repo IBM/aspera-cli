@@ -272,7 +272,11 @@ module Aspera
               # Gen3 API
               # empty transfer spec for authorization request
               request_transfer_spec = {
-                type:  Aspera::Sync::DIRECTION_TO_REQUEST_TYPE[sync_direction],
+                type:  case sync_direction
+                       when :push then :sync_upload
+                       when :pull then :sync_download
+                       when :bidi then :sync
+                       end,
                 paths: {
                   source:      remote_path,
                   destination: local_path
