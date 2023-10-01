@@ -1306,32 +1306,25 @@ with the users home folder),
 e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 </tr>
 <tr class="odd">
-<td>incps</td>
-<td>Hash</td>
-<td>Hash</td>
-<td>include values of presets specified by key <code>incps</code> in
-input hash</td>
-</tr>
-<tr class="even">
 <td>json</td>
 <td>String</td>
 <td>any</td>
 <td>decode JSON values (convenient to provide complex structures)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>lines</td>
 <td>String</td>
 <td>Array</td>
 <td>split a string in multiple lines and return an array</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>list</td>
 <td>String</td>
 <td>Array</td>
 <td>split a string in multiple items taking first character as separator
 and return an array</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>path</td>
 <td>String</td>
 <td>String</td>
@@ -1339,13 +1332,19 @@ and return an array</td>
 replaced with the users home folder),
 e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>preset</td>
 <td>String</td>
 <td>Hash</td>
 <td>get whole option preset value by name. Sub-values can also be used
 using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <code>conf[foo][bar]</code></td>
+</tr>
+<tr class="even">
+<td>extend</td>
+<td>String</td>
+<td>String</td>
+<td>evaluates embedded extended value syntax in string</td>
 </tr>
 <tr class="odd">
 <td>ruby</td>
@@ -1390,6 +1389,9 @@ to value <code>@file:foo</code>.</td>
 </table>
 <p>To display the result of an extended value, use the
 <code>config echo</code> command.</p>
+<p>The <code>extend</code> decoder is useful to evaluate embedded
+extended value syntax in a string. It expects a <code>@</code> to close
+the embedded extended value syntax.</p>
 <p>Example: read the content of the specified file, then, base64 decode,
 then unzip:</p>
 <div class="sourceCode" id="cb96"><pre
@@ -1414,18 +1416,17 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb100-1"><a href
 | lolo | laurent@example.com |
 | toto | titi@tutu.tata      |
 +------+---------------------+</code></pre>
-<p>Example: create a hash and include values from preset named “config”
-of config file in this hash</p>
+<p>Example: create a JSON with values coming from a preset named
+“config” of config file</p>
 <div class="sourceCode" id="cb102"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @incps:@json:<span class="st">&#39;{&quot;hello&quot;:true,&quot;incps&quot;:[&quot;config&quot;]}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @json:@extend:<span class="st">&#39;{&quot;hello&quot;:true,&quot;version&quot;:&quot;@preset:config.version@&quot;}&#39;</span></span></code></pre></div>
 <div class="sourceCode" id="cb103"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="ex">{</span><span class="st">&quot;version&quot;</span><span class="ex">=</span><span class="op">&gt;</span><span class="st">&quot;0.9&quot;</span>, <span class="st">&quot;hello&quot;</span>=<span class="op">&gt;</span>true}</span></code></pre></div>
-<blockquote>
-<p><strong>Note:</strong>
-<code>@incps:@json:'{"incps":["config"]}'</code> or
-<code>@incps:@ruby:'{"incps"=&gt;["config"]}'</code> are equivalent to:
-<code>@preset:config</code></p>
-</blockquote>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="kw">+---------+-----------+</span></span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> key     <span class="kw">|</span> value     <span class="kw">|</span></span>
+<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a><span class="kw">+---------+-----------+</span></span>
+<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> hello   <span class="kw">|</span> <span class="dv">true</span>      <span class="kw">|</span></span>
+<span id="cb103-5"><a href="#cb103-5" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> version <span class="kw">|</span> <span class="fl">4.14</span><span class="kw">.</span><span class="dv">0</span>    <span class="kw">|</span></span>
+<span id="cb103-6"><a href="#cb103-6" aria-hidden="true" tabindex="-1"></a><span class="kw">+---------+-----------+</span></span></code></pre></div>
 <h2 data-number="7.7" id="structured-value"><span
 class="header-section-number">7.7</span> <a id="native"></a>Structured
 Value</h2>
@@ -1636,8 +1637,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb121-1"><a href
 <span id="cb121-16"><a href="#cb121-16" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://faspex4.example.com/path</span>
 <span id="cb121-17"><a href="#cb121-17" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://faspex5_jwt.example.com/path</span>
 <span id="cb121-18"><a href="#cb121-18" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://node_simple.example.com/path</span>
-<span id="cb121-19"><a href="#cb121-19" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://shares.example.com/path <span class="at">--query</span><span class="op">=</span>shares</span>
-<span id="cb121-20"><a href="#cb121-20" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect my_aoc_org <span class="at">--query</span><span class="op">=</span>aoc</span>
+<span id="cb121-19"><a href="#cb121-19" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://shares.example.com/path shares</span>
+<span id="cb121-20"><a href="#cb121-20" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect my_aoc_org aoc</span>
 <span id="cb121-21"><a href="#cb121-21" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> doc</span>
 <span id="cb121-22"><a href="#cb121-22" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> doc transfer-parameters</span>
 <span id="cb121-23"><a href="#cb121-23" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> echo @base64:SGVsbG8gV29ybGQK</span>
@@ -1676,9 +1677,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb121-1"><a href
 <span id="cb121-56"><a href="#cb121-56" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault list<span class="kw">;</span><span class="dt">\</span></span>
 <span id="cb121-57"><a href="#cb121-57" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault password my_new_pass<span class="kw">;</span><span class="dt">\</span></span>
 <span id="cb121-58"><a href="#cb121-58" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault show mylabel<span class="kw">;</span><span class="dt">\</span></span>
-<span id="cb121-59"><a href="#cb121-59" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path <span class="at">--query</span><span class="op">=</span>shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb121-60"><a href="#cb121-60" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org <span class="at">--query</span><span class="op">=</span>aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
-<span id="cb121-61"><a href="#cb121-61" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org <span class="at">--query</span><span class="op">=</span>aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
+<span id="cb121-59"><a href="#cb121-59" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb121-60"><a href="#cb121-60" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
+<span id="cb121-61"><a href="#cb121-61" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
 <h3 data-number="7.9.6" id="format-of-file"><span
 class="header-section-number">7.9.6</span> Format of file</h3>
 <p>The configuration file is a hash in a YAML file. Example:</p>
@@ -4202,7 +4203,7 @@ COMMANDS
 OPTIONS
         Options begin with a &#39;-&#39; (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        base64, csvt, env, file, json, lines, list, path, ruby, secret, stdin, uri, val, zlib, preset, incps, vault
+        val, base64, csvt, env, file, uri, json, lines, list, path, ruby, secret, stdin, zlib, extend, preset, vault
         Dates format is &#39;DD-MM-YY HH:MM:SS&#39;, or &#39;now&#39; or &#39;-&lt;num&gt;h&#39;
 
 ARGS
@@ -4295,7 +4296,6 @@ OPTIONS:
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: orchestrator
@@ -4448,7 +4448,6 @@ OPTIONS:
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: server
@@ -4461,7 +4460,6 @@ OPTIONS:
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: console
@@ -4524,9 +4522,9 @@ ascli aoc user profile show</code></pre>
 “integration”, i.e. client application identification. For this, specify
 the option: <code>--use-generic-client=no</code>.</p>
 <p>If you already know the application, and want to limit the detection
-to it, use option <code>query</code>:</p>
+to it, provide url and plugin name:</p>
 <div class="sourceCode" id="cb232"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard <span class="at">--query</span><span class="op">=</span>aoc</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard myorg aoc</span></code></pre></div>
 <h2 data-number="8.2" id="configuration-using-manual-setup"><span
 class="header-section-number">8.2</span>
 <a id="aocmanual"></a>Configuration: using manual setup</h2>
@@ -4779,7 +4777,7 @@ types.</p>
 <li>List users with <code>laurent</code> in name:</li>
 </ul>
 <div class="sourceCode" id="cb249"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb249-1"><a href="#cb249-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res user list <span class="at">--query</span><span class="op">=</span>--query=@json:<span class="st">&#39;{&quot;q&quot;:&quot;laurent&quot;}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb249-1"><a href="#cb249-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res user list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;q&quot;:&quot;laurent&quot;}&#39;</span></span></code></pre></div>
 <ul>
 <li>List users who logged-in before a date:</li>
 </ul>
@@ -5750,7 +5748,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb349-1"><a href
 <span id="cb349-17"><a href="#cb349-17" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> mv folder_1/200KB.2 folder_1/to.delete</span>
 <span id="cb349-18"><a href="#cb349-18" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_sync_dir&quot;}}&#39;</span></span>
 <span id="cb349-19"><a href="#cb349-19" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;}&#39;</span></span>
-<span id="cb349-20"><a href="#cb349-20" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync admin status <span class="at">--sync-session</span><span class="op">=</span>mysync <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;mysync&quot;,&quot;local_dir&quot;:&quot;my_local_sync_dir&quot;}]}&#39;</span></span>
+<span id="cb349-20"><a href="#cb349-20" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync admin status mysync <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;mysync&quot;,&quot;local_dir&quot;:&quot;my_local_sync_dir&quot;}]}&#39;</span></span>
 <span id="cb349-21"><a href="#cb349-21" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;instance&quot;:{&quot;quiet&quot;:false},&quot;sessions&quot;:[{&quot;name&quot;:&quot;mysync&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;remote_dir&quot;:&quot;&#39;&quot;NEW_SERVER_FOLDER&quot;&#39;&quot;,&quot;local_dir&quot;:&quot;my_local_sync_dir&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb349-22"><a href="#cb349-22" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;my_local_sync_dir&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;&#39;&quot;NEW_SERVER_FOLDER&quot;&#39;&quot;},&quot;reset&quot;:true,&quot;quiet&quot;:false}&#39;</span></span>
 <span id="cb349-23"><a href="#cb349-23" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;EX_ascp_args&quot;:[&quot;--file-list&quot;,&quot;&#39;&quot;filelist.txt&quot;&#39;&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>NEW_SERVER_FOLDER</span>
@@ -6187,9 +6185,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb374-1"><a href
 <span id="cb374-26"><a href="#cb374-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_faspex5_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb374-27"><a href="#cb374-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb374-28"><a href="#cb374-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb374-29"><a href="#cb374-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
-<span id="cb374-30"><a href="#cb374-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_workgroup&quot;]}&#39;</span> testfile.bin</span>
-<span id="cb374-31"><a href="#cb374-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_f5_user&quot;}]}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
+<span id="cb374-29"><a href="#cb374-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_faspex5_workgroup&quot;]}&#39;</span> testfile.bin</span>
+<span id="cb374-30"><a href="#cb374-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
+<span id="cb374-31"><a href="#cb374-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_username&quot;}]my_faspex5_meta}&#39;</span> testfile.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
 <span id="cb374-32"><a href="#cb374-32" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb374-33"><a href="#cb374-33" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_shinbox <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb374-34"><a href="#cb374-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_faspex5_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span></span>
@@ -6668,9 +6666,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb401-1"><a href
 <span id="cb401-12"><a href="#cb401-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files browse /</span>
 <span id="cb401-13"><a href="#cb401-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_shares_upload/testfile.bin</span>
 <span id="cb401-14"><a href="#cb401-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin</span>
-<span id="cb401-15"><a href="#cb401-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb401-15"><a href="#cb401-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
 <span id="cb401-16"><a href="#cb401-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin</span>
-<span id="cb401-17"><a href="#cb401-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb401-17"><a href="#cb401-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
 <span id="cb401-18"><a href="#cb401-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span></code></pre></div>
 <h1 data-number="15" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">15</span> <a id="console"></a>Plugin:

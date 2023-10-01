@@ -134,8 +134,9 @@ REPLACEMENTS = [
   [/-P[0-9a-z_]+ /, '\1'],
   # URLs for doc
   [/@preset:tst_([^ ]+)\.url/, 'https://\1.example.com/path'],
-  [/@preset:[a-z0-9_]+\./, 'my_'],
-  [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path']
+  [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
+  [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
+  ['@extend:', '']
 ].freeze
 
 def all_test_commands_by_plugin

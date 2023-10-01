@@ -1221,21 +1221,24 @@ The following decoders are supported:
 | base64  | String    | String  | decode a base64 encoded string
 | csvt    | String    | Array   | decode a titled CSV value
 | env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
-| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
+| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
 | json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
-| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 | preset  | String    | Hash    | get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+| extend  | String    | String  | evaluates embedded extended value syntax in string
 | ruby    | String    | any     | execute specified Ruby code
 | secret  | None      | String  | Ask password interactively (hides input)
 | stdin   | None      | String  | read from stdin (no value on right)
-| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
-| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
+| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
 | zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
+
+The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
+It expects a `@` to close the embedded extended value syntax.
 
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
@@ -1274,17 +1277,20 @@ ascli config echo @csvt:@file:test.csv
 +------+---------------------+
 ```
 
-Example: create a hash and include values from preset named "config" of config file in this hash
+Example: create a JSON with values coming from a preset named "config" of config file
 
 ```bash
-ascli config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
 ```
 
-```bash
-{"version"=>"0.9", "hello"=>true}
+```ruby
++---------+-----------+
+| key     | value     |
++---------+-----------+
+| hello   | true      |
+| version | 4.14.0    |
++---------+-----------+
 ```
-
-> **Note:** `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` are equivalent to: `@preset:config`
 
 ### <a id="native"></a>Structured Value
 
@@ -1485,8 +1491,8 @@ config coffee --ui=text
 config detect https://faspex4.example.com/path
 config detect https://faspex5_jwt.example.com/path
 config detect https://node_simple.example.com/path
-config detect https://shares.example.com/path --query=shares
-config detect my_aoc_org --query=aoc
+config detect https://shares.example.com/path shares
+config detect my_aoc_org aoc
 config doc
 config doc transfer-parameters
 config echo @base64:SGVsbG8gV29ybGQK
@@ -1525,9 +1531,9 @@ config vault delete mylabel
 config vault list;\
 config vault password my_new_pass;\
 config vault show mylabel;\
-config wizard https://shares.example.com/path --query=shares --username=test --password=test
-config wizard my_aoc_org --query=aoc --pkeypath= --username=my_aoc_user_email
-config wizard my_aoc_org --query=aoc --pkeypath= --username=my_aoc_user_email --use-generic-client=yes
+config wizard https://shares.example.com/path shares --username=test --password=test
+config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email
+config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email --use-generic-client=yes
 ```
 
 #### Format of file
@@ -3053,7 +3059,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        base64, csvt, env, file, json, lines, list, path, ruby, secret, stdin, uri, val, zlib, preset, incps, vault
+        val, base64, csvt, env, file, uri, json, lines, list, path, ruby, secret, stdin, zlib, extend, preset, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -3146,7 +3152,6 @@ OPTIONS:
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: orchestrator
@@ -3299,7 +3304,6 @@ OPTIONS:
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: server
@@ -3312,7 +3316,6 @@ OPTIONS:
         --passphrase=VALUE           SSH private key passphrase
         --ssh-options=VALUE          SSH options (Hash)
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
-        --sync-session=VALUE         Name of session to use for admin commands. default: first one in sync_info
 
 
 COMMAND: console
@@ -3374,10 +3377,10 @@ ascli aoc user profile show
 Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-If you already know the application, and want to limit the detection to it, use option `query`:
+If you already know the application, and want to limit the detection to it, provide url and plugin name:
 
 ```bash
-ascli config wizard --query=aoc
+ascli config wizard myorg aoc
 ```
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
@@ -3618,7 +3621,7 @@ Examples:
 - List users with `laurent` in name:
 
 ```bash
-ascli aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
+ascli aoc admin res user list --query=@json:'{"q":"laurent"}'
 ```
 
 - List users who logged-in before a date:
@@ -4681,7 +4684,7 @@ server mkdir folder_1/target_hot
 server mv folder_1/200KB.2 folder_1/to.delete
 server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"}}'
 server sync admin status --sync-info=@json:'{"name":"sync2"}'
-server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
+server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
 server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER
@@ -5116,9 +5119,9 @@ faspex5 packages receive --box=my_faspex5_shinbox "my_package_id" --to-folder=.
 faspex5 packages receive --box=my_faspex5_workgroup --group-type=workgroups "my_package_id" --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
+faspex5 packages send @json:'{"title":"test title","recipients":["my_faspex5_workgroup"]}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
-faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' testfile.bin
-faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_f5_user"}]}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_faspex5_meta}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 faspex5 packages show "my_package_id"
 faspex5 packages show --box=my_faspex5_shinbox "my_package_id"
 faspex5 packages show --box=my_faspex5_workgroup --group-type=workgroups "my_package_id"
@@ -5537,9 +5540,9 @@ shares admin user share_permissions 1 show 1
 shares files browse /
 shares files delete my_shares_upload/testfile.bin
 shares files download --to-folder=. my_shares_upload/testfile.bin
-shares files download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares files download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
 shares files upload --to-folder=my_shares_upload testfile.bin
-shares files upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn/aspera/http-gwy"}'
+shares files upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
 shares health
 ```
 
