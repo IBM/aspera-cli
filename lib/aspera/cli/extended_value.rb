@@ -69,21 +69,23 @@ module Aspera
       end
 
       # Regex to match an extended value
-      def match_regex_build(prefix, suffix)
-        Regexp.new("^#{prefix}@(#{modifiers.join('|')}):#{suffix}$")
+      def ext_re
+        "@(#{modifiers.join('|')}):"
       end
 
       # parse an option value if it is a String using supported extended value modifiers
       # other value types are returned as is
       def evaluate(value)
-        match_regex = match_regex_build('', '(.*)')
-        Regexp.new("^@(#{modifiers.join('|')}):(.*)")
-        return value if !value.is_a?(String)
+        return value unless value.is_a?(String)
+        regex = Regexp.new("^#{ext_re}(.*)$")
         # first determine decoders, in reversed order
         handlers_reversed = []
-        while (m = value.match(match_regex)) && @handlers.include?(m[1].to_sym)
-          handlers_reversed.unshift(m[1].to_sym)
+        while (m = value.match(regex))
+          handler = m[1].to_sym
+          handlers_reversed.unshift(handler)
           value = m[2]
+          # stop processing if handler is extend (it will be processed later)
+          break if handler.eql?(:extend)
         end
         handlers_reversed.each do |handler|
           value = @handlers[handler].call(value)
@@ -92,8 +94,8 @@ module Aspera
       end # evaluate
 
       def evaluate_all(value)
-        re = match_regex_build('(.*)', '([a-zA-Z0-9_.]*)(.*)')
-        while (m = value.match(re))
+        regex = Regexp.new("^(.*)#{ext_re}([^@]*)@(.*)$")
+        while (m = value.match(regex))
           sub_value = "@#{m[2]}:#{m[3]}"
           Log.log.debug("evaluating #{sub_value}")
           value = m[1] + evaluate(sub_value) + m[4]

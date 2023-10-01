@@ -99,11 +99,9 @@ $(T)sh1: $(T).exists
 	@touch $@
 $(T)sh2: $(T).exists
 	@echo $@
-	set -x&&\
-	shares_upload=$$($(EXE_NOMAN) config preset get misc shares_upload)&&\
-	$(EXE_MAN) shares files upload --to-folder=$${shares_upload} $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)&&\
-	$(EXE_MAN) shares files delete $${shares_upload}/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) shares files upload --to-folder=@preset:misc.shares_upload $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:misc.shares_upload@/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) shares files delete @extend:@preset:misc.shares_upload@/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)sh3: $(T).exists
 	@echo $@
@@ -1256,10 +1254,7 @@ $(T)f5_nagios: $(T).exists
 $(T)f5_p1: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 packages receive INIT --once-only=yes
-	set -x&&\
-	f5_user=$$($(EXE_NOMAN) config preset get tst_faspex5_jwt username)&&\
-	f5_meta=$$($(EXE_NOMAN) config preset get misc faspex5_meta)&&\
-	$(EXE_MAN) faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"'"$${f5_user}"'"}]'"$${f5_meta}"'}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:tst_faspex5_jwt.username@"}]@preset:misc.faspex5_meta@}' $(CF_LOCAL_SAMPLE_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@touch $@
 $(T)f5_p2: $(T).exists
 	@echo $@
@@ -1286,9 +1281,7 @@ $(T)f5_pack_shbox: $(T).exists
 	@touch $@
 $(T)f5_pack_wrkgrp: $(T).exists
 	@echo $@
-	set -x&&\
-	workgroup=$$($(EXE_NOMAN) config preset get misc faspex5_workgroup)&&\
-	$(EXE_MAN) faspex5 packages send @json:'{"title":"test title","recipients":["'"$${workgroup}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:misc.faspex5_workgroup@"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	$(EXE_MAN) faspex5 packages list --box=@preset:misc.faspex5_workgroup --group-type=workgroups
 	set -x&&\
 	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:misc.faspex5_workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\

@@ -63,7 +63,6 @@ module Aspera
           This email was sent to test #{PROGRAM_NAME}.
         END_OF_TEMPLATE
         # special extended values
-        EXTV_INCLUDE_PRESETS = :incps
         EXTV_PRESET = :preset
         EXTV_VAULT = :vault
         PRESET_DIG_SEPARATOR = '.'
@@ -87,7 +86,6 @@ module Aspera
           :AOC_PATH_API_CLIENTS,
           :DEMO_SERVER_PRESET,
           :EMAIL_TEST_TEMPLATE,
-          :EXTV_INCLUDE_PRESETS,
           :EXTV_PRESET,
           :EXTV_VAULT,
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
@@ -123,7 +121,6 @@ module Aspera
           read_config_file
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET, lambda{|v|preset_by_name(v)})
-          ExtendedValue.instance.set_handler(EXTV_INCLUDE_PRESETS, lambda{|v|expanded_with_preset_includes(v)})
           ExtendedValue.instance.set_handler(EXTV_VAULT, lambda{|v|vault_value(v)})
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
@@ -362,31 +359,7 @@ module Aspera
             current = current[name]
             raise CliError, "No such config preset: #{include_path}" if current.nil?
           end
-          case current
-          when Hash then return expanded_with_preset_includes(current, include_path)
-          when String then return ExtendedValue.instance.evaluate(current)
-          else return current
-          end
-        end
-
-        # @return the hash value with 'incps' keys expanded to include other presets
-        # @param hash_val
-        # @param include_path to avoid inclusion loop
-        def expanded_with_preset_includes(hash_val, include_path=[])
-          raise CliError, "#{EXTV_INCLUDE_PRESETS} requires a Hash, have #{hash_val.class}" unless hash_val.is_a?(Hash)
-          if hash_val.key?(EXTV_INCLUDE_PRESETS)
-            memory = hash_val.clone
-            includes = memory[EXTV_INCLUDE_PRESETS]
-            memory.delete(EXTV_INCLUDE_PRESETS)
-            hash_val = {}
-            raise "#{EXTV_INCLUDE_PRESETS} must be an Array" unless includes.is_a?(Array)
-            raise "#{EXTV_INCLUDE_PRESETS} must contain names" unless includes.map(&:class).uniq.eql?([String])
-            includes.each do |preset_name|
-              hash_val.merge!(preset_by_name(preset_name, include_path))
-            end
-            hash_val.merge!(memory)
-          end
-          return hash_val
+          return ExtendedValue.instance.evaluate(current)
         end
 
         def option_use_product=(value)

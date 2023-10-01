@@ -1216,7 +1216,6 @@ The following decoders are supported:
 | csvt    | String    | Array   | decode a titled CSV value
 | env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
 | file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-| incps   | Hash      | Hash    | include values of presets specified by key `incps` in input hash
 | json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
@@ -1231,6 +1230,9 @@ The following decoders are supported:
 | zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
+
+The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
+It expects a `@` to close the embedded extended value syntax.
 
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
@@ -1269,17 +1271,20 @@ toto,titi@tutu.tata
 +------+---------------------+
 ```
 
-Example: create a hash and include values from preset named "config" of config file in this hash
+Example: create a JSON with values coming from a preset named "config" of config file
 
 ```bash
-<%=cmd%> config echo @incps:@json:'{"hello":true,"incps":["config"]}'
+<%=cmd%> config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
 ```
 
-```bash
-{"version"=>"0.9", "hello"=>true}
+```ruby
++---------+-----------+
+| key     | value     |
++---------+-----------+
+| hello   | true      |
+| version | 4.14.0    |
++---------+-----------+
 ```
-
-> **Note:** `@incps:@json:'{"incps":["config"]}'` or `@incps:@ruby:'{"incps"=>["config"]}'` are equivalent to: `@preset:config`
 
 ### <a id="native"></a>Structured Value
 

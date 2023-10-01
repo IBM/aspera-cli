@@ -6,9 +6,10 @@
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
   * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter.
+  * change(break): removed extended value handler `incps`, as it is never used (use `extend` instead).
   * new: aoc: wizard manages public links
   * new: added resolution hints for some known issues.
-  * nex: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+  * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
 
 * 4.14.0
 
