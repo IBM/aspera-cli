@@ -1106,16 +1106,16 @@ $(T)conf_export: $(T).exists
 $(T)conf_wizard_org: $(T).exists
 	@echo $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org --query=aoc --pkeypath= --username=@preset:misc.aoc_user_email --use-generic-client=yes
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org aoc --pkeypath= --username=@preset:misc.aoc_user_email --use-generic-client=yes
 	@touch $@
 $(T)conf_wizard_gen: $(T).exists
 	@echo $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org --query=aoc --pkeypath= --username=@preset:misc.aoc_user_email
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org aoc --pkeypath= --username=@preset:misc.aoc_user_email
 	@touch $@
 $(T)conf_detect: $(T).exists
 	@echo $@
-	$(EXE_MAN) config detect @preset:misc.aoc_org --query=aoc
+	$(EXE_MAN) config detect @preset:misc.aoc_org aoc
 	$(EXE_MAN) config detect @preset:tst_faspex4.url
 	$(EXE_MAN) config detect @preset:tst_node_simple.url
 	@touch $@
