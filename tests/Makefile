@@ -153,7 +153,7 @@ $(T)serv_sync: $(T)serv_upload
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
 	$(EXE_MAN) server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
-	$(EXE_MAN) server sync admin status --sync-session=mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
+	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
 	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'&&\
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"}}'
 	-$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2"}'

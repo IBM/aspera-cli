@@ -84,6 +84,23 @@ module Aspera
     private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :ASYNC_EXECUTABLE, :TS_TO_PARAMS_V2
 
     class << self
+      # Set remote_dir in sync parameters based on transfer spec
+      # @param params [Hash] sync parameters, old or new format
+      # @param remote_dir_key [String] key to update in above hash
+      # @param transfer_spec [Hash] transfer spec
+      def update_remote_dir(sync_params, remote_dir_key, transfer_spec)
+        if transfer_spec.dig(*%w[tags aspera node file_id])
+          # in AoC, use gen4
+          sync_params[remote_dir_key] ||= '/'
+        elsif transfer_spec['cookie']&.start_with?('aspera.shares2')
+          # TODO : something more generic, independent of Shares
+          # in Shares, the actual folder on remote end is not always the same as the name of the share
+          actual_remote = transfer_spec['paths']&.first&.[]('source')
+          sync_params[remote_dir_key] = actual_remote if actual_remote
+        end
+        nil
+      end
+
       # @param sync_params [Hash] sync parameters, old or new format
       # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
       def start(sync_params, &block)
@@ -98,7 +115,7 @@ module Aspera
           if block
             transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], sync_params['remote']['path'])
             # async native JSON format
-            raise StandardError, 'local must be Hash' unless sync_params['local'].is_a?(Hash)
+            raise StandardError, 'sync parameter "local" must be Hash' unless sync_params['local'].is_a?(Hash)
             TS_TO_PARAMS_V2.each do |ts_param, sy_path|
               next unless transfer_spec.key?(ts_param)
               sy_dig = sy_path.split('.')
@@ -107,10 +124,9 @@ module Aspera
               hash = sync_params[sy_dig.first] = {} if hash.nil?
               hash[param] = transfer_spec[ts_param]
             end
-            # 'remote.path',
             sync_params['remote']['connect_mode'] ||= sync_params['remote'].key?('ws_port') ? 'ws' : 'ssh'
             sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
-            sync_params['remote']['path'] ||= '/' if transfer_spec.dig(*%w[tags aspera node file_id])
+            update_remote_dir(sync_params['remote'], 'path', transfer_spec)
           end
           env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
         elsif sync_params.key?('sessions')
@@ -125,7 +141,7 @@ module Aspera
                 end
               end
               session['private_key_paths'] = Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
-              session['remote_dir'] = '/' if transfer_spec.dig(*%w[tags aspera node file_id])
+              update_remote_dir(session, 'remote_dir', transfer_spec)
             end
           end
           raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
