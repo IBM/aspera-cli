@@ -507,8 +507,9 @@ module Aspera
 
         # Find a plugin, and issue the "require"
         # @return [Hash] plugin info: { product: , url:, version: }
-        def identify_plugins_for_url(app_url)
-          check_only = value_or_query(allowed_types: String)
+        def identify_plugins_for_url
+          app_url = options.get_next_argument('url', mandatory: true)
+          check_only = options.get_next_argument('plugin name', mandatory: false)
           check_only = check_only.to_sym unless check_only.nil?
           found_apps = []
           plugins.each do |plugin_name_sym, plugin_info|
@@ -868,7 +869,7 @@ module Aspera
           when :detect
             return {
               type: :object_list,
-              data: identify_plugins_for_url(options.get_next_argument('url', mandatory: true))
+              data: identify_plugins_for_url
             }
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
@@ -940,7 +941,7 @@ module Aspera
           # interactive mode
           options.ask_missing_mandatory = true
           # detect plugins by url and optional query
-          apps = identify_plugins_for_url(options.get_next_argument('url', mandatory: true)).freeze
+          apps = identify_plugins_for_url.freeze
           identification = if apps.length.eql?(1)
             Log.log.debug{"Detected: #{identification}"}
             apps.first
@@ -1032,7 +1033,7 @@ module Aspera
 
         # @return [Hash] email server setting with defaults if not defined
         def email_settings
-          smtp = options.get_option(:smtp, mandatory: true, allowed_types: [Hash])
+          smtp = options.get_option(:smtp, mandatory: true)
           # change string keys into symbol keys
           smtp = smtp.symbolize_keys
           # defaults

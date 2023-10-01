@@ -2930,10 +2930,10 @@ You can test with:
 Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-If you already know the application, and want to limit the detection to it, use option `query`:
+If you already know the application, and want to limit the detection to it, provide url and plugin name:
 
 ```bash
-<%=cmd%> config wizard --query=aoc
+<%=cmd%> config wizard myorg aoc
 ```
 
 ### <a id="aocmanual"></a>Configuration: using manual setup
@@ -3174,7 +3174,7 @@ Examples:
 - List users with `laurent` in name:
 
 ```bash
-<%=cmd%> aoc admin res user list --query=--query=@json:'{"q":"laurent"}'
+<%=cmd%> aoc admin res user list --query=@json:'{"q":"laurent"}'
 ```
 
 - List users who logged-in before a date:

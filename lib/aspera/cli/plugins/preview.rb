@@ -53,6 +53,8 @@ module Aspera
           @gen_options = Aspera::Preview::Options.new
           # used to trigger periodic processing
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
+          # Proc
+          @filter_block = nil
           # link CLI options to gen_info attributes
           options.declare(
             :skip_format, 'Skip this preview format (multiple possible)', values: Aspera::Preview::Generator::PREVIEW_FORMATS,
@@ -328,24 +330,22 @@ module Aspera
         end # generate_preview
 
         # scan all files in provided folder entry
-        # @param scan_start subpath to start folder scan inside
-        def scan_folder_files(top_entry, scan_start=nil)
-          if !scan_start.nil?
+        # @param top_path subpath to start folder scan inside
+        def scan_folder_files(top_entry, top_path=nil)
+          unless top_path.nil?
             # canonical path: start with / and ends with /
-            scan_start = '/' + scan_start.split('/').reject(&:empty?).join('/')
-            scan_start = "#{scan_start}/" # unless scan_start.end_with?('/')
+            top_path = '/' + top_path.split('/').reject(&:empty?).join('/') + '/'
           end
-          filter_block = Aspera::Node.file_matcher(value_or_query(allowed_types: String))
-          Log.log.debug{"scan: #{top_entry} : #{scan_start}".green}
+          Log.log.debug{"scan: #{top_entry} : #{top_path}".green}
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
           until entries_to_process.empty?
             entry = entries_to_process.shift
-            # process this entry only if it is within the scan_start
+            # process this entry only if it is within the top_path
             entry_path_with_slash = entry['path']
             Log.log.info{"processing entry #{entry_path_with_slash}"} if @periodic.trigger?
             entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
-            if !scan_start.nil? && !scan_start.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(scan_start)
+            if !top_path.nil? && !top_path.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(top_path)
               Log.log.debug{"#{entry['path']} folder (skip start)".bg_red}
               next
             end
@@ -353,7 +353,7 @@ module Aspera
             begin
               case entry['type']
               when 'file'
-                if filter_block.call(entry)
+                if @filter_block.nil? || @filter_block.call(entry)
                   generate_preview(entry)
                 else
                   Log.log.debug('skip by filter')
@@ -450,9 +450,13 @@ module Aspera
               else
                 @api_node.read("files/#{scan_id}")[:data]
               end
+            optional_filter = query_option
+            @filter_block = Aspera::Node.file_matcher(optional_filter) unless optional_filter.nil?
             scan_folder_files(folder_info, scan_path)
             return Main.result_status('scan finished')
           when :events, :trevents
+            optional_filter = query_option
+            @filter_block = Aspera::Node.file_matcher(optional_filter) unless optional_filter.nil?
             iteration_persistency = nil
             if options.get_option(:once_only, mandatory: true)
               iteration_persistency = PersistencyActionOnce.new(

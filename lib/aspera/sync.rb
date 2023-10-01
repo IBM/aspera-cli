@@ -80,8 +80,9 @@ module Aspera
     }.freeze
 
     ASYNC_EXECUTABLE = 'async'
+    ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
 
-    private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :ASYNC_EXECUTABLE, :TS_TO_PARAMS_V2
+    private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :TS_TO_PARAMS_V2, :ASYNC_EXECUTABLE, :ASYNC_ADMIN_EXECUTABLE
 
     class << self
       # Set remote_dir in sync parameters based on transfer spec
@@ -91,7 +92,7 @@ module Aspera
       def update_remote_dir(sync_params, remote_dir_key, transfer_spec)
         if transfer_spec.dig(*%w[tags aspera node file_id])
           # in AoC, use gen4
-          sync_params[remote_dir_key] ||= '/'
+          sync_params[remote_dir_key] = '/'
         elsif transfer_spec['cookie']&.start_with?('aspera.shares2')
           # TODO : something more generic, independent of Shares
           # in Shares, the actual folder on remote end is not always the same as the name of the share
@@ -178,47 +179,40 @@ module Aspera
         else raise 'internal error: unspecified case'
         end
       end
-    end
-  end # end Sync
 
-  class SyncAdmin
-    ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
-    private_constant :ASYNC_ADMIN_EXECUTABLE
-    def initialize(sync_params, session_name)
-      @cmdline = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
-      if sync_params.key?('local')
-        raise 'Missing session name' if sync_params['name'].nil?
-        raise 'Session not found' unless session_name.nil? || session_name.eql?(sync_params['name'])
-        @cmdline.push("--name=#{sync_params['name']}")
-        if sync_params.key?('local_db_dir')
-          @cmdline.push("--local-db-dir=#{sync_params['local_db_dir']}")
-        elsif sync_params.dig('local', 'path')
-          @cmdline.push("--local-dir=#{sync_params.dig('local', 'path')}")
+      def admin_status(sync_params, session_name)
+        command_line = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
+        if sync_params.key?('local')
+          raise 'Missing session name' if sync_params['name'].nil?
+          raise 'Session not found' unless session_name.nil? || session_name.eql?(sync_params['name'])
+          command_line.push("--name=#{sync_params['name']}")
+          if sync_params.key?('local_db_dir')
+            command_line.push("--local-db-dir=#{sync_params['local_db_dir']}")
+          elsif sync_params.dig('local', 'path')
+            command_line.push("--local-dir=#{sync_params.dig('local', 'path')}")
+          else
+            raise 'Missing either local_db_dir or local.path'
+          end
+        elsif sync_params.key?('sessions')
+          session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{|s|s['name'].eql?(session_name)}
+          raise "Session #{session_name} not found in #{sync_params['sessions'].map{|s|s['name']}.join(',')}" if session.nil?
+          raise 'Missing session name' if session['name'].nil?
+          command_line.push("--name=#{session['name']}")
+          if session.key?('local_db_dir')
+            command_line.push("--local-db-dir=#{session['local_db_dir']}")
+          elsif session.key?('local_dir')
+            command_line.push("--local-dir=#{session['local_dir']}")
+          else
+            raise 'Missing either local_db_dir or local_dir'
+          end
         else
-          raise 'Missing either local_db_dir or local.path'
+          raise 'At least one of `local` or `sessions` must be present in async parameters'
         end
-      elsif sync_params.key?('sessions')
-        session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{|s|s['name'].eql?(session_name)}
-        raise 'Session not found' if session.nil?
-        raise 'Missing session name' if session['name'].nil?
-        @cmdline.push("--name=#{session['name']}")
-        if session.key?('local_db_dir')
-          @cmdline.push("--local-db-dir=#{session['local_db_dir']}")
-        elsif session.key?('local_dir')
-          @cmdline.push("--local-dir=#{session['local_dir']}")
-        else
-          raise 'Missing either local_db_dir or local_dir'
-        end
-      else
-        raise 'At least one of `local` or `sessions` must be present in async parameters'
+        stdout, stderr, status = Open3.capture3(*command_line)
+        Log.log.debug{"status=#{status}, stderr=#{stderr}"}
+        raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
+        return stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
       end
     end
-
-    def status
-      stdout, stderr, status = Open3.capture3(*@cmdline)
-      Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-      raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
-      return stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
-    end
-  end
+  end # end Sync
 end # end Aspera

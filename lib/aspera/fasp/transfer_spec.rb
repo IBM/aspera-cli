@@ -41,7 +41,7 @@ module Aspera
           return case tspec['direction']
                  when DIRECTION_SEND then :upload
                  when DIRECTION_RECEIVE then :download
-                 else raise 'Error: upload or download only'
+                 else raise "Error: upload or download only, not #{tspec['direction']} (#{tspec['direction'].class})"
                  end
         end
       end

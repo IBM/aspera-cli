@@ -76,8 +76,8 @@ $(T)sh_nagios: $(T).exists
 	@touch $@
 $(T)sh_wizard: $(T).exists
 	@echo $@
-	$(EXE_MAN) config detect @preset:tst_shares.url --query=shares
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_shares.url --query=shares --username=test --password=test
+	$(EXE_MAN) config detect @preset:tst_shares.url shares
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_shares.url shares --username=test --password=test
 	@touch $@
 $(T)shadm: $(T).exists
 	@echo $@

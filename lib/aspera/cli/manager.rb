@@ -91,6 +91,12 @@ module Aspera
         def option_name_to_line(name)
           return "--#{name.to_s.gsub(OPTION_SEP_SYMB, OPTION_SEP_LINE)}"
         end
+
+        def validate_type(what, value, type_list)
+          return nil if type_list.nil?
+          raise 'internal error: types must be a Class Array' unless type_list.is_a?(Array) && type_list.all?(Class)
+          raise CliBadArgument, "#{what} is a #{value.class} but must be one of #{type_list.map(&:name).join(',')}" unless type_list.any? { |t|value.is_a?(t)}
+        end
       end
 
       attr_reader :parser
@@ -162,7 +168,8 @@ module Aspera
       # @return value, list or nil
       def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
         unless type.nil?
-          raise 'internal: type must be a Class' unless type.is_a?(Class)
+          type = [type] unless expected.is_a?(Array)
+          raise "INTERNAL ERROR: types must be Array of Class: #{types}" unless type.all?(Class)
           descr = "#{descr} (#{type})"
         end
         result = default
@@ -191,9 +198,7 @@ module Aspera
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if !aliases.nil? && aliases.key?(result)
-        # if nil here, it is because no value provided and not mandatory
-        return nil if result.nil? && !mandatory
-        raise "Argument shall be #{type.name}, not #{result.class}" if !type.nil? && !result.is_a?(type)
+        self.class.validate_type("Argument #{descr}", result, type) unless result.nil? && !mandatory
         return result
       end
 
@@ -203,22 +208,19 @@ module Aspera
       # either return value or calls handler, can return nil
       # ask interactively if requested/required
       # @param mandatory [Boolean] if true, raise error if option not set
-      # @param allowed_types [Array] list of allowed types
-      def get_option(option_symbol, mandatory: false, allowed_types: nil, default: nil)
-        allowed_types = [allowed_types] if allowed_types.is_a?(Class)
-        raise 'Internal Error: allowed_types must be an Array of Class or a Class' unless allowed_types.nil? || allowed_types.is_a?(Array)
+      def get_option(option_symbol, mandatory: false, default: nil)
+        attributes = @declared_options[option_symbol]
+        raise "INTERNAL ERROR: #{option_symbol} not declared" unless attributes
         result = nil
-        if @declared_options.key?(option_symbol)
-          case @declared_options[option_symbol][:read_write]
-          when :accessor
-            result = @declared_options[option_symbol][:accessor].value
-          when :value
-            result = @declared_options[option_symbol][:value]
-          else
-            raise 'unknown type'
-          end
-          Log.log.debug{"(#{@declared_options[option_symbol][:read_write]}) get #{option_symbol}=#{result}"}
+        case attributes[:read_write]
+        when :accessor
+          result = attributes[:accessor].value
+        when :value
+          result = attributes[:value]
+        else
+          raise 'unknown type'
         end
+        Log.log.debug{"(#{attributes[:read_write]}) get #{option_symbol}=#{result}"}
         result = default if result.nil?
         # do not fail for manual generation if option mandatory but not set
         result = '' if result.nil? && mandatory && !@fail_on_missing_mandatory
@@ -230,15 +232,14 @@ module Aspera
             # ask_missing_mandatory
             expected = :single
             # print "please enter: #{option_symbol.to_s}"
-            if @declared_options.key?(option_symbol) && @declared_options[option_symbol].key?(:values)
-              expected = @declared_options[option_symbol][:values]
+            if @declared_options.key?(option_symbol) && attributes.key?(:values)
+              expected = attributes[:values]
             end
             result = get_interactive(:option, option_symbol.to_s, expected: expected)
             set_option(option_symbol, result, 'interactive')
           end
         end
-        raise "option #{option_symbol} is #{result.class} but must be one of #{allowed_types}" unless \
-          !mandatory || allowed_types.nil? || allowed_types.any? { |t|result.is_a?(t)}
+        self.class.validate_type("Option #{option_symbol}", result, attributes[:types]) unless result.nil? && !mandatory
         return result
       end
 
@@ -282,7 +283,7 @@ module Aspera
         }
         if !types.nil?
           types = [types] unless types.is_a?(Array)
-          raise "INTERNAL ERROR: types must be classes: #{types}" unless types.all?(Class)
+          raise "INTERNAL ERROR: types must be Array of Class: #{types}" unless types.all?(Class)
           opt[:types] = types
           description = "#{description} (#{types.map(&:name).join(', ')})"
         end

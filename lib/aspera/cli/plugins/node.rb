@@ -213,7 +213,7 @@ module Aspera
           when :search
             search_root = get_next_arg_add_prefix(prefix_path, 'search root')
             parameters = {'path' => search_root}
-            other_options = value_or_query(allowed_types: Hash)
+            other_options = query_option
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search', parameters)
             result = { type: :object_list, data: resp[:data]['items']}
@@ -429,7 +429,7 @@ module Aspera
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
-            test_block = Aspera::Node.file_matcher(value_or_query(allowed_types: String))
+            test_block = Aspera::Node.file_matcher(options.get_next_argument('filter', type: String, mandatory: false))
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
             containing_folder_path = options.get_next_argument('path').split(Aspera::Node::PATH_SEPARATOR)
@@ -456,6 +456,7 @@ module Aspera
               ts_direction = case sync_direction
               when :push, :bidi then Fasp::TransferSpec::DIRECTION_SEND
               when :pull then Fasp::TransferSpec::DIRECTION_RECEIVE
+              else raise "internal error: bad direction: #{sync_direction} (#{sync_direction.class})"
               end
               # remote is specified by option to_folder
               apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
@@ -613,7 +614,7 @@ module Aspera
             # filename str
             # skip int
             # status int
-            filter = value_or_query(allowed_types: Hash)
+            filter = query_option
             post_data.merge!(filter) unless filter.nil?
             resp = @api_node.create('async/files', post_data)[:data]
             data = resp['sync_files']
@@ -673,7 +674,7 @@ module Aspera
                 return Main.result_status('Done')
               end
               if %i[bandwidth counters files].include?(sync_command)
-                parameters = value_or_query(allowed_types: Hash, mandatory: false) || {}
+                parameters = query_option || {}
               end
               return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters)[:data] }
             end
@@ -811,7 +812,7 @@ module Aspera
             when :show
               return { type: :single_object, data: @api_node.read(one_res_path)[:data]}
             when :modify
-              @api_node.update(one_res_path, value_or_query(mandatory: true, allowed_types: Hash))
+              @api_node.update(one_res_path, query_option(mandatory: true))
               return Main.result_status("#{one_res_id} updated")
             when :delete
               @api_node.delete(one_res_path)
