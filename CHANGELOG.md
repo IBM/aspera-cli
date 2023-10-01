@@ -8,6 +8,7 @@
   * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter.
   * new: aoc: wizard manages public links
   * new: added resolution hints for some known issues.
+  * nex: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
 
 * 4.14.0
 
