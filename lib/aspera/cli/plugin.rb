@@ -210,12 +210,12 @@ module Aspera
       end
 
       # TODO: when deprecation of `value` is completed: remove this method, replace with options.get_option(:query)
-      def query_option(mandatory: false)
+      def query_option(mandatory: false, default: nil)
         option = :value
         value = options.get_option(option, mandatory: false)
         if value.nil?
           option = :query
-          value = options.get_option(option, mandatory: mandatory)
+          value = options.get_option(option, mandatory: mandatory, default: default)
         end
         return value
       end

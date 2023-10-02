@@ -687,9 +687,7 @@ module Aspera
                 @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)
                 return Main.result_status('Done')
               end
-              if %i[bandwidth counters files].include?(sync_command)
-                parameters = query_option || {}
-              end
+              parameters = query_option(default: {}) if %i[bandwidth counters files].include?(sync_command)
               return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters)[:data] }
             end
           when :stream
