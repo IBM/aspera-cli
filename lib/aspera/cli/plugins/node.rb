@@ -652,9 +652,8 @@ module Aspera
         def ssync_lookup(field, value)
           raise CliBadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
           @api_node.read('asyncs')[:data]['ids'].each do |id|
-            one = @api_node.read("asyncs/#{id}")[:data]['configuration']
-            puts "one=#{one}"
-            if one['name'].eql?(value)
+            sync_info = @api_node.read("asyncs/#{id}")[:data]['configuration']
+            if sync_info[field].eql?(value)
               return id
             end
           end
