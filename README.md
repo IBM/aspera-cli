@@ -3095,13 +3095,13 @@ OPTIONS: global
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey hint initdemo open plugins preset proxy_check smtp_settings vault wizard
 OPTIONS:
+        --config-file=VALUE          Read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
-        --value=VALUE                Value for create, update, list filter (Hash) (deprecated: Use positional value for create/modify or option: query for list/delete)
+        --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set (modify operation)
-        --id=VALUE                   Resource identifier (deprecated: Use identifier after verb (modify,delete,show))
+        --id=VALUE                   Resource identifier (deprecated: (4.14) Use positional identifier after verb (modify,delete,show))
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
-        --config-file=VALUE          Read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
     -N, --no-default                 Do not load default configuration for plugin
         --override=ENUM              Wizard: override existing value: [no], yes
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
@@ -3115,7 +3115,7 @@ OPTIONS:
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials (Array with user and password)
         --secret=VALUE               Secret for access keys
-        --vault=VALUE                Vault for secrets
+        --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
@@ -4475,10 +4475,10 @@ aoc files short_link create testdst public
 aoc files short_link list /testdst private
 aoc files show %id:my_file_id
 aoc files show /200KB.1
-aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
-aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
-aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/testdst"}}'
-aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/testdst","reset":true}]}'
+aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/testdst"}}'
+aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/testdst","reset":true}]}'
+aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/testdst"}}'
+aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_aoc_media_file
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder_nopass
@@ -4497,8 +4497,8 @@ aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345 --query=@j
 aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
 aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
 aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
-aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external_user"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
-aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal_user"],"note":"my note"}' testfile.bin
+aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
+aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal"],"note":"my note"}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
 aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
 aoc packages shared_inboxes list
@@ -4666,37 +4666,37 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 
 ```bash
 server browse /
-server browse NEW_SERVER_FOLDER/testfile.bin
-server browse folder_1/target_hot
-server cp NEW_SERVER_FOLDER/testfile.bin folder_1/200KB.2
-server delete NEW_SERVER_FOLDER
-server delete folder_1/target_hot
-server delete folder_1/to.delete
+server browse my_server_folder/testfile.bin
+server browse my_upload_folder/target_hot
+server cp my_server_folder/testfile.bin my_upload_folder/200KB.2
+server delete my_server_folder
+server delete my_upload_folder/target_hot
+server delete my_upload_folder/to.delete
 server df
-server download NEW_SERVER_FOLDER/testfile.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
-server download NEW_SERVER_FOLDER/testfile.bin --to-folder=folder_1 --transfer=node
+server download my_server_folder/testfile.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
+server download my_server_folder/testfile.bin --to-folder=my_upload_folder --transfer=node
 server du /
-server health transfer --to-folder=folder_1 --format=nagios
+server health transfer --to-folder=my_upload_folder --format=nagios
 server info
-server md5sum NEW_SERVER_FOLDER/testfile.bin
-server mkdir NEW_SERVER_FOLDER --logger=stdout
-server mkdir folder_1/target_hot
-server mv folder_1/200KB.2 folder_1/to.delete
-server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"}}'
+server md5sum my_server_folder/testfile.bin
+server mkdir my_server_folder --logger=stdout
+server mkdir my_upload_folder/target_hot
+server mv my_upload_folder/200KB.2 my_upload_folder/to.delete
+server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"LOCAL_SYNC_DIR"}}'
 server sync admin status --sync-info=@json:'{"name":"sync2"}'
-server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"my_local_sync_dir"}]}'
-server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"NEW_SERVER_FOLDER"'","local_dir":"my_local_sync_dir","reset":true}]}'
-server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"my_local_sync_dir"},"remote":{"path":"'"NEW_SERVER_FOLDER"'"},"reset":true,"quiet":false}'
-server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=NEW_SERVER_FOLDER
+server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"LOCAL_SYNC_DIR"}]}'
+server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_server_folder","local_dir":"LOCAL_SYNC_DIR","reset":true}]}'
+server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"my_server_folder"},"reset":true,"quiet":false}'
+server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=my_server_folder
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
-server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=NEW_SERVER_FOLDER
+server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=my_server_folder
 server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"filepairlist.txt"'"}'
-server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"NEW_SERVER_FOLDER/othername"}]}'
-server upload --src-type=pair --sources=@json:'["testfile.bin","NEW_SERVER_FOLDER/othername"]'
-server upload --src-type=pair testfile.bin NEW_SERVER_FOLDER/othername --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
-server upload --src-type=pair testfile.bin folder_1/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
-server upload --to-folder=folder_1/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-server upload testfile.bin --to-folder=NEW_SERVER_FOLDER --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"my_server_folder/othername"}]}'
+server upload --src-type=pair --sources=@json:'["testfile.bin","my_server_folder/othername"]'
+server upload --src-type=pair testfile.bin my_server_folder/othername --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+server upload --src-type=pair testfile.bin my_upload_folder/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+server upload testfile.bin --to-folder=my_server_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
 ```
 
 ### Authentication on Server with SSH session
@@ -4808,12 +4808,12 @@ This plugin gives access to capabilities provided by HSTS node API.
 It is possible to:
 
 - browse
-- transfer (upload / download)
+- transfer (upload / download / sync)
 - ...
 
 ### Central
 
-The central subcommand uses the "reliable query" API (session and file).
+The central subcommand uses the *reliable query* API (session and file).
 It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
@@ -4822,7 +4822,9 @@ Filtering can be applied:
 ascli node central file list
 ```
 
-by providing the `validator` option, offline transfer validation can be done.
+By providing the `validator` option, offline transfer validation can be done.
+
+> **Note:** This API will probably be deprecated in the future.
 
 ### FASP Stream
 
@@ -4848,6 +4850,14 @@ ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"use
 ascli node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
+
+### Sync
+
+There are three sync types of operations:
+
+- `sync`: perform a local sync, by executing `async` locally
+- `async`: calls legacy async API on node : `/async`
+- `ssync` : calls newer async API on node : `/asyncs`
 
 ### Out of Transfer File Validation
 
@@ -4949,41 +4959,41 @@ node async show ALL
 node basic_token
 node browse / -r
 node delete /todelete
-node delete @list:,folder_1/todelete,folder_1/tdlink,folder_1/delfile
-node delete folder_1/10MB.2
-node delete testfile.bin
-node download testfile.bin --to-folder=.
+node delete @list:,my_upload_folder/todelete,my_upload_folder/tdlink,my_upload_folder/delfile
+node delete my_upload_folder/10MB.2
+node delete my_upload_folder/testfile.bin
+node download my_upload_folder/testfile.bin --to-folder=.
 node health
 node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 node license
-node mkdir folder_1/todelete
-node mkfile folder_1/delfile1 "hello world"
-node mklink folder_1/todelete folder_1/tdlink
-node rename folder_1 delfile1 delfile
+node mkdir my_upload_folder/todelete
+node mkfile my_upload_folder/delfile1 "hello world"
+node mklink my_upload_folder/todelete my_upload_folder/tdlink
+node rename my_upload_folder delfile1 delfile
 node search / --query=@json:'{"sort":"mtime"}'
 node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 node service delete service1
 node service list
 node space /
-node ssync bandwidth my_syncid
-node ssync counters my_syncid
-node ssync create @json:'{"configuration":{"name":"sync1","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
-node ssync delete my_syncid
-node ssync files my_syncid
+node ssync bandwidth %name:my_node_sync
+node ssync counters %name:my_node_sync
+node ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
+node ssync delete %name:my_node_sync
+node ssync files %name:my_node_sync
 node ssync list
-node ssync show my_syncid
-node ssync start my_syncid
-node ssync state my_syncid
-node ssync stop my_syncid
-node ssync summary my_syncid
-node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"my_local_sync_dir"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"my_local_sync_dir","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node ssync show %name:my_node_sync
+node ssync start %name:my_node_sync
+node ssync state %name:my_node_sync
+node ssync stop %name:my_node_sync
+node ssync summary %name:my_node_sync
+node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
-node upload --to-folder=folder_1 --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"my_node_url","username":"my_node_user","password":"my_node_pass_here"}'
+node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node_simple.example.com/path@","username":"my_username","password":"my_password"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin
-node upload testfile.bin --to-folder=folder_1 --ts=@json:'{"target_rate_cap_kbps":10000}'
+node upload testfile.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 ```
 
 ## <a id="faspex5"></a>Plugin: `faspex5`: IBM Aspera Faspex v5
@@ -5119,8 +5129,8 @@ faspex5 packages receive --box=my_faspex5_shinbox "my_package_id" --to-folder=.
 faspex5 packages receive --box=my_faspex5_workgroup --group-type=workgroups "my_package_id" --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
+faspex5 packages send @json:'{"title":"test title","recipients":["my_faspex5_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_faspex5_workgroup"]}' testfile.bin
-faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_faspex5_meta}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 faspex5 packages show "my_package_id"
 faspex5 packages show --box=my_faspex5_shinbox "my_package_id"
@@ -5488,7 +5498,6 @@ ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 ```bash
 faspex address_book
 faspex dropbox list --recipient="*my_faspex_dbx"
-faspex dropbox list --recipient="*my_faspex_wkg"
 faspex health
 faspex login_methods
 faspex me
@@ -5505,7 +5514,7 @@ faspex package recv my_pkgid --recipient="*my_faspex_dbx" --to-folder=.
 faspex package recv my_pkgid --recipient="*my_faspex_wkg" --to-folder=.
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_wkg"]}' testfile.bin
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal_user","my_faspex_username"]}' testfile.bin
+faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal","my_username"]}' testfile.bin
 faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 faspex source list
@@ -5554,7 +5563,7 @@ shares health
 console health
 console transfer current list
 console transfer smart list
-console transfer smart sub my_console_smart_id @json:'{"source":{"paths":["my_file_name"]},"source_type":"user_selected"}'
+console transfer smart sub my_console_smart_id @json:'{"source":{"paths":["my_console_smart_file"]},"source_type":"user_selected"}'
 ```
 
 ## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator

@@ -4224,12 +4224,12 @@ This plugin gives access to capabilities provided by HSTS node API.
 It is possible to:
 
 - browse
-- transfer (upload / download)
+- transfer (upload / download / sync)
 - ...
 
 ### Central
 
-The central subcommand uses the "reliable query" API (session and file).
+The central subcommand uses the *reliable query* API (session and file).
 It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:
@@ -4238,7 +4238,9 @@ Filtering can be applied:
 <%=cmd%> node central file list
 ```
 
-by providing the `validator` option, offline transfer validation can be done.
+By providing the `validator` option, offline transfer validation can be done.
+
+> **Note:** This API will probably be deprecated in the future.
 
 ### FASP Stream
 
@@ -4264,6 +4266,14 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
+
+### Sync
+
+There are three sync types of operations:
+
+- `sync`: perform a local sync, by executing `async` locally
+- `async`: calls legacy async API on node : `/async`
+- `ssync` : calls newer async API on node : `/asyncs`
 
 ### Out of Transfer File Validation
 

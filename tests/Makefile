@@ -18,6 +18,11 @@ interactive: $(T)f5_webauth $(T)aoc_webauth
 # all tests, including interactive ones
 full: all interactive
 
+# just to test nagios, but those are tested in the respective plugins
+only_nagios: $(T)f4_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
+
+only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
+
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
 TIMESTAMP=$(shell LANG=C date)
@@ -34,6 +39,7 @@ EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
+CF_LOCAL_SYNC_DIR=$(shell realpath "$(DIR_TMP)testsync123")
 
 # flush cached tokens
 clean::
@@ -140,15 +146,13 @@ $(T)serv_upload: $(T)serv_mkdir
 	@touch $@
 $(T)serv_sync: $(T)serv_upload 
 	@echo $@
-	set -x&&\
-	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	rm -fr $${local_sync_dir}&&\
-	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:misc.server_folder@","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
-	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"@preset:misc.server_folder@"},"reset":true,"quiet":false}'&&\
-	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"}}'
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:misc.server_folder@","local_dir":"$(CF_LOCAL_SYNC_DIR)","reset":true}]}'
+	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"$(CF_LOCAL_SYNC_DIR)"}]}'
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(CF_LOCAL_SYNC_DIR)"},"remote":{"path":"@preset:misc.server_folder@"},"reset":true,"quiet":false}'
 	-$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2"}'
+	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(CF_LOCAL_SYNC_DIR)"}}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
@@ -531,21 +535,17 @@ $(T)aocfv3inf: $(T).exists
 	@touch $@
 $(T)aocfsync1: $(T).exists
 	@echo $@
-	set -x&&\
-	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	rm -fr $${local_sync_dir}&&\
-	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/testdst","reset":true}]}'&&\
-	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/testdst","reset":true}]}'
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(CF_LOCAL_SYNC_DIR)","remote_dir":"/testdst","reset":true}]}'
+	$(EXE_MAN) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(CF_LOCAL_SYNC_DIR)","remote_dir":"/testdst","reset":true}]}'
 	@touch $@
 $(T)aocfsync2: $(T).exists
 	@echo $@
-	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	rm -fr $${local_sync_dir}&&\
-	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/testdst"}}'
-	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	$(EXE_MAN) aoc files sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/testdst"}}'
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(CF_LOCAL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'
+	$(EXE_MAN) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(CF_LOCAL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
@@ -901,22 +901,17 @@ $(T)sy5: $(T).exists
 	@touch $@
 $(T)ndsyncv1: $(T).exists
 	@echo $@
-	set -x&&\
-	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	rm -fr $${local_sync_dir}&&\
-	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'&&\
-	$(EXE_MAN) node sync ad st --sync-info=@json:'{"sessions":[{"name":"syncv1","direction":"pull","local_dir":"'"$${local_sync_dir}"'","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(CF_LOCAL_SYNC_DIR)","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	$(EXE_MAN) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(CF_LOCAL_SYNC_DIR)","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 	@touch $@
 $(T)ndsyncv2: $(T).exists
 	@echo $@
-	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	set -x&&\
-	rm -fr $${local_sync_dir}&&\
-	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	-local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
-	$(EXE_MAN) node sync ad st --sync-info=@json:'{"name":"syncv2","reset":true,"direction":"pull","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	rm -fr $(CF_LOCAL_SYNC_DIR)
+	mkdir -p $(CF_LOCAL_SYNC_DIR)
+	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(CF_LOCAL_SYNC_DIR)"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	$(EXE_MAN) node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(CF_LOCAL_SYNC_DIR)"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	@touch $@
 tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2
 
@@ -926,20 +921,20 @@ $(T)sync_create: $(T).exists
 	hostport=$$($(EXE_NOMAN) config preset get tst_server url|cut -f3 -d/)&&\
 	host=$${hostport%:*}&&\
 	port=$${hostport#*:}&&\
-	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"sync1","local":{"path":"@preset:sync.local_path@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:tst_server.username@","pass":"@preset:tst_server.password@","path":"@preset:sync.remote_path@"}}}'
+	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:tst_server.username@","pass":"@preset:tst_server.password@","path":"@preset:sync.remote_path@"}}}'
 	$(EXE_MAN) node ssync list
 	@touch $@
 $(T)sync_other: $(T)sync_create
 	@echo $@
-	$(EXE_MAN) node ssync start %name:sync1
-	$(EXE_MAN) node ssync show %name:sync1
-	$(EXE_MAN) node ssync bandwidth %name:sync1
-	$(EXE_MAN) node ssync counters %name:sync1
-	$(EXE_MAN) node ssync files %name:sync1
-	$(EXE_MAN) node ssync state %name:sync1
-	$(EXE_MAN) node ssync stop %name:sync1
-	$(EXE_MAN) node ssync summary %name:sync1
-	$(EXE_MAN) node ssync delete %name:sync1
+	$(EXE_MAN) node ssync start %name:my_node_sync
+	$(EXE_MAN) node ssync show %name:my_node_sync
+	$(EXE_MAN) node ssync bandwidth %name:my_node_sync
+	$(EXE_MAN) node ssync counters %name:my_node_sync
+	$(EXE_MAN) node ssync files %name:my_node_sync
+	$(EXE_MAN) node ssync state %name:my_node_sync
+	$(EXE_MAN) node ssync stop %name:my_node_sync
+	$(EXE_MAN) node ssync summary %name:my_node_sync
+	$(EXE_MAN) node ssync delete %name:my_node_sync
 	@touch $@
 tnsyncs: $(T)sync_create $(T)sync_other
 
@@ -1305,5 +1300,3 @@ $(T)f5_postproc: $(T).exists
 
 tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
 
-# just to test nagios, but those are tested in the respective plugins
-tnagios: $(T)f4_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
