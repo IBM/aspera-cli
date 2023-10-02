@@ -653,9 +653,8 @@ module Aspera
           raise CliBadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
           @api_node.read('asyncs')[:data]['ids'].each do |id|
             sync_info = @api_node.read("asyncs/#{id}")[:data]['configuration']
-            if sync_info[field].eql?(value)
-              return id
-            end
+            # name is unique, so we can return
+            return id if sync_info[field].eql?(value)
           end
           raise CliBadArgument, "no such sync: #{field}=#{value}"
         end
