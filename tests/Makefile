@@ -34,8 +34,6 @@ EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
-CF_HSTS_FOLDER_UPLOAD := $(shell $(EXE_NOMAN) config preset get misc upload_folder 2> /dev/null || echo error)
-CF_HSTS_UPLOADED_FILE=$(CF_HSTS_FOLDER_UPLOAD)/$(CF_LOCAL_SAMPLE_FILENAME)
 
 # flush cached tokens
 clean::
@@ -111,14 +109,13 @@ $(T)sh3: $(T).exists
 	@touch $@
 tshares: $(T)sh_nagios $(T)sh_wizard $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 
-NEW_SERVER_FOLDER=$(CF_HSTS_FOLDER_UPLOAD)/server_folder
 $(T)serv_browse: $(T).exists
 	@echo $@
 	$(EXE_MAN) server browse /
 	@touch $@
 $(T)serv_mkdir: $(T).exists
 	@echo $@
-	$(EXE_MAN) server mkdir $(NEW_SERVER_FOLDER) --logger=stdout
+	$(EXE_MAN) server mkdir @preset:misc.server_folder --logger=stdout
 	@touch $@
 $(T)serv_error: $(T).exists
 	@echo $@
@@ -134,12 +131,12 @@ $(T)serv_error: $(T).exists
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
-	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(NEW_SERVER_FOLDER) --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
-	$(EXE_MAN) server browse $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME)
-	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(NEW_SERVER_FOLDER)/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:'["$(CF_LOCAL_SAMPLE_FILEPATH)","$(NEW_SERVER_FOLDER)/othername"]'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"$(NEW_SERVER_FOLDER)/othername"}]}'
-	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) $(CF_HSTS_FOLDER_UPLOAD)/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+	$(EXE_MAN) server upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=@preset:misc.server_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+	$(EXE_MAN) server browse @extend:@preset:misc.server_folder@/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) @extend:@preset:misc.server_folder@/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(CF_LOCAL_SAMPLE_FILEPATH)","@preset:misc.server_folder@/othername"]'
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(CF_LOCAL_SAMPLE_FILEPATH)","destination":"@preset:misc.server_folder@/othername"}]}'
+	$(EXE_MAN) server upload --src-type=pair $(CF_LOCAL_SAMPLE_FILEPATH) @extend:@preset:misc.upload_folder@/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@touch $@
 $(T)serv_sync: $(T)serv_upload 
 	@echo $@
@@ -147,48 +144,48 @@ $(T)serv_sync: $(T)serv_upload
 	local_sync_dir=$$(realpath $(DIR_TMP))/testsync123&&\
 	rm -fr $${local_sync_dir}&&\
 	mkdir -p $${local_sync_dir}&&\
-	$(EXE_MAN) server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"'"$(NEW_SERVER_FOLDER)"'","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:misc.server_folder@","local_dir":"'"$${local_sync_dir}"'","reset":true}]}'&&\
 	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"'"$${local_sync_dir}"'"}]}'&&\
-	$(EXE_MAN) server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"'"$(NEW_SERVER_FOLDER)"'"},"reset":true,"quiet":false}'&&\
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"},"remote":{"path":"@preset:misc.server_folder@"},"reset":true,"quiet":false}'&&\
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"'"$${local_sync_dir}"'"}}'
 	-$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2"}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filelist.txt
 	echo $(CF_LOCAL_SAMPLE_FILEPATH) > $(DIR_TMP)filepairlist.txt
-	echo $(NEW_SERVER_FOLDER)/othername >> $(DIR_TMP)filepairlist.txt
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=$(NEW_SERVER_FOLDER)
+	$(EXE_NOMAN) conf echo @extend:@preset:misc.server_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=@preset:misc.server_folder
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"$(DIR_TMP)filepairlist.txt"'"}'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=$(NEW_SERVER_FOLDER) 
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:misc.server_folder 
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
 	@touch $@
 $(T)serv_md5: $(T)serv_upload
 	@echo $@
-	$(EXE_MAN) server md5sum $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME)
+	$(EXE_MAN) server md5sum @extend:@preset:misc.server_folder@/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)serv_down_lcl: $(T)serv_upload
 	@echo $@
-	$(EXE_MAN) server download $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
+	$(EXE_MAN) server download @extend:@preset:misc.server_folder@/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 	@touch $@
 $(T)serv_down_from_node: $(T)serv_upload
 	@echo $@
-	$(EXE_MAN) server download $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --transfer=node
+	$(EXE_MAN) server download @extend:@preset:misc.server_folder@/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=@preset:misc.upload_folder --transfer=node
 	@touch $@
 $(T)serv_cp: $(T)serv_upload
 	@echo $@
-	$(EXE_MAN) server cp $(NEW_SERVER_FOLDER)/$(CF_LOCAL_SAMPLE_FILENAME) $(CF_HSTS_FOLDER_UPLOAD)/200KB.2
+	$(EXE_MAN) server cp @extend:@preset:misc.server_folder@/$(CF_LOCAL_SAMPLE_FILENAME) @extend:@preset:misc.upload_folder@/200KB.2
 	@touch $@
 $(T)serv_mv: $(T)serv_cp
 	@echo $@
-	$(EXE_MAN) server mv $(CF_HSTS_FOLDER_UPLOAD)/200KB.2 $(CF_HSTS_FOLDER_UPLOAD)/to.delete
+	$(EXE_MAN) server mv @extend:@preset:misc.upload_folder@/200KB.2 @extend:@preset:misc.upload_folder@/to.delete
 	@touch $@
 $(T)serv_delete: $(T)serv_mv
 	@echo $@
-	$(EXE_MAN) server delete $(CF_HSTS_FOLDER_UPLOAD)/to.delete
+	$(EXE_MAN) server delete @extend:@preset:misc.upload_folder@/to.delete
 	@touch $@
 $(T)serv_cleanup1: $(T).exists
 	@echo $@
-	$(EXE_MAN) server delete $(NEW_SERVER_FOLDER)
+	$(EXE_MAN) server delete @preset:misc.server_folder
 	@touch $@
 $(T)serv_info: $(T).exists
 	@echo $@
@@ -204,7 +201,7 @@ $(T)serv_df: $(T).exists
 	@touch $@
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
-	$(EXE_MAN) server health transfer --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --format=nagios 
+	$(EXE_MAN) server health transfer --to-folder=@preset:misc.upload_folder --format=nagios 
 	-$(EXE_NOMAN) server health transfer --to-folder=/wrong --format=nagios 
 	@touch $@
 $(T)serv_key: $(T).exists
@@ -214,10 +211,10 @@ $(T)serv_key: $(T).exists
 $(T)asession: $(T).exists
 	@echo $@
 	set -x&&\
-	remote_host=$$($(EXE_NOMAN) config preset get tst_server url)&&remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
-	remote_user=$$($(EXE_NOMAN) config preset get tst_server username)&&\
-	remote_pass=$$($(EXE_NOMAN) config preset get tst_server password)&&\
-	$(DIR_BIN)asession @json:'{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	remote_host=$$($(EXE_NOMAN) config preset get tst_server url)&&\
+	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
+	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
+	$(DIR_BIN)asession @json:@extend:'{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:tst_server.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:tst_server.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
 	@touch $@
 tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 
@@ -236,10 +233,7 @@ $(T)f4_plst: $(T).exists
 	@touch $@
 $(T)f4_psnd: $(T).exists
 	@echo $@
-	set -x&&\
-	faspex_username=$$($(EXE_NOMAN) config preset get tst_faspex4 username)&&\
-	email_internal_user=$$($(EXE_NOMAN) config preset get misc email_internal)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'","'"$${faspex_username}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@","@preset:tst_faspex4.username@"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 	@sleep 8
 $(T)f4_prs: $(T)f4_psnd
@@ -296,18 +290,16 @@ $(T)f4_v4: $(T).exists
 	@touch $@
 $(T)f4_db1: $(T).exists
 	@echo $@
-	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_dbx}"
+	$(EXE_MAN) faspex dropbox list --recipient=@extend:"*@preset:misc.faspex_dbx@"
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["*@preset:misc.faspex_dbx@"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
-	faspex_dbx=$$($(EXE_NOMAN) config preset get misc faspex_dbx)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["*'"$${faspex_dbx}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_dbx}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_dbx}" --to-folder=$(DIR_TMP).
-	$(EXE_MAN) faspex dropbox list --recipient="*$${faspex_wkg}"
+	pkgid=$$($(EXE_MAN) faspex package list --recipient=@extend:"*@preset:misc.faspex_dbx@" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient=@extend:"*@preset:misc.faspex_dbx@" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex dropbox list --recipient=@extend:"*@preset:misc.faspex_dbx@"
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["*@preset:misc.faspex_wkg@"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	set -x&&\
-	faspex_wkg=$$($(EXE_NOMAN) config preset get misc faspex_wkg)&&\
-	$(EXE_MAN) faspex package send --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)","recipients":["*'"$${faspex_wkg}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	pkgid=$$($(EXE_MAN) faspex package list --recipient="*$${faspex_wkg}" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
-	$(EXE_MAN) faspex package recv $${pkgid} --recipient="*$${faspex_wkg}" --to-folder=$(DIR_TMP).
+	pkgid=$$($(EXE_MAN) faspex package list --recipient=@extend:"*@preset:misc.faspex_wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
+	$(EXE_MAN) faspex package recv $${pkgid} --recipient=@extend:"*@preset:misc.faspex_wkg@" --to-folder=$(DIR_TMP).
 	@touch $@
 tfaspex: $(T)f4_nagios $(T)f4_wizard $(T)f4_plst $(T)f4_psnd $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_storage $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1
 #  $(T)f4_prl
@@ -330,9 +322,7 @@ $(T)cons2: $(T).exists
 	@touch $@
 $(T)cons3: $(T).exists
 	@echo $@
-	set -x&&\
-	file_name=$$($(EXE_NOMAN) config preset get misc console_smart_file)&&\
-	$(EXE_MAN) console transfer smart sub @preset:misc.console_smart_id @json:'{"source":{"paths":["'"$${file_name}"'"]},"source_type":"user_selected"}'
+	$(EXE_MAN) console transfer smart sub @preset:misc.console_smart_id @json:@extend:'{"source":{"paths":["@preset:misc.console_smart_file@"]},"source_type":"user_selected"}'
 	@touch $@
 tconsole: $(T)cons_nagios $(T)cons_wizard $(T)cons1 $(T)cons2
 #  $(T)cons3
@@ -354,26 +344,22 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
 	-$(EXE_MAN) node delete /todelete
-	$(EXE_MAN) node mkdir $(CF_HSTS_FOLDER_UPLOAD)/todelete
-	$(EXE_MAN) node mklink $(CF_HSTS_FOLDER_UPLOAD)/todelete $(CF_HSTS_FOLDER_UPLOAD)/tdlink
-	$(EXE_MAN) node mkfile $(CF_HSTS_FOLDER_UPLOAD)/delfile1 "hello world"
-	$(EXE_MAN) node rename $(CF_HSTS_FOLDER_UPLOAD) delfile1 delfile
-	$(EXE_MAN) node delete @list:,$(CF_HSTS_FOLDER_UPLOAD)/todelete,$(CF_HSTS_FOLDER_UPLOAD)/tdlink,$(CF_HSTS_FOLDER_UPLOAD)/delfile
+	$(EXE_MAN) node mkdir @extend:@preset:misc.upload_folder@/todelete
+	$(EXE_MAN) node mklink @extend:@preset:misc.upload_folder@/todelete @extend:@preset:misc.upload_folder@/tdlink
+	$(EXE_MAN) node mkfile @extend:@preset:misc.upload_folder@/delfile1 "hello world"
+	$(EXE_MAN) node rename @preset:misc.upload_folder delfile1 delfile
+	$(EXE_MAN) node delete @list:@extend:,@preset:misc.upload_folder@/todelete,@preset:misc.upload_folder@/tdlink,@preset:misc.upload_folder@/delfile
 	@touch $@
 $(T)nd2: $(T).exists
 	@echo $@
-	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --ts=@json:'{"target_rate_cap_kbps":10000}'
-	$(EXE_MAN) node download $(CF_HSTS_UPLOADED_FILE) --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node delete $(CF_HSTS_UPLOADED_FILE)
+	$(EXE_MAN) node upload $(CF_LOCAL_SAMPLE_FILEPATH) --to-folder=@preset:misc.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
+	$(EXE_MAN) node download @extend:@preset:misc.upload_folder@/$(CF_LOCAL_SAMPLE_FILENAME) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node delete @extend:@preset:misc.upload_folder@/$(CF_LOCAL_SAMPLE_FILENAME)
 	@touch $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
-	set -x&&\
-	node_url=$$($(EXE_NOMAN) config preset get tst_node_simple url)&&\
-	node_user=$$($(EXE_NOMAN) config preset get tst_node_simple username)&&\
-	node_pass_here=$$($(EXE_NOMAN) config preset get tst_node_simple password)&&\
-	$(EXE_MAN) node upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD) --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"'"$${node_url}"'","username":"'"$${node_user}"'","password":"'"$${node_pass_here}"'"}'
-	-$(EXE_MAN) node delete $(CF_HSTS_FOLDER_UPLOAD)/10MB.2
+	$(EXE_MAN) node upload --to-folder=@preset:misc.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:tst_node_simple.url@","username":"@preset:tst_node_simple.username@","password":"@preset:tst_node_simple.password@"}'
+	-$(EXE_MAN) node delete @extend:@preset:misc.upload_folder@/10MB.2
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
@@ -593,11 +579,8 @@ $(T)aocshlk3: $(T).exists
 taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists
 	@echo $@
-	set -x&&\
-	email_internal_user=$$($(EXE_NOMAN) config preset get misc email_internal)&&\
-	email_external_user=$$($(EXE_NOMAN) config preset get misc email_external)&&\
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_internal_user}"'"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)&&\
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${email_external_user}"'"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_external@"]}' --new-user-option=@json:'{"package_contact":true}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
 $(T)aocp2: $(T).exists
 	@echo $@
@@ -618,36 +601,35 @@ $(T)aocp5: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc org -N --link=@preset:misc.aoc_publink_recv_from_aocuser
 	@touch $@
-$(T)aocp6: $(T).exists
+$(T)aocp_send_pub_sh: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=@preset:misc.aoc_publink_send_shd_inbox
 	@touch $@
-$(T)aocp7: $(T).exists
+$(T)aocp_send_pub_usr: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH) --link=@preset:misc.aoc_publink_send_aoc_user --password=@preset:misc.aoc_publink_send_use_pass
 	@touch $@
-$(T)aocp8: $(T).exists
+$(T)aocp_send_shbx: $(T).exists
 	@echo $@
-	set -x&&\
-	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	set -x&&\
-	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	set -x&&\
-	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_meta)&&\
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:'{"name":"Test Package $(TIMESTAMP)","recipients":["'"$${aoc_shbx_name}"'"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
-	set -x&&\
-	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-$(T)aocp9: $(T).exists
+$(T)aocp_send_sh_meta_long: $(T).exists
 	@echo $@
-	set -x&&\
-	aoc_shbx_name=$$($(EXE_NOMAN) config preset get misc aoc_shbx_name)&&\
-	$(EXE_MAN) aoc packages list --query=@json:'{"dropbox_name":"'"$${aoc_shbx_name}"'","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp6 $(T)aocp7 $(T)aocp8 $(T)aocp9
+$(T)aocp_send_sh_meta_short: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	@touch $@
+$(T)aocp_recv_shbx: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:misc.aoc_shbx_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	@touch $@
+$(T)aocp_list_shbx: $(T).exists
+	@echo $@
+	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:misc.aoc_shbx_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	@touch $@
+taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send_pub_sh $(T)aocp_send_pub_usr $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short $(T)aocp_recv_shbx $(T)aocp_list_shbx
 $(T)aocadm1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin auth_providers list
@@ -738,19 +720,11 @@ $(T)aocat7: $(T).exists
 $(T)aocat8: $(T).exists
 	@echo $@
 	-$(EXE_NOMAN) aoc admin ats access_key delete ak1ibmcloud
-	-set -x&&\
-	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
-	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
-	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	-$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
-	-set -x&&\
-	aws_bucket_name=$$($(EXE_NOMAN) config preset get misc aws_bucket_name)&&\
-	aws_bucket_key=$$($(EXE_NOMAN) config preset get misc aws_bucket_key)&&\
-	aws_bucket_secret=$$($(EXE_NOMAN) config preset get misc aws_bucket_secret)&&\
-	$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'"$${aws_bucket_name}"'","credentials":{"access_key_id":"'"$${aws_bucket_key}"'","secret_access_key":"'"$${aws_bucket_secret}"'"},"path":"/"}}'
+	-$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
@@ -874,21 +848,13 @@ $(T)at3: $(T).exists
 $(T)at8: $(T).exists
 	@echo $@
 	-$(EXE_NOMAN) ats access_key delete ak2ibmcloud
-	-set -x&&\
-	icos_bucket_name=$$($(EXE_NOMAN) config preset get misc icos_bucket_name)&&\
-	icos_bucket_key=$$($(EXE_NOMAN) config preset get misc icos_bucket_key)&&\
-	icos_bucket_secret=$$($(EXE_NOMAN) config preset get misc icos_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"'"$${icos_bucket_name}"'","credentials":{"access_key_id":"'"$${icos_bucket_key}"'","secret_access_key":"'"$${icos_bucket_secret}"'"},"path":"/"}}'
+	-$(EXE_MAN) ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
-	-set -x&&\
-	aws_bucket_name=$$($(EXE_NOMAN) config preset get misc aws_bucket_name)&&\
-	aws_bucket_key=$$($(EXE_NOMAN) config preset get misc aws_bucket_key)&&\
-	aws_bucket_secret=$$($(EXE_NOMAN) config preset get misc aws_bucket_secret)&&\
-	$(EXE_MAN) ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"'"$${aws_bucket_name}"'","credentials":{"access_key_id":"'"$${aws_bucket_key}"'","secret_access_key":"'"$${aws_bucket_secret}"'"},"path":"/"}}'
+	-$(EXE_MAN) ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
@@ -957,29 +923,23 @@ tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2
 $(T)sync_create: $(T).exists
 	@echo $@
 	set -x&&\
-	local_path=$$($(EXE_NOMAN) config preset get sync local_path)&&\
-	remote_path=$$($(EXE_NOMAN) config preset get sync remote_path)&&\
 	hostport=$$($(EXE_NOMAN) config preset get tst_server url|cut -f3 -d/)&&\
 	host=$${hostport%:*}&&\
 	port=$${hostport#*:}&&\
-	username=$$($(EXE_NOMAN) config preset get tst_server username)&&\
-	password=$$($(EXE_NOMAN) config preset get tst_server password)&&\
-	$(EXE_MAN) node ssync create @json:'{"configuration":{"name":"sync1","local":{"path":"'"$${local_path}"'"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"'"$${username}"'","pass":"'"$${password}"'","path":"'"$${remote_path}"'"}}}'
+	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"sync1","local":{"path":"@preset:sync.local_path@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:tst_server.username@","pass":"@preset:tst_server.password@","path":"@preset:sync.remote_path@"}}}'
 	$(EXE_MAN) node ssync list
 	@touch $@
-$(T)sync_other: $(T).exists
+$(T)sync_other: $(T)sync_create
 	@echo $@
-	set -x&&\
-	syncid=$$($(EXE_NOMAN) node ssync list --format=csv|tail -n1)&&\
-	$(EXE_MAN) node ssync start $${syncid}&&\
-	$(EXE_MAN) node ssync show $${syncid}&&\
-	$(EXE_MAN) node ssync bandwidth $${syncid}&&\
-	$(EXE_MAN) node ssync counters $${syncid}&&\
-	$(EXE_MAN) node ssync files $${syncid}&&\
-	$(EXE_MAN) node ssync state $${syncid}&&\
-	$(EXE_MAN) node ssync stop $${syncid}&&\
-	$(EXE_MAN) node ssync summary $${syncid}&&\
-	$(EXE_MAN) node ssync delete $${syncid}
+	$(EXE_MAN) node ssync start %name:sync1
+	$(EXE_MAN) node ssync show %name:sync1
+	$(EXE_MAN) node ssync bandwidth %name:sync1
+	$(EXE_MAN) node ssync counters %name:sync1
+	$(EXE_MAN) node ssync files %name:sync1
+	$(EXE_MAN) node ssync state %name:sync1
+	$(EXE_MAN) node ssync stop %name:sync1
+	$(EXE_MAN) node ssync summary %name:sync1
+	$(EXE_MAN) node ssync delete %name:sync1
 	@touch $@
 tnsyncs: $(T)sync_create $(T)sync_other
 
@@ -1219,15 +1179,15 @@ tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mxf_png_f
 thot:
 	rm -fr source_hot
 	mkdir source_hot
-	-$(EXE_MAN) server delete $(CF_HSTS_FOLDER_UPLOAD)/target_hot
-	$(EXE_MAN) server mkdir $(CF_HSTS_FOLDER_UPLOAD)/target_hot
+	-$(EXE_MAN) server delete @extend:@preset:misc.upload_folder@/target_hot
+	$(EXE_MAN) server mkdir @extend:@preset:misc.upload_folder@/target_hot
 	echo hello > source_hot/newfile
-	$(EXE_MAN) server upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXE_MAN) server browse $(CF_HSTS_FOLDER_UPLOAD)/target_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:misc.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server browse @extend:@preset:misc.upload_folder@/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXE_MAN) server upload --to-folder=$(CF_HSTS_FOLDER_UPLOAD)/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXE_MAN) server browse $(CF_HSTS_FOLDER_UPLOAD)/target_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:misc.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server browse @extend:@preset:misc.upload_folder@/target_hot
 	ls -al source_hot
 	rm -fr source_hot
 	@touch $@
@@ -1267,9 +1227,7 @@ $(T)f5_p3: $(T).exists
 	@touch $@
 $(T)f5_pack_shbox: $(T).exists
 	@echo $@
-	set -x&&\
-	shinbox=$$($(EXE_NOMAN) config preset get misc faspex5_shinbox)&&\
-	$(EXE_MAN) faspex5 packages send @json:'{"title":"test title","recipients":["'"$${shinbox}"'"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:misc.faspex5_shinbox@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	$(EXE_MAN) faspex5 packages list --box=@preset:misc.faspex5_shinbox
 	set -x&&\
 	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:misc.faspex5_shinbox --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\

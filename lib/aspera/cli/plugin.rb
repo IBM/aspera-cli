@@ -21,31 +21,28 @@ module Aspera
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 
-      # global for inherited classes
-      @@options_created = false # rubocop:disable Style/ClassVars
-
       def initialize(env)
-        raise 'must be Hash' unless env.is_a?(Hash)
-        # env.each_key {|k| raise "wrong agent key #{k}" unless AGENTS.include?(k)}
+        raise 'env must be Hash' unless env.is_a?(Hash)
         @agents = env
         # check presence in descendant of mandatory method and constant
         raise StandardError, "Missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
         raise StandardError, 'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
+        # manual header for all plugins
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
-        return if @@options_created
+      end
+
+      def declare_generic_options
         options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
         options.declare(
           :value, 'Value for create, update, list filter', types: Hash,
-          deprecation: 'Use positional value for create/modify or option: query for list/delete')
+          deprecation: '(4.14) Use positional value for create/modify or option: query for list/delete')
         options.declare(:property, 'Name of property to set (modify operation)')
-        options.declare(:id, 'Resource identifier', deprecation: "Use identifier after verb (#{INSTANCE_OPS.join(',')})")
+        options.declare(:id, 'Resource identifier', deprecation: "(4.14) Use positional identifier after verb (#{INSTANCE_OPS.join(',')})")
         options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
         options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
-        options.parse_options!
-        @@options_created = true # rubocop:disable Style/ClassVars
       end
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
@@ -119,6 +116,7 @@ module Aspera
       # @param item_list_key [String] result is in a sub key of the json
       # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
       # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
+      # @param block [Proc] block to search for identifier based on attribute value
       # @return result suitable for CLI result
       def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false, is_singleton: false, &block)
         if is_singleton

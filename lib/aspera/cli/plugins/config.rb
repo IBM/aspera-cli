@@ -95,8 +95,9 @@ module Aspera
           :COFFEE_IMAGE,
           :WIZARD_RESULT_KEYS
         def initialize(env, params)
-          raise 'env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
-          raise 'missing param' unless %i[name help version gem].sort.eql?(params.keys.sort)
+          raise 'Internal Error: env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
+          raise 'Internal Error: missing param' unless %i[gem help name version].eql?(params.keys.sort)
+          # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super(env)
           @info = params
           @main_folder = default_app_main_folder
@@ -125,6 +126,8 @@ module Aspera
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
+          # declare generic plugin options only after handlers are declared
+          declare_generic_options
           options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
           options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
           options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
@@ -138,7 +141,7 @@ module Aspera
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials (Array with user and password)')
           options.declare(:secret, 'Secret for access keys')
-          options.declare(:vault, 'Vault for secrets')
+          options.declare(:vault, 'Vault for secrets', types: Hash)
           options.declare(:vault_password, 'Vault password')
           options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
           options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
@@ -1139,7 +1142,6 @@ module Aspera
           if @vault.nil?
             vault_info = options.get_option(:vault) || {'type' => 'file', 'name' => 'vault.bin'}
             vault_password = options.get_option(:vault_password, mandatory: true)
-            raise 'vault must be Hash' unless vault_info.is_a?(Hash)
             vault_type = vault_info['type'] || 'file'
             vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
             case vault_type
@@ -1151,9 +1153,8 @@ module Aspera
               case Environment.os
               when Environment::OS_X
                 @vault = Keychain::MacosSystem.new(vault_name, vault_password)
-              when Environment::OS_WINDOWS, Environment::OS_LINUX, Environment::OS_AIX
-                raise 'not implemented'
-              else raise 'Error, OS not supported'
+              else
+                raise 'not implemented for this OS'
               end
             else
               raise CliBadArgument, "Unknown vault type: #{vault_type}"

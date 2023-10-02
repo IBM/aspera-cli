@@ -645,6 +645,22 @@ module Aspera
           end
         end
 
+        # @return [Integer] id of the sync
+        # @raise [CliBadArgument] if no such sync, or not by name
+        # @param [String] field name of the field to search
+        # @param [String] value value of the field to search
+        def ssync_lookup(field, value)
+          raise CliBadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
+          @api_node.read('asyncs')[:data]['ids'].each do |id|
+            one = @api_node.read("asyncs/#{id}")[:data]['configuration']
+            puts "one=#{one}"
+            if one['name'].eql?(value)
+              return id
+            end
+          end
+          raise CliBadArgument, "no such sync: #{field}=#{value}"
+        end
+
         ACTIONS = %i[
           async
           ssync
@@ -665,9 +681,9 @@ module Aspera
             # newer API
             sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary].concat(Plugin::ALL_OPS) - %i[modify])
             case sync_command
-            when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids')
+            when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids'){|field, value|ssync_lookup(field, value)}
             else
-              asyncs_id = instance_identifier
+              asyncs_id = instance_identifier {|field, value|ssync_lookup(field, value)}
               parameters = nil
               if %i[start stop].include?(sync_command)
                 @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)

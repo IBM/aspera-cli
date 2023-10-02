@@ -17,8 +17,7 @@ module Aspera
 
     class CliNoSuchId < Aspera::Cli::CliError
       def initialize(res_type, res_id)
-        msg = "No such #{res_type} identifier: #{res_id}"
-        super(msg)
+        super("No such #{res_type} identifier: #{res_id}")
       end
     end
 
@@ -210,7 +209,7 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false, default: nil)
         attributes = @declared_options[option_symbol]
-        raise "INTERNAL ERROR: #{option_symbol} not declared" unless attributes
+        raise "INTERNAL ERROR: option not declared: #{option_symbol}" unless attributes
         result = nil
         case attributes[:read_write]
         when :accessor
