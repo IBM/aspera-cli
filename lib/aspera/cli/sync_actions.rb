@@ -40,12 +40,15 @@ module Aspera
           if simple_session_args.empty?
             async_params = options.get_option(:sync_info, mandatory: true)
           else
-            raise "provide zero or 3 arguments: #{SIMPLE_ARGUMENTS_SYNC.keys.join(',')}" unless simple_session_args.keys.sort == SIMPLE_ARGUMENTS_SYNC.keys.sort
+            raise CliBadArgument,
+              "Provide zero or 3 arguments: #{SIMPLE_ARGUMENTS_SYNC.keys.join(',')}" unless simple_session_args.keys.sort == SIMPLE_ARGUMENTS_SYNC.keys.sort
             async_params = options.get_option(
               :sync_info,
               mandatory: false,
               default: {'sessions' => [{'name' => File.basename(simple_session_args['local_dir'])}]})
-            raise "sync_info shall be a Hash with key 'sessions' with Array of Hash: #{async_params}" unless async_params.is_a?(Hash) && async_params['sessions']&.is_a?(Array) && async_params['sessions'].first.is_a?(Hash)
+            raise "sync_info shall be a Hash with key 'sessions' with Array of Hash: #{async_params}" unless async_params.is_a?(Hash) &&
+              async_params['sessions']&.is_a?(Array) &&
+              async_params['sessions'].first.is_a?(Hash)
             async_params['sessions'].first.merge!(simple_session_args)
           end
           Log.dump('async_params', async_params)
