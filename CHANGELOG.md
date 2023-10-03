@@ -5,9 +5,12 @@
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
-  * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter.
+  * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
   * change(break): removed extended value handler `incps`, as it is never used (use `extend` instead).
-  * change(break): node `find` command now takes an optional Ruby extended value instead of option `query` with prefix: `exec:`
+  * change(break): node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
+  * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
+  * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
+  * change(break): faspex: option `source_name` is now `remote_source`
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard manages public links
   * new: added resolution hints for some known issues.
