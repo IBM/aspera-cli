@@ -801,11 +801,11 @@ $(T)o5: $(T).exists
 	@touch $@
 $(T)o6: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id --params=@json:'{"Param":"world !"}'
+	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id @json:'{"Param":"world !"}'
 	@touch $@
 $(T)o7: $(T).exists
 	@echo $@
-	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+	$(EXE_MAN) orchestrator workflow start @preset:misc.orch_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 	@touch $@
 $(T)o8: $(T).exists
 	@echo $@

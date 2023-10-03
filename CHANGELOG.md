@@ -11,10 +11,12 @@
   * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
   * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
   * change(break): faspex: option `source_name` is now `remote_source`
+  * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
   * new: wizard: can detect multiple applications at the same address or url.
-  * new: aoc: wizard manages public links
+  * new: aoc: wizard accepts public links
   * new: added resolution hints for some known issues.
   * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+  * new: orchestrator: error analysis for workflow start
 
 * 4.14.0
 

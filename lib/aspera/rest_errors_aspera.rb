@@ -19,10 +19,10 @@ module Aspera
         RestErrorAnalyzer.instance.add_simple_handler('AoC Automation', 'error')
         RestErrorAnalyzer.instance.add_simple_handler('Type 5', 'error_description')
         RestErrorAnalyzer.instance.add_simple_handler('Type 6', 'message')
-        RestErrorAnalyzer.instance.add_handler('Type 7: errors[]') do |name, call_context|
+        RestErrorAnalyzer.instance.add_handler('Type 7: errors[]') do |type, call_context|
           next unless call_context[:data].is_a?(Hash) && call_context[:data]['errors'].is_a?(Hash)
           call_context[:data]['errors'].each do |k, v|
-            RestErrorAnalyzer.add_error(call_context, name, "#{k}: #{v}")
+            RestErrorAnalyzer.add_error(call_context, type, "#{k}: #{v}")
           end
         end
         # call to upload_setup and download_setup of node api
@@ -46,6 +46,17 @@ module Aspera
             r_err = res['message']
             next unless r_err.is_a?(String)
             RestErrorAnalyzer.add_error(call_context, type, r_err)
+          end
+        end
+        RestErrorAnalyzer.instance.add_handler('Orchestrator') do |type, call_context|
+          next if call_context[:response].code.start_with?('2')
+          data = call_context[:data]
+          next unless data.is_a?(Hash)
+          work_order = data['work_order']
+          next unless work_order.is_a?(Hash)
+          RestErrorAnalyzer.add_error(call_context, type, work_order['statusDetails'])
+          data['missing_parameters']&.each do |param|
+            RestErrorAnalyzer.add_error(call_context, type, "missing parameter: #{param}")
           end
         end
       end # register_handlers

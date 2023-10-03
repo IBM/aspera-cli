@@ -47,9 +47,8 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.declare(:params, 'Start parameters', types: Hash, default: {})
-          options.declare(:result, "Specify result value as: 'work step:parameter'")
-          options.declare(:synchronous, 'Work step:parameter expected as result', values: :bool, default: :no)
+          options.declare(:result, "Specify result value as: 'work_step:parameter'")
+          options.declare(:synchronous, 'Wait for completion', values: :bool, default: :no)
           options.declare(:ret_style, 'How return type is requested in api', values: %i[header arg ext], default: :arg)
           options.declare(:auth_style, 'Authentication type', values: %i[arg_pass head_basic apikey], default: :head_basic)
           options.parse_options!
@@ -156,9 +155,9 @@ module Aspera
             end
             case command
             when :status
-              options = {}
-              options[:id] = wf_id unless wf_id.eql?(VAL_ALL)
-              result = call_ao('workflows_status', options)[:data]
+              call_opts = {}
+              call_opts[:id] = wf_id unless wf_id.eql?(VAL_ALL)
+              result = call_ao('workflows_status', call_opts)[:data]
               return {type: :object_list, data: result['workflows']['workflow']}
             when :list
               result = call_ao('workflows_list', id: 0)[:data]
@@ -183,19 +182,18 @@ module Aspera
               }
               call_params = {format: :json}
               override_accept = nil
-              # set external parameters if any
-              # TODO: make not an option, but a parameter
-              self.options.get_option(:params, mandatory: true).each do |name, value|
+              # get external parameters if any
+              options.get_next_argument('external_parameters', mandatory: false, type: Hash, default: {}).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?
-              call_params['synchronous'] = true if self.options.get_option(:synchronous, mandatory: true)
+              call_params['synchronous'] = true if options.get_option(:synchronous, mandatory: true)
               # expected result for synchro call ?
-              expected = self.options.get_option(:result)
-              unless expected.nil?
+              result_location = options.get_option(:result)
+              unless result_location.nil?
                 result[:type] = :status
-                fields = expected.split(':')
-                raise "Expects: work_step:result_name format, but got #{expected}" if fields.length != 2
+                fields = result_location.split(':')
+                raise CliBadArgument, "Expects: work_step:result_name : #{result_location}" if fields.length != 2
                 call_params['explicit_output_step'] = fields[0]
                 call_params['explicit_output_variable'] = fields[1]
                 # implicitly, call is synchronous
