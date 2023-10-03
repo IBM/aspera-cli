@@ -159,8 +159,6 @@ module Aspera
           client_registration_token
           client_access_key
           kms_profile].freeze
-        # TODO: remove this and use %name: instead
-        ENTITY_NAME_SPECIFIER = 'name'
         PACKAGE_QUERY_DEFAULT = {'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true}.freeze
 
         def initialize(env)
@@ -178,7 +176,7 @@ module Aspera
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:workspace, 'Name of workspace', default: :default)
           # TODO: remove this and use %name: instead
-          options.declare(:name, "Resource name (prefer to use keyword #{ENTITY_NAME_SPECIFIER})")
+          options.declare(:name, 'TODO')
           options.declare(:link, 'Public link to shared resource')
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
           options.declare(:from_folder, 'Source folder for Folder-to-Folder transfer')
@@ -265,17 +263,10 @@ module Aspera
         # get identifier or name from command line
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
-          l_res_id = options.get_option(:id)
-          l_res_name = options.get_option(:name)
-          raise 'Provide either option id or name, not both' unless l_res_id.nil? || l_res_name.nil?
-          # try to find item by name (single partial match or exact match)
-          l_res_id = aoc_api.lookup_by_name(resource_class_path, l_res_name)['id'] unless l_res_name.nil?
-          # if no name or id option, taken on command line (after command)
-          if l_res_id.nil?
-            l_res_id = options.get_next_argument('identifier')
-            l_res_id = aoc_api.lookup_by_name(resource_class_path, options.get_next_argument('identifier'))['id'] if l_res_id.eql?(ENTITY_NAME_SPECIFIER)
+          return instance_identifier do |field, value|
+            raise CliBadArgument, 'only selection by name is supported' unless field.eql?('name')
+            aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
-          return l_res_id
         end
 
         def get_resource_path_from_args(resource_class_path)

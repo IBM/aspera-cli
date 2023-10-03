@@ -1301,7 +1301,7 @@ It is also possible to provide a [Extended Value](#extended) in a file using `@j
 
 <%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[config folder]`: `[User's home folder]/.aspera/<%=cmd%>`.
 
-Note: `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
+> **Note:** `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
 The [config folder] can be displayed using :
@@ -1505,7 +1505,7 @@ The user may create as many <%=prsts%> as needed. For instance, a particular <%=
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
-Note: if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
+> **Note:** if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
 <%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
@@ -2628,7 +2628,7 @@ Multi-session is directly supported by the node daemon.
 --ts=@json:'{"multi_session":5,"multi_session_threshold":1,"resume_policy":"none"}'
 ```
 
-Note: `resume_policy` set to `attr` may cause problems: `none` or `sparse_csum` shall be preferred.
+> **Note:** `resume_policy` set to `attr` may cause problems: `none` or `sparse_csum` shall be preferred.
 
 <%=tool%> starts multiple `ascp` for Multi-session using `direct` agent.
 
@@ -2819,7 +2819,7 @@ where:
 - `filename` is the name that will be assigned to the file on the destination
 - `filesize` is the number of bytes that will be sent (in decimal).
 
-Note: characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
+> **Note:** characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
 
 For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<sup>60</sup>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
@@ -2982,7 +2982,7 @@ Let's start by a registration with web based authentication (auth=web):
   - leave the JWT part for now
 - Save
 
-Note: for web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=tool%>, HTTP is required, and 12345 is the default port.
+> **Note:** for web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=tool%>, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
 
@@ -3008,7 +3008,7 @@ Define this <%=prst%> as default configuration for the `aspera` plugin:
 <%=cmd%> config preset set default aoc my_aoc_org
 ```
 
-Note: Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
+> **Note:** Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`. Leave those default values.
 
 #### <a id="jwt"></a>Activation of JSON Web Token (JWT) for direct authentication
 
@@ -3089,7 +3089,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 modified
 ```
 
-Note: the `aspera user info show` command can be used to verify modifications.
+> **Note:** the `aspera user info show` command can be used to verify modifications.
 
 #### <%=prst%> modification for JWT
 
@@ -3105,7 +3105,7 @@ Execute:
 <%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=laurent.martin.aspera@fr.ibm.com
 ```
 
-Note: the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
+> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
 
@@ -3768,7 +3768,7 @@ Using shared inbox name:
 Using shared inbox identifier: first retrieve the id of the shared inbox, and then list packages with the appropriate filter.
 
 ```bash
-shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show name 'My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
+shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
 ```
 
 ```bash
@@ -3789,7 +3789,7 @@ Find files in Files app:
 <%=cmd%> aoc files browse /src_folder
 ```
 
-```bash
+```text
 +------------------------------+--------+----------------+--------------+----------------------+--------------+
 | name                         | type   | recursive_size | size         | modified_time        | access_level |
 +------------------------------+--------+----------------+--------------+----------------------+--------------+
@@ -4780,8 +4780,9 @@ if `id` is set to `ALL`, then all packages are downloaded, and if option `once_o
 
 ### Sending a Package
 
-The command is `faspex package send`. Package information (title, note, metadata, options) is provided in option `delivery_info`.
-The contents of `delivery_info` is directly the contents of the `send` v3 [API of Faspex 4](https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/API%20v.3:%20Send%20Packages), consult it for extended supported parameters.
+The command is `faspex package send`.
+Package information (title, note, metadata, options) is provided in option `delivery_info`.
+The contents of `delivery_info` is directly the contents of the `send` v3 [API of Faspex 4](https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/API%20v.3:%20Send%20Packages).
 
 Example:
 
@@ -4796,6 +4797,16 @@ Additional optional parameters in `delivery_info`:
 
 - Package Note: : `"note":"note this and that"`
 - Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
+
+It is possible to send from a remote source using option `remote_source`, providing either the numerical id, or the name of the remote source using percent selector: `%name:<name>`.
+
+Remote source can be browsed if option `storage` is provided.
+`storage` is an extended value of type `Hash`.
+The key is the storage name, as listed in `source list` command.
+The value is a Hash with the following keys:
+
+- `node` is a Hash with keys: url, username, password
+- `path` is the subpath inside the node, as configured in Faspex
 
 ### Email notification on transfer
 
@@ -4844,9 +4855,9 @@ my_faspex_node:
 
 In this example, a faspex storage named `my_storage` exists in Faspex, and is located
 under the docroot in `/mydir` (this must be the same as configured in Faspex).
-The node configuration name is "my_faspex_node" here.
+The node configuration name is `my_faspex_node` here.
 
-Note: the v4 API provides an API for nodes and shares.
+> **Note:** the v4 API provides an API for nodes and shares.
 
 ### Automated package download (cargo)
 
@@ -4990,7 +5001,7 @@ A subset of `node` plugin operations are supported, basically node API:
 <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
-Note: we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
+> **Note:** we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
 
 ### COS sample commands
 
@@ -5054,7 +5065,7 @@ asconfigurator -x "server;preview_dir,previews"
 asnodeadmin --reload
 ```
 
-Note: the configuration `preview_dir` is *relative* to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
+> **Note:** the configuration `preview_dir` is *relative* to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
 
 If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
 
@@ -5073,7 +5084,7 @@ asconfigurator -x "server; max_request_file_create_size_kb,16384"
 
 If you use a value different than 16777216, then specify it using option `max_size`.
 
-Note: the HSTS parameter (max_request_file_create_size_kb) is in *kiloBytes* while the generator parameter is in *Bytes* (factor of 1024).
+> **Note:** the HSTS parameter (`max_request_file_create_size_kb`) is in **kiloBytes** while the generator parameter is in **Bytes** (factor of 1024).
 
 ### <a id="prev_ext"></a>External tools: Linux
 

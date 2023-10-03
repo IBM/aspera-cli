@@ -47,11 +47,16 @@ module Aspera
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
       # @param description [String] description of the identifier
+      # @param as_option [Symbol] option name to use if identifier is an option
       # @param block [Proc] block to search for identifier based on attribute value
       # @return [String] identifier
-      def instance_identifier(description: 'identifier', &block)
-        res_id = options.get_option(:id)
-        res_id = options.get_next_argument(description) if res_id.nil?
+      def instance_identifier(description: 'identifier', as_option: nil, &block)
+        if as_option.nil?
+          res_id = options.get_option(:id)
+          res_id = options.get_next_argument(description) if res_id.nil?
+        else
+          res_id = options.get_option(as_option)
+        end
         # cab be an Array
         if res_id.is_a?(String) && (m = res_id.match(REGEX_LOOKUP_ID_BY_FIELD))
           if block

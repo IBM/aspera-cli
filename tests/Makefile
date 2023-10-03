@@ -276,11 +276,12 @@ $(T)f4_psld: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex package send --link=@preset:faspex4_publink.link_send_to_dropbox --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(CF_LOCAL_SAMPLE_FILEPATH)
 	@touch $@
-$(T)f4_storage: $(T).exists
+$(T)f4_remote_src: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex source list
-	$(EXE_MAN) faspex -Ptst_faspex4_storage source name @preset:misc.faspex_src info
-	$(EXE_MAN) faspex -Ptst_faspex4_storage source name @preset:misc.faspex_src node br /
+	$(EXE_MAN) faspex source info %name:@preset:misc.faspex_src --storage=@preset:faspex4_storage
+	$(EXE_MAN) faspex source node %name:@preset:misc.faspex_src br / --storage=@preset:faspex4_storage
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(TIMESTAMP) package remote","recipients":["@preset:misc.email_internal@"]}' --remote_source=@extend:%name:@preset:misc.faspex_src sample_source.txt
 	@touch $@
 $(T)f4_misc: $(T).exists
 	@echo $@
@@ -310,7 +311,7 @@ $(T)f4_db1: $(T).exists
 	pkgid=$$($(EXE_MAN) faspex package list --recipient=@extend:"*@preset:misc.faspex_wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv $${pkgid} --recipient=@extend:"*@preset:misc.faspex_wkg@" --to-folder=$(DIR_TMP).
 	@touch $@
-tfaspex: $(T)f4_nagios $(T)f4_wizard $(T)f4_plst $(T)f4_psnd $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_storage $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1
+tfaspex: $(T)f4_nagios $(T)f4_wizard $(T)f4_plst $(T)f4_psnd $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1
 #  $(T)f4_prl
 $(T)cons_nagios: $(T).exists
 	@echo $@
@@ -646,27 +647,27 @@ $(T)aoc8: $(T).exists
 	@touch $@
 $(T)aoc9: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 events
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 events
 	@touch $@
 $(T)aoc11: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@touch $@
 $(T)aoc12: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node do name @preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key delete testsub1
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key delete testsub1
 	@touch $@
 $(T)aoc9b: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do browse /
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret browse /
 	@touch $@
 $(T)aoc10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do mkdir /folder1
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret mkdir /folder1
 	@touch $@
 $(T)aoc13: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin resource node --name=@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret do delete /folder1
+	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret delete /folder1
 	@touch $@
 $(T)aoc14: $(T).exists
 	@echo $@

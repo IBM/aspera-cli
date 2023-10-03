@@ -112,13 +112,11 @@ module Aspera
             end
           end
 
-          # field_sym : :id or :name
-          def get_source_id(source_list, source_name)
-            source_ids = source_list.select { |i| i['name'].eql?(source_name) }
-            if source_ids.empty?
-              raise CliError, %Q(No such Faspex source "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
-            end
-            return source_ids.first['id']
+          # @return [Integer] identifier of source
+          def get_source_id_by_name(source_name, source_list)
+            match_source = source_list.find { |i| i['name'].eql?(source_name) }
+            return match_source['id'] unless match_source.nil?
+            raise CliError, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
           end
         end
 
@@ -128,8 +126,8 @@ module Aspera
           super(env)
           options.declare(:link, 'Public link for specific operation')
           options.declare(:delivery_info, 'Package delivery information', types: Hash)
-          options.declare(:source_name, 'Create package from remote source (by name)')
-          options.declare(:storage, 'Faspex local storage definition')
+          options.declare(:remote_source, 'Remote source for package send (id or %name:)')
+          options.declare(:storage, 'Faspex local storage definition (for browsing source)')
           options.declare(:recipient, 'Use if recipient is a dropbox (with *)')
           options.declare(:box, 'Package box', values: ATOM_MAILBOXES, default: :inbox)
           options.parse_options!
@@ -298,20 +296,20 @@ module Aspera
                 delivery_info['sources'] ||= [{'paths' => []}]
                 first_source = delivery_info['sources'].first
                 first_source['paths'].push(*transfer.source_list)
-                source_name = options.get_option(:source_name)
-                if !source_name.nil?
+                source_id = instance_identifier(as_option: :remote_source) do |field, value|
+                  raise CliBadArgument, 'only name as selector, or give id' unless field.eql?('name')
                   source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
-                  source_id = self.class.get_source_id(source_list, source_name)
-                  first_source['id'] = source_id
+                  self.class.get_source_id_by_name(value, source_list)
                 end
+                first_source['id'] = source_id.to_i unless source_id.nil?
                 pkg_created = api_v3.call({
                   operation:   'POST',
                   subpath:     'send',
                   json_params: package_create_params,
                   headers:     {'Accept' => 'application/json'}
                 })[:data]
-                if !source_name.nil?
-                  # no transfer spec if remote source
+                if first_source.key?('id')
+                  # no transfer spec if remote source: handled by faspex
                   return {data: [pkg_created['links']['status']], type: :value_list, name: 'link'}
                 end
                 raise CliBadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
@@ -421,20 +419,17 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             end
           when :source
-            command_source = options.get_next_command(%i[list id name])
+            command_source = options.get_next_command(%i[list info node])
             source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
             case command_source
             when :list
               return {type: :object_list, data: source_list}
-            else # :id or :name
-              source_match_val = options.get_next_argument('source id or name')
-              source_ids = source_list.select { |i| i[command_source.to_s].to_s.eql?(source_match_val) }
-              if source_ids.empty?
-                raise CliError, "No such Faspex source #{command_source}: #{source_match_val} in [#{source_list.map{|i| i[command_source.to_s]}.join(', ')}]"
-              end
-              # get id and name
-              source_name = source_ids.first['name']
-              # source_id=source_ids.first['id']
+            else # :info :node
+              source_id = instance_identifier do |field, value|
+                raise CliBadArgument, 'only name as selector, or give id' unless field.eql?('name')
+                self.class.get_source_id_by_name(value, source_list)
+              end.to_i
+              source_name = source_list.find{|i|i['id'].eql?(source_id)}['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
               raise CliError, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
@@ -448,9 +443,8 @@ module Aspera
                 raise CliError, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info = source_hash[source_name]
-              Log.log.debug{"source_info: #{source_info}"}
-              command_node = options.get_next_command(%i[info node])
-              case command_node
+              Log.dump(:source_info, source_info)
+              case command_source
               when :info
                 return {data: source_info, type: :single_object}
               when :node
