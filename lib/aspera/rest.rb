@@ -61,30 +61,32 @@ module Aspera
         return [ARRAY_PARAMS].concat(values)
       end
 
+      def array_params?(values)
+        return values.first.eql?(ARRAY_PARAMS)
+      end
+
       # build URI from URL and parameters and check it is http or https
       def build_uri(url, params=nil)
         uri = URI.parse(url)
         raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
-        if !params.nil?
-          # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
-          if params.is_a?(Hash)
-            orig = params
-            params = []
-            orig.each do |k, v|
-              case v
-              when Array
-                suffix = v.first.eql?(ARRAY_PARAMS) ? v.shift : ''
-                v.each do |e|
-                  params.push([k.to_s + suffix, e])
-                end
-              else
-                params.push([k, v])
-              end
+        return uri if params.nil?
+        Log.dump('params', params)
+        raise 'Internal Error: param must be Hash' unless params.is_a?(Hash)
+        query = []
+        params.each do |k, v|
+          case v
+          when Array
+            # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+            suffix = array_params?(v) ? v.shift : ''
+            v.each do |e|
+              query.push(["#{k}#{suffix}", e])
             end
+          else
+            query.push([k, v])
           end
-          # CGI.unescape to transform back %5D into []
-          uri.query = CGI.unescape(URI.encode_www_form(params))
         end
+        # transform back for array args
+        uri.query = URI.encode_www_form(query).gsub('%5B%5D=', '[]=')
         return uri
       end
 
@@ -360,7 +362,7 @@ module Aspera
     # @param options additional search options
     def lookup_by_name(subpath, search_name, options={})
       # returns entities whose name contains value (case insensitive)
-      matching_items = read(subpath, options.merge({'q' => CGI.escape(search_name)}))[:data]
+      matching_items = read(subpath, options.merge({'q' => search_name}))[:data]
       # API style: {totalcount:, ...} cspell: disable-line
       # TODO: not generic enough ? move somewhere ? inheritance ?
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
