@@ -41,3 +41,5 @@ getlogin
 getpwuid
 systmpdir
 stringio
+fnmatch
+FNM_DOTMATCH

@@ -2,11 +2,13 @@
 
 * 4.15.0.pre
 
-  * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`. Also they can detect multiple applications at the same address or url.
+  * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
   * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter.
   * change(break): removed extended value handler `incps`, as it is never used (use `extend` instead).
+  * change(break): node `find` command now takes an optional Ruby extended value instead of option `query` with prefix: `exec:`
+  * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard manages public links
   * new: added resolution hints for some known issues.
   * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)

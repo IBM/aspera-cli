@@ -39,7 +39,12 @@ EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
-CF_LOCAL_SYNC_DIR=$(shell realpath "$(DIR_TMP)testsync123")
+# sync dir must be an absolute path
+CF_LOCAL_SYNC_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
+
+ifeq ($(CF_LOCAL_SYNC_DIR),)
+$(error "CF_LOCAL_SYNC_DIR is empty, see error above")
+endif
 
 # flush cached tokens
 clean::

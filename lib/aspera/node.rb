@@ -15,6 +15,7 @@ module Aspera
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter
     MATCH_EXEC_PREFIX = 'exec:'
+    MATCH_TYPES = [String, Proc, NilClass].freeze
     HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
     PATH_SEPARATOR = '/'
     TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
@@ -28,16 +29,24 @@ module Aspera
     class << self
       attr_accessor :use_standard_ports
 
-      # for access keys: provide expression to match entry in folder
-      # if no prefix: regex
-      # if prefix: ruby code
-      # if expression is nil, then always match
+      # For access keys: provide expression to match entry in folder
       def file_matcher(match_expression)
-        match_expression ||= "#{MATCH_EXEC_PREFIX}true"
-        if match_expression.start_with?(MATCH_EXEC_PREFIX)
-          return Environment.secure_eval("lambda{|f|#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}")
+        case match_expression
+        when Proc then return match_expression
+        when String
+          if match_expression.start_with?(MATCH_EXEC_PREFIX)
+            code = "->(f){#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
+            Log.log.warn{"Use of prefix #{MATCH_EXEC_PREFIX} is deprecated (4.15), instead use: @ruby:'#{code}'"}
+            return Environment.secure_eval(code)
+          end
+          return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
+        when NilClass then return ->(_){true}
+        else raise Cli::CliBadArgument, "Invalid match expression type: #{match_expression.class}"
         end
-        return lambda{|f|f['name'].match(/#{match_expression}/)}
+      end
+
+      def file_matcher_from_argument(options)
+        return file_matcher(options.get_next_argument('filter', type: MATCH_TYPES, mandatory: false))
       end
     end
 

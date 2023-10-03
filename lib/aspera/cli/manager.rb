@@ -157,18 +157,20 @@ module Aspera
         Log.log.debug{"add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
 
+      # @param descr [String] description for help
       # @param expected is
       #    - Array of allowed value (single value)
       #    - :multiple for remaining values
       #    - :single for a single unconstrained value
-      # @param mandatory true/false
-      # @param type expected class for result
-      # @param aliases list of aliases for the value
+      # @param mandatory [Boolean] if true, raise error if option not set
+      # @param type [Class, Array] accepted value type(s)
+      # @param aliases [Hash] map of aliases: key = alias, value = real value
+      # @param default [Object] default value
       # @return value, list or nil
       def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
         unless type.nil?
-          type = [type] unless expected.is_a?(Array)
-          raise "INTERNAL ERROR: types must be Array of Class: #{types}" unless type.all?(Class)
+          type = [type] unless type.is_a?(Array)
+          raise "INTERNAL ERROR: type must be Array of Class: #{type}" unless type.all?(Class)
           descr = "#{descr} (#{type})"
         end
         result = default

@@ -353,7 +353,7 @@ module Aspera
             begin
               case entry['type']
               when 'file'
-                if @filter_block.nil? || @filter_block.call(entry)
+                if @filter_block.call(entry)
                   generate_preview(entry)
                 else
                   Log.log.debug('skip by filter')
@@ -450,13 +450,11 @@ module Aspera
               else
                 @api_node.read("files/#{scan_id}")[:data]
               end
-            optional_filter = query_option
-            @filter_block = Aspera::Node.file_matcher(optional_filter) unless optional_filter.nil?
+            @filter_block = Aspera::Node.file_matcher_from_argument(options)
             scan_folder_files(folder_info, scan_path)
             return Main.result_status('scan finished')
           when :events, :trevents
-            optional_filter = query_option
-            @filter_block = Aspera::Node.file_matcher(optional_filter) unless optional_filter.nil?
+            @filter_block = Aspera::Node.file_matcher_from_argument(options)
             iteration_persistency = nil
             if options.get_option(:once_only, mandatory: true)
               iteration_persistency = PersistencyActionOnce.new(

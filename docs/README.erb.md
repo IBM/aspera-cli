@@ -3153,7 +3153,9 @@ It allows actions (create, update, delete) on "resources": users, group, nodes, 
 
 The command `aoc admin res <type> list` lists all entities of given type. It uses paging and multiple requests if necessary.
 
-The option `query` can be optionally used. It expects a Hash using [Extended Value Syntax](#extended), generally provided using: `--query=@json:{...}`. Values are directly sent to the API call and used as a filter on server side.
+The option `query` can be optionally used.
+It expects a `Hash` using [Extended Value Syntax](#extended), generally provided using: `--query=@json:{...}`.
+Values are directly sent to the API call and used as a filter on server side.
 
 The following parameters are supported:
 
@@ -3381,19 +3383,8 @@ Current Workspace: Default (default)
 ```
 
 ```bash
-thelist=$(<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --format=json --display=data|jq -cr 'map(.id)')
-```
-
-```bash
-echo $thelist
-```
-
-```json
-["113501","354061"]
-```
-
-```bash
-<%=cmd%> aoc admin res user delete @json:"$thelist" --bulk=yes
+<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv |\
+<%=cmd%> aoc admin res user delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
@@ -3834,6 +3825,8 @@ Typically, one would execute this command on a regular basis, using the method o
 The Files application presents a **Home** folder to users in a given workspace.
 Files located here are either user's files, or shared folders.
 
+> **Note:** All commands under `files` are the same as under `access_keys do self` for plugin `node`, i.e. **gen4/access key** operations.
+
 #### Download Files
 
 The general download command is:
@@ -3919,52 +3912,15 @@ Explanation:
 
 #### Find Files
 
-The command `aoc files find [--query=expression]` will recursively scan storage to find files matching the expression criteria. It works also on node resource using the v4 command. (see examples)
+The command `aoc files find` allows to search for files in a given workspace.
 
-The expression can be of 3 formats:
+It works also on `node` resource using the `v4` command:
 
-- empty (default) : all files, equivalent to value: `exec:true`
-- not starting with `exec:` : the expression is a regular expression, using [Ruby Regex](https://ruby-doc.org/core/Regexp.html) syntax, equivalent to value: `exec:f['name'].match(/expression/)`
+```bash
+<%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 find ...
+```
 
-  For instance, to find files with a special extension, use `--query='\.myext$'`
-
-- starting with `exec:` : the Ruby code after the prefix is executed for each entry found. The entry variable name is `f`. The file is displayed if the result of the expression is true.
-
-Examples of expressions: (using like this: `--query=exec:'<expression>'`)
-
-- Find files more recent than 100 days
-
-  ```ruby
-  f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
-  ```
-
-- Find files older than 1 year on a given node and store in file list
-
-  ```ruby
-  f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100
-  ```
-
-  ```bash
-  <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 find / --fields=path --query='exec:<above expression here>' --format=csv > my_file_list.txt
-  ```
-
-- Find files larger than 1MB
-
-  ```ruby
-  f["type"].eql?("file") and f["size"].to_i>1000000
-  ```
-
-- Delete the files, one by one
-
-  ```bash
-  cat my_file_list.txt|while read path;do echo <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v4 delete "$path" ;done
-  ```
-
-- Delete the files in bulk
-
-  ```bash
-  cat my_file_list.txt | <%=cmd%> aoc admin res node --name='my node name' --secret='my_secret_here' v3 delete @lines:@stdin:
-  ```
+For instructions, refer to section `find` for plugin `node`.
 
 ### AoC sample commands
 
@@ -4215,17 +4171,104 @@ If an SSH private key is used for authentication with a passphrase, the passphra
 
 ## <a id="node"></a>Plugin: `node`: IBM Aspera High Speed Transfer Server Node
 
-This plugin gives access to capabilities provided by HSTS node API.
+This plugin gives access to capabilities provided by the HSTS node API.
 
-> **Note:** capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`.
+The authentication is `username` and `password` or `access_key` and `secret` through options: `username` and `password`.
+
+> **Note:** Capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`, `ats`, `shares`.
 
 ### File Operations
 
-It is possible to:
+It is possible to do `gen3` operations:
 
 - browse
 - transfer (upload / download / sync)
+- delete
 - ...
+
+When using an access key, so called **gen4/access key** API is also supported through sub commands using `access_keys do self`.
+
+Example:
+
+- `<%=cmd%> node browse /` : list files with gen3 API
+- `<%=cmd%> node access_key do self browse /` : list files with gen4 API
+
+### Operation `find` on **gen4/access key**
+
+The command `find <folder> [filter_expr]` is available for **gen4/access key**, under `access_keys do self`.
+
+The argument `<folder>` is mandatory and is the root from which search is performed.
+The argument `[filter_expr]` is optional and represent the matching criteria.
+
+It recursively scans storage to find files/folders matching a criteria and then returns a list of matching entries.
+
+`[filter_expr]` is either:
+
+- Optional (default) : all files and folder are selected
+- type `String` : the expression is similar to shell globbing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
+- Type `Proc` : the expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
+
+Examples of expressions:
+
+- Find all files and folders under `/`
+
+  ```bash
+  <%=cmd%> node access_keys do self find
+  ```
+
+- Find all text files `/Documents`
+
+  ```bash
+  <%=cmd%> node access_keys do self find /Documents '*.txt'
+  ```
+
+The following are examples of `ruby_lambda` to be provided in the following template command:
+
+```bash
+ <%=cmd%> node access_keys do self find / @ruby:'ruby_lambda'
+```
+
+> **Note:** Single quotes are used here above to protect the whole **Ruby** expression from the shell. Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
+
+- Find files more recent than 100 days
+
+  ```ruby
+  ->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))<100}
+  ```
+
+- Find files older than 1 year
+
+  ```ruby
+  ->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}
+  ```
+
+- Find files larger than 1MB
+
+  ```ruby
+  ->(f){f["type"].eql?("file") and f["size"].to_i>1000000}
+  ```
+
+- Filter out files beginning with `._` or named `.DS_Store`:
+
+  ```ruby
+  ->(f){!(f["name"].start_with?("._") or f["name"].eql?(".DS_Store"))}
+  ```
+
+- Match files using a [Ruby Regex](https://ruby-doc.org/core/Regexp.html) : `\.gif$`
+
+  ```ruby
+  ->(f){f["name"].match?(/\.gif$/)}
+  ```
+
+<%=tool%> commands can be piped in order to combine operations, such as "find and delete":
+
+```bash
+<%=cmd%> node access_keys do self find / \
+@ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' \
+--fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
+```
+
+> **Note:** the pipe `|` character on the last line.
 
 ### Central
 
@@ -4242,14 +4285,22 @@ By providing the `validator` option, offline transfer validation can be done.
 
 > **Note:** This API will probably be deprecated in the future.
 
+### Sync
+
+There are three sync types of operations:
+
+- `sync`: perform a local sync, by executing `async` locally
+- `async`: calls legacy async API on node : `/async`
+- `ssync` : calls newer async API on node : `/asyncs`
+
 ### FASP Stream
 
 It is possible to start a FASPStream session using the node API:
 
-Use the "node stream create" command, then arguments are provided as a <%=trspec%>.
+Use the command `<%=cmd%> node stream create --ts=@json:<value>`, with <%=trspec%>:
 
-```bash
-<%=cmd%> node stream create --ts=@json:'{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}' --preset=stream
+```json
+{"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
 ```
 
 ### Watchfolder
@@ -4266,14 +4317,6 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 <%=cmd%> node service create @json:'{"id":"mywatchfolderd","type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
 <%=cmd%> node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","target_dir":"/","transport":{"host":"10.25.0.4","user":"user1","pass":"mypassword"}}'
 ```
-
-### Sync
-
-There are three sync types of operations:
-
-- `sync`: perform a local sync, by executing `async` locally
-- `async`: calls legacy async API on node : `/async`
-- `ssync` : calls newer async API on node : `/asyncs`
 
 ### Out of Transfer File Validation
 
@@ -4325,21 +4368,21 @@ dnf install -y ImageMagick-devel
 gem install rmagick rainbow
 ```
 
-For example it is possible to display the preview of a file, if it exists, using:
-
-```bash
-<%=cmd%> aoc files thumbnail /preview_samples/Aspera.mpg
-```
-
-Using direct node access and an access key , one can do:
+For example, it is possible to display the preview of a file, if it exists, using an access key on node:
 
 ```bash
 <%=cmd%> node access_key do self thumbnail /preview_samples/Aspera.mpg
 ```
 
+Previews are mainly used in AoC, this also works with AoC:
+
+```bash
+<%=cmd%> aoc files thumbnail /preview_samples/Aspera.mpg
+```
+
 > **Note:** To specify the file by its file id, use the selector syntax: `%id:_file_id_here_`
 >
-> **Note:** To force textual display of the preview on iTerm, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
+> **Note:** To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
 
 ### Create access key
 
@@ -5188,13 +5231,9 @@ If the `scan` or `events` detection method is used, then the option : `skip_fold
 
 The option `folder_reset_cache` forces the node service to refresh folder contents using various methods.
 
-When scanning the option `query` has the same behavior as for the `node find` command.
+When scanning the option `query` has the same behavior as for the `node access_keys do self find` command.
 
-For instance to filter out files beginning with `._` do:
-
-```bash
---query='exec:!f["name"].start_with?("._") or f["name"].eql?(".DS_Store")'
-```
+Refer to that section for details.
 
 ### Preview File types
 

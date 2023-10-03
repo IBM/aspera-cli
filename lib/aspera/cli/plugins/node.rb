@@ -84,10 +84,10 @@ module Aspera
         SPECIAL_ACTIONS = %i[health events info license].freeze
 
         # actions available in v3 in gen4
-        V3_IN_V4_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+        V3_IN_V4_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
         # actions used commonly when a node is involved
-        COMMON_ACTIONS = %i[access_key].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
+        COMMON_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
 
         private_constant(*%i[CENTRAL_SOAP_API_TEST SEARCH_REMOVE_FIELDS BASE_ACTIONS SPECIAL_ACTIONS V3_IN_V4_ACTIONS COMMON_ACTIONS])
 
@@ -97,7 +97,7 @@ module Aspera
         # commands for execute_command_gen4
         COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
 
-        COMMANDS_COS = %i[upload download info access_key api_details transfer].freeze
+        COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 
@@ -323,15 +323,15 @@ module Aspera
           case command
           when *COMMANDS_GEN3
             execute_command_gen3(command, prefix_path)
-          when :access_key
+          when :access_keys
             ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
             case ak_command
             when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
             when :do
-              access_key = options.get_next_argument('access key id')
-              ak_info = @api_node.read("access_keys/#{access_key}")[:data]
+              access_key_id = options.get_next_argument('access key id')
+              ak_info = @api_node.read("access_keys/#{access_key_id}")[:data]
               # change API credentials if different access key
-              if !access_key.eql?('self')
+              if !access_key_id.eql?('self')
                 @api_node.params[:auth][:username] = ak_info['id']
                 @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
               end
@@ -429,7 +429,7 @@ module Aspera
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
-            test_block = Aspera::Node.file_matcher(options.get_next_argument('filter', type: String, mandatory: false))
+            test_block = Aspera::Node.file_matcher_from_argument(options)
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
             containing_folder_path = options.get_next_argument('path').split(Aspera::Node::PATH_SEPARATOR)
