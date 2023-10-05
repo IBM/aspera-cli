@@ -712,7 +712,7 @@ module Aspera
               raise 'error'
             end
           when :transfer
-            command = options.get_next_command(%i[list cancel show modify bandwidth_average])
+            command = options.get_next_command(%i[list cancel show modify bandwidth_average sessions])
             res_class_path = 'ops/transfers'
             if %i[cancel show modify].include?(command)
               one_res_id = instance_identifier
@@ -720,14 +720,23 @@ module Aspera
             end
             case command
             when :list
-              # could use ? subpath: 'transfers'
-              query = query_read_delete
-              raise 'Query must be a Hash' unless query.nil? || query.is_a?(Hash)
-              transfers_data = @api_node.read(res_class_path, query)[:data]
+              transfers_data = @api_node.read(res_class_path, query_read_delete)[:data]
               return {
                 type:   :object_list,
                 data:   transfers_data,
                 fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
+              }
+            when :sessions
+              transfers_data = @api_node.read(res_class_path, query_read_delete)[:data]
+              sessions = transfers_data.map{|t|t['sessions']}.flatten
+              sessions.each do |session|
+                session['start_time'] = Time.at(session['start_time_usec'] / 1_000_000.0).utc.iso8601(0)
+                session['end_time'] = Time.at(session['end_time_usec'] / 1_000_000.0).utc.iso8601(0)
+              end
+              return {
+                type:   :object_list,
+                data:   sessions,
+                fields: %w[id status start_time end_time target_rate_kbps]
               }
             when :cancel
               resp = @api_node.cancel(one_res_path)
@@ -739,7 +748,7 @@ module Aspera
               resp = @api_node.update(one_res_path, options.get_next_argument('update value', type: Hash))
               return { type: :other_struct, data: resp[:data] }
             when :bandwidth_average
-              transfers_data = @api_node.read(res_class_path, query)[:data]
+              transfers_data = @api_node.read(res_class_path, query_read_delete)[:data]
               # collect all key dates
               bandwidth_period = {}
               dir_info = %i[avg_kbps sessions].freeze

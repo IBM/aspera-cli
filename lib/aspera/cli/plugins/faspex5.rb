@@ -25,8 +25,10 @@ module Aspera
         # Faspex API v5: get transfer spec for connect
         TRANSFER_CONNECT = 'connect'
 
-        ADMIN_RESOURCES = %i[accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs metadata_profiles
-                             email_notifications].freeze
+        ADMIN_RESOURCES = %i[
+          accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
+          metadata_profiles email_notifications
+        ].freeze
         private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
           def application_name
@@ -101,7 +103,7 @@ module Aspera
           options.declare(:link, 'Public link authorization (specific operations)')
           options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{VAL_ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
-          options.declare(:group_type, 'Shared inbox or workgroup', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
+          options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
         end
 
@@ -316,7 +318,7 @@ module Aspera
             # TODO: if packages have same name, they will overwrite ?
             package_ids = list_packages_with_filter.map{|p|p['id']}
             Log.dump(:package_ids, package_ids)
-            Log.dump(:package_ids, skip_ids_persistency.data)
+            Log.dump(:skip_ids, skip_ids_persistency.data)
             package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
             Log.dump(:package_ids, package_ids)
           end
@@ -411,7 +413,7 @@ module Aspera
             package = @api_v5.create('packages', parameters)[:data]
             shared_folder = options.get_option(:shared_folder)
             if shared_folder.nil?
-              # TODO: option to send from remote source or httpgw
+              # send from local files
               transfer_spec = @api_v5.call(
                 operation:   'POST',
                 subpath:     "packages/#{package['id']}/transfer_spec/upload",
@@ -423,6 +425,7 @@ module Aspera
               transfer_spec.delete('authentication')
               return Main.result_transfer(transfer.start(transfer_spec))
             else
+              # send from remote shared folder
               if (m = shared_folder.match(REGEX_LOOKUP_ID_BY_FIELD))
                 shared_folder = lookup_entity_by_field(type: 'shared_folders', value: m[2])['id']
               end

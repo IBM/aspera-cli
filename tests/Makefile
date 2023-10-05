@@ -394,6 +394,7 @@ $(T)nd5: $(T).exists
 $(T)nd6: $(T).exists
 	@echo $@
 	$(EXE_MAN) node transfer list --query=@json:'{"active_only":true}'
+	$(EXE_MAN) node transfer sessions
 	@touch $@
 $(T)nd7: $(T).exists
 	@echo $@
@@ -984,27 +985,27 @@ $(T)conf_ascp_8: $(T)conf_ascp_7
 	$(EXE_MAN) config ascp info --sdk-folder=$(T)sdk_test_dir
 	@touch $@
 
-$(T)conf_id_1: $(T).exists
+$(T)conf_pset_1: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset set conf_name param value
 	@touch $@
-$(T)conf_id_2: $(T).exists
+$(T)conf_pset_2: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset show conf_name
 	@touch $@
-$(T)conf_id_3: $(T).exists
+$(T)conf_pset_3: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset set default shares conf_name
 	@touch $@
-$(T)conf_id_4: $(T).exists
+$(T)conf_pset_4: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset delete conf_name
 	@touch $@
-$(T)conf_id_5: $(T).exists
+$(T)conf_pset_5: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 	@touch $@
-$(T)conf_id_6: $(T).exists
+$(T)conf_pset_6: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset update conf_name --p1=v1 --p2=v2
 	@touch $@
@@ -1122,7 +1123,7 @@ $(T)conf_hint: $(T).exists
 	-$(EXE_MAN) config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
 	-$(EXE_MAN) config hint Aspera::RestCallError 'Signature has expired'
 	@touch $@
-tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_id_1 $(T)conf_id_2 $(T)conf_id_3 $(T)conf_id_4 $(T)conf_id_5 $(T)conf_id_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
+tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
 $(T)prev_check: $(T).exists
 	@echo $@

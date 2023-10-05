@@ -131,10 +131,10 @@ module Aspera
         return table_rows_hash_val.first.keys
       end
 
-      def result_all_fields(_results, table_rows_hash_val)
-        raise 'internal error: must be array' unless table_rows_hash_val.is_a?(Array)
-        # get the list of all column names used in all lines, not just first one, as all lines may have different columns
-        return table_rows_hash_val.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}; }.keys
+      # get the list of all column names used in all lines, not just first one, as all lines may have different columns
+      def result_all_fields(table_rows_hash_val)
+        raise 'Internal error: must be Array' unless table_rows_hash_val.is_a?(Array)
+        return table_rows_hash_val.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
       end
 
       # this method displays the results, especially the table format
@@ -178,7 +178,7 @@ module Aspera
             final_table_columns =
               case user_asked_fields_list_str
               when FIELDS_DEFAULT then result_default_fields(results, table_rows_hash_val)
-              when FIELDS_ALL then     result_all_fields(results, table_rows_hash_val)
+              when FIELDS_ALL then     result_all_fields(table_rows_hash_val)
               else
                 if user_asked_fields_list_str.start_with?('+')
                   result_default_fields(results, table_rows_hash_val).push(*user_asked_fields_list_str.gsub(/^\+/, '').split(','))

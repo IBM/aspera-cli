@@ -5018,25 +5018,25 @@ An interface for the `async` utility is provided in the following plugins:
 - aoc files sync (uses node)
 - shares files sync (uses node)
 
-The main advantage over bare `async` command line when using `server` is the possibility to use a configuration file, using standard options of <%=tool%>.
+The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of <%=tool%>.
 
-In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
+In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 
 Two JSON syntax are supported for option `sync_info`.
 
-### async native JSON
+### async JSON: API format 
 
-It is the same payload as specified on the `async` option `--conf` or in the latest node API.
+It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
 This is the preferred syntax and allows a single session definition.
 But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-### async options as JSON
+### async JSON: options mapping
 
-This is specific to <%=tool%>.
+<%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
 It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 
