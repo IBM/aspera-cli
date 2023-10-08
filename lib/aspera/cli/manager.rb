@@ -159,9 +159,10 @@ module Aspera
 
       # @param descr [String] description for help
       # @param expected is
-      #    - Array of allowed value (single value)
-      #    - :multiple for remaining values
-      #    - :single for a single unconstrained value
+      #   - Array of allowed value (single value)
+      #   - :multiple for remaining values
+      #   - :single for a single unconstrained value
+      #   - :integer for a single integer value
       # @param mandatory [Boolean] if true, raise error if option not set
       # @param type [Class, Array] accepted value type(s)
       # @param aliases [Hash] map of aliases: key = alias, value = real value
@@ -179,6 +180,10 @@ module Aspera
           case expected
           when :single
             result = ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
+          when :integer
+            str_result = ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
+            result = Integer(str_result, exception: false)
+            raise CliBadArgument, "invalid integer: #{str_result}" if result.nil?
           when :multiple
             result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
             # if expecting list and only one arg of type array : it is the list
