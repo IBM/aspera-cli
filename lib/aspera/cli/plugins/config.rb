@@ -793,7 +793,7 @@ module Aspera
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
-            private_key_length = options.get_next_argument('size in bits', mandatory: false) || DEFAULT_PRIVKEY_LENGTH
+            private_key_length = options.get_next_argument('size in bits', expected: :integer, mandatory: false, default: DEFAULT_PRIVKEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status('Generated key: ' + private_key_path)
           when :echo # display the content of a value given on command line

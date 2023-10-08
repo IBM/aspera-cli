@@ -5026,7 +5026,7 @@ In this case, some of the `sync` parameters are filled by the related plugin usi
 
 Two JSON syntax are supported for option `sync_info`.
 
-### async JSON: API format 
+### async JSON: API format
 
 It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
 This is the preferred syntax and allows a single session definition.

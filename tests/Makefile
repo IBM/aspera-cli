@@ -1080,6 +1080,8 @@ $(T)conf_genkey: $(T).exists
 	@echo $@
 	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey
+	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
+	$(EXE_MAN) config genkey $(DIR_TMP)mykey 4096
 	@touch $@
 $(T)conf_smtp: $(T).exists
 	@echo $@
