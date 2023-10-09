@@ -1511,6 +1511,7 @@ config email_test --notif-to=my_email_external
 config export
 config flush_tokens
 config genkey mykey
+config genkey mykey 4096
 config hint Aspera::Fasp::Error 'Remote host is not who we expected'
 config hint Aspera::RestCallError 'Signature has expired'
 config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
@@ -3085,7 +3086,7 @@ OPTIONS: global
         --ui=ENUM                    Method to start browser: text, [graphical]
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
-        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron
+        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --http-options=VALUE         Options for http socket (Hash)
         --insecure=ENUM              Do not validate HTTPS certificate: [no], yes
         --once-only=ENUM             Process only new items (some commands): [no], yes
@@ -3113,7 +3114,7 @@ OPTIONS:
         --use-product=VALUE          Use ascp from specified product
         --smtp=VALUE                 SMTP configuration (Hash)
         --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials (Array with user and password)
+        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
@@ -3160,9 +3161,8 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             Username to log in
         --password=VALUE             User's password
-        --params=VALUE               Start parameters (Hash)
-        --result=VALUE               Specify result value as: 'work step:parameter'
-        --synchronous=ENUM           Work step:parameter expected as result: [no], yes
+        --result=VALUE               Specify result value as: 'work_step:parameter'
+        --synchronous=ENUM           Wait for completion: [no], yes
         --ret-style=ENUM             How return type is requested in api: header, [arg], ext
         --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
 
@@ -3210,7 +3210,7 @@ OPTIONS:
         --link=VALUE                 Public link authorization (specific operations)
         --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
-        --group-type=ENUM            Shared inbox or workgroup: [shared_inboxes], workgroups
+        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 
 
 COMMAND: cos
@@ -5034,6 +5034,7 @@ node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","
 node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
+node transfer sessions
 node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node_simple.example.com/path@","username":"my_username","password":"my_password"}'
 node upload --username=my_aoc_ak_name --password=my_aoc_ak_secret testfile.bin
 node upload testfile.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
@@ -5634,8 +5635,8 @@ orchestrator workflow details my_orch_workflow_id
 orchestrator workflow export my_orch_workflow_id
 orchestrator workflow inputs my_orch_workflow_id
 orchestrator workflow list
-orchestrator workflow start my_orch_workflow_id --params=@json:'{"Param":"world !"}'
-orchestrator workflow start my_orch_workflow_id --params=@json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+orchestrator workflow start my_orch_workflow_id @json:'{"Param":"world !"}'
+orchestrator workflow start my_orch_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 orchestrator workflow status ALL
 orchestrator workflow status my_orch_workflow_id
 ```
@@ -5763,25 +5764,25 @@ An interface for the `async` utility is provided in the following plugins:
 - aoc files sync (uses node)
 - shares files sync (uses node)
 
-The main advantage over bare `async` command line when using `server` is the possibility to use a configuration file, using standard options of `ascli`.
+The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of `ascli`.
 
-In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (including token).
+In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
 
 Two JSON syntax are supported for option `sync_info`.
 
-### async native JSON
+### async JSON: API format
 
-It is the same payload as specified on the `async` option `--conf` or in the latest node API.
+It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
 This is the preferred syntax and allows a single session definition.
 But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-### async options as JSON
+### async JSON: options mapping
 
-This is specific to `ascli`.
+`ascli` defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
 It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
 

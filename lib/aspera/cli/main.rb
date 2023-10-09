@@ -241,7 +241,7 @@ module Aspera
           default: OpenApplication.default_gui_mode)
         options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron')
+        options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
         options.declare(:http_options, 'Options for http socket', types: Hash, handler: {o: self, m: :option_http_options})
         options.declare(:insecure, 'Do not validate HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
         options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
@@ -360,8 +360,8 @@ module Aspera
           if !lock_port.nil?
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
-              Log.log.debug{"Opening lock port #{lock_port.to_i}"}
-              @tcp_server = TCPServer.new('127.0.0.1', lock_port.to_i)
+              Log.log.debug{"Opening lock port #{lock_port}"}
+              @tcp_server = TCPServer.new('127.0.0.1', lock_port)
             rescue StandardError => e
               execute_command = false
               Log.log.warn{"Another instance is already running (#{e.message})."}

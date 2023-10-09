@@ -36,6 +36,8 @@ WIZ_TEST=--test-mode=yes
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_NOMAN" when the command is not needed in documentation
 EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
+EXE_ERR_START=if $(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
+EXE_ERR_END=>/dev/null 2>&1;then echo "Shall error";exit 1;else echo "Error case ok";fi
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
@@ -130,15 +132,12 @@ $(T)serv_mkdir: $(T).exists
 	@touch $@
 $(T)serv_error: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
-	@echo 'Note: error is expected'
-	-$(EXE_NOMAN) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' > /dev/null 2>&1
-	@echo 'Note: error is expected'
-	-$(EXE_NOMAN) server -N --url=local:// ls .
-	-$(EXE_NOMAN) server -N --url=foo:// ls .
-	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
-	-$(EXE_NOMAN) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' > /dev/null 2>&1
-	@echo 'Note: error is expected'
+	@$(EXE_ERR_START) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
+	@$(EXE_ERR_START) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_ERR_END)
+	@$(EXE_ERR_START) server -N --url=local:// ls .$(EXE_ERR_END)
+	@$(EXE_ERR_START) server -N --url=foo:// ls .$(EXE_ERR_END)
+	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
+	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
@@ -211,7 +210,7 @@ $(T)serv_df: $(T).exists
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) server health transfer --to-folder=@preset:misc.upload_folder --format=nagios 
-	-$(EXE_NOMAN) server health transfer --to-folder=/wrong --format=nagios 
+	@$(EXE_ERR_START) server health transfer --to-folder=/wrong --format=nagios $(EXE_ERR_END)
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
@@ -780,7 +779,7 @@ taoc: taocgen taocf taocp taocadm taocts taocauto
 $(T)orch_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) orchestrator health
-	-$(EXE_NOMAN) orchestrator health --url=https://wrong.example
+	@$(EXE_ERR_START) orchestrator health --url=https://wrong.example$(EXE_ERR_END)
 	-$(EXE_NOMAN) config detect @preset:tst_orch.url
 	@touch $@
 $(T)o2: $(T).exists
@@ -1082,6 +1081,7 @@ $(T)conf_genkey: $(T).exists
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey
 	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey 4096
+	@$(EXE_ERR_START) config genkey $(DIR_TMP)mykey not_int$(EXE_ERR_END)
 	@touch $@
 $(T)conf_smtp: $(T).exists
 	@echo $@
@@ -1210,7 +1210,7 @@ tcos: $(T)tcos
 $(T)f5_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 health
-	-$(EXE_NOMAN) faspex5 health --url=https://wrong.example
+	@$(EXE_ERR_START) faspex5 health --url=https://wrong.example$(EXE_ERR_END)
 	@touch $@
 $(T)f5_p1: $(T).exists
 	@echo $@

@@ -139,7 +139,7 @@ module Aspera
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:smtp, 'SMTP configuration', types: Hash)
           options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials (Array with user and password)')
+          options.declare(:proxy_credentials, 'HTTP proxy credentials (user and password)', types: Array)
           options.declare(:secret, 'Secret for access keys')
           options.declare(:vault, 'Vault for secrets', types: Hash)
           options.declare(:vault_password, 'Vault password')
@@ -793,7 +793,7 @@ module Aspera
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
-            private_key_length = options.get_next_argument('size in bits', expected: :integer, mandatory: false, default: DEFAULT_PRIVKEY_LENGTH)
+            private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIVKEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status('Generated key: ' + private_key_path)
           when :echo # display the content of a value given on command line

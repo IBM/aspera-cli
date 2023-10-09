@@ -1659,29 +1659,30 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb121-1"><a href
 <span id="cb121-36"><a href="#cb121-36" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> export</span>
 <span id="cb121-37"><a href="#cb121-37" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> flush_tokens</span>
 <span id="cb121-38"><a href="#cb121-38" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> genkey mykey</span>
-<span id="cb121-39"><a href="#cb121-39" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint Aspera::Fasp::Error <span class="st">&#39;Remote host is not who we expected&#39;</span></span>
-<span id="cb121-40"><a href="#cb121-40" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint Aspera::RestCallError <span class="st">&#39;Signature has expired&#39;</span></span>
-<span id="cb121-41"><a href="#cb121-41" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint OpenSSL::SSL::SSLError <span class="st">&#39;does not match the server certificate&#39;</span></span>
-<span id="cb121-42"><a href="#cb121-42" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> open</span>
-<span id="cb121-43"><a href="#cb121-43" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin create mycommand T</span>
-<span id="cb121-44"><a href="#cb121-44" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin list</span>
-<span id="cb121-45"><a href="#cb121-45" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset delete conf_name</span>
-<span id="cb121-46"><a href="#cb121-46" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset initialize conf_name @json:<span class="st">&#39;{&quot;p1&quot;:&quot;v1&quot;,&quot;p2&quot;:&quot;v2&quot;}&#39;</span></span>
-<span id="cb121-47"><a href="#cb121-47" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset list</span>
-<span id="cb121-48"><a href="#cb121-48" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset overview</span>
-<span id="cb121-49"><a href="#cb121-49" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset set conf_name param value</span>
-<span id="cb121-50"><a href="#cb121-50" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset set default shares conf_name</span>
-<span id="cb121-51"><a href="#cb121-51" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset show conf_name</span>
-<span id="cb121-52"><a href="#cb121-52" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset update conf_name <span class="at">--p1</span><span class="op">=</span>v1 <span class="at">--p2</span><span class="op">=</span>v2</span>
-<span id="cb121-53"><a href="#cb121-53" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> proxy_check <span class="at">--fpac</span><span class="op">=</span>@file:examples/proxy.pac https://eudemo.asperademo.com</span>
-<span id="cb121-54"><a href="#cb121-54" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault create mylabel @json:<span class="st">&#39;{&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;super&quot;}&#39;</span><span class="kw">;</span><span class="dt">\</span></span>
-<span id="cb121-55"><a href="#cb121-55" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault delete mylabel</span>
-<span id="cb121-56"><a href="#cb121-56" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault list<span class="kw">;</span><span class="dt">\</span></span>
-<span id="cb121-57"><a href="#cb121-57" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault password my_new_pass<span class="kw">;</span><span class="dt">\</span></span>
-<span id="cb121-58"><a href="#cb121-58" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault show mylabel<span class="kw">;</span><span class="dt">\</span></span>
-<span id="cb121-59"><a href="#cb121-59" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb121-60"><a href="#cb121-60" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
-<span id="cb121-61"><a href="#cb121-61" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
+<span id="cb121-39"><a href="#cb121-39" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> genkey mykey 4096</span>
+<span id="cb121-40"><a href="#cb121-40" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint Aspera::Fasp::Error <span class="st">&#39;Remote host is not who we expected&#39;</span></span>
+<span id="cb121-41"><a href="#cb121-41" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint Aspera::RestCallError <span class="st">&#39;Signature has expired&#39;</span></span>
+<span id="cb121-42"><a href="#cb121-42" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> hint OpenSSL::SSL::SSLError <span class="st">&#39;does not match the server certificate&#39;</span></span>
+<span id="cb121-43"><a href="#cb121-43" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> open</span>
+<span id="cb121-44"><a href="#cb121-44" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin create mycommand T</span>
+<span id="cb121-45"><a href="#cb121-45" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin list</span>
+<span id="cb121-46"><a href="#cb121-46" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset delete conf_name</span>
+<span id="cb121-47"><a href="#cb121-47" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset initialize conf_name @json:<span class="st">&#39;{&quot;p1&quot;:&quot;v1&quot;,&quot;p2&quot;:&quot;v2&quot;}&#39;</span></span>
+<span id="cb121-48"><a href="#cb121-48" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset list</span>
+<span id="cb121-49"><a href="#cb121-49" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset overview</span>
+<span id="cb121-50"><a href="#cb121-50" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset set conf_name param value</span>
+<span id="cb121-51"><a href="#cb121-51" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset set default shares conf_name</span>
+<span id="cb121-52"><a href="#cb121-52" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset show conf_name</span>
+<span id="cb121-53"><a href="#cb121-53" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset update conf_name <span class="at">--p1</span><span class="op">=</span>v1 <span class="at">--p2</span><span class="op">=</span>v2</span>
+<span id="cb121-54"><a href="#cb121-54" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> proxy_check <span class="at">--fpac</span><span class="op">=</span>@file:examples/proxy.pac https://eudemo.asperademo.com</span>
+<span id="cb121-55"><a href="#cb121-55" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault create mylabel @json:<span class="st">&#39;{&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;super&quot;}&#39;</span><span class="kw">;</span><span class="dt">\</span></span>
+<span id="cb121-56"><a href="#cb121-56" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault delete mylabel</span>
+<span id="cb121-57"><a href="#cb121-57" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault list<span class="kw">;</span><span class="dt">\</span></span>
+<span id="cb121-58"><a href="#cb121-58" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault password my_new_pass<span class="kw">;</span><span class="dt">\</span></span>
+<span id="cb121-59"><a href="#cb121-59" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault show mylabel<span class="kw">;</span><span class="dt">\</span></span>
+<span id="cb121-60"><a href="#cb121-60" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb121-61"><a href="#cb121-61" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
+<span id="cb121-62"><a href="#cb121-62" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_aoc_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_aoc_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
 <h3 data-number="7.9.6" id="format-of-file"><span
 class="header-section-number">7.9.6</span> Format of file</h3>
 <p>The configuration file is a hash in a YAML file. Example:</p>
@@ -4237,7 +4238,7 @@ OPTIONS: global
         --ui=ENUM                    Method to start browser: text, [graphical]
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
-        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron
+        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --http-options=VALUE         Options for http socket (Hash)
         --insecure=ENUM              Do not validate HTTPS certificate: [no], yes
         --once-only=ENUM             Process only new items (some commands): [no], yes
@@ -4265,7 +4266,7 @@ OPTIONS:
         --use-product=VALUE          Use ascp from specified product
         --smtp=VALUE                 SMTP configuration (Hash)
         --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials (Array with user and password)
+        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
@@ -4312,9 +4313,8 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
         --username=VALUE             Username to log in
         --password=VALUE             User&#39;s password
-        --params=VALUE               Start parameters (Hash)
-        --result=VALUE               Specify result value as: &#39;work step:parameter&#39;
-        --synchronous=ENUM           Work step:parameter expected as result: [no], yes
+        --result=VALUE               Specify result value as: &#39;work_step:parameter&#39;
+        --synchronous=ENUM           Wait for completion: [no], yes
         --ret-style=ENUM             How return type is requested in api: header, [arg], ext
         --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
 
@@ -4362,7 +4362,7 @@ OPTIONS:
         --link=VALUE                 Public link authorization (specific operations)
         --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
-        --group-type=ENUM            Shared inbox or workgroup: [shared_inboxes], workgroups
+        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 
 
 COMMAND: cos
@@ -6123,9 +6123,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb370-1"><a href
 <span id="cb370-55"><a href="#cb370-55" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;LOCAL_SYNC_DIR&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb370-56"><a href="#cb370-56" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_node_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;LOCAL_SYNC_DIR&quot;,&quot;remote_dir&quot;:&quot;/aspera-test-dir-tiny&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb370-57"><a href="#cb370-57" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
-<span id="cb370-58"><a href="#cb370-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node_simple.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password&quot;}&#39;</span></span>
-<span id="cb370-59"><a href="#cb370-59" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--username</span><span class="op">=</span>my_aoc_ak_name <span class="at">--password</span><span class="op">=</span>my_aoc_ak_secret testfile.bin</span>
-<span id="cb370-60"><a href="#cb370-60" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span></code></pre></div>
+<span id="cb370-58"><a href="#cb370-58" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer sessions</span>
+<span id="cb370-59"><a href="#cb370-59" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node_simple.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password&quot;}&#39;</span></span>
+<span id="cb370-60"><a href="#cb370-60" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--username</span><span class="op">=</span>my_aoc_ak_name <span class="at">--password</span><span class="op">=</span>my_aoc_ak_secret testfile.bin</span>
+<span id="cb370-61"><a href="#cb370-61" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span></code></pre></div>
 <h1 data-number="12" id="plugin-faspex5-ibm-aspera-faspex-v5"><span
 class="header-section-number">12</span> <a id="faspex5"></a>Plugin:
 <code>faspex5</code>: IBM Aspera Faspex v5</h1>
@@ -6797,8 +6798,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb404-1"><a href
 <span id="cb404-6"><a href="#cb404-6" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow export my_orch_workflow_id</span>
 <span id="cb404-7"><a href="#cb404-7" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow inputs my_orch_workflow_id</span>
 <span id="cb404-8"><a href="#cb404-8" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow list</span>
-<span id="cb404-9"><a href="#cb404-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
-<span id="cb404-10"><a href="#cb404-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
+<span id="cb404-9"><a href="#cb404-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
+<span id="cb404-10"><a href="#cb404-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
 <span id="cb404-11"><a href="#cb404-11" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status ALL</span>
 <span id="cb404-12"><a href="#cb404-12" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status my_orch_workflow_id</span></code></pre></div>
 <h1 data-number="17" id="plugin-cos-ibm-cloud-object-storage"><span
@@ -6919,32 +6920,35 @@ following plugins:</p>
 <li>aoc files sync (uses node)</li>
 <li>shares files sync (uses node)</li>
 </ul>
-<p>The main advantage over bare <code>async</code> command line when
+<p>The main advantage over the <code>async</code> command line when
 using <code>server</code> is the possibility to use a configuration
 file, using standard options of <code>ascli</code>.</p>
 <p>In this case, some of the <code>sync</code> parameters are filled by
-the related plugin using transfer spec parameters (including token).</p>
+the related plugin using transfer spec parameters (e.g. including
+token).</p>
 <blockquote>
 <p><strong>Note:</strong> All <code>sync</code> commands require an
 <code>async</code> enabled license and availability of the
 <code>async</code> executable (and <code>asyncadmin</code>).</p>
 </blockquote>
 <p>Two JSON syntax are supported for option <code>sync_info</code>.</p>
-<h2 data-number="18.1" id="async-native-json"><span
-class="header-section-number">18.1</span> async native JSON</h2>
-<p>It is the same payload as specified on the <code>async</code> option
-<code>--conf</code> or in the latest node API. This is the preferred
-syntax and allows a single session definition. But there is no progress
-output nor error messages.</p>
+<h2 data-number="18.1" id="async-json-api-format"><span
+class="header-section-number">18.1</span> async JSON: API format</h2>
+<p>It is the same payload as specified on the option <code>--conf</code>
+of <code>async</code> or in node API <code>/asyncs</code>. This is the
+preferred syntax and allows a single session definition. But there is no
+progress output nor error messages.</p>
 <p>Documentation on Async node API can be found on <a
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22">IBM
 Developer Portal</a>.</p>
-<h2 data-number="18.2" id="async-options-as-json"><span
-class="header-section-number">18.2</span> async options as JSON</h2>
-<p>This is specific to <code>ascli</code>. It is based on a JSON
-representation of <code>async</code> command line options. It allows
-definition of multiple sync sessions in a single command, although
-usually only one sync session is defined.</p>
+<h2 data-number="18.2" id="async-json-options-mapping"><span
+class="header-section-number">18.2</span> async JSON: options
+mapping</h2>
+<p><code>ascli</code> defines a JSON equivalent to regular
+<code>async</code>options. It is based on a JSON representation of
+<code>async</code> command line options. It allows definition of
+multiple sync sessions in a single command, although usually only one
+sync session is defined.</p>
 <h1 data-number="19" id="plugin-preview-preview-generator-for-aoc"><span
 class="header-section-number">19</span> <a id="preview"></a>Plugin:
 <code>preview</code>: Preview generator for AoC</h1>

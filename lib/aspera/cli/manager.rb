@@ -94,7 +94,9 @@ module Aspera
         def validate_type(what, value, type_list)
           return nil if type_list.nil?
           raise 'internal error: types must be a Class Array' unless type_list.is_a?(Array) && type_list.all?(Class)
-          raise CliBadArgument, "#{what} is a #{value.class} but must be one of #{type_list.map(&:name).join(',')}" unless type_list.any? { |t|value.is_a?(t)}
+          raise CliBadArgument,
+            "#{what} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
+            type_list.any?{|t|value.is_a?(t)}
         end
       end
 
@@ -180,10 +182,6 @@ module Aspera
           case expected
           when :single
             result = ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
-          when :integer
-            str_result = ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
-            result = Integer(str_result, exception: false)
-            raise CliBadArgument, "invalid integer: #{str_result}" if result.nil?
           when :multiple
             result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
             # if expecting list and only one arg of type array : it is the list
@@ -201,6 +199,11 @@ module Aspera
         elsif mandatory
           # no value provided, either get value interactively, or exception
           result = get_interactive(:argument, descr, expected: expected)
+        end
+        if type.eql?([Integer]) && result.is_a?(String)
+          str_result = result
+          result = Integer(str_result, exception: false)
+          raise CliBadArgument, "Invalid integer: #{str_result}" if result.nil?
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if !aliases.nil? && aliases.key?(result)
