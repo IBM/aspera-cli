@@ -52,14 +52,18 @@ module Aspera
         {
           exception:   Aspera::RestCallError,
           match:       /Signature has expired/,
-          remediation: 'Check your local time: is time synchronization enabled?'
+          remediation: [
+            'There is too much time difference between your computer and the server',
+            'Check your local time: is time synchronization enabled?'
+          ]
         },
         {
           exception:   OpenSSL::PKey::RSAError,
           match:       /Neither PUB key nor PRIV key/,
           remediation: [
-            'private key option expect PEM value',
-            'prefix with @file: if you provide a path'
+            'option: private_key expects a key PEM value, not path to file',
+            'if you provide a path: prefix with @file:',
+            'e.g. --private-key=@file:/path/to/key.pem'
           ]
         }
       ]
