@@ -381,6 +381,8 @@ module Aspera
           end
           # execute and display (if not exclusive execution)
           formatter.display_results(command_plugin.execute_action) if execute_command
+          # save config file if command modified it
+          config.save_config_file_if_needed
           # finish
           transfer.shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}

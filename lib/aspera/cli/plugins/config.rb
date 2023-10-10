@@ -38,6 +38,7 @@ module Aspera
         CONF_PRESET_VERSION = 'version'
         CONF_PRESET_DEFAULT = 'default'
         CONF_PRESET_GLOBAL = 'global_common_defaults'
+        GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # default redirect for AoC web auth
@@ -105,6 +106,7 @@ module Aspera
           @plugin_lookup_folders = []
           @use_plugin_defaults = true
           @config_presets = nil
+          @config_checksum_on_disk = nil
           @connect_versions = nil
           @vault = nil
           @conf_file_default = File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
@@ -228,7 +230,7 @@ module Aspera
         def periodic_check_newer_gem_version
           # get verification period
           delay_days = options.get_option(:version_check_days, mandatory: true)
-          Log.log.info{"check days: #{delay_days}"}
+          Log.log.debug{"check days: #{delay_days}"}
           # check only if not zero day
           return if delay_days.eql?(0)
           # get last date from persistency
@@ -324,22 +326,42 @@ module Aspera
           end
         end
 
+        # get the default global preset, or init a new one
+        def global_default_preset
+          global_default_preset_name = get_plugin_default_config_name(CONF_GLOBAL_SYM)
+          if global_default_preset_name.nil?
+            global_default_preset_name = CONF_PRESET_GLOBAL.to_s
+            set_preset_key(CONF_PRESET_DEFAULT, CONF_GLOBAL_SYM, global_default_preset_name)
+          end
+          return global_default_preset_name
+        end
+
+        def set_preset_key(preset, param_name, param_value)
+          raise "Parameter name must be a String or Symbol, not #{param_name.class}" unless [String, Symbol].include?(param_name.class)
+          param_name = param_name.to_s
+          selected_preset = @config_presets[preset]
+          if selected_preset.nil?
+            Log.log.debug{"No such preset name: #{preset}, initializing"}
+            selected_preset = @config_presets[preset] = {}
+          end
+          raise "expecting Hash for #{preset}.#{param_name}" unless selected_preset.is_a?(Hash)
+          if selected_preset.key?(param_name)
+            if selected_preset[param_name].eql?(param_value)
+              Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
+              return
+            end
+            Log.log.warn{"overwriting value: #{selected_preset[param_name]}"}
+          end
+          selected_preset[param_name] = param_value
+          formatter.display_status("Updated: #{preset}: #{param_name} <- #{param_value}")
+          nil
+        end
+
         # set parameter and value in global config
         # creates one if none already created
         # @return preset name that contains global default
         def set_global_default(key, value)
-          # get default preset if it exists
-          global_default_preset_name = get_plugin_default_config_name(CONF_GLOBAL_SYM)
-          if global_default_preset_name.nil?
-            global_default_preset_name = CONF_PRESET_GLOBAL
-            @config_presets[CONF_PRESET_DEFAULT] ||= {}
-            @config_presets[CONF_PRESET_DEFAULT][CONF_GLOBAL_SYM.to_s] = global_default_preset_name
-          end
-          @config_presets[global_default_preset_name] ||= {}
-          @config_presets[global_default_preset_name][key.to_s] = value
-          formatter.display_status("Updated: #{global_default_preset_name}: #{key} <- #{value}")
-          save_presets_to_config_file
-          return global_default_preset_name
+          set_preset_key(global_default_preset, key, value)
         end
 
         public
@@ -398,6 +420,10 @@ module Aspera
           end
         end
 
+        def config_checksum
+          JSON.generate(@config_presets).hash
+        end
+
         # read config file and validate format
         def read_config_file
           Log.log.debug{"config file is: #{@option_config_file}".red}
@@ -405,38 +431,35 @@ module Aspera
           search_files = [@option_config_file]
           # find first existing file (or nil)
           conf_file_to_load = search_files.find{|f| File.exist?(f)}
-          # require save if old version of file
-          save_required = false
           # if no file found, create default config
           if conf_file_to_load.nil?
             Log.log.warn{"No config file found. Creating empty configuration file: #{@option_config_file}"}
-            @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => @info[:version]}}
+            @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => 'new file'}}
           else
             Log.log.debug{"loading #{@option_config_file}"}
             @config_presets = YAML.load_file(conf_file_to_load)
+            @config_checksum_on_disk = config_checksum
           end
           files_to_copy = []
-          Log.log.debug{"Available_presets: #{@config_presets}"}
+          Log.dump('Available_presets', @config_presets)
           raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
           # check there is at least the config section
-          if !@config_presets.key?(CONF_PRESET_CONFIG)
-            raise "Cannot find key: #{CONF_PRESET_CONFIG}"
-          end
+          raise "Cannot find key: #{CONF_PRESET_CONFIG}" unless @config_presets.key?(CONF_PRESET_CONFIG)
           version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
-          if version.nil?
-            raise 'No version found in config section.'
-          end
+          raise 'No version found in config section.' if version.nil?
           Log.log.debug{"conf version: #{version}"}
-          # if there are any conversion needed, those happen here.
-          # Place new compatibility code here
-          if save_required
-            Log.log.warn('Saving automatic conversion.')
-            @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
-            save_presets_to_config_file
+          # VVV if there are any conversion needed, those happen here.
+          # fix bug in 4.4 (creating key "true" in "default" preset)
+          @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
+          # ^^^ Place new compatibility code before this line
+          # set version to current
+          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
+          save_config_file_if_needed
+          unless files_to_copy.empty?
             Log.log.warn('Copying referenced files')
             files_to_copy.each do |file|
               FileUtils.cp(file, @main_folder)
-              Log.log.warn{"..#{file} -> #{@main_folder}"}
+              Log.log.warn{"#{file} -> #{@main_folder}"}
             end
           end
         rescue Psych::SyntaxError => e
@@ -564,8 +587,8 @@ module Aspera
             ascp_path = options.get_next_argument('path to ascp')
             ascp_version = Fasp::Installation.instance.get_ascp_version(ascp_path)
             formatter.display_status("ascp version: #{ascp_version}")
-            preset_name = set_global_default(:ascp_path, ascp_path)
-            return Main.result_status("Saved to default global preset #{preset_name}")
+            set_global_default(:ascp_path, ascp_path)
+            return Main.result_nothing
           when :show # shows files used
             return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
@@ -615,8 +638,8 @@ module Aspera
             when :use
               default_product = options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
-              preset_name = set_global_default(:ascp_path, Fasp::Installation.instance.path(:ascp))
-              return Main.result_status("Saved to default global preset #{preset_name}")
+              set_global_default(:ascp_path, Fasp::Installation.instance.path(:ascp))
+              return Main.result_nothing
             end
           when :install
             # reset to default location, if older default was used
@@ -650,24 +673,24 @@ module Aspera
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           name = instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
+          if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+            name = global_default_preset
+          end
           # those operations require existing option
           raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
-          selected_preset = @config_presets[name]
           case action
           when :list
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
             return {type: :object_list, data: Formatter.flatten_config_overview(@config_presets)}
           when :show
-            raise "no such config: #{name}" if selected_preset.nil?
-            return {type: :single_object, data: selected_preset}
+            return {type: :single_object, data: @config_presets[name]}
           when :delete
             @config_presets.delete(name)
-            save_presets_to_config_file
             return Main.result_status("Deleted: #{name}")
           when :get
             param_name = options.get_next_argument('parameter name')
-            value = selected_preset[param_name]
+            value = @config_presets[name][param_name]
             raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
             when Numeric, String then return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
@@ -675,30 +698,20 @@ module Aspera
             return {type: :single_object, data: value}
           when :unset
             param_name = options.get_next_argument('parameter name')
-            selected_preset.delete(param_name)
-            save_presets_to_config_file
+            @config_presets[name].delete(param_name)
             return Main.result_status("Removed: #{name}: #{param_name}")
           when :set
             param_name = options.get_next_argument('parameter name')
-            param_value = options.get_next_argument('parameter value')
             param_name = Manager.option_line_to_name(param_name)
-            if !@config_presets.key?(name)
-              Log.log.debug{"no such config name: #{name}, initializing"}
-              selected_preset = @config_presets[name] = {}
-            end
-            if selected_preset.key?(param_name)
-              Log.log.warn{"overwriting value: #{selected_preset[param_name]}"}
-            end
-            selected_preset[param_name] = param_value
-            save_presets_to_config_file
-            return Main.result_status("Updated: #{name}: #{param_name} <- #{param_value}")
+            param_value = options.get_next_argument('parameter value')
+            set_preset_key(name, param_name, param_value)
+            return Main.result_nothing
           when :initialize
             config_value = options.get_next_argument('extended value', type: Hash)
             if @config_presets.key?(name)
               Log.log.warn{"configuration already exists: #{name}, overwriting"}
             end
             @config_presets[name] = config_value
-            save_presets_to_config_file
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
@@ -706,9 +719,6 @@ module Aspera
             Log.log.debug{"opts=#{unprocessed_options}"}
             @config_presets[name] ||= {}
             @config_presets[name].merge!(unprocessed_options)
-            # fix bug in 4.4 (creating key "true" in "default" preset)
-            @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
-            save_presets_to_config_file
             return Main.result_status("Updated: #{name}")
           when :ask
             options.ask_missing_mandatory = :yes
@@ -717,7 +727,6 @@ module Aspera
               option_value = options.get_interactive(:option, option_name)
               @config_presets[name][option_name] = option_value
             end
-            save_presets_to_config_file
             return Main.result_status("Updated: #{name}")
           when :lookup
             BasicAuthPlugin.register_options(@agents)
@@ -898,7 +907,6 @@ module Aspera
               @config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND] = DEMO_SERVER_PRESET
               Log.log.info{"Setting server default preset to : #{DEMO_SERVER_PRESET}"}
             end
-            save_presets_to_config_file
             return Main.result_status('Done')
           when :vault then execute_vault
           when :hint
@@ -1002,8 +1010,6 @@ module Aspera
           else
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
-          formatter.display_status('Saving config file.')
-          save_presets_to_config_file
           return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{identification[:product]} #{test_args}")
         end
 
@@ -1064,13 +1070,18 @@ module Aspera
         end
 
         # Save current configuration to config file
-        def save_presets_to_config_file
+        # return true if file was saves
+        def save_config_file_if_needed
           raise 'no configuration loaded' if @config_presets.nil?
+          current_checksum = config_checksum
+          return false if @config_checksum_on_disk.eql?(current_checksum)
           FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
           Environment.restrict_file_access(@main_folder)
-          Log.log.debug{"Writing #{@option_config_file}"}
+          Log.log.info{"Writing #{@option_config_file}"}
+          formatter.display_status('Saving config file.')
           Environment.write_file_restricted(@option_config_file, force: true) {@config_presets.to_yaml}
-          nil
+          @config_checksum_on_disk = current_checksum
+          return true
         end
 
         # returns [String] name if config_presets has default
