@@ -36,8 +36,9 @@ WIZ_TEST=--test-mode=yes
 EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_NOMAN" when the command is not needed in documentation
 EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
+# enclose tests that shall result in error
 EXE_ERR_START=if $(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
-EXE_ERR_END=>/dev/null 2>&1;then echo "Shall error";exit 1;else echo "Error case ok";fi
+EXE_ERR_END=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test ok";fi
 # 10MB testing file generated locally
 CF_LOCAL_SAMPLE_FILENAME=datafile.bin
 CF_LOCAL_SAMPLE_FILEPATH=$(DIR_TMP)$(CF_LOCAL_SAMPLE_FILENAME)
@@ -50,7 +51,7 @@ endif
 
 # flush cached tokens
 clean::
-	-$(EXE_NOMAN) config flush
+	$(EXE_NOMAN) config flush
 
 ###########
 # Coverage
@@ -134,10 +135,10 @@ $(T)serv_error: $(T).exists
 	@echo $@
 	@$(EXE_ERR_START) server --password=wrong upload $(CF_LOCAL_SAMPLE_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
 	@$(EXE_ERR_START) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_ERR_END)
-	@$(EXE_ERR_START) server -N --url=local:// ls .$(EXE_ERR_END)
 	@$(EXE_ERR_START) server -N --url=foo:// ls .$(EXE_ERR_END)
 	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
 	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
+	$(EXE_NOMAN) server -N --url=local:// ls .
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@echo $@
@@ -210,11 +211,11 @@ $(T)serv_df: $(T).exists
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) server health transfer --to-folder=@preset:misc.upload_folder --format=nagios 
-	@$(EXE_ERR_START) server health transfer --to-folder=/wrong --format=nagios $(EXE_ERR_END)
+	@$(EXE_ERR_START) server health transfer --to-folder=/wrong --format=nagios$(EXE_ERR_END)
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
-	$(EXE_MAN) server -N -Ptst_server_bykey -Plocal_user browse /
+	$(EXE_MAN) server -N -Ptst_server_bykey browse /
 	@touch $@
 $(T)asession: $(T).exists
 	@echo $@
@@ -372,7 +373,8 @@ $(T)nd_2_nd_xfer: $(T).exists
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) node -Ptst_node_admak service delete service1&&sleep 5
+	-$(EXE_NOMAN) node -Ptst_node_admak service delete service1
+	@echo "waiting a little...";sleep 5
 	$(EXE_MAN) node -Ptst_node_admak service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXE_MAN) node -Ptst_node_admak service list
 	@echo "waiting a little...";sleep 2
@@ -779,8 +781,8 @@ taoc: taocgen taocf taocp taocadm taocts taocauto
 $(T)orch_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) orchestrator health
-	@$(EXE_ERR_START) orchestrator health --url=https://wrong.example$(EXE_ERR_END)
-	-$(EXE_NOMAN) config detect @preset:tst_orch.url
+	@$(EXE_ERR_START) orchestrator health --url=https://wrong.url --format=nagios$(EXE_ERR_END)
+	$(EXE_NOMAN) config detect @preset:tst_orch.url
 	@touch $@
 $(T)o2: $(T).exists
 	@echo $@
@@ -976,7 +978,7 @@ $(T)conf_ascp_6: $(T).exists
 	@touch $@
 $(T)conf_ascp_7: $(T).exists
 	@echo $@
-	-rm -fr $(T)sdk_test_dir
+	rm -fr $(T)sdk_test_dir
 	$(EXE_MAN) config ascp install --sdk-folder=$(T)sdk_test_dir
 	@touch $@
 $(T)conf_ascp_8: $(T)conf_ascp_7
@@ -1025,16 +1027,16 @@ $(T)conf_vault: $(T).exists
 	set -x;\
 	vault_file=$$(cd $(DIR_TMP);pwd -P)/sample_vault.bin;\
 	rm -f $$vault_file;\
-	export ASCLI_VAULT_PASSWORD=_simple_one_;\
-	export ASCLI_VAULT=@json:'{"type":"file","name":"'"$${vault_file}"'"}';\
-	$(EXE_MAN) $(TMP_CONF) config vault create mylabel @json:'{"password":"my_password_here","description":"super"}';\
-	$(EXE_MAN) $(TMP_CONF) config vault list;\
-	$(EXE_MAN) $(TMP_CONF) config vault show mylabel;\
+	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault @json:'{"type":"file","name":"'"$${vault_file}"'"}';\
+	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault_password _simple_one_
+	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
+	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault list
+	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault show mylabel
 	new_pass=_other_one_;\
-	$(EXE_MAN) $(TMP_CONF) config vault password $${new_pass};\
-	export ASCLI_VAULT_PASSWORD=$${new_pass};\
-	$(EXE_MAN) $(TMP_CONF) config vault list;\
-	$(EXE_MAN) $(TMP_CONF) config vault delete mylabel
+	$(EXE_NOMAN) $(TMP_CONF) -Pvlt config vault password $${new_pass};\
+	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault_password $${new_pass}
+	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault list
+	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault delete mylabel
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -1054,10 +1056,6 @@ $(T)conf_plugins: $(T).exists
 	$(EXE_MAN) config plugin list
 	$(EXE_MAN) config plugin create mycommand $(T)
 	$(EXE_NOMAN) mycommand --plugin-folder=$(T)
-	@touch $@
-$(T)conf_export: $(T).exists
-	@echo $@
-	-$(EXE_MAN) config export
 	@touch $@
 $(T)conf_wizard_org: $(T).exists
 	@echo $@
@@ -1124,8 +1122,9 @@ $(T)conf_hint: $(T).exists
 	-$(EXE_MAN) config hint Aspera::Fasp::Error 'Remote host is not who we expected'
 	-$(EXE_MAN) config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
 	-$(EXE_MAN) config hint Aspera::RestCallError 'Signature has expired'
+	-$(EXE_MAN) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'
 	@touch $@
-tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_export $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
+tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
 $(T)prev_check: $(T).exists
 	@echo $@
@@ -1210,7 +1209,7 @@ tcos: $(T)tcos
 $(T)f5_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 health
-	@$(EXE_ERR_START) faspex5 health --url=https://wrong.example$(EXE_ERR_END)
+	@$(EXE_ERR_START) faspex5 health --url=https://wrong.example --format=nagios$(EXE_ERR_END)
 	@touch $@
 $(T)f5_p1: $(T).exists
 	@echo $@

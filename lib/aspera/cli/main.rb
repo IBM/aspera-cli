@@ -24,12 +24,13 @@ module Aspera
     class Main
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
-      WARNING_FLASH = 'WARNING:'.bg_red.gray.blink.freeze
+      WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
       HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
       # for testing only
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
 
+      # Well know issues that users may get
       ERROR_HINTS = [
         {
           exception:   Fasp::Error,
@@ -132,7 +133,7 @@ module Aspera
         if @option_insecure
           url = http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
           if !@ssl_warned_urls.include?(url)
-            formatter.display_message(:error, "#{WARNING_FLASH} ignoring certificate for: #{url}. Do not deactivate certificate verification in production.")
+            formatter.display_message(:error, "#{WARNING_FLASH} Ignoring certificate for: #{url}. Do not deactivate certificate verification in production.")
             @ssl_warned_urls.push(url)
           end
           http.verify_mode = SELF_SIGNED_CERT
@@ -180,7 +181,7 @@ module Aspera
         formatter.declare_options(options)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        formatter.display_message(:error, "#{'WARNING'.bg_red.blink.gray} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
+        formatter.display_message(:error, "#{WARNING_FLASH} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
           unless current_prog_name.eql?(PROGRAM_NAME)
         Rest.user_agent = PROGRAM_NAME
         Rest.session_cb = lambda{|http|self.http_parameters = http}

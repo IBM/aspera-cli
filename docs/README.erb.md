@@ -10,7 +10,7 @@ Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
 
-This gem provides the <%=tool%> Command Line Interface to IBM Aspera software.
+This gem provides the <%=tool%> CLI (Command Line Interface) to IBM Aspera software.
 
 <%=tool%> is a also great tool to learn Aspera APIs.
 
@@ -128,7 +128,8 @@ If you want to use <%=tool%> with another server, and in order to make further c
 - download a file
 
 ```bash
-<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
+<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb \
+--password=my_password_here
 ```
 
 ```output
@@ -354,16 +355,16 @@ podman load -i <%=cmd%>_image_latest.tar.gz
 
 `ascp`'s configuration file `aspera.conf` is located in the container at: `/aspera_sdk/aspera.conf` (see Dockerfile).
 As the container is immutable, it is not recommended to modify this file.
-If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/ascli` mapped to the container folder `/home/cliuser/.aspera/ascli`:
+If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/<%=cmd%>` mapped to the container folder `/home/cliuser/.aspera/<%=cmd%>`:
 
 ```bash
-echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
+echo '<CONF/>' > $HOME/.aspera/<%=cmd%>/aspera.conf
 ```
 
-Then, tell `ascp` to use that other conf file:
+Then, tell `ascp` to use that other configuration file:
 
 ```bash
---transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
+--transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/<%=cmd%>/aspera.conf"]}'
 ```
 
 #### Container: Singularity
@@ -372,7 +373,7 @@ Singularity is another type of use of container.
 
 On Linux install:
 
-```console
+```bash
 dnf install singularity-ce
 ```
 
@@ -388,7 +389,7 @@ The use like this:
 singularity run <%=cmd%>.sif
 ```
 
-Or get a shell with access to the tool like this:
+Or get a shell with access to <%=tool%> like this:
 
 ```bash
 singularity shell <%=cmd%>.sif
@@ -398,7 +399,7 @@ singularity shell <%=cmd%>.sif
 
 Use this method to install on the native host.
 
-A Ruby interpreter is required to run the tool or to use the gem and tool.
+A Ruby interpreter is required to run <%=tool%> or to use the gem and tool.
 
 Required Ruby <%=ruby_version%>.
 
@@ -483,7 +484,9 @@ Install Latest stable Ruby:
 
 #### macOS: pre-installed or `brew`
 
-macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install <%=gemspec.name%> using `sudo` :
+macOS 10.13+ (High Sierra) comes with a recent Ruby.
+So you can use it directly.
+You will need to install <%=gemspec.name%> using `sudo` :
 
 ```bash
 sudo gem install <%=gemspec.name%><%=geminstadd%>
@@ -515,9 +518,9 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 
 - Install packages needed to build native gems:
   
-    ```bash
-    dnf install -y make automake gcc gcc-c++ kernel-devel
-    ```
+  ```bash
+  dnf install -y make automake gcc gcc-c++ kernel-devel
+  ```
 
 - Enable the Ruby version you want:
 
@@ -539,7 +542,7 @@ apt install -y ruby ruby-dev rubygems ruby-json
 One can cleanup the whole yum-installed Ruby environment like this to uninstall:
 
 ```bash
-gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 ```
 
 #### Other Unixes (AIX)
@@ -576,7 +579,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 <https://www.jruby.org/download>
 
-> **Note:** Using jruby the startup time is longer than the native Ruby, but the transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
@@ -1088,7 +1091,7 @@ Nevertheless, [Extended Values](#extended) syntax is supported, so it is possibl
 
 ### Interactive Input
 
-Some options and parameters are mandatory and other optional. By default, the tool will ask for missing mandatory options or parameters for interactive execution.
+Some options and parameters are mandatory and other optional. By default, <%=tool%> will ask for missing mandatory options or parameters for interactive execution.
 
 The behavior can be controlled with:
 
@@ -1445,23 +1448,26 @@ The default preset for `config` is read for any plugin invocation, this allows s
 When <%=tool%> starts, it looks for the `default` <%=prstt%> and checks the value for `config`.
 If set, it loads the options independently of the plugin used.
 
-> **Note:** If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+> **Note:** If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+>
+> **Note:** If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
 Show current default (global) <%=prstt%> (`config` plugin):
 
 ```console
-$ ascli conf preset get default config
+$ <%=cmd%> conf preset get default config
 global_common_defaults
 ```
 
 ```bash
-ascli conf preset set global_common_defaults version_check_days 0
+<%=cmd%> conf preset set GLOBAL version_check_days 0
 ```
 
-If the default global <%=prstt%> is not set:
+If the default global <%=prstt%> is not set, and you want to use a different name:
 
 ```bash
-ascli conf preset set default config global_common_defaults
+<%=cmd%> conf preset set my_common_defaults version_check_days 0
+<%=cmd%> conf preset set default config my_common_defaults
 ```
 
 #### Config sample commands
@@ -1737,12 +1743,20 @@ The format expected for private keys is [PEM](https://en.wikipedia.org/wiki/Priv
 
 #### <%=tool%> for key generation
 
-The generated key is of type RSA, by default: 4096 bit.
+The generated key is of type `RSA`, by default: **4096** bit.
 For convenience, the public key is also extracted with extension `.pub`.
 The key is not passphrase protected.
 
 ```bash
 <%=cmd%> config genkey ${PRIVKEYFILE} 4096
+```
+
+> **Note:** <%=tool%> uses the `openssl` library.
+
+To display the version of **openssl** used in <%=tool%>:
+
+```bash
+<%=cmd%> config echo @ruby:OpenSSL::OPENSSL_VERSION
 ```
 
 #### `ssh-keygen`
@@ -1755,7 +1769,7 @@ ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 
 #### `openssl`
 
-To generate a private key pair with a passphrase the following can be used on any system:
+To generate a private key with a passphrase the following can be used on any system:
 
 ```bash
 openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE} 4096
@@ -1787,7 +1801,13 @@ Certificates are checked against the [Ruby default certificate store](https://ru
 To display the current root certificate store locations:
 
 ```bash
-<%=cmd%> conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_FILE,OpenSSL::X509::DEFAULT_CERT_DIR]'
+<%=cmd%> conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
+```
+
+or
+
+```bash
+<%=cmd%> conf echo @ruby:'%w[DIR FILE].map{|s|OpenSSL::X509.const_get("DEFAULT_CERT_"+s)}.join("\n")' --format=text
 ```
 
 Ruby's default values can be overridden by env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
@@ -1801,13 +1821,13 @@ To update <%=tool%> trusted root certificates, just update your system's root ce
 An up-to-date version of the certificate bundle can be retrieved with:
 
 ```bash
-ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+<%=cmd%> conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 ```
 
 Once can use this to update the default certificate store:
 
 ```bash
-ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+<%=cmd%> conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
 export SSL_CERT_FILE=/tmp/cacert.pem
 ```
 
@@ -2342,16 +2362,25 @@ Parameters provided in option `transfer_info` are:
 | root_id  | string | password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
-`--transfer-info=@preset:_name_here_` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'`
+
+```bash
+--transfer-info=@preset:_name_here_
+```
+
+or be specified using the extended value syntax :
+
+```bash
+--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'
+```
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
-If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
+If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node.
+It can be either the access key's root file id, or any authorized file id underneath it.
 
 #### <a id="agt_httpgw"></a>HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case FASP is not allowed.
+If it possible to send using a HTTP gateway, in case use of FASP is not allowed.
 
 Parameters provided in option `transfer_info` are:
 
@@ -2560,7 +2589,7 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 
 #### Source directory structure on destination
 
-This section is not specific to `ascli`, it is `ascp` behaviour.
+This section is not specific to <%=tool%> it is `ascp` behaviour.
 
 The transfer destination is normally expected to designate a destination folder.
 
@@ -3333,7 +3362,7 @@ To list the target folder content, add a `/` a the end of the path.
 Example:
 
 ```console
-$ ascli aoc files br the_link
+$ <%=cmd%> aoc files br the_link
 Current Workspace: Default (default)
 +------------+------+----------------+------+----------------------+--------------+
 | name       | type | recursive_size | size | modified_time        | access_level |
@@ -3343,7 +3372,7 @@ Current Workspace: Default (default)
 ```
 
 ```console
-$ ascli aoc files br the_link/
+$ <%=cmd%> aoc files br the_link/
 Current Workspace: Default (default)
 +-------------+------+----------------+------+----------------------+--------------+
 | name        | type | recursive_size | size | modified_time        | access_level |
@@ -4597,13 +4626,13 @@ Admin only: If the value `ALL` is provided to option `box`, then all packages ar
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
 
 ```bash
-<%=cmd%> faspex5 admin res shared_inboxes invite '%name:ascli shinbox' john@example.com
+<%=cmd%> faspex5 admin res shared_inboxes invite '%name:the shared inbox' john@example.com
 ```
 
 It is equivalent to:
 
 ```bash
-<%=cmd%> faspex5 admin res shared_inboxes invite '%name:ascli shinbox' @json:'{"email_address":"john@example.com"}'
+<%=cmd%> faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
 Other payload parameters are possible in Hash format:
@@ -5088,7 +5117,7 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 ### <a id="prev_ext"></a>External tools: Linux
 
-The tool requires the following external tools available in the `PATH`:
+<%=tool%> requires the following external tools available in the `PATH`:
 
 - ImageMagick : `convert` `composite`
 - OptiPNG : `optipng`
@@ -5114,6 +5143,8 @@ dnf install -y ImageMagick optipng
 You may also install `ghostscript` which adds fonts to ImageMagick.
 Available fonts, used to generate png for text, can be listed with `magick identify -list font`.
 Prefer ImageMagick version >=7.
+
+More info on ImageMagick at <https://imagemagick.org/>
 
 #### Video: FFmpeg
 
@@ -5184,7 +5215,7 @@ For video preview, the whole set of options can be overridden with option `reenc
 
 ### Execution
 
-The tool intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+<%=tool%> intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
 It needs to be run on a regular basis to create or update preview files.
 For that use your best reliable scheduler, see [Scheduler](#scheduler).
 
@@ -5216,7 +5247,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 
 ### Candidate detection for creation or update (or deletion)
 
-The tool generates preview files using those commands:
+<%=tool%> generates preview files using those commands:
 
 - `trevents` : only recently uploaded files will be tested (transfer events)
 - `events` : only recently uploaded files will be tested (file events: not working)
@@ -5320,7 +5351,7 @@ brew install shared-mime-info
 
 Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-The tool provides 2 ways to read and write files with the option: `file_access`
+<%=tool%> provides 2 ways to read and write files with the option: `file_access`
 
 If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used. In this case, no transfer happen, source files are directly read from the storage, and preview files
 are directly written to the storage.
@@ -5442,7 +5473,7 @@ Hopefully, IBM integrates this directly in `ascp`, and this tool is made redunda
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-The tool expect one single argument: a <%=trspec%>.
+<%=tool%> expect one single argument: a <%=trspec%>.
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted <%=trspec%> on stdin.
 
@@ -5452,7 +5483,7 @@ During execution, it generates all low level events, one per line, in JSON forma
 
 There are special "extended" <%=trspec%> parameters supported by `asession`:
 
-- `EX_loglevel` to change log level of the tool
+- `EX_loglevel` to change log level of <%=tool%>
 - `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
 > **Note:** In addition, many "EX_" <%=trspec%> parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section <%=trspec%>.
@@ -5651,8 +5682,8 @@ Also, because there was already the `ascp` tool, I thought of an extended tool :
 
 There were a few pitfalls:
 
-- The tool was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
-- The tool was only for transfers, but not able to call other products APIs
+- <%=tool%> was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
+- <%=tool%> was only for transfers, but not able to call other products APIs
 
 So, it evolved into <%=tool%>:
 

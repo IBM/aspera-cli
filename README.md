@@ -10,7 +10,7 @@ Version : 4.15.0.pre
 
 Laurent/2016-2023
 
-This gem provides the `ascli` Command Line Interface to IBM Aspera software.
+This gem provides the `ascli` CLI (Command Line Interface) to IBM Aspera software.
 
 `ascli` is a also great tool to learn Aspera APIs.
 
@@ -130,7 +130,8 @@ If you want to use `ascli` with another server, and in order to make further cal
 - download a file
 
 ```bash
-ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
+ascli config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb \
+--password=my_password_here
 ```
 
 ```output
@@ -364,7 +365,7 @@ If one wants to change the content, it is possible to tell `ascp` to use another
 echo '<CONF/>' > $HOME/.aspera/ascli/aspera.conf
 ```
 
-Then, tell `ascp` to use that other conf file:
+Then, tell `ascp` to use that other configuration file:
 
 ```bash
 --transfer-info=@json:'{"ascp_args":["-f","/home/cliuser/.aspera/ascli/aspera.conf"]}'
@@ -376,7 +377,7 @@ Singularity is another type of use of container.
 
 On Linux install:
 
-```console
+```bash
 dnf install singularity-ce
 ```
 
@@ -392,7 +393,7 @@ The use like this:
 singularity run ascli.sif
 ```
 
-Or get a shell with access to the tool like this:
+Or get a shell with access to `ascli` like this:
 
 ```bash
 singularity shell ascli.sif
@@ -402,7 +403,7 @@ singularity shell ascli.sif
 
 Use this method to install on the native host.
 
-A Ruby interpreter is required to run the tool or to use the gem and tool.
+A Ruby interpreter is required to run `ascli` or to use the gem and tool.
 
 Required Ruby version: >= 2.6.
 
@@ -489,7 +490,9 @@ Install Latest stable Ruby:
 
 #### macOS: pre-installed or `brew`
 
-macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use it directly. You will need to install aspera-cli using `sudo` :
+macOS 10.13+ (High Sierra) comes with a recent Ruby.
+So you can use it directly.
+You will need to install aspera-cli using `sudo` :
 
 ```bash
 sudo gem install aspera-cli --pre
@@ -521,9 +524,9 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 
 - Install packages needed to build native gems:
   
-    ```bash
-    dnf install -y make automake gcc gcc-c++ kernel-devel
-    ```
+  ```bash
+  dnf install -y make automake gcc gcc-c++ kernel-devel
+  ```
 
 - Enable the Ruby version you want:
 
@@ -545,7 +548,7 @@ apt install -y ruby ruby-dev rubygems ruby-json
 One can cleanup the whole yum-installed Ruby environment like this to uninstall:
 
 ```bash
-gem uninstall $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 ```
 
 #### Other Unixes (AIX)
@@ -582,7 +585,7 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 <https://www.jruby.org/download>
 
-> **Note:** Using jruby the startup time is longer than the native Ruby, but the transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
 
 ### <a id="the_gem"></a>`aspera-cli` gem
 
@@ -1094,7 +1097,7 @@ Nevertheless, [Extended Values](#extended) syntax is supported, so it is possibl
 
 ### Interactive Input
 
-Some options and parameters are mandatory and other optional. By default, the tool will ask for missing mandatory options or parameters for interactive execution.
+Some options and parameters are mandatory and other optional. By default, `ascli` will ask for missing mandatory options or parameters for interactive execution.
 
 The behavior can be controlled with:
 
@@ -1451,7 +1454,9 @@ The default preset for `config` is read for any plugin invocation, this allows s
 When `ascli` starts, it looks for the `default` Option preset and checks the value for `config`.
 If set, it loads the options independently of the plugin used.
 
-> **Note:** If no global default is set by the user, the tool will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+> **Note:** If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+>
+> **Note:** If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
 Show current default (global) Option preset (`config` plugin):
 
@@ -1461,13 +1466,14 @@ global_common_defaults
 ```
 
 ```bash
-ascli conf preset set global_common_defaults version_check_days 0
+ascli conf preset set GLOBAL version_check_days 0
 ```
 
-If the default global Option preset is not set:
+If the default global Option preset is not set, and you want to use a different name:
 
 ```bash
-ascli conf preset set default config global_common_defaults
+ascli conf preset set my_common_defaults version_check_days 0
+ascli conf preset set default config my_common_defaults
 ```
 
 #### Config sample commands
@@ -1508,12 +1514,12 @@ config echo @val:@file:no_such_file
 config echo @zlib:@stdin:
 config echo hello
 config email_test --notif-to=my_email_external
-config export
 config flush_tokens
 config genkey mykey
 config genkey mykey 4096
 config hint Aspera::Fasp::Error 'Remote host is not who we expected'
 config hint Aspera::RestCallError 'Signature has expired'
+config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'
 config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
 config open
 config plugin create mycommand T
@@ -1527,11 +1533,10 @@ config preset set default shares conf_name
 config preset show conf_name
 config preset update conf_name --p1=v1 --p2=v2
 config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com
-config vault create mylabel @json:'{"password":"my_password_here","description":"super"}';\
+config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
 config vault delete mylabel
-config vault list;\
-config vault password my_new_pass;\
-config vault show mylabel;\
+config vault list
+config vault show mylabel
 config wizard https://shares.example.com/path shares --username=test --password=test
 config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email
 config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email --use-generic-client=yes
@@ -1804,12 +1809,20 @@ The format expected for private keys is [PEM](https://en.wikipedia.org/wiki/Priv
 
 #### `ascli` for key generation
 
-The generated key is of type RSA, by default: 4096 bit.
+The generated key is of type `RSA`, by default: **4096** bit.
 For convenience, the public key is also extracted with extension `.pub`.
 The key is not passphrase protected.
 
 ```bash
 ascli config genkey ${PRIVKEYFILE} 4096
+```
+
+> **Note:** `ascli` uses the `openssl` library.
+
+To display the version of **openssl** used in `ascli`:
+
+```bash
+ascli config echo @ruby:OpenSSL::OPENSSL_VERSION
 ```
 
 #### `ssh-keygen`
@@ -1822,7 +1835,7 @@ ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
 
 #### `openssl`
 
-To generate a private key pair with a passphrase the following can be used on any system:
+To generate a private key with a passphrase the following can be used on any system:
 
 ```bash
 openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE} 4096
@@ -1854,7 +1867,13 @@ Certificates are checked against the [Ruby default certificate store](https://ru
 To display the current root certificate store locations:
 
 ```bash
-ascli conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_FILE,OpenSSL::X509::DEFAULT_CERT_DIR]'
+ascli conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
+```
+
+or
+
+```bash
+ascli conf echo @ruby:'%w[DIR FILE].map{|s|OpenSSL::X509.const_get("DEFAULT_CERT_"+s)}.join("\n")' --format=text
 ```
 
 Ruby's default values can be overridden by env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
@@ -2409,16 +2428,25 @@ Parameters provided in option `transfer_info` are:
 | root_id  | string | password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
-`--transfer-info=@preset:_name_here_` or be specified using the extended value syntax :
-`--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'`
+
+```bash
+--transfer-info=@preset:_name_here_
+```
+
+or be specified using the extended value syntax :
+
+```bash
+--transfer-info=@json:'{"url":"https://...","username":"_user_here_","password":"my_password_here"}'
+```
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
-If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node. It can be either the access key's root file id, or any authorized file id underneath it.
+If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node.
+It can be either the access key's root file id, or any authorized file id underneath it.
 
 #### <a id="agt_httpgw"></a>HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case FASP is not allowed.
+If it possible to send using a HTTP gateway, in case use of FASP is not allowed.
 
 Parameters provided in option `transfer_info` are:
 
@@ -2711,7 +2739,7 @@ ascli server upload --src-type=pair ~/Documents/Samples/200KB.1 /Upload/sample1
 
 #### Source directory structure on destination
 
-This section is not specific to `ascli`, it is `ascp` behaviour.
+This section is not specific to `ascli` it is `ascp` behaviour.
 
 The transfer destination is normally expected to designate a destination folder.
 
@@ -5277,13 +5305,13 @@ ascli faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,nam
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
 
 ```bash
-ascli faspex5 admin res shared_inboxes invite '%name:ascli shinbox' john@example.com
+ascli faspex5 admin res shared_inboxes invite '%name:the shared inbox' john@example.com
 ```
 
 It is equivalent to:
 
 ```bash
-ascli faspex5 admin res shared_inboxes invite '%name:ascli shinbox' @json:'{"email_address":"john@example.com"}'
+ascli faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
 Other payload parameters are possible in Hash format:
@@ -5834,7 +5862,7 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 ### <a id="prev_ext"></a>External tools: Linux
 
-The tool requires the following external tools available in the `PATH`:
+`ascli` requires the following external tools available in the `PATH`:
 
 - ImageMagick : `convert` `composite`
 - OptiPNG : `optipng`
@@ -5860,6 +5888,8 @@ dnf install -y ImageMagick optipng
 You may also install `ghostscript` which adds fonts to ImageMagick.
 Available fonts, used to generate png for text, can be listed with `magick identify -list font`.
 Prefer ImageMagick version >=7.
+
+More info on ImageMagick at <https://imagemagick.org/>
 
 #### Video: FFmpeg
 
@@ -5930,7 +5960,7 @@ For video preview, the whole set of options can be overridden with option `reenc
 
 ### Execution
 
-The tool intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
+`ascli` intentionally supports only a **one shot** mode (no infinite loop) in order to avoid having a hanging process or using too many resources (calling REST api too quickly during the scan or event method).
 It needs to be run on a regular basis to create or update preview files.
 For that use your best reliable scheduler, see [Scheduler](#scheduler).
 
@@ -5962,7 +5992,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 
 ### Candidate detection for creation or update (or deletion)
 
-The tool generates preview files using those commands:
+`ascli` generates preview files using those commands:
 
 - `trevents` : only recently uploaded files will be tested (transfer events)
 - `events` : only recently uploaded files will be tested (file events: not working)
@@ -6066,7 +6096,7 @@ brew install shared-mime-info
 
 Standard open source tools are used to create thumbnails and video previews.
 Those tools require that original files are accessible in the local file system and also write generated files on the local file system.
-The tool provides 2 ways to read and write files with the option: `file_access`
+`ascli` provides 2 ways to read and write files with the option: `file_access`
 
 If the preview generator is run on a system that has direct access to the file system, then the value `local` can be used. In this case, no transfer happen, source files are directly read from the storage, and preview files
 are directly written to the storage.
@@ -6199,7 +6229,7 @@ Hopefully, IBM integrates this directly in `ascp`, and this tool is made redunda
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-The tool expect one single argument: a [*transfer-spec*](#transferspec).
+`ascli` expect one single argument: a [*transfer-spec*](#transferspec).
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transferspec) on stdin.
 
@@ -6209,7 +6239,7 @@ During execution, it generates all low level events, one per line, in JSON forma
 
 There are special "extended" [*transfer-spec*](#transferspec) parameters supported by `asession`:
 
-- `EX_loglevel` to change log level of the tool
+- `EX_loglevel` to change log level of `ascli`
 - `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
 > **Note:** In addition, many "EX_" [*transfer-spec*](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transferspec).
@@ -6428,8 +6458,8 @@ Also, because there was already the `ascp` tool, I thought of an extended tool :
 
 There were a few pitfalls:
 
-- The tool was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
-- The tool was only for transfers, but not able to call other products APIs
+- `ascli` was written in the aging `perl` language while most Aspera web application products (but the Transfer Server) are written in `ruby`.
+- `ascli` was only for transfers, but not able to call other products APIs
 
 So, it evolved into `ascli`:
 
