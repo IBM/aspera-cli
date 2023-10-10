@@ -33,6 +33,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 		--from=gfm \
 		--to=pdf \
 		--pdf-engine=xelatex \
+		--include-in-header=$(DIR_DOC)template.tex \
 		--toc \
 		--number-sections \
 		--shift-heading-level-by=-1 \
@@ -46,6 +47,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 		--variable=geometry:margin=15mm \
 		-o $@ \
 		$(DIR_TOP)README.md
+
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 
