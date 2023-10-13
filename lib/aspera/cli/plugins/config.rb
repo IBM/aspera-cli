@@ -729,7 +729,7 @@ module Aspera
             end
             return Main.result_status("Updated: #{name}")
           when :lookup
-            BasicAuthPlugin.register_options(@agents)
+            BasicAuthPlugin.declare_options(options)
             url = options.get_option(:url, mandatory: true)
             user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)

@@ -9,6 +9,7 @@ module Aspera
   module Cli
     # Take care of output
     class Formatter
+      # special value for option `fields` to display all fields
       FIELDS_ALL = 'ALL'
       FIELDS_DEFAULT = 'DEF'
       CSV_RECORD_SEPARATOR = "\n"
@@ -51,7 +52,8 @@ module Aspera
           !(h.values.any?{|v|[Hash, Array].any?{|c|v.is_a?(c)}})
         end
 
-        # recursive function to modify a hash
+        # Recursive function to modify a Hash
+        # @return [Hash] new hash flattened
         # @param source [Hash] to be modified
         # @param expand_last [TrueClass,FalseClass] true if last level is not
         # @param result [Hash] new hash flattened
@@ -67,32 +69,32 @@ module Aspera
           end
           return result
         end
-      end
+      end # class
 
       attr_accessor :option_flat_hash, :option_transpose_single, :option_format, :option_display, :option_fields, :option_table_style,
         :option_select, :option_show_secrets
 
-      # adds options but does not parse
+      # initialize the formatter
       def initialize
-        @option_format = :table
-        @option_display = :info
-        @option_fields = FIELDS_DEFAULT
+        @option_format = nil
+        @option_display = nil
+        @option_fields = nil
         @option_select = nil
-        @option_table_style = ':.:'
-        @option_flat_hash = true
-        @option_transpose_single = true
-        @option_show_secrets = false
+        @option_table_style = nil
+        @option_flat_hash = nil
+        @option_transpose_single = nil
+        @option_show_secrets = nil
       end
 
-      def declare_options(opt_mgr)
-        opt_mgr.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format})
-        opt_mgr.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display})
-        opt_mgr.declare(:fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields})
-        opt_mgr.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
-        opt_mgr.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style})
-        opt_mgr.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash})
-        opt_mgr.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single})
-        opt_mgr.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_show_secrets})
+      def declare_options(options)
+        options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format}, default: :table)
+        options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
+        options.declare(:fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields}, default: FIELDS_DEFAULT)
+        options.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
+        options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
+        options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash}, default: true)
+        options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single}, default: true)
+        options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_show_secrets}, default: false)
       end
 
       # main output method

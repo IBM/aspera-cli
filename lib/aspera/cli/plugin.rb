@@ -208,6 +208,7 @@ module Aspera
       end
 
       # TODO: when deprecation of `value` is completed: remove this method, replace with query_read_delete
+      # deprecation: 4.14
       def old_query_read_delete
         query = options.get_option(:value) # legacy, deprecated, remove, one day...
         query = query_read_delete if query.nil?
@@ -215,6 +216,7 @@ module Aspera
       end
 
       # TODO: when deprecation of `value` is completed: remove this method, replace with options.get_option(:query)
+      # deprecation: 4.14
       def query_option(mandatory: false, default: nil)
         option = :value
         value = options.get_option(option, mandatory: false)

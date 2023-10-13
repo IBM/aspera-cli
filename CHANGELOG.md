@@ -18,6 +18,7 @@
   * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
   * new: orchestrator: error analysis for workflow start
   * new: node: added command `transfer sessions` to list all sessions of all transfers
+  * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
 
 * 4.14.0
 
