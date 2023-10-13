@@ -32,13 +32,14 @@ module Aspera
         ATOM_EXT_PARAMS = [MAX_ITEMS, MAX_PAGES].concat(ATOM_PARAMS).freeze
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
+        STANDARD_PATH = '/aspera/faspex'
         private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
 
         class << self
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
-            urls.push("#{address_or_url}/aspera/faspex") unless address_or_url.end_with?('/aspera/faspex')
+            urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
 
             urls.each do |base_url|
               next unless base_url.start_with?('https://')

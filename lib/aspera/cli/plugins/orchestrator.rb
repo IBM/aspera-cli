@@ -8,10 +8,11 @@ module Aspera
     module Plugins
       class Orchestrator < Aspera::Cli::BasicAuthPlugin
         class << self
+          STANDARD_PATH = '/aspera/orchestrator'
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
-            urls.push("#{address_or_url}/aspera/orchestrator") unless address_or_url.end_with?('/aspera/faspex')
+            urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
 
             urls.each do |base_url|
               next unless base_url.match?('https?://')
