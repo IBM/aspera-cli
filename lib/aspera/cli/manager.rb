@@ -434,10 +434,10 @@ module Aspera
       def prompt_user_input(prompt, sensitive)
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
-        return $stdin.gets.chomp
+        line = $stdin.gets
+        raise 'Unexpected end of standard input' if line.nil?
+        return line.chomp
       end
-
-      private
 
       def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory
@@ -445,7 +445,7 @@ module Aspera
           raise CliBadArgument, "missing argument (#{expected}): #{descr}"
         end
         result = nil
-        sensitive = type.eql?(:option) && @declared_options[descr.to_sym][:sensitive]
+        sensitive = type.eql?(:option) && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
         default_prompt = "#{type}: #{descr}"
         # ask interactively
         case expected
@@ -464,6 +464,8 @@ module Aspera
         end
         return result
       end
+
+      private
 
       # generate command line option from option symbol
       def symbol_to_option(symbol, opt_val)

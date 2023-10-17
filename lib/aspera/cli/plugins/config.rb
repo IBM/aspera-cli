@@ -175,8 +175,7 @@ module Aspera
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
           proxy_creds = options.get_option(:proxy_credentials)
           if !proxy_creds.nil?
-            raise CliBadArgument, 'proxy credentials shall be an array (#{proxy_creds.class})' unless proxy_creds.is_a?(Array)
-            raise CliBadArgument, 'proxy credentials shall have two elements (#{proxy_creds.length})' unless proxy_creds.length.eql?(2)
+            raise CliBadArgument, "proxy_credentials shall have two elements (#{proxy_creds.length})" unless proxy_creds.length.eql?(2)
             @pac_exec.proxy_user = Rest.proxy_user = proxy_creds[0]
             @pac_exec.proxy_pass = Rest.proxy_pass = proxy_creds[1]
           end
@@ -859,7 +858,7 @@ module Aspera
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
               require 'aspera/preview/terminal'
-              return Main.result_status(Preview::Terminal.build(Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body, reserved_lines: 3))
+              return Main.result_status(Preview::Terminal.build(Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body))
             end
             OpenApplication.instance.uri(COFFEE_IMAGE)
             return Main.result_nothing
@@ -1141,8 +1140,8 @@ module Aspera
         def vault_value(name)
           m = name.match(/^(.+)\.(.+)$/)
           raise 'vault name shall match <name>.<param>' if m.nil?
+          # this raise exception if label not found:
           info = vault.get(label: m[1])
-          # raise "no such vault entry: #{m[1]}" if info.nil?
           value = info[m[2].to_sym]
           raise "no such entry value: #{m[2]}" if value.nil?
           return value

@@ -120,6 +120,7 @@ $(T)sh2: $(T).exists
 $(T)sh3: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares files upload --to-folder=@preset:misc.shares_upload $(LCL_TST_ASC_FILEPATH) --transfer=httpgw -Pnowss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy"}'
+	$(EXE_MAN) shares files upload --to-folder=@preset:misc.shares_upload 'faux:///testfile?1m' --transfer=httpgw -Pnowss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:misc.shares_upload@/$(LCL_TST_ASC_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy"}'
 	$(EXE_MAN) shares files delete @extend:@preset:misc.shares_upload@/$(LCL_TST_ASC_FILENAME)
 	@touch $@
@@ -570,9 +571,8 @@ $(T)aocffid: $(T).exists
 	$(EXE_MAN) aoc files permission @preset:misc.aoc_test_folder list
 	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
 	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":true}'
-	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
-	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file
 	$(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":false}'
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file
 	@touch $@
 #	$(EXE_MAN) aoc files modify @preset:misc.aoc_test_folder
 $(T)aocfpub: $(T).exists
@@ -967,6 +967,8 @@ $(T)conf_ascp_1: $(T).exists
 $(T)conf_ascp_2: $(T).exists
 	@echo $@
 	$(EXE_MAN) config ascp products list
+	$(EXE_MAN) $(TMP_CONF) config ascp products use 'Aspera Connect'
+	$(EXE_MAN) $(TMP_CONF) config ascp use /usr/bin/ascp
 	@touch $@
 $(T)conf_ascp_3: $(T).exists
 	@echo $@
@@ -987,6 +989,8 @@ $(T)conf_ascp_6: $(T).exists
 	@touch $@
 $(T)conf_ascp_7: $(T).exists
 	@echo $@
+	rm -fr $(HOME)/.aspera/sdk
+	$(EXE_MAN) config ascp install
 	rm -fr $(T)sdk_test_dir
 	$(EXE_MAN) config ascp install --sdk-folder=$(T)sdk_test_dir
 	@touch $@
@@ -994,10 +998,11 @@ $(T)conf_ascp_8: $(T)conf_ascp_7
 	@echo $@
 	$(EXE_MAN) config ascp info --sdk-folder=$(T)sdk_test_dir
 	@touch $@
-
 $(T)conf_pset_1: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset set conf_name param value
+	$(EXE_MAN) $(TMP_CONF) config preset unset conf_name param
+	$(EXE_NOMAN) config preset lookup --url=@preset:tst_faspex4.url --username=@preset:tst_faspex4.username
 	@touch $@
 $(T)conf_pset_2: $(T).exists
 	@echo $@
@@ -1030,22 +1035,36 @@ $(T)conf_list: $(T).exists
 $(T)conf_over: $(T).exists
 	@echo $@
 	$(EXE_MAN) $(TMP_CONF) config preset overview
-	$(EXE_MAN) $(TMP_CONF) config ascp use /usr/bin/ascp
+	@touch $@
+$(T)conf_gem: $(T).exists
+	@echo $@
+	$(EXE_MAN) config gem path
+	$(EXE_MAN) config gem version
+	$(EXE_MAN) config gem name
+	$(EXE_MAN) config folder
+	$(EXE_MAN) $(TMP_CONF) config initdemo
+	$(EXE_NOMAN) $(TMP_CONF) config initdemo
 	@touch $@
 $(T)conf_vault: $(T).exists
-	set -x;\
-	vault_file=$$(cd $(DIR_TMP);pwd -P)/sample_vault.bin;\
-	rm -f $$vault_file;\
-	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault @json:'{"type":"file","name":"'"$${vault_file}"'"}';\
-	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault_password _simple_one_
-	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
-	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault list
-	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault show mylabel
-	new_pass=_other_one_;\
-	$(EXE_NOMAN) $(TMP_CONF) -Pvlt config vault password $${new_pass};\
-	$(EXE_NOMAN) $(TMP_CONF) config preset set vlt vault_password $${new_pass}
-	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault list
-	$(EXE_MAN) $(TMP_CONF) -Pvlt config vault delete mylabel
+	set -x&&\
+	vault_file=$$(cd $(DIR_TMP);pwd -P)/sample_vault.bin&&\
+	rm -f $$vault_file&&\
+	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault @json:'{"type":"file","name":"'"$${vault_file}"'"}'
+	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault_password _simple_one_
+	$(EXE_MAN) $(TMP_CONF) config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
+	$(EXE_MAN) $(TMP_CONF) config vault list
+	$(EXE_MAN) $(TMP_CONF) config vault show mylabel
+	$(EXE_NOMAN) $(TMP_CONF) config preset ask mypreset <<< $$'username\npassword\n\ntheuser\nthepass\n'
+	$(EXE_NOMAN) $(TMP_CONF) config preset secure mypreset
+	new_pass=_other_one_&&\
+	$(EXE_NOMAN) $(TMP_CONF) config vault password $${new_pass}&&\
+	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault_password $${new_pass}
+	$(EXE_MAN) $(TMP_CONF) config vault list
+	$(EXE_MAN) $(TMP_CONF) config vault delete mylabel
+	$(EXE_MAN) $(TMP_CONF) config echo @vault:mypreset.password
+	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:bad$(EXE_ERR_END)
+	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:bad.password$(EXE_ERR_END)
+	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:mypreset.bad$(EXE_ERR_END)
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -1096,10 +1115,12 @@ $(T)conf_smtp: $(T).exists
 	@touch $@
 $(T)conf_pac: $(T).exists
 	@echo $@
-	$(EXE_MAN) config proxy_check --fpac=@file:$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com
+	$(EXE_MAN) config proxy_check --fpac=@file:$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 	@touch $@
 $(T)conf_check_gem: $(T).exists
 	@echo $@
+	$(EXE_MAN) config check_update
+	rm -f $(HOME)/.aspera/ascli/persist_store/version_last_check.txt
 	$(EXE_MAN) config check_update
 	@touch $@
 $(T)conf_doc: $(T).exists
@@ -1137,7 +1158,7 @@ $(T)conf_hint: $(T).exists
 	-$(EXE_MAN) config hint Aspera::RestCallError 'Signature has expired'
 	-$(EXE_MAN) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'
 	@touch $@
-tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
+tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
 $(T)prev_check: $(T).exists
 	@echo $@

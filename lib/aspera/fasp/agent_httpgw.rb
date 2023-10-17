@@ -49,7 +49,7 @@ module Aspera
 
       def initialize(path, size)
         @path = path
-        @total_size = size
+        @size = size
         @offset = 0
         # we cache large chunks, anyway most of them will be the same size
         @chunk_by_size = {}
@@ -57,7 +57,7 @@ module Aspera
 
       def read(chunk_size)
         return nil if eof?
-        bytes_to_read = [chunk_size, @total_size - @offset].min
+        bytes_to_read = [chunk_size, @size - @offset].min
         @offset += bytes_to_read
         @chunk_by_size[bytes_to_read] = "\x00" * bytes_to_read unless @chunk_by_size.key?(bytes_to_read)
         return @chunk_by_size[bytes_to_read]
@@ -67,7 +67,7 @@ module Aspera
       end
 
       def eof?
-        return @offset >= @total_size
+        return @offset >= @size
       end
     end
 
@@ -380,6 +380,8 @@ module Aspera
       private
 
       def initialize(opts)
+        # init super class without arguments
+        super()
         Log.dump(:in_options, opts)
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
@@ -392,17 +394,18 @@ module Aspera
           available = DEFAULT_OPTIONS.map { |k, v| "#{k}(#{v})"}.join(', ')
           raise "Missing mandatory parameter for HTTP GW in transfer_info: url. Allowed parameters: #{available}."
         end
-        # remove /v1 from end
+        # remove /v1 from end of user-provided GW url: we need the base url only
         @options[:url].gsub(%r{/v1/*$}, '')
-        super()
         @gw_api = Rest.new({base_url: @options[:url]})
         @api_info = @gw_api.read('v1/info')[:data]
         Log.dump(:api_info, @api_info)
-        if @options[:api_version].nil?
-          # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
-          @options[:api_version] = API_V2
-          # is the latest supported? else revert to old api
-          @options[:api_version] = API_V1 unless @api_info['endpoints'].any?{|i|i.include?(@options[:api_version])}
+        # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
+        # is the latest supported? else revert to old api
+        if !@options[:api_version].eql?(API_V1)
+          if !@api_info['endpoints'].any?{|i|i.include?(@options[:api_version])}
+            Log.log.warn{"API version #{@options[:api_version]} not supported, reverting to #{API_V1}"}
+            @options[:api_version] = API_V1
+          end
         end
         @options.freeze
         Log.dump(:final_options, @options)

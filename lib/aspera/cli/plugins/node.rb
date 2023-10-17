@@ -526,9 +526,9 @@ module Aspera
             )
             require 'aspera/preview/terminal'
             terminal_options = options.get_option(:query, default: {}).symbolize_keys
-            terminal_options[:reserve] ||= 3
             allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
-            raise "invalid options: #{terminal_options.keys.join(', ')}" unless (terminal_options.keys - allowed_options).empty?
+            unknown_options = terminal_options.keys - allowed_options
+            raise "invalid options: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
             return Main.result_status(Preview::Terminal.build(result[:http].body, **terminal_options))
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
