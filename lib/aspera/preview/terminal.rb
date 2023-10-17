@@ -16,16 +16,16 @@ module Aspera
       TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
       private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS
       class << self
-        def build(blob, reserved_lines: 0, double_precision: true)
-          return iterm_display_image(blob) if iterm_supported?
+        def build(blob, reserve: 0, text: false, double: true)
+          return iterm_display_image(blob) if iterm_supported? && !text
           image = Magick::ImageList.new.from_blob(blob)
           (term_rows, term_columns) = IO.console.winsize
-          term_rows -= reserved_lines
+          term_rows -= reserve
           # compute scaling to fit terminal
           fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
           # TODO: retrieve terminal font ratio using some termcap ?
           font_ratio = 1.7
-          height_ratio = double_precision ? 2.0 : 1.0
+          height_ratio = double ? 2.0 : 1.0
           image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
           # get all pixel colors, adjusted for Rainbow
           pixel_colors = []
@@ -39,10 +39,10 @@ module Aspera
           # now generate text
           text_pixels = []
           pixel_colors.each_with_index do |row_data, row|
-            next if double_precision && row.odd?
+            next if double && row.odd?
             row_data.each_with_index do |pixel_rgb, col|
               text_pixels.push("\n") if col.eql?(0) && !row.eql?(0)
-              if double_precision
+              if double
                 text_pixels.push(Rainbow('▄').background(pixel_rgb).foreground(pixel_colors[row + 1][col]))
               else
                 text_pixels.push(Rainbow(' ').background(pixel_rgb))
