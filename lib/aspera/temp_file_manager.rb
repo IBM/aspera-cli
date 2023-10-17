@@ -14,14 +14,21 @@ module Aspera
     FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
     private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
     include Singleton
+    attr_accessor :cleanup_on_exit
+
     def initialize
       @created_files = []
+      @cleanup_on_exit = true
+    end
+
+    def delete_file(filepath)
+      File.delete(filepath) if @cleanup_on_exit
     end
 
     # call this on process exit
     def cleanup
       @created_files.each do |filepath|
-        File.delete(filepath) if File.file?(filepath)
+        delete_file(filepath) if File.file?(filepath)
       end
       @created_files = []
     end
@@ -54,7 +61,7 @@ module Aspera
         # check age of file, delete too old
         if File.file?(file_path) && (age_sec > FILE_LIST_AGE_MAX_SEC)
           Log.log.debug{"garbage collecting #{name}"}
-          File.delete(file_path)
+          delete_file(file_path)
         end
       end
     end

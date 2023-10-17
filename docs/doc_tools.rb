@@ -116,8 +116,8 @@ REPLACEMENTS = [
   ['$$', '$'],
   # hidden parameters to make test work
   [/OPTST_[A-Z0-5]+/, ''],
-  ['LOCAL_SAMPLE_FILENAME', 'testfile.bin'],
-  ['LOCAL_SAMPLE_FILEPATH', 'testfile.bin'],
+  [/LCL_TST_(UTF|ASC)_FILE(NAME|PATH)/, 'testfile.bin'],
+  ['LCL_SYNC_DIR', '/data/localsync'],
   ['HSTS_UPLOADED_FILE', 'testfile.bin'],
   ['HSTS_FOLDER_UPLOAD', 'folder_1'],
   [%q['"CF_LOCAL_SYNC_DIR"'], 'syncdir'],

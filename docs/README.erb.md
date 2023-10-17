@@ -760,9 +760,11 @@ So special character handling (quotes, spaces, env vars, ...) is handled by the 
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not easy: It is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application (here Ruby).
+MS Windows command line parsing is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application.
+Typically, Windows applications use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
-As far as <%=tool%> is concerned: it is close to a Linux shell parsing.
+As far as <%=tool%> is concerned: the application is Ruby.
+It has its own parsing algorithm, close to a Linux shell parsing.
 
 Thanksfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
 One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
@@ -787,7 +789,7 @@ The following examples give the same result on Windows:
   <%cmd%> conf echo @json:"{\"url\":\"https://...\"}"
   ```
 
-On Windows, `cmd.exe` is typically used to start <%tool%>.
+More details: on Windows, `cmd.exe` is typically used to start <%tool%>.
 `cmd.exe` handles some special characters: `^"<>|%&`.
 Basically it handles I/O redirections (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
@@ -4617,7 +4619,15 @@ The following parameters in option `query` are supported:
 
 Admin only: If the value `ALL` is provided to option `box`, then all packages are selected.
 
-### Faspex 5: List all shared inboxes
+### Faspex 5: List all shared inboxes and workgroups
+
+If ypou are a regular, user, list workgroups you belong to:
+
+```bash
+<%=cmd%> faspex5 admin res workgroup list
+```
+
+If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
 
 ```bash
 <%=cmd%> faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,name

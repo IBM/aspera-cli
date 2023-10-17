@@ -766,9 +766,11 @@ So special character handling (quotes, spaces, env vars, ...) is handled by the 
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not easy: It is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application (here Ruby).
+MS Windows command line parsing is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application.
+Typically, Windows applications use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
-As far as `ascli` is concerned: it is close to a Linux shell parsing.
+As far as `ascli` is concerned: the application is Ruby.
+It has its own parsing algorithm, close to a Linux shell parsing.
 
 Thanksfully, `ascli` provides a command to check the value of an argument after parsing: `config echo`.
 One can also run `ascli` with option `--log-level=debug` to display the command line after parsing.
@@ -793,7 +795,7 @@ The following examples give the same result on Windows:
    conf echo @json:"{\"url\":\"https://...\"}"
   ```
 
-On Windows, `cmd.exe` is typically used to start .
+More details: on Windows, `cmd.exe` is typically used to start .
 `cmd.exe` handles some special characters: `^"<>|%&`.
 Basically it handles I/O redirections (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
@@ -3120,6 +3122,7 @@ OPTIONS: global
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
+        --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey hint initdemo open plugins preset proxy_check smtp_settings vault wizard
@@ -3164,7 +3167,7 @@ OPTIONS:
 COMMAND: shares
 SUBCOMMANDS: admin files health
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --type=ENUM                  Type of user/group for operations: [any], local, ldap, saml
@@ -3173,7 +3176,7 @@ OPTIONS:
 COMMAND: node
 SUBCOMMANDS: access_keys api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --validator=VALUE            Identifier of validator (optional for central)
@@ -3186,7 +3189,7 @@ OPTIONS:
 COMMAND: orchestrator
 SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --result=VALUE               Specify result value as: 'work_step:parameter'
@@ -3198,7 +3201,7 @@ OPTIONS:
 COMMAND: bss
 SUBCOMMANDS: subscription
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
 
@@ -3206,7 +3209,7 @@ OPTIONS:
 COMMAND: alee
 SUBCOMMANDS: entitlement
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
 
@@ -3226,7 +3229,7 @@ OPTIONS:
 COMMAND: faspex5
 SUBCOMMANDS: admin bearer_token gateway health packages postprocessing shared_folders user version
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --client-id=VALUE            OAuth client identifier
@@ -3256,7 +3259,7 @@ OPTIONS:
 COMMAND: faspex
 SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --link=VALUE                 Public link for specific operation
@@ -3270,7 +3273,7 @@ OPTIONS:
 COMMAND: preview
 SUBCOMMANDS: check events scan test trevents
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
@@ -3306,7 +3309,7 @@ OPTIONS:
 COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --auth=ENUM                  OAuth type of authentication: web, [jwt]
@@ -3337,7 +3340,7 @@ OPTIONS:
 COMMAND: server
 SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --ssh-keys=VALUE             SSH key path list (Array or single)
@@ -3349,7 +3352,7 @@ OPTIONS:
 COMMAND: console
 SUBCOMMANDS: health transfer
 OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://org.asperafiles.com
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --filter-from=DATE           Only after date
@@ -4459,10 +4462,10 @@ aoc files short_link create testdst public
 aoc files short_link list /testdst private
 aoc files show %id:my_file_id
 aoc files show /200KB.1
-aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/testdst"}}'
-aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/testdst","reset":true}]}'
-aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/testdst"}}'
-aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/testdst","reset":true}]}'
+aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
+aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
+aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
+aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_aoc_media_file
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder_nopass
@@ -4666,11 +4669,11 @@ server md5sum my_server_folder/testfile.bin
 server mkdir my_server_folder --logger=stdout
 server mkdir my_upload_folder/target_hot
 server mv my_upload_folder/200KB.2 my_upload_folder/to.delete
-server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"LOCAL_SYNC_DIR"}}'
+server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"}}'
 server sync admin status --sync-info=@json:'{"name":"sync2"}'
-server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"LOCAL_SYNC_DIR"}]}'
-server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_server_folder","local_dir":"LOCAL_SYNC_DIR","reset":true}]}'
-server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"my_server_folder"},"reset":true,"quiet":false}'
+server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/localsync"}]}'
+server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_server_folder","local_dir":"/data/localsync","reset":true}]}'
+server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"},"remote":{"path":"my_server_folder"},"reset":true,"quiet":false}'
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=my_server_folder
 server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
 server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"filelist.txt"'"}' --to-folder=my_server_folder
@@ -5057,10 +5060,10 @@ node ssync start %name:my_node_sync
 node ssync state %name:my_node_sync
 node ssync stop %name:my_node_sync
 node ssync summary %name:my_node_sync
-node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"LOCAL_SYNC_DIR"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"LOCAL_SYNC_DIR","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
 node transfer sessions
 node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node_simple.example.com/path@","username":"my_username","password":"my_password"}'
@@ -5296,7 +5299,15 @@ The following parameters in option `query` are supported:
 
 Admin only: If the value `ALL` is provided to option `box`, then all packages are selected.
 
-### Faspex 5: List all shared inboxes
+### Faspex 5: List all shared inboxes and workgroups
+
+If ypou are a regular, user, list workgroups you belong to:
+
+```bash
+ascli faspex5 admin res workgroup list
+```
+
+If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
 
 ```bash
 ascli faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,name

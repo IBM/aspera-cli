@@ -260,6 +260,7 @@ module Aspera
         options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
         options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
         options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
+        options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         # parse declared options
         options.parse_options!
       end
