@@ -56,9 +56,7 @@ module Aspera
               version = res_s['XRD']['application']['version']
               # take redirect if any
               return {version: version, url: result[:http].uri}
-            rescue Errno::ECONNREFUSED
-              next
-            rescue Aspera::RestCallError => e
+            rescue StandardError => e
               Log.log.debug{"detect error: #{e}"}
             end
             return nil

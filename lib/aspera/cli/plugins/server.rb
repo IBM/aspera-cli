@@ -67,8 +67,8 @@ module Aspera
                 if version.match?(/^SSH-2.0-/)
                   return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url}
                 end
-              rescue Errno::ECONNREFUSED
-                next
+              rescue StandardError => e
+                Log.log.debug{"detect error: #{e}"}
               end
             end
             return nil

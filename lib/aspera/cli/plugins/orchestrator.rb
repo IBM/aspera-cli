@@ -25,9 +25,7 @@ module Aspera
                 version: result[:data]['remote_orchestrator_info']['orchestrator-version'],
                 url:     url[0..url.index(test_endpoint) - 2]
               }
-            rescue Errno::ECONNREFUSED
-              next
-            rescue Aspera::RestCallError => e
+            rescue StandardError => e
               Log.log.debug{"detect error: #{e}"}
             end
             return nil

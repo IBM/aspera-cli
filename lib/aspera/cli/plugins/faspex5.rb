@@ -52,9 +52,7 @@ module Aspera
                 version: result[:http]['x-ibm-aspera'] || '5',
                 url:     result[:http].uri.to_s[0..url_length]
               }
-            rescue Errno::ECONNREFUSED
-              next
-            rescue Aspera::RestCallError => e
+            rescue StandardError => e
               Log.log.debug{"detect error: #{e}"}
             end
             return nil
