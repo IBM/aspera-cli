@@ -161,7 +161,7 @@ module Aspera
         raise "unsupported operation : #{call_data[:operation]}"
       end
       if call_data.key?(:json_params) && !call_data[:json_params].nil?
-        req.body = JSON.generate(call_data[:json_params])
+        req.body = JSON.generate(call_data[:json_params]) # , ascii_only: true
         Log.dump('body JSON data', call_data[:json_params])
         req['Content-Type'] = 'application/json'
         # call_data[:headers]['Accept']='application/json'
@@ -183,6 +183,7 @@ module Aspera
       end
       # :type = :basic
       req.basic_auth(call_data[:auth][:username], call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
+      Log.dump(:req_body, req.body)
       return req
     end
 
