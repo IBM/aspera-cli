@@ -13,7 +13,7 @@ all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tcons
 # tnagios: already included
 
 # tests that require user interaction
-interactive: $(T)f5_webauth $(T)aoc_webauth
+interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
 # all tests, including interactive ones
 full: all interactive
@@ -43,7 +43,7 @@ EXE_ERR_END=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test
 LCL_TST_ASC_FILENAME=datafile.bin
 LCL_TST_ASC_FILEPATH=$(DIR_TMP)$(LCL_TST_ASC_FILENAME)
 LCL_TST_UTF_FILENAME='spécial{\#😀"'
-LCL_TST_UTF_FILEPATH=$(DIR_TMP)$(LCL_TST_ASC_FILENAME)
+LCL_TST_UTF_FILEPATH=$(DIR_TMP)$(LCL_TST_UTF_FILENAME)
 # sync dir must be an absolute path
 LCL_SYNC_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
 
@@ -63,19 +63,14 @@ clean::
 
 ###########
 # Tests
-$(DIR_TMP).exists:
-	mkdir -p $(DIR_TMP)
-	touch $@
-$(LCL_TST_ASC_FILEPATH): $(DIR_TMP).exists
-	echo 'This is a small test file' > $(LCL_TST_ASC_FILEPATH)
-$(LCL_TST_UTF_FILEPATH): $(DIR_TMP).exists
-	echo 'This is a small test file' > $(LCL_TST_UTF_FILEPATH)
 # all test cases depend on this
-$(T).exists: $(LCL_TST_ASC_FILEPATH) $(LCL_TST_UTF_FILEPATH)
+$(T).exists:
 	mkdir -p $(T)
+	echo 'This is a small test file' > $(LCL_TST_ASC_FILEPATH)
+	echo 'This is a small test file' > $(LCL_TST_UTF_FILEPATH)
 	@touch $@
 clean::
-	rm -f $(LCL_TST_ASC_FILEPATH)
+	rm -f $(LCL_TST_ASC_FILEPATH) $(LCL_TST_UTF_FILEPATH)
 	rm -fr $(T)
 	rm -f $(DIR_TOP).rspec_status
 $(T)unit: $(T).exists
@@ -102,6 +97,7 @@ $(T)shadm: $(T).exists
 	$(EXE_MAN) shares admin node list
 	$(EXE_MAN) shares admin group list
 	$(EXE_MAN) shares admin user list
+	$(EXE_MAN) shares admin user list --type=local
 	$(EXE_MAN) shares admin user app_authorizations 1 show
 	$(EXE_MAN) shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
 	$(EXE_MAN) shares admin user share_permissions 1 list
@@ -168,7 +164,7 @@ $(T)serv_sync: $(T)serv_upload
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filelist.txt
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filepairlist.txt
-	$(EXE_NOMAN) conf echo @extend:@preset:misc.server_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
+	$(EXE_NOMAN) config echo @extend:@preset:misc.server_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=@preset:misc.server_folder
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"$(DIR_TMP)filepairlist.txt"'"}'
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:misc.server_folder 
@@ -327,6 +323,7 @@ $(T)cons_nagios: $(T).exists
 $(T)cons_wizard: $(T).exists
 	@echo $@
 	$(EXE_NOMAN) config detect @preset:tst_console.url
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_console.url console -Ptst_console
 	@touch $@
 $(T)cons1: $(T).exists
 	@echo $@
@@ -419,6 +416,9 @@ $(T)nd_ak1: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name node_info /
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name browse /
+	@$(EXE_ERR_START)node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @json:'{}'$(EXE_ERR_END)
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / exec:'f["name"].end_with?(".jpg")'
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / @ruby:'->(f){f["name"].end_with?(".jpg")}'
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find /
 	@touch $@
 $(T)nd_ak2: $(T).exists
@@ -498,7 +498,7 @@ $(T)aocfbt: $(T).exists
 	@touch $@
 $(T)aocffin: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc files find / --query='\.partial$$'
+	$(EXE_MAN) aoc files find / '\.partial$$'
 	@touch $@
 $(T)aocfmkd: $(T).exists
 	@echo $@
@@ -569,7 +569,10 @@ $(T)aocffid: $(T).exists
 	$(EXE_MAN) aoc files show /200KB.1
 	$(EXE_MAN) aoc files permission @preset:misc.aoc_test_folder list
 	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
+	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":true}'
+	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
 	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file
+	$(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":false}'
 	@touch $@
 #	$(EXE_MAN) aoc files modify @preset:misc.aoc_test_folder
 $(T)aocfpub: $(T).exists
@@ -1123,6 +1126,10 @@ $(T)conf_echo: $(T).exists
 	  $(EXE_NOMAN) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
 	done
 	@touch $@
+$(T)conf_interactive: $(T).exists
+	@echo $@
+	$(EXE_MAN) config echo @secret:
+	@touch $@
 $(T)conf_hint: $(T).exists
 	@echo $@
 	-$(EXE_MAN) config hint Aspera::Fasp::Error 'Remote host is not who we expected'
@@ -1231,6 +1238,7 @@ $(T)f5_p3: $(T).exists
 	set -x&&\
 	package_id=$$($(EXE_NOMAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 packages show "$${package_id}"&&\
+	$(EXE_MAN) faspex5 packages status "$${package_id}"&&\
 	$(EXE_MAN) faspex5 packages receive "$${package_id}" --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	@touch $@
@@ -1251,6 +1259,11 @@ $(T)f5_pack_wrkgrp: $(T).exists
 	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:misc.faspex5_workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
 	$(EXE_MAN) faspex5 packages show --box=@preset:misc.faspex5_workgroup --group-type=workgroups "$${package_id}"&&\
 	$(EXE_MAN) faspex5 packages receive --box=@preset:misc.faspex5_workgroup --group-type=workgroups "$${package_id}" --to-folder=$(DIR_TMP).
+	@touch $@
+$(T)f5_sh_fold: $(T).exists
+	@echo $@
+	$(EXE_MAN) faspex5 shared list
+	$(EXE_MAN) faspex5 shared browse %name:@preset:misc.faspex_src
 	@touch $@
 $(T)f5_user_res: $(T).exists
 	@echo $@
@@ -1288,12 +1301,14 @@ $(T)f5_error: $(T).exists
 	@touch $@
 $(T)f5_webauth: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) -N -Pf5_web faspex5 version
+	$(EXE_NOMAN) -Pf5_web faspex5 version
 	@touch $@
-$(T)f5_detect: $(T).exists
+$(T)f5_wizard: $(T).exists
 	@echo $@
-	$(EXE_NOMAN) config detect @preset:tst_faspex5_jwt.url
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_faspex5_jwt.url faspex5 --pkeypath=@preset:tst_server_bykey.ssh_keys -Ptst_faspex5_jwt
+	@$(EXE_ERR_START) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_ERR_END)
 	$(EXE_MAN) -N config detect @preset:tst_faspex5_jwt.url
+	$(EXE_NOMAN) config detect @preset:tst_faspex5_jwt.url
 	@touch $@
 $(T)f5_fxgw: $(T).exists
 	@echo $@
@@ -1312,5 +1327,5 @@ $(T)f5_postproc: $(T).exists
 	kill -INT $$(cat $(T)server_pid)
 	@touch $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_detect $(T)f5_fxgw
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold
 
