@@ -48,23 +48,26 @@ module Aspera
       attr_reader :path, :size
 
       def initialize(path, size)
-        @offset = 0
-        @size = size
         @path = path
+        @total_size = size
+        @offset = 0
+        # we cache large chunks, anyway most of them will be the same size
+        @chunk_by_size = {}
       end
 
-      def read(size)
+      def read(chunk_size)
         return nil if eof?
-        bytes_to_read = [size, @size - @offset].min
+        bytes_to_read = [chunk_size, @total_size - @offset].min
         @offset += bytes_to_read
-        return "\x00" * bytes_to_read
+        @chunk_by_size[bytes_to_read] = "\x00" * bytes_to_read unless @chunk_by_size.key?(bytes_to_read)
+        return @chunk_by_size[bytes_to_read]
       end
 
       def close
       end
 
       def eof?
-        return @offset >= @size
+        return @offset >= @total_size
       end
     end
 
