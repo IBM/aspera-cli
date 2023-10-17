@@ -91,11 +91,11 @@ module Aspera
           return "--#{name.to_s.gsub(OPTION_SEP_SYMB, OPTION_SEP_LINE)}"
         end
 
-        def validate_type(what, value, type_list)
+        def validate_type(what, descr, value, type_list)
           return nil if type_list.nil?
           raise 'internal error: types must be a Class Array' unless type_list.is_a?(Array) && type_list.all?(Class)
           raise CliBadArgument,
-            "#{what} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
+            "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
             type_list.any?{|t|value.is_a?(t)}
         end
       end
@@ -207,7 +207,7 @@ module Aspera
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if !aliases.nil? && aliases.key?(result)
-        self.class.validate_type("Argument #{descr}", result, type) unless result.nil? && !mandatory
+        self.class.validate_type(:argument, descr, result, type) unless result.nil? && !mandatory
         return result
       end
 
@@ -248,7 +248,7 @@ module Aspera
             set_option(option_symbol, result, 'interactive')
           end
         end
-        self.class.validate_type("Option #{option_symbol}", result, attributes[:types]) unless result.nil? && !mandatory
+        self.class.validate_type(:option, option_symbol, result, attributes[:types]) unless result.nil? && !mandatory
         return result
       end
 
@@ -260,6 +260,7 @@ module Aspera
         value = ExtendedValue.instance.evaluate(value)
         value = Manager.enum_to_bool(value) if attributes[:values].eql?(BOOLEAN_VALUES)
         Log.log.debug{"(#{attributes[:read_write]}/#{where}) set #{option_symbol}=#{value}"}
+        self.class.validate_type(:option, option_symbol, value, attributes[:types])
         case attributes[:read_write]
         when :accessor
           attributes[:accessor].value = value
