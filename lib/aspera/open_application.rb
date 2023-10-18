@@ -27,7 +27,7 @@ module Aspera
       def uri_graphical(uri)
         case Aspera::Environment.os
         when Aspera::Environment::OS_X       then return system('open', uri.to_s)
-        when Aspera::Environment::OS_WINDOWS then return system('start', 'explorer', '"' + uri.to_s + '"')
+        when Aspera::Environment::OS_WINDOWS then return system('start', 'explorer', %Q{"#{uri}"})
         when Aspera::Environment::OS_LINUX   then return system('xdg-open', uri.to_s)
         else
           raise "no graphical open method for #{Aspera::Environment.os}"
@@ -38,7 +38,7 @@ module Aspera
         if ENV.key?('EDITOR')
           system(ENV['EDITOR'], file_path.to_s)
         elsif Aspera::Environment.os.eql?(Aspera::Environment::OS_WINDOWS)
-          system('notepad.exe', '"' + file_path.to_s + '"')
+          system('notepad.exe', %Q{"#{file_path}"})
         else
           uri_graphical(file_path.to_s)
         end
@@ -59,9 +59,9 @@ module Aspera
       when :text
         case the_url.to_s
         when /^http/
-          puts "USER ACTION: please enter this url in a browser:\n" + the_url.to_s.red + "\n"
+          puts "USER ACTION: please enter this url in a browser:\n#{the_url.to_s.red}\n"
         else
-          puts "USER ACTION: open this:\n" + the_url.to_s.red + "\n"
+          puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
         end
       else
         raise StandardError, "unsupported url open method: #{@url_method}"

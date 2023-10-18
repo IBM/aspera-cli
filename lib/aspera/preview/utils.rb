@@ -11,18 +11,17 @@ module Aspera
     class Utils
       # from bash manual: meta-character need to be escaped
       BASH_SPECIAL_CHARACTERS = "|&;()<> \t#\n"
-      # shell exit code when command is not found
-      BASH_EXIT_NOT_FOUND = 127
       # external binaries used
       EXTERNAL_TOOLS = %i[ffmpeg ffprobe convert composite optipng unoconv].freeze
       TEMP_FORMAT = 'img%04d.jpg'
-      private_constant :BASH_SPECIAL_CHARACTERS, :BASH_EXIT_NOT_FOUND, :EXTERNAL_TOOLS, :TEMP_FORMAT
+      private_constant :BASH_SPECIAL_CHARACTERS, :EXTERNAL_TOOLS, :TEMP_FORMAT
 
       class << self
         # returns string with single quotes suitable for bash if there is any bash meta-character
         def shell_quote(argument)
           return argument unless argument.chars.any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
-          return "'" + argument.gsub(/'/){|_s| "'\"'\"'"} + "'"
+          # surround with single quotes, and escape single quotes
+          return %Q{'#{argument.gsub("'"){|_s| %q{'"'"'}}}'}
         end
 
         # check that external tools can be executed
@@ -41,27 +40,16 @@ module Aspera
         def external_command(command_symb, command_args)
           raise "unexpected command #{command_symb}" unless EXTERNAL_TOOLS.include?(command_symb)
           # build command line, and quote special characters
-          command = command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
-          Log.log.debug{"cmd=#{command}".blue}
-          # capture3: only in ruby2+
-          if Open3.respond_to?(:capture3)
-            stdout, stderr, exit_status = Open3.capture3(command)
-          else
-            stderr = '<merged with stdout>'
-            stdout = %x(#{command} 2>&1)
-            exit_status = $CHILD_STATUS
-          end
-          if BASH_EXIT_NOT_FOUND.eql?(exit_status)
-            raise "Error: #{command_symb} is not in the PATH"
-          end
-          unless exit_status.success?
-            Log.log.error{"command line: #{command}"}
-            Log.log.error{"Error code: #{exit_status}"}
+          command_line = command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
+          Log.log.debug{"cmd=#{command_line}".blue}
+          stdout, stderr, status = Open3.capture3(command_line)
+          unless status.success?
+            Log.log.error{"status: #{status}"}
             Log.log.error{"stdout: #{stdout}"}
             Log.log.error{"stderr: #{stderr}"}
-            raise "#{command_symb} error #{exit_status}"
+            raise "#{command_symb} error #{status}"
           end
-          return {status: exit_status, stdout: stdout}
+          return {status: status, stdout: stdout}
         end
 
         def ffmpeg(a)

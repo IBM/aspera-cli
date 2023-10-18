@@ -72,6 +72,7 @@ module Aspera
         DEFAULT_PRIVKEY_LENGTH = 4096
         COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
+        GEM_CHECK_DATE_FMT = '%Y/%m/%d'
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -229,7 +230,6 @@ module Aspera
         def periodic_check_newer_gem_version
           # get verification period
           delay_days = options.get_option(:version_check_days, mandatory: true)
-          Log.log.debug{"check days: #{delay_days}"}
           # check only if not zero day
           return if delay_days.eql?(0)
           # get last date from persistency
@@ -240,17 +240,11 @@ module Aspera
             id:      'version_last_check')
           # get persisted date or nil
           current_date = Date.today
-          last_check_days =
-            begin
-              current_date - Date.strptime(last_check_array.first, '%Y/%m/%d')
-            rescue StandardError
-              # negative value will force check
-              -1
-            end
-          Log.log.debug{"days elapsed: #{last_check_days}"}
-          return if last_check_days < delay_days
+          last_check_days = (current_date - Date.strptime(last_check_array.first, GEM_CHECK_DATE_FMT)) rescue nil
+          Log.log.debug{"gem check new version: #{delay_days}, #{last_check_days}, #{current_date}, #{last_check_array}"}
+          return if !last_check_days.nil? && last_check_days < delay_days
           # generate timestamp
-          last_check_array[0] = current_date.strftime('%Y/%m/%d')
+          last_check_array[0] = current_date.strftime(GEM_CHECK_DATE_FMT)
           check_date_persist.save
           # compare this version and the one on internet
           check_data = check_gem_version
@@ -294,9 +288,9 @@ module Aspera
             require 'openssl'
             priv_key = OpenSSL::PKey::RSA.new(length)
             File.write(path, priv_key.to_s)
-            File.write(path + '.pub', priv_key.public_key.to_s)
+            File.write("#{path}.pub", priv_key.public_key.to_s)
             Environment.restrict_file_access(path)
-            Environment.restrict_file_access(path + '.pub')
+            Environment.restrict_file_access("#{path}.pub")
             nil
           end
 
@@ -798,14 +792,14 @@ module Aspera
             return Main.result_nothing
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
-            section = '#' + section unless section.nil?
+            section = "##{section}" unless section.nil?
             OpenApplication.instance.uri("#{@info[:help]}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
             private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIVKEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
-            return Main.result_status('Generated key: ' + private_key_path)
+            return Main.result_status("Generated key: #{private_key_path}")
           when :echo # display the content of a value given on command line
             result = {type: :other_struct, data: options.get_next_argument('value')}
             # special for csv
@@ -894,7 +888,7 @@ module Aspera
             else
               Log.log.info{"Creating Demo server preset: #{DEMO_SERVER_PRESET}"}
               @config_presets[DEMO_SERVER_PRESET] = {
-                'url'                                    => 'ssh://' + DEMO + '.asperasoft.com:33001',
+                'url'                                    => "ssh://#{DEMO}.asperasoft.com:33001",
                 'username'                               => ASPERA,
                 'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA # cspell:disable-line
               }

@@ -124,7 +124,7 @@ module Aspera
               url:         instance_url,
               username:    myself['email'],
               auth:        :jwt.to_s,
-              private_key: '@file:' + private_key_path
+              private_key: "@file:#{private_key_path}"
             }
             # set only if non nil
             %i[client_id client_secret].each do |s|
@@ -439,13 +439,13 @@ module Aspera
             return {type: :single_object, data: result['aoc']['bssSubscription']}
           when :ats
             ats_api = Rest.new(aoc_api.params.deep_merge({
-              base_url: aoc_api.params[:base_url] + '/admin/ats/pub/v1',
+              base_url: "#{aoc_api.params[:base_url]}/admin/ats/pub/v1",
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             return Ats.new(@agents.merge(skip_node_options: true)).execute_action_gen(ats_api)
           when :analytics
             analytics_api = Rest.new(aoc_api.params.deep_merge({
-              base_url: aoc_api.params[:base_url].gsub('/api/v1', '') + '/analytics/v2',
+              base_url: "#{aoc_api.params[:base_url].gsub('/api/v1', '')}/analytics/v2",
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             command_analytics = options.get_next_command(%i[application_events transfers])
@@ -501,7 +501,7 @@ module Aspera
               when :self, :organization then resource_type
               when :client_registration_token, :client_access_key then "admin/#{resource_type}s"
               when :application then 'admin/apps_new'
-              when :dropbox then resource_type.to_s + 'es'
+              when :dropbox then "#{resource_type}es"
               when :kms_profile then "integrations/#{resource_type}s"
               else "#{resource_type}s"
               end

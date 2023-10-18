@@ -21,8 +21,15 @@ module Aspera
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
     def execute_single(action_sym, args=nil)
-      # concatenate arguments, enclose in double quotes, protect backslash and double quotes, add "as_" command and as_exit
-      stdin_input = (args || []).map{|v| '"' + v.gsub(/["\\]/n) {|s| '\\' + s } + '"'}.unshift('as_' + action_sym.to_s).join(' ') + "\nas_exit\n"
+      # add "as_" command
+      main_command = ["as_#{action_sym}"]
+      args&.each do |v|
+        # enclose args in double quotes, protect backslash and double quotes
+        main_command.push(%Q{"#{v.gsub(/["\\]/n){|s|"\\#{s}"}}"})
+      end
+      # execute the main command and then exit
+      stdin_input = [main_command.join(' '), 'as_exit', ''].join("\n")
+      Log.log.debug{"execute_single:#{stdin_input}"}
       # execute, get binary output
       byte_buffer = @command_executor.execute('ascmd', stdin_input).unpack('C*')
       raise 'ERROR: empty answer from server' if byte_buffer.empty?
@@ -59,7 +66,7 @@ module Aspera
 
       def message; "ascmd: (#{errno}) #{errstr}"; end
 
-      def extended_message; "ascmd: errno=#{errno} errstr=\"#{errstr}\" command=\"#{command}\" args=#{args}"; end
+      def extended_message; "ascmd: errno=#{errno} errstr=\"#{errstr}\" command=#{command} args=#{args.join(',')}"; end
     end # Error
 
     # description of result structures (see ascmdtypes.h). Base types are big endian

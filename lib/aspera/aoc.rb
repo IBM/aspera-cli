@@ -358,7 +358,8 @@ module Aspera
             # unknown user: create it as external user
             full_recipient_info = create('contacts', {
               'current_workspace_id' => ws_id,
-              'email'                => short_recipient_info}.merge(new_user_option))[:data]
+              'email'                => short_recipient_info
+            }.merge(new_user_option))[:data]
           end
           short_recipient_info = if entity_type.eql?('dropboxes')
             {'id' => full_recipient_info['id'], 'type' => 'dropbox'}
@@ -471,7 +472,10 @@ module Aspera
                 'package_id'        => app_info[:package_id],
                 'package_name'      => app_info[:package_name],
                 'package_operation' => transfer_type
-              }}}})
+              }
+            }
+          }
+        })
       end
       transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['files']['node_id'] = app_info[:node_info]['id']
       transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['app'] = app_info[:app]
@@ -500,7 +504,12 @@ module Aspera
                 'shared_by_email'   => current_user_info['email'],
                 # 'shared_with_name'  => access_id,
                 'access_key'        => app_info[:node_info]['access_key'],
-                'node'              => app_info[:node_info]['name']}}}}}
+                'node'              => app_info[:node_info]['name']
+              }
+            }
+          }
+        }
+      }
       create_param.deep_merge!(default_params)
       if create_param.key?('with')
         contact_info = lookup_by_name(
