@@ -19,7 +19,7 @@ interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 full: all interactive
 
 # just to test nagios, but those are tested in the respective plugins
-only_nagios: $(T)f4_nagios $(T)sh_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
+only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
 only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
 
@@ -82,12 +82,12 @@ $(T)unit: $(T).exists
 	bundle exec rake spec
 	@touch $@
 tunit: $(T)unit
-$(T)sh_nagios: $(T).exists
+$(T)shares_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) shares health
 	$(EXE_NOMAN) shares health --url=https://wrong.example.com
 	@touch $@
-$(T)sh_wizard: $(T).exists
+$(T)shares_wizard: $(T).exists
 	@echo $@
 	$(EXE_MAN) config detect @preset:tst_shares.url shares
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_shares.url shares --username=test --password=test
@@ -124,7 +124,7 @@ $(T)sh3: $(T).exists
 	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:misc.shares_upload@/$(LCL_TST_ASC_FILENAME) --transfer=httpgw -Pnowss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy"}'
 	$(EXE_MAN) shares files delete @extend:@preset:misc.shares_upload@/$(LCL_TST_ASC_FILENAME)
 	@touch $@
-tshares: $(T)sh_nagios $(T)sh_wizard $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
+tshares: $(T)shares_nagios $(T)shares_wizard $(T)shadm $(T)sh1 $(T)sh2 $(T)sh3
 
 $(T)serv_browse: $(T).exists
 	@echo $@
@@ -238,6 +238,7 @@ $(T)f4_nagios: $(T).exists
 $(T)f4_wizard: $(T).exists
 	@echo $@
 	$(EXE_NOMAN) config detect @preset:tst_faspex4.url
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_faspex4.url faspex --username=test --password=test
 	@touch $@
 $(T)f4_plst: $(T).exists
 	@echo $@
@@ -348,6 +349,7 @@ $(T)nd_nagios: $(T).exists
 $(T)nd_wizard: $(T).exists
 	@echo $@
 	$(EXE_MAN) config detect @preset:tst_node_simple.url
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_node_simple.url node --username=test --password=test
 	@touch $@
 $(T)nd1: $(T).exists
 	@echo $@
@@ -787,11 +789,15 @@ $(T)aocauto10: $(DIR_TMP)wf_id.txt
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
 taoc: taocgen taocf taocp taocadm taocts taocauto
 
+$(T)orch_wizard: $(T).exists
+	@echo $@
+	$(EXE_NOMAN) config detect @preset:tst_orch.url
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_orch.url orchestrator --username=test --password=test
+	@touch $@
 $(T)orch_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) orchestrator health
 	@$(EXE_ERR_START) orchestrator health --url=https://wrong.url --format=nagios$(EXE_ERR_END)
-	$(EXE_NOMAN) config detect @preset:tst_orch.url
 	@touch $@
 $(T)o2: $(T).exists
 	@echo $@
@@ -832,7 +838,7 @@ $(T)o10: $(T).exists
 	$(EXE_MAN) orchestrator workflow export @preset:misc.orch_workflow_id
 	@touch $@
 
-torc: $(T)orch_nagios $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10
+torc: $(T)orch_wizard $(T)orch_nagios $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10
 
 $(T)at4: $(T).exists
 	@echo $@

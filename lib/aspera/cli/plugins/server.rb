@@ -42,7 +42,7 @@ module Aspera
 
         class << self
           def application_name
-            'HSTS Fasp'
+            'HSTS Fasp/SSH'
           end
 
           def detect(address_or_url)
@@ -72,6 +72,18 @@ module Aspera
               end
             end
             return nil
+          end
+
+          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+            options = object.options
+            return {
+              preset_value: {
+                url:      options.get_option(:url, mandatory: true),
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'files br /'
+            }
           end
         end
 

@@ -55,7 +55,7 @@ module Aspera
               Log.log.debug{"version: #{result[:http]['X-IBM-Aspera']}"}
               version = res_s['XRD']['application']['version']
               # take redirect if any
-              return {version: version, url: result[:http].uri}
+              return {version: version, url: result[:http].uri.to_s}
             rescue StandardError => e
               Log.log.debug{"detect error: #{e}"}
             end

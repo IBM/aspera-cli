@@ -1488,8 +1488,10 @@ config ascp connect version 'Aspera Connect for Windows' list
 config ascp connect version 'Aspera Connect for Windows' open documentation
 config ascp errors
 config ascp info --sdk-folder=Tsdk_test_dir
+config ascp install
 config ascp install --sdk-folder=Tsdk_test_dir
 config ascp products list
+config ascp products use 'Aspera Connect'
 config ascp show
 config ascp spec
 config ascp use /usr/bin/ascp
@@ -1508,21 +1510,28 @@ config echo @csvt:@stdin:
 config echo @env:USER
 config echo @lines:@stdin:
 config echo @list:,1,2,3
+config echo @secret:
 config echo @uri:/etc/hosts
 config echo @uri:file:/etc/hosts
 config echo @uri:http://ifconfig.me
 config echo @uri:https://ifconfig.me
 config echo @val:@file:no_such_file
+config echo @vault:mypreset.password
 config echo @zlib:@stdin:
 config echo hello
 config email_test --notif-to=my_email_external
 config flush_tokens
+config folder
+config gem name
+config gem path
+config gem version
 config genkey mykey
 config genkey mykey 4096
 config hint Aspera::Fasp::Error 'Remote host is not who we expected'
 config hint Aspera::RestCallError 'Signature has expired'
 config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'
 config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
+config initdemo
 config open
 config plugin create mycommand T
 config plugin list
@@ -1533,12 +1542,18 @@ config preset overview
 config preset set conf_name param value
 config preset set default shares conf_name
 config preset show conf_name
+config preset unset conf_name param
 config preset update conf_name --p1=v1 --p2=v2
-config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com
+config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
 config vault delete mylabel
 config vault list
 config vault show mylabel
+config wizard https://console.example.com/path console -Ptst_console
+config wizard https://faspex4.example.com/path faspex --username=test --password=test
+config wizard https://faspex5_jwt.example.com/path faspex5 --pkeypath=my_ssh_keys -Ptst_faspex5_jwt
+config wizard https://node_simple.example.com/path node --username=test --password=test
+config wizard https://orch.example.com/path orchestrator --username=test --password=test
 config wizard https://shares.example.com/path shares --username=test --password=test
 config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email
 config wizard my_aoc_org aoc --pkeypath= --username=my_aoc_user_email --use-generic-client=yes
@@ -4451,7 +4466,7 @@ aoc files browse / --link=my_aoc_publink_folder_nopass
 aoc files browse / --link=my_aoc_publink_folder_pass --password=my_aoc_publink_password
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
-aoc files find / --query='\.partial$'
+aoc files find / '\.partial$'
 aoc files http_node_download --to-folder=. /200KB.1
 aoc files mkdir /testsrc
 aoc files modify my_aoc_test_folder
@@ -4467,6 +4482,7 @@ aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync
 aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
 aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_aoc_media_file
+aoc files thumbnail my_aoc_media_file --query=@json:'{"text":true,"double":true}'
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder_nopass
 aoc files upload --to-folder=/testsrc testfile.bin
@@ -5015,6 +5031,8 @@ node access_key do my_aoc_ak_name delete /folder2
 node access_key do my_aoc_ak_name delete testfile1
 node access_key do my_aoc_ak_name download testfile1 --to-folder=.
 node access_key do my_aoc_ak_name find /
+node access_key do my_aoc_ak_name find / @ruby:'->(f){f["name"].end_with?(".jpg")}'
+node access_key do my_aoc_ak_name find / exec:'f["name"].end_with?(".jpg")'
 node access_key do my_aoc_ak_name mkdir /folder1
 node access_key do my_aoc_ak_name node_info /
 node access_key do my_aoc_ak_name rename /folder1 folder2
@@ -5210,7 +5228,10 @@ faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_use
 faspex5 packages show "my_package_id"
 faspex5 packages show --box=my_faspex5_shinbox "my_package_id"
 faspex5 packages show --box=my_faspex5_workgroup --group-type=workgroups "my_package_id"
+faspex5 packages status "my_package_id"
 faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
+faspex5 shared browse %name:my_faspex_src
+faspex5 shared list
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
 ```
@@ -5639,12 +5660,14 @@ shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
 shares admin user app_authorizations 1 show
 shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
 shares admin user list
+shares admin user list --type=local
 shares admin user share_permissions 1 list
 shares admin user share_permissions 1 show 1
 shares files browse /
 shares files delete my_shares_upload/testfile.bin
 shares files download --to-folder=. my_shares_upload/testfile.bin
 shares files download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+shares files upload --to-folder=my_shares_upload 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 shares files upload --to-folder=my_shares_upload testfile.bin
 shares files upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
 shares health

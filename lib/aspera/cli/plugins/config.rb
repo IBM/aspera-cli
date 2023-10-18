@@ -519,19 +519,21 @@ module Aspera
             detect_plugin_class = self.class.plugin_class(plugin_name_sym)
             # requires detection method
             next unless detect_plugin_class.respond_to?(:detect)
+            detection_info = nil
             begin
               detection_info = detect_plugin_class.detect(app_url)
             rescue OpenSSL::SSL::SSLError => e
               Log.log.warn(e.message)
               Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
-            rescue Errno::ECONNREFUSED
-              next
-            rescue Aspera::RestCallError => e
+            rescue StandardError => e
               Log.log.debug{"detect error: #{e}"}
+              next
             end
+            next if detection_info.nil?
+            raise 'internal error' if detection_info.key?(:url) && !detection_info[:url].is_a?(String)
             app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
             # if there is a redirect, then the detector can override the url.
-            found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info)) unless detection_info.nil?
+            found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
           end # loop
           raise "No known application found at #{app_url}" if found_apps.empty?
           raise 'Internal error' unless found_apps.all?{|a|a.keys.all?(Symbol)}
