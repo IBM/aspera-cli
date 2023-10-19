@@ -24,15 +24,17 @@ delgen::
 #wkhtmltopdf toc $(MANUAL_HTML) $@
 # +pipe_tables
 # Date in PDF header is either the last checked in date or today if file has been modified
+# sudo tlmgr install fvextra
 $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
+	rm -f $@
 	set -x &&\
 	if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 	date=$$(date $$ref '+%Y/%m/%d') &&\
 	pandoc \
 		--standalone \
-		--from=gfm \
+		--from=markdown_mmd \
 		--to=pdf \
-		--pdf-engine=xelatex \
+		--pdf-engine=lualatex \
 		--include-in-header=$(DIR_DOC)template.tex \
 		--toc \
 		--number-sections \
@@ -42,7 +44,8 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 		--variable=documentclass:report \
 		--variable=date:$$date \
 		--variable=author:'Laurent MARTIN' \
-		--variable=mainfont:Arial \
+		--variable=mainfont:'IBM Plex Sans' \
+		--variable=monofont='IBM Plex Mono' \
 		--variable=urlcolor:blue \
 		--variable=geometry:margin=15mm \
 		-o $@ \

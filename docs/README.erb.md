@@ -4,7 +4,7 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
-##
+## Introduction
 
 Version : <%=gemspec.version.to_s%>
 
@@ -27,13 +27,13 @@ Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
-## BUGS, FEATURES, CONTRIBUTION
+### BUGS, FEATURES, CONTRIBUTION
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 One can also [create one's own plugin](#createownplugin).
 
-## <a id="when_to_use"></a>When to use and when not to use
+### <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
 
@@ -61,7 +61,7 @@ Using APIs (application REST API and transfer SDK) will prove to be easier to de
 
 For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
-## Notations, Shell, Examples
+### Notations, Shell, Examples
 
 Command line operations examples are shown using a shell such: `bash` or `zsh`.
 
@@ -110,14 +110,14 @@ To test with Aspera demo transfer server, setup the environment and then test:
 ```
 
 ```output
-+------------+-----------+-----------+-------+---------------------------+-----------------------+
-| zmode      | zuid      | zgid      | size  | mtime                     | name                  |
-+------------+-----------+-----------+-------+---------------------------+-----------------------+
-| drwxr-xr-x | asperaweb | asperaweb | 90112 | 2023-04-05 15:31:21 +0200 | Upload                |
-| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:16 +0200 | aspera-test-dir-large |
-| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-small |
-| dr-xr-xr-x | asperaweb | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
-+------------+-----------+-----------+-------+---------------------------+-----------------------+
++------------+--------+-----------+-------+---------------------------+-----------------------+
+| zmode      | zuid   | zgid      | size  | mtime                     | name                  |
++------------+--------+-----------+-------+---------------------------+-----------------------+
+| drwxr-xr-x | aspera | asperaweb | 90112 | 2023-04-05 15:31:21 +0200 | Upload                |
+| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:16 +0200 | aspera-test-dir-large |
+| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-small |
+| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
++------------+--------+-----------+-------+---------------------------+-----------------------+
 ```
 
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
@@ -128,8 +128,7 @@ If you want to use <%=tool%> with another server, and in order to make further c
 - download a file
 
 ```bash
-<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb \
---password=my_password_here
+<%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
 ```
 
 ```output
@@ -167,7 +166,7 @@ updated: default &rarr; server to myserver
 ```
 
 ```output
-Time: 00:00:02 =========================================================== 100% 100 Mbps Time: 00:00:00
+Time: 00:00:02 ============================================= 100% 100 Mbps Time: 00:00:00
 complete
 ```
 
@@ -992,27 +991,28 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 {"title":"Test \" ' & \\"}
 ```
 
-### Commands, Options, Positional Values
+### Commands, Options, Positional Arguments
 
-Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv").
+Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv"). Refer to the previous section [Command Line Parsing](#parsing). 
 
 <%=tool%> considers three types of command line arguments:
 
 - Commands
 - Options
-- Positional Values
+- Positional Arguments
+
+For example:
 
 ```bash
 <%=cmd%> command subcommand --option-name=VAL1 VAL2
 ```
 
-- executes *command*: `command subcommand`
-- with one *option*: `option_name`and its *value*: `VAL1`
-- the command has one additional mandatory *argument*: `VAL2`
+- executes **command**: `command subcommand`
+- with one **option**: `option_name`and its *value*: `VAL1`
+- the command has one additional **positional argument**: `VAL2`
 
-When the value of a command, option or argument is constrained by a fixed list of values.
-It is possible to use the first letters of the value only, provided that it uniquely identifies a value.
-For example `<%=cmd%> conf ov` is the same as `<%=cmd%> config overview`.
+If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use the first letters of the value only, provided that it uniquely identifies the value.
+For example `<%=cmd%> conf pre ov` is the same as `<%=cmd%> config preset overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -1031,10 +1031,12 @@ Example:
 - `ascp` is the second level command, and is also the name of the component (singleton)
 - `info` is the third level command, and is also the action to be performed
 
-Typically, commands are located at the beginning of the command line.
+Typically, commands are located at the **beginning** of the command line.
 Order is significant.
 The provided command must match one of the supported commands in the given context.
-If a wrong , or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
+If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
+
+Some sub-commands appear after entity selection, e.g. `<%=cmd%> aoc admin res node do 8669 browse /`: `browse` is a sub-command of `node`.
 
 #### Options
 
@@ -1051,13 +1053,13 @@ Exceptions:
 - some options (flags) don't take a value, e.g. `-r`
 - the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
-  ```bash
-  <%=cmd%> config echo -- --sample
-  ```
+```bash
+<%=cmd%> config echo -- --sample
+```
 
-  ```bash
-  "--sample"
-  ```
+```bash
+"--sample"
+```
 
 > **Note:** Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
@@ -1065,12 +1067,12 @@ Options may have an (hardcoded) default value.
 
 Options can be placed anywhere on command line and evaluated in order.
 
-Options are typically either:
+Options are either:
 
-- optional : typically to change the default behavior
-- mandatory : typically, connection information are options that are mandatory (so they can be placed in a config file)
+- optional : to change the default behavior
+- mandatory : connection information are options that are mandatory (so they can be placed in a config file)
 
-The value for *any* options can come from the following locations (in this order, last value evaluated overrides previous value):
+The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
 - [Configuration file](#configfile).
 - Environment variable
@@ -1080,27 +1082,37 @@ Environment variable starting with prefix: <%=evp%> are taken as option values, 
 
 Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
 
-#### Positional Values
+Parameters are typically designed as options if:
 
-Positional Values are typically mandatory values for a command, such as entity creation data.
+- it is a mandatory parameters that would benefit from being set in a config file or environment variable
+- it is optional
 
-If a Positional Values begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+#### Positional Arguments
 
-The advantages of using a positional value instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
+Positional Arguments are typically mandatory values for a command, such as entity creation data.
+
+It could also be designed as an option, but since it is mandatory and typically creation parameters need not be set in a configuration file, then it is better to use a positional argument, and not define specific options.
+
+The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
 
 The disadvantage is that it is not possible to define a default value in a config file or environment variable like for options.
 Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the config file or environment variable.
 
+If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
+
+Very few positional arguments are optional, they are located at the end of the command line.
+
 ### Interactive Input
 
-Some options and parameters are mandatory and other optional. By default, <%=tool%> will ask for missing mandatory options or parameters for interactive execution.
+Some options and parameters are mandatory and other optional.
+By default, <%=tool%> will ask for missing mandatory options or parameters for interactive execution.
 
 The behavior can be controlled with:
 
-- --interactive=&lt;yes|no&gt; (default=yes if STDIN is a terminal, else no)
+- `--interactive=<yes|no>` (default=yes if STDIN is a terminal, else no)
   - yes : missing mandatory parameters/options are asked to the user
   - no : missing mandatory parameters/options raise an error message
-- --ask-options=&lt;yes|no&gt; (default=no)
+- `--ask-options=<yes|no>` (default=no)
   - optional parameters/options are asked to user
 
 ### Output
@@ -1125,8 +1137,8 @@ By default, result of type single_object and object_list are displayed using for
 The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
 
 In a table format, when displaying "objects" (single, or list), by default, sub object are
-flattened (option `flat_hash`). So, object {"user":{"id":1,"name":"toto"}} will have attributes: user.id and user.name.
-Setting `flat_hash` to `false` will only display one field: "user" and value is the sub hash table.
+flattened (option `flat_hash`). So, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
+Setting `flat_hash` to `false` will only display one field: `user` and value is the sub Hash table.
 When in flatten mode, it is possible to filter fields by "dotted" field name.
 
 Object lists are displayed one per line, with attributes as columns. Single objects are transposed: one attribute per line.
@@ -1161,13 +1173,14 @@ Table output can be filtered using the `select` parameter. Example:
 
 > **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
-#### entity identifier
+#### Entity identifier
 
-When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command: e.g. `<%=cmd%> aoc admin res user show 1234` where `1234` is the user identifier.
+When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command: e.g. `<%=cmd%> aoc admin res user show 1234` where `1234` is the user's identifier.
 
 > **Note:** The legacy option `id` is deprecated: `--id=1234` as it does not provide the possibility to have sub-entities.
 
-Only some commands provide the following capability: If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin res user show %name:john` where `john` is the user name.
+Only some commands provide the following capability:
+If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin res user show %name:john` where `john` is the user name.
 
 Syntax: `%<field>:<value>`
 
@@ -1207,10 +1220,10 @@ But sometime it is convenient to read a value from a file, or decode it, or have
 The extended value syntax is:
 
 ```bash
-<0 or more decoders><nothing or some text value>
+<0 or more decoders><some text value or nothing>
 ```
 
-Decoders act like a function of value on right hand side.
+Decoders act like a function with its parameter on right hand side.
 Decoders are recognized by the prefix: `@` and suffix `:`
 
 The following decoders are supported:
@@ -1245,13 +1258,13 @@ Example: read the content of the specified file, then, base64 decode, then unzip
 <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
-Example: Create a value as a hash, with one key and the value is read from a file:
+Example: Create a value as a Hash, with one key and the value is read from a file:
 
 ```bash
 <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("mykey.txt")}'
 ```
 
-Example: read a csv file and create a list of hash for bulk provisioning:
+Example: read a csv file and create a list of Hash for bulk provisioning:
 
 ```bash
 cat test.csv
@@ -1298,7 +1311,9 @@ Some options and parameters expect a [Extended Value](#extended), i.e. a value m
 For instance, a <%=trspec%> is expected to be a [Extended Value](#extended).
 
 Structured values shall be described using the [Extended Value Syntax](#extended).
-A convenient way to specify a [Extended Value](#extended) is to use the `@json:` decoder, and describe the value in JSON format. The `@ruby:` decoder can also be used. For an array of hash tables, the `@csvt:` decoder can be used.
+A convenient way to specify a [Extended Value](#extended) is to use the `@json:` decoder, and describe the value in JSON format.
+The `@ruby:` decoder can also be used.
+For an Array of Hash tables, the `@csvt:` decoder can be used.
 
 It is also possible to provide a [Extended Value](#extended) in a file using `@json:@file:<path>`
 
@@ -1480,7 +1495,7 @@ If the default global <%=prstt%> is not set, and you want to use a different nam
 
 #### Format of file
 
-The configuration file is a hash in a YAML file. Example:
+The configuration file is a Hash in a YAML file. Example:
 
 ```yaml
 config:
@@ -1571,7 +1586,7 @@ Example: Define options using command line:
 <%=cmd%> -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config
 ```
 
-Example: Define options using a hash:
+Example: Define options using a Hash:
 
 ```bash
 <%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
@@ -1709,14 +1724,17 @@ A passwords can be saved in clear in a <%=prst%> together with other account inf
 Example:
 
 ```bash
-<%=tool%> conf preset update myconf --url=... --username=... --password=...
+<%=cmd%> conf preset update myconf --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
 ```bash
-<%=tool%> conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
-<%=tool%> conf vault create myconf @json:'{"password":"my_password_here"}'
+<%=cmd%> conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+```
+
+```bash
+<%=cmd%> conf vault create myconf @json:'{"password":"my_password_here"}'
 ```
 
 > **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -1986,7 +2004,8 @@ Refer to the following sections.
 
 There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
 
-The `http_proxy` environment variable (**lower case**, preferred) can be set to the URL of the proxy, e.g. `http://myproxy.org.net:3128`.
+The `http_proxy` environment variable (**lower case**, preferred) can be set to the URL of the proxy.
+E.g. `http://myproxy.org.net:3128`.
 Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
 
 > **Note:** Ruby expects a URL and `myproxy.org.net:3128` alone is **not** accepted.
@@ -2185,7 +2204,7 @@ saved to default global preset /Users/laurent/Applications/Aspera Connect.app/Co
 ```
 
 ```output
-Time: 00:00:02 =========================================================== 100% 27766 KB/sec Time: 00:00:02
+Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ```
 
@@ -2260,8 +2279,14 @@ Examples:
 But it is preferred to use the option `transfer_info` with parameter `ascp_args`.
 
 This can be useful to activate logging using option `-L` of `ascp`.
-For example the option `--transfer-info=@json:'{"ascp_args":["-DDL-"]}'` will activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`).
-This is useful if the transfer fails.
+For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
+
+```bash
+--transfer-info=@json:'{"ascp_args":["-DDL-"]}'
+```
+
+This is useful to debug if a transfer fails.
+
 To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
 
 > **Note:** When transfer agent [`direct`](#agt_direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided using `transfer_info` parameter `ascp_args`).
@@ -2416,11 +2441,17 @@ gem install grpc
 ```
 
 On Windows the compilation may fail for various reasons (3.1.1):
+
 <!-- spellchecker: disable -->
+
 - `cannot find -lx64-ucrt-ruby310`
+
    &rarr; copy the file `[Ruby main dir]\lib\libx64-ucrt-ruby310.dll.a` to `[Ruby main dir]\lib\libx64-ucrt-ruby310.a` (remove the dll extension)
+  
 - `conflicting types for 'gettimeofday'`
+
   &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)` ,i.e. change `struct timezone` to `void`
+
 <!-- spellchecker: enable -->
 
 ### <a id="transferspec"></a>Transfer Specification
@@ -2635,9 +2666,15 @@ If transfer spec has a `src_base`, it has the side effect that the simple source
 
 Advanced Example: Send files `./file1` and `./folder2/files2` to server (e.g. `/Upload`) and keep the original file names and folders, i.e. send `file1` to `/Upload/file1` and `files2` to `/Upload/folder2/files2`.
 
-- If files are specified as `./file1 ./folder2/files2`, then destination will be: `/Upload/file1 /Upload/files2`
+- If files are specified as `./file1 ./folder2/files2`,
+
+  then destination will be: `/Upload/file1 /Upload/files2`
+
 - One possibility is to specify a file pair list: `--src-type=pair file1 file1 folder2/files2 folder2/files2`
-- Another possibility is to specify a source base: `--src-base=$PWD $PWD/file1 $PWD/folder2/files2` (note that `.` cannot be used as source base)
+- Another possibility is to specify a source base: `--src-base=$PWD $PWD/file1 $PWD/folder2/files2`
+
+  (note that `.` cannot be used as source base)
+
 - Similarly, create a temporary soft link (Linux): `ln -s . tmp_base` and use `--src-base=tmp_base tmp_base/file1 tmp_base/folder2/files2`
 - One can also similarly use `--sources=@ts` and specify the list of files in the `paths` field of transfer spec with both `source` and `destination` for each file.
 
@@ -3331,9 +3368,7 @@ The environment provided contains the following additional variable:
 Example:
 
 ```bash
-<%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 \
---query=@json:'{"status":"completed","direction":"receive"}' \
---notif-to=active --notif-template=@file:mytemplate.erb
+<%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=active --notif-template=@file:mytemplate.erb
 ```
 
 Options:
@@ -3414,8 +3449,7 @@ Current Workspace: Default (default)
 ```
 
 ```bash
-<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv |\
-<%=cmd%> aoc admin res user delete @lines:@stdin: --bulk=yes
+<%=cmd%> aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | <%=cmd%> aoc admin res user delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
@@ -3465,7 +3499,7 @@ Creation of a sub-access key is like creation of access key with the following d
 <%=cmd%> aoc admin res node --secret=_secret_ v3 transfer list --query=@json:'[["q","*"],["count",5]]'
 ```
 
-Examples of query (TODO: cleanup):
+Examples of query:
 
 ```json
 {"q":"type(file_upload OR file_delete OR file_download OR file_rename OR folder_create OR folder_delete OR folder_share OR folder_share_via_public_link)","sort":"-date"}
@@ -3750,7 +3784,7 @@ General syntax:
 
 Notes:
 
-- Package creation parameter are sent as positional mandatory parameter.
+- Package creation parameter are sent as positional argument.
   Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
 - List allowed shared inbox destinations with: `<%=cmd%> aoc packages shared_inboxes list`
 - Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox.
@@ -3821,14 +3855,14 @@ Find files in Files app:
 ```
 
 ```text
-+------------------------------+--------+----------------+--------------+----------------------+--------------+
-| name                         | type   | recursive_size | size         | modified_time        | access_level |
-+------------------------------+--------+----------------+--------------+----------------------+--------------+
-| sample_video                 | link   |                |              | 2020-11-29T22:49:09Z | edit         |
-| 100G                         | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
-| 10M.dat                      | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
-| Test.pdf                     | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
-+------------------------------+--------+----------------+--------------+----------------------+--------------+
++---------------+--------+----------------+--------------+----------------------+--------------+
+| name          | type   | recursive_size | size         | modified_time        | access_level |
++---------------+--------+----------------+--------------+----------------------+--------------+
+| sample_video  | link   |                |              | 2020-11-29T22:49:09Z | edit         |
+| 100G          | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
+| 10M.dat       | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
+| Test.pdf      | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
++---------------+--------+----------------+--------------+----------------------+--------------+
 ```
 
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
@@ -4294,9 +4328,7 @@ The following are examples of `ruby_lambda` to be provided in the following temp
 <%=tool%> commands can be piped in order to combine operations, such as "find and delete":
 
 ```bash
-<%=cmd%> node access_keys do self find / \
-@ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' \
---fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
+<%=cmd%> node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' --fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
 ```
 
 > **Note:** the pipe `|` character on the last line.
@@ -4462,12 +4494,12 @@ Using existing key:
 option: username> someuser@example.com
 Ask the ascli client id and secret to your Administrator.
 Admin should login to: https://faspex5.example.com/aspera/faspex
-Navigate to: 𓃑  → Admin → Configurations → API clients
+Navigate to: ::  → Admin → Configurations → API clients
 Create an API client with:
 - name: ascli
 - JWT: enabled
 Then, logged in as someuser@example.com go to your profile:
-👤 → Account Settings → Preferences -> Public Key in PEM:
+() → Account Settings → Preferences -> Public Key in PEM:
 -----BEGIN PUBLIC KEY-----
 redacted
 -----END PUBLIC KEY-----
@@ -4574,7 +4606,7 @@ Use this token as password and use `--auth=boot`.
 ### Faspex 5 sample commands
 
 Most commands are directly REST API calls.
-Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional parameter for creation.
+Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional argument for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
@@ -5426,7 +5458,7 @@ If the preview generator does not have access to files on the file system (it is
 
 <%=tool%> can send email, for that setup SMTP configuration. This is done with option `smtp`.
 
-The `smtp` option is a hash table (extended value) with the following fields:
+The `smtp` option is a Hash (extended value) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
 | field        | default             | example                    | description                      |
@@ -5535,7 +5567,7 @@ This makes it easy to integrate with any language provided that one can spawn a 
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted <%=trspec%> on stdin.
 
-> **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the hash using JSON syntax.
+> **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the Hash using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
@@ -5669,8 +5701,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 ### Example: unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
-<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress=none --display=data \
---ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress=none --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.

@@ -1,15 +1,21 @@
+% https://ctan.org/pkg/fvextra
 \usepackage{fvextra}
-\usepackage{fvextra}
+\fvset{breaklines}
+\fvset{breaknonspaceingroup}
+\fvset{breakanywhere}
 \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
   commandchars=\\\{\},
   showtabs=false,
   showspaces=false,
   breaklines,
-  breaksymbolleft={},
+  breaksymbolleft=\tiny\ensuremath{\hookrightarrow},
   breaknonspaceingroup,
-  breakafter=\,: 
+  breakafter=\,.:|-\space,
+  highlightlines=1-1000,
+  highlightcolor=lightgray,
+  fontsize=\small
 }
-% breakanywhere
-\fvset{breaklines}
-\fvset{breaknonspaceingroup}
-\fvset{breakanywhere}
+\usepackage{fontspec}
+\fontspec{Noto Sans Egyptian Hieroglyphs Regular}
+\fontspec{IBM Plex Sans Text}
+\setmainfont{IBM Plex Sans Text}
