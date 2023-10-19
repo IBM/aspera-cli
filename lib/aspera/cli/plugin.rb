@@ -97,7 +97,7 @@ module Aspera
             # if block returns a hash, let's use this (create)
             result = res if param.is_a?(Hash)
             # create -> created
-            result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d"
+            result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
           rescue StandardError => e
             raise e if options.get_option(:bfail)
             result['status'] = e.to_s
