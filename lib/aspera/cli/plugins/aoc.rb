@@ -465,7 +465,6 @@ module Aspera
                 else raise 'organizations or users for option --name'
                 end
               filter = options.get_option(:query) || {}
-              raise 'query must be Hash' unless filter.is_a?(Hash)
               filter['limit'] ||= 100
               if options.get_option(:once_only, mandatory: true)
                 saved_date = []
@@ -550,12 +549,15 @@ module Aspera
               return {type: :object_list, data: items[:list], fields: default_fields}
             when :show
               object = aoc_api.read(resource_instance_path)[:data]
+              # default: show all, but certificate
               fields = object.keys.reject{|k|k.eql?('certificate')}
               return { type: :single_object, data: object, fields: fields }
             when :modify
-              changes = options.get_next_argument('modified parameters (hash)')
-              aoc_api.update(resource_instance_path, changes)
-              return Main.result_status('modified')
+              changes = options.get_next_argument('properties', type: Hash)
+              return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
+                aoc_api.update("#{resource_class_path}/#{one_id}", changes)
+                {'id' => one_id}
+              end
             when :delete
               return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
                 aoc_api.delete("#{resource_class_path}/#{one_id}")
@@ -563,7 +565,7 @@ module Aspera
               end
             when :set_pub_key
               # special : reads private and generate public
-              the_private_key = options.get_next_argument('private_key')
+              the_private_key = options.get_next_argument('private_key PEM value', type: String)
               the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
               aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
               return Main.result_success
@@ -612,7 +614,7 @@ module Aspera
               when :show
                 return { type: :single_object, data: aoc_api.current_user_info(exception: true) }
               when :modify
-                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('modified parameters (hash)'))
+                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', type: Hash))
                 return Main.result_status('modified')
               end
             end
@@ -711,7 +713,7 @@ module Aspera
               end
               return Main.result_transfer_multiple(result_transfer)
             when :show
-              package_id = options.get_next_argument('package ID')
+              package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")[:data]
               return { type: :single_object, data: package_info }
             when :list
@@ -737,7 +739,7 @@ module Aspera
                 aoc_api.delete("packages/#{id}")[:data]
               end
             when *Node::NODE4_READ_ACTIONS
-              package_id = options.get_next_argument('package ID')
+              package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")[:data]
               return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: AoC::SCOPE_NODE_USER)
             end
@@ -749,7 +751,7 @@ module Aspera
             when :short_link
               # execute action on AoC API
               short_link_command = options.get_next_command(%i[create delete list])
-              folder_dest = options.get_next_argument('path')
+              folder_dest = options.get_next_argument('path', type: String)
               link_type = options.get_next_argument('link type', expected: %i[public private])
               home_node_api = aoc_api.node_api_from(
                 node_id: home_info[:node_id],
