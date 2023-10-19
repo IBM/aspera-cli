@@ -1005,7 +1005,8 @@ module Aspera
           else
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
-          return Main.result_status("Done.\nYou can test with:\n#{@info[:name]} #{identification[:product]} #{test_args}")
+          # TODO: actually test the command
+          return Main.result_status("You can test with:\n#{@info[:name]} #{identification[:product]} #{test_args}")
         end
 
         # @return [Hash] email server setting with defaults if not defined
