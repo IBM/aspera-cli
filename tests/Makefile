@@ -695,6 +695,7 @@ $(T)aocarself: $(T).exists
 	$(EXE_MAN) aoc admin res self show
 	$(EXE_MAN) aoc admin res organization show
 	$(EXE_MAN) aoc admin res user list
+	$(EXE_MAN) aoc admin res user modify @extend:%name:@preset:misc.aoc_user_email@ @json:'{"deactivated":false}'
 	$(EXE_MAN) aoc admin res group list
 	$(EXE_MAN) aoc admin res client list
 	$(EXE_MAN) aoc admin res contact list
