@@ -439,6 +439,21 @@ module Aspera
         return line.chomp
       end
 
+      # prompt user for input in a list of symbols
+      # @param prompt [String] prompt to display
+      # @param sym_list [Array] list of symbols to select from
+      # @return [Symbol] selected symbol
+      def prompt_user_input_in_list(prompt, sym_list)
+        loop do
+          input = prompt_user_input(prompt, false).to_sym
+          if sym_list.any?{|a|a.eql?(input)}
+            return input
+          else
+            $stderr.puts("No such #{prompt}: #{input}, select one of: #{sym_list.join(', ')}")
+          end
+        end
+      end
+
       def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory
           raise CliBadArgument, self.class.bad_arg_message_multi("missing: #{descr}", expected) if expected.is_a?(Array)

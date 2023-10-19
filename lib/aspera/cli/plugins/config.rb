@@ -426,8 +426,9 @@ module Aspera
           conf_file_to_load = search_files.find{|f| File.exist?(f)}
           # if no file found, create default config
           if conf_file_to_load.nil?
-            Log.log.warn{"No config file found. Creating empty configuration file: #{@option_config_file}"}
+            Log.log.warn{"No config file found. New configuration file: #{@option_config_file}"}
             @config_presets = {CONF_PRESET_CONFIG => {CONF_PRESET_VERSION => 'new file'}}
+            # @config_checksum_on_disk is nil
           else
             Log.log.debug{"loading #{@option_config_file}"}
             @config_presets = YAML.load_file(conf_file_to_load)
@@ -447,7 +448,6 @@ module Aspera
           # ^^^ Place new compatibility code before this line
           # set version to current
           @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
-          save_config_file_if_needed
           unless files_to_copy.empty?
             Log.log.warn('Copying referenced files')
             files_to_copy.each do |file|
@@ -925,10 +925,10 @@ module Aspera
             Log.log.debug{"Detected: #{identification}"}
             apps.first
           else
-            formatter.display_status('Multiple applications detected:')
+            formatter.display_status('Multiple applications detected, please select from:')
             formatter.display_results({type: :object_list, data: apps, fields: %w[product url version]})
-            answer = options.prompt_user_input('product', false) until apps.any?{|a|answer&.to_sym.eql?(a[:product])}
-            apps.find{|a|a[:product].eql?(answer.to_sym)}
+            answer = options.prompt_user_input_in_list('product', apps.map{|a|a[:product]})
+            apps.find{|a|a[:product].eql?(answer)}
           end
           wiz_url = identification[:url]
           Log.dump(:identification, identification, :ruby)
@@ -950,7 +950,7 @@ module Aspera
             private_key_path = options.get_option(:pkeypath)
             # give a chance to provide
             if private_key_path.nil?
-              formatter.display_status('Please provide path to your private RSA key, or empty to generate one:')
+              formatter.display_status('Please provide the path to your private RSA key, or nothing to generate one:')
               private_key_path = options.get_option(:pkeypath, mandatory: true).to_s
               # private_key_path = File.expand_path(private_key_path)
             end
@@ -1065,7 +1065,7 @@ module Aspera
         end
 
         # Save current configuration to config file
-        # return true if file was saves
+        # return true if file was saved
         def save_config_file_if_needed
           raise 'no configuration loaded' if @config_presets.nil?
           current_checksum = config_checksum

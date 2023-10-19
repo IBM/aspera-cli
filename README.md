@@ -3589,7 +3589,7 @@ To activate default use of JWT authentication for `ascli` using the [option pres
 Execute:
 
 ```bash
-ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/ascli/my_private_key --username=laurent.martin.aspera@fr.ibm.com
+ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/ascli/my_private_key --username=someuser@example.com
 ```
 
 > **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
@@ -3948,7 +3948,7 @@ ascli aoc admin res workspace_membership list --fields=member_type,manager,membe
 | member_type | manager |           member.email           |
 +-------------+---------+----------------------------------+
 | user        | true    | john.curtis@email.com            |
-| user        | false   | laurent.martin.aspera@fr.ibm.com |
+| user        | false   | someuser@example.com |
 | user        | false   | jean.dupont@me.com               |
 | user        | false   | another.user@example.com         |
 | group       | false   |                                  |
@@ -4068,7 +4068,7 @@ In this example, a user has access to a workspace where two shared folders are l
 First, setup the environment (skip if already done)
 
 ```bash
-ascli conf wizard --url=https://sedemo.ibmaspera.com --username=laurent.martin.aspera@fr.ibm.com
+ascli conf wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
 ```
 
 ```output
@@ -4219,7 +4219,7 @@ Notes:
 #### Example: Send a package with one file to two users, using their email
 
 ```bash
-ascli aoc packages send @json:'{"name":"my title","note":"my note","recipients":["laurent.martin.aspera@fr.ibm.com","other@example.com"]}' my_file.dat
+ascli aoc packages send @json:'{"name":"my title","note":"my note","recipients":["someuser@example.com","other@example.com"]}' my_file.dat
 ```
 
 #### Example: Send a package to a shared inbox with metadata
@@ -4290,7 +4290,7 @@ ascli aoc files browse /src_folder
 Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
 
 ```bash
-ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["laurent.martin.aspera@fr.ibm.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
 ```
 
 #### <a id="aoccargo"></a>Receive new packages only (Cargo)
@@ -5100,6 +5100,54 @@ IBM Aspera's newer self-managed application.
 - web : requires authentication with web browser
 - boot : use authentication token copied from browser (experimental)
 
+For a quick start, one can use the wizard, which will help creating a [option preset](#lprt):
+
+```bash
+ascli config wizard
+```
+
+```text
+argument: url> faspex5.example.com
+Multiple applications detected:
++---------+-------------------------------------------+-------------+
+| product | url                                       | version     |
++---------+-------------------------------------------+-------------+
+| faspex5 | https://faspex5.example.com/aspera/faspex | F5.0.6      |
+| server  | ssh://faspex5.example.com:22              | OpenSSH_8.3 |
++---------+-------------------------------------------+-------------+
+product> faspex5
+Using: Faspex at https://faspex5.example.com/aspera/faspex
+Please provide the path to your private RSA key, or nothing to generate one:
+option: pkeypath>
+Using existing key:
+/Users/someuser/.aspera/ascli/my_key
+option: username> someuser@example.com
+Ask the ascli client id and secret to your Administrator.
+Admin should login to: https://faspex5.example.com/aspera/faspex
+Navigate to: 𓃑  → Admin → Configurations → API clients
+Create an API client with:
+- name: ascli
+- JWT: enabled
+Then, logged in as someuser@example.com go to your profile:
+👤 → Account Settings → Preferences -> Public Key in PEM:
+-----BEGIN PUBLIC KEY-----
+redacted
+-----END PUBLIC KEY-----
+Once set, fill in the parameters:
+option: client_id> _my_key_here_
+option: client_secret> ****
+Preparing preset: faspex5_example_com_user
+Setting config preset as default for faspex5
+Done.
+You can test with:
+ascli faspex5 user profile show
+Saving config file.
+```
+
+> **Note:** Include the public key `BEGIN` and `END` lines when pasting in the user profile.
+
+For details on the JWT method, see the following section.
+
 ### Faspex 5 JWT authentication
 
 This is the general purpose and **recommended** method to use.
@@ -5527,7 +5575,7 @@ The contents of `delivery_info` is directly the contents of the `send` v3 [API o
 Example:
 
 ```bash
-ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["laurent.martin.aspera@fr.ibm.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
+ascli faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
