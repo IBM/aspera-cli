@@ -844,13 +844,16 @@ module Aspera
               File.write(plugin_file, content)
               return Main.result_status("Created #{plugin_file}")
             end
-          when :wizard
-            return wizard_find
-          when :detect
+          when :detect, :wizard
+            # interactive mode
+            options.ask_missing_mandatory = true
+            # detect plugins by url and optional query
+            apps = identify_plugins_for_url.freeze
             return {
               type: :object_list,
-              data: identify_plugins_for_url
-            }
+              data: apps
+            } if action.eql?(:detect)
+            return wizard_find(apps)
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
               require 'aspera/preview/terminal'
@@ -916,11 +919,7 @@ module Aspera
           end
         end
 
-        def wizard_find
-          # interactive mode
-          options.ask_missing_mandatory = true
-          # detect plugins by url and optional query
-          apps = identify_plugins_for_url.freeze
+        def wizard_find(apps)
           identification = if apps.length.eql?(1)
             Log.log.debug{"Detected: #{identification}"}
             apps.first
