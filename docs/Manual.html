@@ -514,9 +514,9 @@ class="uri">https://rubyinstaller.org/downloads/</a></p></li>
 href="https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network"
 class="uri">https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network</a></p>
 <div class="sourceCode" id="cb43"><pre
-class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>gem install aspera<span class="at">-cli</span> <span class="at">-N</span> <span class="at">-i</span> repo</span></code></pre></div>
+class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>gem install aspera<span class="at">-cli</span> <span class="at">-N</span> <span class="at">-i</span> my_gems</span></code></pre></div>
 <p>Zip the files <code>*.gem</code> from folder
-<code>repo/cache</code></p></li>
+<code>repo/my_gems</code></p></li>
 <li><p>Download the SDK from: <a href="https://ibm.biz/aspera_sdk"
 class="uri">https://ibm.biz/aspera_sdk</a></p></li>
 </ul>
@@ -533,12 +533,16 @@ class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb44-1"><a href
 <li>Install the gems:</li>
 </ul>
 <div class="sourceCode" id="cb45"><pre
-class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>install -<span class="at">-force</span> -<span class="at">-local</span> *.gem</span></code></pre></div>
+class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>gem install -<span class="at">-force</span> -<span class="at">-local</span> *.gem</span></code></pre></div>
 <ul>
 <li>install the SDK</li>
 </ul>
 <div class="sourceCode" id="cb46"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///SDK.zip</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> An example of installation script is provided:
+<a href="docs/install.bat">docs/install.bat</a></p>
+</blockquote>
 <h3 data-number="3.2.4" id="macos-pre-installed-or-brew"><span
 class="header-section-number">3.2.4</span> macOS: pre-installed or
 <code>brew</code></h3>
@@ -654,9 +658,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a href=
 <p>If a local SDK installation is preferred instead of fetching from
 internet: one can specify the location of the SDK file:</p>
 <div class="sourceCode" id="cb61"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> SDK.zip https://ibm.biz/aspera_sdk</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> sdk.zip https://ibm.biz/aspera_sdk</span></code></pre></div>
 <div class="sourceCode" id="cb62"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///SDK.zip</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div>
 <p>The format is: <code>file:///&lt;path&gt;</code>, where
 <code>&lt;path&gt;</code> can be either a relative path (not starting
 with <code>/</code>), or an absolute path.</p>
@@ -703,7 +707,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb64-1"><a href=
 <li>Download the SDK archive from that URL.</li>
 </ul>
 <div class="sourceCode" id="cb65"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> SDK.zip https://ibm.biz/aspera_sdk</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> sdk.zip https://ibm.biz/aspera_sdk</span></code></pre></div>
 <ul>
 <li><p>Transfer those 2 files to the target system</p></li>
 <li><p>On target system</p></li>
@@ -715,7 +719,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb66-1"><a href=
 <span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.rvm/scripts/rvm</span>
 <span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///SDK.zip</span></code></pre></div>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div>
 <ul>
 <li>Add those lines to shell init (<code>.profile</code>)</li>
 </ul>

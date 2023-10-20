@@ -508,10 +508,10 @@ It is essentially the same procedure, but instead of retrieving files from inter
 - Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
 
   ```bat
-  gem install aspera-cli -N -i repo
+  gem install aspera-cli -N -i my_gems
   ```
 
-  Zip the files `*.gem` from folder `repo/cache`
+  Zip the files `*.gem` from folder `repo/my_gems`
 
 - Download the SDK from: <https://ibm.biz/aspera_sdk>
 
@@ -529,14 +529,16 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 - Install the gems:
 
 ```bat
-install --force --local *.gem
+gem install --force --local *.gem
 ```
 
 - install the SDK
 
 ```bash
-ascli conf ascp install --sdk-url=file:///SDK.zip
+ascli conf ascp install --sdk-url=file:///sdk.zip
 ```
+
+> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
 
 #### macOS: pre-installed or `brew`
 
@@ -677,11 +679,11 @@ ascli conf ascp install
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
 ```bash
-curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_sdk
 ```
 
 ```bash
-ascli conf ascp install --sdk-url=file:///SDK.zip
+ascli conf ascp install --sdk-url=file:///sdk.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -726,7 +728,7 @@ ascli conf --show-config --fields=sdk_url
 - Download the SDK archive from that URL.
 
 ```bash
-curl -Lso SDK.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_sdk
 ```
 
 - Transfer those 2 files to the target system
@@ -740,7 +742,7 @@ tar zxvf rvm-ascli.tgz
 
 source ~/.rvm/scripts/rvm
 
-ascli conf ascp install --sdk-url=file:///SDK.zip
+ascli conf ascp install --sdk-url=file:///sdk.zip
 ```
 
 - Add those lines to shell init (`.profile`)
