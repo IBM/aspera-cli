@@ -27,6 +27,8 @@ Release notes: see [CHANGELOG.md](CHANGELOG.md)
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
+A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Manual.pdf).
+
 ### BUGS, FEATURES, CONTRIBUTION
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -402,7 +404,7 @@ A Ruby interpreter is required to run <%=tool%> or to use the gem and tool.
 
 Required Ruby <%=ruby_version%>.
 
-*Ruby can be installed using any method* : rpm, yum, dnf, rvm, brew, windows installer, ... .
+**Ruby can be installed using any method** : rpm, yum, dnf, rvm, brew, Windows installer, ... .
 
 In priority, refer to the official Ruby documentation:
 
@@ -474,12 +476,61 @@ rvm version
 
 #### Windows: Installer
 
-Install Latest stable Ruby:
+Manual installation:
 
 - Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
 - Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
 - Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
 - At the end of the installation procedure, the Msys2 installer is automatically executed, select option 3 (msys and mingw)
+- then install the aspera-cli gem and Aspera SDK (see next sections)
+
+Automated installation, with internet access:
+
+The ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
+
+Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/> and then install:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+Installation without network:
+
+It is essentially the same procedure, but instead of retrieving files from internet, one copies the files from a machine with internet access, and then install from those archives:
+
+- Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/>
+- Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
+
+  ```bat
+  gem install aspera-cli -N -i repo
+  ```
+
+  Zip the files `*.gem` from folder `repo/cache`
+
+- Download the SDK from: <https://ibm.biz/aspera_sdk>
+
+Create a Zip with all those files, and transfer to the target system.
+
+Then, on the target system:
+
+- Unzip the archive
+- Execute the installer:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+- Install the gems:
+
+```bat
+install --force --local *.gem
+```
+
+- install the SDK
+
+```bash
+<%=cmd%> conf ascp install --sdk-url=file:///SDK.zip
+```
 
 #### macOS: pre-installed or `brew`
 
@@ -993,7 +1044,7 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 
 ### Commands, Options, Positional Arguments
 
-Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv"). Refer to the previous section [Command Line Parsing](#parsing). 
+Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv"). Refer to the previous section [Command Line Parsing](#parsing).
 
 <%=tool%> considers three types of command line arguments:
 
@@ -1984,7 +2035,7 @@ Some actions may require the use of a graphical tool:
 - a browser for Aspera on Cloud authentication (web auth method)
 - a text editor for configuration file edition
 
-By default <%=tool%> assumes that a graphical environment is available on windows, and on other systems, rely on the presence of the `DISPLAY` environment variable.
+By default <%=tool%> assumes that a graphical environment is available on Windows, and on other systems, rely on the presence of the `DISPLAY` environment variable.
 It is also possible to force the graphical mode with option --ui :
 
 - `--ui=graphical` forces a graphical environment, a browser will be opened for URLs or a text editor for file edition.
