@@ -222,6 +222,22 @@ module Aspera
           return status
         end
 
+        def wait_for_job(job_id)
+          spinner = nil
+          while true
+            status = @api_v5.read("jobs/#{job_id}", {type: :formatted})[:data]
+            return status unless %w[queued working].include?(status['status'])
+            if spinner.nil?
+              spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
+              spinner.start
+            end
+            spinner.update(title: status['status'])
+            spinner.spin
+            sleep(0.5)
+          end
+          raise 'internal error'
+        end
+
         # get a (full or partial) list of all entities of a given type
         # @param type [String] the type of entity to list (just a name)
         # @param query [Hash,nil] additional query parameters
@@ -583,13 +599,16 @@ module Aspera
               when :create
                 return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
               when :modify
-                return { type: :single_object, data: @api_v5.modify(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
+                return { type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
               when :delete
                 return { type: :single_object, data: @api_v5.delete(smtp_path)[:data] }
               when :test
                 test_data = options.get_next_argument('Email or test data, see API')
                 test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
-                return { type: :single_object, data: @api_v5.create(File.join(smtp_path, 'test'), test_data)[:data] }
+                creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)[:data]
+                result = wait_for_job(creation['job_id'])
+                result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
+                return { type: :single_object, data: result }
               end
             end
           when :gateway
