@@ -68,7 +68,6 @@ module Aspera
               if v.all?(String)
                 result[prefix + k.to_s] = v.join("\n")
               else
-                Log.log.debug{'>>>>>>>>> yes'}
                 v.each_with_index do |item, index|
                   array_prefix = prefix + k.to_s + "[#{index}]"
                   if item.is_a?(Hash)
@@ -79,7 +78,6 @@ module Aspera
                 end
               end
             else
-              Log.log.debug{">>>>>>>>> simple #{k} #{v.class}"}
               result[prefix + k.to_s] = v
             end
           end
