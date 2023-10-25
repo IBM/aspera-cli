@@ -847,7 +847,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = value_create_modify(command: command, default: {})
+            request_data = query_option(default: {})
             case command
             when :session
               command = options.get_next_command([:list])
