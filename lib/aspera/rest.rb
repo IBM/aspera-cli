@@ -43,6 +43,8 @@ module Aspera
     # error message when entity not found
     ENTITY_NOT_FOUND = 'No such'
 
+    JSON_DECODE = ['application/json', 'application/vnd.api+json', 'application/x-javascript'].freeze
+
     class << self
       # define accessors
       @@global.each_key do |p|
@@ -278,8 +280,8 @@ module Aspera
         Log.log.debug{"result: body=#{result[:http].body}"}
         result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first
         result[:data] = case result_mime
-        when 'application/json', 'application/vnd.api+json'
-          JSON.parse(result[:http].body) rescue nil
+        when *JSON_DECODE
+          JSON.parse(result[:http].body) rescue result[:http].body
         else # when 'text/plain'
           result[:http].body
         end
