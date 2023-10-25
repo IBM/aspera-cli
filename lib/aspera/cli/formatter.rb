@@ -49,7 +49,8 @@ module Aspera
         end
 
         def simple_hash?(h)
-          !(h.values.any?{|v|[Hash, Array].any?{|c|v.is_a?(c)}})
+          raise 'internal error' unless h.is_a?(Hash)
+          !(h.values.any?{|v|[Hash, Array].include?(v.class)})
         end
 
         # Recursive function to modify a Hash
@@ -63,7 +64,22 @@ module Aspera
           source.each do |k, v|
             if v.is_a?(Hash) && !(expand_last && simple_hash?(v))
               flattened_object(v, result: result, prefix: prefix + k.to_s + '.', expand_last: expand_last)
+            elsif v.is_a?(Array)
+              if v.all?(String)
+                result[prefix + k.to_s] = v.join("\n")
+              else
+                Log.log.debug{'>>>>>>>>> yes'}
+                v.each_with_index do |item, index|
+                  array_prefix = prefix + k.to_s + "[#{index}]"
+                  if item.is_a?(Hash)
+                    flattened_object(item, result: result, prefix: "#{array_prefix}.", expand_last: expand_last)
+                  else
+                    result[array_prefix] = item
+                  end
+                end
+              end
             else
+              Log.log.debug{">>>>>>>>> simple #{k} #{v.class}"}
               result[prefix + k.to_s] = v
             end
           end
