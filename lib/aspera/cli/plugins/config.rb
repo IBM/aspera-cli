@@ -677,9 +677,12 @@ module Aspera
           when :list
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
-            return {type: :object_list, data: Formatter.flatten_config_overview(@config_presets)}
+            # display process modifies the value (hide secrets): we do not want to save removed secrets
+            config_copy = JSON.parse(JSON.generate(@config_presets))
+            return {type: :config_over, data: config_copy}
           when :show
-            return {type: :single_object, data: @config_presets[name]}
+            config_copy = JSON.parse(JSON.generate(@config_presets[name]))
+            return {type: :single_object, data: config_copy}
           when :delete
             @config_presets.delete(name)
             return Main.result_status("Deleted: #{name}")

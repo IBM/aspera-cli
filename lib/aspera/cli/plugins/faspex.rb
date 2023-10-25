@@ -84,7 +84,7 @@ module Aspera
             result = {
               base_url: "#{public_uri.scheme}://#{public_uri.host}#{port_add}#{base}",
               subpath:  subpath,
-              query:    URI.decode_www_form(public_uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
+              query:    URI.decode_www_form(public_uri.query).each_with_object({}){|v, h|h[v.first] = v.last }
             }
             Log.dump('link data', result)
             return result
@@ -101,14 +101,6 @@ module Aspera
             # TODO: enter ticket to Faspex ?
             # ##XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
             return result
-          end
-
-          def textify_package_list(table_data)
-            return table_data.map do |e|
-              e.each_key {|k| e[k] = e[k].first if e[k].is_a?(Array) && (e[k].length == 1)}
-              e['items'] = e.key?('link') ? e['link'].length : 0
-              e
-            end
           end
 
           # @return [Integer] identifier of source
@@ -181,7 +173,7 @@ module Aspera
             # get a batch of package information
             # order: first batch is latest packages, and then in a batch ids are increasing
             atom_xml = api_v3.call({operation: 'GET', subpath: "#{mailbox}.atom", headers: {'Accept' => 'application/xml'}, url_params: mailbox_query})[:http].body
-            box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => true})
+            box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
             Log.dump(:box_data, box_data)
             items = box_data.key?('entry') ? box_data['entry'] : []
             Log.log.debug{"new items: #{items.count}"}
@@ -194,11 +186,13 @@ module Aspera
               package[PACKAGE_MATCH_FIELD] =
                 case mailbox
                 when :inbox, :archive
-                  recipient = package['to'].find{|i|recipient_names.include?(i['name'].first)}
-                  recipient.nil? ? nil : recipient['recipient_delivery_id'].first
+                  recipient = package['to'].find{|i|recipient_names.include?(i['name'])}
+                  recipient.nil? ? nil : recipient['recipient_delivery_id']
                 else # :sent
-                  package['delivery_id'].first
+                  package['delivery_id']
                 end
+              # add special key
+              package['items'] = package['link'].is_a?(Array) ? package['link'].length : 0
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient
@@ -218,7 +212,7 @@ module Aspera
             break if link.nil?
             # replace parameters with the ones from next link
             params = CGI.parse(URI.parse(link['href']).query)
-            mailbox_query = params.keys.each_with_object({}){|i, m|; m[i] = params[i].first; }
+            mailbox_query = params.keys.each_with_object({}){|i, m| m[i] = params[i].first }
             Log.log.debug{"query: #{mailbox_query}"}
             break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end
@@ -278,11 +272,11 @@ module Aspera
             command_pkg = options.get_next_command(%i[send recv list])
             case command_pkg
             when :list
+              result = mailbox_filtered_entries
               return {
-                type:    :object_list,
-                data:    mailbox_filtered_entries,
-                fields:  [PACKAGE_MATCH_FIELD, 'title', 'items'],
-                textify: lambda {|table_data|Faspex.textify_package_list(table_data)}
+                type:   :object_list,
+                data:   result,
+                fields: [PACKAGE_MATCH_FIELD, 'title', 'items']
               }
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)

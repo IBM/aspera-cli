@@ -56,16 +56,10 @@ module Aspera
         ALL_SECRETS.any?{|kw|keyword.include?(kw)}
       end
 
-      def deep_remove_secret(obj, is_name_value: false)
+      def deep_remove_secret(obj)
         case obj
         when Array
-          if is_name_value
-            obj.each do |i|
-              i['value'] = HIDDEN_PASSWORD if secret?(i['parameter'], i['value'])
-            end
-          else
-            obj.each{|i|deep_remove_secret(i)}
-          end
+          obj.each{|i|deep_remove_secret(i)}
         when Hash
           obj.each do |k, v|
             if secret?(k, v)

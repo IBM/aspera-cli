@@ -7,6 +7,88 @@ require 'pp'
 
 module Aspera
   module Cli
+    CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
+    # This class is used to transform a complex structure into a simple hash
+    class Flattener
+      def initialize(expand_last: false)
+        @result = nil
+        @expand_last = expand_last
+      end
+
+      def config_over(something)
+        @result = []
+        something.each do |config, preset|
+          preset.each do |parameter, value|
+            @result.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
+          end
+        end
+        return @result
+      end
+
+      def flatten(something)
+        raise 'only Hash' unless something.is_a?(Hash)
+        @result = {}
+        flatten_something(something, '')
+        return @result
+      end
+
+      private
+
+      def special(what)
+        "<#{what}>".reverse_color
+      end
+
+      def simple_hash?(h)
+        !(h.values.any?{|v|[Hash, Array].include?(v.class)})
+      end
+
+      def flatten_something(something, name)
+        if something.is_a?(Hash) && !(@expand_last && simple_hash?(something))
+          flattened_hash(something, name)
+        elsif something.is_a?(Array)
+          flatten_array(something, name)
+        elsif something.is_a?(String) && something.empty?
+          @result[name] = special('empty string')
+        elsif something.nil?
+          @result[name] = special('null')
+        else
+          @result[name] = something
+        end
+      end
+
+      # Recursive function to flatten an array
+      # @return nil
+      def flatten_array(array, name)
+        if array.empty?
+          @result[name] = special('empty list')
+        elsif array.all?(String)
+          @result[name] = array.join("\n")
+        elsif array.all?{|i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
+          @result[name] = array.map(&:values).join(', ')
+        elsif array.all?{|i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
+          flattened_hash(array.each_with_object({}){|i, h|h[i['name']] = i['value']}, name)
+        else
+          array.each_with_index do |item, index|
+            flatten_something(item, "#{name}.#{index}")
+          end
+        end
+        nil
+      end
+
+      # Recursive function to modify a Hash
+      # @return [Hash] new hash flattened
+      # @param hash [Hash] to be modified
+      # @param expand_last [TrueClass,FalseClass] true if last level is not
+      # @param result [Hash] new hash flattened
+      # @param name [String] true if last level is not
+      def flattened_hash(hash, name)
+        prefix = name.empty? ? '' : "#{name}."
+        hash.each do |k, v|
+          flatten_something(v, "#{prefix}#{k}")
+        end
+      end
+    end # class
+
     # Take care of output
     class Formatter
       # special value for option `fields` to display all fields
@@ -18,78 +100,9 @@ module Aspera
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
-      CONF_OVERVIEW_KEYS = %w[config parameter value].freeze
       KEY_VALUE = %w[key value].freeze
 
-      private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR,
-        :CONF_OVERVIEW_KEYS, :KEY_VALUE
-
-      class << self
-        # special for Aspera on Cloud display node
-        # {"param" => [{"name"=>"foo","value"=>"bar"}]} will be expanded to {"param.foo" : "bar"}
-        def flatten_name_value_list(hash)
-          hash.keys.each do |k| # rubocop:disable Style/HashEachMethods
-            v = hash[k]
-            next unless v.is_a?(Array) && v.map(&:class).uniq.eql?([Hash]) && v.map(&:keys).flatten.sort.uniq.eql?(%w[name value])
-            v.each do |pair|
-              hash["#{k}.#{pair['name']}"] = pair['value']
-            end
-            hash.delete(k)
-          end
-        end
-
-        def flatten_config_overview(hash_array_conf)
-          r = []
-          hash_array_conf.each do |config, preset|
-            preset.each do |parameter, value|
-              r.push(CONF_OVERVIEW_KEYS.zip([config, parameter, SecretHider.deep_remove_secret(value).to_s]).to_h)
-            end
-          end
-          return r
-        end
-
-        def simple_hash?(h)
-          raise 'internal error' unless h.is_a?(Hash)
-          !(h.values.any?{|v|[Hash, Array].include?(v.class)})
-        end
-
-        # Recursive function to modify a Hash
-        # @return [Hash] new hash flattened
-        # @param source [Hash] to be modified
-        # @param expand_last [TrueClass,FalseClass] true if last level is not
-        # @param result [Hash] new hash flattened
-        # @param prefix [String] true if last level is not
-        def flattened_object(source, result: {}, prefix: '', expand_last: false)
-          # Log.log.debug{"(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-"}
-          source.each do |k, v|
-            if v.is_a?(Hash) && !(expand_last && simple_hash?(v))
-              flattened_object(v, result: result, prefix: "#{prefix}#{k}.", expand_last: expand_last)
-            elsif v.is_a?(Array)
-              if v.empty?
-                result[prefix + k.to_s] = '<empty>'.bg_gray.black
-              elsif v.all?(String)
-                result[prefix + k.to_s] = v.join("\n")
-              elsif v.all?{|i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
-                result[prefix + k.to_s] = v.map(&:values).join(', ')
-              elsif v.all?{|i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
-                flattened_object(v.each_with_object({}){|i, h|h[i['name']] = i['value']}, result: result, prefix: "#{prefix}#{k}.", expand_last: expand_last)
-              else
-                v.each_with_index do |item, index|
-                  array_prefix = "#{prefix}#{k}[#{index}]"
-                  if item.is_a?(Hash)
-                    flattened_object(item, result: result, prefix: "#{array_prefix}.", expand_last: expand_last)
-                  else
-                    result[array_prefix] = item
-                  end
-                end
-              end
-            else
-              result[prefix + k.to_s] = v
-            end
-          end
-          return result
-        end
-      end # class
+      private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :KEY_VALUE
 
       attr_accessor :option_flat_hash, :option_transpose_single, :option_format, :option_display, :option_fields, :option_table_style,
         :option_select, :option_show_secrets
@@ -109,7 +122,9 @@ module Aspera
       def declare_options(options)
         options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format}, default: :table)
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
-        options.declare(:fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields}, default: FIELDS_DEFAULT)
+        options.declare(
+          :fields, "Comma separated list of fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields},
+          default: FIELDS_DEFAULT)
         options.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
         options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash}, default: true)
@@ -165,9 +180,7 @@ module Aspera
         raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
         res_data = results[:data]
-        # for config overview, it is name and value
-        is_config_overview = res_data.is_a?(Array) && !res_data.empty? && res_data.first.is_a?(Hash) && res_data.first.keys.sort.eql?(CONF_OVERVIEW_KEYS)
-        SecretHider.deep_remove_secret(res_data, is_name_value: is_config_overview) unless @option_show_secrets || @option_display.eql?(:data)
+        SecretHider.deep_remove_secret(res_data) unless @option_show_secrets || @option_display.eql?(:data)
         # comma separated list in string format
         user_asked_fields_list_str = @option_fields
         case @option_format
@@ -189,14 +202,15 @@ module Aspera
             res_data = [res_data]
           end
           case results[:type]
+          when :config_over
+            table_rows_hash_val = Flattener.new.config_over(res_data)
+            final_table_columns = CONF_OVERVIEW_KEYS
           when :object_list # goes to table display
             raise "internal error: unexpected type: #{res_data.class}, expecting Array" unless res_data.is_a?(Array)
             # :object_list is an array of hash tables, where key=colum name
             table_rows_hash_val = res_data
             final_table_columns = nil
-            if @option_flat_hash
-              table_rows_hash_val = table_rows_hash_val.map{|obj|self.class.flattened_object(obj, expand_last: results[:option_expand_last])}
-            end
+            table_rows_hash_val = table_rows_hash_val.map{|obj|Flattener.new(expand_last: results[:option_expand_last]).flatten(obj)} if @option_flat_hash
             final_table_columns =
               case user_asked_fields_list_str
               when FIELDS_DEFAULT then result_default_fields(results, table_rows_hash_val)
@@ -214,10 +228,7 @@ module Aspera
             # :single_object is a simple hash table  (can be nested)
             raise "internal error: expecting Hash: got #{res_data.class}: #{res_data}" unless res_data.is_a?(Hash)
             final_table_columns = results[:columns] || KEY_VALUE
-            if @option_flat_hash
-              res_data = self.class.flattened_object(res_data, expand_last: results[:option_expand_last])
-              self.class.flatten_name_value_list(res_data)
-            end
+            res_data = Flattener.new(expand_last: results[:option_expand_last]).flatten(res_data) if @option_flat_hash
             asked_fields =
               case user_asked_fields_list_str
               when FIELDS_DEFAULT then results[:fields] || res_data.keys
@@ -261,8 +272,7 @@ module Aspera
             display_message(:info, 'empty'.gray) if @option_format.eql?(:table)
             return
           end
-          # convert to string with special function. here table_rows_hash_val is an array of hash
-          table_rows_hash_val = results[:textify].call(table_rows_hash_val) if results.key?(:textify)
+          # here table_rows_hash_val is an array of hash
           unless @option_select.nil? || (@option_select.respond_to?(:empty?) && @option_select.empty?)
             raise CliBadArgument, "expecting hash for select, have #{@option_select.class}: #{@option_select}" unless @option_select.is_a?(Hash)
             @option_select.each{|k, v|table_rows_hash_val.select!{|i|i[k].eql?(v)}}
