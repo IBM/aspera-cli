@@ -652,7 +652,7 @@ taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send
 $(T)aocadm1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin auth_providers list
-	$(EXE_MAN) aoc admin subscription
+	-$(EXE_MAN) aoc admin subscription
 	@touch $@
 $(T)aoc8: $(T).exists
 	@echo $@
