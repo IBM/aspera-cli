@@ -15,6 +15,15 @@ module Aspera
         @expand_last = expand_last
       end
 
+      # General method
+      def flatten(something)
+        raise 'only Hash' unless something.is_a?(Hash)
+        @result = {}
+        flatten_any(something, '')
+        return @result
+      end
+
+      # Special method for configuration overview
       def config_over(something)
         @result = []
         something.each do |config, preset|
@@ -25,24 +34,22 @@ module Aspera
         return @result
       end
 
-      def flatten(something)
-        raise 'only Hash' unless something.is_a?(Hash)
-        @result = {}
-        flatten_something(something, '')
-        return @result
-      end
-
       private
 
+      # Highlight special values
       def special(what)
         "<#{what}>".reverse_color
       end
 
+      # @return true if hash is simple, ie no nested hash or array
       def simple_hash?(h)
         !(h.values.any?{|v|[Hash, Array].include?(v.class)})
       end
 
-      def flatten_something(something, name)
+      # Recursive function to flatten any type
+      # @param something [Object] to be flattened
+      # @param name [String] name of englobing key
+      def flatten_any(something, name)
         if something.is_a?(Hash) && !(@expand_last && simple_hash?(something))
           flattened_hash(something, name)
         elsif something.is_a?(Array)
@@ -57,7 +64,8 @@ module Aspera
       end
 
       # Recursive function to flatten an array
-      # @return nil
+      # @param array [Array] to be flattened
+      # @param name [String] name of englobing key
       def flatten_array(array, name)
         if array.empty?
           @result[name] = special('empty list')
@@ -68,23 +76,18 @@ module Aspera
         elsif array.all?{|i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
           flattened_hash(array.each_with_object({}){|i, h|h[i['name']] = i['value']}, name)
         else
-          array.each_with_index do |item, index|
-            flatten_something(item, "#{name}.#{index}")
-          end
+          array.each_with_index { |item, index| flatten_any(item, "#{name}.#{index}")}
         end
         nil
       end
 
-      # Recursive function to modify a Hash
-      # @return [Hash] new hash flattened
-      # @param hash [Hash] to be modified
-      # @param expand_last [TrueClass,FalseClass] true if last level is not
-      # @param result [Hash] new hash flattened
-      # @param name [String] true if last level is not
+      # Recursive function to flatten a Hash
+      # @param hash [Hash] to be flattened
+      # @param name [String] name of englobing key
       def flattened_hash(hash, name)
         prefix = name.empty? ? '' : "#{name}."
         hash.each do |k, v|
-          flatten_something(v, "#{prefix}#{k}")
+          flatten_any(v, "#{prefix}#{k}")
         end
       end
     end # class
