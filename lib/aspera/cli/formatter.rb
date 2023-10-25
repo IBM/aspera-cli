@@ -60,16 +60,22 @@ module Aspera
         # @param result [Hash] new hash flattened
         # @param prefix [String] true if last level is not
         def flattened_object(source, result: {}, prefix: '', expand_last: false)
-          Log.log.debug{"(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-"}
+          # Log.log.debug{"(#{expand_last})[#{simple_hash?(source)}] -#{source.values}- \n-#{source}-"}
           source.each do |k, v|
             if v.is_a?(Hash) && !(expand_last && simple_hash?(v))
-              flattened_object(v, result: result, prefix: prefix + k.to_s + '.', expand_last: expand_last)
+              flattened_object(v, result: result, prefix: "#{prefix}#{k}.", expand_last: expand_last)
             elsif v.is_a?(Array)
-              if v.all?(String)
+              if v.empty?
+                result[prefix + k.to_s] = '<empty>'.bg_gray.black
+              elsif v.all?(String)
                 result[prefix + k.to_s] = v.join("\n")
+              elsif v.all?{|i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
+                result[prefix + k.to_s] = v.map(&:values).join(', ')
+              elsif v.all?{|i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
+                flattened_object(v.each_with_object({}){|i, h|h[i['name']] = i['value']}, result: result, prefix: "#{prefix}#{k}.", expand_last: expand_last)
               else
                 v.each_with_index do |item, index|
-                  array_prefix = prefix + k.to_s + "[#{index}]"
+                  array_prefix = "#{prefix}#{k}[#{index}]"
                   if item.is_a?(Hash)
                     flattened_object(item, result: result, prefix: "#{array_prefix}.", expand_last: expand_last)
                   else

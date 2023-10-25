@@ -136,26 +136,6 @@ module Aspera
             end
         end
 
-        def c_textify_browse(table_data)
-          return table_data.map do |i|
-                   i['permissions'] = i['permissions'].map { |x| x['name'] }.join(',')
-                   i
-                 end
-        end
-
-        # key/value is defined in main in hash_table
-        def c_textify_bool_list_result(list, name_list)
-          list.each_index do |i|
-            next unless name_list.include?(list[i]['key'])
-            list[i]['value'].each do |item|
-              list.push({'key' => item['name'], 'value' => item['value']})
-            end
-            list.delete_at(i)
-            # continue at same index because we delete current one
-            redo
-          end
-        end
-
         # reduce the path from a result on given named column
         def c_result_remove_prefix_path(result, column, path_prefix)
           if !path_prefix.nil?
@@ -257,12 +237,10 @@ module Aspera
             # if there is no items
             case send_result['self']['type']
             when 'directory', 'container' # directory: node, container: shares
-              result = { data: send_result['items'], type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
+              result = { data: send_result['items'], type: :object_list }
               formatter.display_item_count(send_result['item_count'], send_result['total_count'])
             else # 'file','symbolic_link'
               result = { data: send_result['self'], type: :single_object}
-              # result={ data: [send_result['self']] , type: :object_list, textify: lambda { |table_data| c_textify_browse(table_data) } }
-              # raise "unknown type: #{send_result['self']['type']}"
             end
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :sync
@@ -362,7 +340,7 @@ module Aspera
             return { type: :object_list, data: events}
           when :info
             nd_info = @api_node.read('info')[:data]
-            return { type: :single_object, data: nd_info, textify: lambda { |table_data| c_textify_bool_list_result(table_data, %w[capabilities settings])}}
+            return { type: :single_object, data: nd_info}
           when :license
             # requires: asnodeadmin -mu <node user> --acl-add=internal --internal
             node_license = @api_node.read('license')[:data]
