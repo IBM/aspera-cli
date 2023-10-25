@@ -193,6 +193,7 @@ module Aspera
                 end
               # add special key
               package['items'] = package['link'].is_a?(Array) ? package['link'].length : 0
+              package['metadata'] = package['metadata']['field'].each_with_object({}){|i, m| m[i['name']] = i['content'] }
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient
@@ -269,13 +270,15 @@ module Aspera
             end
             return nagios.result
           when :package
-            command_pkg = options.get_next_command(%i[send recv list])
+            command_pkg = options.get_next_command(%i[send recv list show])
             case command_pkg
+            when :show
+              delivery_id = instance_identifier
+              return {type: :single_object, data: mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)} }
             when :list
-              result = mailbox_filtered_entries
               return {
                 type:   :object_list,
-                data:   result,
+                data:   mailbox_filtered_entries,
                 fields: [PACKAGE_MATCH_FIELD, 'title', 'items']
               }
             when :send
