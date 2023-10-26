@@ -104,7 +104,7 @@ $(T)shadm: $(T).exists
 	$(EXE_MAN) shares admin user share_permissions 1 show 1
 	$(EXE_MAN) shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
 	-$(EXE_MAN) shares admin user add --type=ldap the_name
-	$(EXE_MAN) shares admin share list --fields=-status,status_message
+	$(EXE_MAN) shares admin share list --fields=DEF,-status,status_message
 	$(EXE_MAN) shares admin share user_permissions 1 list
 	@touch $@
 $(T)sh1: $(T).exists

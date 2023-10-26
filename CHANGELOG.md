@@ -2,6 +2,13 @@
 
 * 4.15.0.pre
 
+  * new: wizard: can detect multiple applications at the same address or url.
+  * new: aoc: wizard accepts public links
+  * new: added resolution hints for some known issues.
+  * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+  * new: orchestrator: error analysis for workflow start
+  * new: node: added command `transfer sessions` to list all sessions of all transfers
+  * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
@@ -12,13 +19,7 @@
   * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
   * change(break): faspex: option `source_name` is now `remote_source`
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
-  * new: wizard: can detect multiple applications at the same address or url.
-  * new: aoc: wizard accepts public links
-  * new: added resolution hints for some known issues.
-  * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
-  * new: orchestrator: error analysis for workflow start
-  * new: node: added command `transfer sessions` to list all sessions of all transfers
-  * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
+  * change(break): option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
 
 * 4.14.0
 

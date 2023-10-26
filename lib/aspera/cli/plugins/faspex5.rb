@@ -538,9 +538,9 @@ module Aspera
                 list_key = false
                 id_as_arg = 'type'
               when :accounts
-                display_fields = [:all_but, 'user_profile_data_attributes']
+                display_fields = Formatter.all_but('user_profile_data_attributes')
               when :oauth_clients
-                display_fields = [:all_but, 'public_key']
+                display_fields = Formatter.all_but('public_key')
                 adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)

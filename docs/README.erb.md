@@ -1256,14 +1256,24 @@ To hide secrets from output, set option `show_secrets` to `no`.
 
 #### Selection of output object properties
 
-By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific columns to be displayed, by setting the `fields` option to one of the following value:
+By default, a table output will display one line per entry, and columns for each properties.
+Depending on the command, columns may include by default all properties, or only some selected properties.
+It is possible to define specific columns to be displayed, by setting the `fields` option.
+
+The `fields` option can be either a comma separated list, or an extended value array.
+
+Elements of the list can be:
 
 - DEF : default display of columns (that's the default, when not set)
 - ALL : all columns available
-- a,b,c : the list of attributes specified by the comma separated list
-- Array extended value: for instance, @json:'["a","b","c"]' same as above
-- +a,b,c : add selected properties to the default selection.
-- -a,b,c : remove selected properties from the default selection.
+- -property : remove property from the current list
+- property : add property to the current list
+
+Examples:
+
+- `a,b,c` : the list of attributes specified as a comma separated list
+- Array extended value: for instance, `@json:'["a","b","c"]'` same as above
+- `DEF,-a,b` : default property list, remove `a` and add `b`
 
 ### <a id="extended"></a>Extended Value Syntax
 

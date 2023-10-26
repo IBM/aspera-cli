@@ -133,7 +133,7 @@ module Aspera
           command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
-            return {type: :single_object, data: @ats_api_pub.cloud_names, columns: %w[id name]}
+            return {type: :object_list, data: @ats_api_pub.cloud_names.map { |k, v| %w[id name].zip([k, v]).to_h }}
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show

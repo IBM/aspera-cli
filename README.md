@@ -1262,14 +1262,24 @@ To hide secrets from output, set option `show_secrets` to `no`.
 
 #### Selection of output object properties
 
-By default, a table output will display one line per entry, and columns for each entries. Depending on the command, columns may include by default all properties, or only some selected properties. It is possible to define specific columns to be displayed, by setting the `fields` option to one of the following value:
+By default, a table output will display one line per entry, and columns for each properties.
+Depending on the command, columns may include by default all properties, or only some selected properties.
+It is possible to define specific columns to be displayed, by setting the `fields` option.
+
+The `fields` option can be either a comma separated list, or an extended value array.
+
+Elements of the list can be:
 
 - DEF : default display of columns (that's the default, when not set)
 - ALL : all columns available
-- a,b,c : the list of attributes specified by the comma separated list
-- Array extended value: for instance, @json:'["a","b","c"]' same as above
-- +a,b,c : add selected properties to the default selection.
-- -a,b,c : remove selected properties from the default selection.
+- -property : remove property from the current list
+- property : add property to the current list
+
+Examples:
+
+- `a,b,c` : the list of attributes specified as a comma separated list
+- Array extended value: for instance, `@json:'["a","b","c"]'` same as above
+- `DEF,-a,b` : default property list, remove `a` and add `b`
 
 ### <a id="extended"></a>Extended Value Syntax
 
@@ -3217,7 +3227,7 @@ OPTIONS: global
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of fields, or ALL, or DEF
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array)
         --select=VALUE               Select only some items in lists: column, value (Hash)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
@@ -5798,7 +5808,7 @@ Aspera Shares supports the "node API" for the file transfer part.
 ```bash
 shares admin group list
 shares admin node list
-shares admin share list --fields=-status,status_message
+shares admin share list --fields=DEF,-status,status_message
 shares admin share user_permissions 1 list
 shares admin user add --type=ldap the_name
 shares admin user app_authorizations 1 modify @json:'{"app_login":true}'

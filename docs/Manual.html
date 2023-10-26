@@ -1313,20 +1313,28 @@ hide secrets from output, set option <code>show_secrets</code> to
 class="header-section-number">4.5.6</span> Selection of output object
 properties</h3>
 <p>By default, a table output will display one line per entry, and
-columns for each entries. Depending on the command, columns may include
-by default all properties, or only some selected properties. It is
-possible to define specific columns to be displayed, by setting the
-<code>fields</code> option to one of the following value:</p>
+columns for each properties. Depending on the command, columns may
+include by default all properties, or only some selected properties. It
+is possible to define specific columns to be displayed, by setting the
+<code>fields</code> option.</p>
+<p>The <code>fields</code> option can be either a comma separated list,
+or an extended value array.</p>
+<p>Elements of the list can be:</p>
 <ul>
 <li>DEF : default display of columns (that’s the default, when not
 set)</li>
 <li>ALL : all columns available</li>
-<li>a,b,c : the list of attributes specified by the comma separated
-list</li>
-<li>Array extended value: for instance, <span class="citation"
-data-cites="json">@json</span>:‘[“a”,“b”,“c”]’ same as above</li>
-<li>+a,b,c : add selected properties to the default selection.</li>
-<li>-a,b,c : remove selected properties from the default selection.</li>
+<li>-property : remove property from the current list</li>
+<li>property : add property to the current list</li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li><code>a,b,c</code> : the list of attributes specified as a comma
+separated list</li>
+<li>Array extended value: for instance,
+<code>@json:'["a","b","c"]'</code> same as above</li>
+<li><code>DEF,-a,b</code> : default property list, remove <code>a</code>
+and add <code>b</code></li>
 </ul>
 <h2 data-number="4.6" id="extended-value-syntax"><span
 class="header-section-number">4.6</span> <a id="extended"></a>Extended
@@ -4451,7 +4459,7 @@ OPTIONS: global
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of fields, or ALL, or DEF
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array)
         --select=VALUE               Select only some items in lists: column, value (Hash)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
@@ -7037,7 +7045,7 @@ class="header-section-number">11.1</span> Shares 1 sample commands</h2>
 <div class="sourceCode" id="cb416"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb416-1"><a href="#cb416-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin group list</span>
 <span id="cb416-2"><a href="#cb416-2" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin node list</span>
-<span id="cb416-3"><a href="#cb416-3" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share list <span class="at">--fields</span><span class="op">=</span>-status,status_message</span>
+<span id="cb416-3"><a href="#cb416-3" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
 <span id="cb416-4"><a href="#cb416-4" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share user_permissions 1 list</span>
 <span id="cb416-5"><a href="#cb416-5" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user add <span class="at">--type</span><span class="op">=</span>ldap the_name</span>
 <span id="cb416-6"><a href="#cb416-6" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
