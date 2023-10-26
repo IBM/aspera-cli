@@ -79,7 +79,11 @@ destination_root:
   :cli:
     :type: :special
 destination_root_id:
-  :desc: The file ID of the destination root directory. Required when using Bearer token auth for the destination node.
+  :desc: |-
+    The file ID of the destination root directory.
+    Required when using Bearer token auth for the destination node.
+
+
   :accepted_types: :string
   :agents:
   - :sdk
@@ -177,7 +181,7 @@ multi_session:
 
   :accepted_types: :int
   :cli:
-    :type: :ignore
+    :type: :special
     :switch: "-C"
 multi_session_threshold:
   :desc: |-
@@ -229,7 +233,8 @@ precalculate_job_size:
 preserve_access_time:
   :desc: |-
     Preserve the source-file access timestamps at the destination.
-    Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.
+    Because source access times are updated by the transfer operation,
+    the timestamp that is preserved is the one just before to the transfer.
 
 
   :cli:
@@ -245,7 +250,8 @@ preserve_creation_time:
     :type: :opt_without_arg
 preserve_modification_time:
   :desc: |-
-    Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.
+    Set the modification time, the last time a file or directory was modified (written), of a transferred file
+    to the modification of the source file or directory.
     Preserve source-file modification timestamps at the destination.
 
 
