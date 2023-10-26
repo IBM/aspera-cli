@@ -2652,107 +2652,109 @@ Columns:
 - D=Direct (local `ascp` execution)
 - N=Node API
 - C=Connect Client
+- T=Transfer SDK
+- H=HTTP Gateway
 
 `ascp` argument or environment variable is provided in description.
 
 Fields with EX_ prefix are extensions to transfer agent [`direct`](#agt_direct). (only in `ascli`).
 
-| Field | Type | D | N | C | Description |
-| ----- | ---- | - | - | - | ----------- |
-| apply_local_docroot | bool | Y | &nbsp; | &nbsp; | Apply local docroot to source paths.<br/>(--apply-local-docroot) |
-| authentication | string | &nbsp; | &nbsp; | Y | value=token for SSH bypass keys, else password asked if not provided. |
-| cipher | string | Y | Y | Y | In transit encryption type.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum}) |
-| cipher_allowed | string | Y | Y | Y | returned by node API. Valid literals include "aes-128" and "none". |
-| compression | int | &nbsp; | &nbsp; | &nbsp; | ascp4 only, 0 / 1? |
-| content_protection | string | Y | Y | Y | Enable client-side encryption at rest. (CSEAR, content protection)<br/>Allowed values: encrypt, decrypt<br/>(--file-crypt {enum}) |
-| content_protection_password | string | Y | Y | Y | Specifies CSEAR password. (content protection)<br/>(env:ASPERA_SCP_FILEPASS) |
-| cookie | string | Y | Y | Y | Metadata for transfer specified by application<br/>(env:ASPERA_SCP_COOKIE) |
-| create_dir | bool | Y | Y | Y | Specifies whether to create new directories.<br/>(-d) |
-| delete_before_transfer | bool | Y | Y | Y | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects<br/>on the source are not deleted.<br/>(--delete-before-transfer) |
-| delete_source | bool | Y | Y | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
-| destination_root | string | Y | Y | Y | Destination root directory. |
-| destination_root_id | string | &nbsp; | &nbsp; | &nbsp; | The file ID of the destination root directory. Required when using Bearer token auth for the destination node. |
-| dgram_size | int | Y | Y | Y | UDP datagram size in bytes<br/>(-Z {int}) |
-| direction | string | Y | Y | Y | Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode (conversion){enum}) |
-| exclude_newer_than | int | Y | &nbsp; | &nbsp; | skip src files with mtime > arg<br/>(--exclude-newer-than {int}) |
-| exclude_older_than | int | Y | &nbsp; | &nbsp; | skip src files with mtime < arg<br/>(--exclude-older-than {int}) |
-| fasp_port | int | Y | Y | Y | Specifies fasp (UDP) port.<br/>(-O {int}) |
-| fasp_url | string | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex. |
-| file_checksum | string | Y | Y | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none |
-| http_fallback | bool<br/>string | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){bool}|{string}) |
-| http_fallback_port | int | Y | &nbsp; | &nbsp; | Specifies http port when no cipher is used<br/>(-t {int}) |
-| https_fallback_port | int | Y | Y | Y | Specifies https port when cipher is used<br/>(-t {int}) |
-| keepalive | bool | Y | &nbsp; | &nbsp; | The session is running in persistent session mode.<br/>(--keepalive) |
-| lock_min_rate | bool | Y | Y | Y | TODO: remove ? |
-| lock_min_rate_kbps | bool | &nbsp; | &nbsp; | Y | If true, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps. |
-| lock_rate_policy | bool | &nbsp; | &nbsp; | Y | If true, lock the rate policy to the default value. |
-| lock_target_rate | bool | Y | Y | Y | TODO: remove ? |
-| lock_target_rate_kbps | bool | Y | Y | Y | If true, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps. |
-| min_rate_cap_kbps | int | Y | Y | Y | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0) |
-| min_rate_kbps | int | Y | Y | Y | Set the minimum transfer rate in kilobits per second.<br/>(-m {int}) |
-| move_after_transfer | string | Y | Y | &nbsp; | The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.<br/>(--move-after-transfer {string}) |
-| multi_session | int | Y | Y | Y | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with resume_policy=none.<br/> |
-| multi_session_threshold | int | Y | Y | &nbsp; | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(--multi-session-threshold {int}) |
-| obfuscate_file_names | bool | &nbsp; | &nbsp; | &nbsp; | HTTP Gateway obfuscates file names when set to true. |
-| overwrite | string | Y | Y | Y | Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite {enum}) |
-| password | string | &nbsp; | Y | &nbsp; | Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node api only. |
-| paths | array | Y | Y | Y | Array of path to the source (required) and a path to the destination (optional). |
-| precalculate_job_size | bool | Y | Y | Y | Specifies whether to precalculate the job size.<br/>(--precalculate-job-size) |
-| preserve_access_time | bool | Y | Y | Y | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.<br/>(--preserve-access-time) |
-| preserve_acls | string | Y | &nbsp; | &nbsp; | Preserve access control lists.<br/>Allowed values: none, native, metafile<br/>(--preserve-acls {enum}) |
-| preserve_creation_time | bool | Y | Y | Y | (Windows only) Preserve source-file creation timestamps at the destination.<br/>Only Windows systems retain information about creation time.<br/>If the destination is not a Windows computer, this option is ignored.<br/>(--preserve-creation-time) |
-| preserve_extended_attrs | string | &nbsp; | &nbsp; | &nbsp; | Preserve the extended attributes.<br/>Allowed values: none, native, metafile<br/>(--preserve-xattrs {enum}) |
-| preserve_file_owner_gid | bool | Y | &nbsp; | &nbsp; | Preserve the group ID for a file owner<br/>(--preserve-file-owner-gid) |
-| preserve_file_owner_uid | bool | Y | &nbsp; | &nbsp; | Preserve the user ID for a file owner<br/>(--preserve-file-owner-uid) |
-| preserve_modification_time | bool | Y | Y | Y | Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.<br/>Preserve source-file modification timestamps at the destination.<br/>(--preserve-modification-time) |
-| preserve_remote_acls | string | Y | &nbsp; | &nbsp; | Preserve remote access control lists.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-acls {enum}) |
-| preserve_source_access_time | bool | Y | &nbsp; | &nbsp; | Preserve the time logged for when the source file was accessed<br/>(--preserve-source-access-time) |
-| preserve_times | bool | &nbsp; | Y | &nbsp; | Preserve file timestamps.<br/>(--preserve-times) |
-| proxy | string | Y | &nbsp; | &nbsp; | Specify the address of the Aspera high-speed proxy server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy {string}) |
-| rate_policy | string | Y | Y | Y | The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy {enum}) |
-| rate_policy_allowed | string | &nbsp; | &nbsp; | Y | Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed |
-| read_threads | int | &nbsp; | &nbsp; | &nbsp; | ascp4 only |
-| remote_access_key | string | &nbsp; | &nbsp; | &nbsp; | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node. |
-| remote_host | string | Y | Y | Y | IP or fully qualified domain name of the remote server<br/>(--host {string}) |
-| remote_password | string | Y | Y | Y | SSH session password<br/>(env:ASPERA_SCP_PASS) |
-| remote_user | string | Y | Y | Y | Remote user. Default value is "xfer" on node or connect.<br/>(--user {string}) |
-| remove_after_transfer | bool | Y | Y | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
-| remove_empty_directories | bool | Y | Y | &nbsp; | Specifies whether to remove empty directories.<br/>(--remove-empty-directories) |
-| remove_empty_source_directory | bool | Y | &nbsp; | &nbsp; | Remove empty source subdirectories and remove the source directory itself, if empty<br/>(--remove-empty-source-directory) |
-| remove_skipped | bool | Y | Y | Y | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
-| resume_policy | string | Y | Y | Y | If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
-| retry_duration | string<br/>int | &nbsp; | Y | Y | Specifies how long to wait before retrying transfer. (e.g. "5min") |
-| source_root | string | Y | Y | Y | Path to be prepended to each source path.<br/>This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64 (conversion){string}) |
-| source_root_id | string | &nbsp; | Y | &nbsp; | The file ID of the source root directory. Required when using Bearer token auth for the source node. |
-| src_base | string | Y | Y | &nbsp; | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64 (conversion){string}) |
-| ssh_args | string | &nbsp; | &nbsp; | &nbsp; | Array of arguments to pass to SSH. Use with caution. |
-| ssh_port | int | Y | Y | Y | Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P {int}) |
-| ssh_private_key | string | Y | &nbsp; | &nbsp; | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY) |
-| ssh_private_key_passphrase | string | Y | &nbsp; | &nbsp; | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS) |
-| sshfp | string | Y | Y | Y | Check it against server SSH host key fingerprint<br/>(--check-sshfp {string}) |
-| symlink_policy | string | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links {enum}) |
-| tags | hash | Y | Y | Y | Metadata for transfer as JSON<br/>(--tags64 (conversion){hash}) |
-| target_rate_cap_kbps | int | &nbsp; | &nbsp; | Y | Returned by upload/download_setup node API. |
-| target_rate_kbps | int | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {int}) |
-| target_rate_percentage | string | Y | Y | Y | TODO: remove ? |
-| title | string | &nbsp; | Y | Y | Title of the transfer |
-| token | string | Y | Y | Y | Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN) |
-| use_ascp4 | bool | Y | Y | &nbsp; | specify version of protocol |
-| use_system_ssh | string | &nbsp; | &nbsp; | &nbsp; | TODO, comment... |
-| write_threads | int | &nbsp; | &nbsp; | &nbsp; | ascp4 only |
-| wss_enabled | bool | Y | Y | Y | Server has Web Socket service enabled |
-| wss_port | int | Y | Y | Y | TCP port used for websocket service feed |
-| EX_ascp_args | array | Y | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native command line arguments to ascp |
-| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
-| EX_file_list | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file list, or option transfer_info.ascp_args<br/>source file list |
-| EX_file_pair_list | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file pair list, or option transfer_info.ascp_args<br/>source file pair list |
-| EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) TODO, use proxy option ?<br/>Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
-| EX_http_transfer_jpeg | int | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>HTTP transfers as JPEG file<br/>(-j {int}) |
-| EX_license_text | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_SCP_LICENSE<br/>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
-| EX_no_read | bool | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no read source<br/>(--no-read) |
-| EX_no_write | bool | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no write on destination<br/>(--no-write) |
-| EX_proxy_password | string | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_PROXY_PASS<br/>Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL provided in parameter: proxy.<br/>(env:ASPERA_PROXY_PASS) |
-| EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
+| Field | Type | D | N | C | T | H | Description |
+| ----- | ---- | - | - | - | - | - | ----------- |
+| apply_local_docroot | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Apply local docroot to source paths.<br/>(--apply-local-docroot) |
+| authentication | string | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | value=token for SSH bypass keys, else password asked if not provided.<br/>(<ignored>) |
+| cipher | string | Y | Y | Y | Y | Y | In transit encryption type.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum}) |
+| cipher_allowed | string | Y | Y | Y | Y | Y | returned by node API. Valid literals include "aes-128" and "none".<br/>(<ignored>) |
+| compression | int | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only, 0 / 1?<br/>(<ignored>) |
+| content_protection | string | Y | Y | Y | Y | Y | Enable client-side encryption at rest. (CSEAR, content protection)<br/>Allowed values: encrypt, decrypt<br/>(--file-crypt {enum}) |
+| content_protection_password | string | Y | Y | Y | Y | Y | Specifies CSEAR password. (content protection)<br/>(env:ASPERA_SCP_FILEPASS) |
+| cookie | string | Y | Y | Y | Y | Y | Metadata for transfer specified by application<br/>(env:ASPERA_SCP_COOKIE) |
+| create_dir | bool | Y | Y | Y | Y | Y | Specifies whether to create new directories.<br/>(-d) |
+| delete_before_transfer | bool | Y | Y | Y | Y | Y | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects<br/>on the source are not deleted.<br/>(--delete-before-transfer) |
+| delete_source | bool | Y | Y | &nbsp; | &nbsp; | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
+| destination_root | string | Y | Y | Y | Y | Y | Destination root directory.<br/>(<special>) |
+| destination_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(<ignored>) |
+| dgram_size | int | Y | Y | Y | Y | Y | UDP datagram size in bytes<br/>(-Z {int}) |
+| direction | string | Y | Y | Y | Y | Y | Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode (conversion){enum}) |
+| exclude_newer_than | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | skip src files with mtime > arg<br/>(--exclude-newer-than {int}) |
+| exclude_older_than | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | skip src files with mtime < arg<br/>(--exclude-older-than {int}) |
+| fasp_port | int | Y | Y | Y | Y | Y | Specifies fasp (UDP) port.<br/>(-O {int}) |
+| fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex.<br/>(<ignored>) |
+| file_checksum | string | Y | Y | &nbsp; | &nbsp; | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(<ignored>) |
+| http_fallback | bool<br/>string | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){bool}|{string}) |
+| http_fallback_port | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specifies http port when no cipher is used<br/>(-t {int}) |
+| https_fallback_port | int | Y | Y | Y | Y | Y | Specifies https port when cipher is used<br/>(-t {int}) |
+| keepalive | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The session is running in persistent session mode.<br/>(--keepalive) |
+| lock_min_rate | bool | Y | Y | Y | Y | Y | TODO: remove ?<br/>(<ignored>) |
+| lock_min_rate_kbps | bool | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | If true, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(<ignored>) |
+| lock_rate_policy | bool | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | If true, lock the rate policy to the default value.<br/>(<ignored>) |
+| lock_target_rate | bool | Y | Y | Y | Y | Y | TODO: remove ?<br/>(<ignored>) |
+| lock_target_rate_kbps | bool | Y | Y | Y | Y | Y | If true, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(<ignored>) |
+| min_rate_cap_kbps | int | Y | Y | Y | Y | Y | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(<ignored>) |
+| min_rate_kbps | int | Y | Y | Y | Y | Y | Set the minimum transfer rate in kilobits per second.<br/>(-m {int}) |
+| move_after_transfer | string | Y | Y | &nbsp; | &nbsp; | &nbsp; | The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.<br/>(--move-after-transfer {string}) |
+| multi_session | int | Y | Y | Y | Y | Y | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with resume_policy=none.<br/><br/>(<special>) |
+| multi_session_threshold | int | Y | Y | &nbsp; | &nbsp; | &nbsp; | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(--multi-session-threshold {int}) |
+| obfuscate_file_names | bool | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | HTTP Gateway obfuscates file names when set to true.<br/>(<ignored>) |
+| overwrite | string | Y | Y | Y | Y | Y | Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite {enum}) |
+| password | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node api only.<br/>(<ignored>) |
+| paths | array | Y | Y | Y | Y | Y | Array of path to the source (required) and a path to the destination (optional).<br/>(<special>) |
+| precalculate_job_size | bool | Y | Y | Y | Y | Y | Specifies whether to precalculate the job size.<br/>(--precalculate-job-size) |
+| preserve_access_time | bool | Y | Y | Y | Y | Y | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation,<br/>the timestamp that is preserved is the one just before to the transfer.<br/>(--preserve-access-time) |
+| preserve_acls | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve access control lists.<br/>Allowed values: none, native, metafile<br/>(--preserve-acls {enum}) |
+| preserve_creation_time | bool | Y | Y | Y | Y | Y | (Windows only) Preserve source-file creation timestamps at the destination.<br/>Only Windows systems retain information about creation time.<br/>If the destination is not a Windows computer, this option is ignored.<br/>(--preserve-creation-time) |
+| preserve_extended_attrs | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve the extended attributes.<br/>Allowed values: none, native, metafile<br/>(--preserve-xattrs {enum}) |
+| preserve_file_owner_gid | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve the group ID for a file owner<br/>(--preserve-file-owner-gid) |
+| preserve_file_owner_uid | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve the user ID for a file owner<br/>(--preserve-file-owner-uid) |
+| preserve_modification_time | bool | Y | Y | Y | Y | Y | Set the modification time, the last time a file or directory was modified (written), of a transferred file<br/>to the modification of the source file or directory.<br/>Preserve source-file modification timestamps at the destination.<br/>(--preserve-modification-time) |
+| preserve_remote_acls | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve remote access control lists.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-acls {enum}) |
+| preserve_source_access_time | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Preserve the time logged for when the source file was accessed<br/>(--preserve-source-access-time) |
+| preserve_times | bool | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Preserve file timestamps.<br/>(--preserve-times) |
+| proxy | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specify the address of the Aspera high-speed proxy server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy {string}) |
+| rate_policy | string | Y | Y | Y | Y | Y | The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy {enum}) |
+| rate_policy_allowed | string | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed<br/>(<ignored>) |
+| read_threads | int | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(<ignored>) |
+| remote_access_key | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.<br/>(<ignored>) |
+| remote_host | string | Y | Y | Y | Y | Y | IP or fully qualified domain name of the remote server<br/>(--host {string}) |
+| remote_password | string | Y | Y | Y | Y | Y | SSH session password<br/>(env:ASPERA_SCP_PASS) |
+| remote_user | string | Y | Y | Y | Y | Y | Remote user. Default value is "xfer" on node or connect.<br/>(--user {string}) |
+| remove_after_transfer | bool | Y | Y | &nbsp; | &nbsp; | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
+| remove_empty_directories | bool | Y | Y | &nbsp; | &nbsp; | &nbsp; | Specifies whether to remove empty directories.<br/>(--remove-empty-directories) |
+| remove_empty_source_directory | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Remove empty source subdirectories and remove the source directory itself, if empty<br/>(--remove-empty-source-directory) |
+| remove_skipped | bool | Y | Y | Y | &nbsp; | &nbsp; | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
+| resume_policy | string | Y | Y | Y | Y | Y | If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
+| retry_duration | string<br/>int | &nbsp; | Y | Y | &nbsp; | &nbsp; | Specifies how long to wait before retrying transfer. (e.g. "5min")<br/>(<ignored>) |
+| source_root | string | Y | Y | Y | Y | Y | Path to be prepended to each source path.<br/>This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64 (conversion){string}) |
+| source_root_id | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(<ignored>) |
+| src_base | string | Y | Y | &nbsp; | &nbsp; | &nbsp; | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64 (conversion){string}) |
+| ssh_args | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Array of arguments to pass to SSH. Use with caution.<br/>(<ignored>) |
+| ssh_port | int | Y | Y | Y | Y | Y | Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P {int}) |
+| ssh_private_key | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY) |
+| ssh_private_key_passphrase | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS) |
+| sshfp | string | Y | Y | Y | Y | Y | Check it against server SSH host key fingerprint<br/>(--check-sshfp {string}) |
+| symlink_policy | string | Y | Y | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links {enum}) |
+| tags | hash | Y | Y | Y | Y | Y | Metadata for transfer as JSON<br/>(--tags64 (conversion){hash}) |
+| target_rate_cap_kbps | int | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | Returned by upload/download_setup node API.<br/>(<ignored>) |
+| target_rate_kbps | int | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {int}) |
+| target_rate_percentage | string | Y | Y | Y | Y | Y | TODO: remove ?<br/>(<ignored>) |
+| title | string | &nbsp; | Y | Y | &nbsp; | &nbsp; | Title of the transfer<br/>(<ignored>) |
+| token | string | Y | Y | Y | Y | Y | Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN) |
+| use_ascp4 | bool | Y | Y | &nbsp; | &nbsp; | &nbsp; | specify version of protocol<br/>(<special>) |
+| use_system_ssh | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | TODO, comment...<br/>(<ignored>) |
+| write_threads | int | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(<ignored>) |
+| wss_enabled | bool | Y | Y | Y | Y | Y | Server has Web Socket service enabled<br/>(<special>) |
+| wss_port | int | Y | Y | Y | Y | Y | TCP port used for websocket service feed<br/>(<special>) |
+| EX_ascp_args | array | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native command line arguments to ascp<br/>(<special>) |
+| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
+| EX_file_list | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file list, or option transfer_info.ascp_args<br/>source file list<br/>(<special>) |
+| EX_file_pair_list | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file pair list, or option transfer_info.ascp_args<br/>source file pair list<br/>(<special>) |
+| EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) TODO, use proxy option ?<br/>Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
+| EX_http_transfer_jpeg | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>HTTP transfers as JPEG file<br/>(-j {int}) |
+| EX_license_text | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_SCP_LICENSE<br/>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
+| EX_no_read | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no read source<br/>(--no-read) |
+| EX_no_write | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no write on destination<br/>(--no-write) |
+| EX_proxy_password | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_PROXY_PASS<br/>Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL provided in parameter: proxy.<br/>(env:ASPERA_PROXY_PASS) |
+| EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
 
 #### Destination folder for transfers
 

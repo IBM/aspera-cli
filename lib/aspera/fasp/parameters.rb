@@ -80,8 +80,8 @@ module Aspera
                 end.map{|n|"{#{n}}"}.join('|')
                 conv = options[:cli].key?(:convert) ? '(conversion)' : ''
                 "#{options[:cli][:switch]} #{conv}#{values}"
-              when :special then Cli::Formatter.special('special')
-              when :ignore then Cli::Formatter.special('ignored')
+              when :special then Cli::Formatter.special('special', use_colors: use_colors)
+              when :ignore then Cli::Formatter.special('ignored', use_colors: use_colors)
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end

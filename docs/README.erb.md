@@ -2571,6 +2571,8 @@ Columns:
 - D=Direct (local `ascp` execution)
 - N=Node API
 - C=Connect Client
+- T=Transfer SDK
+- H=HTTP Gateway
 
 `ascp` argument or environment variable is provided in description.
 

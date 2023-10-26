@@ -107,8 +107,10 @@ module Aspera
 
       class << self
         # Highlight special values
-        def special(what)
-          "<#{what}>".reverse_color
+        def special(what, use_colors: true)
+          result = "<#{what}>"
+          result = result.reverse_color if use_colors
+          return result
         end
 
         def all_but(list)
