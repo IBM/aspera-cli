@@ -800,7 +800,9 @@ id="shell-parsing-for-unix-like-systems-linux-macos-aix"><span
 class="header-section-number">4.2.1</span> Shell parsing for Unix-like
 systems: Linux, macOS, AIX</h3>
 <p>Linux command line parsing is easy: It is fully documented in the
-shell’s documentation.</p>
+shell’s documentation. Executables get their <code>argc argv</code>
+directly from the Operating System (<code>exec</code> system call).
+Period.</p>
 <p>On Unix-like environments, this is typically a POSIX shell (bash,
 zsh, ksh, sh). In this environment the shell parses the command line,
 possibly replacing variables, etc… See <a
@@ -813,13 +815,13 @@ the shell for any command executed.</p>
 <h3 data-number="4.2.2" id="shell-parsing-for-windows"><span
 class="header-section-number">4.2.2</span> Shell parsing for
 Windows</h3>
-<p>MS Windows command line parsing is not hasndled by the shell
+<p>MS Windows command line parsing is not handled by the shell
 (<code>cmd.exe</code>), not handled by the operating system, but it is
-handled by the application. Typically, Windows applications use the <a
+handled by the executable. Typically, Windows executables use the <a
 href="https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args">microsoft
 library for this parsing</a>.</p>
-<p>As far as <code>ascli</code> is concerned: the application is Ruby.
-It has its own parsing algorithm, close to a Linux shell parsing.</p>
+<p>As far as <code>ascli</code> is concerned: the executable is Ruby. It
+has its own parsing algorithm, close to a Linux shell parsing.</p>
 <p>Thanksfully, <code>ascli</code> provides a command to check the value
 of an argument after parsing: <code>config echo</code>. One can also run
 <code>ascli</code> with option <code>--log-level=debug</code> to display

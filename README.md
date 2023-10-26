@@ -807,7 +807,7 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 
 #### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
-Linux command line parsing is easy: It is fully documented in the shell's documentation.
+Linux command line parsing is easy: It is fully documented in the shell's documentation. Executables get their `argc argv` directly from the Operating System (`exec` system call). Period.
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
 In this environment the shell parses the command line, possibly replacing variables, etc...
@@ -818,10 +818,10 @@ So special character handling (quotes, spaces, env vars, ...) is handled by the 
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application.
-Typically, Windows applications use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
+MS Windows command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
+Typically, Windows executables use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
-As far as `ascli` is concerned: the application is Ruby.
+As far as `ascli` is concerned: the executable is Ruby.
 It has its own parsing algorithm, close to a Linux shell parsing.
 
 Thanksfully, `ascli` provides a command to check the value of an argument after parsing: `config echo`.

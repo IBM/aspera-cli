@@ -812,10 +812,10 @@ So special character handling (quotes, spaces, env vars, ...) is handled by the 
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not hasndled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the application.
-Typically, Windows applications use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
+MS Windows command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
+Typically, Windows executables use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
-As far as <%=tool%> is concerned: the application is Ruby.
+As far as <%=tool%> is concerned: the executable is Ruby.
 It has its own parsing algorithm, close to a Linux shell parsing.
 
 Thanksfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
