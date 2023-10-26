@@ -4,6 +4,7 @@ require 'aspera/log'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/fasp/error'
+require 'aspera/cli/formatter'
 require 'securerandom'
 require 'base64'
 require 'json'
@@ -16,7 +17,7 @@ module Aspera
     # translate transfer specification to ascp parameter list
     class Parameters
       # Agents shown in manual for parameters (sub list)
-      SUPPORTED_AGENTS = %i[direct node connect].freeze
+      SUPPORTED_AGENTS = %i[direct node connect trsdk httpgw].freeze
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
@@ -79,7 +80,10 @@ module Aspera
                 end.map{|n|"{#{n}}"}.join('|')
                 conv = options[:cli].key?(:convert) ? '(conversion)' : ''
                 "#{options[:cli][:switch]} #{conv}#{values}"
-              else ''
+              when :special then Cli::Formatter.special('special')
+              when :ignore then Cli::Formatter.special('ignored')
+              else
+                param[:d].eql?(tick_yes) ? '' : 'n/a'
               end
             if options.key?(:enum)
               param[:description] += "\nAllowed values: #{options[:enum].join(', ')}"
@@ -205,6 +209,9 @@ module Aspera
 
         # special cases
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
+
+        # notify multi-session was already used, anyway it was deleted by agent direct
+        raise 'internal error' if @builder.read_param('multi_session')
 
         # use web socket session initiation ?
         if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
