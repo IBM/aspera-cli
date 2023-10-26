@@ -2,7 +2,7 @@
 # accepted_types : accepted types for non-enum
 # default        : default value if not specified
 # enum           : set with list of values for enum types accepted in transfer spec
-# agents         : supported agents (for doc only)
+# agents         : supported agents (for doc only), if not specified: all
 # required       : optional, default: false
 # cli.type       : ascp: type of parameter, one of CLI_OPTION_TYPES
 # cli.switch     : ascp: switch for ascp command line
@@ -227,15 +227,35 @@ precalculate_job_size:
   :cli:
     :type: :opt_without_arg
 preserve_access_time:
+  :desc: |-
+    Preserve the source-file access timestamps at the destination.
+    Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.
+
+
   :cli:
     :type: :opt_without_arg
 preserve_creation_time:
+  :desc: |-
+    (Windows only) Preserve source-file creation timestamps at the destination.
+    Only Windows systems retain information about creation time.
+    If the destination is not a Windows computer, this option is ignored.
+
+
   :cli:
     :type: :opt_without_arg
 preserve_modification_time:
+  :desc: |-
+    Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.
+    Preserve source-file modification timestamps at the destination.
+
+
   :cli:
     :type: :opt_without_arg
 preserve_times:
+  :desc: Preserve file timestamps. 
+  :agents:
+  - :sdk
+  - :node
   :cli:
     :type: :opt_without_arg
 rate_policy:
@@ -437,6 +457,7 @@ use_ascp4:
   :cli:
     :type: :special
 use_system_ssh:
+  :desc: TODO, comment...
   :accepted_types: :string
   :agents:
   - :sdk
@@ -454,22 +475,46 @@ source_root:
     :switch: "--source-prefix64"
     :convert: Aspera::Fasp::Parameters.convert_base64
 min_rate_cap_kbps:
+  :desc: |-
+    The highest minimum rate that an incoming transfer can request, in kilobits per second.
+    Client minimum rate requests that exceed the minimum rate cap are ignored.
+    The default value of unlimited applies no cap to the minimum rate. (Default: 0)
+
+
   :accepted_types: :int
   :cli:
     :type: :ignore
 lock_rate_policy:
+  :desc: If true, lock the rate policy to the default value.
   :accepted_types: :bool
+  :agents:
+  - :sdk
+  - :connect
   :cli:
     :type: :ignore
 lock_target_rate_kbps:
+  :desc: |-
+    If true, lock the target transfer rate to the default value set for target_rate_kbps.
+    If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+
+
   :accepted_types: :bool
   :cli:
     :type: :ignore
 lock_min_rate_kbps:
+  :desc: |-
+    If true, lock the minimum transfer rate to the value set for min_rate_kbps.
+    If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+
+
   :accepted_types: :bool
+  :agents:
+  - :sdk
+  - :connect
   :cli:
     :type: :ignore
 apply_local_docroot:
+  :desc: Apply local docroot to source paths.
   :agents:
   - :direct
   - :sdk
@@ -588,8 +633,10 @@ EX_license_text:
     :type: :envvar
     :variable: ASPERA_SCP_LICENSE
 keepalive:
+  :desc: The session is running in persistent session mode.
   :agents:
-  - :none
+  - :sdk
+  - :direct
   :cli:
     :type: :opt_without_arg
 dgram_size:
@@ -654,6 +701,7 @@ EX_no_write:
     :type: :opt_without_arg
     :switch: "--no-write"
 target_rate_percentage:
+  :desc: "TODO: remove ?"
   :cli:
     :type: :ignore
 rate_policy_allowed:
@@ -668,15 +716,18 @@ rate_policy_allowed:
   :cli:
     :type: :ignore
 fasp_url:
+  :desc: Only used in Faspex.
   :agents:
   - :unknown
   :cli:
     :type: :ignore
 lock_min_rate:
+  :desc: "TODO: remove ?"
   :accepted_types: :bool
   :cli:
     :type: :ignore
 lock_target_rate:
+  :desc: "TODO: remove ?"
   :accepted_types: :bool
   :cli:
     :type: :ignore
@@ -691,9 +742,10 @@ cipher_allowed:
   :cli:
     :type: :ignore
 obfuscate_file_names:
+  :desc: HTTP Gateway obfuscates file names when set to true.
   :accepted_types: :bool
   :agents:
-  - :unknown
+  - :httpgw
   :cli:
     :type: :ignore
 EX_file_list:

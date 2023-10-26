@@ -57,9 +57,9 @@ def spec_table
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Fasp::Parameters.man_table.each do |p|
+  Aspera::Fasp::Parameters.man_table(use_colors: false, use_unicode: false).each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
-    p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.empty?}
+    p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.strip.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')
     p[:type] = p[:type].gsub(',', '<br/>')
     table.push(fields.map{|f|p[f]})

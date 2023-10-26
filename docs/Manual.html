@@ -800,9 +800,7 @@ id="shell-parsing-for-unix-like-systems-linux-macos-aix"><span
 class="header-section-number">4.2.1</span> Shell parsing for Unix-like
 systems: Linux, macOS, AIX</h3>
 <p>Linux command line parsing is easy: It is fully documented in the
-shell’s documentation. Executables get their <code>argc argv</code>
-directly from the Operating System (<code>exec</code> system call).
-Period.</p>
+shell’s documentation.</p>
 <p>On Unix-like environments, this is typically a POSIX shell (bash,
 zsh, ksh, sh). In this environment the shell parses the command line,
 possibly replacing variables, etc… See <a
@@ -2945,7 +2943,7 @@ href="#agt_direct"><code>direct</code></a>. (only in
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>(–apply-local-docroot)</td>
+<td>Apply local docroot to source paths.<br/>(–apply-local-docroot)</td>
 </tr>
 <tr class="even">
 <td>authentication</td>
@@ -2976,6 +2974,14 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 “none”.</td>
 </tr>
 <tr class="odd">
+<td>compression</td>
+<td>int</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>ascp4 only, 0 / 1?</td>
+</tr>
+<tr class="even">
 <td>content_protection</td>
 <td>string</td>
 <td>Y</td>
@@ -2985,7 +2991,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
 {enum})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>content_protection_password</td>
 <td>string</td>
 <td>Y</td>
@@ -2994,7 +3000,7 @@ protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
 <td>Specifies CSEAR password. (content
 protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>cookie</td>
 <td>string</td>
 <td>Y</td>
@@ -3003,7 +3009,7 @@ protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Metadata for transfer specified by
 application<br/>(env:ASPERA_SCP_COOKIE)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>create_dir</td>
 <td>bool</td>
 <td>Y</td>
@@ -3011,7 +3017,7 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 <td>Y</td>
 <td>Specifies whether to create new directories.<br/>(-d)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>delete_before_transfer</td>
 <td>bool</td>
 <td>Y</td>
@@ -3023,7 +3029,7 @@ directories that have matching names.<br/>Objects on the destination
 that have the same name but different type or size as objects<br/>on the
 source are not deleted.<br/>(–delete-before-transfer)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>delete_source</td>
 <td>bool</td>
 <td>Y</td>
@@ -3032,13 +3038,22 @@ source are not deleted.<br/>(–delete-before-transfer)</td>
 <td>Remove SRC files after transfer
 success<br/>(–remove-after-transfer)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>destination_root</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Destination root directory.</td>
+</tr>
+<tr class="odd">
+<td>destination_root_id</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>The file ID of the destination root directory. Required when using
+Bearer token auth for the destination node.</td>
 </tr>
 <tr class="even">
 <td>dgram_size</td>
@@ -3084,6 +3099,14 @@ receive<br/>(–mode (conversion){enum})</td>
 <td>Specifies fasp (UDP) port.<br/>(-O {int})</td>
 </tr>
 <tr class="odd">
+<td>fasp_url</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>Only used in Faspex.</td>
+</tr>
+<tr class="even">
 <td>file_checksum</td>
 <td>string</td>
 <td>Y</td>
@@ -3093,7 +3116,7 @@ receive<br/>(–mode (conversion){enum})</td>
 hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5,
 none</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>http_fallback</td>
 <td>bool<br/>string</td>
 <td>Y</td>
@@ -3102,7 +3125,7 @@ none</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
 transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>http_fallback_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3110,7 +3133,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td> </td>
 <td>Specifies http port when no cipher is used<br/>(-t {int})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>https_fallback_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3118,29 +3141,40 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>Y</td>
 <td>Specifies https port when cipher is used<br/>(-t {int})</td>
 </tr>
+<tr class="even">
+<td>keepalive</td>
+<td>bool</td>
+<td>Y</td>
+<td> </td>
+<td> </td>
+<td>The session is running in persistent session
+mode.<br/>(–keepalive)</td>
+</tr>
 <tr class="odd">
 <td>lock_min_rate</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>TODO: remove ?</td>
 </tr>
 <tr class="even">
 <td>lock_min_rate_kbps</td>
 <td>bool</td>
-<td>Y</td>
-<td>Y</td>
-<td>Y</td>
 <td> </td>
+<td> </td>
+<td>Y</td>
+<td>If true, lock the minimum transfer rate to the value set for
+min_rate_kbps.<br/>If false, users can adjust the transfer rate up to
+the value set for target_rate_cap_kbps.</td>
 </tr>
 <tr class="odd">
 <td>lock_rate_policy</td>
 <td>bool</td>
-<td>Y</td>
-<td>Y</td>
-<td>Y</td>
 <td> </td>
+<td> </td>
+<td>Y</td>
+<td>If true, lock the rate policy to the default value.</td>
 </tr>
 <tr class="even">
 <td>lock_target_rate</td>
@@ -3148,7 +3182,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>TODO: remove ?</td>
 </tr>
 <tr class="odd">
 <td>lock_target_rate_kbps</td>
@@ -3156,7 +3190,9 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>If true, lock the target transfer rate to the default value set for
+target_rate_kbps.<br/>If false, users can adjust the transfer rate up to
+the value set for target_rate_cap_kbps.</td>
 </tr>
 <tr class="even">
 <td>min_rate_cap_kbps</td>
@@ -3164,7 +3200,10 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>The highest minimum rate that an incoming transfer can request, in
+kilobits per second.<br/>Client minimum rate requests that exceed the
+minimum rate cap are ignored.<br/>The default value of unlimited applies
+no cap to the minimum rate. (Default: 0)</td>
 </tr>
 <tr class="odd">
 <td>min_rate_kbps</td>
@@ -3207,6 +3246,14 @@ greater than or equal to the specified value.<br/>(0=no file is
 split)<br/>(–multi-session-threshold {int})</td>
 </tr>
 <tr class="odd">
+<td>obfuscate_file_names</td>
+<td>bool</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>HTTP Gateway obfuscates file names when set to true.</td>
+</tr>
+<tr class="even">
 <td>overwrite</td>
 <td>string</td>
 <td>Y</td>
@@ -3216,7 +3263,7 @@ split)<br/>(–multi-session-threshold {int})</td>
 name.<br/>Allowed values: never, always, diff, older,
 diff+older<br/>(–overwrite {enum})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>password</td>
 <td>string</td>
 <td> </td>
@@ -3227,7 +3274,7 @@ node api user is not the same as the one running asperanoded.<br/>Allows
 impersonating the transfer user and have access to resources
 (e.g. network shares).<br/>Windows only, node api only.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>paths</td>
 <td>array</td>
 <td>Y</td>
@@ -3236,7 +3283,7 @@ impersonating the transfer user and have access to resources
 <td>Array of path to the source (required) and a path to the destination
 (optional).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>precalculate_job_size</td>
 <td>bool</td>
 <td>Y</td>
@@ -3245,15 +3292,18 @@ impersonating the transfer user and have access to resources
 <td>Specifies whether to precalculate the job
 size.<br/>(–precalculate-job-size)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>preserve_access_time</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>(–preserve-access-time)</td>
+<td>Preserve the source-file access timestamps at the
+destination.<br/>Because source access times are updated by the transfer
+operation, the timestamp that is preserved is the one just before to the
+transfer.<br/>(–preserve-access-time)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>preserve_acls</td>
 <td>string</td>
 <td>Y</td>
@@ -3262,13 +3312,25 @@ size.<br/>(–precalculate-job-size)</td>
 <td>Preserve access control lists.<br/>Allowed values: none, native,
 metafile<br/>(–preserve-acls {enum})</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>preserve_creation_time</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>(–preserve-creation-time)</td>
+<td>(Windows only) Preserve source-file creation timestamps at the
+destination.<br/>Only Windows systems retain information about creation
+time.<br/>If the destination is not a Windows computer, this option is
+ignored.<br/>(–preserve-creation-time)</td>
+</tr>
+<tr class="odd">
+<td>preserve_extended_attrs</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>Preserve the extended attributes.<br/>Allowed values: none, native,
+metafile<br/>(–preserve-xattrs {enum})</td>
 </tr>
 <tr class="even">
 <td>preserve_file_owner_gid</td>
@@ -3294,7 +3356,10 @@ owner<br/>(–preserve-file-owner-uid)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>(–preserve-modification-time)</td>
+<td>Set the modification time, the last time a file or directory was
+modified (written), of a transferred file to the modification of the
+source file or directory.<br/>Preserve source-file modification
+timestamps at the destination.<br/>(–preserve-modification-time)</td>
 </tr>
 <tr class="odd">
 <td>preserve_remote_acls</td>
@@ -3317,10 +3382,10 @@ accessed<br/>(–preserve-source-access-time)</td>
 <tr class="odd">
 <td>preserve_times</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
-<td>Y</td>
-<td>Y</td>
-<td>(–preserve-times)</td>
+<td> </td>
+<td>Preserve file timestamps.<br/>(–preserve-times)</td>
 </tr>
 <tr class="even">
 <td>proxy</td>
@@ -3351,6 +3416,23 @@ values: low, fair, high, fixed<br/>(–policy {enum})</td>
 <td>Y</td>
 <td>Specifies most aggressive rate policy that is allowed.<br/>Returned
 by node API.<br/>Allowed values: low, fair, high, fixed</td>
+</tr>
+<tr class="odd">
+<td>read_threads</td>
+<td>int</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>ascp4 only</td>
+</tr>
+<tr class="even">
+<td>remote_access_key</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>The access key ID of the access key that was used to construct the
+bearer token that is used to authenticate to the remote node.</td>
 </tr>
 <tr class="odd">
 <td>remote_host</td>
@@ -3465,6 +3547,14 @@ the destination.<br/>Special care must be taken when used with cloud
 storage.<br/>(–src-base64 (conversion){string})</td>
 </tr>
 <tr class="odd">
+<td>ssh_args</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>Array of arguments to pass to SSH. Use with caution.</td>
+</tr>
+<tr class="even">
 <td>ssh_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3473,7 +3563,7 @@ storage.<br/>(–src-base64 (conversion){string})</td>
 <td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P
 {int})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ssh_private_key</td>
 <td>string</td>
 <td>Y</td>
@@ -3483,7 +3573,7 @@ storage.<br/>(–src-base64 (conversion){string})</td>
 —–BEGIN RSA PRIV4TE KEY—–…<br/>Note the JSON encoding: for
 newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ssh_private_key_passphrase</td>
 <td>string</td>
 <td>Y</td>
@@ -3492,7 +3582,7 @@ newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 <td>The passphrase associated with the transfer user’s SSH private key.
 Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>sshfp</td>
 <td>string</td>
 <td>Y</td>
@@ -3501,7 +3591,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Check it against server SSH host key fingerprint<br/>(–check-sshfp
 {string})</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>symlink_policy</td>
 <td>string</td>
 <td>Y</td>
@@ -3510,7 +3600,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Handle source side symbolic links<br/>Allowed values: follow, copy,
 copy+force, skip<br/>(–symbolic-links {enum})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>tags</td>
 <td>hash</td>
 <td>Y</td>
@@ -3518,7 +3608,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON<br/>(–tags64 (conversion){hash})</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>target_rate_cap_kbps</td>
 <td>int</td>
 <td> </td>
@@ -3526,7 +3616,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Returned by upload/download_setup node API.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>target_rate_kbps</td>
 <td>int</td>
 <td>Y</td>
@@ -3534,15 +3624,15 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Specifies desired speed for the transfer.<br/>(-l {int})</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>target_rate_percentage</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>TODO: remove ?</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>title</td>
 <td>string</td>
 <td> </td>
@@ -3550,7 +3640,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Title of the transfer</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>token</td>
 <td>string</td>
 <td>Y</td>
@@ -3559,7 +3649,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Authorization token: Bearer, Basic or ATM (Also arg
 -W)<br/>(env:ASPERA_SCP_TOKEN)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>use_ascp4</td>
 <td>bool</td>
 <td>Y</td>
@@ -3567,7 +3657,23 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td> </td>
 <td>specify version of protocol</td>
 </tr>
+<tr class="even">
+<td>use_system_ssh</td>
+<td>string</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>TODO, comment…</td>
+</tr>
 <tr class="odd">
+<td>write_threads</td>
+<td>int</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>ascp4 only</td>
+</tr>
+<tr class="even">
 <td>wss_enabled</td>
 <td>bool</td>
 <td>Y</td>
@@ -3575,7 +3681,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Server has Web Socket service enabled</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>wss_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3583,7 +3689,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>TCP port used for websocket service feed</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_ascp_args</td>
 <td>array</td>
 <td>Y</td>
@@ -3592,7 +3698,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native
 command line arguments to ascp</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>EX_at_rest_password</td>
 <td>string</td>
 <td>Y</td>
@@ -3602,7 +3708,7 @@ command line arguments to ascp</td>
 content_protection_password<br/>Content protection
 password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_file_list</td>
 <td>string</td>
 <td>Y</td>
@@ -3611,7 +3717,7 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>DEPRECATED: (4.14) Use command line file list, or option
 transfer_info.ascp_args<br/>source file list</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>EX_file_pair_list</td>
 <td>string</td>
 <td>Y</td>
@@ -3620,7 +3726,7 @@ transfer_info.ascp_args<br/>source file list</td>
 <td>DEPRECATED: (4.14) Use command line file pair list, or option
 transfer_info.ascp_args<br/>source file pair list</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_http_proxy_url</td>
 <td>string</td>
 <td>Y</td>
@@ -3629,7 +3735,7 @@ transfer_info.ascp_args<br/>source file pair list</td>
 <td>DEPRECATED: (4.14) TODO, use proxy option ?<br/>Specify the proxy
 server address used by HTTP Fallback<br/>(-x {string})</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>EX_http_transfer_jpeg</td>
 <td>int</td>
 <td>Y</td>
@@ -3638,7 +3744,7 @@ server address used by HTTP Fallback<br/>(-x {string})</td>
 <td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>HTTP
 transfers as JPEG file<br/>(-j {int})</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_license_text</td>
 <td>string</td>
 <td>Y</td>
@@ -3648,7 +3754,7 @@ transfers as JPEG file<br/>(-j {int})</td>
 text override.<br/>By default ascp looks for license file near
 executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>EX_no_read</td>
 <td>bool</td>
 <td>Y</td>
@@ -3657,7 +3763,7 @@ executable.<br/>(env:ASPERA_SCP_LICENSE)</td>
 <td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no read
 source<br/>(–no-read)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_no_write</td>
 <td>bool</td>
 <td>Y</td>
@@ -3666,7 +3772,7 @@ source<br/>(–no-read)</td>
 <td>DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no write
 on destination<br/>(–no-write)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>EX_proxy_password</td>
 <td>string</td>
 <td>Y</td>
@@ -3677,7 +3783,7 @@ for Aspera proxy server authentication.<br/>May be overridden by
 password in URL provided in parameter:
 proxy.<br/>(env:ASPERA_PROXY_PASS)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>EX_ssh_key_paths</td>
 <td>array</td>
 <td>Y</td>
