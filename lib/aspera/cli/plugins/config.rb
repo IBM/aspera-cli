@@ -317,6 +317,11 @@ module Aspera
             # Module.nesting[2] is Aspera::Cli::Plugins
             return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
           end
+
+          # deep clone hash so that it does not get modified in case of display and secret hide
+          def protect_presets(val)
+            return JSON.parse(JSON.generate(val))
+          end
         end
 
         # get the default global preset, or init a new one
@@ -377,6 +382,7 @@ module Aspera
             current = current[name]
             raise CliError, "No such config preset: #{include_path}" if current.nil?
           end
+          current = self.class.protect_presets(current) unless current.is_a?(String)
           return ExtendedValue.instance.evaluate(current)
         end
 
@@ -678,11 +684,9 @@ module Aspera
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
             # display process modifies the value (hide secrets): we do not want to save removed secrets
-            config_copy = JSON.parse(JSON.generate(@config_presets))
-            return {type: :config_over, data: config_copy}
+            return {type: :config_over, data: self.class.protect_presets(@config_presets)}
           when :show
-            config_copy = JSON.parse(JSON.generate(@config_presets[name]))
-            return {type: :single_object, data: config_copy}
+            return {type: :single_object, data: self.class.protect_presets(@config_presets[name])}
           when :delete
             @config_presets.delete(name)
             return Main.result_status("Deleted: #{name}")
@@ -1185,7 +1189,7 @@ module Aspera
           @config_presets.each do |_k, v|
             next unless v.is_a?(Hash)
             conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
-            return v if conf_url.eql?(url) && v['username'].eql?(username)
+            return self.class.protect_presets(v) if conf_url.eql?(url) && v['username'].eql?(username)
           end
           nil
         end
