@@ -208,10 +208,11 @@ module Aspera
         else
           raise 'At least one of `local` or `sessions` must be present in async parameters'
         end
+        Log.log.debug{"execute: #{command_line.join(' ')}"}
         stdout, stderr, status = Open3.capture3(*command_line)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
-        return stdout.split("\n").each_with_object({}){|l, m|i = l.split(/:  */); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
+        return stdout.split("\n").each_with_object({}){|l, m|i = l.split(':', 2); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
       end
     end
   end # end Sync
