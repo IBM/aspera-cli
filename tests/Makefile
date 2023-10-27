@@ -31,14 +31,22 @@ TIMESTAMP=$(shell LANG=C date)
 TEST_CONFIG=$(DIR_TMP)sample.conf
 TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
+# tests use config file in test folder
+EXE_COMMON=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
-EXE_MAN=$(EXETESTB) --warnings --config-file=$(TEST_CONF_FILE_PATH)
+EXE_MAN=$(EXE_COMMON) --warnings
 # "EXE_NOMAN" when the command is not needed in documentation
-EXE_NOMAN=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
+EXE_NOMAN=$(EXE_COMMON)
 # enclose tests that shall result in error
-EXE_ERR_START=if $(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
-EXE_ERR_END=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test ok";fi
+EXE_BEG_ERR=if $(EXE_COMMON)
+EXE_END_ERR=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test ok";fi
+# enclose tests that fail, but should not
+EXE_BEG_FAI=if $(EXE_COMMON)
+EXE_END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else echo "Test known to fail";fi
+# ignore status of those, mainly optiona cleanups, for restarts
+EXE_BEG_IGN=$(EXE_COMMON)
+EXE_END_IGN=>/dev/null 2>&1 || true
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
 LCL_TST_ASC_FILENAME=datafile.bin
 LCL_TST_ASC_FILEPATH=$(DIR_TMP)$(LCL_TST_ASC_FILENAME)
@@ -103,7 +111,7 @@ $(T)shadm: $(T).exists
 	$(EXE_MAN) shares admin user share_permissions 1 list
 	$(EXE_MAN) shares admin user share_permissions 1 show 1
 	$(EXE_MAN) shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
-	-$(EXE_MAN) shares admin user add --type=ldap the_name
+	$(EXE_BEG_FAI) shares admin user add --type=ldap the_name $(EXE_END_FAI)
 	$(EXE_MAN) shares admin share list --fields=DEF,-status,status_message
 	$(EXE_MAN) shares admin share user_permissions 1 list
 	@touch $@
@@ -136,11 +144,11 @@ $(T)serv_mkdir: $(T).exists
 	@touch $@
 $(T)serv_error: $(T).exists
 	@echo $@
-	@$(EXE_ERR_START) server --password=wrong upload $(LCL_TST_ASC_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
-	@$(EXE_ERR_START) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_ERR_END)
-	@$(EXE_ERR_START) server -N --url=foo:// ls .$(EXE_ERR_END)
-	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
-	@$(EXE_ERR_START) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_ERR_END)
+	$(EXE_BEG_ERR) server --password=wrong upload $(LCL_TST_ASC_FILEPATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BEG_ERR) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
+	$(EXE_BEG_ERR) server -N --url=foo:// ls .$(EXE_END_ERR)
+	$(EXE_BEG_ERR) server -N --url=@preset:tst_node_simple.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BEG_ERR) server -N --url=@preset:tst_node_simple.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_NOMAN) server -N --url=local:// ls .
 	@touch $@
 $(T)serv_upload: $(T)serv_mkdir 
@@ -159,7 +167,7 @@ $(T)serv_sync: $(T)serv_upload
 	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:misc.server_folder@","local_dir":"$(LCL_SYNC_DIR)","reset":true}]}'
 	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"$(LCL_SYNC_DIR)"}]}'
 	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"@preset:misc.server_folder@"},"reset":true,"quiet":false}'
-	-$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2"}'
+	$(EXE_BEG_FAI) server sync admin status --sync-info=@json:'{"name":"sync2"}' $(EXE_END_FAI)
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(LCL_SYNC_DIR)"}}'
 	@touch $@
 $(T)serv_upload_ex: $(T)serv_mkdir
@@ -214,7 +222,7 @@ $(T)serv_df: $(T).exists
 $(T)serv_nagios_transfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) server health transfer --to-folder=@preset:misc.upload_folder --format=nagios 
-	@$(EXE_ERR_START) server health transfer --to-folder=/wrong --format=nagios$(EXE_ERR_END)
+	$(EXE_BEG_ERR) server health transfer --to-folder=/wrong --format=nagios$(EXE_END_ERR)
 	@touch $@
 $(T)serv_key: $(T).exists
 	@echo $@
@@ -359,7 +367,7 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node browse / -r
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
-	-$(EXE_MAN) node delete /todelete
+	$(EXE_BEG_IGN) node delete /todelete $(EXE_END_IGN)
 	$(EXE_MAN) node mkdir @extend:@preset:misc.upload_folder@/todelete
 	$(EXE_MAN) node mklink @extend:@preset:misc.upload_folder@/todelete @extend:@preset:misc.upload_folder@/tdlink
 	$(EXE_MAN) node mkfile @extend:@preset:misc.upload_folder@/delfile1 "hello world"
@@ -375,11 +383,11 @@ $(T)nd2: $(T).exists
 $(T)nd_2_nd_xfer: $(T).exists
 	@echo $@
 	$(EXE_MAN) node upload --to-folder=@preset:misc.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:tst_node_simple.url@","username":"@preset:tst_node_simple.username@","password":"@preset:tst_node_simple.password@"}'
-	-$(EXE_MAN) node delete @extend:@preset:misc.upload_folder@/10MB.2
+	$(EXE_BEG_IGN) node delete @extend:@preset:misc.upload_folder@/10MB.2$(EXE_END_IGN)
 	@touch $@
 $(T)nd4: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) node -Ptst_node_admak service delete service1
+	$(EXE_BEG_IGN) node -Ptst_node_admak service delete service1$(EXE_END_IGN)
 	@echo "waiting a little...";sleep 5
 	$(EXE_MAN) node -Ptst_node_admak service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXE_MAN) node -Ptst_node_admak service list
@@ -419,7 +427,7 @@ $(T)nd_ak1: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name node_info /
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name browse /
-	@$(EXE_ERR_START)node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @json:'{}'$(EXE_ERR_END)
+	$(EXE_BEG_ERR)node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @json:'{}'$(EXE_END_ERR)
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / exec:'f["name"].end_with?(".jpg")'
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / @ruby:'->(f){f["name"].end_with?(".jpg")}'
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find /
@@ -435,7 +443,7 @@ $(T)nd_ak3: $(T).exists
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show /testfile1
-	-$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name thumbnail /testfile1
+	$(EXE_BEG_ERR) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name thumbnail /testfile1$(EXE_END_ERR)
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete testfile1
 	@touch $@
 $(T)nd_ak4: $(T).exists
@@ -505,12 +513,12 @@ $(T)aocffin: $(T).exists
 	@touch $@
 $(T)aocfmkd: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) aoc files delete /testsrc
+	$(EXE_BEG_IGN) aoc files delete /testsrc$(EXE_END_IGN)
 	$(EXE_MAN) aoc files mkdir /testsrc
 	@touch $@
 $(T)aocfren: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) aoc files delete /testdst
+	$(EXE_BEG_IGN) aoc files delete /testdst$(EXE_END_IGN)
 	$(EXE_NOMAN) aoc files mkdir /somefolder
 	$(EXE_MAN) aoc files rename /somefolder testdst
 	@touch $@
@@ -652,7 +660,7 @@ taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send
 $(T)aocadm1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc admin auth_providers list
-	-$(EXE_MAN) aoc admin subscription
+	$(EXE_BEG_FAI) aoc admin subscription$(EXE_END_FAI)
 	@touch $@
 $(T)aoc8: $(T).exists
 	@echo $@
@@ -739,16 +747,16 @@ $(T)aocat7: $(T).exists
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) aoc admin ats access_key delete ak1ibmcloud
-	-$(EXE_MAN) aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'
+	$(EXE_BEG_IGN) aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
+	$(EXE_BEG_FAI) aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	@touch $@
 $(T)aocat9: $(T).exists
 	@echo $@
-	-$(EXE_MAN) aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'
+	$(EXE_BEG_FAI)aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
-	-$(EXE_MAN) aoc admin ats access_key list --fields=name,id
+	$(EXE_MAN) aoc admin ats access_key list --fields=name,id
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
@@ -756,7 +764,7 @@ $(T)aocat11: $(T).exists
 	@touch $@
 $(T)aocat13: $(T).exists
 	@echo $@
-	-$(EXE_MAN) aoc admin ats access_key delete ak1ibmcloud
+	$(EXE_BEG_FAI) aoc admin ats access_key delete ak1ibmcloud$(EXE_END_FAI)
 	@touch $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
 $(DIR_TMP)wf_id.txt: $(T)aocauto1
@@ -798,7 +806,7 @@ $(T)orch_wizard: $(T).exists
 $(T)orch_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) orchestrator health
-	@$(EXE_ERR_START) orchestrator health --url=https://wrong.url --format=nagios$(EXE_ERR_END)
+	$(EXE_BEG_ERR) orchestrator health --url=https://wrong.url --format=nagios$(EXE_END_ERR)
 	@touch $@
 $(T)o2: $(T).exists
 	@echo $@
@@ -871,18 +879,18 @@ $(T)at3: $(T).exists
 	@touch $@
 $(T)at8: $(T).exists
 	@echo $@
-	-$(EXE_NOMAN) ats access_key delete ak2ibmcloud
-	-$(EXE_MAN) ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'
+	$(EXE_BEG_IGN) ats access_key delete ak2ibmcloud$(EXE_END_IGN)
+	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@touch $@
 $(T)at9: $(T).exists
 	@echo $@
-	-$(EXE_MAN) ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'
+	$(EXE_BEG_FAI) ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
-	-$(EXE_MAN) ats access_key list --fields=name,id
+	$(EXE_MAN) ats access_key list --fields=name,id
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
@@ -893,11 +901,11 @@ $(T)at12: $(T).exists
 	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=my_secret_here
 	@touch $@
 $(T)at13: $(T).exists
-	-$(EXE_MAN) ats access_key delete ak2ibmcloud
+	$(EXE_BEG_FAI) ats access_key delete ak2ibmcloud$(EXE_END_FAI)
 	@touch $@
 $(T)at14: $(T).exists
 	@echo $@
-	-$(EXE_MAN) ats access_key delete ak_aws
+	$(EXE_BEG_FAI) ats access_key delete ak_aws$(EXE_END_FAI)
 	@touch $@
 
 tats: $(T)at4 $(T)at5 $(T)at6 $(T)at7 $(T)at2 $(T)at1 $(T)at3 $(T)at8 $(T)at9 $(T)at10 $(T)at11 $(T)at12 $(T)at13 $(T)at14
@@ -1069,9 +1077,9 @@ $(T)conf_vault: $(T).exists
 	$(EXE_MAN) $(TMP_CONF) config vault list
 	$(EXE_MAN) $(TMP_CONF) config vault delete mylabel
 	$(EXE_MAN) $(TMP_CONF) config echo @vault:mypreset.password
-	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:bad$(EXE_ERR_END)
-	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:bad.password$(EXE_ERR_END)
-	@$(EXE_ERR_START)$(TMP_CONF) config echo @vault:mypreset.bad$(EXE_ERR_END)
+	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad$(EXE_END_ERR)
+	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad.password$(EXE_END_ERR)
+	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:mypreset.bad$(EXE_END_ERR)
 	@touch $@
 $(T)conf_help: $(T).exists
 	@echo $@
@@ -1084,7 +1092,7 @@ $(T)conf_help: $(T).exists
 $(T)conf_open_err: $(T).exists
 	@echo $@
 	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	-$(EXE_MAN) $(TMP_CONF) config open
+	$(EXE_BEG_ERR) $(TMP_CONF) config open$(EXE_END_ERR)
 	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
@@ -1114,7 +1122,7 @@ $(T)conf_genkey: $(T).exists
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey
 	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)mykey 4096
-	@$(EXE_ERR_START) config genkey $(DIR_TMP)mykey not_int$(EXE_ERR_END)
+	$(EXE_BEG_ERR) config genkey $(DIR_TMP)mykey not_int$(EXE_END_ERR)
 	@touch $@
 $(T)conf_smtp: $(T).exists
 	@echo $@
@@ -1145,7 +1153,7 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @base64:SGVsbG8gV29ybGQK
 	$(EXE_MAN) config echo @list:,1,2,3
 	$(EXE_MAN) config echo @env:USER
-	-$(EXE_MAN) config echo @val:@file:no_such_file
+	$(EXE_BEG_ERR) config echo @val:@file:no_such_file$(EXE_END_ERR)
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) config echo @zlib:@stdin:
@@ -1160,10 +1168,10 @@ $(T)conf_interactive: $(T).exists
 	@touch $@
 $(T)conf_hint: $(T).exists
 	@echo $@
-	-$(EXE_MAN) config hint Aspera::Fasp::Error 'Remote host is not who we expected'
-	-$(EXE_MAN) config hint OpenSSL::SSL::SSLError 'does not match the server certificate'
-	-$(EXE_MAN) config hint Aspera::RestCallError 'Signature has expired'
-	-$(EXE_MAN) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'
+	$(EXE_BEG_ERR) config hint Aspera::Fasp::Error 'Remote host is not who we expected'$(EXE_END_ERR)
+	$(EXE_BEG_ERR) config hint OpenSSL::SSL::SSLError 'does not match the server certificate'$(EXE_END_ERR)
+	$(EXE_BEG_ERR) config hint Aspera::RestCallError 'Signature has expired'$(EXE_END_ERR)
+	$(EXE_BEG_ERR) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_END_ERR)
 	@touch $@
 tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
@@ -1223,7 +1231,7 @@ tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mxf_png_f
 thot:
 	rm -fr source_hot
 	mkdir source_hot
-	-$(EXE_MAN) server delete @extend:@preset:misc.upload_folder@/target_hot
+	$(EXE_BEG_IGN) server delete @extend:@preset:misc.upload_folder@/target_hot$(EXE_END_IGN)
 	$(EXE_MAN) server mkdir @extend:@preset:misc.upload_folder@/target_hot
 	echo hello > source_hot/newfile
 	$(EXE_MAN) server upload --to-folder=@extend:@preset:misc.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
@@ -1250,7 +1258,7 @@ tcos: $(T)tcos
 $(T)f5_nagios: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 health
-	@$(EXE_ERR_START) faspex5 health --url=https://wrong.example --format=nagios$(EXE_ERR_END)
+	$(EXE_BEG_ERR) faspex5 health --url=https://wrong.example --format=nagios$(EXE_END_ERR)
 	@touch $@
 $(T)f5_p1: $(T).exists
 	@echo $@
@@ -1334,7 +1342,7 @@ $(T)f5_webauth: $(T).exists
 $(T)f5_wizard: $(T).exists
 	@echo $@
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:tst_faspex5_jwt.url faspex5 --pkeypath=@preset:tst_server_bykey.ssh_keys -Ptst_faspex5_jwt
-	@$(EXE_ERR_START) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_ERR_END)
+	$(EXE_BEG_ERR) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_END_ERR)
 	$(EXE_MAN) -N config detect @preset:tst_faspex5_jwt.url
 	$(EXE_NOMAN) config detect @preset:tst_faspex5_jwt.url
 	@touch $@
