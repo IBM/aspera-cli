@@ -7,14 +7,18 @@ require 'rainbow'
 require 'io/console'
 module Aspera
   module Preview
-    # Generates a string that can display an image in a terminal
+    # Display a picture in the terminal, either using coloured characters or iTerm2
     class Terminal
-      # quantum depth is 8 or 16: convert xc: -format "%q" info:
       # Rainbow only supports 8-bit colors
+      # quantum depth is 8 or 16, see: convert xc: -format "%q" info:
       SHIFT_FOR_8_BIT = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
-      ITERM_NAMES = %w[iTerm WezTerm mintty].freeze
+      # env vars to detect terminal type
       TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
-      private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS
+      # terminal names that support iTerm2 image display
+      ITERM_NAMES = %w[iTerm WezTerm mintty].freeze
+      # TODO: retrieve terminal font ratio using some termcap ?
+      DEFAULT_FONT_RATIO = 1.7
+      private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS, :DEFAULT_FONT_RATIO
       class << self
         def build(blob, reserve: 3, text: false, double: true)
           return iterm_display_image(blob) if iterm_supported? && !text
@@ -23,10 +27,8 @@ module Aspera
           term_rows -= reserve
           # compute scaling to fit terminal
           fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
-          # TODO: retrieve terminal font ratio using some termcap ?
-          font_ratio = 1.7
           height_ratio = double ? 2.0 : 1.0
-          image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
+          image = image.scale((image.columns * fit_term_ratio * DEFAULT_FONT_RATIO).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
           # get all pixel colors, adjusted for Rainbow
           pixel_colors = []
           image.each_pixel do |pixel, col, row|

@@ -14,10 +14,12 @@ class String
   # it adds control chars to set color (and reset at the end).
   VT_STYLES = {
     bold:          1,
+    dim:           2,
     italic:        3,
     underline:     4,
     blink:         5,
     reverse_color: 7,
+    invisible:     8,
     black:         30,
     red:           31,
     green:         32,
