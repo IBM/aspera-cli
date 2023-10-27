@@ -75,7 +75,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download sync]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download http_node_download sync]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -289,6 +289,14 @@ module Aspera
             # delete this part, as the returned value contains only destination, and not sources
             transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
+          when :http_node_download
+            remote_path = get_next_arg_add_prefix(prefix_path, 'remote path')
+            file_name = File.basename(remote_path)
+            @api_node.call(
+              operation: 'GET',
+              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents",
+              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
+            return Main.result_status("downloaded: #{file_name}")
           end
           raise 'INTERNAL ERROR'
         end
