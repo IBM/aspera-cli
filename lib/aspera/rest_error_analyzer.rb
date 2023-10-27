@@ -59,13 +59,10 @@ module Aspera
     # add a simple error handler
     # check that key exists and is string under specified path (hash)
     # adds other keys as secondary information
-    def add_simple_handler(name, *args)
+    def add_simple_handler(name:, always: false, path:)
       add_handler(name) do |type, call_context|
         # need to clone because we modify and same array is used subsequently
-        path = args.clone
-        # Log.log.debug{"path=#{path}"}
-        # if last in path is boolean it tells if the error is only with http error code or always
-        always = [true, false].include?(path.last) ? path.pop : false
+        path = path.clone
         if call_context[:data].is_a?(Hash) && (!call_context[:response].code.start_with?('2') || always)
           msg_key = path.pop
           # dig and find sub entry corresponding to path in deep hash
