@@ -43,24 +43,13 @@ module Aspera
 
         # @param to_text [bool] replace HTML entities with text equivalent
         # @return a table suitable to display in manual
-        def man_table(use_colors: true, use_unicode: nil)
-          use_unicode = ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if use_unicode.nil?
-          tick_yes = 'Y'
-          tick_no = ' '
-          if use_unicode
-            tick_yes = "\u2713"
-            tick_no = "\u2717"
-          end
-          if use_colors
-            tick_yes = tick_yes.green
-            tick_no = tick_no.red
-          end
+        def man_table
           result = []
           description.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
             # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |a|
-              param[a.to_s[0].to_sym] = options[:agents].nil? || options[:agents].include?(a) ? tick_yes : tick_no
+              param[a.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(a))
             end
             # only keep lines that are usable in supported agents
             next if SUPPORTED_AGENTS_SHORT.inject(true){|m, j|m && param[j].empty?}
@@ -80,8 +69,8 @@ module Aspera
                 end.map{|n|"{#{n}}"}.join('|')
                 conv = options[:cli].key?(:convert) ? '(conversion)' : ''
                 "#{options[:cli][:switch]} #{conv}#{values}"
-              when :special then Cli::Formatter.special('special', use_colors: use_colors)
-              when :ignore then Cli::Formatter.special('ignored', use_colors: use_colors)
+              when :special then Cli::Formatter.special('special')
+              when :ignore then Cli::Formatter.special('ignored')
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end

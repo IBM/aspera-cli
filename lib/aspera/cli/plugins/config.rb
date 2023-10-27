@@ -825,8 +825,8 @@ module Aspera
                 plugin_class = self.class.plugin_class(name)
                 result.push({
                   plugin: name,
-                  detect: plugin_class.respond_to?(:detect) ? 'Y' : '',
-                  wizard: plugin_class.respond_to?(:wizard) ? 'Y' : '',
+                  detect: Formatter.tick(plugin_class.respond_to?(:detect)),
+                  wizard: Formatter.tick(plugin_class.respond_to?(:wizard)),
                   path:   info[:source]
                 })
               end

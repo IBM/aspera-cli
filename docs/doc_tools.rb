@@ -57,7 +57,7 @@ def spec_table
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Fasp::Parameters.man_table(use_colors: false, use_unicode: false).each do |p|
+  Aspera::Fasp::Parameters.man_table.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.strip.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')
@@ -99,6 +99,8 @@ end
 REPLACEMENTS = [
   # replace command name
   [/^.*\$\(EXE_MAN.?\) +/, ''],
+  [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
+  [/\$\(EXE_END_FAI.?\)$/, ''],
   # replace makefile macros
   [/\$\(([^)]*)\)/, '\1'],
   # remove multi command mark
@@ -144,7 +146,7 @@ def all_test_commands_by_plugin
     commands = {}
     File.open(@env[:TEST_MAKEFILE]) do |f|
       f.each_line do |line|
-        next unless line.match?(/\$\(EXE_MAN.?\) +/)
+        next unless line.match?(/\$\((EXE_MAN|EXE_BEG_FAI).?\) +/)
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
         line = line.strip.squeeze(' ')

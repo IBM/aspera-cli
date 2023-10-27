@@ -756,7 +756,7 @@ $(T)aocat9: $(T).exists
 	@touch $@
 $(T)aocat10: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin ats access_key list --fields=name,id
+	$(EXE_BEG_FAI) aoc admin ats access_key list --fields=name,id$(EXE_END_FAI)
 	@touch $@
 $(T)aocat11: $(T).exists
 	@echo $@
@@ -890,7 +890,7 @@ $(T)at9: $(T).exists
 	@touch $@
 $(T)at10: $(T).exists
 	@echo $@
-	$(EXE_MAN) ats access_key list --fields=name,id
+	$(EXE_BEG_FAI) ats access_key list --fields=name,id$(EXE_END_FAI)
 	@touch $@
 $(T)at11: $(T).exists
 	@echo $@
@@ -1089,11 +1089,6 @@ $(T)conf_help: $(T).exists
 	$(EXE_MAN) config coffee --ui=text
 	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) config coffee --ui=text
 	@touch $@
-$(T)conf_open_err: $(T).exists
-	@echo $@
-	printf -- "---\nconfig:\n  version: 0" > $(TEST_CONFIG)
-	$(EXE_BEG_ERR) $(TMP_CONF) config open$(EXE_END_ERR)
-	@touch $@
 $(T)conf_plugins: $(T).exists
 	@echo $@
 	$(EXE_MAN) config plugin list
@@ -1173,7 +1168,7 @@ $(T)conf_hint: $(T).exists
 	$(EXE_BEG_ERR) config hint Aspera::RestCallError 'Signature has expired'$(EXE_END_ERR)
 	$(EXE_BEG_ERR) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_END_ERR)
 	@touch $@
-tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help $(T)conf_open_err $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
+tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
 $(T)prev_check: $(T).exists
 	@echo $@

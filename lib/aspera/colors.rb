@@ -40,7 +40,7 @@ class String
   private_constant :VT_STYLES
   # defines methods to String, one per entry in VT_STYLES
   VT_STYLES.each do |name, code|
-    if $stderr.tty?
+    if $stdout.tty?
       begin_seq = vt_cmd(code)
       end_code = 0 # by default reset all
       if code <= 7 then code + 20

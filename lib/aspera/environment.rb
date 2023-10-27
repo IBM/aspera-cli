@@ -113,6 +113,12 @@ module Aspera
       rescue => e
         Log.log.warn(e.message)
       end
+
+      # @return true if we can display Unicode characters
+      def use_unicode?
+        @use_unicode = $stdout.tty? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @use_unicode.nil?
+        return @use_unicode
+      end
     end # self
   end # Environment
 end # Aspera

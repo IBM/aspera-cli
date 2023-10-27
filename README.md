@@ -3297,7 +3297,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
@@ -3451,7 +3451,7 @@ OPTIONS:
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token browse central delete download events health info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
@@ -4518,6 +4518,8 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```bash
 aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+aoc admin ats access_key delete ak1ibmcloud
 aoc admin ats access_key list --fields=name,id
 aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
 aoc admin ats cluster clouds
@@ -4554,6 +4556,7 @@ aoc admin resource node do %name:my_aoc_ak_name --secret=my_aoc_ak_secret v3 acc
 aoc admin resource node do %name:my_aoc_ak_name --secret=my_aoc_ak_secret v3 events
 aoc admin resource workspace list
 aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+aoc admin subscription
 aoc automation workflow action my_wf_id create @json:'{"name":"toto"}' \
 aoc automation workflow create @json:'{"name":"test_workflow"}'
 aoc automation workflow delete my_wf_id
@@ -4741,6 +4744,10 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ```bash
 ats access_key cluster ak2ibmcloud --secret=my_secret_here
+ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
+ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ats access_key delete ak2ibmcloud
+ats access_key delete ak_aws
 ats access_key entitlement ak2ibmcloud
 ats access_key list --fields=name,id
 ats access_key node ak2ibmcloud browse / --secret=my_secret_here
@@ -4783,6 +4790,7 @@ server mkdir my_server_folder --logger=stdout
 server mkdir my_upload_folder/target_hot
 server mv my_upload_folder/200KB.2 my_upload_folder/to.delete
 server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"}}'
+server sync admin status --sync-info=@json:'{"name":"sync2"}'
 server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/localsync"}]}'
 server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_server_folder","local_dir":"/data/localsync","reset":true}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"},"remote":{"path":"my_server_folder"},"reset":true,"quiet":false}'
@@ -5794,6 +5802,7 @@ shares admin group list
 shares admin node list
 shares admin share list --fields=DEF,-status,status_message
 shares admin share user_permissions 1 list
+shares admin user add --type=ldap the_name
 shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
 shares admin user app_authorizations 1 show
 shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'

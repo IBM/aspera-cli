@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/secret_hider'
+require 'aspera/environment'
 require 'terminal-table'
 require 'yaml'
 require 'pp'
@@ -53,6 +54,8 @@ module Aspera
           @result[name] = Formatter.special('empty string')
         elsif something.nil?
           @result[name] = Formatter.special('null')
+        # elsif something.eql?(true) || something.eql?(false)
+        #  @result[name] = something
         else
           @result[name] = something
         end
@@ -122,6 +125,23 @@ module Aspera
         def all_but(list)
           list = [list] unless list.is_a?(Array)
           return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(FIELDS_ALL)
+        end
+
+        def tick(yes)
+          result =
+            if Environment.use_unicode?
+              if yes
+                "\u2713"
+              else
+                "\u2717"
+              end
+            elsif yes
+              'Y'
+            else
+              ' '
+            end
+          return result.green if yes
+          return result.red
         end
       end
 
