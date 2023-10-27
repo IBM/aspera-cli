@@ -243,10 +243,17 @@ module Aspera
         # initialize with number of initial retries allowed, nil gives zero
         tries_remain_redirect = call_data[:redirect_max].to_i if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
+        result_mime = nil
+        file_saved = false
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          if !call_data[:save_to_file].nil? && result[:http].code.to_s.start_with?('2')
+          result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first.downcase
+          # JSON data needs to be parsed, in case it contains an error code
+          if !call_data[:save_to_file].nil? &&
+              result[:http].code.to_s.start_with?('2') &&
+              !result[:http]['Content-Length'].nil? &&
+              !JSON_DECODE.include?(result_mime)
             total_size = result[:http]['Content-Length'].to_i
             progress = ProgressBar.create(
               format:     '%a %B %p%% %r KB/sec %e',
@@ -273,12 +280,12 @@ module Aspera
             # rename at the end
             File.rename(target_file_tmp, target_file)
             progress = nil
+            file_saved = true
           end # save_to_file
         end
-        # sometimes there is a UTF8 char (e.g. (c) )
+        # sometimes there is a UTF8 char (e.g. (c) ), TODO : related tp mime type encoding ?
         result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
         Log.log.debug{"result: body=#{result[:http].body}"}
-        result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first
         result[:data] = case result_mime
         when *JSON_DECODE
           JSON.parse(result[:http].body) rescue result[:http].body
@@ -288,6 +295,7 @@ module Aspera
         Log.dump("result: parsed: #{result_mime}", result[:data])
         Log.log.debug{"result: code=#{result[:http].code}"}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
+        File.write(call_data[:save_to_file], result[:http].body) unless file_saved || call_data[:save_to_file].nil?
       rescue RestCallError => e
         # not authorized: oauth token expired
         if call_data[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
