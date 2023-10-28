@@ -27,6 +27,7 @@ module Aspera
     # Analyzes REST call response and raises a RestCallError exception
     # if HTTP result code is not 2XX
     def raise_on_error(req, res)
+      Log.log.debug{"raise_on_error #{req.method} #{req.path} #{res[:http].code}"}
       call_context = {
         messages: [],
         request:  req,
@@ -60,17 +61,17 @@ module Aspera
     # check that key exists and is string under specified path (hash)
     # adds other keys as secondary information
     def add_simple_handler(name:, always: false, path:)
+      path.freeze
       add_handler(name) do |type, call_context|
-        # need to clone because we modify and same array is used subsequently
-        path = path.clone
         if call_context[:data].is_a?(Hash) && (!call_context[:response].code.start_with?('2') || always)
-          msg_key = path.pop
-          # dig and find sub entry corresponding to path in deep hash
-          error_struct = path.inject(call_context[:data]) { |sub_hash, key| sub_hash.respond_to?(:keys) ? sub_hash[key] : nil }
-          if error_struct.is_a?(Hash) && error_struct[msg_key].is_a?(String)
-            RestErrorAnalyzer.add_error(call_context, type, error_struct[msg_key])
+          # Log.log.debug{"simple_handler: #{type} #{path} #{path.last}"}
+          # dig and find hash containing error message
+          error_struct = path.length.eql?(1) ? call_context[:data] : call_context[:data].dig(*path[0..-2])
+          # Log.log.debug{"found: #{error_struct.class} #{error_struct}"}
+          if error_struct.is_a?(Hash) && error_struct[path.last].is_a?(String)
+            RestErrorAnalyzer.add_error(call_context, type, error_struct[path.last])
             error_struct.each do |k, v|
-              next if k.eql?(msg_key)
+              next if k.eql?(path.last)
               RestErrorAnalyzer.add_error(call_context, "#{type}(sub)", "#{k}: #{v}") if [String, Integer].include?(v.class)
             end
           end
