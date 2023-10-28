@@ -408,7 +408,7 @@ module Aspera
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)
             # check format of bearer token
-            OAuth.bearer_extract(result[:password])
+            Oauth.bearer_extract(result[:password])
             return Main.result_status(result[:password])
           when :browse
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
