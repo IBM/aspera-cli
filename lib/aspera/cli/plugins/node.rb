@@ -106,6 +106,8 @@ module Aspera
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(:sync_name, 'Sync name')
             options.declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
+            options.declare(:bearer_key, 'RSA private key PEM value for bearer token generation')
+            options.declare(:token_info, 'Bearer token info', types: Hash)
             declare_sync_options
             options.parse_options!
             Aspera::Node.use_standard_ports = options.get_option(:default_ports)
@@ -656,7 +658,8 @@ module Aspera
           watch_folder
           central
           asperabrowser
-          basic_token].concat(COMMON_ACTIONS).freeze
+          basic_token
+          bearer_token].concat(COMMON_ACTIONS).freeze
 
         def execute_action(command=nil, prefix_path=nil)
           command ||= options.get_next_command(ACTIONS)
@@ -874,6 +877,10 @@ module Aspera
             return Main.result_status('done')
           when :basic_token
             return Main.result_status(Rest.basic_creds(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+          when :bearer_token
+            private_key = OpenSSL::PKey::RSA.new(options.get_option(:bearer_key, mandatory: true))
+            access_key = options.get_option(:username, mandatory: true)
+            return Main.result_status(Aspera::Node.bearer_token(payload: options.get_option(:token_info, mandatory: true), access_key: access_key,private_key: private_key))
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action

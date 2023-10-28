@@ -19,9 +19,12 @@ module Aspera
     HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
     PATH_SEPARATOR = '/'
     TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
+    SCOPE_USER = 'user:all'
+    SCOPE_ADMIN = 'admin:all'
+    SIGNATURE_DELIMITER = '==SIGNATURE=='
 
     # register node special token decoder
-    Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition('==SIGNATURE==').first)})
+    Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)})
 
     # class instance variable, access with accessors on class
     @use_standard_ports = true
@@ -47,6 +50,30 @@ module Aspera
 
       def file_matcher_from_argument(options)
         return file_matcher(options.get_next_argument('filter', type: MATCH_TYPES, mandatory: false))
+      end
+
+      # node API scopes
+      def token_scope(access_key, scope)
+        return "node.#{access_key}:#{scope}"
+      end
+
+      # Create an Aspera Node bearer token
+      # @param payload [String] JSON payload to be included in the token
+      # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
+      def bearer_token(access_key:, scope: SCOPE_USER, payload:, private_key:, expiration_sec: 3600)
+        raise 'payload shall be Hash' unless payload.is_a?(Hash)
+        raise 'missing user_id' unless payload.key?('user_id')
+        raise 'private_key shall be OpenSSL::PKey::RSA' unless private_key.is_a?(OpenSSL::PKey::RSA)
+        payload['scope'] ||= token_scope(access_key, scope)
+        payload['auth_type'] ||= 'access_key'
+        payload['expires_at'] ||= (Time.now + expiration_sec).utc.strftime('%FT%TZ')
+        payload_json = JSON.generate(payload)
+        return Base64.strict_encode64(Zlib::Deflate.deflate([
+          payload_json,
+          SIGNATURE_DELIMITER,
+          Base64.strict_encode64(private_key.sign(OpenSSL::Digest.new('sha512'), payload_json)).scan(/.{1,60}/).join("\n"),
+          ''
+        ].join("\n")))
       end
     end
 

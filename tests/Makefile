@@ -450,6 +450,10 @@ $(T)nd_ak4: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show %id:1
 	@touch $@
+$(T)nd_ak5: $(T).exists
+	@echo $@
+	$(EXE_MAN) node -Ptst_node_admak bearer --bearer-key=@preset:tst_aoc_jwt.private_key --token-info=@json:'{"user_id":"1"}'
+	@touch $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
 tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 tndak
 

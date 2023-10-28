@@ -5,6 +5,7 @@ require 'aspera/rest'
 require 'aspera/hash_ext'
 require 'aspera/data_repository'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/node'
 require 'base64'
 require 'cgi'
 
@@ -62,8 +63,6 @@ module Aspera
     SCOPE_FILES_ADMIN = 'admin:all'
     SCOPE_FILES_ADMIN_USER = 'admin-user:all'
     SCOPE_FILES_ADMIN_USER_USER = "#{SCOPE_FILES_ADMIN_USER}+#{SCOPE_FILES_USER}"
-    SCOPE_NODE_USER = 'user:all'
-    SCOPE_NODE_ADMIN = 'admin:all'
     FILES_APP = 'files'
     PACKAGES_APP = 'packages'
     API_V1 = 'api/v1'
@@ -101,11 +100,6 @@ module Aspera
           base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
           headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id, customer_id)}
         })
-      end
-
-      # node API scopes
-      def node_scope(access_key, scope)
-        return "node.#{access_key}:#{scope}"
       end
 
       # @param url [String] URL of AoC public link
@@ -260,10 +254,10 @@ module Aspera
     # @param node_id [String] identifier of node in AoC
     # @param workspace_id [String] workspace identifier
     # @param workspace_name [String] workspace name
-    # @param scope e.g. SCOPE_NODE_USER, or nil (requires secret)
+    # @param scope e.g. Aspera::Node::SCOPE_USER, or nil (requires secret)
     # @param package_info [Hash] created package information
     # @returns [Aspera::Node] a node API for access key
-    def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: SCOPE_NODE_USER, package_info: nil)
+    def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Aspera::Node::SCOPE_USER, package_info: nil)
       raise 'invalid type for node_id' unless node_id.is_a?(String)
       node_info = read("nodes/#{node_id}")[:data]
       if workspace_name.nil? && !workspace_id.nil?
@@ -292,7 +286,7 @@ module Aspera
       else
         # OAuth bearer token
         node_rest_params[:auth] = params[:auth].clone
-        node_rest_params[:auth][:scope] = self.class.node_scope(node_info['access_key'], scope)
+        node_rest_params[:auth][:scope] = Aspera::Node.token_scope(node_info['access_key'], scope)
         # special header required for bearer token only
         node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
       end

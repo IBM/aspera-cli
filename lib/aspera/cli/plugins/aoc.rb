@@ -741,13 +741,13 @@ module Aspera
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")[:data]
-              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: AoC::SCOPE_NODE_USER)
+              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: Aspera::Node::SCOPE_USER)
             end
           when :files
             command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))
             case command_repo
             when *NODE4_EXT_COMMANDS
-              return execute_nodegen4_command(command_repo, home_info[:node_id], file_id: home_info[:file_id], scope: AoC::SCOPE_NODE_USER)
+              return execute_nodegen4_command(command_repo, home_info[:node_id], file_id: home_info[:file_id], scope: Aspera::Node::SCOPE_USER)
             when :short_link
               # execute action on AoC API
               short_link_command = options.get_next_command(%i[create delete list])
