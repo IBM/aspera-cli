@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/rest'
+require 'aspera/oauth'
 require 'xmlsimple'
 
 module Aspera
@@ -85,7 +86,7 @@ module Aspera
           receiver_client_ids: 'aspera_ats'
         }})
       # get delegated token to be placed in rest call header and in transfer tags
-      @storage_credentials['token'][TOKEN_FIELD] = delegated_oauth.get_authorization.gsub(/^Bearer /, '')
+      @storage_credentials['token'][TOKEN_FIELD] = OAuth.bearer_extract(delegated_oauth.get_authorization)
       @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@storage_credentials)}
     end
   end

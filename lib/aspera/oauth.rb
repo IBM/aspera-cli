@@ -34,6 +34,7 @@ module Aspera
     TOKEN_EXPIRATION_GUARD_SEC = 120
     # a prefix for persistency of tokens (simplify garbage collect)
     PERSIST_CATEGORY_TOKEN = 'token'
+    BEARER_PREFIX = 'Bearer '
 
     private_constant :JWT_ACCEPTED_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
 
@@ -45,6 +46,19 @@ module Aspera
     @id_handlers = {}
 
     class << self
+      def bearer_build(token)
+        return BEARER_PREFIX + token
+      end
+
+      def bearer_extract(token)
+        raise 'not a bearer token, wrong prefix' unless bearer?(token)
+        return token[BEARER_PREFIX.length..-1]
+      end
+
+      def bearer?(token)
+        return token.start_with?(BEARER_PREFIX)
+      end
+
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
@@ -306,7 +320,7 @@ module Aspera
       end # if ! in_cache
       raise "API error: No such field in answer: #{@generic_parameters[:token_field]}" unless token_data.key?(@generic_parameters[:token_field])
       # ok we shall have a token here
-      return 'Bearer ' + token_data[@generic_parameters[:token_field]]
+      return self.class.bearer_build(token_data[@generic_parameters[:token_field]])
     end
   end # OAuth
 end # Aspera

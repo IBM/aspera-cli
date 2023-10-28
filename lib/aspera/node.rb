@@ -21,10 +21,12 @@ module Aspera
     TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
     SCOPE_USER = 'user:all'
     SCOPE_ADMIN = 'admin:all'
+    SCOPE_PREFIX = 'node.'
+    SCOPE_SEPARATOR = ':'
     SIGNATURE_DELIMITER = '==SIGNATURE=='
 
     # register node special token decoder
-    Oauth.register_decoder(lambda{|token|JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)})
+    Oauth.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
 
     # class instance variable, access with accessors on class
     @use_standard_ports = true
@@ -54,7 +56,14 @@ module Aspera
 
       # node API scopes
       def token_scope(access_key, scope)
-        return "node.#{access_key}:#{scope}"
+        return [SCOPE_PREFIX, access_key, SCOPE_SEPARATOR, scope].join('')
+      end
+
+      def decode_scope(scope)
+        items = scope.split(SCOPE_SEPARATOR, 2)
+        raise "invalid scope: #{scope}" unless items.length.eql?(2)
+        raise "invalid scope: #{scope}" unless items[0].start_with?(SCOPE_PREFIX)
+        return {access_key: items[0][SCOPE_PREFIX.length..-1], scope: items[1]}
       end
 
       # Create an Aspera Node bearer token
@@ -63,6 +72,8 @@ module Aspera
       def bearer_token(access_key:, scope: SCOPE_USER, payload:, private_key:, expiration_sec: 3600)
         raise 'payload shall be Hash' unless payload.is_a?(Hash)
         raise 'missing user_id' unless payload.key?('user_id')
+        raise 'user_id must be a String' unless payload['user_id'].is_a?(String)
+        raise 'user_id must not be empty' if payload['user_id'].empty?
         raise 'private_key shall be OpenSSL::PKey::RSA' unless private_key.is_a?(OpenSSL::PKey::RSA)
         payload['scope'] ||= token_scope(access_key, scope)
         payload['auth_type'] ||= 'access_key'
@@ -74,6 +85,22 @@ module Aspera
           Base64.strict_encode64(private_key.sign(OpenSSL::Digest.new('sha512'), payload_json)).scan(/.{1,60}/).join("\n"),
           ''
         ].join("\n")))
+      end
+
+      def decode_bearer_token(token)
+        return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)
+      end
+
+      def bearer_headers(bearer_auth, access_key: nil)
+        # if username is not provided, use the access key from the token
+        if access_key.nil?
+          access_key = Aspera::Node.decode_scope(Aspera::Node.decode_bearer_token(Oauth.bearer_extract(bearer_auth))['scope'])[:access_key]
+          raise "internal error #{access_key}" if access_key.nil?
+        end
+        return {
+          Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => access_key,
+          'Authorization'                          => bearer_auth
+        }
       end
     end
 

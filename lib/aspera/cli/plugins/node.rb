@@ -8,6 +8,7 @@ require 'aspera/id_generator'
 require 'aspera/node'
 require 'aspera/aoc'
 require 'aspera/sync'
+require 'aspera/oauth'
 require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'zlib'
@@ -107,7 +108,8 @@ module Aspera
             options.declare(:sync_name, 'Sync name')
             options.declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
             options.declare(:bearer_key, 'RSA private key PEM value for bearer token generation')
-            options.declare(:token_info, 'Bearer token info', types: Hash)
+            options.declare(:token_info, 'Information for bearer token', types: Hash)
+            options.declare(:root_id, 'File id of top folder if using bearer tokens')
             declare_sync_options
             options.parse_options!
             Aspera::Node.use_standard_ports = options.get_option(:default_ports)
@@ -117,14 +119,11 @@ module Aspera
             if env.key?(:node_api)
               # this can be Aspera::Node or Aspera::Rest (shares)
               env[:node_api]
-            elsif options.get_option(:password, mandatory: true).start_with?('Bearer ')
+            elsif Oauth.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
               Aspera::Node.new(params: {
                 base_url: options.get_option(:url, mandatory: true),
-                headers:  {
-                  Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => options.get_option(:username, mandatory: true),
-                  'Authorization'                          => options.get_option(:password, mandatory: true)
-                }
+                headers:  Aspera::Node.bearer_headers(options.get_option(:password, mandatory: true), access_key: options.get_option(:username))
               })
             else
               # this is normal case
@@ -312,17 +311,25 @@ module Aspera
           when :access_keys
             ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
             case ak_command
-            when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys')
+            when *Plugin::ALL_OPS
+              return entity_command(ak_command, @api_node, 'access_keys') do |field, value|
+                       raise 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
+                       @api_node.read('access_keys/self')[:data]['id']
+                     end
             when :do
               access_key_id = options.get_next_argument('access key id')
-              ak_info = @api_node.read("access_keys/#{access_key_id}")[:data]
-              # change API credentials if different access key
-              if !access_key_id.eql?('self')
-                @api_node.params[:auth][:username] = ak_info['id']
-                @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
+              root_file_id = options.get_option(:root_id)
+              if root_file_id.nil?
+                ak_info = @api_node.read("access_keys/#{access_key_id}")[:data]
+                # change API credentials if different access key
+                if !access_key_id.eql?('self')
+                  @api_node.params[:auth][:username] = ak_info['id']
+                  @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
+                end
+                root_file_id = ak_info['root_file_id']
               end
               command_repo = options.get_next_command(COMMANDS_GEN4)
-              return execute_command_gen4(command_repo, ak_info['root_file_id'])
+              return execute_command_gen4(command_repo, root_file_id)
             end
           when :health
             nagios = Nagios.new
@@ -397,10 +404,11 @@ module Aspera
             when :oauth2
               result[:username] = apifid[:api].params[:headers][Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY]
               result[:password] = apifid[:api].oauth_token
-            else raise 'unknown'
+            else raise 'internal error: unknown auth type'
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)
-            raise 'not bearer token' unless result[:password].start_with?('Bearer ')
+            # check format of bearer token
+            OAuth.bearer_extract(result[:password])
             return Main.result_status(result[:password])
           when :browse
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
@@ -880,7 +888,9 @@ module Aspera
           when :bearer_token
             private_key = OpenSSL::PKey::RSA.new(options.get_option(:bearer_key, mandatory: true))
             access_key = options.get_option(:username, mandatory: true)
-            return Main.result_status(Aspera::Node.bearer_token(payload: options.get_option(:token_info, mandatory: true), access_key: access_key,private_key: private_key))
+            return Main.result_status(Aspera::Node.bearer_token(
+              payload: options.get_option(:token_info, mandatory: true), access_key: access_key,
+              private_key: private_key))
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action
