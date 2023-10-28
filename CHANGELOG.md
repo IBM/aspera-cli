@@ -9,6 +9,7 @@
   * new: orchestrator: error analysis for workflow start
   * new: node: added command `transfer sessions` to list all sessions of all transfers
   * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
+  * new: generate node api bearer token and access node API with bearer token as credentials
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
