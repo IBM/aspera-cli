@@ -117,22 +117,16 @@ module Aspera
       # @param rest_api [Rest] api to use
       # @param res_class_path [String] sub path in URL to resource relative to base url
       # @param display_fields [Array] fields to display by default
-      # @param id_default [String] default identifier to use for existing entity commands (show, modify)
       # @param item_list_key [String] result is in a sub key of the json
       # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
       # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
       # @param block [Proc] block to search for identifier based on attribute value
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path, display_fields: nil, id_default: nil, item_list_key: false, id_as_arg: false, is_singleton: false, &block)
+      def entity_command(command, rest_api, res_class_path, display_fields: nil, item_list_key: false, id_as_arg: false, is_singleton: false, &block)
         if is_singleton
           one_res_path = res_class_path
         elsif INSTANCE_OPS.include?(command)
-          begin
-            one_res_id = instance_identifier(&block)
-          rescue StandardError => e
-            raise e if id_default.nil?
-            one_res_id = id_default
-          end
+          one_res_id = instance_identifier(&block)
           one_res_path = "#{res_class_path}/#{one_res_id}"
           one_res_path = "#{res_class_path}?#{id_as_arg}=#{one_res_id}" if id_as_arg
         end

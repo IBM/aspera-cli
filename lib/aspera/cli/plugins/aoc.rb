@@ -868,7 +868,7 @@ module Aspera
               wf_command = options.get_next_command(%i[action launch].concat(Plugin::ALL_OPS))
               case wf_command
               when *Plugin::ALL_OPS
-                return entity_command(wf_command, automation_api, 'workflows', id_default: :id)
+                return entity_command(wf_command, automation_api, 'workflows')
               when :launch
                 wf_id = instance_identifier
                 data = automation_api.create("workflows/#{wf_id}/launch", {})[:data]

@@ -312,7 +312,7 @@ module Aspera
           when :access_keys
             ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
             case ak_command
-            when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys', id_default: 'self')
+            when *Plugin::ALL_OPS then return entity_command(ak_command, @api_node, 'access_keys')
             when :do
               access_key_id = options.get_next_argument('access key id')
               ak_info = @api_node.read("access_keys/#{access_key_id}")[:data]
@@ -366,7 +366,7 @@ module Aspera
         # @return [Hash] api and main file id for given path or id
         # Allows to specify a file by its path or by its id on the node
         def apifid_from_next_arg(top_file_id)
-          file_path = instance_identifier(description: 'path or id') do |attribute, value|
+          file_path = instance_identifier(description: 'path or %id:<id>') do |attribute, value|
             raise 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
             # directly return result for method
             return {api: @api_node, file_id: value}
