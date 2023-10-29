@@ -1,0 +1,20 @@
+# Pandoc options
+#verbosity: INFO
+from: markdown_mmd
+to: pdf
+pdf-engine: lualatex
+toc: true
+number-sections: true
+shift-heading-level-by: -1
+variables:
+  author: 'Laurent MARTIN'
+  mainfont: 'IBM Plex Sans'
+  monofont: 'IBM Plex Mono'
+  urlcolor: blue
+  geometry: margin=15mm
+metadata-files:
+  - metadata.yaml
+resource-path:
+  - .
+include-in-header:
+  - template.tex

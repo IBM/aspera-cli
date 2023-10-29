@@ -1,0 +1,4 @@
+---
+documentclass: report
+include-before: '\newpage'
+---

@@ -30,29 +30,16 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 	set -x &&\
 	if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 	date=$$(date $$ref '+%Y/%m/%d') &&\
+	pandoc --defaults=pandoc_md_pdf.yaml --variable=date:$$date -o $@ $(DIR_TOP)README.md
+
+$(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \
-		--standalone \
-		--from=markdown_mmd \
-		--to=pdf \
-		--pdf-engine=lualatex \
-		--include-in-header=$(DIR_DOC)template.tex \
 		--toc \
 		--number-sections \
 		--shift-heading-level-by=-1 \
 		--resource-path=. \
-		--variable=include-before:'\newpage' \
-		--variable=documentclass:report \
-		--variable=date:$$date \
-		--variable=author:'Laurent MARTIN' \
-		--variable=mainfont:'IBM Plex Sans' \
-		--variable=monofont='IBM Plex Mono' \
-		--variable=urlcolor:blue \
-		--variable=geometry:margin=15mm \
 		-o $@ \
 		$(DIR_TOP)README.md
-
-$(MANUAL_HTML): $(DIR_TOP)README.md
-	pandoc --number-sections --shift-heading-level-by=-1 --resource-path=. --toc -o $@ $(DIR_TOP)README.md
 
 # regenerate always, as it depends on sources (when a new option is added for example). instead do: make delgen doc
 #.PHONY: $(DIR_TOP)README.md

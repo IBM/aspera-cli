@@ -384,7 +384,7 @@ Build an image like this:
 singularity build <%=cmd%>.sif docker://<%=containerimage%>
 ```
 
-The use like this:
+Then, start <%=tool%> like this:
 
 ```bash
 singularity run <%=cmd%>.sif
@@ -463,7 +463,12 @@ curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
 ```
 
 As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
-If so, one can rename the login script: `mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok`.
+If so, one can rename the login script:
+
+```bash
+mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
+```
+
 To activate Ruby (and <%=cmd%>) later, source it:
 
 ```bash
@@ -488,7 +493,7 @@ Automated installation, with internet access:
 
 The ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
 
-Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/> and then install:
+Download theruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
 
 ```bat
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
@@ -1127,7 +1132,7 @@ Options are either:
 
 The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
-- [Configuration file](#configfile).
+- [Configuration file](#configfile)
 - Environment variable
 - Command line
 
@@ -1191,7 +1196,7 @@ The table style can be customized with parameter: `table_style` (horizontal, ver
 
 In a table format, when displaying "objects" (single, or list), by default, sub object are
 flattened (option `flat_hash`). So, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
-Setting `flat_hash` to `false` will only display one field: `user` and value is the sub Hash table.
+Setting `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
 When in flatten mode, it is possible to filter fields by "dotted" field name.
 
 Object lists are displayed one per line, with attributes as columns. Single objects are transposed: one attribute per line.
@@ -1277,17 +1282,19 @@ Examples:
 
 ### <a id="extended"></a>Extended Value Syntax
 
-Some options and arguments are specified by a simple string.
-But sometime it is convenient to read a value from a file, or decode it, or have a value more complex than a string (e.g. Hash table).
+Most options and arguments are specified by a simple string (e.g. username or url).
+Sometime it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
+Some options expect a more complex value such as `Hash` or `Array`.
 
-The extended value syntax is:
+The **Extended Value** Syntax allows to specify such values and even read values from other sources than the command line itself.
+
+The syntax is:
 
 ```bash
 <0 or more decoders><some text value or nothing>
 ```
 
-Decoders act like a function with its parameter on right hand side.
-Decoders are recognized by the prefix: `@` and suffix `:`
+Decoders act like a function with its parameter on right hand side and are recognized by the prefix: `@` and suffix `:`
 
 The following decoders are supported:
 
@@ -1315,19 +1322,25 @@ To display the result of an extended value, use the `config echo` command.
 The `extend` decoder is useful to evaluate embedded extended value syntax in a string.
 It expects a `@` to close the embedded extended value syntax.
 
+Example: Create a `Hash` value with the convenient `@json:` decoder:
+
+```bash
+<%=cmd%> config echo @json:'{"key1":"value1","key2":"value2"}'
+```
+
 Example: read the content of the specified file, then, base64 decode, then unzip:
 
 ```bash
 <%=cmd%> config echo @zlib:@base64:@file:myfile.dat
 ```
 
-Example: Create a value as a Hash, with one key and the value is read from a file:
+Example: Create a `Hash` value with one key and the value is read from a file:
 
 ```bash
 <%=cmd%> config echo @ruby:'{"token_verification_key"=>File.read("mykey.txt")}'
 ```
 
-Example: read a csv file and create a list of Hash for bulk provisioning:
+Example: read a csv file and create an `Array` of `Hash` for bulk provisioning:
 
 ```bash
 cat test.csv
@@ -1358,7 +1371,7 @@ Example: create a JSON with values coming from a preset named "config" of config
 <%=cmd%> config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
 ```
 
-```ruby
+```output
 +---------+-----------+
 | key     | value     |
 +---------+-----------+
@@ -1367,27 +1380,16 @@ Example: create a JSON with values coming from a preset named "config" of config
 +---------+-----------+
 ```
 
-### <a id="native"></a>Structured Value
-
-Some options and parameters expect a [Extended Value](#extended), i.e. a value more complex than a simple string. This is usually a Hash table or an Array, which could also contain sub structures.
-
-For instance, a <%=trspec%> is expected to be a [Extended Value](#extended).
-
-Structured values shall be described using the [Extended Value Syntax](#extended).
-A convenient way to specify a [Extended Value](#extended) is to use the `@json:` decoder, and describe the value in JSON format.
-The `@ruby:` decoder can also be used.
-For an Array of Hash tables, the `@csvt:` decoder can be used.
-
-It is also possible to provide a [Extended Value](#extended) in a file using `@json:@file:<path>`
-
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[config folder]`: `[User's home folder]/.aspera/<%=cmd%>`.
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[User's home folder]/.aspera/<%=cmd%>`.
 
 > **Note:** `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
-It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`. <%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists. So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
+It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
+<%=tool%> sets the env var `%HOME%` to the value of `%USERPROFILE%` if set and exists.
+So, on Windows `%USERPROFILE%` is used as it is more reliable than `%HOMEDRIVE%%HOMEPATH%`.
 
-The [config folder] can be displayed using :
+The configuration folder can be displayed using :
 
 ```bash
 <%=cmd%> config folder
@@ -1409,11 +1411,11 @@ set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-When OAuth is used (AoC, Faspex4 api v4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in `[config folder]/persist_store` by default.
+When OAuth is used (AoC, Faspex4 api v4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
 The command `config flush_tokens` deletes all existing tokens.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
-Tokens that can be refreshed are refreshed. Else tokens are re-generated if expired.
+Tokens that can be refreshed will be refreshed, else tokens are re-generated if expired.
 
 ### <a id="configfile"></a>Configuration file
 
@@ -1454,7 +1456,7 @@ The command `set` allows setting individual options in a <%=prst%>.
 <%=cmd%> config preset set demo_server password my_password_here
 ```
 
-The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [*Structured Value*](#native).
+The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended).
 
 ```bash
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
@@ -1558,7 +1560,7 @@ If the default global <%=prstt%> is not set, and you want to use a different nam
 
 #### Format of file
 
-The configuration file is a Hash in a YAML file. Example:
+The configuration file is a `Hash` in a YAML file. Example:
 
 ```yaml
 config:
@@ -1616,7 +1618,7 @@ Options are loaded using this algorithm:
 
 - If option `--no-default` (or `-N`) is specified, then no default value is loaded for the plugin
 - else it looks for the name of the plugin as key in section `default`, the value is the name of the default <%=prst%> for it, and loads it.
-- If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the <%=prst%> specified from the configuration file, or of the value is a Hash, it uses it as options values.
+- If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the <%=prst%> specified from the configuration file, or if the value is a `Hash`, it uses it as options values.
 - Environment variables are evaluated
 - Command line options are evaluated
 
@@ -1649,7 +1651,7 @@ Example: Define options using command line:
 <%=cmd%> -N --url=_url_here_ --password=my_password_here --username=_name_here_ node --show-config
 ```
 
-Example: Define options using a Hash:
+Example: Define options using a `Hash`:
 
 ```bash
 <%=cmd%> -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","username":"_name_here_"}' node --show-config
@@ -1725,7 +1727,7 @@ A more secure option is to retrieve values from a secret vault.
 
 The vault is used with options `vault` and `vault_password`.
 
-`vault` defines the vault to be used and shall be a Hash, example:
+`vault` defines the vault to be used and shall be a `Hash`, example:
 
 ```json
 {"type":"system","name":"<%=cmd%>"}
@@ -2528,13 +2530,12 @@ All parameters necessary for this transfer are described in a <%=trspec%> (Trans
 - file list
 - etc...
 
-<%=tool%> builds the <%=trspec%> internally, so it is not necessary to provide additional parameters on the command line for this transfer.
-
-The <%=trspec%> is a Hash (dictionary), so it is described on the command line with the [Extended Value Syntax](#extended).
+<%=tool%> builds the <%=trspec%> internally as a `Hash`.
+It is not necessary to provide additional parameters on the command line for this transfer.
 
 It is possible to modify or add any of the supported <%=trspec%> parameter using the `ts` option.
-The `ts` option accepts a [Structured Value](#native) containing one or several <%=trspec%> parameters in a `Hash`.
-Multiple `ts` options on command line are cumulative, and Hash is deeply merged.
+The `ts` option accepts a [`Hash` Extended Value](#extended) containing one or several <%=trspec%> parameters.
+Multiple `ts` options on command line are cumulative, and the `Hash` value is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
 
 > **Note:** Default transfer spec values can be displayed with command: `config ascp info --flat-hash=no` under field `ts`.
@@ -3026,8 +3027,8 @@ Examples:
 
 ### Bulk creation and deletion of resources
 
-Bulk creation and deletion of resources are possible using option `bulk` (yes,no(default)).
-In that case, the operation expects an Array of Hash instead of a simple Hash using the [Extended Value Syntax](#extended).
+Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
+In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value Syntax](#extended).
 This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
@@ -4856,7 +4857,7 @@ It is equivalent to:
 <%=cmd%> faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
-Other payload parameters are possible in Hash format:
+Other payload parameters are possible the `Hash` value:
 
 ```json
 {"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3
@@ -5051,11 +5052,11 @@ Additional optional parameters in `delivery_info`:
 It is possible to send from a remote source using option `remote_source`, providing either the numerical id, or the name of the remote source using percent selector: `%name:<name>`.
 
 Remote source can be browsed if option `storage` is provided.
-`storage` is an extended value of type `Hash`.
+`storage` is a `Hash` extended value.
 The key is the storage name, as listed in `source list` command.
-The value is a Hash with the following keys:
+The value is a `Hash` with the following keys:
 
-- `node` is a Hash with keys: url, username, password
+- `node` is a `Hash` with keys: `url`, `username`, `password`
 - `path` is the subpath inside the node, as configured in Faspex
 
 ### Email notification on transfer
@@ -5432,7 +5433,7 @@ This shall list the contents of the storage root of the access key.
 
 When generating preview files, some options are provided by default.
 Some values for the options can be modified on command line.
-For video preview, the whole set of options can be overridden with option `reencode_ffmpeg`: it is a Hash with two keys: `in` and `out`, each is an array of strings with the native options to `ffmpeg`.
+For video preview, the whole set of options can be overridden with option `reencode_ffmpeg`: it is a `Hash` with two keys: `in` and `out`, each is an `Array` of strings with the native options to `ffmpeg`.
 
 ### Execution
 
@@ -5589,7 +5590,7 @@ If the preview generator does not have access to files on the file system (it is
 
 <%=tool%> can send email, for that setup SMTP configuration. This is done with option `smtp`.
 
-The `smtp` option is a Hash (extended value) with the following fields:
+The `smtp` option is a `Hash` (extended value) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
 | field        | default             | example                    | description                      |
@@ -5698,7 +5699,7 @@ This makes it easy to integrate with any language provided that one can spawn a 
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted <%=trspec%> on stdin.
 
-> **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the Hash using JSON syntax.
+> **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the `Hash` using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
