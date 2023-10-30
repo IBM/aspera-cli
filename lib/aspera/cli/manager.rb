@@ -176,31 +176,32 @@ module Aspera
           raise "INTERNAL ERROR: type must be Array of Class: #{type}" unless type.all?(Class)
           descr = "#{descr} (#{type})"
         end
-        result = default
-        if !@unprocessed_cmd_line_arguments.empty?
-          # there are values
-          case expected
-          when :single
-            result = ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
-          when :multiple
-            result = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
-            # if expecting list and only one arg of type array : it is the list
-            if result.length.eql?(1) && result.first.is_a?(Array)
-              result = result.first
+        result =
+          if !@unprocessed_cmd_line_arguments.empty?
+            # there are values
+            case expected
+            when :single
+              ExtendedValue.instance.evaluate(@unprocessed_cmd_line_arguments.shift)
+            when :multiple
+              value = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|ExtendedValue.instance.evaluate(v)}
+              # if expecting list and only one arg of type array : it is the list
+              if value.length.eql?(1) && value.first.is_a?(Array)
+                value = value.first
+              end
+              value
+            when Array
+              allowed_values = [].concat(expected)
+              allowed_values.concat(aliases.keys) unless aliases.nil?
+              raise "internal error: only symbols allowed: #{allowed_values}" unless allowed_values.all?(Symbol)
+              self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
+            else
+              raise 'Internal error: expected: must be single, multiple, or value array'
             end
-          when Array
-            allowed_values = [].concat(expected)
-            allowed_values.concat(aliases.keys) unless aliases.nil?
-            raise "internal error: only symbols allowed: #{allowed_values}" unless allowed_values.all?(Symbol)
-            result = self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
-          else
-            raise 'Internal error: expected: must be single, multiple, or value array'
+          elsif !default.nil? then default
+            # no value provided, either get value interactively, or exception
+          elsif mandatory then get_interactive(:argument, descr, expected: expected)
           end
-        elsif mandatory
-          # no value provided, either get value interactively, or exception
-          result = get_interactive(:argument, descr, expected: expected)
-        end
-        if type.eql?([Integer]) && result.is_a?(String)
+        if result.is_a?(String) && type.eql?([Integer])
           str_result = result
           result = Integer(str_result, exception: false)
           raise CliBadArgument, "Invalid integer: #{str_result}" if result.nil?
@@ -283,9 +284,10 @@ module Aspera
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
         raise "INTERNAL ERROR: #{option_symbol} already declared" if @declared_options.key?(option_symbol)
+        # raise "INTERNAL ERROR: #{option_symbol} clash with another option" if @declared_options.keys.map(&:to_s).any?{|k|k.start_with?(option_symbol.to_s) || option_symbol.to_s.start_with?(k)}
         raise "INTERNAL ERROR: #{option_symbol} ends with dot" unless description[-1] != '.'
-        raise "INTERNAL ERROR: #{option_symbol} does not start with capital" unless description[0] == description[0].upcase
-        raise "INTERNAL ERROR: #{option_symbol} shall use :types" if description.downcase.include?('hash') || description.downcase.include?('extended value')
+        raise "INTERNAL ERROR: #{option_symbol} description does not start with capital" unless description[0] == description[0].upcase
+        raise "INTERNAL ERROR: #{option_symbol} shall use :types" if ['hash', 'extended value'].any?{|s|description.downcase.include?(s) }
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
