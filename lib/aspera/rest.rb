@@ -130,6 +130,10 @@ module Aspera
       return @oauth
     end
 
+    def peer_certificate
+      return http_session.peer_cert
+    end
+
     # @param a_rest_params [Hash] default call parameters (merged at call)
     def initialize(a_rest_params)
       raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
