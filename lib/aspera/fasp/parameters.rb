@@ -4,7 +4,9 @@ require 'aspera/log'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/fasp/error'
+require 'aspera/fasp/installation'
 require 'aspera/cli/formatter'
+require 'aspera/rest'
 require 'securerandom'
 require 'base64'
 require 'json'
@@ -21,7 +23,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      SUPPORTED_OPTIONS = %i[ascp_args wss].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss wss_secure].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -125,7 +127,8 @@ module Aspera
       def initialize(job_spec, options)
         @job_spec = job_spec
         # check necessary options
-        raise 'Internal: missing options' unless (SUPPORTED_OPTIONS - options.keys).empty?
+        missing_options = SUPPORTED_OPTIONS - options.keys
+        raise "Internal: missing options: #{missing_options.join(', ')}" unless missing_options.empty?
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
         Log.dump(:options, @options)
         raise 'ascp arguments must be an Array' unless @options[:ascp_args].is_a?(Array)
@@ -189,12 +192,6 @@ module Aspera
           env:          {},
           ascp_version: :ascp
         }
-        # some ssh credentials are required to avoid interactive password input
-        if !@job_spec.key?('remote_password') &&
-            !@job_spec.key?('ssh_private_key') &&
-            !@job_spec.key?('EX_ssh_key_paths')
-          raise Fasp::Error, 'required: password or ssh key (value or path)'
-        end
 
         # special cases
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
@@ -202,7 +199,7 @@ module Aspera
         # notify multi-session was already used, anyway it was deleted by agent direct
         raise 'internal error' if @builder.read_param('multi_session')
 
-        # use web socket session initiation ?
+        # use web socket sesure for session ?
         if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
@@ -212,12 +209,26 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
-          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-          @job_spec['EX_ssh_key_paths'] = [OpenSSL::X509::DEFAULT_CERT_FILE]
-          Log.log.debug('CA certs: EX_ssh_key_paths <- DEFAULT_CERT_FILE from openssl')
+          if @options[:wss_secure]
+            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+            env_args[:args].unshift('-i', OpenSSL::X509::DEFAULT_CERT_FILE)
+            Log.log.debug{"CA certs for wss: openssl cert: #{DEFAULT_CERT_FILE}"}
+          else
+            wss_api = Rest.new(base_url: "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}/v1/transfer")
+            wss_api.read('start') rescue nil
+            wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
+            File.write(wss_cert_file, wss_api.peer_certificate.to_pem)
+            env_args[:args].unshift('-i', wss_cert_file)
+            Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
+          end
         else
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
+          # add SSH bypass keys when authentication is token and no auth is provided
+          if @job_spec.key?('token') && !@job_spec.key?('remote_password')
+            # @job_spec['remote_password'] = Installation.instance.bypass_pass # not used: no passphrase
+            Installation.instance.bypass_keys.each { |key| env_args[:args].unshift('-i', key) }
+          end
         end
 
         # process parameters as specified in table
@@ -243,7 +254,17 @@ module Aspera
         # destination MUST be last command line argument to ascp
         @builder.add_command_line_options([destination_folder])
 
+        Log.log.debug{"ascp args: #{env_args}"}
+
         @builder.add_env_args(env_args)
+
+        env_args[:args].unshift('-q') if @options[:quiet]
+
+        # add fallback cert and key as arguments if needed
+        if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
+          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_cert_privkey))
+          env_args[:args].unshift('-I', Installation.instance.path(:fallback_certificate))
+        end
 
         return env_args
       end

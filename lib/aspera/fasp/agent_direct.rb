@@ -22,6 +22,7 @@ module Aspera
         spawn_timeout_sec: 3,
         spawn_delay_sec:   2,
         wss:               true, # true: if both SSH and wss in ts: prefer wss
+        wss_secure:        true, # false: bypass cert verification for wss
         multi_incr_udp:    true,
         resume:            {},
         ascp_args:         [],
@@ -49,14 +50,6 @@ module Aspera
         end
         Log.dump('ts', transfer_spec)
 
-        # add bypass keys when authentication is token and no auth is provided
-        if transfer_spec.key?('token') &&
-            !transfer_spec.key?('remote_password') &&
-            !transfer_spec.key?('EX_ssh_key_paths')
-          # transfer_spec['remote_password'] = Installation.instance.bypass_pass # not used: no passphrase
-          transfer_spec['EX_ssh_key_paths'] = Installation.instance.bypass_keys
-        end
-
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
         multi_session_info = nil
@@ -82,15 +75,7 @@ module Aspera
         end
 
         # compute known arguments and environment variables
-        env_args =  Parameters.new(transfer_spec, @options).ascp_args
-
-        # add fallback cert and key as arguments if needed
-        if ['1', 1, true, 'force'].include?(transfer_spec['http_fallback'])
-          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_cert_privkey))
-          env_args[:args].unshift('-I', Installation.instance.path(:fallback_certificate))
-        end
-
-        env_args[:args].unshift('-q') if @options[:quiet]
+        env_args = Parameters.new(transfer_spec, @options).ascp_args
 
         # transfer job can be multi session
         xfer_job = {
