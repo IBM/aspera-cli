@@ -17,10 +17,11 @@ module Aspera
       # terminal names that support iTerm2 image display
       ITERM_NAMES = %w[iTerm WezTerm mintty].freeze
       # TODO: retrieve terminal font ratio using some termcap ?
-      DEFAULT_FONT_RATIO = 1.7
+      # ratio = font height / font width
+      DEFAULT_FONT_RATIO = 32.0 / 14.0
       private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS, :DEFAULT_FONT_RATIO
       class << self
-        def build(blob, reserve: 3, text: false, double: true)
+        def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
           return iterm_display_image(blob) if iterm_supported? && !text
           image = Magick::ImageList.new.from_blob(blob)
           (term_rows, term_columns) = IO.console.winsize
@@ -28,7 +29,7 @@ module Aspera
           # compute scaling to fit terminal
           fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
           height_ratio = double ? 2.0 : 1.0
-          image = image.scale((image.columns * fit_term_ratio * DEFAULT_FONT_RATIO).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
+          image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
           # get all pixel colors, adjusted for Rainbow
           pixel_colors = []
           image.each_pixel do |pixel, col, row|
