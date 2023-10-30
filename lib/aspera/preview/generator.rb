@@ -19,6 +19,7 @@ module Aspera
       FFMPEG_OPTIONS_LIST = %w[in out].freeze
 
       # CLI needs to know conversion type to know if need skip it
+      # one of CONVERSION_TYPES
       attr_reader :conversion_type
 
       # @param src source file path
@@ -32,51 +33,36 @@ module Aspera
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
-      def initialize(options, src, dst, main_temp_dir, api_mime_type)
-        @options = options
+      def initialize(src, dst, options, main_temp_dir, api_mime_type)
         @source_file_path = src
         @destination_file_path = dst
+        @options = options
         @temp_folder = File.join(main_temp_dir, @source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # extract preview format from extension of target file
         @preview_format_symb = File.extname(@destination_file_path).gsub(/^\./, '').to_sym
-        @conversion_type = FileTypes.instance.conversion_type(@source_file_path, api_mime_type)
-      end
-
-      # name of processing method in this object
-      # combination of: conversion type and output format (and video_conversion for video)
-      def processing_method_symb
-        name = "convert_#{@conversion_type}_to_#{@preview_format_symb}"
-        if @conversion_type.eql?(:video)
+        conversion_type = FileTypes.instance.conversion_type(@source_file_path, api_mime_type)
+        @processing_method = "convert_#{conversion_type}_to_#{@preview_format_symb}"
+        if conversion_type.eql?(:video)
           case @preview_format_symb
           when :mp4
-            name = "#{name}_using_#{@options.video_conversion}"
+            @processing_method = "#{@processing_method}_using_#{@options.video_conversion}"
           when :png
-            name = "#{name}_using_#{@options.video_png_conv}"
+            @processing_method = "#{@processing_method}_using_#{@options.video_png_conv}"
           end
         end
-        Log.log.debug{"method: #{name}"}
-        return name.to_sym
-      end
-
-      # @return true if conversion is supported.
-      # for instance, plaintext to mp4 is not supported
-      def supported?
-        return false if @conversion_type.nil?
-        return respond_to?(processing_method_symb, true)
+        @processing_method = @processing_method.to_sym
+        Log.log.debug{"method: #{@processing_method}"}
+        raise "no processing know for #{conversion_type} -> #{@preview_format_symb}" unless respond_to?(@processing_method, true)
       end
 
       # create preview as specified in constructor
       def generate
-        raise 'could not detect type of file' if @conversion_type.nil?
-        method_symb = processing_method_symb
-        Log.log.info{"#{@source_file_path}->#{@destination_file_path} (#{method_symb})"}
+        Log.log.info{"#{@source_file_path}->#{@destination_file_path} (#{@processing_method})"}
         begin
-          send(method_symb)
+          send(@processing_method)
           # check that generated size does not exceed maximum
           result_size = File.size(@destination_file_path)
-          if result_size > @options.max_size
-            Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"}
-          end
+          Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
         rescue StandardError => e
           Log.log.error{"Ignoring: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)

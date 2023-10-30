@@ -1180,35 +1180,35 @@ $(T)prev_check: $(T).exists
 	@touch $@
 $(T)prev_dcm: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_dcm --log-level=debug
+	$(EXE_MAN) preview test --base=$@ @preset:misc.file_dcm
 	@touch $@
 $(T)prev_pdf: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_pdf --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_pdf
 	@touch $@
 $(T)prev_docx: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_docx --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_docx
 	@touch $@
 $(T)prev_mxf_blend: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=blend --log-level=debug
+	$(EXE_MAN) preview test --base=$@ @preset:misc.file_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 	@touch $@
-$(T)prev_mxf_png_fix: $(T).exists
+$(T)prev_mpg_png_fix: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_mxf --video-png-conv=fixed --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_mpg --video-png-conv=fixed
 	@touch $@
-$(T)prev_mxf_png_ani: $(T).exists
+$(T)prev_mpg_png_ani: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ png @preset:misc.file_mxf --video-png-conv=animated --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_mpg --video-png-conv=animated
 	@touch $@
-$(T)prev_mxf_reencode: $(T).exists
+$(T)prev_mpg_reencode: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=reencode --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_mpg mp4 --video-conversion=reencode
 	@touch $@
-$(T)prev_mxf_clips: $(T).exists
+$(T)prev_mpg_clips: $(T).exists
 	@echo $@
-	$(EXE_MAN) preview test --case=$@ mp4 @preset:misc.file_mxf --video-conversion=clips --log-level=debug
+	$(EXE_MAN) preview show --base=$@ @preset:misc.file_mpg mp4 --video-conversion=clips
 	@touch $@
 $(T)prev_events: $(T).exists
 	@echo $@
@@ -1225,7 +1225,7 @@ $(T)prev_folder: $(T).exists
 	$(EXE_MAN) preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@touch $@
 
-tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mxf_png_fix $(T)prev_mxf_png_ani $(T)prev_mxf_blend $(T)prev_mxf_reencode $(T)prev_mxf_clips $(T)prev_events $(T)prev_scan $(T)prev_folder
+tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_events $(T)prev_scan $(T)prev_folder
 # TODO : finalize
 thot:
 	rm -fr source_hot

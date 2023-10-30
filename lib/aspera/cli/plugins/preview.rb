@@ -5,6 +5,7 @@ require 'aspera/preview/generator'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
+require 'aspera/preview/terminal'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/persistency_action_once'
 require 'aspera/node'
@@ -68,7 +69,7 @@ module Aspera
           options.declare(:previews_folder, 'Preview folder in storage root', handler: {o: self, m: :option_previews_folder}, default: DEFAULT_PREVIEWS_FOLDER)
           options.declare(:temp_folder, 'Path to temp folder', default: Dir.tmpdir)
           options.declare(:skip_folders, 'List of folder to skip', handler: {o: self, m: :option_skip_folders}, default: [])
-          options.declare(:case, 'Basename of output for for test')
+          options.declare(:base, 'Basename of output for for test')
           options.declare(:scan_path, 'Subpath in folder id to start scan in (default=/)')
           options.declare(:scan_id, 'Folder id in storage to start scan in, default is access key main folder id')
           options.declare(:mimemagic, 'Use Mime type detection of gem mimemagic', values: :bool, default: false)
@@ -257,9 +258,10 @@ module Aspera
           "#{entry['id']}#{PREVIEW_FOLDER_SUFFIX}"
         end
 
-        def preview_filename(preview_format, filename=nil)
-          filename ||= PREVIEW_BASENAME
-          return "#{filename}.#{preview_format}"
+        # Generate a file name based on basename and format (extension)
+        def preview_filename(preview_format, base_name=nil)
+          base_name ||= PREVIEW_BASENAME
+          return "#{base_name}.#{preview_format}"
         end
 
         # generate preview files for one folder entry (file) if necessary
@@ -292,10 +294,13 @@ module Aspera
                 next false if gen_info[:preview_newer_than_original]
               end
             end
-            # need generator for further checks
-            gen_info[:generator] = Aspera::Preview::Generator.new(@gen_options, gen_info[:src], gen_info[:dst], @tmp_folder, entry['content_type'])
-            # get conversion_type (if known) and check if supported
-            next false unless gen_info[:generator].supported?
+            begin
+              # need generator for further checks
+              gen_info[:generator] = Aspera::Preview::Generator.new(gen_info[:src], gen_info[:dst], @gen_options, @tmp_folder, entry['content_type'])
+            rescue
+              # no conversion supported
+              next false
+            end
             # shall we skip it ?
             next false if @skip_types.include?(gen_info[:generator].conversion_type)
             # ok we need to generate
@@ -386,11 +391,11 @@ module Aspera
           end
         end
 
-        ACTIONS = %i[scan events trevents check test].freeze
+        ACTIONS = %i[scan events trevents check test show].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
-          unless %i[check test].include?(command)
+          unless %i[check test show].include?(command)
             # this will use node api
             @api_node = Aspera::Node.new(params: basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.params[:base_url]).host
@@ -472,15 +477,18 @@ module Aspera
             return Main.result_status("#{command} finished")
           when :check
             return Main.result_status('Tools validated')
-          when :test
-            format = options.get_next_argument('format', expected: Aspera::Preview::Generator::PREVIEW_FORMATS)
+          when :test, :show
             source = options.get_next_argument('source file')
-            dest = preview_filename(format, options.get_option(:case))
-            g = Aspera::Preview::Generator.new(@gen_options, source, dest, @tmp_folder, nil)
-            raise "cannot find file type for #{source}" if g.conversion_type.nil?
-            raise "out format #{format} not supported" unless g.supported?
+            format = options.get_next_argument('format', expected: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
+            generated_file_path = preview_filename(format, options.get_option(:base))
+            g = Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder, nil)
             g.generate
-            return Main.result_status("generated: #{dest}")
+            if command.eql?(:show)
+              terminal_options = options.get_option(:query, default: {}).symbolize_keys
+              Log.log.debug{"preview: #{generated_file_path}"}
+              formatter.display_status(Aspera::Preview::Terminal.build(File.read(generated_file_path), **terminal_options))
+            end
+            return Main.result_status("generated: #{generated_file_path}")
           else
             raise 'error'
           end

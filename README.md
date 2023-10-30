@@ -1423,6 +1423,12 @@ The command `config flush_tokens` deletes all existing tokens.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
 Tokens that can be refreshed will be refreshed, else tokens are re-generated if expired.
 
+### Temporary files
+
+Some temporary files may be needed during runtime.
+The temporary folder may be specified with option: `temp_folder`.
+Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
+
 ### <a id="configfile"></a>Configuration file
 
 On the first execution of `ascli`, an empty configuration file is created in the configuration folder.
@@ -1971,13 +1977,18 @@ or
 ascli conf echo @ruby:'%w[DIR FILE].map{|s|OpenSSL::X509.const_get("DEFAULT_CERT_"+s)}.join("\n")' --format=text
 ```
 
-Ruby's default values can be overridden by env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
+Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
 `ascp` also needs to validate certificates when using **WSS**.
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS.
+By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS:
+
+```bash
+strings $(which ascp)|grep -w OPENSSLDIR
+```
+
 `ascli` overrides and sets the default Ruby certificate path as well for `ascp` using `-i` switch.
 
-To update `ascli` trusted root certificates, just update your system's root certificates or use env vars specified here above.
+To update trusted root certificates for`ascli`, just update your system's root certificates or use env vars specified here above.
 
 An up-to-date version of the certificate bundle can be retrieved with:
 
@@ -1991,6 +2002,20 @@ Once can use this to update the default certificate store:
 ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
 export SSL_CERT_FILE=/tmp/cacert.pem
 ```
+
+### Image and video thumbnails
+
+`ascli` can display thumbnails for images and videos in the terminal.
+This is available with the `thumbnail` command of `node` when using **gen4/access key** API.
+It's also available when using the `show` command of `preview` plugin.
+
+The following options can be specified in the option `query`:
+
+| option     | description |
+|------------|-------------|
+| text       | display text instead of image (Bool) |
+| double     | display double text resolution (half characters) (Bool) |
+| font_ratio | Font height/width ratio interminal (Float) |
 
 ### Plugins
 
@@ -2095,7 +2120,7 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 ### <a id="http_options"></a>HTTP socket parameters
 
-If the server does not provide a valid certificate, use option: `--insecure=yes`.
+If the server does not provide a valid certificate, then one can use the option: `--insecure=yes` to bypass verification.
 
 HTTP socket parameters can be adjusted using option `http_options`:
 
@@ -2385,6 +2410,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                 | Type  | Description |
 |----------------------|-------|-------------|
 | wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| wss_secure           | Bool  | Web Socket Session<br/>Validate certificate.<br/>Default: true |
 | ascp_args            | Array | Array of strings with native ascp arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
 | spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
@@ -3398,7 +3424,7 @@ OPTIONS:
 
 
 COMMAND: preview
-SUBCOMMANDS: check events scan test trevents
+SUBCOMMANDS: check events scan show test trevents
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
@@ -3409,7 +3435,7 @@ OPTIONS:
         --previews-folder=VALUE      Preview folder in storage root
         --temp-folder=VALUE          Path to temp folder
         --skip-folders=VALUE         List of folder to skip
-        --case=VALUE                 Basename of output for for test
+        --base=VALUE                 Basename of output for for test
         --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
         --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
         --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
@@ -6364,14 +6390,14 @@ If the preview generator does not have access to files on the file system (it is
 preview check --skip-types=office
 preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 preview scan --skip-types=office --log-level=info
-preview test --case=test mp4 my_file_mxf --video-conversion=blend --log-level=debug
-preview test --case=test mp4 my_file_mxf --video-conversion=clips --log-level=debug
-preview test --case=test mp4 my_file_mxf --video-conversion=reencode --log-level=debug
-preview test --case=test png my_file_dcm --log-level=debug
-preview test --case=test png my_file_docx --log-level=debug
-preview test --case=test png my_file_mxf --video-png-conv=animated --log-level=debug
-preview test --case=test png my_file_mxf --video-png-conv=fixed --log-level=debug
-preview test --case=test png my_file_pdf --log-level=debug
+preview show --base=test my_file_docx
+preview show --base=test my_file_mpg --video-png-conv=animated
+preview show --base=test my_file_mpg --video-png-conv=fixed
+preview show --base=test my_file_mpg mp4 --video-conversion=clips
+preview show --base=test my_file_mpg mp4 --video-conversion=reencode
+preview show --base=test my_file_pdf
+preview test --base=test my_file_dcm
+preview test --base=test my_file_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 preview trevents --once-only=yes --skip-types=office --log-level=info
 ```
 

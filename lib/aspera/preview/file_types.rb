@@ -297,9 +297,10 @@ module Aspera
         return detected_mime
       end
 
-      # return file type, one of enum CONVERSION_TYPES
       # @param filepath [String] full path to file
       # @param mimetype [String] provided by node api
+      # @return file type, one of enum CONVERSION_TYPES
+      # @raise [RuntimeError] if no conversion type found
       def conversion_type(filepath, mimetype)
         Log.log.debug{"conversion_type(#{filepath},m=#{mimetype},t=#{@use_mimemagic})"}
         # 1- get type from provided mime type, using local mapping
@@ -322,6 +323,7 @@ module Aspera
         # 3- else, from extensions, using local mapping
         extension = File.extname(filepath.downcase)[1..-1]
         conversion_type = SUPPORTED_EXTENSIONS[extension] if conversion_type.nil?
+        raise "no conversion type found for extension #{extension}" if conversion_type.nil?
         Log.log.debug{"conversion_type(#{extension}): #{conversion_type.class.name} [#{conversion_type}]"}
         return conversion_type
       end

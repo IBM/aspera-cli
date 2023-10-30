@@ -11,6 +11,8 @@
   * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
   * new: node: generate bearer token from private key and user information
   * new: node: access node API with bearer token as credentials
+  * new: agent: `direct` supports option `wss_secure` to specify if certificate is validated or not
+  * new: preview: command `show` generates a preview and displays it in terminal
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
