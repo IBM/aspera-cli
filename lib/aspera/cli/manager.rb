@@ -156,7 +156,7 @@ module Aspera
           end
         end
         @initial_cli_options = @unprocessed_cmd_line_options.dup
-        Log.log.debug{"add_cmd_line_options:commands/args=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
+        Log.log.debug{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
 
       # @param descr [String] description for help

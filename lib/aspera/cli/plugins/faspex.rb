@@ -241,11 +241,11 @@ module Aspera
             subpath:     create_path,
             json_params: package_create_params,
             headers:     {'Accept' => 'text/javascript'}})[:http].body
-          # get args of function call
+          # get arguments of function call
           package_creation_data.delete!("\n") # one line
           package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
           package_creation_data.gsub!(/"\);[^"]+$/, '"') # delete trailer
-          package_creation_data.gsub!(/\}", *"/, '},"') # between two args
+          package_creation_data.gsub!(/\}", *"/, '},"') # between two arguments
           package_creation_data.gsub!('\\"', '"') # remove protecting quote
           begin
             package_creation_data = JSON.parse("[#{package_creation_data}]")

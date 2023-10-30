@@ -6,20 +6,22 @@ require 'stringio'
 module Aspera
   # servlet called on callback: it records the callback request
   class WebAuthServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, application) # additional args get here
+    # @param server [WEBrick::HTTPServer]
+    # @param web_auth [WebAuth]
+    def initialize(server, web_auth)
       Log.log.debug('WebAuthServlet initialize')
       super(server)
-      @app = application
+      @web_auth = web_auth
     end
 
     def service(request, response)
       Log.log.debug{"received request from browser #{request.request_method} #{request.path}"}
       raise WEBrick::HTTPStatus::MethodNotAllowed, "unexpected method: #{request.request_method}" unless request.request_method.eql?('GET')
-      raise WEBrick::HTTPStatus::NotFound, "unexpected path: #{request.path}" unless request.path.eql?(@app.expected_path)
+      raise WEBrick::HTTPStatus::NotFound, "unexpected path: #{request.path}" unless request.path.eql?(@web_auth.expected_path)
       # acquire lock and signal change
-      @app.mutex.synchronize do
-        @app.query = request.query
-        @app.cond.signal
+      @web_auth.mutex.synchronize do
+        @web_auth.query = request.query
+        @web_auth.cond.signal
       end
       response.status = 200
       response.content_type = 'text/html'
@@ -42,7 +44,8 @@ module Aspera
       @cond = ConditionVariable.new
       @expected_path = uri.path.empty? ? '/' : uri.path
       @query = nil
-      mount(@expected_path, WebAuthServlet, self) # additional args provided to constructor
+      # last argument (self) is provided to constructor of servlet
+      mount(@expected_path, WebAuthServlet, self)
       Thread.new { start }
     end
 

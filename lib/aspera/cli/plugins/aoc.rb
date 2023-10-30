@@ -186,15 +186,14 @@ module Aspera
           Node.new(env.merge({man_only: true, skip_basic_auth_options: true}))
         end
 
+        # @return [Hash] with keys from OPTIONS_NEW and values from options (command line)
         # build list of options for AoC API, based on options of CLI
         def aoc_params(subpath)
-          # copy command line options to args
-          return Aspera::AoC::OPTIONS_NEW.each_with_object({subpath: subpath}){|i, m|m[i] = options.get_option(i)}
         end
 
         def aoc_api
           if @cache_api_aoc.nil?
-            @cache_api_aoc = AoC.new(aoc_params(AoC::API_V1))
+            @cache_api_aoc = AoC.new_with_path(AoC::API_V1, options)
             # add keychain for access key secrets
             @cache_api_aoc.secret_finder = @agents[:config]
           end
@@ -386,7 +385,7 @@ module Aspera
             end
           when :subscription
             org = aoc_api.read('organization')[:data]
-            bss_api = AoC.new(aoc_params('bss/platform'))
+            bss_api = AoC.new_with_path('bss/platform', options)
             graphql_query = "
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {

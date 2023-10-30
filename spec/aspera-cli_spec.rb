@@ -102,7 +102,7 @@ RSpec.describe(Aspera::AsCmd) do
         ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
   end
@@ -120,7 +120,7 @@ RSpec.describe(Aspera::AsCmd) do
         ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
   end
@@ -135,7 +135,7 @@ RSpec.describe(Aspera::AsCmd) do
         ascmd.execute_single('md5sum', ['/does_not_exist'])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
   end
@@ -153,7 +153,7 @@ RSpec.describe(Aspera::AsCmd) do
         ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
   end
@@ -170,7 +170,7 @@ RSpec.describe(Aspera::AsCmd) do
         ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
-        expect(e.message).to(eq('ascmd: (2) No such file or directory'))
+        expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
   end

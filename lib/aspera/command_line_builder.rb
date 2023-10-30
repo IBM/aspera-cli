@@ -55,31 +55,34 @@ module Aspera
 
     attr_reader :params_definition
 
-    # @param param_hash
+    # @param [Hash] param_hash with parameters
+    # @param [Hash] params_definition with definition of parameters
     def initialize(param_hash, params_definition)
       @param_hash = param_hash # keep reference so that it can be modified by caller before calling `process_params`
       @params_definition = params_definition
-      @result_env = {}
-      @result_args = []
+      @result = {
+        env:  {},
+        args: []
+      }
       @used_param_names = []
     end
 
-    # adds keys :env :args with resulting values after processing
-    # warns if some parameters were not used
-    def add_env_args(env, args)
-      Log.log.debug{"ENV=#{@result_env}, ARGS=#{@result_args}"}
+    # add processed parameters to env and args, warns about unused parameters
+    # @param [Hash] env_args with :env and :args
+    def add_env_args(env_args)
+      Log.log.debug{"add_env_args: ENV=#{@result[:env]}, ARGS=#{@result[:args]}"}
       # warn about non translated arguments
       @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
       # set result
-      env.merge!(@result_env)
-      args.push(*@result_args)
+      env_args[:env].merge!(@result[:env])
+      env_args[:args].push(*@result[:args])
       return nil
     end
 
     # add options directly to command line
     def add_command_line_options(options)
       return if options.nil?
-      options.each{|o|@result_args.push(o.to_s)}
+      options.each{|o|@result[:args].push(o.to_s)}
     end
 
     def process_params
@@ -157,7 +160,7 @@ module Aspera
         return
       when :envvar # set in env var
         raise 'error' unless options[:cli].key?(:variable)
-        @result_env[options[:cli][:variable]] = parameter_value
+        @result[:env][options[:cli][:variable]] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
         add_param = false
         case parameter_value

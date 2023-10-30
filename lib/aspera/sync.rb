@@ -154,7 +154,7 @@ module Aspera
             raise StandardError, 'instance key must be Hash' unless sync_params['instance'].is_a?(Hash)
             instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
             instance_builder.process_params
-            instance_builder.add_env_args(env_args[:env], env_args[:args])
+            instance_builder.add_env_args(env_args)
           end
 
           sync_params['sessions'].each do |session_params|
@@ -162,7 +162,7 @@ module Aspera
             raise StandardError, 'session must contain at least name' unless session_params.key?('name')
             session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
             session_builder.process_params
-            session_builder.add_env_args(env_args[:env], env_args[:args])
+            session_builder.add_env_args(env_args)
           end
         else
           raise 'At least one of `local` or `sessions` must be present in async parameters'

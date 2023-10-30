@@ -132,13 +132,19 @@ module Aspera
         a_opt[:url] = pub_link_info[:url]
         a_auth[:grant_method] = :aoc_pub_link
         a_auth[:aoc_pub_link] = {
-          url:  {grant_type: 'url_token'}, # URL args
+          url:  {grant_type: 'url_token'}, # URL arguments
           json: {url_token: pub_link_info[:token]} # JSON body
         }
         # password protection of link
         a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?
         # SUCCESS
         return nil
+      end
+
+      # TODO: change to not use options.get_option
+      def new_with_path(new_base_path, options)
+        # create an API object with the same options, but with a different subpath
+        return AoC.new(OPTIONS_NEW.each_with_object({subpath: new_base_path}){|i, m|m[i] = options.get_option(i)})
       end
     end # static methods
 

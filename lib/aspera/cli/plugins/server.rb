@@ -230,10 +230,10 @@ module Aspera
           when *TRANSFER_COMMANDS
             return execute_transfer(command, server_transfer_spec)
           when *Aspera::AsCmd::OPERATIONS
-            args = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
+            command_arguments = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
             ascmd = Aspera::AsCmd.new(ascmd_executor)
             begin
-              result = ascmd.send(:execute_single, command, args)
+              result = ascmd.send(:execute_single, command, command_arguments)
               case command
               when :mkdir, :mv, :cp, :rm
                 return Main.result_success

@@ -81,7 +81,7 @@ module Aspera
           end
         end
 
-        # compute known args
+        # compute known arguments and environment variables
         env_args =  Parameters.new(transfer_spec, @options).ascp_args
 
         # add fallback cert and key as arguments if needed

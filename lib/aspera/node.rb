@@ -153,7 +153,7 @@ module Aspera
     # @param state [Object] state object sent to processing method
     # @param top_file_id [String] file id to start at (default = access key root file id)
     # @param top_file_path [String] path of top folder (default = /)
-    # @param block [Proc] processing method, args: entry, path, state
+    # @param block [Proc] processing method, arguments: entry, path, state
     def process_folder_tree(state:, top_file_id:, top_file_path: '/', &block)
       raise 'INTERNAL ERROR: top_file_path not set' if top_file_path.nil?
       raise 'INTERNAL ERROR: Missing block' unless block

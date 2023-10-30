@@ -20,11 +20,11 @@ module Aspera
     # @param [Symbol] one of OPERATIONS
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
-    def execute_single(action_sym, args=nil)
+    def execute_single(action_sym, arguments=nil)
       # add "as_" command
       main_command = ["as_#{action_sym}"]
-      args&.each do |v|
-        # enclose args in double quotes, protect backslash and double quotes
+      arguments&.each do |v|
+        # enclose arguments in double quotes, protect backslash and double quotes
         main_command.push(%Q{"#{v.gsub(/["\\]/n){|s|"\\#{s}"}}"})
       end
       # execute the main command and then exit
@@ -53,20 +53,22 @@ module Aspera
       # for info, second overrides first, so restore it
       case result.keys.length; when 0 then result = system_info; when 1 then result = result[result.keys.first]; else raise 'error'; end
       # raise error as exception
-      raise Error.new(result[:errno], result[:errstr], action_sym, args) if
+      raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
         result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
       return result
     end # execute_single
 
     # This exception is raised when +ascmd+ returns an error.
     class Error < StandardError
-      attr_reader :errno, :errstr, :command, :args
 
-      def initialize(errno, errstr, cmd, args); super(); @errno = errno; @errstr = errstr; @command = cmd; @args = args; end # rubocop:disable Style/Semicolon
+      def initialize(errno, errstr, cmd, arguments); super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end # rubocop:disable Style/Semicolon
 
-      def message; "ascmd: (#{errno}) #{errstr}"; end
+      def message; "ascmd: #{@errstr} (#{@errno})"; end
 
-      def extended_message; "ascmd: errno=#{errno} errstr=\"#{errstr}\" command=#{command} args=#{args.join(',')}"; end
+      #TODO : delete : attr_reader :errno #, :errstr, :command
+      #TODO : delete :def args; @arguments; end
+
+      def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments.join(',')}"; end
     end # Error
 
     # description of result structures (see ascmdtypes.h). Base types are big endian

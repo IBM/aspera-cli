@@ -87,7 +87,7 @@ module Aspera
             query.push([k, v])
           end
         end
-        # transform back for array args
+        # [] is allowed in url parameters
         uri.query = URI.encode_www_form(query).gsub('%5B%5D=', '[]=')
         return uri
       end
@@ -351,16 +351,16 @@ module Aspera
       return call({operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, encoding => params})
     end
 
-    def read(subpath, args=nil)
-      return call({operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: args})
+    def read(subpath, options=nil)
+      return call({operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: options})
     end
 
     def update(subpath, params)
       return call({operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params})
     end
 
-    def delete(subpath, args=nil)
-      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: args})
+    def delete(subpath, params=nil)
+      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: params})
     end
 
     def cancel(subpath)

@@ -128,8 +128,8 @@ module Aspera
         raise 'Internal: missing options' unless (SUPPORTED_OPTIONS - options.keys).empty?
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
         Log.dump(:options, @options)
-        raise 'ascp args must be an Array' unless @options[:ascp_args].is_a?(Array)
-        raise 'ascp args must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
+        raise 'ascp arguments must be an Array' unless @options[:ascp_args].is_a?(Array)
+        raise 'ascp arguments must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
@@ -233,7 +233,7 @@ module Aspera
         end
         # get list of files to transfer and build arg for ascp
         process_file_list
-        # optional args, at the end to override previous ones (to allow override)
+        # optional arguments, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
         @builder.add_command_line_options(@options[:ascp_args])
         # process destination folder
@@ -243,7 +243,7 @@ module Aspera
         # destination MUST be last command line argument to ascp
         @builder.add_command_line_options([destination_folder])
 
-        @builder.add_env_args(env_args[:env], env_args[:args])
+        @builder.add_env_args(env_args)
 
         return env_args
       end
