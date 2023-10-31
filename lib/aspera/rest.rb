@@ -26,35 +26,23 @@ module Aspera
   class Rest
     # global settings also valid for any subclass
     @@global = { # rubocop:disable Style/ClassVars
-      debug:                   false,
-      # true if https ignore certificate
-      user_agent:              'Ruby',
-      download_partial_suffix: '.http_partial',
-      # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      session_cb:              nil,
-      proxy_user:              nil,
-      proxy_pass:              nil
+      user_agent:              'Ruby',          # goes to HTTP request header: 'User-Agent'
+      download_partial_suffix: '.http_partial', # suffix for partial download
+      session_cb:              nil              # a lambda which takes the Net::HTTP as arg, use this to change parameters
     }
 
+    # flag for array parameters prefixed with []
     ARRAY_PARAMS = '[]'
 
     private_constant :ARRAY_PARAMS
 
-    # error message when entity not found
+    # error message when entity not found (TODO: use specific exception)
     ENTITY_NOT_FOUND = 'No such'
 
+    # Content-Type that are JSON
     JSON_DECODE = ['application/json', 'application/vnd.api+json', 'application/x-javascript'].freeze
 
     class << self
-      # define accessors
-      @@global.each_key do |p|
-        define_method(p){@@global[p]}
-        define_method("#{p}=") do |val|
-          Log.log.debug{"#{p} => #{val}".red}
-          @@global[p] = val
-        end
-      end
-
       def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
       # used to build a parameter list prefixed with "[]"
@@ -92,19 +80,32 @@ module Aspera
         return uri
       end
 
+      # start a HTTP/S session
+      # @param base_url [String] base url of HTTP/S session
+      # @return [Net::HTTP] a started HTTP session
       def start_http_session(base_url)
         uri = build_uri(base_url)
         # this honors http_proxy env var
         http_session = Net::HTTP.new(uri.host, uri.port)
-        http_session.proxy_user = proxy_user
-        http_session.proxy_pass = proxy_pass
         http_session.use_ssl = uri.scheme.eql?('https')
-        http_session.set_debug_output($stdout) if debug
         # set http options in callback, such as timeout and cert. verification
-        session_cb&.call(http_session)
+        @@global[:session_cb]&.call(http_session)
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         http_session.start
         return http_session
+      end
+
+      # set global parameters
+      def set_parameters(**options)
+        options.each do |key, value|
+          raise "ERROR: unknown Rest option #{key}" unless @@global.key?(key)
+          @@global[key] = value
+        end
+      end
+
+      # @return [String] HTTP agent name
+      def user_agent
+        return @@global[:user_agent]
       end
     end
 
@@ -128,10 +129,6 @@ module Aspera
         @oauth = Oauth.new(@params[:auth])
       end
       return @oauth
-    end
-
-    def peer_certificate
-      return http_session.peer_cert
     end
 
     # @param a_rest_params [Hash] default call parameters (merged at call)
@@ -219,7 +216,7 @@ module Aspera
       call_data[:subpath] = '' if call_data[:subpath].nil?
       Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
-      call_data[:headers]['User-Agent'] ||= self.class.user_agent
+      call_data[:headers]['User-Agent'] ||= @@global[:user_agent]
       # defaults from @params are overridden by call data
       call_data = @params.deep_merge(call_data)
       case call_data[:auth][:type]
@@ -271,7 +268,7 @@ module Aspera
               target_file = File.join(File.dirname(target_file), m[1])
             end
             # download with temp filename
-            target_file_tmp = "#{target_file}#{self.class.download_partial_suffix}"
+            target_file_tmp = "#{target_file}#{@@global[:download_partial_suffix]}"
             Log.log.debug{"saving to: #{target_file}"}
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|

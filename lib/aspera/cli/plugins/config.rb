@@ -73,6 +73,8 @@ module Aspera
         COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'
+        # for testing only
+        SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -95,7 +97,8 @@ module Aspera
           :SERVER_COMMAND,
           :PRESET_DIG_SEPARATOR,
           :COFFEE_IMAGE,
-          :WIZARD_RESULT_KEYS
+          :WIZARD_RESULT_KEYS,
+          :SELF_SIGNED_CERT
         def initialize(env, params)
           raise 'Internal Error: env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'Internal Error: missing param' unless %i[gem help name version].eql?(params.keys.sort)
@@ -114,6 +117,10 @@ module Aspera
           @option_config_file = @conf_file_default
           @pac_exec = nil
           @sdk_default_location = false
+          @option_insecure = false
+          @option_ignore_cert_host_port = []
+          @option_http_options = {}
+          @ssl_warned_urls = []
           Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
           # set folder for FASP SDK
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
@@ -152,6 +159,9 @@ module Aspera
           options.declare(:notif_template, 'Email ERB template for notification of transfers')
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
+          options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
+          options.declare(:ignore_certificate, 'List of HTTPS url where to no validate certificate', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
+          options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.parse_options!
           # Check SDK folder is set or not, for compatibility, we check in two places
           sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
@@ -177,8 +187,55 @@ module Aspera
           proxy_creds = options.get_option(:proxy_credentials)
           if !proxy_creds.nil?
             raise CliBadArgument, "proxy_credentials shall have two elements (#{proxy_creds.length})" unless proxy_creds.length.eql?(2)
-            @pac_exec.proxy_user = Rest.proxy_user = proxy_creds[0]
-            @pac_exec.proxy_pass = Rest.proxy_pass = proxy_creds[1]
+            @proxy_credentials = {user: proxy_creds[0], pass: proxy_creds[1]}
+            @pac_exec.proxy_user = @proxy_credentials[:user]
+            @pac_exec.proxy_pass = @proxy_credentials[:pass]
+          end
+          Rest.set_parameters(user_agent: PROGRAM_NAME, session_cb: lambda{|http_session|update_http_session(http_session)})
+        end
+
+        attr_accessor :option_insecure, :option_http_options
+        attr_reader :option_ignore_cert_host_port
+
+        def option_ignore_cert_host_port=(url_list)
+          url_list.each do |url|
+            uri = URI.parse(url)
+            @option_ignore_cert_host_port.push([uri.host, uri.port].freeze)
+          end
+        end
+
+        def ignore_cert?(address, port)
+          endpoint = [address, port].freeze
+          Log.log.debug{"ignore cert? #{endpoint}"}
+          return false unless @option_insecure || @option_ignore_cert_host_port.any?(endpoint)
+          base_url = "https://#{address}:#{port}"
+          if !@ssl_warned_urls.include?(base_url)
+            formatter.display_message(
+              :error,
+              "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
+            @ssl_warned_urls.push(base_url)
+          end
+          return true
+        end
+
+        # called every time a new REST HTTP session is opened to set user-provided options
+        # @param http_session [Net::HTTP] the newly created HTTP/S session object
+        def update_http_session(http_session)
+          http_session.set_debug_output($stdout) if @option_rest_debug
+          http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
+          if @proxy_credentials
+            http_session.proxy_user = @proxy_credentials[:user]
+            http_session.proxy_pass = @proxy_credentials[:pass]
+          end
+          @option_http_options.each do |k, v|
+            method = "#{k}=".to_sym
+            # check if accessor is a method of Net::HTTP
+            # continue_timeout= read_timeout= write_timeout=
+            if http_session.respond_to?(method)
+              http_session.send(method, v)
+            else
+              Log.log.error{"no such HTTP session attribute: #{k}"}
+            end
           end
         end
 

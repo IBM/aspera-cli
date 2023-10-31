@@ -104,6 +104,10 @@ module Aspera
       DISPLAY_LEVELS = %i[info data error].freeze
 
       private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR
+      # prefix to display error messages in user messages (terminal)
+      ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
+      WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
+      HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
       attr_accessor :option_flat_hash, :option_transpose_single, :option_format, :option_display, :option_fields, :option_table_style,
         :option_select, :option_show_secrets

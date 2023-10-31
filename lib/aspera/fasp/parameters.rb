@@ -23,7 +23,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      SUPPORTED_OPTIONS = %i[ascp_args wss wss_secure].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -209,17 +209,19 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
-          if @options[:wss_secure]
-            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-            env_args[:args].unshift('-i', OpenSSL::X509::DEFAULT_CERT_FILE)
-            Log.log.debug{"CA certs for wss: openssl cert: #{DEFAULT_CERT_FILE}"}
-          else
-            wss_api = Rest.new(base_url: "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}/v1/transfer")
-            wss_api.read('start') rescue nil
+          if @options[:check_ignore]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
+            http_session = Rest.start_http_session("https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}")
+            # wss_api = Rest.new(base_url: "/v1/transfer")
+            # wss_api.read('start') rescue nil
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
-            File.write(wss_cert_file, wss_api.peer_certificate.to_pem)
+            File.write(wss_cert_file, http_session.peer_cert.to_pem)
+            http_session.finish
             env_args[:args].unshift('-i', wss_cert_file)
             Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
+          else
+            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+            env_args[:args].unshift('-i', OpenSSL::X509::DEFAULT_CERT_FILE)
+            Log.log.debug{"CA certs for wss: openssl certs: #{OpenSSL::X509::DEFAULT_CERT_FILE}"}
           end
         else
           # remove unused parameter (avoid warning)

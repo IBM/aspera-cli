@@ -22,13 +22,15 @@ module Aspera
         spawn_timeout_sec: 3,
         spawn_delay_sec:   2,
         wss:               true, # true: if both SSH and wss in ts: prefer wss
-        wss_secure:        true, # false: bypass cert verification for wss
         multi_incr_udp:    true,
         resume:            {},
         ascp_args:         [],
+        check_ignore:      nil, # callback with host,port
         quiet:             true # by default no native ascp progress bar
       }.freeze
-      private_constant :DEFAULT_OPTIONS
+      # Management port start message
+      MGT_HEADER = 'FASPMGR 2'
+      private_constant :DEFAULT_OPTIONS, :MGT_HEADER
 
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
@@ -214,7 +216,7 @@ module Aspera
             line.chomp!
             Log.log.debug{"line=[#{line}]"}
             case line
-            when 'FASPMGR 2'
+            when MGT_HEADER
               # begin event
               current_event_data = {}
               current_event_text = ''
@@ -308,7 +310,7 @@ module Aspera
         command = data
           .keys
           .map{|k|"#{k.capitalize}: #{data[k]}"}
-          .unshift('FASPMGR 2')
+          .unshift(MGT_HEADER)
           .push('', '')
           .join("\n")
         session[:io].puts(command)

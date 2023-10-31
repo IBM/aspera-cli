@@ -2044,9 +2044,12 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 ### <a id="http_options"></a>HTTP socket parameters
 
-If the server does not provide a valid certificate, then one can use the option: `--insecure=yes` to bypass verification.
+To ignore SSL certificate for any address/port, use option: `insecure`, i.e. `--insecure=yes`.
+To ignore SSL certificate for specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
-HTTP socket parameters can be adjusted using option `http_options`:
+> **Note:** Ignoring certificate also applies to `ascp`'s wss.
+
+HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 
 | parameter            | default |
 |----------------------|---------|
@@ -2055,9 +2058,9 @@ HTTP socket parameters can be adjusted using option `http_options`:
 | `open_timeout`       | 60      |
 | `keep_alive_timeout` | 2       |
 
-Values are in set *seconds* and can be of type either integer or float.
+Values are in set **seconds** and can be of type either integer or float.
 Default values are the ones of Ruby:
-refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
+For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
 Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
 
@@ -2334,7 +2337,6 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                 | Type  | Description |
 |----------------------|-------|-------------|
 | wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| wss_secure           | Bool  | Web Socket Session<br/>Validate certificate.<br/>Default: true |
 | ascp_args            | Array | Array of strings with native ascp arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
 | spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |

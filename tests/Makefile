@@ -428,9 +428,9 @@ $(T)nd_ak1: $(T).exists
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name node_info /
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name browse /
 	$(EXE_BEG_ERR)node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @json:'{}'$(EXE_END_ERR)
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / exec:'f["name"].end_with?(".jpg")'
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find / @ruby:'->(f){f["name"].end_with?(".jpg")}'
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find /
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder exec:'f["name"].end_with?(".jpg")'
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder
 	@touch $@
 $(T)nd_ak2: $(T).exists
 	@echo $@

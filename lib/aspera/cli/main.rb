@@ -22,14 +22,6 @@ module Aspera
   module Cli
     # The main CLI class
     class Main
-      # prefix to display error messages in user messages (terminal)
-      ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
-      WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
-      HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
-
-      # for testing only
-      SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
-
       # Well know issues that users may get
       ERROR_HINTS = [
         {
@@ -69,7 +61,7 @@ module Aspera
         }
       ]
 
-      private_constant :ERROR_FLASH, :WARNING_FLASH, :HINT_FLASH, :SELF_SIGNED_CERT, :ERROR_HINTS
+      private_constant :ERROR_HINTS
 
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
@@ -109,7 +101,7 @@ module Aspera
           raise global_status unless global_status.eql?(:success)
           return {type: :object_list, data: status_table}
         end
-      end
+      end # self
 
       private
 
@@ -121,37 +113,7 @@ module Aspera
       # =============================================================
       # Parameter handlers
       #
-      attr_accessor :option_insecure, :option_http_options, :option_cache_tokens
-
-      def option_ui; OpenApplication.instance.url_method; end
-
-      def option_ui=(value); OpenApplication.instance.url_method = value; end
-
-      # called every time a new REST HTTP session is opened
-      # @param http [Net::HTTP] the newly created http session object
-      def http_parameters=(http)
-        if @option_insecure
-          url = http.inspect.gsub(/^[^ ]* /, 'https://').gsub(/ [^ ]*$/, '')
-          if !@ssl_warned_urls.include?(url)
-            formatter.display_message(:error, "#{WARNING_FLASH} Ignoring certificate for: #{url}. Do not deactivate certificate verification in production.")
-            @ssl_warned_urls.push(url)
-          end
-          http.verify_mode = SELF_SIGNED_CERT
-        end
-        http.set_debug_output($stdout) if @option_rest_debug
-        raise 'http_options expects Hash' unless @option_http_options.is_a?(Hash)
-
-        @option_http_options.each do |k, v|
-          method = "#{k}=".to_sym
-          # check if accessor is a method of Net::HTTP
-          # continue_timeout= read_timeout= write_timeout=
-          if http.respond_to?(method)
-            http.send(method, v)
-          else
-            Log.log.error{"no such attribute: #{k}"}
-          end
-        end
-      end
+      attr_accessor :option_cache_tokens
 
       # minimum initialization, no exception raised
       def initialize(argv)
@@ -159,11 +121,8 @@ module Aspera
         early_debug_setup(argv)
         @option_help = false
         @option_show_config = false
-        @option_insecure = false
         @option_rest_debug = false
         @option_cache_tokens = true
-        @option_http_options = {}
-        @ssl_warned_urls = []
         @bash_completion = false
         # environment provided to plugin for various capabilities
         @agents = {
@@ -181,10 +140,9 @@ module Aspera
         formatter.declare_options(options)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
-        formatter.display_message(:error, "#{WARNING_FLASH} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") \
-          unless current_prog_name.eql?(PROGRAM_NAME)
-        Rest.user_agent = PROGRAM_NAME
-        Rest.session_cb = lambda{|http|self.http_parameters = http}
+        formatter.display_message(
+          :error,
+          "#{Formatter::WARNING_FLASH} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(PROGRAM_NAME)
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
@@ -250,13 +208,11 @@ module Aspera
         options.declare(
           :ui, 'Method to start browser',
           values: OpenApplication.user_interfaces,
-          handler: {o: self, m: :option_ui},
+          handler: {o: OpenApplication.instance, m: :url_method},
           default: OpenApplication.default_gui_mode)
         options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
-        options.declare(:http_options, 'Options for http socket', types: Hash, handler: {o: self, m: :option_http_options})
-        options.declare(:insecure, 'Do not validate HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
         options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
         options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
         options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
@@ -403,7 +359,7 @@ module Aspera
         # 1- processing of error condition
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
-          formatter.display_message(:error, "#{ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
+          formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
           ERROR_HINTS.each do |hint|
@@ -423,7 +379,7 @@ module Aspera
               end
               remediation = hint[:remediation]
               remediation = [remediation] unless remediation.is_a?(Array)
-              remediation.each{|r|formatter.display_message(:error, "#{HINT_FLASH} #{r}")}
+              remediation.each{|r|formatter.display_message(:error, "#{Formatter::HINT_FLASH} #{r}")}
               break
             end
           end
@@ -431,7 +387,7 @@ module Aspera
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
           options.final_errors.each do |msg|
-            formatter.display_message(:error, "#{ERROR_FLASH} Argument: #{msg}")
+            formatter.display_message(:error, "#{Formatter::ERROR_FLASH} Argument: #{msg}")
             # add code as exception if there is not already an error
             exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
           end

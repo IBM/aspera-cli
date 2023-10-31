@@ -110,15 +110,20 @@ module Aspera
         agent_options = @opt_mgr.get_option(:transfer_info)
         raise CliBadArgument, "the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), "\
           'e.g. use @json:<json>' unless agent_options.is_a?(Hash)
-        # special case: use default node
-        if agent_type.eql?(:node) && agent_options.empty?
-          param_set_name = @config.get_plugin_default_config_name(:node)
-          raise CliBadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
-          agent_options = @config.preset_by_name(param_set_name)
-        end
-        # special case: native progress bar
-        if agent_type.eql?(:direct) && @opt_mgr.get_option(:progress, mandatory: true).eql?(:native)
-          agent_options[:quiet] = false
+        # special cases
+        case agent_type
+        when :node
+          if agent_options.empty?
+            param_set_name = @config.get_plugin_default_config_name(:node)
+            raise CliBadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
+            agent_options = @config.preset_by_name(param_set_name)
+          end
+        when :direct
+          # special case: native progress bar
+          if @opt_mgr.get_option(:progress, mandatory: true).eql?(:native)
+            agent_options[:quiet] = false
+          end
+          agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
         end
         # normalize after getting from user or default node
         agent_options = agent_options.symbolize_keys

@@ -115,6 +115,7 @@ module Aspera
     # @param params [Hash] Rest parameters
     # @param app_info [Hash,NilClass] special processing for AoC
     def initialize(params:, app_info: nil, add_tspec: nil)
+      # init Rest
       super(params)
       @app_info = app_info
       # this is added to transfer spec, for instance to add tags (COS)
@@ -298,8 +299,18 @@ module Aspera
         transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
         # by default: same address as node API
         transfer_spec['remote_host'] = URI.parse(params[:base_url]).host
+        # AoC allows specification of other url
         if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
           transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
+        end
+        # check WSS ports
+        info = read('info')[:data]
+        if info.key?('settings')
+          # transform array to hash
+          settings = info['settings'].each_with_object({}){|i, h|h[i['name']] = i['value']}
+          %w[wss_enabled wss_port].each do |i|
+            transfer_spec[i] = settings[i] if settings.key?(i)
+          end
         end
       else
         # retrieve values from API (and keep a copy/cache)

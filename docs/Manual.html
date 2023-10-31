@@ -2234,10 +2234,19 @@ HTTP requests and responses.</p>
 <h2 data-number="4.17" id="http-socket-parameters"><span
 class="header-section-number">4.17</span> <a id="http_options"></a>HTTP
 socket parameters</h2>
-<p>If the server does not provide a valid certificate, then one can use
-the option: <code>--insecure=yes</code> to bypass verification.</p>
-<p>HTTP socket parameters can be adjusted using option
-<code>http_options</code>:</p>
+<p>To ignore SSL certificate for any address/port, use option:
+<code>insecure</code>, i.e. <code>--insecure=yes</code>. To ignore SSL
+certificate for specific address/port, use option
+<code>ignore_certificate</code>, set to an <code>Array</code> of URL for
+which certificate will be ignored (only the address and port are
+matched),
+e.g. <code>--ignore-certificate=@list:,https://127.0.0.1:9092</code></p>
+<blockquote>
+<p><strong>Note:</strong> Ignoring certificate also applies to
+<code>ascp</code>’s wss.</p>
+</blockquote>
+<p>HTTP connection parameters (not <code>ascp</code> wss) can be
+adjusted using option <code>http_options</code>:</p>
 <table>
 <thead>
 <tr class="header">
@@ -2264,9 +2273,9 @@ the option: <code>--insecure=yes</code> to bypass verification.</p>
 </tr>
 </tbody>
 </table>
-<p>Values are in set <em>seconds</em> and can be of type either integer
-or float. Default values are the ones of Ruby: refer to the Ruby
-library: <a
+<p>Values are in set <strong>seconds</strong> and can be of type either
+integer or float. Default values are the ones of Ruby: For a full list,
+refer to the Ruby library: <a
 href="https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html"><code>Net::HTTP</code></a>.</p>
 <p>Like any other option, those can be set either on command line, or in
 config file, either in a global preset or server-specific one.</p>
@@ -2542,29 +2551,24 @@ policy:</p>
 is available<br/>Default: true</td>
 </tr>
 <tr class="even">
-<td>wss_secure</td>
-<td>Bool</td>
-<td>Web Socket Session<br/>Validate certificate.<br/>Default: true</td>
-</tr>
-<tr class="odd">
 <td>ascp_args</td>
 <td>Array</td>
 <td>Array of strings with native ascp arguments<br/>Use this instead of
 deprecated <code>EX_ascp_args</code>.<br/>Default: []</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>spawn_timeout_sec</td>
 <td>Float</td>
 <td>Multi session<br/>Verification time that <code>ascp</code> is
 running<br/>Default: 3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>spawn_delay_sec</td>
 <td>Float</td>
 <td>Multi session<br/>Delay between startup of sessions<br/>Default:
 2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>multi_incr_udp</td>
 <td>Bool</td>
 <td>Multi Session<br/>Increment UDP port on multi-session<br/>If true,
@@ -2573,28 +2577,28 @@ each session will have a different UDP port starting at
 use <code>fasp_port</code> (or <code>ascp</code> default)<br/>Default:
 true</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>resume</td>
 <td>Hash</td>
 <td>Resume<br/>parameters<br/>See below</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>resume.iter_max</td>
 <td>int</td>
 <td>Resume<br/>Max number of retry on error<br/>Default: 7</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>resume.sleep_initial</td>
 <td>int</td>
 <td>Resume<br/>First Sleep before retry<br/>Default: 2</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>resume.sleep_factor</td>
 <td>int</td>
 <td>Resume<br/>Multiplier of sleep period between attempts<br/>Default:
 2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>resume.sleep_max</td>
 <td>int</td>
 <td>Resume<br/>Default: 60</td>
@@ -4704,8 +4708,6 @@ OPTIONS: global
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
-        --http-options=VALUE         Options for http socket (Hash)
-        --insecure=ENUM              Do not validate HTTPS certificate: [no], yes
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
@@ -4742,6 +4744,9 @@ OPTIONS:
         --notif-template=VALUE       Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
+        --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
+        --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --http-options=VALUE         Options for HTTP/S socket (Hash)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -6605,9 +6610,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb391-1"><a href
 <span id="cb391-4"><a href="#cb391-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name delete /folder2</span>
 <span id="cb391-5"><a href="#cb391-5" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name delete testfile1</span>
 <span id="cb391-6"><a href="#cb391-6" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name download testfile1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb391-7"><a href="#cb391-7" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find /</span>
-<span id="cb391-8"><a href="#cb391-8" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find / @ruby:<span class="st">&#39;-&gt;(f){f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)}&#39;</span></span>
-<span id="cb391-9"><a href="#cb391-9" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find / exec:<span class="st">&#39;f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)&#39;</span></span>
+<span id="cb391-7"><a href="#cb391-7" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find my_aoc_folder</span>
+<span id="cb391-8"><a href="#cb391-8" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find my_aoc_folder @ruby:<span class="st">&#39;-&gt;(f){f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)}&#39;</span></span>
+<span id="cb391-9"><a href="#cb391-9" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name find my_aoc_folder exec:<span class="st">&#39;f[&quot;name&quot;].end_with?(&quot;.jpg&quot;)&#39;</span></span>
 <span id="cb391-10"><a href="#cb391-10" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name mkdir /folder1</span>
 <span id="cb391-11"><a href="#cb391-11" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name node_info /</span>
 <span id="cb391-12"><a href="#cb391-12" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name rename /folder1 folder2</span>

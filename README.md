@@ -2120,9 +2120,12 @@ In order to get traces of execution, use argument : `--log-level=debug`
 
 ### <a id="http_options"></a>HTTP socket parameters
 
-If the server does not provide a valid certificate, then one can use the option: `--insecure=yes` to bypass verification.
+To ignore SSL certificate for any address/port, use option: `insecure`, i.e. `--insecure=yes`.
+To ignore SSL certificate for specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
-HTTP socket parameters can be adjusted using option `http_options`:
+> **Note:** Ignoring certificate also applies to `ascp`'s wss.
+
+HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 
 | parameter            | default |
 |----------------------|---------|
@@ -2131,9 +2134,9 @@ HTTP socket parameters can be adjusted using option `http_options`:
 | `open_timeout`       | 60      |
 | `keep_alive_timeout` | 2       |
 
-Values are in set *seconds* and can be of type either integer or float.
+Values are in set **seconds** and can be of type either integer or float.
 Default values are the ones of Ruby:
-refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
+For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
 Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
 
@@ -2410,7 +2413,6 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                 | Type  | Description |
 |----------------------|-------|-------------|
 | wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| wss_secure           | Bool  | Web Socket Session<br/>Validate certificate.<br/>Default: true |
 | ascp_args            | Array | Array of strings with native ascp arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
 | spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
@@ -3267,8 +3269,6 @@ OPTIONS: global
         --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
-        --http-options=VALUE         Options for http socket (Hash)
-        --insecure=ENUM              Do not validate HTTPS certificate: [no], yes
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
@@ -3305,6 +3305,9 @@ OPTIONS:
         --notif-template=VALUE       Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
+        --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
+        --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --http-options=VALUE         Options for HTTP/S socket (Hash)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -5231,9 +5234,9 @@ node access_key do my_aoc_ak_name browse /
 node access_key do my_aoc_ak_name delete /folder2
 node access_key do my_aoc_ak_name delete testfile1
 node access_key do my_aoc_ak_name download testfile1 --to-folder=.
-node access_key do my_aoc_ak_name find /
-node access_key do my_aoc_ak_name find / @ruby:'->(f){f["name"].end_with?(".jpg")}'
-node access_key do my_aoc_ak_name find / exec:'f["name"].end_with?(".jpg")'
+node access_key do my_aoc_ak_name find my_aoc_folder
+node access_key do my_aoc_ak_name find my_aoc_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
+node access_key do my_aoc_ak_name find my_aoc_folder exec:'f["name"].end_with?(".jpg")'
 node access_key do my_aoc_ak_name mkdir /folder1
 node access_key do my_aoc_ak_name node_info /
 node access_key do my_aoc_ak_name rename /folder1 folder2
