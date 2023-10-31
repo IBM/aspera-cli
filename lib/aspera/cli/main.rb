@@ -7,62 +7,14 @@ require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
-require 'aspera/fasp/error'
-require 'aspera/open_application'
-require 'aspera/temp_file_manager'
-require 'aspera/persistency_folder'
+require 'aspera/cli/hints'
 require 'aspera/log'
-require 'aspera/rest'
-require 'aspera/nagios'
-require 'aspera/colors'
 require 'aspera/secret_hider'
-require 'net/ssh'
 
 module Aspera
   module Cli
     # The main CLI class
     class Main
-      # Well know issues that users may get
-      ERROR_HINTS = [
-        {
-          exception:   Fasp::Error,
-          match:       'Remote host is not who we expected',
-          remediation: [
-            'For this specific error, refer to:',
-            "#{SRC_URL}#error-remote-host-is-not-who-we-expected",
-            'Add this to arguments:',
-            %q{--ts=@json:'{"sshfp":null}'"}
-          ]
-        },
-        {
-          exception:   OpenSSL::SSL::SSLError,
-          match:       /does not match the server certificate/,
-          remediation: [
-            'You can ignore SSL errors with option:',
-            '--insecure=yes'
-          ]
-        },
-        {
-          exception:   Aspera::RestCallError,
-          match:       /Signature has expired/,
-          remediation: [
-            'There is too much time difference between your computer and the server',
-            'Check your local time: is time synchronization enabled?'
-          ]
-        },
-        {
-          exception:   OpenSSL::PKey::RSAError,
-          match:       /Neither PUB key nor PRIV key/,
-          remediation: [
-            'option: private_key expects a key PEM value, not path to file',
-            'if you provide a path: prefix with @file:',
-            'e.g. --private-key=@file:/path/to/key.pem'
-          ]
-        }
-      ]
-
-      private_constant :ERROR_HINTS
-
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
 
@@ -113,27 +65,23 @@ module Aspera
       # =============================================================
       # Parameter handlers
       #
-      attr_accessor :option_cache_tokens
 
       # minimum initialization, no exception raised
       def initialize(argv)
-        # first thing : manage debug level (allows debugging of option parser)
-        early_debug_setup(argv)
+        @argv = argv
+        # environment provided to plugin for various capabilities
+        @agents = {}
         @option_help = false
         @option_show_config = false
-        @option_rest_debug = false
-        @option_cache_tokens = true
         @bash_completion = false
-        # environment provided to plugin for various capabilities
-        @agents = {
-          formatter: Formatter.new,
-          options:   Manager.new(PROGRAM_NAME)
-        }
-        @argv = argv
       end
 
-      # This can throw exception if there is a problem with the environment
+      # This can throw exception if there is a problem with the environment, needs to be caught by execute method
       def init_agents_and_options
+        # first thing : manage debug level (allows debugging of option parser)
+        early_debug_setup
+        @agents[:formatter] = Formatter.new
+        @agents[:options] = Manager.new(PROGRAM_NAME)
         # give command line arguments to option manager
         options.parse_command_line(@argv)
         # formatter adds options
@@ -147,16 +95,11 @@ module Aspera
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
+        # data persistency
+        raise 'internal error: missing persistency object' unless @agents[:persistency]
         # the TransferAgent plugin may use the @preset parser
         @agents[:transfer] = TransferAgent.new(options, config)
-        # data persistency
-        @agents[:persistency] = PersistencyFolder.new(File.join(config.main_folder, 'persist_store'))
         Log.log.debug('plugin env created'.red)
-        Oauth.persist_mgr = persistency if @option_cache_tokens
-        Fasp::Parameters.file_list_folder = File.join(config.main_folder, 'filelists')
-        Aspera::RestErrorAnalyzer.instance.log_file = File.join(config.main_folder, 'rest_exceptions.log')
-        # register aspera REST call error handlers
-        Aspera::RestErrorsAspera.register_handlers
         # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
         options.parser.banner = app_banner
       end
@@ -202,7 +145,6 @@ module Aspera
         options.declare(:help, 'Show this message', values: :none, short: 'h') { @option_help = true }
         options.declare(:bash_comp, 'Generate bash completion for command', values: :none) { @bash_completion = true }
         options.declare(:show_config, 'Display parameters used for the provided action', values: :none) { @option_show_config = true }
-        options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
         options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         options.declare(:warnings, 'Check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
         options.declare(
@@ -215,7 +157,6 @@ module Aspera
         options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)
         options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
         options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
-        options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
         options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
         # parse declared options
         options.parse_options!
@@ -270,9 +211,9 @@ module Aspera
 
       # early debug for parser
       # Note: does not accept shortcuts
-      def early_debug_setup(argv)
+      def early_debug_setup
         Aspera::Log.instance.program_name = PROGRAM_NAME
-        argv.each do |arg|
+        @argv.each do |arg|
           case arg
           when '--' then break
           when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
@@ -285,7 +226,6 @@ module Aspera
 
       # this is the main function called by initial script just after constructor
       def process_command_line
-        Log.log.debug('process_command_line')
         # catch exception information , if any
         exception_info = nil
         # false if command shall not be executed (e.g. --show-config)
@@ -362,27 +302,7 @@ module Aspera
           formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
-          ERROR_HINTS.each do |hint|
-            next unless exception_info[:e].is_a?(hint[:exception])
-            message = exception_info[:e].message
-            matches = hint[:match]
-            matches = [matches] unless matches.is_a?(Array)
-            matches.each do |m|
-              case m
-              when String
-                next unless message.eql?(m)
-              when Regexp
-                next unless message.match?(m)
-              else
-                Log.log.warn("Internal error: hint is a #{m.class}")
-                next
-              end
-              remediation = hint[:remediation]
-              remediation = [remediation] unless remediation.is_a?(Array)
-              remediation.each{|r|formatter.display_message(:error, "#{Formatter::HINT_FLASH} #{r}")}
-              break
-            end
-          end
+          Hints.hint_for(exception_info[:e])
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config

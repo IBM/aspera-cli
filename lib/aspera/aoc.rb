@@ -121,12 +121,13 @@ module Aspera
       # check option "link"
       # if present try to get token value (resolve redirection if short links used)
       # then set options url/token/auth
+      # @return nil
       def resolve_pub_link(a_auth, a_opt)
         public_link_url = a_opt[:link]
         return nil if public_link_url.nil?
         raise 'Do not use both link and url options' unless a_opt[:url].nil?
-        result = Rest.new({base_url: public_link_url, redirect_max: MAX_PUB_LINK_REDIRECT}).read('')
-        public_link_url = result[:http].uri.to_s
+        read_link = Rest.new({base_url: public_link_url, redirect_max: MAX_PUB_LINK_REDIRECT}).read('')
+        public_link_url = read_link[:http].uri.to_s
         pub_link_info = public_link_info(public_link_url)
         raise ArgumentError, 'link option must be redirect or have token parameter' if pub_link_info.nil?
         a_opt[:url] = pub_link_info[:url]

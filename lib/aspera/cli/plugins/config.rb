@@ -15,6 +15,7 @@ require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/keychain/encrypted_hash'
 require 'aspera/keychain/macos_security'
+require 'aspera/persistency_folder'
 require 'aspera/aoc'
 require 'aspera/rest'
 require 'xmlsimple'
@@ -45,6 +46,7 @@ module Aspera
         DEFAULT_REDIRECT = 'http://localhost:12345'
         # folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
+        PERSISTENCY_FOLDER = 'persist_store'
         RUBY_FILE_EXT = '.rb'
         ASPERA = 'aspera'
         AOC_COMMAND = 'aoc'
@@ -98,7 +100,8 @@ module Aspera
           :PRESET_DIG_SEPARATOR,
           :COFFEE_IMAGE,
           :WIZARD_RESULT_KEYS,
-          :SELF_SIGNED_CERT
+          :SELF_SIGNED_CERT,
+          :PERSISTENCY_FOLDER
         def initialize(env, params)
           raise 'Internal Error: env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'Internal Error: missing param' unless %i[gem help name version].eql?(params.keys.sort)
@@ -121,7 +124,11 @@ module Aspera
           @option_ignore_cert_host_port = []
           @option_http_options = {}
           @ssl_warned_urls = []
+          @option_rest_debug = false
+          @option_cache_tokens = true
           Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
+          # data persistency manager
+          env[:persistency] = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folder for FASP SDK
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           add_plugin_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
@@ -162,6 +169,8 @@ module Aspera
           options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
           options.declare(:ignore_certificate, 'List of HTTPS url where to no validate certificate', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
+          options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
+          options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
           options.parse_options!
           # Check SDK folder is set or not, for compatibility, we check in two places
           sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
@@ -192,8 +201,14 @@ module Aspera
             @pac_exec.proxy_pass = @proxy_credentials[:pass]
           end
           Rest.set_parameters(user_agent: PROGRAM_NAME, session_cb: lambda{|http_session|update_http_session(http_session)})
+          Oauth.persist_mgr = persistency if @option_cache_tokens
+          Fasp::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
+          Aspera::RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
+          # register aspera REST call error handlers
+          Aspera::RestErrorsAspera.register_handlers
         end
 
+        attr_accessor :option_cache_tokens
         attr_accessor :option_insecure, :option_http_options
         attr_reader :option_ignore_cert_host_port
 
@@ -422,7 +437,6 @@ module Aspera
         public
 
         # $HOME/.aspera/`program_name`
-        attr_reader :main_folder
         attr_reader :gem_url, :plugins
         attr_accessor :option_config_file
 

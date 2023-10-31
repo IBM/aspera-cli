@@ -44,7 +44,7 @@ EXE_END_ERR=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test
 # enclose tests that fail, but should not
 EXE_BEG_FAI=if $(EXE_COMMON)
 EXE_END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else echo "Test known to fail";fi
-# ignore status of those, mainly optiona cleanups, for restarts
+# enclose tests whose status is ignored, mainly optional cleanups, for restarts
 EXE_BEG_IGN=$(EXE_COMMON)
 EXE_END_IGN=>/dev/null 2>&1 || true
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
@@ -573,8 +573,8 @@ $(T)aocfsync2: $(T).exists
 	@echo $@
 	rm -fr $(LCL_SYNC_DIR)
 	mkdir -p $(LCL_SYNC_DIR)
-	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'
-	$(EXE_MAN) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'
+	$(EXE_BEG_FAI) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
 	@touch $@
 $(T)aocffid: $(T).exists
 	@echo $@
