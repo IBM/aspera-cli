@@ -24,19 +24,23 @@ module Aspera
     # OAuth methods supported by default
     STD_AUTH_TYPES = %i[web jwt].freeze
 
-    # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
-    JWT_ACCEPTED_OFFSET_SEC = 300
-    # one hour validity (TODO: configurable?)
-    JWT_EXPIRY_OFFSET_SEC = 3600
-    # tokens older than 30 minutes will be discarded from cache
-    TOKEN_CACHE_EXPIRY_SEC = 1800
-    # tokens valid for less than this duration will be regenerated
-    TOKEN_EXPIRATION_GUARD_SEC = 120
+    @@globals = {
+      # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
+      jwt_accepted_offset_sec:    300,
+      # one hour validity (TODO: configurable?)
+      jwt_expiry_offset_sec:      3600,
+      # tokens older than 30 minutes will be discarded from cache
+      token_cache_expiry_sec:     1800,
+      # tokens valid for less than this duration will be regenerated
+      token_expiration_guard_sec: 120
+    }
+
     # a prefix for persistency of tokens (simplify garbage collect)
     PERSIST_CATEGORY_TOKEN = 'token'
+    # prefix for bearer token when in header
     BEARER_PREFIX = 'Bearer '
 
-    private_constant :JWT_ACCEPTED_OFFSET_SEC, :JWT_EXPIRY_OFFSET_SEC, :TOKEN_CACHE_EXPIRY_SEC, :PERSIST_CATEGORY_TOKEN, :TOKEN_EXPIRATION_GUARD_SEC
+    private_constant :PERSIST_CATEGORY_TOKEN, :BEARER_PREFIX
 
     # persistency manager
     @persist = nil
@@ -62,7 +66,7 @@ module Aspera
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
-        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, TOKEN_CACHE_EXPIRY_SEC)
+        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @@globals[:token_cache_expiry_sec])
       end
 
       def persist_mgr
@@ -167,9 +171,9 @@ module Aspera
       Log.log.info{"seconds=#{seconds_since_epoch}"}
       raise 'missing JWT payload' unless oauth.specific_parameters[:payload].is_a?(Hash)
       jwt_payload = {
-        exp: seconds_since_epoch + JWT_EXPIRY_OFFSET_SEC, # expiration time
-        nbf: seconds_since_epoch - JWT_ACCEPTED_OFFSET_SEC, # not before
-        iat: seconds_since_epoch - JWT_ACCEPTED_OFFSET_SEC + 1, # issued at (we tell a little in the past so that server always accepts)
+        exp: seconds_since_epoch + @@globals[:jwt_expiry_offset_sec], # expiration time
+        nbf: seconds_since_epoch - @@globals[:jwt_accepted_offset_sec], # not before
+        iat: seconds_since_epoch - @@globals[:jwt_accepted_offset_sec] + 1, # issued at (we tell a little in the past so that server always accepts)
         jti: SecureRandom.uuid # JWT id
       }.merge(oauth.specific_parameters[:payload])
       Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}
@@ -280,7 +284,7 @@ module Aspera
             elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
             end
           # force refresh if we see a token too close from expiration
-          use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < TOKEN_EXPIRATION_GUARD_SEC
+          use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < @@globals[:token_expiration_guard_sec]
           Log.log.debug{"Expiration: #{expires_at_sec} / #{use_refresh_token}"}
         end
       end
