@@ -69,12 +69,17 @@ module Aspera
       # Create an Aspera Node bearer token
       # @param payload [String] JSON payload to be included in the token
       # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
-      def bearer_token(access_key:, scope: SCOPE_USER, payload:, private_key:, expiration_sec: 3600)
+      def bearer_token(access_key:, payload:, private_key:)
         raise 'payload shall be Hash' unless payload.is_a?(Hash)
         raise 'missing user_id' unless payload.key?('user_id')
         raise 'user_id must be a String' unless payload['user_id'].is_a?(String)
         raise 'user_id must not be empty' if payload['user_id'].empty?
         raise 'private_key shall be OpenSSL::PKey::RSA' unless private_key.is_a?(OpenSSL::PKey::RSA)
+        # manage convenience parameters
+        expiration_sec = payload['_validity'] || 3600
+        payload.delete('_validity')
+        scope = payload['_scope'] || SCOPE_USER
+        payload.delete('_scope')
         payload['scope'] ||= token_scope(access_key, scope)
         payload['auth_type'] ||= 'access_key'
         payload['expires_at'] ||= (Time.now + expiration_sec).utc.strftime('%FT%TZ')

@@ -452,7 +452,7 @@ $(T)nd_ak_bearer: $(T).exists
 	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds access_key do self show / --fields=id>$(DIR_TMP)root_id
 	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds access_key do self permission %id:$$(cat $(DIR_TMP)root_id) create @json:'{"access_type":"user","access_id":"666"}'
 	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds bearer_token @file:@preset:misc.private_key_path @json:'{"user_id":"666"}'>$(DIR_TMP)bearer_666
-	$(EXE_MAN) node -N -Ptst_node_preview --username=@ruby:nil --password="Bearer $$(cat $(DIR_TMP)bearer_666)" --root-id=$$(cat $(DIR_TMP)root_id) access_key do self br /
+	$(EXE_MAN) node -N --url=@preset:tst_node_preview.url --password="Bearer $$(cat $(DIR_TMP)bearer_666)" --root-id=$$(cat $(DIR_TMP)root_id) access_key do self br /
 	$(EXE_MAN) node -N -Ptst_node_preview access_key delete @preset:ak_creds.username
 	@touch $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4 $(T)nd_ak_bearer

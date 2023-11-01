@@ -2187,8 +2187,28 @@ authentication: HTTP Basic Authentication.</p>
 section above.</p>
 <p>Aspera on Cloud relies on Oauth, refer to the <a href="#aoc">Aspera
 on Cloud</a> section.</p>
-<h2 data-number="4.15" id="logging-debugging"><span
-class="header-section-number">4.15</span> Logging, Debugging</h2>
+<h2 data-number="4.15"
+id="graphical-interactions-browser-and-text-editor"><span
+class="header-section-number">4.15</span>
+<a id="graphical"></a>Graphical Interactions: Browser and Text
+Editor</h2>
+<p>Some actions may require the use of a graphical tool:</p>
+<ul>
+<li>a browser for Aspera on Cloud authentication (web auth method)</li>
+<li>a text editor for configuration file edition</li>
+</ul>
+<p>By default <code>ascli</code> assumes that a graphical environment is
+available on Windows, and on other systems, rely on the presence of the
+<code>DISPLAY</code> environment variable. It is also possible to force
+the graphical mode with option –ui :</p>
+<ul>
+<li><code>--ui=graphical</code> forces a graphical environment, a
+browser will be opened for URLs or a text editor for file edition.</li>
+<li><code>--ui=text</code> forces a text environment, the URL or file
+path to open is displayed on terminal.</li>
+</ul>
+<h2 data-number="4.16" id="logging-debugging"><span
+class="header-section-number">4.16</span> Logging, Debugging</h2>
 <p>The gem is equipped with traces, mainly for debugging and learning
 APIs. By default logging level is <code>warn</code> and the output
 channel is <code>stderr</code>. To increase debug level, use parameter
@@ -2223,8 +2243,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf pre over <span class="at">--log-level</span><span class="op">=</span>error <span class="at">--logger</span><span class="op">=</span>syslog</span></code></pre></div>
 <p>When <code>ascli</code> is used interactively in a shell, the shell
 itself will usually log executed commands in the history file.</p>
-<h2 data-number="4.16" id="learning-aspera-product-apis-rest"><span
-class="header-section-number">4.16</span> Learning Aspera Product APIs
+<h2 data-number="4.17" id="learning-aspera-product-apis-rest"><span
+class="header-section-number">4.17</span> Learning Aspera Product APIs
 (REST)</h2>
 <p><code>ascli</code> uses mainly Aspera applications REST APIs. To
 display HTTP calls, use argument <code>-r</code> or
@@ -2232,8 +2252,8 @@ display HTTP calls, use argument <code>-r</code> or
 HTTP requests and responses.</p>
 <p>In order to get traces of execution, use argument :
 <code>--log-level=debug</code></p>
-<h2 data-number="4.17" id="http-socket-parameters"><span
-class="header-section-number">4.17</span> <a id="http_options"></a>HTTP
+<h2 data-number="4.18" id="http-socket-parameters"><span
+class="header-section-number">4.18</span> <a id="http_options"></a>HTTP
 socket parameters</h2>
 <p>To ignore SSL certificate for any address/port, use option:
 <code>insecure</code>, i.e. <code>--insecure=yes</code>. To ignore SSL
@@ -2283,33 +2303,13 @@ config file, either in a global preset or server-specific one.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb173"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res package list <span class="at">--http-options</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;read_timeout&quot;:10.0}&#39;</span></span></code></pre></div>
-<h2 data-number="4.18"
-id="graphical-interactions-browser-and-text-editor"><span
-class="header-section-number">4.18</span>
-<a id="graphical"></a>Graphical Interactions: Browser and Text
-Editor</h2>
-<p>Some actions may require the use of a graphical tool:</p>
-<ul>
-<li>a browser for Aspera on Cloud authentication (web auth method)</li>
-<li>a text editor for configuration file edition</li>
-</ul>
-<p>By default <code>ascli</code> assumes that a graphical environment is
-available on Windows, and on other systems, rely on the presence of the
-<code>DISPLAY</code> environment variable. It is also possible to force
-the graphical mode with option –ui :</p>
-<ul>
-<li><code>--ui=graphical</code> forces a graphical environment, a
-browser will be opened for URLs or a text editor for file edition.</li>
-<li><code>--ui=text</code> forces a text environment, the URL or file
-path to open is displayed on terminal.</li>
-</ul>
 <h2 data-number="4.19" id="proxy"><span
 class="header-section-number">4.19</span> Proxy</h2>
 <p>There are several types of network connections, each of them use a
 different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <ul>
 <li>Ruby HTTP: REST and HTTPGW client</li>
-<li>Legacy Aspera HTTP/S Fallback</li>
+<li>Legacy Aspera HTTP/S Fallback and ascp wss</li>
 <li>Aspera FASP</li>
 </ul>
 <p>Refer to the following sections.</p>
@@ -5026,9 +5026,9 @@ Cloud</a>.</p>
 href="#jwt">JWT</a> section (auth=jwt) in addition to Client
 Registration.</p>
 <p>In Oauth, a “Bearer” token are generated to authenticate REST calls.
-Bearer tokens are valid for a period of time.<code>ascli</code> saves
-generated tokens in its configuration folder, tries to re-use them or
-regenerates them when they have expired.</p>
+Bearer tokens are valid for a period of time defined at its creation.
+<code>ascli</code> saves generated tokens in its configuration folder,
+tries to re-use them or regenerates them when they have expired.</p>
 <h3 data-number="5.2.2" id="optional-api-client-registration"><span
 class="header-section-number">5.2.2</span>
 <a id="clientreg"></a>Optional: API Client Registration</h3>
@@ -6523,14 +6523,20 @@ selector syntax: <code>%id:_file_id_here_</code></p>
 class="header-section-number">8.10</span> Create access key</h2>
 <div class="sourceCode" id="cb383"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb383-1"><a href="#cb383-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key create @json:<span class="st">&#39;{&quot;id&quot;:&quot;myaccesskey&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;local&quot;,&quot;path&quot;:&quot;/data/mydir&quot;}}&#39;</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> The <code>id</code> and <code>secret</code>
+are optional. If not provided, they will be generated and returned in
+the result.</p>
+</blockquote>
 <h2 data-number="8.11" id="generate-and-use-bearer-token"><span
 class="header-section-number">8.11</span> Generate and use bearer
 token</h2>
 <p>Bearer tokens are part of the <strong>gen4/access key</strong> API.
-For example they are used in Aspera on Cloud, but any application
-integrating Aspera can use it. In this API, files, users and groups are
-identified by an id (a String with numerical value,
-e.g. <code>"125"</code>).</p>
+It follows the model of OAuth 2. For example they are used in Aspera on
+Cloud. This is also available for developers for any application
+integrating Aspera. In this API, files, users and groups are identified
+by an id (a String, e.g. <code>"125"</code>, not necessarily
+numerical).</p>
 <p>Bearer tokens are typically generated by the authentification
 application, and then recognized by the node API. A bearer token is
 authorized on the node by creating <code>permissions</code> on a
@@ -6539,14 +6545,113 @@ authorized on the node by creating <code>permissions</code> on a
 <code>bearer_token</code>: it takes two arguments:</p>
 <ul>
 <li>the private key used to sign the token</li>
-<li>the token information, which is a JSON object containing the user id
-and groups ids, e.g. <code>{"user_id":"125"}</code></li>
+<li>the token information, which is a <code>Hash</code> containing the
+following elements:</li>
 </ul>
-<p>Here is a scenario showing how to create a bearer token and use
-it:</p>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 23%" />
+<col style="width: 9%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>parameter</th>
+<th>Default</th>
+<th>type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>user_id</td>
+<td>-</td>
+<td>Mandatory</td>
+<td>Identifier of user</td>
+</tr>
+<tr class="even">
+<td>scope</td>
+<td><code>node.&lt;access_key&gt;:&lt;_scope&gt;</code></td>
+<td>Mandatory</td>
+<td>API scope,
+e.g. <code>node.&lt;access_key&gt;:&lt;node scope&gt;</code></td>
+</tr>
+<tr class="odd">
+<td>expires_at</td>
+<td><code>now+&lt;_validity&gt;</code></td>
+<td>Mandatory</td>
+<td>Format: <code>%Y-%m-%dT%H:%M:%SZ</code>
+e.g. <code>2021-12-31T23:59:59Z</code></td>
+</tr>
+<tr class="even">
+<td>auth_type</td>
+<td><code>access_key</code></td>
+<td>Optional</td>
+<td><code>access_key</code>, <code>node_user</code></td>
+</tr>
+<tr class="odd">
+<td>group_ids</td>
+<td>-</td>
+<td>Optional</td>
+<td>List of group ids</td>
+</tr>
+<tr class="even">
+<td>organization_id</td>
+<td>-</td>
+<td>Optional</td>
+<td>Organization id</td>
+</tr>
+<tr class="odd">
+<td>watermarking_json_base64</td>
+<td>-</td>
+<td>Optional</td>
+<td>Watermarking information (not used)</td>
+</tr>
+<tr class="even">
+<td>_scope</td>
+<td><code>user:all</code></td>
+<td>Special</td>
+<td>Either <code>user:all</code> or <code>admin:all</code></td>
+</tr>
+<tr class="odd">
+<td>_validity</td>
+<td>3600</td>
+<td>Special</td>
+<td>Validity in seconds from now.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> For convenience, <code>ascli</code> provides
+parameters <code>_scope</code> and <code>_validity</code>, removed from
+the final payload. They are used to build the default value of
+<code>scope</code> and <code>expires_at</code>.</p>
+</blockquote>
+<h3 data-number="8.11.1" id="bearer-token-environment"><span
+class="header-section-number">8.11.1</span> Bearer token:
+environment</h3>
 <ul>
-<li><p>We assume here that an access key was created, and default
-configuration is set to use it.</p></li>
+<li><p>If a self-managed Aspera node is used, then a “node user admin”
+must be created: It has no <code>docroot</code> but has at least one
+file restriction (for testing, one can use <code>*</code> to accept
+creation of an access key with any storage root path). Refer to the
+Aspera HSTS documentation.</p></li>
+<li><p>If Cloud Pak for integration is used, then the node admin is
+created automatically.</p></li>
+<li><p>If Aspera on Cloud or ATS is used, then the SaaS API for access
+key creation is used.</p></li>
+<li><p>An access key shall be created to grant access for transfers to
+its storage. The access_key and its secrets represent an administrative
+access to the storage as it has access rights to the whole storage of
+the access key.</p></li>
+</ul>
+<h3 data-number="8.11.2" id="bearer-token-preparation"><span
+class="header-section-number">8.11.2</span> Bearer token:
+preparation</h3>
+<p>Let’s assume that the access key was created, and a default
+configuration is set to use this <strong>access key</strong>.</p>
+<ul>
 <li><p>Create a private key (organization key) that will be used to sign
 bearer tokens:</p>
 <div class="sourceCode" id="cb384"><pre
@@ -6554,21 +6659,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb384-1"><a href
 <span id="cb384-2"><a href="#cb384-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf genkey <span class="va">$my_private_pem</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> This key is not used for authentication, it is
-only used to sign bearer tokens. Refer to section <a
-href="#private_key">private key</a> for more details.</p>
+used to sign bearer tokens. Refer to section <a
+href="#private_key">private key</a> for more details on generation.</p>
 </blockquote></li>
-<li><p>The corresponding public key shall be placed in the access key to
-be able to check the signature of the bearer token:</p>
+<li><p>The corresponding public key shall be placed as an attribute of
+the <strong>access key</strong>:</p>
 <div class="sourceCode" id="cb385"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb385-1"><a href="#cb385-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key set_bearer_key self @file:<span class="va">$my_private_pem</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> Either the public or private key can be
-provided, and only the public key is used. Alternatively, use the
-following equivalent command, as <code>ascli</code> kindly extracts the
-public key with extension <code>.pub</code>:</p>
+provided, and only the public key is used. This will enable to check the
+signature of the bearer token.</p>
 </blockquote>
+<p>Alternatively, use the following equivalent command, as
+<code>ascli</code> kindly extracts the public key with extension
+<code>.pub</code>:</p>
 <div class="sourceCode" id="cb386"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb386-1"><a href="#cb386-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key modify %id:self @ruby:<span class="st">&#39;{token_verification_key: File.read(&quot;&#39;</span><span class="va">$my_private_pem</span><span class="st">&#39;.pub&quot;)}&#39;</span></span></code></pre></div></li>
+</ul>
+<h3 data-number="8.11.3" id="bearer-token-configuration-for-user"><span
+class="header-section-number">8.11.3</span> Bearer token: configuration
+for user</h3>
+<ul>
 <li><p>Select a folder for which we want to grant access to a user, and
 get its identifier:</p>
 <div class="sourceCode" id="cb387"><pre
@@ -6577,9 +6689,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb387-1"><a href
 <p><strong>Note:</strong> Here we simply select <code>/</code>, but any
 folder can be selected in the access key storage.</p>
 </blockquote></li>
-<li><p>let’s designate a user by its id:</p>
+<li><p>Let’s designate a user by its id:</p>
 <div class="sourceCode" id="cb388"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb388-1"><a href="#cb388-1" aria-hidden="true" tabindex="-1"></a><span class="va">my_user_id</span><span class="op">=</span>1</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb388-1"><a href="#cb388-1" aria-hidden="true" tabindex="-1"></a><span class="va">my_user_id</span><span class="op">=</span>777</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> This is an arbitrary identifier, typically
 managed by the web application. Not related to Linux user ids or
@@ -6590,21 +6702,24 @@ anything else.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb389-1"><a href="#cb389-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key do self permission %id:<span class="va">$my_folder_id</span> create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;}&#39;</span></span></code></pre></div></li>
 <li><p>Create a Bearer token for the user:</p>
 <div class="sourceCode" id="cb390"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb390-1"><a href="#cb390-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node bearer_token <span class="at">--bearer-key</span><span class="op">=</span>@file:./myorgkey.pem <span class="at">--token-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;user_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;}&#39;</span> <span class="op">&gt;</span> bearer.txt</span></code></pre></div></li>
-<li><p>Now, let’s assume we do not have access key credentials, and we
-want to do (limited) operations using the bearer token:</p>
-<div class="sourceCode" id="cb391"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb391-1"><a href="#cb391-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node <span class="at">--username</span><span class="op">=</span>@ruby:nil <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$(</span><span class="fu">cat</span> bearer.txt<span class="va">)</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$my_folder_id</span> access_key do self br /</span></code></pre></div>
-<blockquote>
-<p><strong>Note:</strong> We reset here the username to nil, but using
-the access key also would work but is not necessary. Only the url and
-the bearer token used as password are required.</p>
-</blockquote></li>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb390-1"><a href="#cb390-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node bearer_token @file:./myorgkey.pem @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;,&quot;_validity&quot;:86400}&#39;</span> <span class="op">&gt;</span> bearer.txt</span></code></pre></div></li>
 </ul>
+<h3 data-number="8.11.4" id="bearer-token-user-side"><span
+class="header-section-number">8.11.4</span> Bearer token: user side</h3>
+<p>Now, let’s assume we are the user, the only information received
+are:</p>
+<ul>
+<li>the url of the node API</li>
+<li>a Bearer token</li>
+<li>a file <code>id</code> for which we have access</li>
+</ul>
+<p>Let’s use it:</p>
+<div class="sourceCode" id="cb391"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb391-1"><a href="#cb391-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node <span class="at">-N</span> <span class="at">--url</span><span class="op">=</span>... <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$(</span><span class="fu">cat</span> bearer.txt<span class="va">)</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$my_folder_id</span> access_key do self br /</span></code></pre></div>
 <h2 data-number="8.12" id="node-sample-commands"><span
 class="header-section-number">8.12</span> Node sample commands</h2>
 <div class="sourceCode" id="cb392"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href="#cb392-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--username</span><span class="op">=</span>@ruby:nil <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$bearer_666</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$root_id</span> access_key do self br /</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href="#cb392-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--url</span><span class="op">=</span>https://node_preview.example.com/path <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$bearer_666</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$root_id</span> access_key do self br /</span>
 <span id="cb392-2"><a href="#cb392-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key create @json:<span class="st">&#39;{&quot;id&quot;:&quot;my_username&quot;,&quot;secret&quot;:&quot;my_password&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;local&quot;,&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb392-3"><a href="#cb392-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key delete my_username</span>
 <span id="cb392-4"><a href="#cb392-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_aoc_ak_name browse /</span>
@@ -7553,7 +7668,7 @@ class="header-section-number">16</span> <a id="preview"></a>Plugin:
 <p>The <code>preview</code> generates thumbnails (office, images, video)
 and video previews on storage for use primarily in the Aspera on Cloud
 application. It uses the <strong>node API</strong> of Aspera HSTS and
-requires use of Access Keys and it’s <strong>storage root</strong>.
+requires use of Access Keys and its <strong>storage root</strong>.
 Several parameters can be used to tune several aspects:</p>
 <ul>
 <li>Methods for detection of new files needing generation</li>

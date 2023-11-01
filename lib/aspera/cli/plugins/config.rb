@@ -877,7 +877,7 @@ module Aspera
             private_key_path = options.get_next_argument('private key file path')
             private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIVKEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
-            return Main.result_status("Generated key: #{private_key_path}")
+            return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
           when :echo # display the content of a value given on command line
             result = {type: :other_struct, data: options.get_next_argument('value')}
             # special for csv

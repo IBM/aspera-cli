@@ -126,7 +126,7 @@ module Aspera
               # info is provided like node_info of aoc
               Aspera::Node.new(params: {
                 base_url: options.get_option(:url, mandatory: true),
-                headers:  Aspera::Node.bearer_headers(options.get_option(:password, mandatory: true), access_key: options.get_option(:username))
+                headers:  Aspera::Node.bearer_headers(options.get_option(:password, mandatory: true))
               })
             else
               # this is normal case
@@ -901,10 +901,7 @@ module Aspera
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', type: String))
             token_info = options.get_next_argument('user and group identification', type: Hash)
             access_key = options.get_option(:username, mandatory: true)
-            return Main.result_status(Aspera::Node.bearer_token(
-              payload: token_info,
-              access_key: access_key,
-              private_key: private_key))
+            return Main.result_status(Aspera::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action
