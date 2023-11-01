@@ -7,6 +7,7 @@ module Aspera
     module Plugins
       # Plugin for Aspera Shares v1
       class Shares < Aspera::Cli::BasicAuthPlugin
+        API_BASE = 'node_api'
         class << self
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -15,7 +16,7 @@ module Aspera
             begin
               # shall fail: shares requires auth, but we check error message
               # TODO: use ping instead ?
-              api.read('node_api/app')
+              api.read("#{API_BASE}/app")
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 found = true
@@ -66,7 +67,7 @@ module Aspera
             nagios = Nagios.new
             begin
               Rest
-                .new(base_url: options.get_option(:url, mandatory: true) + '/node_api')
+                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{API_BASE}")
                 .call(
                   operation: 'GET',
                   subpath: 'ping',
@@ -78,9 +79,9 @@ module Aspera
             end
             return nagios.result
           when :repository, :files
-            api_shares_node = basic_auth_api('node_api')
+            api_shares_node = basic_auth_api(API_BASE)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
-            return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_shares_node)).execute_action(repo_command)
+            return Node.new(@agents, api: api_shares_node).execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
             admin_command = options.get_next_command(%i[user group share node].freeze)

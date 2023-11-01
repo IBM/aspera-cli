@@ -175,15 +175,13 @@ module Aspera
           options.declare(:scope, 'OAuth scope for AoC API calls', default: AoC::SCOPE_FILES_USER)
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:workspace, 'Name of workspace', default: :default)
-          # TODO: remove this and use %name: instead
-          options.declare(:name, 'TODO')
           options.declare(:link, 'Public link to shared resource')
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
           options.declare(:from_folder, 'Source folder for Folder-to-Folder transfer')
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
           options.parse_options!
-          # add node plugin options (TODO: check needed ? if yes, tell why)
-          Node.new(env.merge({man_only: true, skip_basic_auth_options: true}))
+          # add node plugin options (for manual)
+          Node.declare_options(options)
         end
 
         # @return [Hash] with keys from OPTIONS_NEW and values from options (command line)
@@ -323,10 +321,7 @@ module Aspera
             scope: scope
           )
           file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")[:data]['root_file_id'] if file_id.nil?
-          node_plugin = Node.new(@agents.merge(
-            skip_basic_auth_options: true,
-            skip_node_options:       true,
-            node_api:                top_node_api))
+          node_plugin = Node.new(@agents, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
             return node_plugin.execute_command_gen4(command_repo, file_id)
@@ -441,7 +436,7 @@ module Aspera
               base_url: "#{aoc_api.params[:base_url]}/admin/ats/pub/v1",
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
-            return Ats.new(@agents.merge(skip_node_options: true)).execute_action_gen(ats_api)
+            return Ats.new(@agents).execute_action_gen(ats_api)
           when :analytics
             analytics_api = Rest.new(aoc_api.params.deep_merge({
               base_url: "#{aoc_api.params[:base_url].gsub('/api/v1', '')}/analytics/v2",
@@ -455,13 +450,13 @@ module Aspera
               return {type: :object_list, data: events}
             when :transfers
               event_type = command_analytics.to_s
-              filter_resource = options.get_option(:name) || 'organizations'
-              filter_id = options.get_option(:id) ||
+              filter_resource = options.get_next_argument('resource', expected: %i[organizations users nodes])
+              filter_id = options.get_next_argument('identifier', mandatory: false) ||
                 case filter_resource
-                when 'organizations' then aoc_api.current_user_info['organization_id']
-                when 'users' then aoc_api.current_user_info['id']
-                when 'nodes' then aoc_api.current_user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
-                else raise 'organizations or users for option --name'
+                when :organizations then aoc_api.current_user_info['organization_id']
+                when :users then aoc_api.current_user_info['id']
+                when :nodes then aoc_api.current_user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
+                else raise 'Internal error'
                 end
               filter = options.get_option(:query) || {}
               filter['limit'] ||= 100
@@ -471,7 +466,7 @@ module Aspera
                   manager: @agents[:persistency],
                   data: saved_date,
                   ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, mandatory: true), current_workspace_info['name']].push(
-                    filter_resource,
+                    filter_resource.to_s,
                     filter_id)))
                 start_date_time = saved_date.first
                 stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
@@ -653,12 +648,14 @@ module Aspera
               # return all info on package (especially package id)
               return { type: :single_object, data: created_package[:info]}
             when :recv
+              ids_to_download = nil
               if !aoc_api.url_token_data.nil?
                 assert_public_link_types(['view_received_package'])
-                options.set_option(:id, aoc_api.url_token_data['data']['package_id'])
+                # set the package id, it will
+                ids_to_download = aoc_api.url_token_data['data']['package_id']
               end
-              # scalar here
-              ids_to_download = instance_identifier
+              # get from command line unless it was a public link
+              ids_to_download ||= instance_identifier
               skip_ids_data = []
               skip_ids_persistency = nil
               if options.get_option(:once_only, mandatory: true)

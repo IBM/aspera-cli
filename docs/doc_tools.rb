@@ -82,6 +82,7 @@ def ruby_version
   return message
 end
 
+# generate help for the given command
 def generate_help(varname)
   raise "missing #{varname}" unless @env.key?(varname)
   return %x(#{@env[varname]} -h 2>&1)
@@ -98,16 +99,18 @@ end
 # various replacements from commands in test makefile
 REPLACEMENTS = [
   # replace command name
-  [/^.*\$\(EXE_MAN.?\) +/, ''],
+  [/^.*\$\(EXE_MAN\) +/, ''],
   [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
   [/\$\(EXE_END_FAI.?\)$/, ''],
   # replace makefile macros
-  [/\$\(([^)]*)\)/, '\1'],
+  [/\$\(([^) ]*)\)/, '\1'],
+  # change file_vars
+  [/\(cat ([^)]+)\)/, '\1'],
   # remove multi command mark
   [/\)?&&\\$/, ''],
   [/ &\\$/, ''],
-  # remove redirection
-  [/ [>|] .*$/, ''],
+  # remove redir to file
+  [/ *> *[^(}][^ ]*$/, ''],
   # remove folder macro
   [/DIR_[A-Z]+/, ''],
   # replace shell vars in JSON

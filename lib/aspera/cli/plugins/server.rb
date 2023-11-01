@@ -92,7 +92,7 @@ module Aspera
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
           options.declare(:passphrase, 'SSH private key passphrase')
           options.declare(:ssh_options, 'SSH options', types: Hash, default: {})
-          declare_sync_options
+          SyncActions.declare_options(options)
           options.parse_options!
           @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end

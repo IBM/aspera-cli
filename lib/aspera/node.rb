@@ -303,15 +303,14 @@ module Aspera
         if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
           transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
         end
-        # check WSS ports
         info = read('info')[:data]
-        if info.key?('settings')
-          # transform array to hash
-          settings = info['settings'].each_with_object({}){|i, h|h[i['name']] = i['value']}
-          %w[wss_enabled wss_port].each do |i|
-            transfer_spec[i] = settings[i] if settings.key?(i)
-          end
-        end
+        transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
+        # get settings from name.value array to hash key.value
+        settings = info['settings']&.each_with_object({}){|i, h|h[i['name']] = i['value']}
+        # check WSS ports
+        %w[wss_enabled wss_port].each do |i|
+          transfer_spec[i] = settings[i] if settings.key?(i)
+        end if settings.is_a?(Hash)
       else
         # retrieve values from API (and keep a copy/cache)
         @std_t_spec_cache ||= create(

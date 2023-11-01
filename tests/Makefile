@@ -399,13 +399,6 @@ $(T)nd4: $(T).exists
 	@echo "waiting a little...";sleep 5
 	$(EXE_MAN) node -Ptst_node_admak service list
 	@touch $@
-# test creation of access key
-$(T)nd5: $(T).exists
-	@echo $@
-	$(EXE_MAN) node -N -Ptst_node_preview access_key create @json:'{"id":"testingAK1","storage":{"type":"local","path":"/"}}'
-	sleep 2
-	$(EXE_MAN) node -N -Ptst_node_preview access_key delete testingAK1
-	@touch $@
 $(T)nd6: $(T).exists
 	@echo $@
 	$(EXE_MAN) node transfer list --query=@json:'{"active_only":true}'
@@ -450,20 +443,28 @@ $(T)nd_ak4: $(T).exists
 	@echo $@
 	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show %id:1
 	@touch $@
-$(T)nd_ak5: $(T).exists
+$(T)nd_ak_bearer: $(T).exists
 	@echo $@
-	$(EXE_MAN) node -Ptst_node_admak bearer --bearer-key=@preset:tst_aoc_jwt.private_key --token-info=@json:'{"user_id":"1"}'
+	$(EXE_BEG_IGN) node -N -Ptst_node_preview access_key delete @preset:ak_creds.username$(EXE_END_IGN)
+	$(EXE_MAN) node -N -Ptst_node_preview access_key create @json:@extend:'{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
+	sleep 2
+	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds access_key set_bearer_key self @file:@preset:misc.private_key_path
+	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds access_key do self show / --fields=id>$(DIR_TMP)root_id
+	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds access_key do self permission %id:$$(cat $(DIR_TMP)root_id) create @json:'{"access_type":"user","access_id":"666"}'
+	$(EXE_MAN) node -N -Ptst_node_preview -Pak_creds bearer_token @file:@preset:misc.private_key_path @json:'{"user_id":"666"}'>$(DIR_TMP)bearer_666
+	$(EXE_MAN) node -N -Ptst_node_preview --username=@ruby:nil --password="Bearer $$(cat $(DIR_TMP)bearer_666)" --root-id=$$(cat $(DIR_TMP)root_id) access_key do self br /
+	$(EXE_MAN) node -N -Ptst_node_preview access_key delete @preset:ak_creds.username
 	@touch $@
-tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4
-tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd5 $(T)nd6 $(T)nd7 $(T)nd8 tndak
+tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4 $(T)nd_ak_bearer
+tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd8 tndak
 
 $(T)aocfxgw: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc gateway https://localhost:12345/aspera/faspex &\
-		jobs -p > $(T)server_pid
+		jobs -p > $(DIR_TMP)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	kill -INT $$(cat $(T)server_pid)
+	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@touch $@
 $(T)aocg1: $(T).exists
 	@echo $@
@@ -700,7 +701,7 @@ $(T)aoc14: $(T).exists
 	@touch $@
 $(T)aoc15: $(T).exists
 	@echo $@
-	$(EXE_MAN) aoc admin analytics transfers --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=@preset:misc.email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+	$(EXE_MAN) aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=@preset:misc.email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@touch $@
 $(T)aocarself: $(T).exists
 	@echo $@
@@ -771,8 +772,8 @@ $(T)aocat13: $(T).exists
 	$(EXE_BEG_FAI) aoc admin ats access_key delete ak1ibmcloud$(EXE_END_FAI)
 	@touch $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
-$(DIR_TMP)wf_id.txt: $(T)aocauto1
-	$(EXE_MAN) aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data > $@
+$(DIR_TMP)wf_id: $(T)aocauto1
+	$(EXE_MAN) aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data>$@
 $(T)aocauto1: $(T).exists
 	@echo $@
 	$(EXE_MAN) aoc automation workflow create @json:'{"name":"test_workflow"}'
@@ -782,20 +783,20 @@ $(T)aocauto2: $(T).exists
 	$(EXE_MAN) aoc automation workflow list
 	$(EXE_MAN) aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 	@touch $@
-$(T)aocauto3: $(DIR_TMP)wf_id.txt
+$(T)aocauto3: $(DIR_TMP)wf_id
 	@echo $@
 	set -x&&\
-	wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	wf_id=$$(cat $(DIR_TMP)wf_id)&&\
 	$(EXE_MAN) aoc automation workflow action $${wf_id} create @json:'{"name":"toto"}' \
 		| tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
 	rm -f tmp_action_id.txt
 	@touch $@
-$(T)aocauto10: $(DIR_TMP)wf_id.txt
+$(T)aocauto10: $(DIR_TMP)wf_id
 	@echo $@
 	set -x&&\
-	wf_id=$$(cat $(DIR_TMP)wf_id.txt)&&\
+	wf_id=$$(cat $(DIR_TMP)wf_id)&&\
 	$(EXE_MAN) aoc automation workflow delete $${wf_id}
 	rm -f $(T)wf.id
 	@touch $@
@@ -1348,18 +1349,18 @@ $(T)f5_wizard: $(T).exists
 $(T)f5_fxgw: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 gateway https://localhost:12345/aspera/faspex &\
-		jobs -p > $(T)server_pid
+		jobs -p > $(DIR_TMP)server_pid
 	sleep 2
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
 	sleep 3
-	kill -USR1 $$(cat $(T)server_pid)
+	kill -USR1 $$(cat $(DIR_TMP)server_pid)
 	@touch $@
 $(T)f5_postproc: $(T).exists
 	@echo $@
 	$(EXE_MAN) faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
-	jobs -p > $(T)server_pid
+	jobs -p > $(DIR_TMP)server_pid
 	sleep 10
-	kill -INT $$(cat $(T)server_pid)
+	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@touch $@
 
 tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold

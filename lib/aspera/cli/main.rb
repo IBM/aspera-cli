@@ -196,7 +196,7 @@ module Aspera
             next if plugin_name_sym.eql?(Plugins::Config::CONF_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @agents.clone
-            plugin_env[:man_only] = true
+            plugin_env[:all_manuals] = true # force declaration of all options
             plugin_env[:options] = Manager.new(PROGRAM_NAME)
             plugin_env[:options].parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym, plugin_env)

@@ -19,6 +19,7 @@ module Aspera
       class Node < Aspera::Cli::BasicAuthPlugin
         include SyncActions
         class << self
+          @node_options_declared = false
           def application_name
             'HSTS Node API'
           end
@@ -61,6 +62,20 @@ module Aspera
               test_args:    'info'
             }
           end
+
+          def declare_options(options, force: false)
+            return if @node_options_declared && !force
+            @node_options_declared = true
+            options.declare(:validator, 'Identifier of validator (optional for central)')
+            options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
+            options.declare(:sync_name, 'Sync name')
+            options.declare(
+              :default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes,
+              handler: {o: Aspera::Node, m: :use_standard_ports})
+            options.declare(:root_id, 'File id of top folder if using bearer tokens')
+            SyncActions.declare_options(options)
+            options.parse_options!
+          end
         end
 
         # spellchecker: disable
@@ -100,25 +115,13 @@ module Aspera
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 
-        def initialize(env)
+        def initialize(env, api: nil)
           super(env)
-          unless env[:skip_node_options]
-            options.declare(:validator, 'Identifier of validator (optional for central)')
-            options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
-            options.declare(:sync_name, 'Sync name')
-            options.declare(:default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes)
-            options.declare(:bearer_key, 'RSA private key PEM value for bearer token generation')
-            options.declare(:token_info, 'Information for bearer token', types: Hash)
-            options.declare(:root_id, 'File id of top folder if using bearer tokens')
-            declare_sync_options
-            options.parse_options!
-            Aspera::Node.use_standard_ports = options.get_option(:default_ports)
-          end
-          return if env[:man_only]
+          Node.declare_options(options, force: env[:all_manuals])
           @api_node =
-            if env.key?(:node_api)
+            if !api.nil? || env[:all_manuals]
               # this can be Aspera::Node or Aspera::Rest (shares)
-              env[:node_api]
+              api
             elsif Oauth.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
               Aspera::Node.new(params: {
@@ -309,7 +312,7 @@ module Aspera
           when *COMMANDS_GEN3
             execute_command_gen3(command, prefix_path)
           when :access_keys
-            ak_command = options.get_next_command([:do].concat(Plugin::ALL_OPS))
+            ak_command = options.get_next_command(%i[do set_bearer_key].concat(Plugin::ALL_OPS))
             case ak_command
             when *Plugin::ALL_OPS
               return entity_command(ak_command, @api_node, 'access_keys') do |field, value|
@@ -330,6 +333,15 @@ module Aspera
               end
               command_repo = options.get_next_command(COMMANDS_GEN4)
               return execute_command_gen4(command_repo, root_file_id)
+            when :set_bearer_key
+              access_key_id = options.get_next_argument('access key id')
+              access_key_id = @api_node.read('access_keys/self')[:data]['id'] if access_key_id.eql?('self')
+              bearer_key_pem = options.get_next_argument('public or private RSA key PEM value', type: String)
+              key = OpenSSL::PKey.read(bearer_key_pem)
+              key = key.public_key if key.private?
+              bearer_key_pem = key.to_pem
+              @api_node.update("access_keys/#{access_key_id}", {token_verification_key: bearer_key_pem})
+              return Main.result_status('public key updated')
             end
           when :health
             nagios = Nagios.new
@@ -389,7 +401,7 @@ module Aspera
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
-            return Node.new(@agents.merge(skip_basic_auth_options: true, skip_node_options: true, node_api: apifid[:api])).execute_action(command_legacy)
+            return Node.new(@agents, api: apifid[:api]).execute_action(command_legacy)
           when :node_info, :bearer_token_node
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             result = {
@@ -886,10 +898,12 @@ module Aspera
           when :basic_token
             return Main.result_status(Rest.basic_creds(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
-            private_key = OpenSSL::PKey::RSA.new(options.get_option(:bearer_key, mandatory: true))
+            private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', type: String))
+            token_info = options.get_next_argument('user and group identification', type: Hash)
             access_key = options.get_option(:username, mandatory: true)
             return Main.result_status(Aspera::Node.bearer_token(
-              payload: options.get_option(:token_info, mandatory: true), access_key: access_key,
+              payload: token_info,
+              access_key: access_key,
               private_key: private_key))
           end # case command
           raise 'ERROR: shall not reach this line'

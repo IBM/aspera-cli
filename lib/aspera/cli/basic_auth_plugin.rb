@@ -8,7 +8,10 @@ module Aspera
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Aspera::Cli::Plugin
       class << self
-        def declare_options(options)
+        @basic_options_declared = false
+        def declare_options(options, force: false)
+          return if @basic_options_declared && !force
+          @basic_options_declared = true
           options.declare(:url, 'URL of application, e.g. https://faspex.example.com/aspera/faspex')
           options.declare(:username, 'Username to log in')
           options.declare(:password, "User's password")
@@ -18,7 +21,7 @@ module Aspera
 
       def initialize(env)
         super(env)
-        self.class.declare_options(options) unless env[:skip_basic_auth_options]
+        BasicAuthPlugin.declare_options(options, force: env[:all_manuals])
       end
 
       # returns a Rest object with basic auth

@@ -454,7 +454,7 @@ module Aspera
                     username: node_config['username'],
                     password: node_config['password']}})
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
-                return Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node)).execute_action(command, source_info[KEY_PATH])
+                return Node.new(@agents, api: api_node).execute_action(command, source_info[KEY_PATH])
               end
             end
           when :me

@@ -43,7 +43,7 @@ module Aspera
               instance_id = params[:instance_id]
             end
             api_node = CosNode.new(bucket_name, storage_endpoint, instance_id, service_api_key, options.get_option(:identity, mandatory: true))
-            node_plugin = Node.new(@agents.merge(skip_basic_auth_options: true, node_api: api_node))
+            node_plugin = Node.new(@agents, api: api_node)
             command = options.get_next_command(Node::COMMANDS_COS)
             return node_plugin.execute_action(command)
           end

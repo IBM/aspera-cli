@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
-# require 'English'
 require 'aspera/cli/plugin'
 require 'aspera/sync'
-# require 'aspera/log'
-# require 'open3'
 
 module Aspera
   module Cli
@@ -15,8 +12,11 @@ module Aspera
         local_dir:  String,
         remote_dir: String
       }.stringify_keys.freeze
-      def declare_sync_options
-        options.declare(:sync_info, 'Information for sync instance and sessions', types: Hash)
+
+      class << self
+        def declare_options(options)
+          options.declare(:sync_info, 'Information for sync instance and sessions', types: Hash)
+        end
       end
 
       def execute_sync_action(&block)

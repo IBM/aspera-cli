@@ -1051,7 +1051,8 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 
 ### Commands, Options, Positional Arguments
 
-Command line arguments are the units of command line, as parsed by the shell, typically separated by spaces (and called "argv"). Refer to the previous section [Command Line Parsing](#parsing).
+Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
+The tokenization of the command line is typically done by the shell, refer to the previous section [Command Line Parsing](#parsing).
 
 <%=tool%> considers three types of command line arguments:
 
@@ -1066,10 +1067,10 @@ For example:
 ```
 
 - executes **command**: `command subcommand`
-- with one **option**: `option_name`and its *value*: `VAL1`
+- with one **option**: `option_name` and its **value**: `VAL1`
 - the command has one additional **positional argument**: `VAL2`
 
-If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use the first letters of the value only, provided that it uniquely identifies the value.
+If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
 For example `<%=cmd%> conf pre ov` is the same as `<%=cmd%> config preset overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
@@ -1125,10 +1126,10 @@ Options may have an (hardcoded) default value.
 
 Options can be placed anywhere on command line and evaluated in order.
 
-Options are either:
+Options are typically:
 
 - optional : to change the default behavior
-- mandatory : connection information are options that are mandatory (so they can be placed in a config file)
+- mandatory : so they can be placed in a config file, for example: connection information
 
 The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -2312,7 +2313,7 @@ There are currently 3 agents, set with option `transfer`:
 
 - [`direct`](#agt_direct) : a local execution of `ascp`
 - [`connect`](#agt_connect) : use of a local Connect Client
-- [`node`](#agt_node) : use of an Aspera Transfer Node (potentially *remote*).
+- [`node`](#agt_node) : use of an Aspera Transfer Node (potentially **remote**).
 - [`httpgw`](#agt_httpgw) : use of an Aspera HTTP Gateway
 - [`trsdk`](#agt_trsdk) : use of Aspera Transfer SDK
 
@@ -2320,7 +2321,7 @@ There are currently 3 agents, set with option `transfer`:
 For example, a node agent executing an "upload", or "package send" operation
 will effectively push files to the related server from the agent node.
 
-<%=tool%> standardizes on the use of a <%=trspec%> instead of *native* `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+<%=tool%> standardizes on the use of a <%=trspec%> instead of **native** `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 Specific options for agents are provided with option `transfer_info`, cumulatively.
 
@@ -2923,10 +2924,10 @@ WARN -- : Another instance is already running (Address already in use - bind(2) 
 
 ### "Proven&ccedil;ale"
 
-`ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call *PVCL*. Several *PVCL* adapters are available, some are embedded in `ascp`
+`ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call **PVCL**. Several **PVCL** adapters are available, some are embedded in `ascp`
 , some are provided om shared libraries and must be activated. (e.g. using `trapd`)
 
-The list of supported *PVCL* adapters can be retrieved with command:
+The list of supported **PVCL** adapters can be retrieved with command:
 
 ```bash
 <%=cmd%> conf ascp info
@@ -3369,7 +3370,7 @@ Resources are identified by a unique `id`, as well as a unique `name` (case inse
 
 To execute an action on a specific resource, select it using one of those methods:
 
-- *recommended*: give id directly on command line *after the action*: `aoc admin res node show 123`
+- **recommended**: give id directly on command line *after the action*: `aoc admin res node show 123`
 - give name on command line *after the action*: `aoc admin res node show name abc`
 - provide option `id` : `aoc admin res node show 123`
 - provide option `name` : `aoc admin res node show --name=abc`
@@ -4554,7 +4555,12 @@ For example they are used in Aspera on Cloud, but any application integrating As
 In this API, files, users and groups are identified by an id (a String with numerical value, e.g. `"125"`).
 
 Bearer tokens are typically generated by the authentification application, and then recognized by the node API.
-A bearer token is authorized on the node by creating `permissions`.
+A bearer token is authorized on the node by creating `permissions` on a **folder**.
+
+Bearer tokens can be generated using command `bearer_token`: it takes two arguments:
+
+- the private key used to sign the token
+- the token information, which is a JSON object containing the user id and groups ids, e.g. `{"user_id":"125"}`
 
 Here is a scenario showing how to create a bearer token and use it:
 
@@ -4568,22 +4574,27 @@ Here is a scenario showing how to create a bearer token and use it:
   ```
 
   > **Note:** This key is not used for authentication, it is only used to sign bearer tokens.
-  > <%=tool%> kindly extracts the public key with extension `.pub`
   > Refer to section [private key](#private_key) for more details.
 
 - The corresponding public key shall be placed in the access key to be able to check the signature of the bearer token:
 
   ```bash
+  <%=cmd%> node access_key set_bearer_key self @file:$my_private_pem
+  ```
+
+  > **Note:** Either the public or private key can be provided, and only the public key is used. Alternatively, use the following equivalent command, as <%=tool%> kindly extracts the public key with extension `.pub`:
+
+  ```bash
   <%=cmd%> node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
   ```
 
-- Select a folder for which we want to grant access to a user, and get it's identifier:
+- Select a folder for which we want to grant access to a user, and get its identifier:
 
   ```bash
   my_folder_id=$(ascli node access_key do self show / --fields=id)
   ```
 
-  > **Note:** here we simply select `/`, but any folder would do.
+  > **Note:** Here we simply select `/`, but any folder can be selected in the access key storage.
 
 - let's designate a user by its id:
 
@@ -4601,9 +4612,9 @@ Here is a scenario showing how to create a bearer token and use it:
 
 - Create a Bearer token for the user:
 
-```bash
-ascli node bearer --bearer-key=@file:./myorgkey.pem --token-info=@json:'{"user_id":"'$my_user_id'"}' > bearer.txt
-```
+  ```bash
+  ascli node bearer_token --bearer-key=@file:./myorgkey.pem --token-info=@json:'{"user_id":"'$my_user_id'"}' > bearer.txt
+  ```
 
 - Now, let's assume we do not have access key credentials, and we want to do (limited) operations using the bearer token:
 
@@ -5344,7 +5355,7 @@ asconfigurator -x "server;preview_dir,previews"
 asnodeadmin --reload
 ```
 
-> **Note:** the configuration `preview_dir` is *relative* to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
+> **Note:** the configuration `preview_dir` is **relative** to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
 
 If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
 
