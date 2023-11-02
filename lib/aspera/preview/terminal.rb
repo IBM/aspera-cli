@@ -42,7 +42,7 @@ module Aspera
           # now generate text
           text_pixels = []
           pixel_colors.each_with_index do |row_data, row|
-            next if double && row.odd?
+            next if double && (row.odd? || row.eql?(pixel_colors.length - 1))
             row_data.each_with_index do |pixel_rgb, col|
               text_pixels.push("\n") if col.eql?(0) && !row.eql?(0)
               if double

@@ -1,0 +1,27 @@
+#!/bin/bash
+if test -z "$1" -o -z "$2"; then
+    echo "Usage: $0 <begin|end> <file>" 1>&2
+    exit 1
+fi
+d=$(dirname "$0")
+t="$d"/../tmp/t
+mkdir -p "$t"
+case "$1" in
+    "begin")
+        echo "Starting ${2##*/}"
+        ;;
+    "end")
+        echo "Ending ${2##*/}"
+        touch "$2"
+        NUM=$(grep START_TEST "$d"/Makefile|wc -l)
+        EXE=$(ls $t|wc -l)
+        terminal_width=$(tput cols)
+        bars=$(($EXE * $terminal_width / $NUM))
+        printf '=%.0s' $(seq 1 $bars)
+        echo
+        ;;
+    *)
+        echo "Unknown command: $1" 1>&2
+        exit 1
+        ;;
+esac

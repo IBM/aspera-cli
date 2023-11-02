@@ -284,9 +284,9 @@ module Aspera
             file_saved = true
           end # save_to_file
         end
-        # sometimes there is a UTF8 char (e.g. (c) ), TODO : related tp mime type encoding ?
-        result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
-        Log.log.debug{"result: body=#{result[:http].body}"}
+        # sometimes there is a UTF8 char (e.g. (c) ), TODO : related to mime type encoding ?
+        # result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
+        # Log.log.debug{"result: body=#{result[:http].body}"}
         result[:data] = case result_mime
         when *JSON_DECODE
           JSON.parse(result[:http].body) rescue result[:http].body
