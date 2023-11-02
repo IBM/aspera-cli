@@ -95,7 +95,7 @@ module Aspera
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
-        SPECIAL_ACTIONS = %i[health events info license].freeze
+        SPECIAL_ACTIONS = %i[health events info slash license].freeze
 
         # actions available in v3 in gen4
         V3_IN_V4_ACTIONS = %i[access_keys].concat(BASE_ACTIONS).concat(SPECIAL_ACTIONS).freeze
@@ -369,6 +369,9 @@ module Aspera
             return { type: :object_list, data: events}
           when :info
             nd_info = @api_node.read('info')[:data]
+            return { type: :single_object, data: nd_info}
+          when :slash
+            nd_info = @api_node.read('')[:data]
             return { type: :single_object, data: nd_info}
           when :license
             # requires: asnodeadmin -mu <node user> --acl-add=internal --internal

@@ -166,7 +166,7 @@ module Aspera
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
         options.declare(
           :fields, "Comma separated list of: fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields},
-          types: [String, Array],
+          types: [String, Array, Regexp],
           default: FIELDS_DEFAULT)
         options.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
         options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
@@ -198,6 +198,10 @@ module Aspera
         display_status(count_msg)
       end
 
+      def all_fields(data)
+        data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
+      end
+
       # this method computes the list of fields to display
       # data: array of hash
       # default: list of fields to display by default (may contain FIELDS_ALL, FIELDS_DEFAULT)
@@ -208,6 +212,7 @@ module Aspera
           when NilClass then [FIELDS_DEFAULT]
           when String then @option_fields.split(',')
           when Array then @option_fields
+          when Regexp then return all_fields(data).select{|i|i.match(@option_fields)}
           else raise "internal error: option_fields: #{@option_fields}"
           end
         result = []
@@ -221,7 +226,7 @@ module Aspera
           case item
           when FIELDS_ALL
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
-            request.unshift(*data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys)
+            request.unshift(*all_fields(data))
           when FIELDS_DEFAULT
             # all fields, if no default
             request.unshift(*(default || [FIELDS_ALL]))

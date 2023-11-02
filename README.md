@@ -1219,25 +1219,6 @@ The style of output can be set using the `format` parameter, supporting:
 - `yaml` : YAML
 - `csv` : Comma Separated Values
 
-#### <a id="option_select"></a>Option: `select`: Filter on columns values for `object_list`
-
-Table output can be filtered using the `select` parameter. Example:
-
-```bash
-ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
-```
-
-```output
-+-------------------------------+----------------------------------+-----------+
-|             name              |              email               | ats_admin |
-+-------------------------------+----------------------------------+-----------+
-| John Curtis                   | john@example.com                 | true      |
-| Laurent Martin                | laurent@example.com              | true      |
-+-------------------------------+----------------------------------+-----------+
-```
-
-> **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
-
 #### Entity identifier
 
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command: e.g. `ascli aoc admin res user show 1234` where `1234` is the user's identifier.
@@ -1266,7 +1247,7 @@ The option `display` controls the level of output:
 By default, secrets are removed from output: option `show_secrets` defaults to `no`, unless `display` is `data`, to allows piping results.
 To hide secrets from output, set option `show_secrets` to `no`.
 
-#### Selection of output object properties
+#### Option: `fields`: Selection of output object properties
 
 By default, a table output will display one line per entry, and columns for each properties.
 Depending on the command, columns may include by default all properties, or only some selected properties.
@@ -1276,16 +1257,37 @@ The `fields` option can be either a comma separated list, or an extended value a
 
 Elements of the list can be:
 
-- DEF : default display of columns (that's the default, when not set)
-- ALL : all columns available
+- `DEF` : default display of columns (that's the default, when not set)
+- `ALL` : all columns available
 - -property : remove property from the current list
 - property : add property to the current list
+- a ruby `RegEx` : using `@ruby:'/.../'`
 
 Examples:
 
 - `a,b,c` : the list of attributes specified as a comma separated list
-- Array extended value: for instance, `@json:'["a","b","c"]'` same as above
+- `@json:'["a","b","c"]'` : Array extended value: same as above
 - `DEF,-a,b` : default property list, remove `a` and add `b`
+- `@ruby:'/^server/'` : Display all properties whose name begin with `server`
+
+#### <a id="option_select"></a>Option: `select`: Filter on columns values for `object_list`
+
+Table output can be filtered using the `select` parameter. Example:
+
+```bash
+ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
+```
+
+```output
++-------------------------------+----------------------------------+-----------+
+|             name              |              email               | ats_admin |
++-------------------------------+----------------------------------+-----------+
+| John Curtis                   | john@example.com                 | true      |
+| Laurent Martin                | laurent@example.com              | true      |
++-------------------------------+----------------------------------+-----------+
+```
+
+> **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
 
 ### <a id="extended"></a>Extended Value Syntax
 
@@ -3254,7 +3256,7 @@ OPTIONS: global
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array)
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp)
         --select=VALUE               Select only some items in lists: column, value (Hash)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
@@ -3328,7 +3330,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
@@ -5147,7 +5149,20 @@ ascli aoc files thumbnail /preview_samples/Aspera.mpg
 ascli node access_key create @json:'{"id":"myaccesskey","secret":"my_secret_here","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
-> **Note:** The `id` and `secret` are optional. If not provided, they will be generated and returned in the result.
+> **Note:** The `id` and `secret` are optional.
+> If not provided, they will be generated and returned in the result.
+
+Access keys support extra overriding parameters using parameter: `configuration` and sub keys `transfer` and `server`. For example, an access key can be modified or created with the following options:
+
+```json
+{"configuration":{"transfer":{"target_rate_cap_kbps":500000}}}
+```
+
+The list of supported options can be displayed using command:
+
+```bash
+ascli node info --field=@ruby:'/^access_key_configuration_capabilities.*/'
+```
 
 ### Generate and use bearer token
 
