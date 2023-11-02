@@ -2,18 +2,19 @@
 
 * 4.15.0.pre
 
+  * new: global: added resolution hints for well known issues.
+  * new: global: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+  * new: global: option `fields` now supports `RegExp`
+  * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard accepts public links
-  * new: added resolution hints for some known issues.
-  * new: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
   * new: orchestrator: error analysis for workflow start
-  * new: node: added command `transfer sessions` to list all sessions of all transfers
   * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
+  * new: node: added command `transfer sessions` to list all sessions of all transfers
   * new: node: generate bearer token from private key and user information
   * new: node: access node API with bearer token as credentials
   * new: agent: `direct` allows ignoring certificate for wss using http options
   * new: preview: command `show` generates a preview and displays it in terminal
-  * new: global: option `fields` now supports `RegExp`
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
