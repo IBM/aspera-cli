@@ -5190,10 +5190,11 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 | organization_id           | -                           | Optional  | Organization id                                          |
 | watermarking_json_base64  | -                           | Optional  | Watermarking information (not used)                      |
 | _scope                    | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
-| _validity                 | 3600                        | Special   | Validity in seconds from now.                            |
+| _validity                 | 86400                       | Special   | Validity in seconds from now.                            |
 
-> **Note:** For convenience, `ascli` provides parameters `_scope` and `_validity`, removed from the final payload.
-> They are used to build the default value of `scope` and `expires_at`.
+> **Note:** For convenience, `ascli` provides additional parameters `_scope` and `_validity`.
+> They are not part of the API and are removed from the final payload.
+> They are used respectively to build the default value of `scope` and `expires_at`.
 
 #### Bearer token: environment
 
@@ -5265,7 +5266,7 @@ Let's assume that the access key was created, and a default configuration is set
 - Create a Bearer token for the user:
 
   ```bash
-  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":86400}' > bearer.txt
+  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' > bearer.txt
   ```
 
 #### Bearer token: user side

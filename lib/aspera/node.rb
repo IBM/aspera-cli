@@ -13,7 +13,7 @@ module Aspera
   class Node < Aspera::Rest
     # permissions
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
-    # prefix for ruby code for filter
+    # prefix for ruby code for filter (deprecated)
     MATCH_EXEC_PREFIX = 'exec:'
     MATCH_TYPES = [String, Proc, NilClass].freeze
     HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
@@ -24,6 +24,8 @@ module Aspera
     SCOPE_PREFIX = 'node.'
     SCOPE_SEPARATOR = ':'
     SIGNATURE_DELIMITER = '==SIGNATURE=='
+    BEARER_TOKEN_VALIDITY_DEFAULT = 86400
+    BEARER_TOKEN_SCOPE_DEFAULT = SCOPE_USER
 
     # register node special token decoder
     Oauth.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
@@ -76,9 +78,9 @@ module Aspera
         raise 'user_id must not be empty' if payload['user_id'].empty?
         raise 'private_key shall be OpenSSL::PKey::RSA' unless private_key.is_a?(OpenSSL::PKey::RSA)
         # manage convenience parameters
-        expiration_sec = payload['_validity'] || 3600
+        expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
         payload.delete('_validity')
-        scope = payload['_scope'] || SCOPE_USER
+        scope = payload['_scope'] || BEARER_TOKEN_SCOPE_DEFAULT
         payload.delete('_scope')
         payload['scope'] ||= token_scope(access_key, scope)
         payload['auth_type'] ||= 'access_key'

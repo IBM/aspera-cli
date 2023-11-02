@@ -6629,7 +6629,7 @@ e.g. <code>2021-12-31T23:59:59Z</code></td>
 </tr>
 <tr class="odd">
 <td>_validity</td>
-<td>3600</td>
+<td>86400</td>
 <td>Special</td>
 <td>Validity in seconds from now.</td>
 </tr>
@@ -6637,8 +6637,9 @@ e.g. <code>2021-12-31T23:59:59Z</code></td>
 </table>
 <blockquote>
 <p><strong>Note:</strong> For convenience, <code>ascli</code> provides
-parameters <code>_scope</code> and <code>_validity</code>, removed from
-the final payload. They are used to build the default value of
+additional parameters <code>_scope</code> and <code>_validity</code>.
+They are not part of the API and are removed from the final payload.
+They are used respectively to build the default value of
 <code>scope</code> and <code>expires_at</code>.</p>
 </blockquote>
 <h3 data-number="8.11.1" id="bearer-token-environment"><span
@@ -6715,7 +6716,7 @@ anything else.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb391-1"><a href="#cb391-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key do self permission %id:<span class="va">$my_folder_id</span> create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;}&#39;</span></span></code></pre></div></li>
 <li><p>Create a Bearer token for the user:</p>
 <div class="sourceCode" id="cb392"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href="#cb392-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node bearer_token @file:./myorgkey.pem @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;,&quot;_validity&quot;:86400}&#39;</span> <span class="op">&gt;</span> bearer.txt</span></code></pre></div></li>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href="#cb392-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node bearer_token @file:./myorgkey.pem @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;,&quot;_validity&quot;:3600}&#39;</span> <span class="op">&gt;</span> bearer.txt</span></code></pre></div></li>
 </ul>
 <h3 data-number="8.11.4" id="bearer-token-user-side"><span
 class="header-section-number">8.11.4</span> Bearer token: user side</h3>

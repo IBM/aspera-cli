@@ -92,12 +92,13 @@ module Aspera
 
       # generic method
       def wait_for_transfers_completion
-        started = false
+        # set to true when we know the total size of the transfer
+        precalc_started = false
         spinner = nil
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
-          transfer_data = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(read error)'}
+          transfer_data = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
           when 'completed'
             notify_end(@transfer_id)
@@ -110,14 +111,29 @@ module Aspera
             spinner.update(title: transfer_data['status'])
             spinner.spin
           when 'running'
-            if !started && transfer_data['precalc'].is_a?(Hash) &&
-                transfer_data['precalc']['status'].eql?('ready')
-              notify_begin(@transfer_id, transfer_data['precalc']['bytes_expected'])
-              started = true
-            else
+            if spinner
+              message = transfer_data['status']
+              message = "#{message} (#{transfer_data['error_desc']})" if !transfer_data['error_desc']&.empty?
+              spinner.update(title: message)
+            end
+            if precalc_started
               notify_progress(@transfer_id, transfer_data['bytes_transferred'])
+            elsif transfer_data['precalc'].is_a?(Hash) &&
+                transfer_data['precalc']['status'].eql?('ready')
+              if spinner
+                spinner.stop
+                spinner = nil
+              end
+              notify_begin(@transfer_id, transfer_data['precalc']['bytes_expected'])
+              precalc_started = true
+            elsif spinner
+              spinner.spin
             end
           when 'failed'
+            if spinner
+              spinner.update(title: transfer_data['status'])
+              spinner.stop
+            end
             # Bug in HSTS ? transfer is marked failed, but there is no reason
             if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
               notify_end(@transfer_id)

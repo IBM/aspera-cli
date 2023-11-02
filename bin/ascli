@@ -1,13 +1,14 @@
-#!/usr/bin/env ruby -EUTF-8:UTF-8
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'rubygems'
-require 'securerandom'
-# compute gem root based on  this script location
-GEM_ROOT = File.realpath(File.join(File.dirname(File.realpath(__FILE__)), '..'))
+Encoding.default_internal = Encoding::UTF_8
+Encoding.default_external = Encoding::UTF_8
+# compute gem source root based on this script location
+GEM_ROOT = File.dirname(File.dirname(File.realpath(__FILE__)))
 # coverage for tests
 if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
+  require 'securerandom'
   SimpleCov.root(GEM_ROOT)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
   # keep cache data for 1 day (must be longer that time to run the whole test suite)

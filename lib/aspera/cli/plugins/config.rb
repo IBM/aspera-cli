@@ -745,9 +745,7 @@ module Aspera
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
           name = instance_identifier if name.nil? && PRESET_INSTANCE_ACTIONS.include?(action)
-          if name.eql?(GLOBAL_DEFAULT_KEYWORD)
-            name = global_default_preset
-          end
+          name = global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
           # those operations require existing option
           raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
           case action
