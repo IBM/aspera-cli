@@ -237,6 +237,7 @@ module Aspera
         # @param http_session [Net::HTTP] the newly created HTTP/S session object
         def update_http_session(http_session)
           http_session.set_debug_output($stdout) if @option_rest_debug
+          #Rest.io_http_session(http_session).debug_output = Log.log
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           if @proxy_credentials
             http_session.proxy_user = @proxy_credentials[:user]
