@@ -1272,7 +1272,11 @@ Examples:
 
 #### <a id="option_select"></a>Option: `select`: Filter on columns values for `object_list`
 
-Table output can be filtered using the `select` parameter. Example:
+Table output can be filtered using option `select`.
+This parameter is either a `Hash` or `Proc`.
+The `Proc` takes as argument a line in the table.
+
+Example:
 
 ```bash
 ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
@@ -1287,7 +1291,13 @@ ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sor
 +-------------------------------+----------------------------------+-----------+
 ```
 
-> **Note:** `select` filters selected elements from the result of API calls, while the `query` parameters gives filtering parameters to the API when listing elements.
+> **Note:** `select` filters elements from the result of command, while the `query` parameters gives filtering parameters to the API when listing elements.
+
+In above example, the same result is obtained with option:
+
+```bash
+--select=@ruby:'->(u){u["ats_admin"]}'
+```
 
 ### <a id="extended"></a>Extended Value Syntax
 
@@ -3257,7 +3267,7 @@ OPTIONS: global
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp)
-        --select=VALUE               Select only some items in lists: column, value (Hash)
+        --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
         --transpose-single=ENUM      Single object fields output vertically: no, [yes]

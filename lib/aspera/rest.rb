@@ -80,7 +80,7 @@ module Aspera
         return uri
       end
 
-      # start a HTTP/S session
+      # start a HTTP/S session, also used for web sockets
       # @param base_url [String] base url of HTTP/S session
       # @return [Net::HTTP] a started HTTP session
       def start_http_session(base_url)
@@ -93,6 +93,14 @@ module Aspera
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         http_session.start
         return http_session
+      end
+
+      # get Net::HTTP underlying socket i/o
+      # little hack, handy because HTTP debug, proxy, etc... will be available
+      # used implement web sockets after `start_http_session`
+      def io_http_session(http_session)
+        # Net::BufferedIO in net/protocol.rb
+        http_session.instance_variable_get(:@socket)
       end
 
       # set global parameters

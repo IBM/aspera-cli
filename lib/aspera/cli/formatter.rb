@@ -147,7 +147,7 @@ module Aspera
           return result.green if yes
           return result.red
         end
-      end
+      end # self
 
       # initialize the formatter
       def initialize
@@ -168,7 +168,7 @@ module Aspera
           :fields, "Comma separated list of: fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields},
           types: [String, Array, Regexp],
           default: FIELDS_DEFAULT)
-        options.declare(:select, 'Select only some items in lists: column, value', types: Hash, handler: {o: self, m: :option_select})
+        options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_select})
         options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash}, default: true)
         options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single}, default: true)
@@ -246,14 +246,16 @@ module Aspera
       # fields: list of column names
       def display_table(object_array, fields)
         raise 'internal error: no field specified' if fields.nil?
+        case @option_select
+        when Proc
+          object_array.select!{|i|@option_select.call(i)}
+        when Hash
+          @option_select.each{|k, v|object_array.select!{|i|i[k].eql?(v)}}
+        end
         if object_array.empty?
+          # no  display for csv
           display_message(:info, Formatter.special('empty')) if @option_format.eql?(:table)
           return
-        end
-        unless @option_select.nil? || (@option_select.respond_to?(:empty?) && @option_select.empty?)
-          raise CliBadArgument, "expecting hash for select, have #{@option_select.class}: #{@option_select}" unless @option_select.is_a?(Hash)
-          # TODO: review
-          @option_select.each{|k, v|object_array.select!{|i|i[k].eql?(v)}}
         end
         if object_array.length == 1 && fields.length == 1
           display_message(:data, object_array.first[fields.first])
