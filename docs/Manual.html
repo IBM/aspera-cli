@@ -4703,7 +4703,7 @@ OPTIONS: global
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp)
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
@@ -5903,10 +5903,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb335-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb336-1"><a href="#cb336-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files perm /shared_folder_test1 delete 6161</span></code></pre></div>
 <p>Public and Private short links can be managed with command:</p>
 <div class="sourceCode" id="cb337"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb337-1"><a href="#cb337-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> oc files short_link list _path_here_ private</span>
-<span id="cb337-2"><a href="#cb337-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> oc files short_link list _path_here_ public</span>
-<span id="cb337-3"><a href="#cb337-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> oc files short_link delete</span>
-<span id="cb337-4"><a href="#cb337-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> oc files short_link create</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb337-1"><a href="#cb337-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link private create _path_here_</span>
+<span id="cb337-2"><a href="#cb337-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link private list _path_here_</span>
+<span id="cb337-3"><a href="#cb337-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link public list _path_here_</span>
+<span id="cb337-4"><a href="#cb337-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link public delete _id_</span></code></pre></div>
 <h3 data-number="5.7.3" id="cross-organization-transfers"><span
 class="header-section-number">5.7.3</span> Cross Organization
 transfers</h3>
@@ -6028,9 +6028,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb340-1"><a href
 <span id="cb340-59"><a href="#cb340-59" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files modify my_aoc_test_folder</span>
 <span id="cb340-60"><a href="#cb340-60" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files permission my_aoc_test_folder list</span>
 <span id="cb340-61"><a href="#cb340-61" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files rename /somefolder testdst</span>
-<span id="cb340-62"><a href="#cb340-62" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create /testdst private</span>
-<span id="cb340-63"><a href="#cb340-63" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create testdst public</span>
-<span id="cb340-64"><a href="#cb340-64" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link list /testdst private</span>
+<span id="cb340-62"><a href="#cb340-62" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link private create /testdst</span>
+<span id="cb340-63"><a href="#cb340-63" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link private list /testdst</span>
+<span id="cb340-64"><a href="#cb340-64" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link public create testdst</span>
 <span id="cb340-65"><a href="#cb340-65" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show %id:my_file_id</span>
 <span id="cb340-66"><a href="#cb340-66" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show /200KB.1</span>
 <span id="cb340-67"><a href="#cb340-67" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>

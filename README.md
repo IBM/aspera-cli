@@ -3266,7 +3266,7 @@ OPTIONS: global
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
         --display=ENUM               Output only some information: [info], data, error
-        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp)
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
@@ -4511,10 +4511,10 @@ ascli aoc files perm /shared_folder_test1 delete 6161
 Public and Private short links can be managed with command:
 
 ```bash
-ascli oc files short_link list _path_here_ private
-ascli oc files short_link list _path_here_ public
-ascli oc files short_link delete
-ascli oc files short_link create
+ascli aoc files short_link private create _path_here_
+ascli aoc files short_link private list _path_here_
+ascli aoc files short_link public list _path_here_
+ascli aoc files short_link public delete _id_
 ```
 
 #### Cross Organization transfers
@@ -4623,9 +4623,9 @@ aoc files mkdir /testsrc
 aoc files modify my_aoc_test_folder
 aoc files permission my_aoc_test_folder list
 aoc files rename /somefolder testdst
-aoc files short_link create /testdst private
-aoc files short_link create testdst public
-aoc files short_link list /testdst private
+aoc files short_link private create /testdst
+aoc files short_link private list /testdst
+aoc files short_link public create testdst
 aoc files show %id:my_file_id
 aoc files show /200KB.1
 aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
