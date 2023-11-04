@@ -289,6 +289,7 @@ module Aspera
 
       # this method displays the results, especially the table format
       def display_results(results)
+        # :type :data :fields :name :option_expand_last
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])

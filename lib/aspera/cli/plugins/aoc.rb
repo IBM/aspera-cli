@@ -764,8 +764,8 @@ module Aspera
               folder_dest = options.get_next_argument('path', type: String)
               link_type = options.get_next_argument('link type', expected: %i[public private])
               home_node_api = aoc_api.node_api_from(
-                node_id: home_info[:node_id],
-                workspace_id: current_workspace_info['id'],
+                node_id:        home_info[:node_id],
+                workspace_id:   current_workspace_info['id'],
                 workspace_name: current_workspace_info['name'])
               shared_apfid = home_node_api.resolve_api_fid(home_info[:file_id], folder_dest)
               folder_info = {
@@ -811,8 +811,8 @@ module Aspera
                   sort:        '-created_at'
                 }
                 result = aoc_api.read('short_links', list_params)[:data]
-                result.each{|i|i.delete('data')}
-                return {type: :object_list, data: result}
+                #result.each{|i|i.delete('data')}
+                return {type: :object_list, data: result, field: %w[ALL -data]}
               when :create
                 creation_params = {
                   purpose:            purpose,
