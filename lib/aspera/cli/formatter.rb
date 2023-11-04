@@ -165,7 +165,7 @@ module Aspera
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
         options.declare(
           :fields, "Comma separated list of: fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields},
-          types: [String, Array, Regexp],
+          types: [String, Array, Regexp, Proc],
           default: FIELDS_DEFAULT)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_select})
         options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
@@ -212,6 +212,7 @@ module Aspera
           when String then @option_fields.split(',')
           when Array then @option_fields
           when Regexp then return all_fields(data).select{|i|i.match(@option_fields)}
+          when Proc then return all_fields(data).select{|i|@option_fields.call(i)}
           else raise "internal error: option_fields: #{@option_fields}"
           end
         result = []
@@ -227,8 +228,9 @@ module Aspera
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
             request.unshift(*all_fields(data))
           when FIELDS_DEFAULT
-            # all fields, if no default
-            request.unshift(*(default || [FIELDS_ALL]))
+            default = all_fields(data).select{|i|default.call(i)} if default.is_a?(Proc)
+            default = all_fields(data) if default.nil?
+            request.unshift(*default)
           else
             if removal
               result = result.reject{|i|i.eql?(item)}
@@ -288,6 +290,7 @@ module Aspera
 
       # this method displays the results, especially the table format
       def display_results(results)
+        raise "INTERNAL ERROR, result unsupported key: #{results.keys - %i[type data fields name]}" unless (results.keys - %i[type data fields name]).empty?
         # :type :data :fields :name
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
