@@ -604,15 +604,15 @@ $(T)aoc_lnk_priv: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocshlk1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link list /testdst private
+	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
 $(T)aocshlk2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link create /testdst private
+	$(EXE_MAN) aoc files short_link private create /testdst
 	@$(STOP_TEST) $@
 $(T)aocshlk3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link create testdst public
+	$(EXE_MAN) aoc files short_link public create testdst
 	@$(STOP_TEST) $@
 taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists

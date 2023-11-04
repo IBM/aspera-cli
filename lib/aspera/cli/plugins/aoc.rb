@@ -759,10 +759,9 @@ module Aspera
             when *NODE4_EXT_COMMANDS
               return execute_nodegen4_command(command_repo, home_info[:node_id], file_id: home_info[:file_id], scope: Aspera::Node::SCOPE_USER)
             when :short_link
-              # execute action on AoC API
+              link_type = options.get_next_argument('link type', expected: %i[public private])
               short_link_command = options.get_next_command(%i[create delete list])
               folder_dest = options.get_next_argument('path', type: String)
-              link_type = options.get_next_argument('link type', expected: %i[public private])
               home_node_api = aoc_api.node_api_from(
                 node_id:        home_info[:node_id],
                 workspace_id:   current_workspace_info['id'],
@@ -805,14 +804,13 @@ module Aspera
                 end
                 list_params = {
                   json_query:  query.to_json,
-                  edit_access: true,
                   purpose:     purpose,
+                  edit_access: true,
                   # embed: 'updated_by_user',
                   sort:        '-created_at'
                 }
                 result = aoc_api.read('short_links', list_params)[:data]
-                #result.each{|i|i.delete('data')}
-                return {type: :object_list, data: result, field: %w[ALL -data]}
+                return {type: :object_list, data: result, fields: %w[ALL -data]}
               when :create
                 creation_params = {
                   purpose:            purpose,

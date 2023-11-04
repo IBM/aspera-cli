@@ -25,6 +25,7 @@
   * change(break): node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
   * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
   * change(break): aoc: removed option `link`: use `url` instead
+  * change(break): aoc: in command `short_link`, place type before command, e.g. `short_link private create /blah`
   * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
   * change(break): faspex: option `source_name` is now `remote_source`
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`

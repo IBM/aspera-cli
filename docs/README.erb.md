@@ -4058,10 +4058,10 @@ The pseudo parameter `link_name` allows changing default "shared as" name.
 Public and Private short links can be managed with command:
 
 ```bash
-<%=cmd%> oc files short_link list _path_here_ private
-<%=cmd%> oc files short_link list _path_here_ public
-<%=cmd%> oc files short_link delete
-<%=cmd%> oc files short_link create
+<%=cmd%> aoc files short_link private create _path_here_
+<%=cmd%> aoc files short_link private list _path_here_
+<%=cmd%> aoc files short_link public list _path_here_
+<%=cmd%> aoc files short_link public delete _id_
 ```
 
 #### Cross Organization transfers
