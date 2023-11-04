@@ -11,9 +11,8 @@ module Aspera
     CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
     # This class is used to transform a complex structure into a simple hash
     class Flattener
-      def initialize(expand_last: false)
+      def initialize
         @result = nil
-        @expand_last = expand_last
       end
 
       # General method
@@ -46,7 +45,7 @@ module Aspera
       # @param something [Object] to be flattened
       # @param name [String] name of englobing key
       def flatten_any(something, name)
-        if something.is_a?(Hash) && !(@expand_last && simple_hash?(something))
+        if something.is_a?(Hash) && !simple_hash?(something)
           flattened_hash(something, name)
         elsif something.is_a?(Array)
           flatten_array(something, name)
@@ -289,7 +288,7 @@ module Aspera
 
       # this method displays the results, especially the table format
       def display_results(results)
-        # :type :data :fields :name :option_expand_last
+        # :type :data :fields :name
         raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
         raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
@@ -318,7 +317,7 @@ module Aspera
             raise "internal error: expecting Array: got #{obj_list.class}" unless obj_list.is_a?(Array)
             raise 'internal error: expecting Array of Hash' unless obj_list.all?(Hash)
             # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{|obj|Flattener.new(expand_last: results[:option_expand_last]).flatten(obj)} if @option_flat_hash
+            obj_list = obj_list.map{|obj|Flattener.new.flatten(obj)} if @option_flat_hash
             display_table(obj_list, compute_fields(obj_list, results[:fields]))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
