@@ -4925,7 +4925,6 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --passphrase=VALUE           RSA private key passphrase
         --workspace=VALUE            Name of workspace
-        --link=VALUE                 Public link to shared resource
         --new-user-option=VALUE      New user creation option for unknown package recipients
         --from-folder=VALUE          Source folder for Folder-to-Folder transfer
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
@@ -5027,17 +5026,18 @@ links)</li>
 </ul>
 <p>The authentication method is controlled by option
 <code>auth</code>.</p>
-<p>For a <em>quick start</em>, follow the mandatory and sufficient
-section: <a href="#clientreg">API Client Registration</a> (auth=web) as
-well as <a href="#aocpreset">[option preset](#lprt) for Aspera on
-Cloud</a>.</p>
+<p>For a <strong>quick start</strong>, follow the mandatory and
+sufficient section: <a href="#clientreg">API Client Registration</a>
+(auth=web) as well as <a href="#aocpreset">[option preset](#lprt) for
+Aspera on Cloud</a>.</p>
 <p>For a more convenient, browser-less, experience follow the <a
 href="#jwt">JWT</a> section (auth=jwt) in addition to Client
 Registration.</p>
-<p>In Oauth, a “Bearer” token are generated to authenticate REST calls.
-Bearer tokens are valid for a period of time defined at its creation.
-<code>ascli</code> saves generated tokens in its configuration folder,
-tries to re-use them or regenerates them when they have expired.</p>
+<p>In Oauth, a “Bearer” token is generated to authenticate REST calls.
+Bearer tokens are valid for a period of time defined (by the AoC app,
+configurable by admin) at its creation. <code>ascli</code> saves
+generated tokens in its configuration folder, tries to re-use them or
+regenerates them when they have expired.</p>
 <h3 data-number="5.2.2" id="optional-api-client-registration"><span
 class="header-section-number">5.2.2</span>
 <a id="clientreg"></a>Optional: API Client Registration</h3>
@@ -5150,7 +5150,8 @@ class="header-section-number">5.2.5.1</span> Graphically</h4>
 <code>https://myorg.ibmaspera.com/</code></li>
 <li>Click on the user’s icon (top right)</li>
 <li>Select “Account Settings”</li>
-<li>Paste the <em>Public Key</em> in the “Public Key” section</li>
+<li>Paste the <strong>Public Key</strong> in the “Public Key”
+section</li>
 <li>Click on “Submit”</li>
 </ul>
 <h4 data-number="5.2.5.2" id="using-command-line"><span
@@ -5193,8 +5194,18 @@ data-cites="file">@file</span>” tag in the configuration file, the
 <code>@val:</code> prefix is added.</p>
 </blockquote>
 <p>After this last step, commands do not require web login anymore.</p>
-<h3 data-number="5.2.7" id="first-use-1"><span
-class="header-section-number">5.2.7</span> <a id="aocfirst"></a>First
+<h3 data-number="5.2.7" id="public-and-private-links"><span
+class="header-section-number">5.2.7</span> Public and private links</h3>
+<p>AoC gives the possibility to generate public links for both the
+<code>Files</code> and <code>Packages</code> modules. Public links embed
+the authorization of access. Provide the public link using option
+<code>url</code> alone.</p>
+<p>In addition, the <code>Files</code> application supports private
+links. Private links require the user to authenticate. So, provide the
+same options as for regular authentication, and provide the private link
+using option <code>url</code>.</p>
+<h3 data-number="5.2.8" id="first-use-1"><span
+class="header-section-number">5.2.8</span> <a id="aocfirst"></a>First
 Use</h3>
 <p>Once client has been registered and <a href="#lprt">option preset</a>
 created: <code>ascli</code> can be used:</p>
@@ -5295,8 +5306,9 @@ unique <code>name</code> (case insensitive).</p>
 those methods:</p>
 <ul>
 <li><strong>recommended</strong>: give id directly on command line
-<em>after the action</em>: <code>aoc admin res node show 123</code></li>
-<li>give name on command line <em>after the action</em>:
+<strong>after the action</strong>:
+<code>aoc admin res node show 123</code></li>
+<li>give name on command line <strong>after the action</strong>:
 <code>aoc admin res node show name abc</code></li>
 <li>provide option <code>id</code> :
 <code>aoc admin res node show 123</code></li>
@@ -6005,55 +6017,56 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb340-1"><a href
 <span id="cb340-48"><a href="#cb340-48" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files bearer /</span>
 <span id="cb340-49"><a href="#cb340-49" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files bearer_token_node / <span class="at">--cache-tokens</span><span class="op">=</span>no</span>
 <span id="cb340-50"><a href="#cb340-50" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse /</span>
-<span id="cb340-51"><a href="#cb340-51" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--link</span><span class="op">=</span>my_aoc_publink_folder_nopass</span>
-<span id="cb340-52"><a href="#cb340-52" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--link</span><span class="op">=</span>my_aoc_publink_folder_pass <span class="at">--password</span><span class="op">=</span>my_aoc_publink_password</span>
-<span id="cb340-53"><a href="#cb340-53" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files delete /testsrc</span>
-<span id="cb340-54"><a href="#cb340-54" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files download <span class="at">--transfer</span><span class="op">=</span>connect /200KB.1</span>
-<span id="cb340-55"><a href="#cb340-55" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files find / <span class="st">&#39;\.partial$&#39;</span></span>
-<span id="cb340-56"><a href="#cb340-56" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files http_node_download <span class="at">--to-folder</span><span class="op">=</span>. /200KB.1</span>
-<span id="cb340-57"><a href="#cb340-57" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files mkdir /testsrc</span>
-<span id="cb340-58"><a href="#cb340-58" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files modify my_aoc_test_folder</span>
-<span id="cb340-59"><a href="#cb340-59" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files permission my_aoc_test_folder list</span>
-<span id="cb340-60"><a href="#cb340-60" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files rename /somefolder testdst</span>
-<span id="cb340-61"><a href="#cb340-61" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create /testdst private</span>
-<span id="cb340-62"><a href="#cb340-62" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create testdst public</span>
-<span id="cb340-63"><a href="#cb340-63" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link list /testdst private</span>
-<span id="cb340-64"><a href="#cb340-64" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show %id:my_file_id</span>
-<span id="cb340-65"><a href="#cb340-65" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show /200KB.1</span>
-<span id="cb340-66"><a href="#cb340-66" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
-<span id="cb340-67"><a href="#cb340-67" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb340-68"><a href="#cb340-68" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
-<span id="cb340-69"><a href="#cb340-69" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb340-70"><a href="#cb340-70" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_aoc_media_file</span>
-<span id="cb340-71"><a href="#cb340-71" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_aoc_media_file <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb340-72"><a href="#cb340-72" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files transfer <span class="at">--from-folder</span><span class="op">=</span>/testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst testfile.bin</span>
-<span id="cb340-73"><a href="#cb340-73" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/ testfile.bin <span class="at">--link</span><span class="op">=</span>my_aoc_publink_folder_nopass</span>
-<span id="cb340-74"><a href="#cb340-74" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc testfile.bin</span>
-<span id="cb340-75"><a href="#cb340-75" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload Test.pdf <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
-<span id="cb340-76"><a href="#cb340-76" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files v3 info</span>
-<span id="cb340-77"><a href="#cb340-77" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> gateway https://localhost:12345/aspera/faspex</span>
-<span id="cb340-78"><a href="#cb340-78" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> org <span class="at">--link</span><span class="op">=</span>my_aoc_publink_recv_from_aocuser</span>
-<span id="cb340-79"><a href="#cb340-79" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> organization</span>
-<span id="cb340-80"><a href="#cb340-80" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages browse <span class="st">&quot;my_package_id&quot;</span> /contents</span>
-<span id="cb340-81"><a href="#cb340-81" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages list</span>
-<span id="cb340-82"><a href="#cb340-82" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_aoc_shbx_name&quot;,&quot;sort&quot;:&quot;-received_at&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false}&#39;</span></span>
-<span id="cb340-83"><a href="#cb340-83" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb340-84"><a href="#cb340-84" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345</span>
-<span id="cb340-85"><a href="#cb340-85" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_aoc_shbx_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
-<span id="cb340-86"><a href="#cb340-86" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> testfile.bin</span>
-<span id="cb340-87"><a href="#cb340-87" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> testfile.bin</span>
-<span id="cb340-88"><a href="#cb340-88" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;]}&#39;</span> testfile.bin</span>
-<span id="cb340-89"><a href="#cb340-89" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> testfile.bin</span>
-<span id="cb340-90"><a href="#cb340-90" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> testfile.bin</span>
-<span id="cb340-91"><a href="#cb340-91" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin <span class="at">--link</span><span class="op">=</span>my_aoc_publink_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_aoc_publink_send_use_pass</span>
-<span id="cb340-92"><a href="#cb340-92" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin <span class="at">--link</span><span class="op">=</span>my_aoc_publink_send_shd_inbox</span>
-<span id="cb340-93"><a href="#cb340-93" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages shared_inboxes list</span>
-<span id="cb340-94"><a href="#cb340-94" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> remind <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
-<span id="cb340-95"><a href="#cb340-95" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> servers</span>
-<span id="cb340-96"><a href="#cb340-96" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb340-97"><a href="#cb340-97" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
-<span id="cb340-98"><a href="#cb340-98" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
-<span id="cb340-99"><a href="#cb340-99" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
+<span id="cb340-51"><a href="#cb340-51" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--url</span><span class="op">=</span>my_aoc_privlink</span>
+<span id="cb340-52"><a href="#cb340-52" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--url</span><span class="op">=</span>my_aoc_publink_folder_nopass</span>
+<span id="cb340-53"><a href="#cb340-53" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--url</span><span class="op">=</span>my_aoc_publink_folder_pass <span class="at">--password</span><span class="op">=</span>my_aoc_publink_password</span>
+<span id="cb340-54"><a href="#cb340-54" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files delete /testsrc</span>
+<span id="cb340-55"><a href="#cb340-55" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files download <span class="at">--transfer</span><span class="op">=</span>connect /200KB.1</span>
+<span id="cb340-56"><a href="#cb340-56" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files find / <span class="st">&#39;\.partial$&#39;</span></span>
+<span id="cb340-57"><a href="#cb340-57" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files http_node_download <span class="at">--to-folder</span><span class="op">=</span>. /200KB.1</span>
+<span id="cb340-58"><a href="#cb340-58" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files mkdir /testsrc</span>
+<span id="cb340-59"><a href="#cb340-59" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files modify my_aoc_test_folder</span>
+<span id="cb340-60"><a href="#cb340-60" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files permission my_aoc_test_folder list</span>
+<span id="cb340-61"><a href="#cb340-61" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files rename /somefolder testdst</span>
+<span id="cb340-62"><a href="#cb340-62" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create /testdst private</span>
+<span id="cb340-63"><a href="#cb340-63" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link create testdst public</span>
+<span id="cb340-64"><a href="#cb340-64" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link list /testdst private</span>
+<span id="cb340-65"><a href="#cb340-65" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show %id:my_file_id</span>
+<span id="cb340-66"><a href="#cb340-66" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show /200KB.1</span>
+<span id="cb340-67"><a href="#cb340-67" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
+<span id="cb340-68"><a href="#cb340-68" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
+<span id="cb340-69"><a href="#cb340-69" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
+<span id="cb340-70"><a href="#cb340-70" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
+<span id="cb340-71"><a href="#cb340-71" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_aoc_media_file</span>
+<span id="cb340-72"><a href="#cb340-72" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_aoc_media_file <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
+<span id="cb340-73"><a href="#cb340-73" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files transfer <span class="at">--from-folder</span><span class="op">=</span>/testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst testfile.bin</span>
+<span id="cb340-74"><a href="#cb340-74" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/ testfile.bin <span class="at">--url</span><span class="op">=</span>my_aoc_publink_folder_nopass</span>
+<span id="cb340-75"><a href="#cb340-75" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc testfile.bin</span>
+<span id="cb340-76"><a href="#cb340-76" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload Test.pdf <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
+<span id="cb340-77"><a href="#cb340-77" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files v3 info</span>
+<span id="cb340-78"><a href="#cb340-78" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> gateway https://localhost:12345/aspera/faspex</span>
+<span id="cb340-79"><a href="#cb340-79" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> org <span class="at">--url</span><span class="op">=</span>my_aoc_publink_recv_from_aocuser</span>
+<span id="cb340-80"><a href="#cb340-80" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> organization</span>
+<span id="cb340-81"><a href="#cb340-81" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages browse <span class="st">&quot;my_package_id&quot;</span> /contents</span>
+<span id="cb340-82"><a href="#cb340-82" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages list</span>
+<span id="cb340-83"><a href="#cb340-83" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_aoc_shbx_name&quot;,&quot;sort&quot;:&quot;-received_at&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false}&#39;</span></span>
+<span id="cb340-84"><a href="#cb340-84" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb340-85"><a href="#cb340-85" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345</span>
+<span id="cb340-86"><a href="#cb340-86" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_aoc_shbx_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
+<span id="cb340-87"><a href="#cb340-87" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> testfile.bin</span>
+<span id="cb340-88"><a href="#cb340-88" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> testfile.bin</span>
+<span id="cb340-89"><a href="#cb340-89" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_aoc_shbx_ws @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_aoc_shbx_name&quot;]}&#39;</span> testfile.bin</span>
+<span id="cb340-90"><a href="#cb340-90" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> testfile.bin</span>
+<span id="cb340-91"><a href="#cb340-91" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> testfile.bin</span>
+<span id="cb340-92"><a href="#cb340-92" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin <span class="at">--url</span><span class="op">=</span>my_aoc_publink_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_aoc_publink_send_use_pass</span>
+<span id="cb340-93"><a href="#cb340-93" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin <span class="at">--url</span><span class="op">=</span>my_aoc_publink_send_shd_inbox</span>
+<span id="cb340-94"><a href="#cb340-94" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages shared_inboxes list</span>
+<span id="cb340-95"><a href="#cb340-95" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> remind <span class="at">--username</span><span class="op">=</span>my_aoc_user_email</span>
+<span id="cb340-96"><a href="#cb340-96" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> servers</span>
+<span id="cb340-97"><a href="#cb340-97" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb340-98"><a href="#cb340-98" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
+<span id="cb340-99"><a href="#cb340-99" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
+<span id="cb340-100"><a href="#cb340-100" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> <a id="ats"></a>Plugin:
 <code>ats</code>: IBM Aspera Transfer Service</h1>
@@ -6426,8 +6439,8 @@ line.</p>
 </blockquote>
 <h2 data-number="8.3" id="central"><span
 class="header-section-number">8.3</span> Central</h2>
-<p>The central subcommand uses the <em>reliable query</em> API (session
-and file). It allows listing transfer sessions and transferred
+<p>The central subcommand uses the <strong>reliable query</strong> API
+(session and file). It allows listing transfer sessions and transferred
 files.</p>
 <p>Filtering can be applied:</p>
 <div class="sourceCode" id="cb373"><pre

@@ -3131,12 +3131,12 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controlled by option `auth`.
 
-For a *quick start*, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [<%=prst%> for Aspera on Cloud](#aocpreset).
+For a **quick start**, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [<%=prst%> for Aspera on Cloud](#aocpreset).
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token are generated to authenticate REST calls.
-Bearer tokens are valid for a period of time defined at its creation.
+In Oauth, a "Bearer" token is generated to authenticate REST calls.
+Bearer tokens are valid for a period of time defined (by the AoC app, configurable by admin) at its creation.
 <%=tool%> saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
 #### <a id="clientreg"></a>Optional: API Client Registration
@@ -3240,7 +3240,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
 - Click on the user's icon (top right)
 - Select "Account Settings"
-- Paste the *Public Key* in the "Public Key" section
+- Paste the **Public Key** in the "Public Key" section
 - Click on "Submit"
 
 ##### Using command line
@@ -3285,6 +3285,16 @@ Execute:
 > **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
+
+#### Public and private links
+
+AoC gives the possibility to generate public links for both the `Files` and `Packages` modules.
+Public links embed the authorization of access.
+Provide the public link using option `url` alone.
+
+In addition, the `Files` application supports private links.
+Private links require the user to authenticate.
+So, provide the same options as for regular authentication, and provide the private link using option `url`.
 
 #### <a id="aocfirst"></a>First Use
 
@@ -3384,8 +3394,8 @@ Resources are identified by a unique `id`, as well as a unique `name` (case inse
 
 To execute an action on a specific resource, select it using one of those methods:
 
-- **recommended**: give id directly on command line *after the action*: `aoc admin res node show 123`
-- give name on command line *after the action*: `aoc admin res node show name abc`
+- **recommended**: give id directly on command line **after the action**: `aoc admin res node show 123`
+- give name on command line **after the action**: `aoc admin res node show name abc`
 - provide option `id` : `aoc admin res node show 123`
 - provide option `name` : `aoc admin res node show --name=abc`
 
@@ -4444,7 +4454,7 @@ The following are examples of `ruby_lambda` to be provided in the following temp
 
 ### Central
 
-The central subcommand uses the *reliable query* API (session and file).
+The central subcommand uses the **reliable query** API (session and file).
 It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:

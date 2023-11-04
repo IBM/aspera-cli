@@ -167,7 +167,7 @@ module Aspera
               # if there is one destination in paths, then use file-pair-list
               if is_pair_list
                 option = '--file-pair-list'
-                lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination'] || e['source']); }
+                lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination'] || e['source']) }
               else
                 option = '--file-list'
                 lines = ts_paths_array.map{|i|i['source']}

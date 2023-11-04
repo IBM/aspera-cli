@@ -30,7 +30,7 @@ module Aspera
     # Production domain of AoC
     PROD_DOMAIN = 'ibmaspera.com'
     # to avoid infinite loop in pub link redirection
-    MAX_PUB_LINK_REDIRECT = 10
+    MAX_AOC_URL_REDIRECT = 10
     # Well-known AoC globals client apps
     GLOBAL_CLIENT_APPS = %w[aspera.global-cli-client aspera.drive].freeze
     # index offset in data repository of client app
@@ -47,7 +47,7 @@ module Aspera
     # Node events: permission.created permission.modified permission.deleted
     PERMISSIONS_CREATED = ['permission.created'].freeze
 
-    private_constant :MAX_PUB_LINK_REDIRECT,
+    private_constant :MAX_AOC_URL_REDIRECT,
       :GLOBAL_CLIENT_APPS,
       :DATA_REPO_INDEX_START,
       :COOKIE_PREFIX_CONSOLE_AOC,
@@ -76,20 +76,6 @@ module Aspera
         return client_name, Base64.urlsafe_encode64(DataRepository.instance.data(DATA_REPO_INDEX_START + client_index))
       end
 
-      # @param url of AoC instance
-      # @return organization id in url and AoC domain: ibmaspera.com, asperafiles.com or qa.asperafiles.com, etc...
-      def parse_url(aoc_org_url)
-        uri = URI.parse(aoc_org_url.gsub(%r{/+$}, ''))
-        instance_fqdn = uri.host
-        Log.log.debug{"instance_fqdn=#{instance_fqdn}"}
-        raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if instance_fqdn.nil?
-        organization, instance_domain = instance_fqdn.split('.', 2)
-        Log.log.debug{"instance_domain=#{instance_domain}"}
-        Log.log.debug{"organization=#{organization}"}
-        raise "expecting a public FQDN for #{PRODUCT_NAME}" if instance_domain.nil?
-        return organization, instance_domain
-      end
-
       # base API url depends on domain, which could be "qa.xxx"
       def api_base_url(organization: 'api', api_domain: PROD_DOMAIN)
         return "https://#{organization}.#{api_domain}"
@@ -102,119 +88,126 @@ module Aspera
         })
       end
 
+      # split host of http://myorg.asperafiles.com in org and domain
+      def url_parts(uri)
+        raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if uri.host.nil?
+        parts = uri.host.split('.', 2)
+        raise "expecting a public FQDN for #{PRODUCT_NAME}" unless parts.length == 2
+        return parts
+      end
+
       # @param url [String] URL of AoC public link
       # @return [Hash] information about public link, or nil if not a public link
-      def public_link_info(url)
-        pub_uri = URI.parse(url)
-        return nil if pub_uri.query.nil?
-        # detect if it's an expected format
-        url_param_token_pair = URI.decode_www_form(pub_uri.query).find{|e|e.first.eql?('token')}
-        return nil if url_param_token_pair.nil?
-        Log.log.warn{"Unknown pub link path: #{pub_uri.path}"} unless PUBLIC_LINK_PATHS.include?(pub_uri.path)
-        # ok we get it !
+      def link_info(url)
+        final_uri = Rest.new({base_url: url, redirect_max: MAX_AOC_URL_REDIRECT}).read('')[:http].uri
+        raise 'AoC shall redirect to login page' if final_uri.query.nil?
+        decoded_query = Rest.decode_query(final_uri.query)
+        # is that a public link ?
+        if decoded_query.key?('token')
+          Log.log.warn{"Unknown pub link path: #{final_uri.path}"} unless PUBLIC_LINK_PATHS.include?(final_uri.path)
+          # ok we get it !
+          return {
+            instance_domain: url_parts(final_uri)[1],
+            url:             'https://' + final_uri.host,
+            token:           decoded_query['token']
+          }
+        end
+        Log.log.debug{"path=#{final_uri.path} does not end with /login"} unless final_uri.path.end_with?('/login')
+        if decoded_query['state']
+          # can be a private link
+          state_uri = URI.parse(decoded_query['state'])
+          if state_uri.query && decoded_query['redirect_uri']
+            decoded_state = Rest.decode_query(state_uri.query)
+            if decoded_state.key?('short_link_url')
+              if (m = state_uri.path.match(%r{/files/workspaces/([0-9]+)/all/([0-9]+):([0-9]+)}))
+                redirect_uri = URI.parse(decoded_query['redirect_uri'])
+                parts = url_parts(redirect_uri)
+                return {
+                  instance_domain: parts[1],
+                  organization:    parts[0],
+                  url:             'https://' + redirect_uri.host,
+                  private_link:    {
+                    workspace_id: m[1],
+                    node_id:      m[2],
+                    file_id:      m[3]
+                  }
+                }
+              end
+            end
+          end
+        end
+        parts = url_parts(URI.parse(url))
         return {
-          url:   'https://' + pub_uri.host,
-          token: url_param_token_pair.last
+          instance_domain: parts[1],
+          organization:    parts[0]
         }
-      end
-
-      # check option "link"
-      # if present try to get token value (resolve redirection if short links used)
-      # then set options url/token/auth
-      # @return nil
-      def resolve_pub_link(a_auth, a_opt)
-        public_link_url = a_opt[:link]
-        return nil if public_link_url.nil?
-        raise 'Do not use both link and url options' unless a_opt[:url].nil?
-        read_link = Rest.new({base_url: public_link_url, redirect_max: MAX_PUB_LINK_REDIRECT}).read('')
-        public_link_url = read_link[:http].uri.to_s
-        pub_link_info = public_link_info(public_link_url)
-        raise ArgumentError, 'link option must be redirect or have token parameter' if pub_link_info.nil?
-        a_opt[:url] = pub_link_info[:url]
-        a_auth[:grant_method] = :aoc_pub_link
-        a_auth[:aoc_pub_link] = {
-          url:  {grant_type: 'url_token'}, # URL arguments
-          json: {url_token: pub_link_info[:token]} # JSON body
-        }
-        # password protection of link
-        a_auth[:aoc_pub_link][:json][:password] = a_opt[:password] unless a_opt[:password].nil?
-        # SUCCESS
-        return nil
-      end
-
-      # TODO: change to not use options.get_option
-      def new_with_path(new_base_path, options)
-        # create an API object with the same options, but with a different subpath
-        return AoC.new(OPTIONS_NEW.each_with_object({subpath: new_base_path}){|i, m|m[i] = options.get_option(i)})
       end
     end # static methods
 
-    # CLI options that are also options to initialize
-    OPTIONS_NEW = %i[link url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
+    attr_reader :private_link
 
-    # @param any of OPTIONS_NEW + subpath
-    def initialize(opt)
-      raise ArgumentError, 'Missing mandatory option: scope' if opt[:scope].nil?
-
+    def initialize(subpath: API_V1, url:, auth:, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
+      password: nil)
+      # test here because link may set url
+      raise ArgumentError, 'Missing mandatory option: url' if url.nil?
+      raise ArgumentError, 'Missing mandatory option: scope' if scope.nil?
+      # default values for client id
+      client_id, client_secret = self.class.get_client_info if client_id.nil?
       # access key secrets are provided out of band to get node api access
       # key: access key
       # value: associated secret
       @secret_finder = nil
       @cache_user_info = nil
       @cache_url_token_info = nil
-
       # init rest params
       aoc_rest_p = {auth: {type: :oauth2}}
       # shortcut to auth section
       aoc_auth_p = aoc_rest_p[:auth]
-
-      # sets opt[:url], aoc_rest_p[:auth][:grant_method], [:auth][:aoc_pub_link] if there is a link
-      self.class.resolve_pub_link(aoc_auth_p, opt)
-
-      # test here because link may set url
-      raise ArgumentError, 'Missing mandatory option: url' if opt[:url].nil?
-
-      # get org name and domain from url
-      organization, instance_domain = self.class.parse_url(opt[:url])
+      # analyze type of url
+      url_info = AoC.link_info(url)
+      Log.dump(:url_info, url_info)
+      @private_link = url_info[:private_link]
+      aoc_auth_p[:grant_method] = if url_info.key?(:token)
+        :aoc_pub_link
+      else
+        raise ArgumentError, 'Missing mandatory option: auth' if auth.nil?
+        auth
+      end
       # this is the base API url
-      api_url_base = self.class.api_base_url(api_domain: instance_domain)
+      api_url_base = self.class.api_base_url(api_domain: url_info[:instance_domain])
       # API URL, including subpath (version ...)
-      aoc_rest_p[:base_url] = "#{api_url_base}/#{opt[:subpath]}"
-      # base auth URL
-      aoc_auth_p[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{organization}"
-      aoc_auth_p[:client_id] = opt[:client_id]
-      aoc_auth_p[:client_secret] = opt[:client_secret]
-      aoc_auth_p[:scope] = opt[:scope]
-
-      # filled if pub link
-      if !aoc_auth_p.key?(:grant_method)
-        raise ArgumentError, 'Missing mandatory option: auth' if opt[:auth].nil?
-        aoc_auth_p[:grant_method] = opt[:auth]
-      end
-
-      if aoc_auth_p[:client_id].nil?
-        aoc_auth_p[:client_id], aoc_auth_p[:client_secret] = self.class.get_client_info
-      end
+      aoc_rest_p[:base_url] = "#{api_url_base}/#{subpath}"
+      # auth URL
+      aoc_auth_p[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}"
+      aoc_auth_p[:client_id] = client_id
+      aoc_auth_p[:client_secret] = client_secret
+      aoc_auth_p[:scope] = scope
 
       # fill other auth parameters based on Oauth method
       case aoc_auth_p[:grant_method]
       when :web
-        raise ArgumentError, 'Missing mandatory option: redirect_uri' if opt[:redirect_uri].nil?
-        aoc_auth_p[:web] = {redirect_uri: opt[:redirect_uri]}
+        raise ArgumentError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
+        aoc_auth_p[:web] = {redirect_uri: redirect_uri}
       when :jwt
-        raise ArgumentError, 'Missing mandatory option: private_key' if opt[:private_key].nil?
-        raise ArgumentError, 'Missing mandatory option: username' if opt[:username].nil?
+        raise ArgumentError, 'Missing mandatory option: private_key' if private_key.nil?
+        raise ArgumentError, 'Missing mandatory option: username' if username.nil?
         aoc_auth_p[:jwt] = {
-          private_key_obj: OpenSSL::PKey::RSA.new(opt[:private_key], opt[:passphrase]),
+          private_key_obj: OpenSSL::PKey::RSA.new(private_key, passphrase),
           payload:         {
-            iss: aoc_auth_p[:client_id],  # issuer
-            sub: opt[:username],          # subject
+            iss: aoc_auth_p[:client_id], # issuer
+            sub: username, # subject
             aud: JWT_AUDIENCE
           }
         }
         # add jwt payload for global ids
-        aoc_auth_p[:jwt][:payload][:org] = organization if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
+        aoc_auth_p[:jwt][:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
       when :aoc_pub_link
+        aoc_auth_p[:aoc_pub_link] = {
+          url:  {grant_type: 'url_token'}, # URL arguments
+          json: {url_token: url_info[:token]} # JSON body
+        }
+        # password protection of link
+        aoc_auth_p[:aoc_pub_link][:json][:password] = password unless password.nil?
         # basic auth required for /token
         aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
       else raise "ERROR: unsupported auth method: #{aoc_auth_p[:grant_method]}"

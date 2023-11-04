@@ -594,9 +594,13 @@ $(T)aocffid: $(T).exists
 #	$(EXE_MAN) aoc files modify @preset:misc.aoc_test_folder
 $(T)aocfpub: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files browse / -N --link=@preset:misc.aoc_publink_folder_nopass
-	$(EXE_MAN) aoc files browse / -N --link=@preset:misc.aoc_publink_folder_pass --password=@preset:misc.aoc_publink_password
-	$(EXE_MAN) aoc files upload -N --to-folder=/ $(LCL_TST_ASC_FILEPATH) --link=@preset:misc.aoc_publink_folder_nopass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:misc.aoc_publink_folder_nopass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:misc.aoc_publink_folder_pass --password=@preset:misc.aoc_publink_password
+	$(EXE_MAN) aoc files upload --to-folder=/ $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_folder_nopass
+	@$(STOP_TEST) $@
+$(T)aoc_lnk_priv: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc files browse / --url=@preset:misc.aoc_privlink
 	@$(STOP_TEST) $@
 $(T)aocshlk1: $(T).exists
 	@$(START_TEST) $@
@@ -610,7 +614,7 @@ $(T)aocshlk3: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link create testdst public
 	@$(STOP_TEST) $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aocfmkd $(T)aocfren $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aocp1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(LCL_TST_ASC_FILEPATH)
@@ -633,15 +637,15 @@ $(T)aocp4: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp5: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc org -N --link=@preset:misc.aoc_publink_recv_from_aocuser
+	$(EXE_MAN) aoc org -N --url=@preset:misc.aoc_publink_recv_from_aocuser
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_sh: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) --link=@preset:misc.aoc_publink_send_shd_inbox
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_send_shd_inbox
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_usr: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send -N @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) --link=@preset:misc.aoc_publink_send_aoc_user --password=@preset:misc.aoc_publink_send_use_pass
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_send_aoc_user --password=@preset:misc.aoc_publink_send_use_pass
 	@$(STOP_TEST) $@
 $(T)aocp_send_shbx: $(T).exists
 	@$(START_TEST) $@

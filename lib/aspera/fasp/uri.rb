@@ -3,6 +3,7 @@
 # cspell:words httpport targetrate minrate bwcap createpath lockpolicy lockminrate
 
 require 'aspera/log'
+require 'aspera/rest'
 require 'aspera/command_line_builder'
 
 module Aspera
@@ -23,9 +24,7 @@ module Aspera
         # faspex does not encode trailing base64 padding, fix that to be able to decode properly
         fixed_query = @fasp_uri.query.gsub(/(=+)$/){|x|'%3D' * x.length}
 
-        URI.decode_www_form(fixed_query).each do |i|
-          name = i[0]
-          value = i[1]
+        Rest.decode_query(fixed_query).each do |name, value|
           case name
           when 'cookie'      then result_ts['cookie'] = value
           when 'token'       then result_ts['token'] = value

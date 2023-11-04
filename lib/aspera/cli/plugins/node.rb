@@ -19,7 +19,7 @@ module Aspera
       class Node < Aspera::Cli::BasicAuthPlugin
         include SyncActions
         class << self
-          @node_options_declared = false
+          @@node_options_declared = false # rubocop:disable Style/ClassVars
           def application_name
             'HSTS Node API'
           end
@@ -64,8 +64,8 @@ module Aspera
           end
 
           def declare_options(options, force: false)
-            return if @node_options_declared && !force
-            @node_options_declared = true
+            return if @@node_options_declared && !force
+            @@node_options_declared = true # rubocop:disable Style/ClassVars
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(:sync_name, 'Sync name')

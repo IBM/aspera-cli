@@ -84,7 +84,7 @@ module Aspera
             result = {
               base_url: "#{public_uri.scheme}://#{public_uri.host}#{port_add}#{base}",
               subpath:  subpath,
-              query:    URI.decode_www_form(public_uri.query).each_with_object({}){|v, h|h[v.first] = v.last }
+              query:    Rest.decode_query(public_uri.query)
             }
             Log.dump('link data', result)
             return result

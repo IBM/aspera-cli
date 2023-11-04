@@ -43,7 +43,7 @@ module Aspera
 
           def private_key_required?(url)
             # pub link do not need private key
-            return !AoC.public_link_info(url)
+            return AoC.link_info(url)[:token].nil?
           end
 
           # @param [Hash] env : options, formatter
@@ -54,10 +54,10 @@ module Aspera
             options = object.options
             formatter = object.formatter
             instance_url = options.get_option(:url, mandatory: true)
-            pub_link = AoC.public_link_info(instance_url)
-            if !pub_link.nil?
-              pub_api = Rest.new({base_url: "https://#{URI.parse(pub_link[:url]).host}/api/v1"})
-              pub_info = pub_api.read('env/url_token_check', {token: pub_link[:token]})[:data]
+            pub_link_info = AoC.link_info(instance_url)
+            if !pub_link_info[:token].nil?
+              pub_api = Rest.new({base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1"})
+              pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})[:data]
               preset_value = {
                 link: instance_url
               }
@@ -175,7 +175,6 @@ module Aspera
           options.declare(:scope, 'OAuth scope for AoC API calls', default: AoC::SCOPE_FILES_USER)
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:workspace, 'Name of workspace', default: :default)
-          options.declare(:link, 'Public link to shared resource')
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
           options.declare(:from_folder, 'Source folder for Folder-to-Folder transfer')
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
@@ -184,14 +183,16 @@ module Aspera
           Node.declare_options(options)
         end
 
-        # @return [Hash] with keys from OPTIONS_NEW and values from options (command line)
-        # build list of options for AoC API, based on options of CLI
-        def aoc_params(subpath)
+        OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password].freeze
+
+        def api_from_options(new_base_path)
+          # create an API object with the same options, but with a different subpath
+          return Aspera::AoC.new(**OPTIONS_NEW.each_with_object({subpath: new_base_path}){|i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
         end
 
         def aoc_api
           if @cache_api_aoc.nil?
-            @cache_api_aoc = AoC.new_with_path(AoC::API_V1, options)
+            @cache_api_aoc = api_from_options(AoC::API_V1)
             # add keychain for access key secrets
             @cache_api_aoc.secret_finder = @agents[:config]
           end
@@ -201,13 +202,17 @@ module Aspera
         # @return [Hash] current workspace information,
         def current_workspace_info
           return @cache_workspace_info unless @cache_workspace_info.nil?
-          default_workspace_id = if aoc_api.url_token_data.nil?
-            aoc_api.current_user_info['default_workspace_id']
-          else
-            aoc_api.url_token_data['data']['workspace_id']
-          end
-
           ws_name = options.get_option(:workspace)
+          default_workspace_id =
+            if !aoc_api.url_token_data.nil?
+              aoc_api.url_token_data['data']['workspace_id']
+            elsif !aoc_api.private_link.nil?
+              ws_name = nil
+              aoc_api.private_link[:workspace_id]
+            else
+              aoc_api.current_user_info['default_workspace_id']
+            end
+
           ws_id =
             case ws_name
             when :default
@@ -215,7 +220,7 @@ module Aspera
               raise CliError, 'No default workspace defined for user, please specify workspace' if default_workspace_id.nil?
               default_workspace_id
             when String then aoc_api.lookup_by_name('workspaces', ws_name)['id']
-            when NilClass then nil
+            when NilClass then default_workspace_id
             else raise CliError, 'unexpected value type for workspace'
             end
           @cache_workspace_info =
@@ -227,7 +232,11 @@ module Aspera
             end
           Log.dump(:current_workspace_info, @cache_workspace_info)
           # display workspace
-          default_flag = @cache_workspace_info['id'] == default_workspace_id ? ' (default)' : ''
+          default_flag = if @cache_workspace_info['id'].eql?(default_workspace_id)
+            ' (default)'
+          else
+            ''
+          end
           formatter.display_status("Current Workspace: #{@cache_workspace_info['name'].to_s.red}#{default_flag}")
           return @cache_workspace_info
         end
@@ -239,6 +248,11 @@ module Aspera
             assert_public_link_types(['view_shared_file'])
             home_node_id = aoc_api.url_token_data['data']['node_id']
             home_file_id = aoc_api.url_token_data['data']['file_id']
+          elsif !aoc_api.private_link.nil?
+            home_node_id = aoc_api.private_link[:node_id]
+            home_file_id = aoc_api.private_link[:file_id]
+            folder_name = aoc_api.node_api_from(node_id: home_node_id).read("files/#{home_file_id}")[:data]['name']
+            formatter.display_status("Private Folder: #{folder_name}")
           end
           home_node_id ||= current_workspace_info['home_node_id'] || current_workspace_info['node_id']
           home_file_id ||= current_workspace_info['home_file_id']
@@ -380,7 +394,7 @@ module Aspera
             end
           when :subscription
             org = aoc_api.read('organization')[:data]
-            bss_api = AoC.new_with_path('bss/platform', options)
+            bss_api = api_from_options('bss/platform')
             graphql_query = "
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {
@@ -902,8 +916,7 @@ module Aspera
           raise 'internal error: command shall return'
         end
 
-        private :aoc_params,
-          :home_info,
+        private :home_info,
           :assert_public_link_types,
           :execute_admin_action
       end # AoC

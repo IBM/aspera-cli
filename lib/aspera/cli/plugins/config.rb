@@ -20,7 +20,6 @@ require 'aspera/aoc'
 require 'aspera/rest'
 require 'xmlsimple'
 require 'base64'
-require 'net/smtp'
 require 'open3'
 require 'date'
 require 'erb'
@@ -126,6 +125,7 @@ module Aspera
           @ssl_warned_urls = []
           @option_rest_debug = false
           @option_cache_tokens = true
+          @proxy_credentials = nil
           Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
           # data persistency manager
           env[:persistency] = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
@@ -237,7 +237,7 @@ module Aspera
         # @param http_session [Net::HTTP] the newly created HTTP/S session object
         def update_http_session(http_session)
           http_session.set_debug_output($stdout) if @option_rest_debug
-          #Rest.io_http_session(http_session).debug_output = Log.log
+          # Rest.io_http_session(http_session).debug_output = Log.log
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           if @proxy_credentials
             http_session.proxy_user = @proxy_credentials[:user]
@@ -1132,6 +1132,7 @@ module Aspera
           # execute template
           msg_with_headers = ERB.new(notif_template).result(template_binding)
           Log.dump(:msg_with_headers, msg_with_headers)
+          require 'net/smtp'
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])
           smtp.enable_starttls if mail_conf[:tls]
           smtp.enable_tls if mail_conf[:ssl]

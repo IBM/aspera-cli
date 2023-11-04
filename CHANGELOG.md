@@ -8,6 +8,7 @@
   * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard accepts public links
+  * new: aoc: support private links
   * new: orchestrator: error analysis for workflow start
   * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
   * new: node: added command `transfer sessions` to list all sessions of all transfers
@@ -15,6 +16,7 @@
   * new: node: access node API with bearer token as credentials
   * new: agent: `direct` allows ignoring certificate for wss using http options
   * new: preview: command `show` generates a preview and displays it in terminal
+  * fix: Ruby warning: `net/protocol.rb:68: warning: already initialized constant Net::ProtocRetryError` solved by removing dependency on `net-smtp` from gem spec (already in base ruby).
   * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
   * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
   * change(break): sync: replaced option `sync_session` with optional positional parameter.
@@ -22,6 +24,7 @@
   * change(break): removed extended value handler `incps`, as it is never used (use `extend` instead).
   * change(break): node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
   * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
+  * change(break): aoc: removed option `link`: use `url` instead
   * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
   * change(break): faspex: option `source_name` is now `remote_source`
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`

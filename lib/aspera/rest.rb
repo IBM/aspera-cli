@@ -80,6 +80,10 @@ module Aspera
         return uri
       end
 
+      def decode_query(query)
+        URI.decode_www_form(query).each_with_object({}){|v, h|h[v.first] = v.last }
+      end
+
       # start a HTTP/S session, also used for web sockets
       # @param base_url [String] base url of HTTP/S session
       # @return [Net::HTTP] a started HTTP session

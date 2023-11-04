@@ -3488,7 +3488,6 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --passphrase=VALUE           RSA private key passphrase
         --workspace=VALUE            Name of workspace
-        --link=VALUE                 Public link to shared resource
         --new-user-option=VALUE      New user creation option for unknown package recipients
         --from-folder=VALUE          Source folder for Folder-to-Folder transfer
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
@@ -3585,12 +3584,12 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controlled by option `auth`.
 
-For a *quick start*, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [[option preset](#lprt) for Aspera on Cloud](#aocpreset).
+For a **quick start**, follow the mandatory and sufficient section: [API Client Registration](#clientreg) (auth=web) as well as [[option preset](#lprt) for Aspera on Cloud](#aocpreset).
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token are generated to authenticate REST calls.
-Bearer tokens are valid for a period of time defined at its creation.
+In Oauth, a "Bearer" token is generated to authenticate REST calls.
+Bearer tokens are valid for a period of time defined (by the AoC app, configurable by admin) at its creation.
 `ascli` saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
 #### <a id="clientreg"></a>Optional: API Client Registration
@@ -3694,7 +3693,7 @@ Open the previously generated public key located here: `$HOME/.aspera/ascli/my_p
 - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
 - Click on the user's icon (top right)
 - Select "Account Settings"
-- Paste the *Public Key* in the "Public Key" section
+- Paste the **Public Key** in the "Public Key" section
 - Click on "Submit"
 
 ##### Using command line
@@ -3739,6 +3738,16 @@ ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.asp
 > **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
+
+#### Public and private links
+
+AoC gives the possibility to generate public links for both the `Files` and `Packages` modules.
+Public links embed the authorization of access.
+Provide the public link using option `url` alone.
+
+In addition, the `Files` application supports private links.
+Private links require the user to authenticate.
+So, provide the same options as for regular authentication, and provide the private link using option `url`.
 
 #### <a id="aocfirst"></a>First Use
 
@@ -3838,8 +3847,8 @@ Resources are identified by a unique `id`, as well as a unique `name` (case inse
 
 To execute an action on a specific resource, select it using one of those methods:
 
-- **recommended**: give id directly on command line *after the action*: `aoc admin res node show 123`
-- give name on command line *after the action*: `aoc admin res node show name abc`
+- **recommended**: give id directly on command line **after the action**: `aoc admin res node show 123`
+- give name on command line **after the action**: `aoc admin res node show name abc`
 - provide option `id` : `aoc admin res node show 123`
 - provide option `name` : `aoc admin res node show --name=abc`
 
@@ -4603,8 +4612,9 @@ aoc bearer_token --display=data --scope=user:all
 aoc files bearer /
 aoc files bearer_token_node / --cache-tokens=no
 aoc files browse /
-aoc files browse / --link=my_aoc_publink_folder_nopass
-aoc files browse / --link=my_aoc_publink_folder_pass --password=my_aoc_publink_password
+aoc files browse / --url=my_aoc_privlink
+aoc files browse / --url=my_aoc_publink_folder_nopass
+aoc files browse / --url=my_aoc_publink_folder_pass --password=my_aoc_publink_password
 aoc files delete /testsrc
 aoc files download --transfer=connect /200KB.1
 aoc files find / '\.partial$'
@@ -4625,12 +4635,12 @@ aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","dir
 aoc files thumbnail my_aoc_media_file
 aoc files thumbnail my_aoc_media_file --query=@json:'{"text":true,"double":true}'
 aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
-aoc files upload --to-folder=/ testfile.bin --link=my_aoc_publink_folder_nopass
+aoc files upload --to-folder=/ testfile.bin --url=my_aoc_publink_folder_nopass
 aoc files upload --to-folder=/testsrc testfile.bin
 aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
 aoc gateway https://localhost:12345/aspera/faspex
-aoc org --link=my_aoc_publink_recv_from_aocuser
+aoc org --url=my_aoc_publink_recv_from_aocuser
 aoc organization
 aoc packages browse "my_package_id" /contents
 aoc packages list
@@ -4643,8 +4653,8 @@ aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files del
 aoc packages send --workspace=my_aoc_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_aoc_shbx_name"]}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' testfile.bin
 aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal"],"note":"my note"}' testfile.bin
-aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
-aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --link=my_aoc_publink_send_shd_inbox
+aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --url=my_aoc_publink_send_aoc_user --password=my_aoc_publink_send_use_pass
+aoc packages send @json:'{"name":"Important files delivery"}' testfile.bin --url=my_aoc_publink_send_shd_inbox
 aoc packages shared_inboxes list
 aoc remind --username=my_aoc_user_email
 aoc servers
@@ -5041,7 +5051,7 @@ ascli node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (D
 
 ### Central
 
-The central subcommand uses the *reliable query* API (session and file).
+The central subcommand uses the **reliable query** API (session and file).
 It allows listing transfer sessions and transferred files.
 
 Filtering can be applied:

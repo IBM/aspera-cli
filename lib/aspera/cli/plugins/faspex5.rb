@@ -118,7 +118,7 @@ module Aspera
           case options.get_option(:auth, mandatory: true)
           when :link
             uri = URI.parse(public_link)
-            link_arguments = URI.decode_www_form(uri.query).each_with_object({}){|v, h|h[v.first] = v.last; }
+            link_arguments = Rest.decode_query(uri.query)
             Log.dump(:link_arguments, link_arguments)
             context = link_arguments['context']
             raise 'missing context' if context.nil?
