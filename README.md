@@ -4842,8 +4842,8 @@ server sync admin status --sync-info=@json:'{"name":"sync2"}'
 server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/localsync"}]}'
 server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/localsync","reset":true}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
-server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","'"filelist.txt"'"]}' --to-folder=my_inside_folder
-server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"filepairlist.txt"'"]}'
+server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
+server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","filepairlist.txt"]}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"my_inside_folder/othername"}]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","my_inside_folder/othername"]'
 server upload --src-type=pair testfile.bin my_inside_folder/othername --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'

@@ -104,7 +104,7 @@ REPLACEMENTS = [
   [/\$\(EXE_END_FAI.?\)$/, ''],
   # replace makefile macros
   [/\$\(([^) ]*)\)/, '\1'],
-  # change file_vars
+  # replace file_vars
   [/\(cat ([^)]+)\)/, '\1'],
   # remove multi command mark
   [/\)?&&\\$/, ''],
@@ -113,12 +113,12 @@ REPLACEMENTS = [
   [/ *> *[^(}][^ ]*$/, ''],
   # remove folder macro
   [/DIR_[A-Z]+/, ''],
-  # replace shell vars in JSON
-  [/'"\$\$\{([a-z_0-9]+)\}"'/, 'my_\1'],
-  # replace shell vars in shell
-  [/\$\$\{([a-z_0-9]+)\}/, 'my_\1'],
   # de-dup dollar in regex
   ['$$', '$'],
+  # replace shell vars in shell
+  [/\$\{([a-z_0-9]+)\}/, 'my_\1'],
+  # remove extraneous quotes on JSON
+  [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
   # hidden parameters to make test work
   [/OPTST_[A-Z0-5]+/, ''],
   [/LCL_TST_(UTF|ASC)_FILE(NAME|PATH)/, 'testfile.bin'],
