@@ -36,16 +36,11 @@ module Aspera
 
       private
 
-      # @return true if hash is simple, ie no nested hash or array
-      def simple_hash?(h)
-        !(h.values.any?{|v|[Hash, Array].include?(v.class)})
-      end
-
       # Recursive function to flatten any type
       # @param something [Object] to be flattened
       # @param name [String] name of englobing key
       def flatten_any(something, name)
-        if something.is_a?(Hash) && !simple_hash?(something)
+        if something.is_a?(Hash)
           flattened_hash(something, name)
         elsif something.is_a?(Array)
           flatten_array(something, name)
@@ -205,7 +200,7 @@ module Aspera
       # data: array of hash
       # default: list of fields to display by default (may contain FIELDS_ALL, FIELDS_DEFAULT)
       def compute_fields(data, default)
-        Log.log.debug{"compute_fields: #{data.class} #{default.class} #{default}"}
+        Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
         request =
           case @option_fields
           when NilClass then [FIELDS_DEFAULT]
@@ -269,6 +264,7 @@ module Aspera
           object_array = fields.map { |i| new_columns.zip([i, single[i]]).to_h }
           fields = new_columns
         end
+        Log.dump(:object_array, object_array)
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
         # here : fields : list of column names
