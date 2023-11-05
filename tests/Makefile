@@ -24,7 +24,7 @@ only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)s
 only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
-DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads
+DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
 TIMESTAMP=$(shell LANG=C date)
 
 # temp conf file that is modified, to avoid the test configuration file
@@ -142,7 +142,7 @@ $(T)serv_browse: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_mkdir: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) server mkdir @preset:misc.server_folder --logger=stdout
+	$(EXE_MAN) server mkdir @preset:server.inside_folder --logger=stdout
 	@$(STOP_TEST) $@
 $(T)serv_error: $(T).exists
 	@$(START_TEST) $@
@@ -155,59 +155,59 @@ $(T)serv_error: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload $(LCL_TST_ASC_FILEPATH) --to-folder=@preset:misc.server_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
-	$(EXE_MAN) server browse @extend:@preset:misc.server_folder@/$(LCL_TST_ASC_FILENAME)
-	$(EXE_MAN) server upload --src-type=pair $(LCL_TST_ASC_FILEPATH) @extend:@preset:misc.server_folder@/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(LCL_TST_ASC_FILEPATH)","@preset:misc.server_folder@/othername"]'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(LCL_TST_ASC_FILEPATH)","destination":"@preset:misc.server_folder@/othername"}]}'
-	$(EXE_MAN) server upload --src-type=pair $(LCL_TST_ASC_FILEPATH) @extend:@preset:misc.upload_folder@/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+	$(EXE_MAN) server upload $(LCL_TST_ASC_FILEPATH) --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(LCL_TST_ASC_FILENAME)
+	$(EXE_MAN) server upload --src-type=pair $(LCL_TST_ASC_FILEPATH) @extend:@preset:server.inside_folder@/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(LCL_TST_ASC_FILEPATH)","@preset:server.inside_folder@/othername"]'
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(LCL_TST_ASC_FILEPATH)","destination":"@preset:server.inside_folder@/othername"}]}'
+	$(EXE_MAN) server upload --src-type=pair $(LCL_TST_ASC_FILEPATH) @extend:@preset:server.upload_folder@/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@$(STOP_TEST) $@
 $(T)serv_sync: $(T)serv_upload 
 	@$(START_TEST) $@
 	rm -fr $(LCL_SYNC_DIR)
 	mkdir -p $(LCL_SYNC_DIR)
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:misc.server_folder@","local_dir":"$(LCL_SYNC_DIR)","reset":true}]}'
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(LCL_SYNC_DIR)","reset":true}]}'
 	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"$(LCL_SYNC_DIR)"}]}'
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"@preset:misc.server_folder@"},"reset":true,"quiet":false}'
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(LCL_SYNC_DIR)"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
 	$(EXE_BEG_FAI) server sync admin status --sync-info=@json:'{"name":"sync2"}' $(EXE_END_FAI)
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(LCL_SYNC_DIR)"}}'
 	@$(STOP_TEST) $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filelist.txt
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filepairlist.txt
-	$(EXE_NOMAN) config echo @extend:@preset:misc.server_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=@preset:misc.server_folder
+	$(EXE_NOMAN) config echo @extend:@preset:server.inside_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=@preset:server.inside_folder
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"$(DIR_TMP)filepairlist.txt"'"}'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:misc.server_folder 
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
 	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
 	@$(STOP_TEST) $@
 $(T)serv_md5: $(T)serv_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) server md5sum @extend:@preset:misc.server_folder@/$(LCL_TST_ASC_FILENAME)
+	$(EXE_MAN) server md5sum @extend:@preset:server.inside_folder@/$(LCL_TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)serv_down_lcl: $(T)serv_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) server download @extend:@preset:misc.server_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
+	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 	@$(STOP_TEST) $@
 $(T)serv_down_from_node: $(T)serv_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) server download @extend:@preset:misc.server_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=@preset:misc.upload_folder --transfer=node
+	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=@preset:server.upload_folder --transfer=node
 	@$(STOP_TEST) $@
 $(T)serv_cp: $(T)serv_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) server cp @extend:@preset:misc.server_folder@/$(LCL_TST_ASC_FILENAME) @extend:@preset:misc.upload_folder@/200KB.2
+	$(EXE_MAN) server cp @extend:@preset:server.inside_folder@/$(LCL_TST_ASC_FILENAME) @extend:@preset:server.upload_folder@/200KB.2
 	@$(STOP_TEST) $@
 $(T)serv_mv: $(T)serv_cp
 	@$(START_TEST) $@
-	$(EXE_MAN) server mv @extend:@preset:misc.upload_folder@/200KB.2 @extend:@preset:misc.upload_folder@/to.delete
+	$(EXE_MAN) server mv @extend:@preset:server.upload_folder@/200KB.2 @extend:@preset:server.upload_folder@/to.delete
 	@$(STOP_TEST) $@
 $(T)serv_delete: $(T)serv_mv
 	@$(START_TEST) $@
-	$(EXE_MAN) server delete @extend:@preset:misc.upload_folder@/to.delete
+	$(EXE_MAN) server delete @extend:@preset:server.upload_folder@/to.delete
 	@$(STOP_TEST) $@
 $(T)serv_cleanup1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) server delete @preset:misc.server_folder
+	$(EXE_MAN) server delete @preset:server.inside_folder
 	@$(STOP_TEST) $@
 $(T)serv_info: $(T).exists
 	@$(START_TEST) $@
@@ -223,7 +223,7 @@ $(T)serv_df: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_nagios_transfer: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) server health transfer --to-folder=@preset:misc.upload_folder --format=nagios 
+	$(EXE_MAN) server health transfer --to-folder=@preset:server.upload_folder --format=nagios 
 	$(EXE_BEG_ERR) server health transfer --to-folder=/wrong --format=nagios$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)serv_key: $(T).exists
@@ -370,22 +370,22 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
 	$(EXE_BEG_IGN) node delete /todelete $(EXE_END_IGN)
-	$(EXE_MAN) node mkdir @extend:@preset:misc.upload_folder@/todelete
-	$(EXE_MAN) node mklink @extend:@preset:misc.upload_folder@/todelete @extend:@preset:misc.upload_folder@/tdlink
-	$(EXE_MAN) node mkfile @extend:@preset:misc.upload_folder@/delfile1 "hello world"
-	$(EXE_MAN) node rename @preset:misc.upload_folder delfile1 delfile
-	$(EXE_MAN) node delete @list:@extend:,@preset:misc.upload_folder@/todelete,@preset:misc.upload_folder@/tdlink,@preset:misc.upload_folder@/delfile
+	$(EXE_MAN) node mkdir @extend:@preset:server.upload_folder@/todelete
+	$(EXE_MAN) node mklink @extend:@preset:server.upload_folder@/todelete @extend:@preset:server.upload_folder@/tdlink
+	$(EXE_MAN) node mkfile @extend:@preset:server.upload_folder@/delfile1 "hello world"
+	$(EXE_MAN) node rename @preset:server.upload_folder delfile1 delfile
+	$(EXE_MAN) node delete @list:@extend:,@preset:server.upload_folder@/todelete,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/delfile
 	@$(STOP_TEST) $@
 $(T)nd2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node upload $(LCL_TST_ASC_FILEPATH) --to-folder=@preset:misc.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
-	$(EXE_MAN) node download @extend:@preset:misc.upload_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node delete @extend:@preset:misc.upload_folder@/$(LCL_TST_ASC_FILENAME)
+	$(EXE_MAN) node upload $(LCL_TST_ASC_FILEPATH) --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
+	$(EXE_MAN) node download @extend:@preset:server.upload_folder@/$(LCL_TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node delete @extend:@preset:server.upload_folder@/$(LCL_TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node upload --to-folder=@preset:misc.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:tst_node_simple.url@","username":"@preset:tst_node_simple.username@","password":"@preset:tst_node_simple.password@"}'
-	$(EXE_BEG_IGN) node delete @extend:@preset:misc.upload_folder@/10MB.2$(EXE_END_IGN)
+	$(EXE_MAN) node upload --to-folder=@preset:server.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:tst_node_simple.url@","username":"@preset:tst_node_simple.username@","password":"@preset:tst_node_simple.password@"}'
+	$(EXE_BEG_IGN) node delete @extend:@preset:server.upload_folder@/10MB.2$(EXE_END_IGN)
 	@$(STOP_TEST) $@
 $(T)nd4: $(T).exists
 	@$(START_TEST) $@
@@ -412,7 +412,7 @@ $(T)nd7: $(T).exists
 	@$(STOP_TEST) $@
 $(T)nd8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node upload --username=@preset:misc.aoc_ak_name --password=@preset:misc.aoc_ak_secret $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) node upload --username=@preset:aoc.ak_name --password=@preset:aoc.ak_secret $(LCL_TST_ASC_FILEPATH)
 	@$(STOP_TEST) $@
 $(T)nd_ak: $(T).exists
 	@$(START_TEST) $@
@@ -420,30 +420,30 @@ $(T)nd_ak: $(T).exists
 	@$(STOP_TEST) $@
 $(T)nd_ak1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name node_info /
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name browse /
-	$(EXE_BEG_ERR)node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @json:'{}'$(EXE_END_ERR)
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder exec:'f["name"].end_with?(".jpg")'
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name find @preset:misc.aoc_folder
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name node_info /
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name browse /
+	$(EXE_BEG_ERR)node -Ptst_node_admak access_key do @preset:aoc.ak_name find @json:'{}'$(EXE_END_ERR)
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name find @preset:aoc.test_folder exec:'f["name"].end_with?(".jpg")'
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name find @preset:aoc.test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name find @preset:aoc.test_folder
 	@$(STOP_TEST) $@
 $(T)nd_ak2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name mkdir /folder1
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name rename /folder1 folder2
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete /folder2
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name mkdir /folder1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name rename /folder1 folder2
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name delete /folder2
 	@$(STOP_TEST) $@
 $(T)nd_ak3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name upload 'faux:///testfile1?1k' --default_ports=no
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name download testfile1 --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show /testfile1
-	$(EXE_BEG_ERR) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name thumbnail /testfile1$(EXE_END_ERR)
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name delete testfile1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name upload 'faux:///testfile1?1k' --default_ports=no
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name download testfile1 --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name show /testfile1
+	$(EXE_BEG_ERR) node -Ptst_node_admak access_key do @preset:aoc.ak_name thumbnail /testfile1$(EXE_END_ERR)
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name delete testfile1
 	@$(STOP_TEST) $@
 $(T)nd_ak4: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:misc.aoc_ak_name show %id:1
+	$(EXE_MAN) node -Ptst_node_admak access_key do @preset:aoc.ak_name show %id:1
 	@$(STOP_TEST) $@
 $(T)nd_ak_bearer: $(T).exists
 	@$(START_TEST) $@
@@ -471,7 +471,7 @@ $(T)aocfxgw: $(T).exists
 $(T)aocg1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc -N servers
-	$(EXE_MAN) aoc -N remind --username=@preset:misc.aoc_user_email
+	$(EXE_MAN) aoc -N remind --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(T)aocg2: $(T).exists
 	@$(START_TEST) $@
@@ -503,7 +503,7 @@ $(T)aocg8: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_webauth: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) aoc -Ptst_aoc_web user profile show
+	$(EXE_NOMAN) aoc -Paoc_web user profile show
 	@$(STOP_TEST) $@
 taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocg7 $(T)aocg8
 $(T)aocfbr: $(T).exists
@@ -539,7 +539,7 @@ $(T)aocftr: $(T)aocfupl $(T)aocfren
 	@$(STOP_TEST) $@
 $(T)aocndinf: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files node_info --workspace=@preset:misc.aoc_workspace2 /myfolder --format=json --display=data | $(EXE_MAN) aoc files upload Test.pdf --transfer=node --transfer-info=@json:@stdin:
+	$(EXE_MAN) aoc files node_info --workspace=@preset:aoc.workspace testdst --format=json --display=data | $(EXE_MAN) aoc files upload $(LCL_TST_ASC_FILENAME) --transfer=node --transfer-info=@json:@stdin:
 	@$(STOP_TEST) $@
 $(T)aocfdel: $(T)aocfren
 	@$(START_TEST) $@
@@ -551,15 +551,15 @@ $(T)aocfbearnode: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocfdown: $(T).exists
 	@$(START_TEST) $@
-	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
+	@rm -f $(DIR_CONNECT_DOWNLOAD)$(LCL_TST_ASC_FILENAME)
 	@-killall asperaconnect
 	@sleep 1
-	$(EXE_MAN) aoc files download --transfer=connect /200KB.1
-	@rm -f $(DIR_CONNECT_DOWNLOAD)/200KB.1
+	$(EXE_MAN) aoc files download --transfer=connect $(LCL_TST_ASC_FILENAME)
+	@rm -f $(DIR_CONNECT_DOWNLOAD)$(LCL_TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)aocfhttpd: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files http_node_download --to-folder=$(DIR_TMP). /200KB.1
+	$(EXE_MAN) aoc files http_node_download --to-folder=$(DIR_TMP). $(LCL_TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)aocfv3inf: $(T).exists
 	@$(START_TEST) $@
@@ -582,25 +582,29 @@ $(T)aocfsync2: $(T).exists
 $(T)aocffid: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
-	file_id=$$($(EXE_NOMAN) aoc files br /200KB.1 --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) aoc files show %id:$${file_id}
-	$(EXE_MAN) aoc files show /200KB.1
-	$(EXE_MAN) aoc files permission @preset:misc.aoc_test_folder list
-	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file
-	$(EXE_MAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":true}'
-	$(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file --query=@json:'{"text":true,"double":false}'
-	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @preset:misc.aoc_media_file
+	file_id=$$($(EXE_NOMAN) aoc files br $(LCL_TST_ASC_FILENAME) --fields=id --format=csv --display=data)&&\
+		$(EXE_MAN) aoc files show %id:$${file_id}
+	$(EXE_MAN) aoc files show /
+	$(EXE_MAN) aoc files show $(LCL_TST_ASC_FILENAME)
+	$(EXE_BEG_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
+	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:misc.file_mpg video_file.mpg
+	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:misc.file_jpg image_file.mpg
+	$(EXE_MAN) aoc files permission @preset:aoc.test_folder list
+	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
+	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":true}'
+	$(EXE_NOMAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":false}'
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
 	@$(STOP_TEST) $@
-#	$(EXE_MAN) aoc files modify @preset:misc.aoc_test_folder
+#	$(EXE_MAN) aoc files modify @preset:aoc.test_folder
 $(T)aocfpub: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files browse / -N --url=@preset:misc.aoc_publink_folder_nopass
-	$(EXE_MAN) aoc files browse / -N --url=@preset:misc.aoc_publink_folder_pass --password=@preset:misc.aoc_publink_password
-	$(EXE_MAN) aoc files upload --to-folder=/ $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_folder_nopass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.publink_folder_nopass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.publink_folder_pass --password=@preset:aoc.publink_password
+	$(EXE_MAN) aoc files upload --to-folder=/ $(LCL_TST_ASC_FILEPATH) -N --url=@preset:aoc.publink_folder_nopass
 	@$(STOP_TEST) $@
 $(T)aoc_lnk_priv: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files browse / --url=@preset:misc.aoc_privlink
+	$(EXE_MAN) aoc files browse / --url=@preset:aoc.privlink
 	@$(STOP_TEST) $@
 $(T)aocshlk1: $(T).exists
 	@$(START_TEST) $@
@@ -637,106 +641,106 @@ $(T)aocp4: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp5: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc org -N --url=@preset:misc.aoc_publink_recv_from_aocuser
+	$(EXE_MAN) aoc org -N --url=@preset:aoc.publink_recv_from_aocuser
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_sh: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_send_shd_inbox
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:aoc.publink_send_shd_inbox
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_usr: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:misc.aoc_publink_send_aoc_user --password=@preset:misc.aoc_publink_send_use_pass
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(LCL_TST_ASC_FILEPATH) -N --url=@preset:aoc.publink_send_aoc_user --password=@preset:aoc.publink_send_use_pass
 	@$(STOP_TEST) $@
 $(T)aocp_send_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"]}' $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"]}' $(LCL_TST_ASC_FILEPATH)
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_long: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(LCL_TST_ASC_FILEPATH)
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_short: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:misc.aoc_shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.aoc_shbx_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(LCL_TST_ASC_FILEPATH)
 	@$(STOP_TEST) $@
 $(T)aocp_recv_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:misc.aoc_shbx_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shbx_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 	@$(STOP_TEST) $@
 $(T)aocp_list_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:misc.aoc_shbx_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shbx_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 	@$(STOP_TEST) $@
 taocp: $(T)aocp1 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send_pub_sh $(T)aocp_send_pub_usr $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short $(T)aocp_recv_shbx $(T)aocp_list_shbx
 $(T)aocadm1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin auth_providers list
+	$(EXE_MAN) -Paoc_admin aoc admin auth_providers list
 	$(EXE_BEG_FAI) aoc admin subscription$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aoc8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource workspace list
+	$(EXE_MAN) -Paoc_admin aoc admin resource workspace list
 	@$(STOP_TEST) $@
 $(T)aoc9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 events
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 events
 	@$(STOP_TEST) $@
 $(T)aoc11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@$(STOP_TEST) $@
 $(T)aoc12: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret v3 access_key delete testsub1
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
 	@$(STOP_TEST) $@
 $(T)aoc9b: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret browse /
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret browse /
 	@$(STOP_TEST) $@
 $(T)aoc10: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret mkdir /folder1
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret mkdir /folder1
 	@$(STOP_TEST) $@
 $(T)aoc13: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource node do %name:@preset:misc.aoc_ak_name --secret=@preset:misc.aoc_ak_secret delete /folder1
+	$(EXE_MAN) -Paoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret delete /folder1
 	@$(STOP_TEST) $@
 $(T)aoc14: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+	$(EXE_MAN) -Paoc_admin aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@$(STOP_TEST) $@
 $(T)aoc15: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=@preset:misc.email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+	$(EXE_MAN) -Paoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=@preset:misc.email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@$(STOP_TEST) $@
 $(T)aocarself: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin res self show
-	$(EXE_MAN) aoc admin res organization show
-	$(EXE_MAN) aoc admin res user list
-	$(EXE_MAN) aoc admin res user modify @extend:%name:@preset:misc.aoc_user_email@ @json:'{"deactivated":false}'
-	$(EXE_MAN) aoc admin res group list
-	$(EXE_MAN) aoc admin res client list
-	$(EXE_MAN) aoc admin res contact list
-	$(EXE_MAN) aoc admin res dropbox list
-	$(EXE_MAN) aoc admin res node list
-	$(EXE_MAN) aoc admin res operation list
-	$(EXE_MAN) aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
-	$(EXE_MAN) aoc admin res saml_configuration list
-	$(EXE_MAN) aoc admin res dropbox_membership list
-	$(EXE_MAN) aoc admin res workspace_membership list
-	$(EXE_MAN) aoc admin res short_link list
-	$(EXE_MAN) aoc admin res application list
-	$(EXE_MAN) aoc admin res client_access_key list
-	$(EXE_MAN) aoc admin res kms_profile list
+	$(EXE_MAN) -Paoc_admin aoc admin res self show
+	$(EXE_MAN) -Paoc_admin aoc admin res organization show
+	$(EXE_MAN) -Paoc_admin aoc admin res user list
+	$(EXE_MAN) -Paoc_admin aoc admin res user modify @extend:%name:@preset:aoc.user_email@ @json:'{"deactivated":false}'
+	$(EXE_MAN) -Paoc_admin aoc admin res group list
+	$(EXE_MAN) -Paoc_admin aoc admin res client list
+	$(EXE_MAN) -Paoc_admin aoc admin res contact list
+	$(EXE_MAN) -Paoc_admin aoc admin res dropbox list
+	$(EXE_MAN) -Paoc_admin aoc admin res node list
+	$(EXE_MAN) -Paoc_admin aoc admin res operation list
+	$(EXE_MAN) -Paoc_admin aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
+	$(EXE_MAN) -Paoc_admin aoc admin res saml_configuration list
+	$(EXE_MAN) -Paoc_admin aoc admin res dropbox_membership list
+	$(EXE_MAN) -Paoc_admin aoc admin res workspace_membership list
+	$(EXE_MAN) -Paoc_admin aoc admin res short_link list
+	$(EXE_MAN) -Paoc_admin aoc admin res application list
+	$(EXE_MAN) -Paoc_admin aoc admin res client_access_key list
+	$(EXE_MAN) -Paoc_admin aoc admin res kms_profile list
 	@$(STOP_TEST) $@
 $(T)aoccltreg: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-	$(EXE_MAN) aoc admin res client_registration_token list
+	$(EXE_MAN) -Paoc_admin aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+	$(EXE_MAN) -Paoc_admin aoc admin res client_registration_token list
 	set -x&&\
-	clt_reg_id=$$($(EXE_NOMAN) aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1)&&\
-	$(EXE_MAN) aoc admin res client_registration_token delete $${clt_reg_id}
+	clt_reg_id=$$($(EXE_NOMAN) -Paoc_admin aoc admin res client_registration_token list --fields=ALL --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --format=csv --display=data|tail -n 1)&&\
+	$(EXE_MAN) -Paoc_admin aoc admin res client_registration_token delete $${clt_reg_id}
 	@$(STOP_TEST) $@
 taocadm: $(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
 $(T)aocat4: $(T).exists
@@ -758,42 +762,42 @@ $(T)aocat7: $(T).exists
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
-	$(EXE_BEG_FAI) aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_IGN) -Paoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
+	$(EXE_BEG_FAI) -Paoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:misc.icos_bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:misc.icos_bucket_name@","credentials":{"access_key_id":"@preset:misc.icos_bucket_key@","secret_access_key":"@preset:misc.icos_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aocat9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI)aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) -Paoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:misc.aws_bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:misc.aws_bucket_name@","credentials":{"access_key_id":"@preset:misc.aws_bucket_key@","secret_access_key":"@preset:misc.aws_bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aocat10: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) aoc admin ats access_key list --fields=name,id$(EXE_END_FAI)
+	$(EXE_BEG_FAI) -Paoc_admin aoc admin ats access_key list --fields=name,id$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aocat11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
+	$(EXE_MAN) -Paoc_admin aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
 	@$(STOP_TEST) $@
 $(T)aocat13: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) aoc admin ats access_key delete ak1ibmcloud$(EXE_END_FAI)
+	$(EXE_BEG_FAI) -Paoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 taocts: $(T)aocat4 $(T)aocat5 $(T)aocat6 $(T)aocat7 $(T)aocat8 $(T)aocat9 $(T)aocat10 $(T)aocat11 $(T)aocat13
 $(DIR_TMP)wf_id: $(T)aocauto1
-	$(EXE_MAN) aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data>$@
+	$(EXE_MAN) -Paoc_admin aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data>$@
 $(T)aocauto1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc automation workflow create @json:'{"name":"test_workflow"}'
+	$(EXE_MAN) -Paoc_admin aoc automation workflow create @json:'{"name":"test_workflow"}'
 	@$(STOP_TEST) $@
 $(T)aocauto2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc automation workflow list
-	$(EXE_MAN) aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+	$(EXE_MAN) -Paoc_admin aoc automation workflow list
+	$(EXE_MAN) -Paoc_admin aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 	@$(STOP_TEST) $@
 $(T)aocauto3: $(DIR_TMP)wf_id
 	@$(START_TEST) $@
 	set -x&&\
 	wf_id=$$(cat $(DIR_TMP)wf_id)&&\
-	$(EXE_MAN) aoc automation workflow action $${wf_id} create @json:'{"name":"toto"}' \
+	$(EXE_MAN) -Paoc_admin aoc automation workflow action $${wf_id} create @json:'{"name":"toto"}' \
 		| tee action.info
 	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info>tmp_action_id.txt
 	rm -f action.info
@@ -803,7 +807,7 @@ $(T)aocauto10: $(DIR_TMP)wf_id
 	@$(START_TEST) $@
 	set -x&&\
 	wf_id=$$(cat $(DIR_TMP)wf_id)&&\
-	$(EXE_MAN) aoc automation workflow delete $${wf_id}
+	$(EXE_MAN) -Paoc_admin aoc automation workflow delete $${wf_id}
 	rm -f $(T)wf.id
 	@$(STOP_TEST) $@
 taocauto: $(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10
@@ -1109,16 +1113,16 @@ $(T)conf_plugins: $(T).exists
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org aoc --pkeypath= --username=@preset:misc.aoc_user_email --use-generic-client=yes
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --pkeypath= --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
 $(T)conf_wizard_gen: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:misc.aoc_org aoc --pkeypath= --username=@preset:misc.aoc_user_email
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --pkeypath= --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(T)conf_detect: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config detect @preset:misc.aoc_org aoc
+	$(EXE_MAN) config detect @preset:aoc.org aoc
 	$(EXE_MAN) config detect @preset:tst_faspex4.url
 	$(EXE_MAN) config detect @preset:tst_node_simple.url
 	@$(STOP_TEST) $@
@@ -1237,15 +1241,15 @@ tprev: $(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_f
 thot:
 	rm -fr source_hot
 	mkdir source_hot
-	$(EXE_BEG_IGN) server delete @extend:@preset:misc.upload_folder@/target_hot$(EXE_END_IGN)
-	$(EXE_MAN) server mkdir @extend:@preset:misc.upload_folder@/target_hot
+	$(EXE_BEG_IGN) server delete @extend:@preset:server.upload_folder@/target_hot$(EXE_END_IGN)
+	$(EXE_MAN) server mkdir @extend:@preset:server.upload_folder@/target_hot
 	echo hello > source_hot/newfile
-	$(EXE_MAN) server upload --to-folder=@extend:@preset:misc.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXE_MAN) server browse @extend:@preset:misc.upload_folder@/target_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXE_MAN) server upload --to-folder=@extend:@preset:misc.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-	$(EXE_MAN) server browse @extend:@preset:misc.upload_folder@/target_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
 	rm -fr source_hot
 	@$(STOP_TEST) $@
@@ -1269,7 +1273,7 @@ $(T)f5_nagios: $(T).exists
 $(T)f5_p1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages receive INIT --once-only=yes
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:tst_faspex5_jwt.username@"}]@preset:misc.faspex5_meta@}' $(LCL_TST_ASC_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:tst_faspex5_jwt.username@"}]@preset:faspex5.meta@}' $(LCL_TST_ASC_FILEPATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@$(STOP_TEST) $@
 $(T)f5_p2: $(T).exists
 	@$(START_TEST) $@
@@ -1286,21 +1290,21 @@ $(T)f5_p3: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:misc.faspex5_shinbox@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(LCL_TST_ASC_FILEPATH)
-	$(EXE_MAN) faspex5 packages list --box=@preset:misc.faspex5_shinbox
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shinbox@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shinbox
 	set -x&&\
-	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:misc.faspex5_shinbox --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) faspex5 packages show --box=@preset:misc.faspex5_shinbox "$${package_id}"&&\
-	$(EXE_MAN) faspex5 packages receive --box=@preset:misc.faspex5_shinbox "$${package_id}" --to-folder=$(DIR_TMP).
+	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:faspex5.shinbox --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
+	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shinbox "$${package_id}"&&\
+	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shinbox "$${package_id}" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:misc.faspex5_workgroup@"]}' $(LCL_TST_ASC_FILEPATH)
-	$(EXE_MAN) faspex5 packages list --box=@preset:misc.faspex5_workgroup --group-type=workgroups
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(LCL_TST_ASC_FILEPATH)
+	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups
 	set -x&&\
-	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:misc.faspex5_workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
-	$(EXE_MAN) faspex5 packages show --box=@preset:misc.faspex5_workgroup --group-type=workgroups "$${package_id}"&&\
-	$(EXE_MAN) faspex5 packages receive --box=@preset:misc.faspex5_workgroup --group-type=workgroups "$${package_id}" --to-folder=$(DIR_TMP).
+	package_id=$$($(EXE_NOMAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data)&&\
+	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups "$${package_id}"&&\
+	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.workgroup --group-type=workgroups "$${package_id}" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_sh_fold: $(T).exists
 	@$(START_TEST) $@
