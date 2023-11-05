@@ -176,10 +176,8 @@ $(T)serv_upload_ex: $(T)serv_mkdir
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filelist.txt
 	echo $(LCL_TST_ASC_FILEPATH) > $(DIR_TMP)filepairlist.txt
 	$(EXE_NOMAN) config echo @extend:@preset:server.inside_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_list":"'"$(DIR_TMP)filelist.txt"'"}' --to-folder=@preset:server.inside_folder
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_file_pair_list":"'"$(DIR_TMP)filepairlist.txt"'"}'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:'{"EX_ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
+	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
+	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
 	@$(STOP_TEST) $@
 $(T)serv_md5: $(T)serv_upload
 	@$(START_TEST) $@
@@ -1244,11 +1242,11 @@ thot:
 	$(EXE_BEG_IGN) server delete @extend:@preset:server.upload_folder@/target_hot$(EXE_END_IGN)
 	$(EXE_MAN) server mkdir @extend:@preset:server.upload_folder@/target_hot
 	echo hello > source_hot/newfile
-	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
 	sleep 10
-	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --ts=@json:'{"EX_ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
 	rm -fr source_hot
