@@ -46,6 +46,7 @@ module Aspera
     # types of events for shared folder creation
     # Node events: permission.created permission.modified permission.deleted
     PERMISSIONS_CREATED = ['permission.created'].freeze
+    DEFAULT_WORKSPACE = ''
 
     private_constant :MAX_AOC_URL_REDIRECT,
       :GLOBAL_CLIENT_APPS,
@@ -147,7 +148,7 @@ module Aspera
     attr_reader :private_link
 
     def initialize(subpath: API_V1, url:, auth:, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
-      password: nil)
+      password: nil, workspace: nil, secret_finder: nil)
       # test here because link may set url
       raise ArgumentError, 'Missing mandatory option: url' if url.nil?
       raise ArgumentError, 'Missing mandatory option: scope' if scope.nil?
@@ -156,7 +157,8 @@ module Aspera
       # access key secrets are provided out of band to get node api access
       # key: access key
       # value: associated secret
-      @secret_finder = nil
+      @secret_finder = secret_finder
+      @workspace_name = workspace
       @cache_user_info = nil
       @cache_url_token_info = nil
       # init rest params
@@ -215,7 +217,7 @@ module Aspera
       super(aoc_rest_p)
     end
 
-    def url_token_data
+    def public_link
       return nil unless params[:auth][:grant_method].eql?(:aoc_pub_link)
       return @cache_url_token_info unless @cache_url_token_info.nil?
       # TODO: can there be several in list ?
@@ -223,32 +225,91 @@ module Aspera
       return @cache_url_token_info
     end
 
-    def additional_persistence_ids
-      return [current_user_info['id']] if url_token_data.nil?
-      return [] # TODO : url_token_data['id'] ?
+    def assert_public_link_types(expected)
+      raise "public link type is #{public_link['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(public_link['purpose'])
     end
 
-    def secret_finder=(secret_finder)
-      raise 'secret finder already set' unless @secret_finder.nil?
-      raise 'secret finder must have lookup_secret' unless secret_finder.respond_to?(:lookup_secret)
-      @secret_finder = secret_finder
+    def additional_persistence_ids
+      return [current_user_info['id']] if public_link.nil?
+      return [] # TODO : public_link['id'] ?
     end
+
+    # def secret_finder=(secret_finder)
+    #  raise 'secret finder already set' unless @secret_finder.nil?
+    #  raise 'secret finder must have lookup_secret' unless secret_finder.respond_to?(:lookup_secret)
+    #  @secret_finder = secret_finder
+    # end
 
     # cached user information
     def current_user_info(exception: false)
-      if @cache_user_info.nil?
-        # get our user's default information
-        @cache_user_info =
-          begin
-            read('self')[:data]
-          rescue StandardError => e
-            raise e if exception
-            Log.log.debug{"ignoring error: #{e}"}
-            {}
-          end
-        USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = 'unknown' if @cache_user_info[f].nil?}
-      end
+      return @cache_user_info unless @cache_user_info.nil?
+      # get our user's default information
+      @cache_user_info =
+        begin
+          read('self')[:data]
+        rescue StandardError => e
+          raise e if exception
+          Log.log.debug{"ignoring error: #{e}"}
+          {}
+        end
+      USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = 'unknown' if @cache_user_info[f].nil?}
       return @cache_user_info
+    end
+
+    # @param application [Symbol] :files or :packages
+    # @return [Hash] current context information: workspace, and home node/file if app is "Files"
+    def context(application = nil)
+      return @context_cache unless @context_cache.nil?
+      raise 'context must be initialized with application' if application.nil?
+      ws_id =
+        if !public_link.nil?
+          Log.log.debug('Using workspace of public link')
+          public_link['data']['workspace_id']
+        elsif !private_link.nil?
+          Log.log.debug('Using workspace of private link')
+          private_link[:workspace_id]
+        elsif @workspace_name.eql?(DEFAULT_WORKSPACE)
+          Log.log.debug('Using default workspace'.green)
+          raise 'User does not have default workspace, please specify workspace' if current_user_info['default_workspace_id'].nil?
+          current_user_info['default_workspace_id']
+        elsif @workspace_name.nil?
+          nil
+        else
+          lookup_by_name('workspaces', @workspace_name)['id']
+        end
+      Log.log.warn('Could not determine workspace') if ws_id.nil?
+      ws_info =
+        begin
+          read("workspaces/#{ws_id}")[:data]
+        rescue Aspera::RestCallError => e
+          Log.log.debug(e.message)
+          %w[id name home_node_id home_file_id].each_with_object({}){|k, h| h[k] = ''}
+        end
+      @context_cache = {
+        workspace_id:   ws_info['id'],
+        workspace_name: ws_info['name']
+      }
+      return @context_cache unless application.eql?(:files)
+      if !public_link.nil?
+        assert_public_link_types(['view_shared_file'])
+        @context_cache[:home_node_id] = public_link['data']['node_id']
+        @context_cache[:home_file_id] = public_link['data']['file_id']
+      elsif !private_link.nil?
+        @context_cache[:home_node_id] = private_link[:node_id]
+        @context_cache[:home_file_id] = private_link[:file_id]
+      else
+        @context_cache[:home_node_id] = ws_info['home_node_id']
+        @context_cache[:home_file_id] = ws_info['home_file_id']
+      end
+      if @context_cache[:home_node_id].to_s.empty? && public_link.nil?
+        # not part of any workspace, but has some folder shared
+        user_info = current_user_info(exception: true) rescue {'read_only_home_node_id' => nil, 'read_only_home_file_id' => nil}
+        @context_cache[:home_node_id] = user_info['read_only_home_node_id']
+        @context_cache[:home_file_id] = user_info['read_only_home_file_id']
+      end
+      # raise "Cannot get user's home node id, check your default workspace or specify one" if @context_cache[:home_node_id].to_s.empty?
+      Log.dump(:context, @context_cache)
+      return @context_cache
     end
 
     # @param node_id [String] identifier of node in AoC

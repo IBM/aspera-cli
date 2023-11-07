@@ -9,6 +9,7 @@ DIR_DOC=
 MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
+DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
 
 # main target to build doc
 all:: $(DIR_TOP).gems_checked $(MANUAL_PDF) $(MANUAL_HTML) $(TMPL_CONF_FILE_PATH)
@@ -17,7 +18,7 @@ doc: all
 
 # generate template configuration file for tests, remove own secrets
 $(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
-	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
+	$(DOC_TOOL) generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
 delgen::
 	rm -f $(TMPL_CONF_FILE_PATH)
 
