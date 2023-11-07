@@ -277,18 +277,23 @@ module Aspera
         else
           lookup_by_name('workspaces', @workspace_name)['id']
         end
-      Log.log.warn('Could not determine workspace') if ws_id.nil?
       ws_info =
-        begin
+        if ws_id.nil?
+          nil
+        else
           read("workspaces/#{ws_id}")[:data]
-        rescue Aspera::RestCallError => e
-          Log.log.debug(e.message)
-          %w[id name home_node_id home_file_id].each_with_object({}){|k, h| h[k] = ''}
         end
-      @context_cache = {
-        workspace_id:   ws_info['id'],
-        workspace_name: ws_info['name']
-      }
+      @context_cache = if ws_info.nil?
+        {
+          workspace_id:   nil,
+          workspace_name: 'Shared folders'
+        }
+      else
+        {
+          workspace_id:   ws_info['id'],
+          workspace_name: ws_info['name']
+        }
+      end
       return @context_cache unless application.eql?(:files)
       if !public_link.nil?
         assert_public_link_types(['view_shared_file'])
@@ -297,17 +302,16 @@ module Aspera
       elsif !private_link.nil?
         @context_cache[:home_node_id] = private_link[:node_id]
         @context_cache[:home_file_id] = private_link[:file_id]
-      else
+      elsif ws_info
         @context_cache[:home_node_id] = ws_info['home_node_id']
         @context_cache[:home_file_id] = ws_info['home_file_id']
-      end
-      if @context_cache[:home_node_id].to_s.empty? && public_link.nil?
+      else
         # not part of any workspace, but has some folder shared
         user_info = current_user_info(exception: true) rescue {'read_only_home_node_id' => nil, 'read_only_home_file_id' => nil}
         @context_cache[:home_node_id] = user_info['read_only_home_node_id']
         @context_cache[:home_file_id] = user_info['read_only_home_file_id']
       end
-      # raise "Cannot get user's home node id, check your default workspace or specify one" if @context_cache[:home_node_id].to_s.empty?
+      raise "Cannot get user's home node id, check your default workspace or specify one" if @context_cache[:home_node_id].to_s.empty?
       Log.dump(:context, @context_cache)
       return @context_cache
     end

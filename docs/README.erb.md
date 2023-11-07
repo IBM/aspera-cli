@@ -3074,7 +3074,7 @@ This option is available only for some of the resources: if you need it: try and
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 
-Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
+Aspera on Cloud API requires the use of Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
@@ -3295,6 +3295,9 @@ Provide the public link using option `url` alone.
 In addition, the `Files` application supports private links.
 Private links require the user to authenticate.
 So, provide the same options as for regular authentication, and provide the private link using option `url`.
+
+A user may not be part of any workspace, but still have access to shared folders (using private links).
+In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@json:null` or `@ruby:nil`.
 
 #### <a id="aocfirst"></a>First Use
 
@@ -4363,7 +4366,7 @@ The authentication is `username` and `password` or `access_key` and `secret` thr
 
 ### File Operations
 
-It is possible to do `gen3` operations:
+It is possible to do **gen3/node user** operations:
 
 - browse
 - transfer (upload / download / sync)
@@ -4374,8 +4377,8 @@ When using an access key, so called **gen4/access key** API is also supported th
 
 Example:
 
-- `<%=cmd%> node browse /` : list files with gen3 API
-- `<%=cmd%> node access_key do self browse /` : list files with gen4 API
+- `<%=cmd%> node browse /` : list files with **gen3/node user** API
+- `<%=cmd%> node access_key do self browse /` : list files with **gen4/access key** API
 
 ### Operation `find` on **gen4/access key**
 

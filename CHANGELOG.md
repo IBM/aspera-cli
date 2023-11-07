@@ -8,7 +8,7 @@
   * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard accepts public links
-  * new: aoc: support private links
+  * new: aoc: support private links, and possibility to list shared folder with workspace `@json:null`
   * new: orchestrator: error analysis for workflow start
   * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
   * new: node: added command `transfer sessions` to list all sessions of all transfers
@@ -26,6 +26,8 @@
   * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
   * change(break): aoc: removed option `link`: use `url` instead
   * change(break): aoc: in command `short_link`, place type before command, e.g. `short_link private create /blah`
+  * change(break): aoc: replaced option `operation` with mandatory positional parameter for command `files transfer`
+  * change(break): aoc: replaced option `from_folder` with mandatory positional parameter for command `files transfer`
   * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
   * change(break): faspex: option `source_name` is now `remote_source`
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`

@@ -3480,16 +3480,14 @@ OPTIONS:
         --username=VALUE             Username to log in
         --password=VALUE             User's password
         --auth=ENUM                  OAuth type of authentication: web, [jwt]
-        --operation=ENUM             Client operation for transfers: [push], pull
         --client-id=VALUE            OAuth API client identifier
         --client-secret=VALUE        OAuth API client secret
+        --scope=VALUE                OAuth scope for AoC API calls
         --redirect-uri=VALUE         OAuth API client redirect URI
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --scope=VALUE                OAuth scope for AoC API calls
         --passphrase=VALUE           RSA private key passphrase
-        --workspace=VALUE            Name of workspace
+        --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients
-        --from-folder=VALUE          Source folder for Folder-to-Folder transfer
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
 
 
@@ -3527,7 +3525,7 @@ This option is available only for some of the resources: if you need it: try and
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 
-Aspera on Cloud uses the more advanced Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
+Aspera on Cloud API requires the use of Oauth v2 mechanism for authentication (HTTP Basic authentication is not supported).
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
@@ -3748,6 +3746,9 @@ Provide the public link using option `url` alone.
 In addition, the `Files` application supports private links.
 Private links require the user to authenticate.
 So, provide the same options as for regular authentication, and provide the private link using option `url`.
+
+A user may not be part of any workspace, but still have access to shared folders (using private links).
+In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@json:null` or `@ruby:nil`.
 
 #### <a id="aocfirst"></a>First Use
 
@@ -4617,9 +4618,9 @@ aoc files browse / --url=my_privlink
 aoc files browse / --url=my_publink_folder_nopass
 aoc files browse / --url=my_publink_folder_pass --password=my_publink_password
 aoc files delete /testsrc
-aoc files download --transfer=connect testfile.bin
+aoc files download --transfer=connect testdst/testfile.bin
 aoc files find / '\.partial$'
-aoc files http_node_download --to-folder=. testfile.bin
+aoc files http_node_download --to-folder=. testdst/testfile.bin
 aoc files mkdir /testsrc
 aoc files modify my_test_folder
 aoc files permission my_test_folder list
@@ -4629,17 +4630,17 @@ aoc files short_link private list /testdst
 aoc files short_link public create testdst
 aoc files show %id:my_file_id
 aoc files show /
-aoc files show testfile.bin
+aoc files show testdst/testfile.bin
 aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
 aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
 aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
 aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_test_folder/video_file.mpg
 aoc files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
-aoc files transfer --from-folder=/testsrc --to-folder=/testdst testfile.bin
+aoc files transfer push /testsrc --to-folder=/testdst testfile.bin
 aoc files upload --to-folder=/ testfile.bin --url=my_publink_folder_nopass
 aoc files upload --to-folder=/testsrc testfile.bin
-aoc files upload testfile.bin --transfer=node --transfer-info=@json:@stdin:
+aoc files upload --workspace=my_other_workspace --to-folder=my_other_folder testfile.bin --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
 aoc gateway https://localhost:12345/aspera/faspex
 aoc org --url=my_publink_recv_from_aocuser
@@ -4960,7 +4961,7 @@ The authentication is `username` and `password` or `access_key` and `secret` thr
 
 ### File Operations
 
-It is possible to do `gen3` operations:
+It is possible to do **gen3/node user** operations:
 
 - browse
 - transfer (upload / download / sync)
@@ -4971,8 +4972,8 @@ When using an access key, so called **gen4/access key** API is also supported th
 
 Example:
 
-- `ascli node browse /` : list files with gen3 API
-- `ascli node access_key do self browse /` : list files with gen4 API
+- `ascli node browse /` : list files with **gen3/node user** API
+- `ascli node access_key do self browse /` : list files with **gen4/access key** API
 
 ### Operation `find` on **gen4/access key**
 
@@ -6144,7 +6145,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 cos --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
 cos --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
 cos node access_key show self
-cos node download testfile.bin --to-folder=.
+cos node download testdst/testfile.bin --to-folder=.
 cos node info
 cos node upload testfile.bin
 ```

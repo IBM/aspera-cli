@@ -175,8 +175,6 @@ module Aspera
           options.declare(:passphrase, 'RSA private key passphrase')
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Aspera::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
-          options.declare(:operation, 'Client operation for transfers', values: %i[push pull], default: :push)
-          options.declare(:from_folder, 'Source folder for Folder-to-Folder transfer')
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
           options.parse_options!
           # add node plugin options (for manual)
@@ -261,18 +259,20 @@ module Aspera
             return node_plugin.execute_command_gen4(command_repo, file_id)
           when :transfer
             # client side is agent
-            # server side is protocol server
+            # server side is transfer server
             # in same workspace
-            # default is push
-            case options.get_option(:operation, mandatory: true)
+            push_pull = options.get_next_argument('direction', expected: %i[push pull])
+            source_folder = options.get_next_argument('folder of source files', type: String)
+            case push_pull
             when :push
               client_direction = Fasp::TransferSpec::DIRECTION_SEND
-              client_folder = options.get_option(:from_folder, mandatory: true)
+              client_folder = source_folder
               server_folder = transfer.destination_folder(client_direction)
             when :pull
               client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_direction)
-              server_folder = options.get_option(:from_folder, mandatory: true)
+              server_folder = source_folder
+            else raise 'internal error'
             end
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
@@ -516,7 +516,7 @@ module Aspera
           if %i[files packages].include?(command)
             default_flag = ' (default)' if options.get_option(:workspace).eql?(:default)
             app_context = aoc_api.context(command)
-            formatter.display_status("Current Workspace: #{app_context[:workspace_name].to_s.red}#{default_flag}")
+            formatter.display_status("Workspace: #{app_context[:workspace_name].to_s.red}#{default_flag}")
             if !aoc_api.private_link.nil?
               folder_name = aoc_api.node_api_from(node_id: app_context[:home_node_id]).read("files/#{app_context[:home_file_id]}")[:data]['name']
               formatter.display_status("Private Folder: #{folder_name}")

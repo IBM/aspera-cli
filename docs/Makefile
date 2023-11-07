@@ -12,7 +12,7 @@ MANUAL_HTML=$(MANUAL_BASE).html
 DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
 
 # main target to build doc
-all:: $(DIR_TOP).gems_checked $(MANUAL_PDF) $(MANUAL_HTML) $(TMPL_CONF_FILE_PATH)
+all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF)
 
 doc: all
 

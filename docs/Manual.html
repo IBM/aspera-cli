@@ -4917,16 +4917,14 @@ OPTIONS:
         --username=VALUE             Username to log in
         --password=VALUE             User&#39;s password
         --auth=ENUM                  OAuth type of authentication: web, [jwt]
-        --operation=ENUM             Client operation for transfers: [push], pull
         --client-id=VALUE            OAuth API client identifier
         --client-secret=VALUE        OAuth API client secret
+        --scope=VALUE                OAuth scope for AoC API calls
         --redirect-uri=VALUE         OAuth API client redirect URI
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --scope=VALUE                OAuth scope for AoC API calls
         --passphrase=VALUE           RSA private key passphrase
-        --workspace=VALUE            Name of workspace
+        --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients
-        --from-folder=VALUE          Source folder for Folder-to-Folder transfer
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
 
 
@@ -4970,7 +4968,7 @@ entities you try to create or delete support this option.</p>
 <h1 data-number="5" id="plugin-aoc-ibm-aspera-on-cloud"><span
 class="header-section-number">5</span> <a id="aoc"></a>Plugin:
 <code>aoc</code>: IBM Aspera on Cloud</h1>
-<p>Aspera on Cloud uses the more advanced Oauth v2 mechanism for
+<p>Aspera on Cloud API requires the use of Oauth v2 mechanism for
 authentication (HTTP Basic authentication is not supported).</p>
 <p>It is recommended to use the wizard to set it up, although manual
 configuration is also possible.</p>
@@ -5204,6 +5202,11 @@ the authorization of access. Provide the public link using option
 links. Private links require the user to authenticate. So, provide the
 same options as for regular authentication, and provide the private link
 using option <code>url</code>.</p>
+<p>A user may not be part of any workspace, but still have access to
+shared folders (using private links). In that case, it is possible to
+list those shared folder by using a value for option
+<code>workspace</code> equal to <code>@json:null</code> or
+<code>@ruby:nil</code>.</p>
 <h3 data-number="5.2.8" id="first-use-1"><span
 class="header-section-number">5.2.8</span> <a id="aocfirst"></a>First
 Use</h3>
@@ -6022,9 +6025,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb340-1"><a href
 <span id="cb340-53"><a href="#cb340-53" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--url</span><span class="op">=</span>my_publink_folder_nopass</span>
 <span id="cb340-54"><a href="#cb340-54" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files browse / <span class="at">--url</span><span class="op">=</span>my_publink_folder_pass <span class="at">--password</span><span class="op">=</span>my_publink_password</span>
 <span id="cb340-55"><a href="#cb340-55" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files delete /testsrc</span>
-<span id="cb340-56"><a href="#cb340-56" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files download <span class="at">--transfer</span><span class="op">=</span>connect testfile.bin</span>
+<span id="cb340-56"><a href="#cb340-56" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files download <span class="at">--transfer</span><span class="op">=</span>connect testdst/testfile.bin</span>
 <span id="cb340-57"><a href="#cb340-57" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files find / <span class="st">&#39;\.partial$&#39;</span></span>
-<span id="cb340-58"><a href="#cb340-58" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files http_node_download <span class="at">--to-folder</span><span class="op">=</span>. testfile.bin</span>
+<span id="cb340-58"><a href="#cb340-58" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files http_node_download <span class="at">--to-folder</span><span class="op">=</span>. testdst/testfile.bin</span>
 <span id="cb340-59"><a href="#cb340-59" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files mkdir /testsrc</span>
 <span id="cb340-60"><a href="#cb340-60" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files modify my_test_folder</span>
 <span id="cb340-61"><a href="#cb340-61" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files permission my_test_folder list</span>
@@ -6034,17 +6037,17 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb340-1"><a href
 <span id="cb340-65"><a href="#cb340-65" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files short_link public create testdst</span>
 <span id="cb340-66"><a href="#cb340-66" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show %id:my_file_id</span>
 <span id="cb340-67"><a href="#cb340-67" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show /</span>
-<span id="cb340-68"><a href="#cb340-68" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show testfile.bin</span>
+<span id="cb340-68"><a href="#cb340-68" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files show testdst/testfile.bin</span>
 <span id="cb340-69"><a href="#cb340-69" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
 <span id="cb340-70"><a href="#cb340-70" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb340-71"><a href="#cb340-71" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/localsync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
 <span id="cb340-72"><a href="#cb340-72" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb340-73"><a href="#cb340-73" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_test_folder/video_file.mpg</span>
 <span id="cb340-74"><a href="#cb340-74" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files thumbnail my_test_folder/video_file.mpg <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb340-75"><a href="#cb340-75" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files transfer <span class="at">--from-folder</span><span class="op">=</span>/testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst testfile.bin</span>
+<span id="cb340-75"><a href="#cb340-75" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files transfer push /testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst testfile.bin</span>
 <span id="cb340-76"><a href="#cb340-76" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/ testfile.bin <span class="at">--url</span><span class="op">=</span>my_publink_folder_nopass</span>
 <span id="cb340-77"><a href="#cb340-77" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc testfile.bin</span>
-<span id="cb340-78"><a href="#cb340-78" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
+<span id="cb340-78"><a href="#cb340-78" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder testfile.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
 <span id="cb340-79"><a href="#cb340-79" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files v3 info</span>
 <span id="cb340-80"><a href="#cb340-80" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> gateway https://localhost:12345/aspera/faspex</span>
 <span id="cb340-81"><a href="#cb340-81" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> org <span class="at">--url</span><span class="op">=</span>my_publink_recv_from_aocuser</span>
@@ -6353,7 +6356,7 @@ plugins which access to the node API, such as <code>aoc</code>,
 </blockquote>
 <h2 data-number="8.1" id="file-operations"><span
 class="header-section-number">8.1</span> File Operations</h2>
-<p>It is possible to do <code>gen3</code> operations:</p>
+<p>It is possible to do <strong>gen3/node user</strong> operations:</p>
 <ul>
 <li>browse</li>
 <li>transfer (upload / download / sync)</li>
@@ -6365,9 +6368,10 @@ API is also supported through sub commands using
 <code>access_keys do self</code>.</p>
 <p>Example:</p>
 <ul>
-<li><code>ascli node browse /</code> : list files with gen3 API</li>
+<li><code>ascli node browse /</code> : list files with <strong>gen3/node
+user</strong> API</li>
 <li><code>ascli node access_key do self browse /</code> : list files
-with gen4 API</li>
+with <strong>gen4/access key</strong> API</li>
 </ul>
 <h2 data-number="8.2" id="operation-find-on-gen4access-key"><span
 class="header-section-number">8.2</span> Operation <code>find</code> on
@@ -7651,7 +7655,7 @@ class="header-section-number">14.4</span> COS sample commands</h2>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb438-1"><a href="#cb438-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_icos_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_icos_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_icos_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_icos_resource_instance_id node info</span>
 <span id="cb438-2"><a href="#cb438-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_icos_bucket_name <span class="at">--region</span><span class="op">=</span>my_icos_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
 <span id="cb438-3"><a href="#cb438-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node access_key show self</span>
-<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download testfile.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download testdst/testfile.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb438-5"><a href="#cb438-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info</span>
 <span id="cb438-6"><a href="#cb438-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node upload testfile.bin</span></code></pre></div>
 <h1 data-number="15" id="ibm-aspera-sync"><span
