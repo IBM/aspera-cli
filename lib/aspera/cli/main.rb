@@ -121,7 +121,6 @@ module Aspera
           #{t}source repo: #{SRC_URL}
 
           ENVIRONMENT VARIABLES
-          #{t}#{config.conf_dir_env_var} config folder, default: $HOME/#{Plugins::Config::ASPERA_HOME_FOLDER_NAME}/#{PROGRAM_NAME}
           #{t}Any option can be set as an environment variable, refer to the manual
 
           COMMANDS

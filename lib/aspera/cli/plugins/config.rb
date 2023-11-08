@@ -101,13 +101,67 @@ module Aspera
           :WIZARD_RESULT_KEYS,
           :SELF_SIGNED_CERT,
           :PERSISTENCY_FOLDER
+
+        class << self
+          def generate_rsa_private_key(path:, length: DEFAULT_PRIVKEY_LENGTH)
+            require 'openssl'
+            priv_key = OpenSSL::PKey::RSA.new(length)
+            File.write(path, priv_key.to_s)
+            File.write("#{path}.pub", priv_key.public_key.to_s)
+            Environment.restrict_file_access(path)
+            Environment.restrict_file_access("#{path}.pub")
+            nil
+          end
+
+          # folder containing plugins in the gem's main folder
+          def gem_plugins_folder
+            File.dirname(File.expand_path(__FILE__))
+          end
+
+          # name of englobing module
+          # @return "Aspera::Cli::Plugins"
+          def module_full_name
+            return Module.nesting[2].to_s
+          end
+
+          # @return main folder where code is, i.e. .../lib
+          # go up as many times as englobing modules (not counting class, as it is a file)
+          def gem_src_root
+            File.expand_path(module_full_name.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
+          end
+
+          # instantiate a plugin
+          # plugins must be Capitalized
+          def plugin_class(plugin_name_sym)
+            # Module.nesting[2] is Aspera::Cli::Plugins
+            return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
+          end
+
+          # deep clone hash so that it does not get modified in case of display and secret hide
+          def protect_presets(val)
+            return JSON.parse(JSON.generate(val))
+          end
+
+          # return product family folder (~/.aspera)
+          def module_family_folder
+            user_home_folder = Dir.home
+            raise CliError, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
+            return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
+          end
+
+          # return product config folder (~/.aspera/<name>)
+          def default_app_main_folder(app_name:)
+            raise 'app_name must be a non-empty String' unless app_name.is_a?(String) && !app_name.empty?
+            return File.join(module_family_folder, app_name)
+          end
+        end # self
+
         def initialize(env, params)
           raise 'Internal Error: env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
           raise 'Internal Error: missing param' unless %i[gem help name version].eql?(params.keys.sort)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super(env)
           @info = params
-          @main_folder = default_app_main_folder
           @plugins = {}
           @plugin_lookup_folders = []
           @use_plugin_defaults = true
@@ -115,8 +169,6 @@ module Aspera
           @config_checksum_on_disk = nil
           @connect_versions = nil
           @vault = nil
-          @conf_file_default = File.join(@main_folder, DEFAULT_CONFIG_FILENAME)
-          @option_config_file = @conf_file_default
           @pac_exec = nil
           @sdk_default_location = false
           @option_insecure = false
@@ -126,16 +178,28 @@ module Aspera
           @option_rest_debug = false
           @option_cache_tokens = true
           @proxy_credentials = nil
+          @main_folder = nil
+          @option_config_file = nil
+          # option to set main folder
+          options.declare(
+            :home, 'Home folder for tool',
+            handler: {o: self, m: :main_folder},
+            types: String,
+            default: self.class.default_app_main_folder(app_name: @info[:name]))
+          options.parse_options!
           Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
           # data persistency manager
           env[:persistency] = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
-          # set folder for FASP SDK
+          # set folders for plugin lookup
           add_plugin_lookup_folder(self.class.gem_plugins_folder)
           add_plugin_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
-          # do file parameter first
-          options.declare(:config_file, "Read parameters from file in YAML format, current=#{@option_config_file}", handler: {o: self, m: :option_config_file})
+          # option to set config file
+          options.declare(
+            :config_file, 'Path to YAML file with preset configuration',
+            handler: {o: self, m: :option_config_file},
+            default: File.join(@main_folder, DEFAULT_CONFIG_FILENAME))
           options.parse_options!
-          # read correct file (set @config_presets)
+          # read config file (set @config_presets)
           read_config_file
           # add preset handler (needed for smtp)
           ExtendedValue.instance.set_handler(EXTV_PRESET, lambda{|v|preset_by_name(v)})
@@ -144,7 +208,7 @@ module Aspera
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
           # declare generic plugin options only after handlers are declared
-          declare_generic_options
+          Plugin.declare_generic_options(options)
           options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
           options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
           options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
@@ -178,12 +242,12 @@ module Aspera
             @sdk_default_location = true
             Log.log.debug('SDK folder is not set, checking default')
             # new location
-            sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK)
+            sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK)
             Log.log.debug{"checking: #{sdk_folder}"}
             if !Dir.exist?(sdk_folder)
               Log.log.debug{"not exists: #{sdk_folder}"}
               # former location
-              former_sdk_folder = File.join(default_app_main_folder, APP_NAME_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: @info[:name]), APP_NAME_SDK)
               Log.log.debug{"checking: #{former_sdk_folder}"}
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
@@ -208,8 +272,7 @@ module Aspera
           Aspera::RestErrorsAspera.register_handlers
         end
 
-        attr_accessor :option_cache_tokens
-        attr_accessor :option_insecure, :option_http_options
+        attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_http_options
         attr_reader :option_ignore_cert_host_port
 
         def option_ignore_cert_host_port=(url_list)
@@ -253,29 +316,6 @@ module Aspera
               Log.log.error{"no such HTTP session attribute: #{k}"}
             end
           end
-        end
-
-        # env var name to override the app's main folder
-        # default main folder is $HOME/<vendor main app folder>/<program name>
-        def conf_dir_env_var
-          return "#{@info[:name]}_home".upcase
-        end
-
-        # return product family folder (~/.aspera)
-        def module_family_folder
-          user_home_folder = Dir.home
-          raise CliError, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
-          return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
-        end
-
-        # return product config folder (~/.aspera/<name>)
-        def default_app_main_folder(app_name: nil)
-          app_name = @info[:name] if app_name.nil?
-          # find out application main folder
-          app_folder = ENV[conf_dir_env_var]
-          # if env var undefined or empty
-          app_folder = File.join(module_family_folder, app_name) if app_folder.nil? || app_folder.empty?
-          return app_folder
         end
 
         def check_gem_version
@@ -354,49 +394,6 @@ module Aspera
           return nil
         end
 
-        private
-
-        class << self
-          def generate_rsa_private_key(path:, length: DEFAULT_PRIVKEY_LENGTH)
-            require 'openssl'
-            priv_key = OpenSSL::PKey::RSA.new(length)
-            File.write(path, priv_key.to_s)
-            File.write("#{path}.pub", priv_key.public_key.to_s)
-            Environment.restrict_file_access(path)
-            Environment.restrict_file_access("#{path}.pub")
-            nil
-          end
-
-          # folder containing plugins in the gem's main folder
-          def gem_plugins_folder
-            File.dirname(File.expand_path(__FILE__))
-          end
-
-          # name of englobing module
-          # @return "Aspera::Cli::Plugins"
-          def module_full_name
-            return Module.nesting[2].to_s
-          end
-
-          # @return main folder where code is, i.e. .../lib
-          # go up as many times as englobing modules (not counting class, as it is a file)
-          def gem_src_root
-            File.expand_path(module_full_name.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
-          end
-
-          # instantiate a plugin
-          # plugins must be Capitalized
-          def plugin_class(plugin_name_sym)
-            # Module.nesting[2] is Aspera::Cli::Plugins
-            return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
-          end
-
-          # deep clone hash so that it does not get modified in case of display and secret hide
-          def protect_presets(val)
-            return JSON.parse(JSON.generate(val))
-          end
-        end
-
         # get the default global preset, or init a new one
         def global_default_preset
           global_default_preset_name = get_plugin_default_config_name(CONF_GLOBAL_SYM)
@@ -434,8 +431,6 @@ module Aspera
         def set_global_default(key, value)
           set_preset_key(global_default_preset, key, value)
         end
-
-        public
 
         # $HOME/.aspera/`program_name`
         attr_reader :gem_url, :plugins
@@ -716,7 +711,7 @@ module Aspera
             end
           when :install
             # reset to default location, if older default was used
-            Fasp::Installation.instance.sdk_folder = default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
+            Fasp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
             v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
             return Main.result_status("Installed version #{v}")
           when :spec
@@ -903,8 +898,8 @@ module Aspera
               return {type: :object_list, data: result, fields: %w[plugin detect wizard path]}
             when :create
               plugin_name = options.get_next_argument('name', expected: :single).downcase
-              plugin_folder = options.get_next_argument('folder', expected: :single, mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
-              plugin_file = File.join(plugin_folder, "#{plugin_name}.rb")
+              destination_folder = options.get_next_argument('folder', expected: :single, mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
+              plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
               content = <<~END_OF_PLUGIN_CODE
                 require 'aspera/cli/plugin'
                 module Aspera

@@ -21,6 +21,19 @@ module Aspera
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 
+      class << self
+        def declare_generic_options(options)
+          options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
+          options.declare(
+            :value, 'Value for create, update, list filter', types: Hash,
+            deprecation: '(4.14) Use positional value for create/modify or option: query for list/delete')
+          options.declare(:property, 'Name of property to set (modify operation)')
+          options.declare(:id, 'Resource identifier', deprecation: "(4.14) Use positional identifier after verb (#{INSTANCE_OPS.join(',')})")
+          options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
+          options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
+        end
+      end
+
       def initialize(env)
         raise 'env must be Hash' unless env.is_a?(Hash)
         @agents = env
@@ -32,17 +45,6 @@ module Aspera
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
-      end
-
-      def declare_generic_options
-        options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
-        options.declare(
-          :value, 'Value for create, update, list filter', types: Hash,
-          deprecation: '(4.14) Use positional value for create/modify or option: query for list/delete')
-        options.declare(:property, 'Name of property to set (modify operation)')
-        options.declare(:id, 'Resource identifier', deprecation: "(4.14) Use positional identifier after verb (#{INSTANCE_OPS.join(',')})")
-        options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
-        options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
       end
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>

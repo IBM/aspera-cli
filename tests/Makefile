@@ -32,7 +32,7 @@ TEST_CONFIG=$(DIR_TMP)sample.conf
 TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
 # tests use config file in test folder
-EXE_COMMON=$(EXETESTB) --config-file=$(TEST_CONF_FILE_PATH)
+EXE_COMMON=$(EXETESTB) --home=$(DIR_PRIV)ascli_home --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXE_COMMON) --warnings

@@ -1396,7 +1396,7 @@ Example: create a JSON with values coming from a preset named "config" of config
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[User's home folder]/.aspera/<%=cmd%>`.
+<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored by default in `[User's home folder]/.aspera/<%=cmd%>`.
 
 > **Note:** `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
@@ -1413,7 +1413,7 @@ The configuration folder can be displayed using :
 /Users/kenji/.aspera/<%=cmd%>
 ```
 
-It can be overridden using the environment variable `<%=evp%>HOME`.
+It can be overridden using option `home`.
 
 Example (Windows):
 
@@ -1427,9 +1427,9 @@ C:\Users\Kenji\.aspera\<%=cmd%>
 
 When OAuth is used (AoC, Faspex4 api v4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
-The command `config flush_tokens` deletes all existing tokens.
+The command `config flush_tokens` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
-Tokens that can be refreshed will be refreshed, else tokens are re-generated if expired.
+When a token has expired, then a new token is generated, either using a refresh_token if it is available, or by the default method.
 
 ### Temporary files
 

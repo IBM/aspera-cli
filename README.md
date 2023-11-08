@@ -1402,7 +1402,7 @@ ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
 
-`ascli` configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored `[User's home folder]/.aspera/ascli`.
+`ascli` configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored by default in `[User's home folder]/.aspera/ascli`.
 
 > **Note:** `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
@@ -1419,7 +1419,7 @@ ascli config folder
 /Users/kenji/.aspera/ascli
 ```
 
-It can be overridden using the environment variable `ASCLI_HOME`.
+It can be overridden using option `home`.
 
 Example (Windows):
 
@@ -1433,9 +1433,9 @@ C:\Users\Kenji\.aspera\ascli
 
 When OAuth is used (AoC, Faspex4 api v4, Faspex5) `ascli` keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
-The command `config flush_tokens` deletes all existing tokens.
+The command `config flush_tokens` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
-Tokens that can be refreshed will be refreshed, else tokens are re-generated if expired.
+When a token has expired, then a new token is generated, either using a refresh_token if it is available, or by the default method.
 
 ### Temporary files
 
@@ -3246,7 +3246,6 @@ DESCRIPTION
         source repo: https://github.com/IBM/aspera-cli
 
 ENVIRONMENT VARIABLES
-        ASCLI_HOME config folder, default: $HOME/.aspera/ascli
         Any option can be set as an environment variable, refer to the manual
 
 COMMANDS
@@ -3289,7 +3288,8 @@ OPTIONS: global
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey hint initdemo open plugins preset proxy_check smtp_settings vault wizard
 OPTIONS:
-        --config-file=VALUE          Read parameters from file in YAML format, current=/usershome/.aspera/ascli/config.yaml
+        --home=VALUE                 Home folder for tool (String)
+        --config-file=VALUE          Path to YAML file with preset configuration
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set (modify operation)
