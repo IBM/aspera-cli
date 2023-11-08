@@ -134,11 +134,12 @@ REPLACEMENTS = [
   ['my_f5_meta', ''],
   # remove special configs
   ['-N ', ''],
+  [/-P[0-9a-z_]+ /, ''],
+  [/--preset=[0-9a-z_]+/, ''],
   ['TMP_CONF', ''],
   ['WIZ_TEST', ''],
-  [/-P[0-9a-z_]+ /, '\1'],
   # URLs for doc
-  [/@preset:tst_([^ ]+)\.url/, 'https://\1.example.com/path'],
+  [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
   [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
   [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
   ['@extend:', '']
@@ -153,6 +154,7 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
         line = line.strip.squeeze(' ')
+        $stderr.puts line
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []

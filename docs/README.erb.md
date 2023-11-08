@@ -1320,6 +1320,7 @@ The following decoders are supported:
 | json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
+| none    | None      | Nil     | A null value
 | path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 | preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | extend  | String    | String  | evaluates embedded extended value syntax in string
@@ -3297,7 +3298,7 @@ Private links require the user to authenticate.
 So, provide the same options as for regular authentication, and provide the private link using option `url`.
 
 A user may not be part of any workspace, but still have access to shared folders (using private links).
-In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@json:null` or `@ruby:nil`.
+In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@none:` or `@json:null` or `@ruby:nil`.
 
 #### <a id="aocfirst"></a>First Use
 

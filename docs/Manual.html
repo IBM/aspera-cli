@@ -1428,6 +1428,12 @@ e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 and return an array</td>
 </tr>
 <tr class="even">
+<td>none</td>
+<td>None</td>
+<td>Nil</td>
+<td>A null value</td>
+</tr>
+<tr class="odd">
 <td>path</td>
 <td>String</td>
 <td>String</td>
@@ -1435,7 +1441,7 @@ and return an array</td>
 replaced with the users home folder),
 e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>preset</td>
 <td>String</td>
 <td>Hash</td>
@@ -1443,38 +1449,38 @@ e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <code>conf[foo][bar]</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>extend</td>
 <td>String</td>
 <td>String</td>
 <td>evaluates embedded extended value syntax in string</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>ruby</td>
 <td>String</td>
 <td>any</td>
 <td>execute specified Ruby code</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>secret</td>
 <td>None</td>
 <td>String</td>
 <td>Ask password interactively (hides input)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>stdin</td>
 <td>None</td>
 <td>String</td>
 <td>read from stdin (no value on right)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>uri</td>
 <td>String</td>
 <td>String</td>
 <td>read value from specified URL,
 e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>val</td>
 <td>String</td>
 <td>String</td>
@@ -1482,7 +1488,7 @@ e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
 to value <code>@file:foo</code>.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>zlib</td>
 <td>String</td>
 <td>String</td>
@@ -1737,8 +1743,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb129-1"><a href
 <span id="cb129-16"><a href="#cb129-16" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> coffee</span>
 <span id="cb129-17"><a href="#cb129-17" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> coffee <span class="at">--ui</span><span class="op">=</span>text</span>
 <span id="cb129-18"><a href="#cb129-18" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://faspex4.example.com/path</span>
-<span id="cb129-19"><a href="#cb129-19" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://faspex5_jwt.example.com/path</span>
-<span id="cb129-20"><a href="#cb129-20" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://node_simple.example.com/path</span>
+<span id="cb129-19"><a href="#cb129-19" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://faspex5.example.com/path</span>
+<span id="cb129-20"><a href="#cb129-20" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://node.example.com/path</span>
 <span id="cb129-21"><a href="#cb129-21" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect https://shares.example.com/path shares</span>
 <span id="cb129-22"><a href="#cb129-22" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> detect my_org aoc</span>
 <span id="cb129-23"><a href="#cb129-23" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> doc</span>
@@ -1782,10 +1788,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb129-1"><a href
 <span id="cb129-61"><a href="#cb129-61" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault delete mylabel</span>
 <span id="cb129-62"><a href="#cb129-62" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault list</span>
 <span id="cb129-63"><a href="#cb129-63" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault show mylabel</span>
-<span id="cb129-64"><a href="#cb129-64" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://console.example.com/path console <span class="at">-Ptst_console</span></span>
+<span id="cb129-64"><a href="#cb129-64" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://console.example.com/path console</span>
 <span id="cb129-65"><a href="#cb129-65" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb129-66"><a href="#cb129-66" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex5_jwt.example.com/path faspex5 <span class="at">--pkeypath</span><span class="op">=</span>my_ssh_keys <span class="at">-Ptst_faspex5_jwt</span></span>
-<span id="cb129-67"><a href="#cb129-67" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://node_simple.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
+<span id="cb129-66"><a href="#cb129-66" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex5.example.com/path faspex5 <span class="at">--pkeypath</span><span class="op">=</span>my_private_key</span>
+<span id="cb129-67"><a href="#cb129-67" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb129-68"><a href="#cb129-68" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb129-69"><a href="#cb129-69" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb129-70"><a href="#cb129-70" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
@@ -4692,7 +4698,7 @@ COMMANDS
 OPTIONS
         Options begin with a &#39;-&#39; (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, path, ruby, secret, stdin, zlib, extend, preset, vault
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, ruby, secret, stdin, zlib, extend, preset, vault
         Dates format is &#39;DD-MM-YY HH:MM:SS&#39;, or &#39;now&#39; or &#39;-&lt;num&gt;h&#39;
 
 ARGS
@@ -5205,8 +5211,8 @@ using option <code>url</code>.</p>
 <p>A user may not be part of any workspace, but still have access to
 shared folders (using private links). In that case, it is possible to
 list those shared folder by using a value for option
-<code>workspace</code> equal to <code>@json:null</code> or
-<code>@ruby:nil</code>.</p>
+<code>workspace</code> equal to <code>@none:</code> or
+<code>@json:null</code> or <code>@ruby:nil</code>.</p>
 <h3 data-number="5.2.8" id="first-use-1"><span
 class="header-section-number">5.2.8</span> <a id="aocfirst"></a>First
 Use</h3>
@@ -5971,8 +5977,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb339-1"><a href
 class="header-section-number">5.8</span> AoC sample commands</h2>
 <div class="sourceCode" id="cb340"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb340-1"><a href="#cb340-1" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin analytics transfers organization <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notif-to</span><span class="op">=</span>my_email_external <span class="at">--notif-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: &lt;%=ev[&quot;files_completed&quot;]%&gt; files received\n\n&lt;%=ev.to_yaml%&gt;}&#39;</span></span>
-<span id="cb340-2"><a href="#cb340-2" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_aws_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_aws_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_aws_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_aws_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb340-3"><a href="#cb340-3" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_icos_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_icos_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_icos_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_icos_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb340-2"><a href="#cb340-2" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb340-3"><a href="#cb340-3" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb340-4"><a href="#cb340-4" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key delete ak1ibmcloud</span>
 <span id="cb340-5"><a href="#cb340-5" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key list <span class="at">--fields</span><span class="op">=</span>name,id</span>
 <span id="cb340-6"><a href="#cb340-6" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key node ak1ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here browse /</span>
@@ -6170,8 +6176,8 @@ API</a> for the <code>POST /access_keys</code> endpoint.</p>
 class="header-section-number">6.4</span> ATS sample commands</h2>
 <div class="sourceCode" id="cb355"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb355-1"><a href="#cb355-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key cluster ak2ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here</span>
-<span id="cb355-2"><a href="#cb355-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_aws_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_aws_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_aws_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_aws_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb355-3"><a href="#cb355-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_icos_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak2ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_icos_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_icos_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_icos_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb355-2"><a href="#cb355-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb355-3"><a href="#cb355-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak2ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb355-4"><a href="#cb355-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key delete ak2ibmcloud</span>
 <span id="cb355-5"><a href="#cb355-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key delete ak_aws</span>
 <span id="cb355-6"><a href="#cb355-6" aria-hidden="true" tabindex="-1"></a><span class="ex">ats</span> access_key entitlement ak2ibmcloud</span>
@@ -6755,7 +6761,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb394-1"><a href
 <h2 data-number="8.12" id="node-sample-commands"><span
 class="header-section-number">8.12</span> Node sample commands</h2>
 <div class="sourceCode" id="cb395"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href="#cb395-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--url</span><span class="op">=</span>https://node_preview.example.com/path <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$bearer_666</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$root_id</span> access_key do self br /</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href="#cb395-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--url</span><span class="op">=</span>https://tst.example.com/path <span class="at">--password</span><span class="op">=</span><span class="st">&quot;Bearer </span><span class="va">$bearer_666</span><span class="st">&quot;</span> <span class="at">--root-id</span><span class="op">=</span><span class="va">$root_id</span> access_key do self br /</span>
 <span id="cb395-2"><a href="#cb395-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key create @json:<span class="st">&#39;{&quot;id&quot;:&quot;my_username&quot;,&quot;secret&quot;:&quot;my_password&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;local&quot;,&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb395-3"><a href="#cb395-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key delete my_username</span>
 <span id="cb395-4"><a href="#cb395-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do my_ak_name browse /</span>
@@ -6774,7 +6780,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href
 <span id="cb395-17"><a href="#cb395-17" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do self permission %id:<span class="va">$root_id</span> create @json:<span class="st">&#39;{&quot;access_type&quot;:&quot;user&quot;,&quot;access_id&quot;:&quot;666&quot;}&#39;</span></span>
 <span id="cb395-18"><a href="#cb395-18" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key do self show / <span class="at">--fields</span><span class="op">=</span>id</span>
 <span id="cb395-19"><a href="#cb395-19" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key list</span>
-<span id="cb395-20"><a href="#cb395-20" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key set_bearer_key self @file:my_private_key_path</span>
+<span id="cb395-20"><a href="#cb395-20" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key set_bearer_key self @file:my_private_key</span>
 <span id="cb395-21"><a href="#cb395-21" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> api_details</span>
 <span id="cb395-22"><a href="#cb395-22" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> async bandwidth 1</span>
 <span id="cb395-23"><a href="#cb395-23" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> async counters 1</span>
@@ -6783,7 +6789,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href
 <span id="cb395-26"><a href="#cb395-26" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> async show 1</span>
 <span id="cb395-27"><a href="#cb395-27" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> async show ALL</span>
 <span id="cb395-28"><a href="#cb395-28" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> basic_token</span>
-<span id="cb395-29"><a href="#cb395-29" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> bearer_token @file:my_private_key_path @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span></span>
+<span id="cb395-29"><a href="#cb395-29" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> bearer_token @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span></span>
 <span id="cb395-30"><a href="#cb395-30" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> browse / <span class="at">-r</span></span>
 <span id="cb395-31"><a href="#cb395-31" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete @list:,my_upload_folder/todelete,my_upload_folder/tdlink,my_upload_folder/delfile</span>
 <span id="cb395-32"><a href="#cb395-32" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete my_upload_folder/testfile.bin</span>
@@ -6817,7 +6823,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href
 <span id="cb395-60"><a href="#cb395-60" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_node_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/localsync&quot;,&quot;remote_dir&quot;:&quot;/aspera-test-dir-tiny&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb395-61"><a href="#cb395-61" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
 <span id="cb395-62"><a href="#cb395-62" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> transfer sessions</span>
-<span id="cb395-63"><a href="#cb395-63" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node_simple.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password&quot;}&#39;</span></span>
+<span id="cb395-63"><a href="#cb395-63" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-small/10MB.2&quot;}],&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://node.example.com/path@&quot;,&quot;username&quot;:&quot;my_username&quot;,&quot;password&quot;:&quot;my_password&quot;}&#39;</span></span>
 <span id="cb395-64"><a href="#cb395-64" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret testfile.bin</span>
 <span id="cb395-65"><a href="#cb395-65" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span></code></pre></div>
 <h1 data-number="9" id="plugin-faspex5-ibm-aspera-faspex-v5"><span
@@ -7015,7 +7021,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb402-1"><a href
 <span id="cb402-34"><a href="#cb402-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb402-35"><a href="#cb402-35" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages status <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb402-36"><a href="#cb402-36" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
-<span id="cb402-37"><a href="#cb402-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared browse %name:my_faspex_src</span>
+<span id="cb402-37"><a href="#cb402-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared browse %name:my_src</span>
 <span id="cb402-38"><a href="#cb402-38" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared list</span>
 <span id="cb402-39"><a href="#cb402-39" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
 <span id="cb402-40"><a href="#cb402-40" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
@@ -7464,30 +7470,30 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb428-1"><a href
 class="header-section-number">10.8</span> Faspex 4 sample commands</h2>
 <div class="sourceCode" id="cb429"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> address_book</span>
-<span id="cb429-2"><a href="#cb429-2" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> dropbox list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_faspex_dbx&quot;</span></span>
+<span id="cb429-2"><a href="#cb429-2" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> dropbox list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span></span>
 <span id="cb429-3"><a href="#cb429-3" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> health</span>
 <span id="cb429-4"><a href="#cb429-4" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> login_methods</span>
 <span id="cb429-5"><a href="#cb429-5" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> me</span>
 <span id="cb429-6"><a href="#cb429-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--box</span><span class="op">=</span>sent <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--format</span><span class="op">=</span>csv <span class="at">--display</span><span class="op">=</span>data <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
 <span id="cb429-7"><a href="#cb429-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--format</span><span class="op">=</span>csv <span class="at">--display</span><span class="op">=</span>data <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
 <span id="cb429-8"><a href="#cb429-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:5}&#39;</span></span>
-<span id="cb429-9"><a href="#cb429-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_faspex_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
-<span id="cb429-10"><a href="#cb429-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_faspex_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
+<span id="cb429-9"><a href="#cb429-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
+<span id="cb429-10"><a href="#cb429-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
 <span id="cb429-11"><a href="#cb429-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb429-12"><a href="#cb429-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="st">&quot;my_package_id&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--box</span><span class="op">=</span>sent</span>
 <span id="cb429-13"><a href="#cb429-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--link</span><span class="op">=</span>https://app.example.com/recv_from_user_path</span>
 <span id="cb429-14"><a href="#cb429-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:10}&#39;</span></span>
-<span id="cb429-15"><a href="#cb429-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv my_pkgid <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_faspex_dbx&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb429-16"><a href="#cb429-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv my_pkgid <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_faspex_wkg&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb429-17"><a href="#cb429-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_faspex_dbx&quot;]}&#39;</span> testfile.bin</span>
-<span id="cb429-18"><a href="#cb429-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_faspex_wkg&quot;]}&#39;</span> testfile.bin</span>
+<span id="cb429-15"><a href="#cb429-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv my_pkgid <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb429-16"><a href="#cb429-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv my_pkgid <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb429-17"><a href="#cb429-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_dbx&quot;]}&#39;</span> testfile.bin</span>
+<span id="cb429-18"><a href="#cb429-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_wkg&quot;]}&#39;</span> testfile.bin</span>
 <span id="cb429-19"><a href="#cb429-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;,&quot;my_username&quot;]}&#39;</span> testfile.bin</span>
-<span id="cb429-20"><a href="#cb429-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;TIMESTAMP package remote&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> <span class="at">--remote_source</span><span class="op">=</span>%name:my_faspex_src sample_source.txt</span>
+<span id="cb429-20"><a href="#cb429-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;TIMESTAMP package remote&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> <span class="at">--remote_source</span><span class="op">=</span>%name:my_src sample_source.txt</span>
 <span id="cb429-21"><a href="#cb429-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_dropbox_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin</span>
 <span id="cb429-22"><a href="#cb429-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_user_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> testfile.bin</span>
-<span id="cb429-23"><a href="#cb429-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source info %name:my_faspex_src <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
+<span id="cb429-23"><a href="#cb429-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source info %name:my_src <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
 <span id="cb429-24"><a href="#cb429-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source list</span>
-<span id="cb429-25"><a href="#cb429-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source node %name:my_faspex_src br / <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
+<span id="cb429-25"><a href="#cb429-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source node %name:my_src br / <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
 <span id="cb429-26"><a href="#cb429-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dmembership list</span>
 <span id="cb429-27"><a href="#cb429-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dropbox list</span>
 <span id="cb429-28"><a href="#cb429-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 metadata_profile list</span>
@@ -7514,12 +7520,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb430-1"><a href
 <span id="cb430-11"><a href="#cb430-11" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user share_permissions 1 list</span>
 <span id="cb430-12"><a href="#cb430-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user share_permissions 1 show 1</span>
 <span id="cb430-13"><a href="#cb430-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files browse /</span>
-<span id="cb430-14"><a href="#cb430-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_shares_upload/testfile.bin</span>
-<span id="cb430-15"><a href="#cb430-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin</span>
-<span id="cb430-16"><a href="#cb430-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_shares_upload/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
-<span id="cb430-17"><a href="#cb430-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb430-18"><a href="#cb430-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin</span>
-<span id="cb430-19"><a href="#cb430-19" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_shares_upload testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb430-14"><a href="#cb430-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_share1/testfile.bin</span>
+<span id="cb430-15"><a href="#cb430-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/testfile.bin</span>
+<span id="cb430-16"><a href="#cb430-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb430-17"><a href="#cb430-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb430-18"><a href="#cb430-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 testfile.bin</span>
+<span id="cb430-19"><a href="#cb430-19" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 testfile.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
 <span id="cb430-20"><a href="#cb430-20" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span></code></pre></div>
 <h1 data-number="12" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">12</span> <a id="console"></a>Plugin:
@@ -7530,7 +7536,7 @@ class="header-section-number">12.1</span> Console sample commands</h2>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb431-1"><a href="#cb431-1" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> health</span>
 <span id="cb431-2"><a href="#cb431-2" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer current list</span>
 <span id="cb431-3"><a href="#cb431-3" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart list</span>
-<span id="cb431-4"><a href="#cb431-4" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart sub my_console_smart_id @json:<span class="st">&#39;{&quot;source&quot;:{&quot;paths&quot;:[&quot;my_console_smart_file&quot;]},&quot;source_type&quot;:&quot;user_selected&quot;}&#39;</span></span></code></pre></div>
+<span id="cb431-4"><a href="#cb431-4" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart sub my_smart_id @json:<span class="st">&#39;{&quot;source&quot;:{&quot;paths&quot;:[&quot;my_smart_file&quot;]},&quot;source_type&quot;:&quot;user_selected&quot;}&#39;</span></span></code></pre></div>
 <h1 data-number="13"
 id="plugin-orchestratoribm-aspera-orchestrator"><span
 class="header-section-number">13</span> <a id="orchestrator"></a>Plugin:
@@ -7543,14 +7549,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb432-1"><a href
 <span id="cb432-2"><a href="#cb432-2" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> info</span>
 <span id="cb432-3"><a href="#cb432-3" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> plugins</span>
 <span id="cb432-4"><a href="#cb432-4" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> processes</span>
-<span id="cb432-5"><a href="#cb432-5" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow details my_orch_workflow_id</span>
-<span id="cb432-6"><a href="#cb432-6" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow export my_orch_workflow_id</span>
-<span id="cb432-7"><a href="#cb432-7" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow inputs my_orch_workflow_id</span>
+<span id="cb432-5"><a href="#cb432-5" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow details my_workflow_id</span>
+<span id="cb432-6"><a href="#cb432-6" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow export my_workflow_id</span>
+<span id="cb432-7"><a href="#cb432-7" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow inputs my_workflow_id</span>
 <span id="cb432-8"><a href="#cb432-8" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow list</span>
-<span id="cb432-9"><a href="#cb432-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
-<span id="cb432-10"><a href="#cb432-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_orch_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
+<span id="cb432-9"><a href="#cb432-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
+<span id="cb432-10"><a href="#cb432-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
 <span id="cb432-11"><a href="#cb432-11" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status ALL</span>
-<span id="cb432-12"><a href="#cb432-12" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status my_orch_workflow_id</span></code></pre></div>
+<span id="cb432-12"><a href="#cb432-12" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status my_workflow_id</span></code></pre></div>
 <h1 data-number="14" id="plugin-cos-ibm-cloud-object-storage"><span
 class="header-section-number">14</span> <a id="cos"></a>Plugin:
 <code>cos</code>: IBM Cloud Object Storage</h1>
@@ -7652,10 +7658,10 @@ real file instead.</p>
 <h2 data-number="14.4" id="cos-sample-commands"><span
 class="header-section-number">14.4</span> COS sample commands</h2>
 <div class="sourceCode" id="cb438"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb438-1"><a href="#cb438-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_icos_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_icos_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_icos_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_icos_resource_instance_id node info</span>
-<span id="cb438-2"><a href="#cb438-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_icos_bucket_name <span class="at">--region</span><span class="op">=</span>my_icos_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb438-1"><a href="#cb438-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id node info</span>
+<span id="cb438-2"><a href="#cb438-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
 <span id="cb438-3"><a href="#cb438-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node access_key show self</span>
-<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download testdst/testfile.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download testfile.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb438-5"><a href="#cb438-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info</span>
 <span id="cb438-6"><a href="#cb438-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node upload testfile.bin</span></code></pre></div>
 <h1 data-number="15" id="ibm-aspera-sync"><span
@@ -8025,14 +8031,14 @@ class="header-section-number">16.12</span> Preview sample commands</h2>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb454-1"><a href="#cb454-1" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> check <span class="at">--skip-types</span><span class="op">=</span>office</span>
 <span id="cb454-2"><a href="#cb454-2" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
 <span id="cb454-3"><a href="#cb454-3" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
-<span id="cb454-4"><a href="#cb454-4" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_docx</span>
-<span id="cb454-5"><a href="#cb454-5" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
-<span id="cb454-6"><a href="#cb454-6" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
-<span id="cb454-7"><a href="#cb454-7" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
-<span id="cb454-8"><a href="#cb454-8" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
-<span id="cb454-9"><a href="#cb454-9" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_file_pdf</span>
-<span id="cb454-10"><a href="#cb454-10" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_file_dcm</span>
-<span id="cb454-11"><a href="#cb454-11" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_file_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
+<span id="cb454-4"><a href="#cb454-4" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_docx</span>
+<span id="cb454-5"><a href="#cb454-5" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
+<span id="cb454-6"><a href="#cb454-6" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
+<span id="cb454-7"><a href="#cb454-7" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
+<span id="cb454-8"><a href="#cb454-8" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
+<span id="cb454-9"><a href="#cb454-9" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
+<span id="cb454-10"><a href="#cb454-10" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb454-11"><a href="#cb454-11" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
 <span id="cb454-12"><a href="#cb454-12" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> trevents <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
 <h1 data-number="17" id="smtp-for-email-notifications"><span
 class="header-section-number">17</span> SMTP for email

@@ -1326,6 +1326,7 @@ The following decoders are supported:
 | json    | String    | any     | decode JSON values (convenient to provide complex structures)
 | lines   | String    | Array   | split a string in multiple lines and return an array
 | list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
+| none    | None      | Nil     | A null value
 | path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 | preset  | String    | Hash    | get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | extend  | String    | String  | evaluates embedded extended value syntax in string
@@ -1598,8 +1599,8 @@ config check_update
 config coffee
 config coffee --ui=text
 config detect https://faspex4.example.com/path
-config detect https://faspex5_jwt.example.com/path
-config detect https://node_simple.example.com/path
+config detect https://faspex5.example.com/path
+config detect https://node.example.com/path
 config detect https://shares.example.com/path shares
 config detect my_org aoc
 config doc
@@ -1643,10 +1644,10 @@ config vault create mylabel @json:'{"password":"my_password_here","description":
 config vault delete mylabel
 config vault list
 config vault show mylabel
-config wizard https://console.example.com/path console -Ptst_console
+config wizard https://console.example.com/path console
 config wizard https://faspex4.example.com/path faspex --username=test --password=test
-config wizard https://faspex5_jwt.example.com/path faspex5 --pkeypath=my_ssh_keys -Ptst_faspex5_jwt
-config wizard https://node_simple.example.com/path node --username=test --password=test
+config wizard https://faspex5.example.com/path faspex5 --pkeypath=my_private_key
+config wizard https://node.example.com/path node --username=test --password=test
 config wizard https://orch.example.com/path orchestrator --username=test --password=test
 config wizard https://shares.example.com/path shares --username=test --password=test
 config wizard my_org aoc --pkeypath= --username=my_user_email
@@ -3255,7 +3256,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, path, ruby, secret, stdin, zlib, extend, preset, vault
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, ruby, secret, stdin, zlib, extend, preset, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -3748,7 +3749,7 @@ Private links require the user to authenticate.
 So, provide the same options as for regular authentication, and provide the private link using option `url`.
 
 A user may not be part of any workspace, but still have access to shared folders (using private links).
-In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@json:null` or `@ruby:nil`.
+In that case, it is possible to list those shared folder by using a value for option `workspace` equal to `@none:` or `@json:null` or `@ruby:nil`.
 
 #### <a id="aocfirst"></a>First Use
 
@@ -4564,8 +4565,8 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```bash
 aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
-aoc admin ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+aoc admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+aoc admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key delete ak1ibmcloud
 aoc admin ats access_key list --fields=name,id
 aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
@@ -4793,8 +4794,8 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ```bash
 ats access_key cluster ak2ibmcloud --secret=my_secret_here
-ats access_key create --cloud=aws --region=my_aws_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_aws_bucket_name","credentials":{"access_key_id":"my_aws_bucket_key","secret_access_key":"my_aws_bucket_secret"},"path":"/"}}'
-ats access_key create --cloud=softlayer --region=my_icos_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_icos_bucket_name","credentials":{"access_key_id":"my_icos_bucket_key","secret_access_key":"my_icos_bucket_secret"},"path":"/"}}'
+ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 ats access_key delete ak2ibmcloud
 ats access_key delete ak_aws
 ats access_key entitlement ak2ibmcloud
@@ -5307,7 +5308,7 @@ ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_fold
 ### Node sample commands
 
 ```bash
-node --url=https://node_preview.example.com/path --password="Bearer $bearer_666" --root-id=$root_id access_key do self br /
+node --url=https://tst.example.com/path --password="Bearer $bearer_666" --root-id=$root_id access_key do self br /
 node access_key create @json:'{"id":"my_username","secret":"my_password","storage":{"type":"local","path":"/"}}'
 node access_key delete my_username
 node access_key do my_ak_name browse /
@@ -5326,7 +5327,7 @@ node access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 node access_key do self permission %id:$root_id create @json:'{"access_type":"user","access_id":"666"}'
 node access_key do self show / --fields=id
 node access_key list
-node access_key set_bearer_key self @file:my_private_key_path
+node access_key set_bearer_key self @file:my_private_key
 node api_details
 node async bandwidth 1
 node async counters 1
@@ -5335,7 +5336,7 @@ node async list
 node async show 1
 node async show ALL
 node basic_token
-node bearer_token @file:my_private_key_path @json:'{"user_id":"666"}'
+node bearer_token @file:my_private_key @json:'{"user_id":"666"}'
 node browse / -r
 node delete @list:,my_upload_folder/todelete,my_upload_folder/tdlink,my_upload_folder/delfile
 node delete my_upload_folder/testfile.bin
@@ -5369,7 +5370,7 @@ node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"directi
 node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
 node transfer sessions
-node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node_simple.example.com/path@","username":"my_username","password":"my_password"}'
+node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password"}'
 node upload --username=my_ak_name --password=my_ak_secret testfile.bin
 node upload testfile.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 ```
@@ -5563,7 +5564,7 @@ faspex5 packages show --box=my_shinbox "my_package_id"
 faspex5 packages show --box=my_workgroup --group-type=workgroups "my_package_id"
 faspex5 packages status "my_package_id"
 faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
-faspex5 shared browse %name:my_faspex_src
+faspex5 shared browse %name:my_src
 faspex5 shared list
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
@@ -5945,30 +5946,30 @@ ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 
 ```bash
 faspex address_book
-faspex dropbox list --recipient="*my_faspex_dbx"
+faspex dropbox list --recipient="*my_dbx"
 faspex health
 faspex login_methods
 faspex me
 faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}'
 faspex package list --query=@json:'{"max":5}'
-faspex package list --recipient="*my_faspex_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
-faspex package list --recipient="*my_faspex_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
+faspex package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
+faspex package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
 faspex package recv "my_package_id" --to-folder=.
 faspex package recv "my_package_id" --to-folder=. --box=sent
 faspex package recv --to-folder=. --link=https://app.example.com/recv_from_user_path
 faspex package recv ALL --to-folder=. --once-only=yes --query=@json:'{"max":10}'
-faspex package recv my_pkgid --recipient="*my_faspex_dbx" --to-folder=.
-faspex package recv my_pkgid --recipient="*my_faspex_wkg" --to-folder=.
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_dbx"]}' testfile.bin
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_faspex_wkg"]}' testfile.bin
+faspex package recv my_pkgid --recipient="*my_dbx" --to-folder=.
+faspex package recv my_pkgid --recipient="*my_wkg" --to-folder=.
+faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_dbx"]}' testfile.bin
+faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_wkg"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal","my_username"]}' testfile.bin
-faspex package send --delivery-info=@json:'{"title":"TIMESTAMP package remote","recipients":["my_email_internal"]}' --remote_source=%name:my_faspex_src sample_source.txt
+faspex package send --delivery-info=@json:'{"title":"TIMESTAMP package remote","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
 faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
 faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"Important files delivery"}' testfile.bin
-faspex source info %name:my_faspex_src --storage=@preset:faspex4_storage
+faspex source info %name:my_src --storage=@preset:faspex4_storage
 faspex source list
-faspex source node %name:my_faspex_src br / --storage=@preset:faspex4_storage
+faspex source node %name:my_src br / --storage=@preset:faspex4_storage
 faspex v4 dmembership list
 faspex v4 dropbox list
 faspex v4 metadata_profile list
@@ -5997,12 +5998,12 @@ shares admin user list --type=local
 shares admin user share_permissions 1 list
 shares admin user share_permissions 1 show 1
 shares files browse /
-shares files delete my_shares_upload/testfile.bin
-shares files download --to-folder=. my_shares_upload/testfile.bin
-shares files download --to-folder=. my_shares_upload/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
-shares files upload --to-folder=my_shares_upload 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
-shares files upload --to-folder=my_shares_upload testfile.bin
-shares files upload --to-folder=my_shares_upload testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+shares files delete my_share1/testfile.bin
+shares files download --to-folder=. my_share1/testfile.bin
+shares files download --to-folder=. my_share1/testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+shares files upload --to-folder=my_share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+shares files upload --to-folder=my_share1 testfile.bin
+shares files upload --to-folder=my_share1 testfile.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
 shares health
 ```
 
@@ -6014,7 +6015,7 @@ shares health
 console health
 console transfer current list
 console transfer smart list
-console transfer smart sub my_console_smart_id @json:'{"source":{"paths":["my_console_smart_file"]},"source_type":"user_selected"}'
+console transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
 ```
 
 ## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator
@@ -6026,14 +6027,14 @@ orchestrator health
 orchestrator info
 orchestrator plugins
 orchestrator processes
-orchestrator workflow details my_orch_workflow_id
-orchestrator workflow export my_orch_workflow_id
-orchestrator workflow inputs my_orch_workflow_id
+orchestrator workflow details my_workflow_id
+orchestrator workflow export my_workflow_id
+orchestrator workflow inputs my_workflow_id
 orchestrator workflow list
-orchestrator workflow start my_orch_workflow_id @json:'{"Param":"world !"}'
-orchestrator workflow start my_orch_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+orchestrator workflow start my_workflow_id @json:'{"Param":"world !"}'
+orchestrator workflow start my_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 orchestrator workflow status ALL
-orchestrator workflow status my_orch_workflow_id
+orchestrator workflow status my_workflow_id
 ```
 
 ## <a id="cos"></a>Plugin: `cos`: IBM Cloud Object Storage
@@ -6142,10 +6143,10 @@ ascli cos node upload 'faux:///sample1G?1g'
 ### COS sample commands
 
 ```bash
-cos --bucket=my_icos_bucket_name --endpoint=my_icos_bucket_endpoint --apikey=my_icos_bucket_apikey --crn=my_icos_resource_instance_id node info
-cos --bucket=my_icos_bucket_name --region=my_icos_bucket_region --service-credentials=@json:@file:service_creds.json node info
+cos --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_apikey --crn=my_resource_instance_id node info
+cos --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:service_creds.json node info
 cos node access_key show self
-cos node download testdst/testfile.bin --to-folder=.
+cos node download testfile.bin --to-folder=.
 cos node info
 cos node upload testfile.bin
 ```
@@ -6476,14 +6477,14 @@ If the preview generator does not have access to files on the file system (it is
 preview check --skip-types=office
 preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 preview scan --skip-types=office --log-level=info
-preview show --base=test my_file_docx
-preview show --base=test my_file_mpg --video-png-conv=animated
-preview show --base=test my_file_mpg --video-png-conv=fixed
-preview show --base=test my_file_mpg mp4 --video-conversion=clips
-preview show --base=test my_file_mpg mp4 --video-conversion=reencode
-preview show --base=test my_file_pdf
-preview test --base=test my_file_dcm
-preview test --base=test my_file_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
+preview show --base=test my_docx
+preview show --base=test my_mpg --video-png-conv=animated
+preview show --base=test my_mpg --video-png-conv=fixed
+preview show --base=test my_mpg mp4 --video-conversion=clips
+preview show --base=test my_mpg mp4 --video-conversion=reencode
+preview show --base=test my_pdf
+preview test --base=test my_dcm
+preview test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 preview trevents --once-only=yes --skip-types=office --log-level=info
 ```
 

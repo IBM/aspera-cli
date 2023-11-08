@@ -32,6 +32,10 @@ module Aspera
           Log.log.warn('Titled CSV file without any line') if hash_array.empty?
           return hash_array
         end
+
+        def assert_no_value(v, what)
+          raise "no value allowed for extended value type: #{what}" unless v.empty?
+        end
       end
 
       private
@@ -47,10 +51,11 @@ module Aspera
           json:   lambda{|v|JSON.parse(v)},
           lines:  lambda{|v|v.split("\n")},
           list:   lambda{|v|v[1..-1].split(v[0])},
+          none:   lambda{|v|ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
           path:   lambda{|v|File.expand_path(v)},
           ruby:   lambda{|v|Environment.secure_eval(v)},
-          secret: lambda{|v|raise 'no value allowed for secret' unless v.empty?; $stdin.getpass('secret> ')}, # rubocop:disable Style/Semicolon
-          stdin:  lambda{|v|raise 'no value allowed for stdin' unless v.empty?; $stdin.read}, # rubocop:disable Style/Semicolon
+          secret: lambda{|v|ExtendedValue.assert_no_value(v, :secret); $stdin.getpass('secret> ')}, # rubocop:disable Style/Semicolon
+          stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
           zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
           extend: lambda{|v|ExtendedValue.instance.evaluate_all(v)}
           # other handlers can be set using set_handler, e.g. preset is reader in config plugin
