@@ -31,7 +31,7 @@ module Aspera
         },
         {
           exception:   OpenSSL::SSL::SSLError,
-          match:       /does not match the server certificate/,
+          match:       /(does not match the server certificate|certificate verify failed)/,
           remediation: [
             'You can ignore SSL errors with option:',
             '--insecure=yes'
@@ -51,7 +51,7 @@ module Aspera
       private_constant :ERROR_HINTS
 
       class << self
-        def hint_for(error)
+        def hint_for(error, formatter)
           ERROR_HINTS.each do |hint|
             next unless error.is_a?(hint[:exception])
             message = error.message

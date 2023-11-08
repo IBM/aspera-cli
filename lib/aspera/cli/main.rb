@@ -301,7 +301,7 @@ module Aspera
           formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?
-          Hints.hint_for(exception_info[:e])
+          Hints.hint_for(exception_info[:e], formatter)
         end
         # 2- processing of command not processed (due to exception or bad command line)
         if execute_command || @option_show_config
