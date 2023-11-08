@@ -109,7 +109,7 @@ REPLACEMENTS = [
   # remove multi command mark
   [/\)?&&\\$/, ''],
   [/ &\\$/, ''],
-  # remove redir to file
+  # remove redirection to file
   [/ *> *[^(}][^ ]*$/, ''],
   # remove folder macro
   [/DIR_[A-Z]+/, ''],
@@ -142,7 +142,8 @@ REPLACEMENTS = [
   [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
   [/@preset:[a-z0-9_]+\.([a-z0-9_]+)@?/, 'my_\1'],
   [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
-  ['@extend:', '']
+  ['@extend:', ''],
+  ['"my_password"', '"my_password_here"']
 ].freeze
 
 def all_test_commands_by_plugin

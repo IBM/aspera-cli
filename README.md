@@ -5332,7 +5332,7 @@ ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_fold
 
 ```bash
 node --url=https://tst.example.com/path --password="Bearer $bearer_666" --root-id=$root_id access_key do self br /
-node access_key create @json:'{"id":"my_username","secret":"my_password","storage":{"type":"local","path":"/"}}'
+node access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 node access_key delete my_username
 node access_key do my_ak_name browse /
 node access_key do my_ak_name delete /folder2
@@ -5378,7 +5378,7 @@ node service list
 node space /
 node ssync bandwidth %name:my_node_sync
 node ssync counters %name:my_node_sync
-node ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password","path":"my_remote_path"}}}'
+node ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
 node ssync delete %name:my_node_sync
 node ssync files %name:my_node_sync
 node ssync list
@@ -5393,7 +5393,7 @@ node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"directi
 node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
 node transfer sessions
-node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password"}'
+node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
 node upload --username=my_ak_name --password=my_ak_secret testfile.bin
 node upload testfile.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 ```
