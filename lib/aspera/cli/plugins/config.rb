@@ -736,6 +736,13 @@ module Aspera
                 raise last_line
               end
             end
+            # ascp's openssl directory
+            ascp_file = Fasp::Installation.instance.path(:ascp)
+            File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |match|
+              if (m = match.match(/OPENSSLDIR.*"(.*)"/))
+                data['openssldir'] = m[1]
+              end
+            end if File.file?(ascp_file)
             data['keypass'] = Fasp::Installation.instance.bypass_pass
             # log is "-" no need to display
             data.delete('log')

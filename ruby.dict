@@ -43,3 +43,4 @@ systmpdir
 stringio
 fnmatch
 FNM_DOTMATCH
+binread

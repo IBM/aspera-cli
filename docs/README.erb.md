@@ -871,14 +871,15 @@ Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the <%=tool%> parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
-Typically, the `@json:` modifier is used, it expects a JSON string. JSON itself has some special syntax: for example `"` is used to denote strings.
+Some of the <%=tool%> parameters are expected to be [Extended Values](#extended), i.e. not a simple `String`, but a complex structure (`Hash`, `Array`).
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
+JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
 #### Testing Extended Values
 
 In case of doubt of argument values after parsing, one can test using command `config echo`. `config echo` takes exactly **one** argument which can use the [Extended Value](#extended) syntax. Unprocessed command line arguments are shown in the error message.
 
-Example: The shell parses three arguments (as strings: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+Example: The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
 <%=cmd%> conf echo 1 2 3
@@ -1922,17 +1923,21 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 ```
 
 `ascp` also needs to validate certificates when using **WSS**.
-<%=tool%> also has `ascp` to use certificate reference from `cert_stores` (using `-i` switch of `ascp`).
 
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS:
-
-> **Note:** This overrides the default location used by `ascp`:
+> **Note:** <%=tool%> overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
 
 ```bash
 strings $(ascli conf ascp info --fields=ascp)|grep -w OPENSSLDIR
 ```
 
-To update trusted root certificates for <%=tool%>: Display the trusted certificate store locations used by <%=tool%>.
+or
+
+```bash
+<%=cmd%> conf ascp info --fields=openssldir
+```
+
+To update trusted root certificates for <%=tool%>:
+Display the trusted certificate store locations used by <%=tool%>.
 Typically done by updating the system's root certificate store.
 
 An up-to-date version of the certificate bundle can be retrieved with:

@@ -122,7 +122,7 @@ REPLACEMENTS = [
   # hidden parameters to make test work
   [/OPTST_[A-Z0-5]+/, ''],
   [/TST_(UTF|ASC)_(FILENAME|LCL_PATH)/, 'testfile.bin'],
-  ['TST_SYNC_LCL_DIR', '/data/localsync'],
+  ['TST_SYNC_LCL_DIR', '/data/local_sync'],
   ['HSTS_UPLOADED_FILE', 'testfile.bin'],
   ['HSTS_FOLDER_UPLOAD', 'folder_1'],
   [%q['"CF_LOCAL_SYNC_DIR"'], 'syncdir'],

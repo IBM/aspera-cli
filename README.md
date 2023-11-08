@@ -877,14 +877,15 @@ Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the `ascli` parameters are expected to be [Extended Values](#extended), i.e. not a simple strings, but a complex structure (Hash, Array).
-Typically, the `@json:` modifier is used, it expects a JSON string. JSON itself has some special syntax: for example `"` is used to denote strings.
+Some of the `ascli` parameters are expected to be [Extended Values](#extended), i.e. not a simple `String`, but a complex structure (`Hash`, `Array`).
+Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
+JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
 #### Testing Extended Values
 
 In case of doubt of argument values after parsing, one can test using command `config echo`. `config echo` takes exactly **one** argument which can use the [Extended Value](#extended) syntax. Unprocessed command line arguments are shown in the error message.
 
-Example: The shell parses three arguments (as strings: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+Example: The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
 ascli conf echo 1 2 3
@@ -1998,17 +1999,21 @@ ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
 `ascp` also needs to validate certificates when using **WSS**.
-`ascli` also has `ascp` to use certificate reference from `cert_stores` (using `-i` switch of `ascp`).
 
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS:
-
-> **Note:** This overrides the default location used by `ascp`:
+> **Note:** `ascli` overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
 
 ```bash
 strings $(ascli conf ascp info --fields=ascp)|grep -w OPENSSLDIR
 ```
 
-To update trusted root certificates for `ascli`: Display the trusted certificate store locations used by `ascli`.
+or
+
+```bash
+ascli conf ascp info --fields=openssldir
+```
+
+To update trusted root certificates for `ascli`:
+Display the trusted certificate store locations used by `ascli`.
 Typically done by updating the system's root certificate store.
 
 An up-to-date version of the certificate bundle can be retrieved with:
@@ -4655,10 +4660,10 @@ aoc files short_link public create testdst
 aoc files show %id:my_file_id
 aoc files show /
 aoc files show testdst/testfile.bin
-aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
-aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
-aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/testdst"}}'
-aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/testdst","reset":true}]}'
+aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
+aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
 aoc files thumbnail my_test_folder/video_file.mpg
 aoc files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
 aoc files transfer push /testsrc --to-folder=/testdst testfile.bin
@@ -4862,11 +4867,11 @@ server md5sum my_inside_folder/testfile.bin
 server mkdir my_inside_folder --logger=stdout
 server mkdir my_upload_folder/target_hot
 server mv my_upload_folder/200KB.2 my_upload_folder/to.delete
-server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"}}'
+server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"}}'
 server sync admin status --sync-info=@json:'{"name":"sync2"}'
-server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/localsync"}]}'
-server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/localsync","reset":true}]}'
-server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/localsync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
+server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/local_sync"}]}'
+server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
+server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","filepairlist.txt"]}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"my_inside_folder/othername"}]}'
@@ -5387,10 +5392,10 @@ node ssync start %name:my_node_sync
 node ssync state %name:my_node_sync
 node ssync stop %name:my_node_sync
 node ssync summary %name:my_node_sync
-node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/localsync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/localsync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 node transfer list --query=@json:'{"active_only":true}'
 node transfer sessions
 node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
