@@ -609,7 +609,7 @@ module Aspera
                   id: IdGenerator.from_list(['aoc_recv', options.get_option(:url, mandatory: true),
                                              aoc_api.context[:workspace_id]].concat(aoc_api.additional_persistence_ids)))
               end
-              if VAL_ALL.eql?(ids_to_download)
+              if ExtendedValue::ALL.eql?(ids_to_download)
                 query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
                 raise 'option query must be Hash' unless query.is_a?(Hash)
                 if query.key?('dropbox_name')
@@ -625,7 +625,7 @@ module Aspera
                 ids_to_download = package_info.map{|e|e['id']}
                 # array here
                 ids_to_download.reject!{|id|skip_ids_data.include?(id)}
-              end # VAL_ALL
+              end # ExtendedValue::ALL
               # list here
               ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               result_transfer = []
@@ -740,7 +740,7 @@ module Aspera
                   sort:        '-created_at'
                 }
                 result = aoc_api.read('short_links', list_params)[:data]
-                return {type: :object_list, data: result, fields: %w[ALL -data]}
+                return {type: :object_list, data: result, fields: Formatter.all_but('data')}
               when :create
                 creation_params = {
                   purpose:            purpose,

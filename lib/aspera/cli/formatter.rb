@@ -86,10 +86,7 @@ module Aspera
 
     # Take care of output
     class Formatter
-      # special value for option `fields` to display all fields
-      FIELDS_ALL = 'ALL'
       FIELDS_LESS = '-'
-      FIELDS_DEFAULT = 'DEF'
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
       # supported output formats
@@ -97,7 +94,7 @@ module Aspera
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
 
-      private_constant :FIELDS_ALL, :FIELDS_DEFAULT, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR
+      private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
@@ -122,7 +119,7 @@ module Aspera
 
         def all_but(list)
           list = [list] unless list.is_a?(Array)
-          return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(FIELDS_ALL)
+          return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(ExtendedValue::ALL)
         end
 
         def tick(yes)
@@ -159,9 +156,9 @@ module Aspera
         options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format}, default: :table)
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
         options.declare(
-          :fields, "Comma separated list of: fields, or #{FIELDS_ALL}, or #{FIELDS_DEFAULT}", handler: {o: self, m: :option_fields},
+          :fields, "Comma separated list of: fields, or #{ExtendedValue::ALL}, or #{ExtendedValue::DEF}", handler: {o: self, m: :option_fields},
           types: [String, Array, Regexp, Proc],
-          default: FIELDS_DEFAULT)
+          default: ExtendedValue::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_select})
         options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash}, default: true)
@@ -198,12 +195,12 @@ module Aspera
 
       # this method computes the list of fields to display
       # data: array of hash
-      # default: list of fields to display by default (may contain FIELDS_ALL, FIELDS_DEFAULT)
+      # default: list of fields to display by default (may contain special values)
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
         request =
           case @option_fields
-          when NilClass then [FIELDS_DEFAULT]
+          when NilClass then [ExtendedValue::DEF]
           when String then @option_fields.split(',')
           when Array then @option_fields
           when Regexp then return all_fields(data).select{|i|i.match(@option_fields)}
@@ -219,10 +216,10 @@ module Aspera
             item = item[1..-1]
           end
           case item
-          when FIELDS_ALL
+          when ExtendedValue::ALL
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
             request.unshift(*all_fields(data))
-          when FIELDS_DEFAULT
+          when ExtendedValue::DEF
             default = all_fields(data).select{|i|default.call(i)} if default.is_a?(Proc)
             default = all_fields(data) if default.nil?
             request.unshift(*default)

@@ -340,7 +340,7 @@ module Aspera
                 delivery_id = instance_identifier
                 raise 'empty id' if delivery_id.empty?
                 recipient = options.get_option(:recipient)
-                if VAL_ALL.eql?(delivery_id)
+                if ExtendedValue::ALL.eql?(delivery_id)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']

@@ -16,8 +16,6 @@ module Aspera
       MAX_ITEMS = 'max'
       # special query parameter: max number of pages for list command
       MAX_PAGES = 'pmax'
-      # used when all resources are selected
-      VAL_ALL = 'ALL'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
 

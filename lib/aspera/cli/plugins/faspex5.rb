@@ -100,7 +100,7 @@ module Aspera
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
           options.declare(:link, 'Public link authorization (specific operations)')
-          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{VAL_ALL}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{ExtendedValue::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
@@ -291,7 +291,7 @@ module Aspera
           box = options.get_option(:box)
           api_path =
             case box
-            when VAL_ALL then '' # only admin can list all packages globally
+            when ExtendedValue::ALL then '' # only admin can list all packages globally
             when *API_LIST_MAILBOX_TYPES then box
             else
               group_type = options.get_option(:group_type)
@@ -329,7 +329,7 @@ module Aspera
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
             skip_ids_persistency.save
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-          when VAL_ALL
+          when ExtendedValue::ALL
             # TODO: if packages have same name, they will overwrite ?
             package_ids = list_packages_with_filter.map{|p|p['id']}
             Log.dump(:package_ids, package_ids)

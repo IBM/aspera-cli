@@ -14,6 +14,10 @@ module Aspera
     class ExtendedValue
       include Singleton
 
+      # special values
+      ALL = 'ALL'
+      DEF = 'DEF'
+
       class << self
         # decode comma separated table text
         def decode_csvt(value)

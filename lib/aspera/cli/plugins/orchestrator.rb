@@ -155,7 +155,7 @@ module Aspera
             case command
             when :status
               call_opts = {}
-              call_opts[:id] = wf_id unless wf_id.eql?(VAL_ALL)
+              call_opts[:id] = wf_id unless wf_id.eql?(ExtendedValue::ALL)
               result = call_ao('workflows_status', call_opts)[:data]
               return {type: :object_list, data: result['workflows']['workflow']}
             when :list
