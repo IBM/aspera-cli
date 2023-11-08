@@ -1976,33 +1976,40 @@ mv ${PRIVKEYFILE}.with_des ${PRIVKEYFILE}
 
 ### <a id="certificates"></a>SSL CA certificate bundle
 
+To display trusted certificate store locations:
+
+```bash
+ascli --show-config --fields=cert_stores
+```
+
+To modify the locations of certificate store, use option `cert_stores`.
+If you use this option, then default locations are removed, but they can be added using special value `DEF`.
+The value can be either an `Array`, or successive options.
+
 `ascli` uses the Ruby `openssl` gem, which uses the `openssl` library.
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
-
-To display the current root certificate store locations:
-
-```bash
-ascli conf echo @ruby:'[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
-```
-
-or
-
-```bash
-ascli conf echo @ruby:'%w[DIR FILE].map{|s|OpenSSL::X509.const_get("DEFAULT_CERT_"+s)}.join("\n")' --format=text
-```
-
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
-`ascp` also needs to validate certificates when using **WSS**.
-By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS:
+> **Note:** One can display those values like this:
 
 ```bash
-strings $(which ascp)|grep -w OPENSSLDIR
+ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
+ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
-`ascli` overrides and sets the default Ruby certificate path as well for `ascp` using `-i` switch.
+`ascp` also needs to validate certificates when using **WSS**.
+`ascli` also has `ascp` to use certificate reference from `cert_stores` (using `-i` switch of `ascp`).
 
-To update trusted root certificates for`ascli`, just update your system's root certificates or use env vars specified here above.
+By default, `ascp` uses primarily certificates from hard-coded path (e.g. on macOS: `/Library/Aspera/ssl`) for WSS:
+
+> **Note:** This overrides the default location used by `ascp`:
+
+```bash
+strings $(ascli conf ascp info --fields=ascp)|grep -w OPENSSLDIR
+```
+
+To update trusted root certificates for `ascli`: Display the trusted certificate store locations used by `ascli`.
+Typically done by updating the system's root certificate store.
 
 An up-to-date version of the certificate bundle can be retrieved with:
 
@@ -2010,11 +2017,26 @@ An up-to-date version of the certificate bundle can be retrieved with:
 ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 ```
 
-Once can use this to update the default certificate store:
+To download that certificate store:
 
 ```bash
 ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
-export SSL_CERT_FILE=/tmp/cacert.pem
+```
+
+Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
+
+To trust a certificate (e.g. self-signed), provided that the `CN` is correct, save the certificate to a file:
+
+```bash
+ascli conf remote_certificate https://localhost:9092 > myserver.pem
+```
+
+> **Note:** the saved certificateb shows the CN as first line.
+
+Then, use this file as certificate store (e.g. here, Node API):
+
+```bash
+ascli conf echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
 ```
 
 ### Image and video thumbnails
@@ -3286,7 +3308,7 @@ OPTIONS: global
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey hint initdemo open plugins preset proxy_check smtp_settings vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check remote_certificate smtp_settings throw vault wizard
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
@@ -3319,6 +3341,7 @@ OPTIONS:
         --plugin-folder=VALUE        Folder where to find additional plugins
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
         --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
     -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]

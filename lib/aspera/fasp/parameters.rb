@@ -220,8 +220,10 @@ module Aspera
             Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
           else
             # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-            env_args[:args].unshift('-i', OpenSSL::X509::DEFAULT_CERT_FILE)
-            Log.log.debug{"CA certs for wss: openssl certs: #{OpenSSL::X509::DEFAULT_CERT_FILE}"}
+            @options[:trusted_certs].each do |file|
+              env_args[:args].unshift('-i', file)
+              Log.log.debug{"trusted certs for wss: #{file}"}
+            end
           end
         else
           # remove unused parameter (avoid warning)

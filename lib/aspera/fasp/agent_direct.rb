@@ -26,7 +26,8 @@ module Aspera
         resume:            {},
         ascp_args:         [],
         check_ignore:      nil, # callback with host,port
-        quiet:             true # by default no native ascp progress bar
+        quiet:             true, # by default no native ascp progress bar
+        trusted_certs:     [] # list of files with trusted certificates (stores)
       }.freeze
       # Management port start message
       MGT_HEADER = 'FASPMGR 2'

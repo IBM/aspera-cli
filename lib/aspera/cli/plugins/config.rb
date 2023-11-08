@@ -180,6 +180,8 @@ module Aspera
           @proxy_credentials = nil
           @main_folder = nil
           @option_config_file = nil
+          @certificate_store = nil
+          @certificate_paths = nil
           # option to set main folder
           options.declare(
             :home, 'Home folder for tool',
@@ -232,6 +234,7 @@ module Aspera
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
           options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
           options.declare(:ignore_certificate, 'List of HTTPS url where to no validate certificate', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
+          options.declare(:cert_stores, 'List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
           options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
@@ -275,6 +278,45 @@ module Aspera
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_http_options
         attr_reader :option_ignore_cert_host_port
 
+        def trusted_cert_locations=(path_list)
+          path_list = [path_list] unless path_list.is_a?(Array)
+          if @certificate_store.nil?
+            Log.log.debug('Creating SSL Cert store')
+            @certificate_store = OpenSSL::X509::Store.new
+            @certificate_store.set_default_paths
+            @certificate_paths = []
+          end
+
+          path_list.each do |path|
+            raise 'Expecting a String for cert location' unless path.is_a?(String)
+            Log.log.debug("Adding cert location: #{path}")
+            if path.eql?(ExtendedValue::DEF)
+              path = OpenSSL::X509::DEFAULT_CERT_DIR
+              @certificate_store.add_path(path)
+              @certificate_paths.push(path)
+              path = OpenSSL::X509::DEFAULT_CERT_FILE
+              @certificate_store.add_file(path)
+            elsif File.file?(path)
+              @certificate_store.add_file(path)
+            elsif File.directory?(path)
+              @certificate_store.add_path(path)
+            else
+              raise "No such file or folder: #{path}"
+            end
+            @certificate_paths.push(path)
+          end
+        end
+
+        def trusted_cert_locations(files_only: false)
+          locations = if @certificate_paths.nil?
+            [OpenSSL::X509::DEFAULT_CERT_DIR, OpenSSL::X509::DEFAULT_CERT_FILE]
+          else
+            @certificate_paths
+          end
+          locations = locations.select{|f|File.file?(f)} if files_only
+          return locations
+        end
+
         def option_ignore_cert_host_port=(url_list)
           url_list.each do |url|
             uri = URI.parse(url)
@@ -302,6 +344,8 @@ module Aspera
           http_session.set_debug_output($stdout) if @option_rest_debug
           # Rest.io_http_session(http_session).debug_output = Log.log
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
+          http_session.cert_store = @certificate_store if @certificate_store
+          Log.log.debug{"using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
           if @proxy_credentials
             http_session.proxy_user = @proxy_credentials[:user]
             http_session.proxy_pass = @proxy_credentials[:pass]
@@ -835,6 +879,7 @@ module Aspera
           open
           documentation
           genkey
+          remote_certificate
           gem
           plugins
           flush_tokens
@@ -851,7 +896,7 @@ module Aspera
           check_update
           initdemo
           vault
-          hint].freeze
+          throw].freeze
 
         # Main action procedure for plugin
         def execute_action
@@ -872,6 +917,13 @@ module Aspera
             private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIVKEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
+          when :remote_certificate
+            remote_url = options.get_next_argument('remote URL')
+            @option_insecure = true
+            remote_certificate = Rest.start_http_session(remote_url).peer_cert
+            remote_certificate.subject.to_a.find { |name, _, _| name == 'CN' }[1]
+            formatter.display_status("CN=#{remote_certificate.subject.to_a.find { |name, _, _| name == 'CN' }[1] rescue ''}")
+            return Main.result_status(remote_certificate.to_pem)
           when :echo # display the content of a value given on command line
             result = {type: :other_struct, data: options.get_next_argument('value')}
             # special for csv
@@ -979,7 +1031,7 @@ module Aspera
             end
             return Main.result_status('Done')
           when :vault then execute_vault
-          when :hint
+          when :throw
             # :type [String]
             options
             exception_class_name = options.get_next_argument('exception class name', mandatory: true)

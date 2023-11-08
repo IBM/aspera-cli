@@ -7,6 +7,8 @@
   * new: global: option `fields` now supports `RegExp`
   * new: global: option `home` to set the main folder for configuration and cache
   * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
+  * new: global: option `cert_stores` to specify alternate certificate stores
+  * new: config: command `remote_certificate` to retrieve a remote certificate
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard accepts public links
   * new: aoc: support private links, and possibility to list shared folder with workspace `@json:null`

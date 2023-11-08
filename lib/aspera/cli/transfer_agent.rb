@@ -43,9 +43,9 @@ module Aspera
       end
 
       # @param env external objects: option manager, config file manager
-      def initialize(opt_mgr, config)
+      def initialize(opt_mgr, config_plugin)
         @opt_mgr = opt_mgr
-        @config = config
+        @config = config_plugin
         # command line can override transfer spec
         @transfer_spec_cmdline = {'create_dir' => true}
         @transfer_info = {}
@@ -124,6 +124,7 @@ module Aspera
             agent_options[:quiet] = false
           end
           agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
+          agent_options[:trusted_certs] ||= @config.trusted_cert_locations(files_only: true)
         end
         # normalize after getting from user or default node
         agent_options = agent_options.symbolize_keys

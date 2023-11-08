@@ -40,7 +40,8 @@ EXE_MAN=$(EXE_COMMON) --warnings
 EXE_NOMAN=$(EXE_COMMON)
 # enclose tests that shall result in error
 EXE_BEG_ERR=if $(EXE_COMMON)
-EXE_END_ERR=>/dev/null 2>&1;then echo "No error: problem";exit 1;else echo "Test ok";fi
+EXE_SHW_ERR=;then echo "No error: problem";exit 1;else echo "Test ok";fi
+EXE_END_ERR=>/dev/null 2>&1$(EXE_SHW_ERR)
 # enclose tests that fail, but should not
 EXE_BEG_FAI=if $(EXE_COMMON)
 EXE_END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else echo "Test known to fail";fi
@@ -1236,10 +1237,11 @@ $(T)conf_interactive: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_hint: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) config hint Aspera::Fasp::Error 'Remote host is not who we expected'$(EXE_END_ERR)
-	$(EXE_BEG_ERR) config hint OpenSSL::SSL::SSLError 'does not match the server certificate'$(EXE_END_ERR)
-	$(EXE_BEG_ERR) config hint Aspera::RestCallError 'Signature has expired'$(EXE_END_ERR)
-	$(EXE_BEG_ERR) config hint OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_END_ERR)
+	$(EXE_BEG_ERR) config throw Aspera::Fasp::Error     'Remote host is not who we expected'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
 	@$(STOP_TEST) $@
 tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
