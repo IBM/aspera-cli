@@ -154,7 +154,7 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
         line = line.strip.squeeze(' ')
-        #$stderr.puts line
+        # $stderr.puts line
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []

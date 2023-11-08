@@ -9,6 +9,7 @@ module Aspera
       # Access Aspera Transfer Service
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Aspera::Cli::Plugin
+        CLOUD_TABLE = %w[id name].freeze
         def initialize(env)
           super(env)
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
@@ -133,7 +134,7 @@ module Aspera
           command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
-            return {type: :object_list, data: @ats_api_pub.cloud_names.map { |k, v| %w[id name].zip([k, v]).to_h }}
+            return {type: :object_list, data: @ats_api_pub.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }}
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show

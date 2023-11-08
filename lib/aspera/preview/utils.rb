@@ -33,7 +33,7 @@ module Aspera
             external_command(command_symb, ['-h'], log_error: false)
           rescue Errno::ENOENT => e
             raise "missing #{command_symb} binary: #{e}"
-          rescue => e
+          rescue
             nil
           end
         end

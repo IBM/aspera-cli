@@ -24,7 +24,7 @@ module Aspera
     # OAuth methods supported by default
     STD_AUTH_TYPES = %i[web jwt].freeze
 
-    @@globals = {
+    @@globals = { # rubocop:disable Style/ClassVars
       # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
       jwt_accepted_offset_sec:    300,
       # one hour validity (TODO: configurable?)

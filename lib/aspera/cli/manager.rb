@@ -284,7 +284,8 @@ module Aspera
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
         raise "INTERNAL ERROR: #{option_symbol} already declared" if @declared_options.key?(option_symbol)
-        # raise "INTERNAL ERROR: #{option_symbol} clash with another option" if @declared_options.keys.map(&:to_s).any?{|k|k.start_with?(option_symbol.to_s) || option_symbol.to_s.start_with?(k)}
+        # raise "INTERNAL ERROR: #{option_symbol} clash with another option" if
+        # @declared_options.keys.map(&:to_s).any?{|k|k.start_with?(option_symbol.to_s) || option_symbol.to_s.start_with?(k)}
         raise "INTERNAL ERROR: #{option_symbol} ends with dot" unless description[-1] != '.'
         raise "INTERNAL ERROR: #{option_symbol} description does not start with capital" unless description[0] == description[0].upcase
         raise "INTERNAL ERROR: #{option_symbol} shall use :types" if ['hash', 'extended value'].any?{|s|description.downcase.include?(s) }

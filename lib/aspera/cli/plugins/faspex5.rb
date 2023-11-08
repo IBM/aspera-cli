@@ -24,13 +24,13 @@ module Aspera
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
         # Faspex API v5: get transfer spec for connect
         TRANSFER_CONNECT = 'connect'
-
         ADMIN_RESOURCES = %i[
           accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
           metadata_profiles email_notifications
         ].freeze
+        JOB_RUNNING = %w[queued working].freeze
         STANDARD_PATH = '/aspera/faspex'
-        private_constant(*%i[RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
+        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
         class << self
           def application_name
             'Faspex'
@@ -224,9 +224,9 @@ module Aspera
 
         def wait_for_job(job_id)
           spinner = nil
-          while true
+          loop do
             status = @api_v5.read("jobs/#{job_id}", {type: :formatted})[:data]
-            return status unless %w[queued working].include?(status['status'])
+            return status unless JOB_RUNNING.include?(status['status'])
             if spinner.nil?
               spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
               spinner.start

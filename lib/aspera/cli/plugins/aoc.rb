@@ -606,8 +606,11 @@ module Aspera
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: skip_ids_data,
-                  id: IdGenerator.from_list(['aoc_recv', options.get_option(:url, mandatory: true),
-                                             aoc_api.context[:workspace_id]].concat(aoc_api.additional_persistence_ids)))
+                  id: IdGenerator.from_list(
+                    ['aoc_recv',
+                     options.get_option(:url, mandatory: true),
+                     aoc_api.context[:workspace_id]
+                    ].concat(aoc_api.additional_persistence_ids)))
               end
               if ExtendedValue::ALL.eql?(ids_to_download)
                 query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
