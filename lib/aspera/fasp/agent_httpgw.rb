@@ -9,19 +9,6 @@ require 'websocket'
 require 'base64'
 require 'json'
 
-# HTTP GW Upload protocol
-# -----------------------
-# v1
-# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acknowledged with "end upload"
-# 2.. - MessageType: String (Slice Upload start) JSON : type: slice_upload, acknowledged with "end upload"
-# v2
-# 1 - MessageType: String (Transfer Spec) JSON : type: transfer_spec, acknowledged with "end upload"
-# 2 - MessageType: String (Slice Upload start) JSON : type: slice_upload, acknowledged with "end_slice_upload"
-# 3.. - MessageType: ByteArray (File Size) Chunks : acknowledged with "end upload"
-# last - MessageType: String (Slice Upload end) JSON : type: slice_upload, acknowledged with "end_slice_upload"
-
-# ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
-# https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
 module Aspera
   module Fasp
     # generates a pseudo file stream
@@ -71,13 +58,24 @@ module Aspera
       end
     end
 
-    # start a transfer using Aspera HTTP Gateway, using web socket session for uploads
+    # Start a transfer using Aspera HTTP Gateway, using web socket secure for uploads
+    # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
+    # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
+    # HTTP GW Upload protocol:
+    #   #     type                Contents            Ack                 Counter
+    # v1
+    #   0     JSON.transfer_spec  Transfer Spec       "end upload"        sent_general
+    #   1..   JSON.slice_upload   Slice data base64   "end upload"        sent_general
+    # v2
+    #   0     JSON.transfer_spec  Transfer Spec       "end upload"        sent_general
+    #   1     JSON.slice_upload   File start          "end_slice_upload"  sent_v2_delimiter
+    #   2..   Binary              File binary chunks  "end upload"        sent_general
+    #   last  JSON.slice_upload   File end            "end_slice_upload"  sent_v2_delimiter
     class AgentHttpgw < Aspera::Fasp::AgentBase
-      # message returned by HTTP GW in case of success
+      MSG_SEND_TRANSFER_SPEC = 'transfer_spec'
+      MSG_SEND_SLICE_UPLOAD = 'slice_upload'
       MSG_RECV_DATA_RECEIVED_SIGNAL = 'end upload'
       MSG_RECV_SLICE_UPLOAD_SIGNAL = 'end_slice_upload'
-      MSG_SEND_SLICE_UPLOAD = 'slice_upload'
-      MSG_SEND_TRANSFER_SPEC = 'transfer_spec'
       # upload API versions
       API_V1 = 'v1'
       API_V2 = 'v2'
@@ -97,9 +95,9 @@ module Aspera
       # send message on http gw web socket
       def ws_snd_json(msg_type, payload)
         if msg_type.eql?(MSG_SEND_SLICE_UPLOAD) && @options[:api_version].eql?(API_V2)
-          @shared_info[:count][:sent_v2_slice] += 1
+          @shared_info[:count][:sent_v2_delimiter] += 1
         else
-          @shared_info[:count][:sent_other] += 1
+          @shared_info[:count][:sent_general] += 1
         end
         Log.log.debug do
           log_data = payload.dup
@@ -111,21 +109,23 @@ module Aspera
 
       def ws_send(data_to_send, type: :text)
         Log.log.debug{"#{LOG_WS_SEND}sending: #{type}"}
-        @shared_info[:count][:sent_other] += 1 if type.eql?(:binary)
+        @shared_info[:count][:sent_general] += 1 if type.eql?(:binary)
         Log.log.debug{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
         frame_generator = ::WebSocket::Frame::Outgoing::Client.new(data: data_to_send, type: type, version: @ws_handshake.version)
         @ws_io.write(frame_generator.to_s)
       end
 
       # wait for all message sent to be acknowledged by HTTPGW server, and check presence of exception
-      def wait_for_sent_msg_ack_or_exception
+      def wait_for_sent_msg_ack_or_end_read_thread
         if @options[:synchronous]
           @shared_info[:mutex].synchronize do
-            while (@shared_info[:count][:received_data] != @shared_info[:count][:sent_other]) ||
-                (@shared_info[:count][:received_v2_slice] != @shared_info[:count][:sent_v2_slice])
+            while (@shared_info[:count][:received_general] != @shared_info[:count][:sent_general]) ||
+                (@shared_info[:count][:received_v2_delimiter] != @shared_info[:count][:sent_v2_delimiter])
               Log.log.debug{"#{LOG_WS_SEND}wait: counts: #{@shared_info[:count]}"}
               @shared_info[:cond_var].wait(@shared_info[:mutex], 1.0)
               raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
+              # if read thread exited, there will be no more updates
+              break unless @ws_read_thread.alive?
             end
           end
         else
@@ -139,12 +139,12 @@ module Aspera
         Log.log.debug{"#{LOG_WS_RECV}message: [#{message}]"}
         if message.eql?(MSG_RECV_DATA_RECEIVED_SIGNAL)
           @shared_info[:mutex].synchronize do
-            @shared_info[:count][:received_data] += 1
+            @shared_info[:count][:received_general] += 1
             @shared_info[:cond_var].signal
           end
         elsif message.eql?(MSG_RECV_SLICE_UPLOAD_SIGNAL)
           @shared_info[:mutex].synchronize do
-            @shared_info[:count][:received_v2_slice] += 1
+            @shared_info[:count][:received_v2_delimiter] += 1
             @shared_info[:cond_var].signal
           end
         else
@@ -168,7 +168,6 @@ module Aspera
         frame_parser = ::WebSocket::Frame::Incoming::Client.new(version: @ws_handshake.version)
         until @ws_io.eof?
           begin # rubocop:disable Style/RedundantBegin
-            Log.log.debug{"#{LOG_WS_RECV}eof= #{@ws_io.eof?}"}
             # ready byte by byte until frame is ready
             while (frame_ok = frame_parser.next).nil?
               # blocking read
@@ -186,8 +185,10 @@ module Aspera
             break
           end # begin/rescue
         end # loop
-        Log.log.debug{"#{LOG_WS_RECV}exception: #{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"} unless @shared_info[:read_exception].nil?
-        Log.log.debug{"#{LOG_WS_RECV}read thread stopped"}
+        Log.log.debug do
+          "#{LOG_WS_RECV}exception: #{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"
+        end unless @shared_info[:read_exception].nil?
+        Log.log.debug{"#{LOG_WS_RECV}read thread stopped (ws eof=#{@ws_io.eof?})"}
       end
 
       def upload(transfer_spec)
@@ -236,22 +237,22 @@ module Aspera
         @shared_info = {
           read_exception: nil, # error message if any in callback
           count:          {
-            received_data:     0, # number of files received on other side
-            received_v2_slice: 0, # number of slices received on other side
-            sent_other:        0,
-            sent_v2_slice:     0
+            sent_general:          0,
+            received_general:      0,
+            sent_v2_delimiter:     0,
+            received_v2_delimiter: 0
           },
           mutex:          Mutex.new,
           cond_var:       ConditionVariable.new
         }
         # start read thread
-        ws_read_thread = Thread.new {process_read_thread}
+        @ws_read_thread = Thread.new {process_read_thread}
         # notify progress bar
         notify_begin(session_id, total_bytes_to_transfer)
         # first step send transfer spec
         Log.dump(:ws_spec, transfer_spec)
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
-        wait_for_sent_msg_ack_or_exception
+        wait_for_sent_msg_ack_or_end_read_thread
         # current file index
         file_index = 0
         # aggregate size sent
@@ -294,7 +295,7 @@ module Aspera
                   # send once, after data, at end
                   ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(slice_info[:total_slices] - 1)
                 end
-                wait_for_sent_msg_ack_or_exception
+                wait_for_sent_msg_ack_or_end_read_thread
               rescue Errno::EPIPE => e
                 raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
                 raise e
@@ -319,8 +320,8 @@ module Aspera
         notify_progress(session_id, session_sent_bytes)
         notify_end(session_id)
         Log.log.debug('Finished upload, waiting for end of read thread.')
-        ws_read_thread.join
-        Log.log.debug{"Read thread joined, result: #{@shared_info[:count][:received_data]} / #{@shared_info[:count][:sent_other]}"}
+        @ws_read_thread.join
+        Log.log.debug{"Read thread joined, result: #{@shared_info[:count][:received_general]} / #{@shared_info[:count][:sent_general]}"}
         ws_send(nil, type: :close) unless @ws_io.nil?
         @ws_io = nil
         http_session&.finish
