@@ -2179,58 +2179,9 @@ It’s also available when using the <code>show</code> command of
 </tr>
 </tbody>
 </table>
-<h2 data-number="4.14" id="plugins"><span
-class="header-section-number">4.14</span> Plugins</h2>
-<p><code>ascli</code> uses a plugin mechanism. The first level command
-(just after <code>ascli</code> on the command line) is the name of the
-concerned plugin which will execute the command. Each plugin usually
-represents commands sent to a specific application. For instance, the
-plugin <code>faspex</code> allows operations on the application “Aspera
-Faspex”.</p>
-<p>Available plugins can be found using command:</p>
-<div class="sourceCode" id="cb169"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf plugin list</span></code></pre></div>
-<pre class="output"><code>+--------------+--------------------------------------------------------+
-| plugin       | path                                                   |
-+--------------+--------------------------------------------------------+
-| shares       | ..../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
-| node         | ..../aspera-cli/lib/aspera/cli/plugins/node.rb         |
-...
-+--------------+--------------------------------------------------------+</code></pre>
-<h3 data-number="4.14.1" id="create-your-own-plugin"><span
-class="header-section-number">4.14.1</span>
-<a id="createownplugin"></a>Create your own plugin</h3>
-<p>By default plugins are looked-up in folders specified by
-(multi-value) option <code>plugin_folder</code>:</p>
-<div class="sourceCode" id="cb171"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;key&quot;:&quot;plugin_folder&quot;}&#39;</span></span></code></pre></div>
-<p>You can create the skeleton of a new plugin like this:</p>
-<div class="sourceCode" id="cb172"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf plugin create foo .</span></code></pre></div>
-<pre class="output"><code>Created ./foo.rb</code></pre>
-<div class="sourceCode" id="cb174"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb174-1"><a href="#cb174-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--plugin-folder</span><span class="op">=</span>. foo</span></code></pre></div>
-<h3 data-number="4.14.2"
-id="plugins-application-url-and-authentication"><span
-class="header-section-number">4.14.2</span> <a id="plugins"></a>Plugins:
-Application URL and Authentication</h3>
-<p><code>ascli</code> comes with several Aspera application plugins.</p>
-<p>REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares,
-Console, Orchestrator, Server) use simple username/password
-authentication: HTTP Basic Authentication.</p>
-<p>Those are using options:</p>
-<ul>
-<li>url</li>
-<li>username</li>
-<li>password</li>
-</ul>
-<p>Those can be provided using command line, parameter set, env var, see
-section above.</p>
-<p>Aspera on Cloud relies on Oauth, refer to the <a href="#aoc">Aspera
-on Cloud</a> section.</p>
-<h2 data-number="4.15"
+<h2 data-number="4.14"
 id="graphical-interactions-browser-and-text-editor"><span
-class="header-section-number">4.15</span>
+class="header-section-number">4.14</span>
 <a id="graphical"></a>Graphical Interactions: Browser and Text
 Editor</h2>
 <p>Some actions may require the use of a graphical tool:</p>
@@ -2248,8 +2199,8 @@ browser will be opened for URLs or a text editor for file edition.</li>
 <li><code>--ui=text</code> forces a text environment, the URL or file
 path to open is displayed on terminal.</li>
 </ul>
-<h2 data-number="4.16" id="logging-debugging"><span
-class="header-section-number">4.16</span> Logging, Debugging</h2>
+<h2 data-number="4.15" id="logging-debugging"><span
+class="header-section-number">4.15</span> Logging, Debugging</h2>
 <p>The gem is equipped with traces, mainly for debugging and learning
 APIs. By default logging level is <code>warn</code> and the output
 channel is <code>stderr</code>. To increase debug level, use parameter
@@ -2275,17 +2226,17 @@ href="#agt_direct"><code>direct</code></a>.</p>
 <ul>
 <li>display debugging log on <code>stdout</code>:</li>
 </ul>
-<div class="sourceCode" id="cb175"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb175-1"><a href="#cb175-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf pre over <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--logger</span><span class="op">=</span>stdout</span></code></pre></div>
+<div class="sourceCode" id="cb169"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf pre over <span class="at">--log-level</span><span class="op">=</span>debug <span class="at">--logger</span><span class="op">=</span>stdout</span></code></pre></div>
 <ul>
 <li>log errors to <code>syslog</code>:</li>
 </ul>
-<div class="sourceCode" id="cb176"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb176-1"><a href="#cb176-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf pre over <span class="at">--log-level</span><span class="op">=</span>error <span class="at">--logger</span><span class="op">=</span>syslog</span></code></pre></div>
+<div class="sourceCode" id="cb170"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf pre over <span class="at">--log-level</span><span class="op">=</span>error <span class="at">--logger</span><span class="op">=</span>syslog</span></code></pre></div>
 <p>When <code>ascli</code> is used interactively in a shell, the shell
 itself will usually log executed commands in the history file.</p>
-<h2 data-number="4.17" id="learning-aspera-product-apis-rest"><span
-class="header-section-number">4.17</span> Learning Aspera Product APIs
+<h2 data-number="4.16" id="learning-aspera-product-apis-rest"><span
+class="header-section-number">4.16</span> Learning Aspera Product APIs
 (REST)</h2>
 <p><code>ascli</code> uses mainly Aspera applications REST APIs. To
 display HTTP calls, use argument <code>-r</code> or
@@ -2293,8 +2244,8 @@ display HTTP calls, use argument <code>-r</code> or
 HTTP requests and responses.</p>
 <p>In order to get traces of execution, use argument :
 <code>--log-level=debug</code></p>
-<h2 data-number="4.18" id="http-socket-parameters"><span
-class="header-section-number">4.18</span> <a id="http_options"></a>HTTP
+<h2 data-number="4.17" id="http-socket-parameters"><span
+class="header-section-number">4.17</span> <a id="http_options"></a>HTTP
 socket parameters</h2>
 <p>To ignore SSL certificate for any address/port, use option:
 <code>insecure</code>, i.e. <code>--insecure=yes</code>. To ignore SSL
@@ -2342,10 +2293,10 @@ href="https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html"><code>Net:
 <p>Like any other option, those can be set either on command line, or in
 config file, either in a global preset or server-specific one.</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb177"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb177-1"><a href="#cb177-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res package list <span class="at">--http-options</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;read_timeout&quot;:10.0}&#39;</span></span></code></pre></div>
-<h2 data-number="4.19" id="proxy"><span
-class="header-section-number">4.19</span> Proxy</h2>
+<div class="sourceCode" id="cb171"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res package list <span class="at">--http-options</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;read_timeout&quot;:10.0}&#39;</span></span></code></pre></div>
+<h2 data-number="4.18" id="proxy"><span
+class="header-section-number">4.18</span> Proxy</h2>
 <p>There are several types of network connections, each of them use a
 different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <ul>
@@ -2354,8 +2305,8 @@ different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <li>Aspera FASP</li>
 </ul>
 <p>Refer to the following sections.</p>
-<h2 data-number="4.20" id="proxy-for-rest-and-httpgw"><span
-class="header-section-number">4.20</span> Proxy for REST and HTTPGW</h2>
+<h2 data-number="4.19" id="proxy-for-rest-and-httpgw"><span
+class="header-section-number">4.19</span> Proxy for REST and HTTPGW</h2>
 <p>There are two possibilities to define an HTTP proxy to be used when
 Ruby HTTP is used.</p>
 <p>The <code>http_proxy</code> environment variable (<strong>lower
@@ -2368,36 +2319,36 @@ find proxy</a>.</p>
 <code>myproxy.org.net:3128</code> alone is <strong>not</strong>
 accepted.</p>
 </blockquote>
-<div class="sourceCode" id="cb178"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://proxy.example.com:3128</span></code></pre></div>
+<div class="sourceCode" id="cb172"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://proxy.example.com:3128</span></code></pre></div>
 <p>The <code>fpac</code> option (function for proxy auto config) can be
 set to a <a href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy
 Auto Configuration (PAC)</a> javascript value. To read the script from a
 URL (<code>http:</code>, <code>https:</code> and <code>file:</code>),
 use prefix: <code>@uri:</code>. A minimal script can be specified to
 define the use of a local proxy:</p>
-<div class="sourceCode" id="cb179"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb179-1"><a href="#cb179-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host){return &quot;PROXY localhost:3128&quot;}&#39;</span> ...</span></code></pre></div>
+<div class="sourceCode" id="cb173"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host){return &quot;PROXY localhost:3128&quot;}&#39;</span> ...</span></code></pre></div>
 <p>The result of a PAC file can be tested with command:
 <code>config proxy_check</code>. Example, using command line option:</p>
-<div class="sourceCode" id="cb180"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf proxy_check <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host) {return &quot;PROXY proxy.example.com:3128;DIRECT&quot;;}&#39;</span> http://example.com</span></code></pre></div>
+<div class="sourceCode" id="cb174"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb174-1"><a href="#cb174-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf proxy_check <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host) {return &quot;PROXY proxy.example.com:3128;DIRECT&quot;;}&#39;</span> http://example.com</span></code></pre></div>
 <pre class="text"><code>PROXY proxy.example.com:1234;DIRECT</code></pre>
-<div class="sourceCode" id="cb182"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb182-1"><a href="#cb182-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config proxy_check <span class="at">--fpac</span><span class="op">=</span>@file:./proxy.pac http://www.example.com</span></code></pre></div>
+<div class="sourceCode" id="cb176"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb176-1"><a href="#cb176-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config proxy_check <span class="at">--fpac</span><span class="op">=</span>@file:./proxy.pac http://www.example.com</span></code></pre></div>
 <pre class="text"><code>PROXY proxy.example.com:8080</code></pre>
-<div class="sourceCode" id="cb184"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb184-1"><a href="#cb184-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config proxy_check <span class="at">--fpac</span><span class="op">=</span>@uri:http://server/proxy.pac http://www.example.com</span></code></pre></div>
+<div class="sourceCode" id="cb178"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config proxy_check <span class="at">--fpac</span><span class="op">=</span>@uri:http://server/proxy.pac http://www.example.com</span></code></pre></div>
 <pre class="text"><code>PROXY proxy.example.com:8080</code></pre>
 <p>If the proxy requires credentials, then use option
 <code>proxy_credentials</code> with username and password provided as an
 <code>Array</code>:</p>
-<div class="sourceCode" id="cb186"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;__username_here__&quot;,&quot;__password_here__&quot;]&#39;</span> ...</span></code></pre></div>
-<div class="sourceCode" id="cb187"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@list::__username_here__:__password_here__ ...</span></code></pre></div>
-<h2 data-number="4.21" id="proxy-for-legacy-aspera-https-fallback"><span
-class="header-section-number">4.21</span> Proxy for Legacy Aspera HTTP/S
+<div class="sourceCode" id="cb180"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;__username_here__&quot;,&quot;__password_here__&quot;]&#39;</span> ...</span></code></pre></div>
+<div class="sourceCode" id="cb181"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb181-1"><a href="#cb181-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@list::__username_here__:__password_here__ ...</span></code></pre></div>
+<h2 data-number="4.20" id="proxy-for-legacy-aspera-https-fallback"><span
+class="header-section-number">4.20</span> Proxy for Legacy Aspera HTTP/S
 Fallback</h2>
 <p>Only supported with the <code>direct</code> agent: To specify a proxy
 for legacy HTTP fallback, use <code>ascp</code> native option
@@ -2406,15 +2357,15 @@ for legacy HTTP fallback, use <code>ascp</code> native option
 Alternatively, set the <a
 href="#transferspec"><em>transfer-spec</em></a> parameter:
 <code>EX_http_proxy_url</code>.</p>
-<h2 data-number="4.22" id="fasp-proxy-forward-for-transfers"><span
-class="header-section-number">4.22</span> FASP proxy (forward) for
+<h2 data-number="4.21" id="fasp-proxy-forward-for-transfers"><span
+class="header-section-number">4.21</span> FASP proxy (forward) for
 transfers</h2>
 <p>To specify a FASP proxy (forward), set the <a
 href="#transferspec"><em>transfer-spec</em></a> parameter:
 <code>proxy</code> (only supported with the <code>direct</code>
 agent).</p>
-<h2 data-number="4.23" id="fasp-configuration"><span
-class="header-section-number">4.23</span> <a id="client"></a>FASP
+<h2 data-number="4.22" id="fasp-configuration"><span
+class="header-section-number">4.22</span> <a id="client"></a>FASP
 configuration</h2>
 <p>The <code>config</code> plugin also allows specification for the use
 of a local FASP <strong>client</strong>. It provides the following
@@ -2428,22 +2379,22 @@ locally</li>
 <li><code>connect</code> : list,download connect client versions
 available on internet</li>
 </ul>
-<h3 data-number="4.23.1" id="show-path-of-currently-used-ascp"><span
-class="header-section-number">4.23.1</span> Show path of currently used
+<h3 data-number="4.22.1" id="show-path-of-currently-used-ascp"><span
+class="header-section-number">4.22.1</span> Show path of currently used
 <code>ascp</code></h3>
-<div class="sourceCode" id="cb188"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp show</span></code></pre></div>
+<div class="sourceCode" id="cb182"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb182-1"><a href="#cb182-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp show</span></code></pre></div>
 <pre class="output"><code>/Users/laurent/.aspera/ascli/sdk/ascp</code></pre>
-<div class="sourceCode" id="cb190"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb190-1"><a href="#cb190-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info</span></code></pre></div>
+<div class="sourceCode" id="cb184"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb184-1"><a href="#cb184-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info</span></code></pre></div>
 <pre class="output"><code>+--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
 | ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
 ...</code></pre>
-<h3 data-number="4.23.2"
+<h3 data-number="4.22.2"
 id="selection-of-ascp-location-for-direct-agent"><span
-class="header-section-number">4.23.2</span> Selection of
+class="header-section-number">4.22.2</span> Selection of
 <code>ascp</code> location for <a
 href="#agt_direct"><code>direct</code></a> agent</h3>
 <p>By default, <code>ascli</code> uses any found local product with
@@ -2453,8 +2404,8 @@ href="#agt_direct"><code>direct</code></a> agent</h3>
 <p>For a permanent change, the command <code>config ascp use</code> sets
 the same parameter for the global default.</p>
 <p>Using a POSIX shell:</p>
-<div class="sourceCode" id="cb192"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb192-1"><a href="#cb192-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp use @path:<span class="st">&#39;~/Applications/Aspera CLI/bin/ascp&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb186"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp use @path:<span class="st">&#39;~/Applications/Aspera CLI/bin/ascp&#39;</span></span></code></pre></div>
 <pre class="output"><code>ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path &lt;- /Users/laurent/Applications/Aspera CLI/bin/ascp
 Saved to default global preset global_common_defaults</code></pre>
@@ -2465,13 +2416,13 @@ Updated: global_common_defaults: ascp_path &lt;- C:\Users\admin\.aspera\ascli\sd
 Saved to default global preset global_common_defaults</code></pre>
 <p>If the path has spaces, read section: <a href="#parsing">Shell and
 Command line parsing</a>.</p>
-<h3 data-number="4.23.3"
+<h3 data-number="4.22.3"
 id="list-locally-installed-aspera-transfer-products"><span
-class="header-section-number">4.23.3</span> List locally installed
+class="header-section-number">4.22.3</span> List locally installed
 Aspera Transfer products</h3>
 <p>Locally installed Aspera products can be listed with:</p>
-<div class="sourceCode" id="cb196"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb196-1"><a href="#cb196-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products list</span></code></pre></div>
+<div class="sourceCode" id="cb190"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb190-1"><a href="#cb190-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products list</span></code></pre></div>
 <pre class="output"><code>+---------------------------------------+----------------------------------------+
 | name                                  | app_root                               |
 +---------------------------------------+----------------------------------------+
@@ -2480,9 +2431,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb196-1"><a href
 | IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
 | IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
 +---------------------------------------+----------------------------------------+</code></pre>
-<h3 data-number="4.23.4"
+<h3 data-number="4.22.4"
 id="selection-of-local-client-for-ascp-for-direct-agent"><span
-class="header-section-number">4.23.4</span> Selection of local client
+class="header-section-number">4.22.4</span> Selection of local client
 for <code>ascp</code> for <a href="#agt_direct"><code>direct</code></a>
 agent</h3>
 <p>If no <code>ascp</code> is selected, this is equivalent to using
@@ -2490,15 +2441,15 @@ option: <code>--use-product=FIRST</code>.</p>
 <p>Using the option use_product finds the <code>ascp</code> binary of
 the selected product.</p>
 <p>To permanently use the <code>ascp</code> of a product:</p>
-<div class="sourceCode" id="cb198"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb198-1"><a href="#cb198-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
-<span id="cb198-2"><a href="#cb198-2" aria-hidden="true" tabindex="-1"></a><span class="ex">saved</span> to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp</span></code></pre></div>
-<h3 data-number="4.23.5"
+<div class="sourceCode" id="cb192"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb192-1"><a href="#cb192-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
+<span id="cb192-2"><a href="#cb192-2" aria-hidden="true" tabindex="-1"></a><span class="ex">saved</span> to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp</span></code></pre></div>
+<h3 data-number="4.22.5"
 id="installation-of-connect-client-on-command-line"><span
-class="header-section-number">4.23.5</span> Installation of Connect
+class="header-section-number">4.22.5</span> Installation of Connect
 Client on command line</h3>
-<div class="sourceCode" id="cb199"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect list</span></code></pre></div>
+<div class="sourceCode" id="cb193"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb193-1"><a href="#cb193-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect list</span></code></pre></div>
 <pre class="output"><code>+-----------------------------------------------+--------------------------------------+-----------+
 | id                                            | title                                | version   |
 +-----------------------------------------------+--------------------------------------+-----------+
@@ -2509,8 +2460,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb199-1"><a href
 | urn:uuid:D8629AD2-6898-4811-A46F-2AF386531BFF | Aspera Connect for Mac Intel         | 3.11.2.63 |
 | urn:uuid:97F94DF0-22B1-11E2-81C1-0800200C9A66 | Aspera Connect for Linux 64          | 3.11.2.63 |
 +-----------------------------------------------+--------------------------------------+-----------+</code></pre>
-<div class="sourceCode" id="cb201"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> list</span></code></pre></div>
+<div class="sourceCode" id="cb195"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb195-1"><a href="#cb195-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> list</span></code></pre></div>
 <pre class="output"><code>+-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
 | title                                     | type                     | href                                                                                    | hreflang | rel                 |
 +-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+
@@ -2519,12 +2470,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href
 | Aspera Connect for Mac HTML Documentation | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=aspera-connect-user-guide-macos   | en       | documentation       |
 | Aspera Connect for Mac Release Notes      | text/html                | https://www.ibm.com/docs/en/aspera-connect/3.11?topic=notes-release-aspera-connect-3112 | en       | release-notes       |
 +-------------------------------------------+--------------------------+-----------------------------------------------------------------------------------------+----------+---------------------+</code></pre>
-<div class="sourceCode" id="cb203"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb203-1"><a href="#cb203-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> download enclosure <span class="at">--to-folder</span><span class="op">=</span>.</span></code></pre></div>
+<div class="sourceCode" id="cb197"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> download enclosure <span class="at">--to-folder</span><span class="op">=</span>.</span></code></pre></div>
 <pre class="output"><code>Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg</code></pre>
-<h2 data-number="4.24" id="transfer-clients-agents"><span
-class="header-section-number">4.24</span> <a id="agents"></a>Transfer
+<h2 data-number="4.23" id="transfer-clients-agents"><span
+class="header-section-number">4.23</span> <a id="agents"></a>Transfer
 Clients: Agents</h2>
 <p>Some of the actions on Aspera Applications lead to file transfers
 (upload and download) using the FASP protocol (<code>ascp</code>).</p>
@@ -2560,8 +2511,8 @@ for a transfer session, as a common method for those three Transfer
 Agents.</p>
 <p>Specific options for agents are provided with option
 <code>transfer_info</code>, cumulatively.</p>
-<h3 data-number="4.24.1" id="direct"><span
-class="header-section-number">4.24.1</span>
+<h3 data-number="4.23.1" id="direct"><span
+class="header-section-number">4.23.1</span>
 <a id="agt_direct"></a>Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
 <code>ascp</code>. This is the default agent for <code>ascli</code>.
@@ -2650,17 +2601,17 @@ true</td>
 <p>In case of transfer interruption, the agent will
 <strong>resume</strong> a transfer up to <code>iter_max</code> time.
 Sleep between iterations is:</p>
-<div class="sourceCode" id="cb205"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb205-1"><a href="#cb205-1" aria-hidden="true" tabindex="-1"></a><span class="ex">max</span><span class="er">(</span> <span class="ex">sleep_max</span> , sleep_initial <span class="pp">*</span> sleep_factor ^ <span class="er">(</span><span class="ex">iter_index-1</span><span class="kw">)</span> <span class="kw">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb199"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a><span class="ex">max</span><span class="er">(</span> <span class="ex">sleep_max</span> , sleep_initial <span class="pp">*</span> sleep_factor ^ <span class="er">(</span><span class="ex">iter_index-1</span><span class="kw">)</span> <span class="kw">)</span></span></code></pre></div>
 <p>Some transfer errors are considered “retryable” (e.g. timeout) and
 some other not (e.g. wrong password). The list of known protocol errors
 and retry level can be listed:</p>
-<div class="sourceCode" id="cb206"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb206-1"><a href="#cb206-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp errors</span></code></pre></div>
+<div class="sourceCode" id="cb200"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp errors</span></code></pre></div>
 <p>Examples:</p>
-<div class="sourceCode" id="cb207"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb207-1"><a href="#cb207-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ... <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;wss&quot;:true,&quot;resume&quot;:{&quot;iter_max&quot;:20}}&#39;</span></span>
-<span id="cb207-2"><a href="#cb207-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ... <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb201"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ... <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;wss&quot;:true,&quot;resume&quot;:{&quot;iter_max&quot;:20}}&#39;</span></span>
+<span id="cb201-2"><a href="#cb201-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> ... <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> The <code>direct</code> agent supports
 additional <code>transfer_spec</code> parameters starting with
@@ -2671,8 +2622,8 @@ additional <code>transfer_spec</code> parameters starting with
 of <code>ascp</code>. For example, to activate debug level 2 for
 <code>ascp</code> (<code>DD</code>), and display those logs on the
 terminal (<code>-</code>):</p>
-<div class="sourceCode" id="cb208"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb208-1"><a href="#cb208-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-DDL-&quot;]}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb202"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-DDL-&quot;]}&#39;</span></span></code></pre></div>
 <p>This is useful to debug if a transfer fails.</p>
 <p>To store <code>ascp</code> logs in file
 <code>aspera-scp-transfer.log</code> in a folder, use
@@ -2693,14 +2644,14 @@ file using those additional methods:</p>
 <li>Using the pseudo <a href="#transferspec"><em>transfer-spec</em></a>
 parameter <code>EX_file_list</code></li>
 </ul>
-<div class="sourceCode" id="cb209"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb209-1"><a href="#cb209-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;EX_file_list&quot;:&quot;file_list.txt&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb203"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb203-1"><a href="#cb203-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;EX_file_list&quot;:&quot;file_list.txt&quot;}&#39;</span></span></code></pre></div>
 <ul>
 <li>Using option <code>transfer_info</code> parameter
 <code>ascp_args</code></li>
 </ul>
-<div class="sourceCode" id="cb210"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb210-1"><a href="#cb210-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;myfilelist&quot;]}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb204"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb204-1"><a href="#cb204-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;myfilelist&quot;]}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> File lists is shown here, there are also
 similar options for file pair lists.</p>
@@ -2718,69 +2669,69 @@ href="#agt_direct"><code>direct</code></a> transfer agent (i.e. local
 <code>aspera.conf</code> where Virtual links can be configured:</p>
 <p>On a server (HSTS), the following commands can be used to set a
 global virtual link:</p>
-<div class="sourceCode" id="cb211"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true&#39;</span></span>
-<span id="cb211-2"><a href="#cb211-2" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true&#39;</span></span>
-<span id="cb211-3"><a href="#cb211-3" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1&#39;</span></span>
-<span id="cb211-4"><a href="#cb211-4" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb205"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb205-1"><a href="#cb205-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_trunk_data;id,1;trunk_name,in;trunk_capacity,45000;trunk_on,true&#39;</span></span>
+<span id="cb205-2"><a href="#cb205-2" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_trunk_data;id,2;trunk_name,out;trunk_capacity,45000;trunk_on,true&#39;</span></span>
+<span id="cb205-3"><a href="#cb205-3" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1&#39;</span></span>
+<span id="cb205-4"><a href="#cb205-4" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2&#39;</span></span></code></pre></div>
 <p>But this command is not available on clients, so edit the file
 <code>aspera.conf</code>, you can find the location with:
 <code>ascli conf ascp info --fields=aspera_conf</code> and modify the
 sections <code>default</code> and <code>trunks</code> like this for a
 global 100 Mbps virtual link:</p>
-<div class="sourceCode" id="cb212"><pre
-class="sourceCode xml"><code class="sourceCode xml"><span id="cb212-1"><a href="#cb212-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
-<span id="cb212-2"><a href="#cb212-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
-<span id="cb212-3"><a href="#cb212-3" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">default</span>&gt;</span>
-<span id="cb212-4"><a href="#cb212-4" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">transfer</span>&gt;</span>
-<span id="cb212-5"><a href="#cb212-5" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">in</span>&gt;</span>
-<span id="cb212-6"><a href="#cb212-6" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">bandwidth</span>&gt;</span>
-<span id="cb212-7"><a href="#cb212-7" aria-hidden="true" tabindex="-1"></a>                    &lt;<span class="kw">aggregate</span>&gt;</span>
-<span id="cb212-8"><a href="#cb212-8" aria-hidden="true" tabindex="-1"></a>                        &lt;<span class="kw">trunk_id</span>&gt;1&lt;/<span class="kw">trunk_id</span>&gt;</span>
-<span id="cb212-9"><a href="#cb212-9" aria-hidden="true" tabindex="-1"></a>                    &lt;/<span class="kw">aggregate</span>&gt;</span>
-<span id="cb212-10"><a href="#cb212-10" aria-hidden="true" tabindex="-1"></a>                &lt;/<span class="kw">bandwidth</span>&gt;</span>
-<span id="cb212-11"><a href="#cb212-11" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">in</span>&gt;</span>
-<span id="cb212-12"><a href="#cb212-12" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">out</span>&gt;</span>
-<span id="cb212-13"><a href="#cb212-13" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">bandwidth</span>&gt;</span>
-<span id="cb212-14"><a href="#cb212-14" aria-hidden="true" tabindex="-1"></a>                    &lt;<span class="kw">aggregate</span>&gt;</span>
-<span id="cb212-15"><a href="#cb212-15" aria-hidden="true" tabindex="-1"></a>                        &lt;<span class="kw">trunk_id</span>&gt;2&lt;/<span class="kw">trunk_id</span>&gt;</span>
-<span id="cb212-16"><a href="#cb212-16" aria-hidden="true" tabindex="-1"></a>                    &lt;/<span class="kw">aggregate</span>&gt;</span>
-<span id="cb212-17"><a href="#cb212-17" aria-hidden="true" tabindex="-1"></a>                &lt;/<span class="kw">bandwidth</span>&gt;</span>
-<span id="cb212-18"><a href="#cb212-18" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">out</span>&gt;</span>
-<span id="cb212-19"><a href="#cb212-19" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">transfer</span>&gt;</span>
-<span id="cb212-20"><a href="#cb212-20" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">default</span>&gt;</span>
-<span id="cb212-21"><a href="#cb212-21" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">trunks</span>&gt;</span>
-<span id="cb212-22"><a href="#cb212-22" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">trunk</span>&gt;</span>
-<span id="cb212-23"><a href="#cb212-23" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">id</span>&gt;1&lt;/<span class="kw">id</span>&gt;</span>
-<span id="cb212-24"><a href="#cb212-24" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;in&lt;/<span class="kw">name</span>&gt;</span>
-<span id="cb212-25"><a href="#cb212-25" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
-<span id="cb212-26"><a href="#cb212-26" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
-<span id="cb212-27"><a href="#cb212-27" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
-<span id="cb212-28"><a href="#cb212-28" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
-<span id="cb212-29"><a href="#cb212-29" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
-<span id="cb212-30"><a href="#cb212-30" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">trunk</span>&gt;</span>
-<span id="cb212-31"><a href="#cb212-31" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">id</span>&gt;2&lt;/<span class="kw">id</span>&gt;</span>
-<span id="cb212-32"><a href="#cb212-32" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;out&lt;/<span class="kw">name</span>&gt;</span>
-<span id="cb212-33"><a href="#cb212-33" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
-<span id="cb212-34"><a href="#cb212-34" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
-<span id="cb212-35"><a href="#cb212-35" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
-<span id="cb212-36"><a href="#cb212-36" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
-<span id="cb212-37"><a href="#cb212-37" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
-<span id="cb212-38"><a href="#cb212-38" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">trunks</span>&gt;</span>
-<span id="cb212-39"><a href="#cb212-39" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
+<div class="sourceCode" id="cb206"><pre
+class="sourceCode xml"><code class="sourceCode xml"><span id="cb206-1"><a href="#cb206-1" aria-hidden="true" tabindex="-1"></a><span class="fu">&lt;?xml</span><span class="ot"> version=</span><span class="st">&#39;1.0&#39;</span><span class="ot"> encoding=</span><span class="st">&#39;UTF-8&#39;</span><span class="fu">?&gt;</span></span>
+<span id="cb206-2"><a href="#cb206-2" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">CONF</span><span class="ot"> version=</span><span class="st">&quot;2&quot;</span>&gt;</span>
+<span id="cb206-3"><a href="#cb206-3" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">default</span>&gt;</span>
+<span id="cb206-4"><a href="#cb206-4" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">transfer</span>&gt;</span>
+<span id="cb206-5"><a href="#cb206-5" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">in</span>&gt;</span>
+<span id="cb206-6"><a href="#cb206-6" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">bandwidth</span>&gt;</span>
+<span id="cb206-7"><a href="#cb206-7" aria-hidden="true" tabindex="-1"></a>                    &lt;<span class="kw">aggregate</span>&gt;</span>
+<span id="cb206-8"><a href="#cb206-8" aria-hidden="true" tabindex="-1"></a>                        &lt;<span class="kw">trunk_id</span>&gt;1&lt;/<span class="kw">trunk_id</span>&gt;</span>
+<span id="cb206-9"><a href="#cb206-9" aria-hidden="true" tabindex="-1"></a>                    &lt;/<span class="kw">aggregate</span>&gt;</span>
+<span id="cb206-10"><a href="#cb206-10" aria-hidden="true" tabindex="-1"></a>                &lt;/<span class="kw">bandwidth</span>&gt;</span>
+<span id="cb206-11"><a href="#cb206-11" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">in</span>&gt;</span>
+<span id="cb206-12"><a href="#cb206-12" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">out</span>&gt;</span>
+<span id="cb206-13"><a href="#cb206-13" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">bandwidth</span>&gt;</span>
+<span id="cb206-14"><a href="#cb206-14" aria-hidden="true" tabindex="-1"></a>                    &lt;<span class="kw">aggregate</span>&gt;</span>
+<span id="cb206-15"><a href="#cb206-15" aria-hidden="true" tabindex="-1"></a>                        &lt;<span class="kw">trunk_id</span>&gt;2&lt;/<span class="kw">trunk_id</span>&gt;</span>
+<span id="cb206-16"><a href="#cb206-16" aria-hidden="true" tabindex="-1"></a>                    &lt;/<span class="kw">aggregate</span>&gt;</span>
+<span id="cb206-17"><a href="#cb206-17" aria-hidden="true" tabindex="-1"></a>                &lt;/<span class="kw">bandwidth</span>&gt;</span>
+<span id="cb206-18"><a href="#cb206-18" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">out</span>&gt;</span>
+<span id="cb206-19"><a href="#cb206-19" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">transfer</span>&gt;</span>
+<span id="cb206-20"><a href="#cb206-20" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">default</span>&gt;</span>
+<span id="cb206-21"><a href="#cb206-21" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">trunks</span>&gt;</span>
+<span id="cb206-22"><a href="#cb206-22" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">trunk</span>&gt;</span>
+<span id="cb206-23"><a href="#cb206-23" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">id</span>&gt;1&lt;/<span class="kw">id</span>&gt;</span>
+<span id="cb206-24"><a href="#cb206-24" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;in&lt;/<span class="kw">name</span>&gt;</span>
+<span id="cb206-25"><a href="#cb206-25" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
+<span id="cb206-26"><a href="#cb206-26" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
+<span id="cb206-27"><a href="#cb206-27" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
+<span id="cb206-28"><a href="#cb206-28" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
+<span id="cb206-29"><a href="#cb206-29" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
+<span id="cb206-30"><a href="#cb206-30" aria-hidden="true" tabindex="-1"></a>        &lt;<span class="kw">trunk</span>&gt;</span>
+<span id="cb206-31"><a href="#cb206-31" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">id</span>&gt;2&lt;/<span class="kw">id</span>&gt;</span>
+<span id="cb206-32"><a href="#cb206-32" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">name</span>&gt;out&lt;/<span class="kw">name</span>&gt;</span>
+<span id="cb206-33"><a href="#cb206-33" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">capacity</span>&gt;</span>
+<span id="cb206-34"><a href="#cb206-34" aria-hidden="true" tabindex="-1"></a>                &lt;<span class="kw">schedule</span><span class="ot"> format=</span><span class="st">&quot;ranges&quot;</span>&gt;1000000&lt;/<span class="kw">schedule</span>&gt;</span>
+<span id="cb206-35"><a href="#cb206-35" aria-hidden="true" tabindex="-1"></a>            &lt;/<span class="kw">capacity</span>&gt;</span>
+<span id="cb206-36"><a href="#cb206-36" aria-hidden="true" tabindex="-1"></a>            &lt;<span class="kw">on</span>&gt;true&lt;/<span class="kw">on</span>&gt;</span>
+<span id="cb206-37"><a href="#cb206-37" aria-hidden="true" tabindex="-1"></a>        &lt;/<span class="kw">trunk</span>&gt;</span>
+<span id="cb206-38"><a href="#cb206-38" aria-hidden="true" tabindex="-1"></a>    &lt;/<span class="kw">trunks</span>&gt;</span>
+<span id="cb206-39"><a href="#cb206-39" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
 <p>It is also possible to set a schedule with different time and days,
 for example for the value of <code>schedule</code>:</p>
 <pre class="text"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
-<h3 data-number="4.24.2" id="ibm-aspera-connect-client-gui"><span
-class="header-section-number">4.24.2</span> <a id="agt_connect"></a>IBM
+<h3 data-number="4.23.2" id="ibm-aspera-connect-client-gui"><span
+class="header-section-number">4.23.2</span> <a id="agt_connect"></a>IBM
 Aspera Connect Client GUI</h3>
 <p>By specifying option: <code>--transfer=connect</code>,
 <code>ascli</code> will start transfers using the locally installed
 Aspera Connect Client. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.24.3"
+<h3 data-number="4.23.3"
 id="aspera-node-api-node-to-node-transfers"><span
-class="header-section-number">4.24.3</span> <a id="agt_node"></a>Aspera
+class="header-section-number">4.23.3</span> <a id="agt_node"></a>Aspera
 Node API : Node to node transfers</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
@@ -2824,11 +2775,11 @@ option <code>transfer_info</code> are:</p>
 </table>
 <p>Like any other option, <code>transfer_info</code> can get its value
 from a pre-configured <a href="#lprt">option preset</a> :</p>
-<div class="sourceCode" id="cb214"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb214-1"><a href="#cb214-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@preset:_name_here_</span></span></code></pre></div>
+<div class="sourceCode" id="cb208"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb208-1"><a href="#cb208-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@preset:_name_here_</span></span></code></pre></div>
 <p>or be specified using the extended value syntax :</p>
-<div class="sourceCode" id="cb215"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb215-1"><a href="#cb215-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;url&quot;:&quot;https://...&quot;,&quot;username&quot;:&quot;_user_here_&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb209"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb209-1"><a href="#cb209-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;url&quot;:&quot;https://...&quot;,&quot;username&quot;:&quot;_user_here_&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
 <p>If <code>transfer_info</code> is not specified and a default node has
 been configured (name in <code>node</code> for section
 <code>default</code>) then this node is used by default.</p>
@@ -2837,8 +2788,8 @@ then the <code>username</code> is expected to be an access key and the
 parameter <code>root_id</code> is mandatory and specifies the root file
 id on the node. It can be either the access key’s root file id, or any
 authorized file id underneath it.</p>
-<h3 data-number="4.24.4" id="http-gateway"><span
-class="header-section-number">4.24.4</span> <a id="agt_httpgw"></a>HTTP
+<h3 data-number="4.23.4" id="http-gateway"><span
+class="header-section-number">4.23.4</span> <a id="agt_httpgw"></a>HTTP
 Gateway</h3>
 <p>If it possible to send using a HTTP gateway, in case use of FASP is
 not allowed.</p>
@@ -2885,14 +2836,14 @@ not allowed.</p>
 </tbody>
 </table>
 <p>Example:</p>
-<div class="sourceCode" id="cb216"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 323 <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://asperagw.example.com:9443/aspera/http-gwy&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb210"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb210-1"><a href="#cb210-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 323 <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://asperagw.example.com:9443/aspera/http-gwy&quot;}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> The gateway only supports transfers authorized
 with a token.</p>
 </blockquote>
-<h3 data-number="4.24.5" id="transfer-sdk"><span
-class="header-section-number">4.24.5</span>
+<h3 data-number="4.23.5" id="transfer-sdk"><span
+class="header-section-number">4.23.5</span>
 <a id="agt_trsdk"></a>Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
 (<code>asperatransferd</code>).</p>
@@ -2901,8 +2852,8 @@ class="header-section-number">4.24.5</span>
 <p>The gem <code>grpc</code> was removed from dependencies, as it
 requires compilation of a native part. So, to use the Transfer SDK you
 should install this gem:</p>
-<div class="sourceCode" id="cb217"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb217-1"><a href="#cb217-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install grpc</span></code></pre></div>
+<div class="sourceCode" id="cb211"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install grpc</span></code></pre></div>
 <p>On Windows the compilation may fail for various reasons (3.1.1):</p>
 <!-- spellchecker: disable -->
 <ul>
@@ -2919,8 +2870,8 @@ change the signature of <code>gettimeofday</code> to
 <code>struct timezone</code> to <code>void</code></p></li>
 </ul>
 <!-- spellchecker: enable -->
-<h2 data-number="4.25" id="transfer-specification"><span
-class="header-section-number">4.25</span>
+<h2 data-number="4.24" id="transfer-specification"><span
+class="header-section-number">4.24</span>
 <a id="transferspec"></a>Transfer Specification</h2>
 <p>Some commands lead to file transfer (upload/download). All parameters
 necessary for this transfer are described in a <a
@@ -2964,8 +2915,8 @@ instead of <code>ascp</code> parameters has the advantage of:</p>
 <li>common to all <a href="#agents">Transfer Agent</a></li>
 <li>not dependent on command line limitations (special characters…)</li>
 </ul>
-<h2 data-number="4.26" id="transfer-parameters"><span
-class="header-section-number">4.26</span>
+<h2 data-number="4.25" id="transfer-parameters"><span
+class="header-section-number">4.25</span>
 <a id="transferparams"></a>Transfer Parameters</h2>
 <p>All standard <a href="#transferspec"><em>transfer-spec</em></a>
 parameters can be specified. <a
@@ -2986,9 +2937,9 @@ Connect SDK</a> → search
 <code>The parameters for starting a transfer.</code></li>
 </ul>
 <p>Parameters can be displayed with commands:</p>
-<div class="sourceCode" id="cb218"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp spec</span>
-<span id="cb218-2"><a href="#cb218-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp spec <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;d&quot;:&quot;Y&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>-d,n,c</span></code></pre></div>
+<div class="sourceCode" id="cb212"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb212-1"><a href="#cb212-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp spec</span>
+<span id="cb212-2"><a href="#cb212-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp spec <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;d&quot;:&quot;Y&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>-d,n,c</span></code></pre></div>
 <p>Columns:</p>
 <ul>
 <li>D=Direct (local <code>ascp</code> execution)</li>
@@ -4078,8 +4029,8 @@ paths<br/>(-i {array})</td>
 </tr>
 </tbody>
 </table>
-<h3 data-number="4.26.1" id="destination-folder-for-transfers"><span
-class="header-section-number">4.26.1</span> Destination folder for
+<h3 data-number="4.25.1" id="destination-folder-for-transfers"><span
+class="header-section-number">4.25.1</span> Destination folder for
 transfers</h3>
 <p>The destination folder is set by <code>ascli</code> by default
 to:</p>
@@ -4093,8 +4044,8 @@ href="#transferspec"><em>transfer-spec</em></a> parameter
 <code>--ts=@json:'{"destination_root":"&lt;path&gt;"}'</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code> .</p>
-<h3 data-number="4.26.2" id="list-of-files-for-transfers"><span
-class="header-section-number">4.26.2</span> <a id="file_list"></a>List
+<h3 data-number="4.25.2" id="list-of-files-for-transfers"><span
+class="header-section-number">4.25.2</span> <a id="file_list"></a>List
 of files for transfers</h3>
 <p>When uploading, downloading or sending files, the user must specify
 the list of files to transfer.</p>
@@ -4124,11 +4075,11 @@ is directly provided on the command line (after commands): unused
 arguments (not starting with <code>-</code>) are considered as source
 files. So, by default, the list of files to transfer will be simply
 specified on the command line. Example:</p>
-<div class="sourceCode" id="cb219"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload ~/first.file secondfile</span></code></pre></div>
+<div class="sourceCode" id="cb213"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb213-1"><a href="#cb213-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload ~/first.file secondfile</span></code></pre></div>
 <p>This is the same as (with default values):</p>
-<div class="sourceCode" id="cb220"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb220-1"><a href="#cb220-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="at">--sources</span><span class="op">=</span>@args <span class="at">--src-type</span><span class="op">=</span>list ~/mysample.file secondfile</span></code></pre></div></li>
+<div class="sourceCode" id="cb214"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb214-1"><a href="#cb214-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="at">--sources</span><span class="op">=</span>@args <span class="at">--src-type</span><span class="op">=</span>list ~/mysample.file secondfile</span></code></pre></div></li>
 <li><p>an <a href="#extended">Extended Value</a> with type <strong>Array
 of String</strong></p>
 <blockquote>
@@ -4139,21 +4090,21 @@ of String</strong></p>
 <ul>
 <li><p>Using extended value</p>
 <p>Create the file list:</p>
-<div class="sourceCode" id="cb221"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb221-1"><a href="#cb221-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> ~/mysample.file <span class="op">&gt;</span> myfilelist.txt</span>
-<span id="cb221-2"><a href="#cb221-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> secondfile <span class="op">&gt;&gt;</span> myfilelist.txt</span></code></pre></div>
+<div class="sourceCode" id="cb215"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb215-1"><a href="#cb215-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> ~/mysample.file <span class="op">&gt;</span> myfilelist.txt</span>
+<span id="cb215-2"><a href="#cb215-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> secondfile <span class="op">&gt;&gt;</span> myfilelist.txt</span></code></pre></div>
 <p>Use the file list: one path per line:</p>
-<div class="sourceCode" id="cb222"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@lines</span><span class="wa">:@file:myfilelist</span><span class="at">.txt</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb216"><pre
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@lines</span><span class="wa">:@file:myfilelist</span><span class="at">.txt</span></span></code></pre></div></li>
 <li><p>Using JSON array</p>
-<div class="sourceCode" id="cb223"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb223-1"><a href="#cb223-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@json:</span><span class="st">&#39;[&quot;file1&quot;,&quot;file2&quot;]&#39;</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb217"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb217-1"><a href="#cb217-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@json:</span><span class="st">&#39;[&quot;file1&quot;,&quot;file2&quot;]&#39;</span></span></code></pre></div></li>
 <li><p>Using STDIN, one path per line</p>
-<div class="sourceCode" id="cb224"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb224-1"><a href="#cb224-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@lines:@stdin:</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb218"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@lines:@stdin:</span></span></code></pre></div></li>
 <li><p>Using Ruby code (one path per line in file)</p>
-<div class="sourceCode" id="cb225"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb225-1"><a href="#cb225-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@ruby</span>:<span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb219"><pre
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@ruby</span>:<span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
 </ul></li>
 <li><p><code>@ts</code> : the user provides the list of files directly
 in the <code>paths</code> field of transfer spec (option
@@ -4161,8 +4112,8 @@ in the <code>paths</code> field of transfer spec (option
 <ul>
 <li>Using transfer spec</li>
 </ul>
-<div class="sourceCode" id="cb226"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;file1&quot;},{&quot;source&quot;:&quot;file2&quot;}]}&#39;</span></span></code></pre></div></li>
+<div class="sourceCode" id="cb220"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb220-1"><a href="#cb220-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;file1&quot;},{&quot;source&quot;:&quot;file2&quot;}]}&#39;</span></span></code></pre></div></li>
 </ul>
 <p>The option <code>src_type</code> allows specifying if the list
 specified in option <code>sources</code> is a simple file list or if it
@@ -4180,16 +4131,16 @@ second element is the first destination, and so on.</li>
 </ul>
 <p>Example: Source file <code>200KB.1</code> is renamed
 <code>sample1</code> on destination:</p>
-<div class="sourceCode" id="cb227"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="at">--src-type</span><span class="op">=</span>pair ~/Documents/Samples/200KB.1 /Upload/sample1</span></code></pre></div>
+<div class="sourceCode" id="cb221"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb221-1"><a href="#cb221-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="at">--src-type</span><span class="op">=</span>pair ~/Documents/Samples/200KB.1 /Upload/sample1</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> There are some specific rules to specify a
 file list when using <strong>Aspera on Cloud</strong>, refer to the AoC
 plugin section.</p>
 </blockquote>
-<h3 data-number="4.26.3"
+<h3 data-number="4.25.3"
 id="source-directory-structure-on-destination"><span
-class="header-section-number">4.26.3</span> Source directory structure
+class="header-section-number">4.25.3</span> Source directory structure
 on destination</h3>
 <p>This section is not specific to <code>ascli</code> it is
 <code>ascp</code> behaviour.</p>
@@ -4362,8 +4313,8 @@ the list of files in the <code>paths</code> field of transfer spec with
 both <code>source</code> and <code>destination</code> for each
 file.</p></li>
 </ul>
-<h3 data-number="4.26.4" id="support-of-multi-session"><span
-class="header-section-number">4.26.4</span>
+<h3 data-number="4.25.4" id="support-of-multi-session"><span
+class="header-section-number">4.25.4</span>
 <a id="multisession"></a>Support of multi-session</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
@@ -4372,14 +4323,14 @@ connect.</p>
 <ul>
 <li><code>--transfer=node</code></li>
 </ul>
-<div class="sourceCode" id="cb228"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;multi_session&quot;:10,&quot;multi_session_threshold&quot;:1}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb222"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;multi_session&quot;:10,&quot;multi_session_threshold&quot;:1}&#39;</span></span></code></pre></div>
 <p>Multi-session is directly supported by the node daemon.</p>
 <ul>
 <li><code>--transfer=direct</code></li>
 </ul>
-<div class="sourceCode" id="cb229"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb229-1"><a href="#cb229-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;multi_session&quot;:5,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb223"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb223-1"><a href="#cb223-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;multi_session&quot;:5,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> <code>resume_policy</code> set to
 <code>attr</code> may cause problems: <code>none</code> or
@@ -4389,8 +4340,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb229-1"><a href
 Multi-session using <code>direct</code> agent.</p>
 <p>When multi-session is used, one separate UDP port is used per session
 (refer to <code>ascp</code> manual page).</p>
-<h3 data-number="4.26.5" id="content-protection"><span
-class="header-section-number">4.26.5</span> Content protection</h3>
+<h3 data-number="4.25.5" id="content-protection"><span
+class="header-section-number">4.25.5</span> Content protection</h3>
 <p>Also known as Client-side encryption at rest (CSEAR), content
 protection allows a client to send files to a server which will store
 them encrypted (upload), and decrypt files as they are being downloaded
@@ -4406,38 +4357,38 @@ used.</li>
 </ul>
 <p>Example: parameter to download a faspex package and decrypt on the
 fly</p>
-<div class="sourceCode" id="cb230"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb230-1"><a href="#cb230-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="4.26.6" id="transfer-spec-examples"><span
-class="header-section-number">4.26.6</span> Transfer Spec Examples</h3>
+<div class="sourceCode" id="cb224"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb224-1"><a href="#cb224-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
+<h3 data-number="4.25.6" id="transfer-spec-examples"><span
+class="header-section-number">4.25.6</span> Transfer Spec Examples</h3>
 <ul>
 <li>Change target rate</li>
 </ul>
-<div class="sourceCode" id="cb231"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb231-1"><a href="#cb231-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;target_rate_kbps&quot;:500000}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb225"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb225-1"><a href="#cb225-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;target_rate_kbps&quot;:500000}&#39;</span></span></code></pre></div>
 <ul>
 <li>Override the FASP SSH port to a specific TCP port:</li>
 </ul>
-<div class="sourceCode" id="cb232"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;ssh_port&quot;:33002}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb226"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;ssh_port&quot;:33002}&#39;</span></span></code></pre></div>
 <ul>
 <li>Force http fallback mode:</li>
 </ul>
-<div class="sourceCode" id="cb233"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb233-1"><a href="#cb233-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;http_fallback&quot;:&quot;force&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb227"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb227-1"><a href="#cb227-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;http_fallback&quot;:&quot;force&quot;}&#39;</span></span></code></pre></div>
 <ul>
 <li>Activate progress when not activated by default on server</li>
 </ul>
-<div class="sourceCode" id="cb234"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb234-1"><a href="#cb234-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
-<h2 data-number="4.27" id="scheduler"><span
-class="header-section-number">4.27</span>
+<div class="sourceCode" id="cb228"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
+<h2 data-number="4.26" id="scheduler"><span
+class="header-section-number">4.26</span>
 <a id="scheduler"></a>Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
-<h3 data-number="4.27.1" id="windows-scheduler"><span
-class="header-section-number">4.27.1</span> Windows Scheduler</h3>
+<h3 data-number="4.26.1" id="windows-scheduler"><span
+class="header-section-number">4.26.1</span> Windows Scheduler</h3>
 <p>Windows provides the <a
 href="https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page">Task
 Scheduler</a>. It can be configured:</p>
@@ -4448,8 +4399,8 @@ href="https://learn.microsoft.com/fr-fr/windows-server/administration/windows-co
 href="https://learn.microsoft.com/en-us/powershell/module/scheduledtasks">scheduletasks</a></p></li>
 <li><p>Using <code>taskschd.msc</code> (UI)</p></li>
 </ul>
-<h3 data-number="4.27.2" id="unix-like-scheduler"><span
-class="header-section-number">4.27.2</span> Unix-like Scheduler</h3>
+<h3 data-number="4.26.2" id="unix-like-scheduler"><span
+class="header-section-number">4.26.2</span> Unix-like Scheduler</h3>
 <p>Unix-like systems (Linux, …) provide cron, configured using a <a
 href="https://www.man7.org/linux/man-pages/man5/crontab.5.html">crontab</a></p>
 <p>Linux also provides <code>anacron</code>, if tasks are hourly or
@@ -4457,28 +4408,28 @@ daily.</p>
 <p>For example, on Linux it is convenient to create a wrapping script,
 e.g. <code>cron_ascli</code> that will setup the environment (e.g. Ruby)
 to properly start <code>ascli</code>:</p>
-<div class="sourceCode" id="cb235"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb235-1"><a href="#cb235-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb235-2"><a href="#cb235-2" aria-hidden="true" tabindex="-1"></a><span class="co"># load the ruby environment</span></span>
-<span id="cb235-3"><a href="#cb235-3" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> /etc/profile.d/rvm.sh</span>
-<span id="cb235-4"><a href="#cb235-4" aria-hidden="true" tabindex="-1"></a><span class="ex">rvm</span> use 2.6 <span class="at">--quiet</span></span>
-<span id="cb235-5"><a href="#cb235-5" aria-hidden="true" tabindex="-1"></a><span class="co"># set a timeout protection, just in case ascli is frozen </span></span>
-<span id="cb235-6"><a href="#cb235-6" aria-hidden="true" tabindex="-1"></a><span class="va">tmout</span><span class="op">=</span>30m</span>
-<span id="cb235-7"><a href="#cb235-7" aria-hidden="true" tabindex="-1"></a><span class="co"># forward arguments to ascli</span></span>
-<span id="cb235-8"><a href="#cb235-8" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> timeout <span class="va">${tmout}</span> ascli <span class="st">&quot;</span><span class="va">${@}</span><span class="st">&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb229"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb229-1"><a href="#cb229-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb229-2"><a href="#cb229-2" aria-hidden="true" tabindex="-1"></a><span class="co"># load the ruby environment</span></span>
+<span id="cb229-3"><a href="#cb229-3" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> /etc/profile.d/rvm.sh</span>
+<span id="cb229-4"><a href="#cb229-4" aria-hidden="true" tabindex="-1"></a><span class="ex">rvm</span> use 2.6 <span class="at">--quiet</span></span>
+<span id="cb229-5"><a href="#cb229-5" aria-hidden="true" tabindex="-1"></a><span class="co"># set a timeout protection, just in case ascli is frozen </span></span>
+<span id="cb229-6"><a href="#cb229-6" aria-hidden="true" tabindex="-1"></a><span class="va">tmout</span><span class="op">=</span>30m</span>
+<span id="cb229-7"><a href="#cb229-7" aria-hidden="true" tabindex="-1"></a><span class="co"># forward arguments to ascli</span></span>
+<span id="cb229-8"><a href="#cb229-8" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> timeout <span class="va">${tmout}</span> ascli <span class="st">&quot;</span><span class="va">${@}</span><span class="st">&quot;</span></span></code></pre></div>
 <p>Example of cronjob created for user <code>xfer</code>.</p>
-<div class="sourceCode" id="cb236"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb236-1"><a href="#cb236-1" aria-hidden="true" tabindex="-1"></a><span class="fu">crontab</span><span class="op">&lt;&lt;EOF</span></span>
-<span id="cb236-2"><a href="#cb236-2" aria-hidden="true" tabindex="-1"></a><span class="st">0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error</span></span>
-<span id="cb236-3"><a href="#cb236-3" aria-hidden="true" tabindex="-1"></a><span class="st">2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error</span></span>
-<span id="cb236-4"><a href="#cb236-4" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
+<div class="sourceCode" id="cb230"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb230-1"><a href="#cb230-1" aria-hidden="true" tabindex="-1"></a><span class="fu">crontab</span><span class="op">&lt;&lt;EOF</span></span>
+<span id="cb230-2"><a href="#cb230-2" aria-hidden="true" tabindex="-1"></a><span class="st">0    * * * *  /home/xfer/cron_ascli preview scan --logger=syslog --display=error</span></span>
+<span id="cb230-3"><a href="#cb230-3" aria-hidden="true" tabindex="-1"></a><span class="st">2-59 * * * *  /home/xfer/cron_ascli preview trev --logger=syslog --display=error</span></span>
+<span id="cb230-4"><a href="#cb230-4" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> The logging options are kept here in the
 cronfile instead of conf file to allow execution on command line with
 output on command line.</p>
 </blockquote>
-<h2 data-number="4.28" id="locking-for-exclusive-execution"><span
-class="header-section-number">4.28</span> <a id="locking"></a>Locking
+<h2 data-number="4.27" id="locking-for-exclusive-execution"><span
+class="header-section-number">4.27</span> <a id="locking"></a>Locking
 for exclusive execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
@@ -4501,8 +4452,8 @@ protection against parallel execution:</p>
 href="https://linux.die.net/man/1/flock"><code>flock</code></a> to do
 the same:</li>
 </ul>
-<div class="sourceCode" id="cb237"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb237-1"><a href="#cb237-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/flock</span> <span class="at">-w</span> 0 /var/cron.lock ascli ...</span></code></pre></div>
+<div class="sourceCode" id="cb231"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb231-1"><a href="#cb231-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/flock</span> <span class="at">-w</span> 0 /var/cron.lock ascli ...</span></code></pre></div>
 <p><code>ascli</code> natively supports a locking mechanism with option
 <code>lock_port</code>. (Technically, this opens a local TCP server
 port, and fails if this port is already used, providing a local lock.
@@ -4510,14 +4461,14 @@ Lock is released when process exits).</p>
 <p>Testing <code>ascli</code> locking:</p>
 <p>Run this same command in two separate terminals within less than 30
 seconds:</p>
-<div class="sourceCode" id="cb238"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb238-1"><a href="#cb238-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @ruby:<span class="st">&#39;sleep(30)&#39;</span> <span class="at">--lock-port</span><span class="op">=</span>12345</span></code></pre></div>
+<div class="sourceCode" id="cb232"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @ruby:<span class="st">&#39;sleep(30)&#39;</span> <span class="at">--lock-port</span><span class="op">=</span>12345</span></code></pre></div>
 <p>The first instance will sleep 30 seconds, the second one will
 immediately exit like this:</p>
-<div class="sourceCode" id="cb239"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb239-1"><a href="#cb239-1" aria-hidden="true" tabindex="-1"></a><span class="ex">WARN</span> <span class="at">--</span> : Another instance is already running <span class="er">(</span><span class="ex">Address</span> already in use <span class="at">-</span> bind<span class="er">(</span><span class="ex">2</span><span class="kw">)</span> <span class="cf">for</span> <span class="st">&quot;127.0.0.1&quot;</span> port 12345<span class="kw">)</span><span class="bu">.</span></span></code></pre></div>
-<h2 data-number="4.29" id="provençale"><span
-class="header-section-number">4.29</span> “Provençale”</h2>
+<div class="sourceCode" id="cb233"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb233-1"><a href="#cb233-1" aria-hidden="true" tabindex="-1"></a><span class="ex">WARN</span> <span class="at">--</span> : Another instance is already running <span class="er">(</span><span class="ex">Address</span> already in use <span class="at">-</span> bind<span class="er">(</span><span class="ex">2</span><span class="kw">)</span> <span class="cf">for</span> <span class="st">&quot;127.0.0.1&quot;</span> port 12345<span class="kw">)</span><span class="bu">.</span></span></code></pre></div>
+<h2 data-number="4.28" id="provençale"><span
+class="header-section-number">4.28</span> “Provençale”</h2>
 <p><code>ascp</code>, the underlying executable implementing Aspera file
 transfer using FASP, has a capability to not only access the local file
 system (using system’s
@@ -4530,8 +4481,8 @@ shared libraries and must be activated. (e.g. using
 <code>trapd</code>)</p>
 <p>The list of supported <strong>PVCL</strong> adapters can be retrieved
 with command:</p>
-<div class="sourceCode" id="cb240"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb240-1"><a href="#cb240-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp info</span></code></pre></div>
+<div class="sourceCode" id="cb234"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb234-1"><a href="#cb234-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf ascp info</span></code></pre></div>
 <pre class="output"><code>+--------------------+-----------------------------------------------------------+
 | key                | value                                                     |
 +--------------------+-----------------------------------------------------------+
@@ -4553,13 +4504,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb240-1"><a href
 <code>ascp</code> including configuration. They act as a pseudo
 “drive”.</p>
 <p>The simplified format is:</p>
-<div class="sourceCode" id="cb242"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb242-1"><a href="#cb242-1" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>adapter<span class="op">&gt;</span>:///<span class="op">&lt;</span>sub <span class="fu">file</span> path<span class="op">&gt;</span><span class="pp">?</span><span class="op">&lt;</span>arg1<span class="op">&gt;</span>=<span class="op">&lt;</span>val1<span class="op">&gt;&amp;</span>...</span></code></pre></div>
+<div class="sourceCode" id="cb236"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb236-1"><a href="#cb236-1" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>adapter<span class="op">&gt;</span>:///<span class="op">&lt;</span>sub <span class="fu">file</span> path<span class="op">&gt;</span><span class="pp">?</span><span class="op">&lt;</span>arg1<span class="op">&gt;</span>=<span class="op">&lt;</span>val1<span class="op">&gt;&amp;</span>...</span></code></pre></div>
 <p>One of the adapters, used in this manual, for testing, is
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
-<h2 data-number="4.30" id="faux-for-testing"><span
-class="header-section-number">4.30</span>
+<h2 data-number="4.29" id="faux-for-testing"><span
+class="header-section-number">4.29</span>
 <a id="faux_testing"></a><code>faux:</code> for testing</h2>
 <p>This is an extract of the man page of <code>ascp</code>. This feature
 is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
@@ -4568,8 +4519,8 @@ is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
 to <code>faux://</code>.</p>
 <p>To send uninitialized data in place of an actual source file, the
 source file is replaced with an argument of the form:</p>
-<div class="sourceCode" id="cb243"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faux:///filename?filesize</span></span></code></pre></div>
+<div class="sourceCode" id="cb237"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb237-1"><a href="#cb237-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faux:///filename?filesize</span></span></code></pre></div>
 <p>where:</p>
 <ul>
 <li><code>filename</code> is the name that will be assigned to the file
@@ -4592,8 +4543,8 @@ likely fail due to lack of destination storage unless destination is
 <code>faux://</code>.</p>
 <p>To send uninitialized data in place of a source directory, the source
 argument is replaced with an argument of the form:</p>
-<div class="sourceCode" id="cb244"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb244-1"><a href="#cb244-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faux:///dirname?</span><span class="op">&lt;</span>arg1<span class="op">&gt;</span>=<span class="op">&lt;</span>val1<span class="op">&gt;&amp;</span>...</span></code></pre></div>
+<div class="sourceCode" id="cb238"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb238-1"><a href="#cb238-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faux:///dirname?</span><span class="op">&lt;</span>arg1<span class="op">&gt;</span>=<span class="op">&lt;</span>val1<span class="op">&gt;&amp;</span>...</span></code></pre></div>
 <p>where:</p>
 <ul>
 <li><code>dirname</code> is the folder name and can contain
@@ -4681,24 +4632,24 @@ bytes, etc.</li>
 <li>Upload 20 gibibytes of random data to file myfile to directory
 /Upload</li>
 </ul>
-<div class="sourceCode" id="cb245"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb245-1"><a href="#cb245-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload faux:///myfile\?20g <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
+<div class="sourceCode" id="cb239"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb239-1"><a href="#cb239-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload faux:///myfile\?20g <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
 <ul>
 <li>Upload a file /tmp/sample but do not save results to disk (no
 docroot on destination)</li>
 </ul>
-<div class="sourceCode" id="cb246"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb246-1"><a href="#cb246-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload /tmp/sample <span class="at">--to-folder</span><span class="op">=</span>faux://</span></code></pre></div>
+<div class="sourceCode" id="cb240"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb240-1"><a href="#cb240-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload /tmp/sample <span class="at">--to-folder</span><span class="op">=</span>faux://</span></code></pre></div>
 <ul>
 <li>Upload a faux directory <code>mydir</code> containing 1 million
 files, sequentially with sizes ranging from 0 to 2 Mebibyte - 2 bytes,
 with the basename of each file being <code>testfile</code> to
 /Upload</li>
 </ul>
-<div class="sourceCode" id="cb247"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb247-1"><a href="#cb247-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1m&amp;size=0&amp;inc=2&amp;seq=sequential&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
-<h2 data-number="4.31" id="usage"><span
-class="header-section-number">4.31</span> <a id="usage"></a>Usage</h2>
+<div class="sourceCode" id="cb241"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb241-1"><a href="#cb241-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1m&amp;size=0&amp;inc=2&amp;seq=sequential&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
+<h2 data-number="4.30" id="usage"><span
+class="header-section-number">4.30</span> <a id="usage"></a>Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.15.0.pre)
@@ -4987,9 +4938,9 @@ OPTIONS:
 <p><strong>Note:</strong> commands and parameter values can be written
 in short form.</p>
 </blockquote>
-<h2 data-number="4.32"
+<h2 data-number="4.31"
 id="bulk-creation-and-deletion-of-resources"><span
-class="header-section-number">4.32</span> Bulk creation and deletion of
+class="header-section-number">4.31</span> Bulk creation and deletion of
 resources</h2>
 <p>Bulk creation and deletion of resources are possible using option
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
@@ -4998,6 +4949,44 @@ instead of a simple <code>Hash</code> using the <a
 href="#extended">Extended Value Syntax</a>. This option is available
 only for some of the resources: if you need it: try and see if the
 entities you try to create or delete support this option.</p>
+<h2 data-number="4.32" id="plugins"><span
+class="header-section-number">4.32</span> Plugins</h2>
+<p><code>ascli</code> uses a plugin mechanism. The first level command
+(just after <code>ascli</code> on the command line) is the name of the
+concerned plugin which will execute the command. Each plugin usually
+represents commands sent to a specific application. For instance, the
+plugin <code>faspex</code> allows operations on the application “Aspera
+Faspex”.</p>
+<p>Available plugins can be found using command:</p>
+<div class="sourceCode" id="cb243"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf plugin list</span></code></pre></div>
+<pre class="output"><code>+--------------+--------+--------+-------------------------------------------------------+
+| plugin       | detect | wizard | path                                                  |
++--------------+--------+--------+-------------------------------------------------------+
+| shares       | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
+| node         | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/node.rb         |
+...
++--------------+--------+--------+-------------------------------------------------------+</code></pre>
+<p>Most plugins will take the URL option: <code>url</code> to identify
+their location.</p>
+<p>REST APIs of Aspera legacy applications (Aspera Node, Faspex 4,
+Shares, Console, Orchestrator) use simple username/password
+authentication: HTTP Basic Authentication using options:
+<code>username</code> and <code>password</code>.</p>
+<p>Aspera on Cloud and Faspex 5 rely on Oauth.</p>
+<h3 data-number="4.32.1" id="create-your-own-plugin"><span
+class="header-section-number">4.32.1</span>
+<a id="createownplugin"></a>Create your own plugin</h3>
+<p>By default plugins are looked-up in folders specified by
+(multi-value) option <code>plugin_folder</code>:</p>
+<div class="sourceCode" id="cb245"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb245-1"><a href="#cb245-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;key&quot;:&quot;plugin_folder&quot;}&#39;</span></span></code></pre></div>
+<p>You can create the skeleton of a new plugin like this:</p>
+<div class="sourceCode" id="cb246"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb246-1"><a href="#cb246-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> conf plugin create foo .</span></code></pre></div>
+<pre class="output"><code>Created ./foo.rb</code></pre>
+<div class="sourceCode" id="cb248"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb248-1"><a href="#cb248-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--plugin-folder</span><span class="op">=</span>. foo</span></code></pre></div>
 <h1 data-number="5" id="plugin-aoc-ibm-aspera-on-cloud"><span
 class="header-section-number">5</span> <a id="aoc"></a>Plugin:
 <code>aoc</code>: IBM Aspera on Cloud</h1>

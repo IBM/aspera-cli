@@ -1982,67 +1982,6 @@ The following options can be specified in the option `query`:
 | double     | display double text resolution (half characters) (Bool) |
 | font_ratio | Font height/width ratio interminal (Float) |
 
-### Plugins
-
-<%=tool%> uses a plugin mechanism.
-The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command.
-Each plugin usually represents commands sent to a specific application.
-For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
-
-Available plugins can be found using command:
-
-```bash
-<%=cmd%> conf plugin list
-```
-
-```output
-+--------------+--------------------------------------------------------+
-| plugin       | path                                                   |
-+--------------+--------------------------------------------------------+
-| shares       | ..../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
-| node         | ..../aspera-cli/lib/aspera/cli/plugins/node.rb         |
-...
-+--------------+--------------------------------------------------------+
-```
-
-#### <a id="createownplugin"></a>Create your own plugin
-
-By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
-
-```bash
-<%=cmd%> --show-config --select=@json:'{"key":"plugin_folder"}'
-```
-
-You can create the skeleton of a new plugin like this:
-
-```bash
-<%=cmd%> conf plugin create foo .
-```
-
-```output
-Created ./foo.rb
-```
-
-```bash
-<%=cmd%> --plugin-folder=. foo
-```
-
-#### <a id="plugins"></a>Plugins: Application URL and Authentication
-
-<%=tool%> comes with several Aspera application plugins.
-
-REST APIs of Aspera legacy applications (Aspera Node, Faspex, Shares, Console, Orchestrator, Server) use simple username/password authentication: HTTP Basic Authentication.
-
-Those are using options:
-
-- url
-- username
-- password
-
-Those can be provided using command line, parameter set, env var, see section above.
-
-Aspera on Cloud relies on Oauth, refer to the [Aspera on Cloud](#aoc) section.
-
 ### <a id="graphical"></a>Graphical Interactions: Browser and Text Editor
 
 Some actions may require the use of a graphical tool:
@@ -3099,6 +3038,59 @@ Examples:
 Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
 In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value Syntax](#extended).
 This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
+
+### Plugins
+
+<%=tool%> uses a plugin mechanism.
+The first level command (just after <%=tool%> on the command line) is the name of the concerned plugin which will execute the command.
+Each plugin usually represents commands sent to a specific application.
+For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
+
+Available plugins can be found using command:
+
+```bash
+<%=cmd%> conf plugin list
+```
+
+```output
++--------------+--------+--------+-------------------------------------------------------+
+| plugin       | detect | wizard | path                                                  |
++--------------+--------+--------+-------------------------------------------------------+
+| shares       | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
+| node         | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/node.rb         |
+...
++--------------+--------+--------+-------------------------------------------------------+
+```
+
+Most plugins will take the URL option: `url` to identify their location.
+
+REST APIs of Aspera legacy applications (Aspera Node, Faspex 4, Shares, Console, Orchestrator) use simple username/password authentication: HTTP Basic Authentication using options: `username` and `password`.
+
+Aspera on Cloud and Faspex 5 rely on Oauth.
+
+#### <a id="createownplugin"></a>Create your own plugin
+
+By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
+
+```bash
+<%=cmd%> --show-config --select=@json:'{"key":"plugin_folder"}'
+```
+
+You can create the skeleton of a new plugin like this:
+
+```bash
+<%=cmd%> conf plugin create foo .
+```
+
+```output
+Created ./foo.rb
+```
+
+```bash
+<%=cmd%> --plugin-folder=. foo
+```
+
+
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 

@@ -150,6 +150,36 @@ module Aspera
         Log.log.debug('fasp local shutdown')
       end
 
+      def process_management_line(line, state)
+        state[:text] += line
+        line.chomp!
+        Log.log.debug{"line=[#{line}]"}
+        case line
+        when MGT_HEADER
+          # begin event
+          state[:data] = {}
+          state[:text] = ''
+        when /^([^:]+): (.*)$/
+          # event field
+          state[:data][Regexp.last_match(1)] = Regexp.last_match(2)
+        when ''
+          # empty line is separator to end event information
+          raise 'unexpected empty line' if state[:data].nil?
+          state[:data][AgentBase::LISTENER_SESSION_ID_B] = state[:session_id]
+          notify_listeners(state[:text], state[:data])
+          case state[:data]['Type']
+          when 'INIT'
+            state[:session][:id] = state[:data]['SessionId']
+            Log.log.debug{"session id: #{state[:session][:id]}"}
+          when 'DONE', 'ERROR'
+            # TODO: check if this is always the last event
+            state[:event] = state[:data]
+          end # event type
+        else
+          raise "unexpected line:[#{line}]"
+        end # case
+      end
+
       # This is the low level method to start the "ascp" process
       # currently, relies on command line arguments
       # start ascp with management port.
@@ -177,7 +207,7 @@ module Aspera
           ascp_arguments = env_args[:args].clone
           # add management port on the selected local port
           ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
-          # start ascp in sub process
+          # display ascp command line
           Log.log.debug do
             [
               'execute:',
@@ -186,7 +216,7 @@ module Aspera
               ascp_arguments.map{|a|Shellwords.shellescape(a)}
             ].flatten.join(' ')
           end
-          # start process
+          # start ascp in separate process
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments)
           # in parent, wait for connection to socket max 3 seconds
           Log.log.debug{"before accept for pid (#{ascp_pid})"}
@@ -201,55 +231,26 @@ module Aspera
           end
           Log.log.debug{"after accept (#{ascp_mgt_io})"}
           session[:io] = ascp_mgt_io
-          # exact text for event, with \n
-          current_event_text = ''
-          # parsed event (hash)
-          current_event_data = nil
-          # this is the last full status
-          last_status_event = nil
-          # read management port
-          loop do
-            # TODO: timeout here ?
-            line = ascp_mgt_io.gets
-            # nil when ascp process exits
-            break if line.nil?
-            current_event_text += line
-            line.chomp!
-            Log.log.debug{"line=[#{line}]"}
-            case line
-            when MGT_HEADER
-              # begin event
-              current_event_data = {}
-              current_event_text = ''
-            when /^([^:]+): (.*)$/
-              # event field
-              current_event_data[Regexp.last_match(1)] = Regexp.last_match(2)
-            when ''
-              # empty line is separator to end event information
-              raise 'unexpected empty line' if current_event_data.nil?
-              current_event_data[AgentBase::LISTENER_SESSION_ID_B] = ascp_pid
-              notify_listeners(current_event_text, current_event_data)
-              case current_event_data['Type']
-              when 'INIT'
-                session[:id] = current_event_data['SessionId']
-                Log.log.debug{"session id: #{session[:id]}"}
-              when 'DONE', 'ERROR'
-                # TODO: check if this is always the last event
-                last_status_event = current_event_data
-              end # event type
-            else
-              raise "unexpected line:[#{line}]"
-            end # case
-          end # loop (process mgt port lines)
+          state = {
+            session:    session,
+            session_id: ascp_pid,
+            text:       '', # exact text for event, with \n
+            data:       nil, # parsed event (hash)
+            event:      nil # this is the last full status
+          }
+          # read management port, until socket is closed (gets returns nil)
+          while (line = ascp_mgt_io.gets)
+            process_management_line(line, state)
+          end
           # check that last status was received before process exit
-          if last_status_event.is_a?(Hash)
-            case last_status_event['Type']
+          if state[:event].is_a?(Hash)
+            case state[:event]['Type']
             when 'DONE'
               # all went well
               exception_raised = false
             when 'ERROR'
-              Log.log.error{"code: #{last_status_event['Code']}"}
-              if /bearer token/i.match?(last_status_event['Description'])
+              Log.log.error{"code: #{state[:event]['Code']}"}
+              if /bearer token/i.match?(state[:event]['Description'])
                 Log.log.error('need to regenerate token'.red)
                 if session[:token_regenerator].respond_to?(:refreshed_transfer_token)
                   # regenerate token here, expired, or error on it
@@ -257,14 +258,10 @@ module Aspera
                   env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
                 end
               end
-              # cannot resolve address
-              # if last_status_event['Code'].to_i.eql?(14)
-              #  Log.log.warn{"host: #{}"}
-              # end
-              raise Fasp::Error.new(last_status_event['Description'], last_status_event['Code'].to_i)
-            else # case
-              raise "unexpected last event type: #{last_status_event['Type']}"
-            end
+              raise Fasp::Error.new(state[:event]['Description'], state[:event]['Code'].to_i)
+            else
+              raise "unexpected last event type: #{state[:event]['Type']}"
+            end # case
           else
             exception_raised = false
             Log.log.debug('no status read from ascp mgt port')
