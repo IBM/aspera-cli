@@ -5,6 +5,7 @@ require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
 require 'aspera/cli/formatter'
 require 'aspera/cli/info'
+require 'aspera/cli/transfer_progress'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
@@ -182,6 +183,7 @@ module Aspera
           @option_config_file = nil
           @certificate_store = nil
           @certificate_paths = nil
+        @progressbar = nil
           # option to set main folder
           options.declare(
             :home, 'Home folder for tool',
@@ -238,7 +240,9 @@ module Aspera
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
           options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
+          options.declare(:progressbar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           options.parse_options!
+          @progressbar = TransferProgress.new if options.get_option(:progressbar)
           # Check SDK folder is set or not, for compatibility, we check in two places
           sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
           if sdk_folder.nil?
@@ -276,7 +280,7 @@ module Aspera
         end
 
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_http_options
-        attr_reader :option_ignore_cert_host_port
+        attr_reader :option_ignore_cert_host_port, :progressbar
 
         def trusted_cert_locations=(path_list)
           path_list = [path_list] unless path_list.is_a?(Array)

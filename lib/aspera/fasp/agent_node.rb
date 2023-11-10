@@ -5,7 +5,6 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/node'
 require 'aspera/log'
 require 'aspera/oauth'
-require 'tty-spinner'
 
 module Aspera
   module Fasp
@@ -17,8 +16,8 @@ module Aspera
 
       def initialize(options)
         raise 'node specification must be Hash' unless options.is_a?(Hash)
+        super(options)
         %i[url username password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.key?(k) }
-        super()
         # root id is required for access key
         @root_id = options[:root_id]
         rest_params = { base_url: options[:url]}
@@ -35,6 +34,7 @@ module Aspera
         @node_api = Rest.new(rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
+        Log.dump(:agent_options, @options)
       end
 
       # used internally to ensure node api is set before using.
@@ -93,58 +93,46 @@ module Aspera
       # generic method
       def wait_for_transfers_completion
         # set to true when we know the total size of the transfer
-        precalc_started = false
-        spinner = nil
+        total_size_sent = false
+        session_started = false
+        bytes_expected = nil
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
           transfer_data = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
-          when 'completed'
-            notify_end(@transfer_id)
-            break
           when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)'
-            if spinner.nil?
-              spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
-              spinner.start
-            end
-            spinner.update(title: transfer_data['status'])
-            spinner.spin
+            notify_progress(session_id: nil, type: :pre_start, info: transfer_data['status'])
           when 'running'
-            if spinner
-              message = transfer_data['status']
-              message = "#{message} (#{transfer_data['error_desc']})" if !transfer_data['error_desc']&.empty?
-              spinner.update(title: message)
+            if !session_started
+              notify_progress(session_id: @transfer_id, type: :session_start)
+              session_started = true
             end
-            if precalc_started
-              notify_progress(@transfer_id, transfer_data['bytes_transferred'])
-            elsif transfer_data['precalc'].is_a?(Hash) &&
+            message = transfer_data['status']
+            message = "#{message} (#{transfer_data['error_desc']})" if !transfer_data['error_desc']&.empty?
+            notify_progress(session_id: nil, type: :pre_start, info: message)
+            if !total_size_sent &&
+                transfer_data['precalc'].is_a?(Hash) &&
                 transfer_data['precalc']['status'].eql?('ready')
-              if spinner
-                spinner.stop
-                spinner = nil
-              end
-              notify_begin(@transfer_id, transfer_data['precalc']['bytes_expected'])
-              precalc_started = true
-            elsif spinner
-              spinner.spin
+              bytes_expected = transfer_data['precalc']['bytes_expected']
+              notify_progress(type: :session_size, session_id: @transfer_id, info: bytes_expected)
+              total_size_sent = true
             end
+            notify_progress(type: :transfer, session_id: @transfer_id, info: transfer_data['bytes_transferred'])
+          when 'completed'
+            notify_progress(type: :transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
+            notify_progress(type: :end, session_id: @transfer_id)
+            break
           when 'failed'
-            if spinner
-              spinner.update(title: transfer_data['status'])
-              spinner.stop
-            end
+            notify_progress(type: :end, session_id: @transfer_id)
             # Bug in HSTS ? transfer is marked failed, but there is no reason
-            if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
-              notify_end(@transfer_id)
-              break
-            end
+            break if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Fasp::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
           else
             Log.log.warn{"transfer_data -> #{transfer_data}"}
             raise Fasp::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
           end
-          sleep(1)
+          sleep(1.0)
         end
         # TODO: get status of sessions
         return []

@@ -103,8 +103,11 @@ module Aspera
       # little hack, handy because HTTP debug, proxy, etc... will be available
       # used implement web sockets after `start_http_session`
       def io_http_session(http_session)
+        raise "wring type #{http_session.class}" unless http_session.is_a?(Net::HTTP)
         # Net::BufferedIO in net/protocol.rb
-        http_session.instance_variable_get(:@socket)
+        result = http_session.instance_variable_get(:@socket)
+        raise "no socket for #{http_session}" if result.nil?
+        return result
       end
 
       # set global parameters

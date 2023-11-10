@@ -33,8 +33,6 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-One can also [create one's own plugin](#createownplugin).
-
 ### <a id="when_to_use"></a>When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
@@ -2487,10 +2485,9 @@ Parameters provided in option `transfer_info` are:
 | Name                   | Type   | Description                           |
 |------------------------|--------|---------------------------------------|
 | url                    | string | URL of the HTTP GW</br>Mandatory      |
-| upload_bar_refresh_sec | float  | Refresh rate for upload progress bar  |
-| upload_chunk_size      | int    | Size in bytes of chunks for upload    |
-| api_version            | string | v1 or v2, for force use of version    |
-| synchronous            | bool   | wait for each message acknowledgment  |
+| upload_chunk_size      | int    | Size in bytes of chunks for upload<br/>Default: 64000    |
+| api_version            | string | v1 or v2, for force use of version<br/>Default: v2       |
+| synchronous            | bool   | wait for each message acknowledgment<br/>Default: false  |
 
 Example:
 
@@ -2503,8 +2500,14 @@ Example:
 #### <a id="agt_trsdk"></a>Transfer SDK
 
 Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
+Set option `transfer` to `trsdk`.
 
-By default it will listen on local port `55002` on `127.0.0.1`.
+Options for `transfer_info` are:
+
+| Name     | Type   | Description |
+|----------|--------|-------------|
+| address  | string | IP address listened by the daemon</br>Mandatory<br/>Default: 127.0.0.1 |
+| port     | int    | port of the daemon</br>Mandatory<br/>Default: 55002 |
 
 The gem `grpc` was removed from dependencies, as it requires compilation of a native part.
 So, to use the Transfer SDK you should install this gem:
@@ -2818,6 +2821,12 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
+### Transfer progress bar
+
+Control with option `progressbar` (`Bool`), by default it is `yes` if the output is a terminal.
+
+
+
 ### <a id="scheduler"></a>Scheduler
 
 It is useful to configure automated scheduled execution.
@@ -3068,8 +3077,6 @@ REST APIs of Aspera legacy applications (Aspera Node, Faspex 4, Shares, Console,
 
 Aspera on Cloud and Faspex 5 rely on Oauth.
 
-#### <a id="createownplugin"></a>Create your own plugin
-
 By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
 ```bash
@@ -3089,8 +3096,6 @@ Created ./foo.rb
 ```bash
 <%=cmd%> --plugin-folder=. foo
 ```
-
-
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 
@@ -5977,7 +5982,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 ### Example: unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
-<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress=none --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progressbar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
@@ -6009,7 +6014,7 @@ Typically, the health check uses the REST API of the application with the follow
 <%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```bash
-<%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress=none
+<%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progressbar=no
 ```
 
 ```output

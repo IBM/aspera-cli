@@ -35,8 +35,6 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-One can also [create one's own plugin](#createownplugin).
-
 ### <a id="when_to_use"></a>When to use and when not to use
 
 `ascli` is designed to be used as a command line tool to:
@@ -2563,10 +2561,9 @@ Parameters provided in option `transfer_info` are:
 | Name                   | Type   | Description                           |
 |------------------------|--------|---------------------------------------|
 | url                    | string | URL of the HTTP GW</br>Mandatory      |
-| upload_bar_refresh_sec | float  | Refresh rate for upload progress bar  |
-| upload_chunk_size      | int    | Size in bytes of chunks for upload    |
-| api_version            | string | v1 or v2, for force use of version    |
-| synchronous            | bool   | wait for each message acknowledgment  |
+| upload_chunk_size      | int    | Size in bytes of chunks for upload<br/>Default: 64000    |
+| api_version            | string | v1 or v2, for force use of version<br/>Default: v2       |
+| synchronous            | bool   | wait for each message acknowledgment<br/>Default: false  |
 
 Example:
 
@@ -2579,6 +2576,14 @@ ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"h
 #### <a id="agt_trsdk"></a>Transfer SDK
 
 Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
+Set option `transfer` to `trsdk`.
+
+Options for `transfer_info` are:
+
+| Name     | Type   | Description |
+|----------|--------|-------------|
+| address  | string | IP address listened by the daemon</br>Mandatory<br/>Default: 127.0.0.1 |
+| port     | int    | port of the daemon</br>Mandatory<br/>Default: 55002 |
 
 By default it will listen on local port `55002` on `127.0.0.1`.
 
@@ -2989,6 +2994,12 @@ Example: parameter to download a faspex package and decrypt on the fly
 --ts=@json:'{"precalculate_job_size":true}'
 ```
 
+### Transfer progress bar
+
+Control with option `progressbar` (`Bool`), by default it is `yes` if the output is a terminal.
+
+
+
 ### <a id="scheduler"></a>Scheduler
 
 It is useful to configure automated scheduled execution.
@@ -3244,7 +3255,7 @@ OPTIONS: global
     -v, --version                    Display version
     -w, --warnings                   Check for language warnings
         --ui=ENUM                    Method to start browser: text, [graphical]
-        --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
+        --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
@@ -3289,13 +3300,13 @@ OPTIONS:
         --http-options=VALUE         Options for HTTP/S socket (Hash)
     -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
+        --progressbar=ENUM           Display progress bar: [no], yes
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
         --transfer=ENUM              Type of transfer agent: [direct], node, connect, httpgw, trsdk
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
-        --progress=ENUM              Type of progress bar: none, [native], multi
 
 
 COMMAND: shares
@@ -3520,8 +3531,6 @@ REST APIs of Aspera legacy applications (Aspera Node, Faspex 4, Shares, Console,
 
 Aspera on Cloud and Faspex 5 rely on Oauth.
 
-#### <a id="createownplugin"></a>Create your own plugin
-
 By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
 ```bash
@@ -3541,8 +3550,6 @@ Created ./foo.rb
 ```bash
 ascli --plugin-folder=. foo
 ```
-
-
 
 ## <a id="aoc"></a>Plugin: `aoc`: IBM Aspera on Cloud
 
@@ -4871,7 +4878,7 @@ server upload --src-type=pair --sources=@json:'["testfile.bin","my_inside_folder
 server upload --src-type=pair testfile.bin my_inside_folder/othername --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
 server upload --src-type=pair testfile.bin my_upload_folder/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
-server upload testfile.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+server upload testfile.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
 ```
 
 ### Authentication on Server with SSH session
@@ -6679,26 +6686,9 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```bash
 asession -h
-USAGE
-    asession
-    asession -h|--help
-    asession <transfer spec extended value>
-    
-    If no argument is provided, default will be used: @json:@stdin
-    -h, --help display this message
-    <transfer spec extended value> a JSON value for transfer_spec, using the prefix: @json:
-    The value can be either:
-       the JSON description itself, e.g. @json:'{"xx":"yy",...}'
-       @json:@stdin, if the JSON is provided from stdin
-       @json:@file:<path>, if the JSON is provided from a file
-    Asynchronous commands can be provided on STDIN, examples:
-       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
-       {"type":"START","source":"xx","destination":"yy"}
-       {"type":"DONE"}
-Note: debug information can be placed on STDERR, using the "EX_loglevel" parameter in transfer spec (debug=0)
-EXAMPLES
-    asession @json:'{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
-    echo '{"remote_host":...}'|asession @json:@stdin
+<internal:/Users/laurent/.rvm/rubies/ruby-3.1.3/lib/ruby/3.1.0/rubygems/core_ext/kernel_require.rb>:85:in `require': cannot load such file -- aspera/cli/listener/line_dump (LoadError)
+	from <internal:/Users/laurent/.rvm/rubies/ruby-3.1.3/lib/ruby/3.1.0/rubygems/core_ext/kernel_require.rb>:85:in `require'
+	from ../bin/asession:7:in `<main>'
 
 ```
 
@@ -6775,7 +6765,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 ### Example: unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
-ascli aoc files download . --to-folder=. --lock-port=12345 --progress=none --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+ascli aoc files download . --to-folder=. --lock-port=12345 --progressbar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
@@ -6807,7 +6797,7 @@ Typically, the health check uses the REST API of the application with the follow
 `ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```bash
-ascli server health transfer --to-folder=/Upload --format=nagios --progress=none
+ascli server health transfer --to-folder=/Upload --format=nagios --progressbar=no
 ```
 
 ```output

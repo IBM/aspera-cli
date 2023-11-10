@@ -4,7 +4,6 @@
 # Laurent Martin/2017
 $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib")
 require 'aspera/fasp/agent_direct'
-require 'aspera/cli/listener/line_dump'
 require 'aspera/cli/extended_value'
 require 'aspera/log'
 require 'json'
@@ -71,8 +70,6 @@ if transfer_spec.key?(TS_TMP_FILELIST_FOLDER)
 end
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
 client = Aspera::Fasp::AgentDirect.new({quiet: true})
-# display JSON instead of legacy Lines
-client.add_listener(Aspera::Cli::Listener::LineDump.new)
 # start transfer (asynchronous)
 job_id = client.start_transfer(transfer_spec)
 # async commands

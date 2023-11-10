@@ -2,10 +2,44 @@
 
 require 'aspera/colors'
 require 'aspera/secret_hider'
+require 'aspera/environment'
 require 'logger'
 require 'pp'
 require 'json'
 require 'singleton'
+
+# extend Ruby logger with trace levels
+class Logger
+  TRACE_MAX = 2
+  # add custom level to logger severity
+  module Severity
+    1.upto(TRACE_MAX).each { |level| const_set("TRACE#{level}", - level)}
+  end
+  # quick access to label
+  SEVERITY_LABEL = Severity.constants.each_with_object({}) { |name, hash| hash[Severity.const_get(name)] = name}
+  def format_severity(severity)
+    SEVERITY_LABEL[severity] || 'ANY'
+  end
+
+  def self.make_methods(meth)
+    level = ::Logger.const_get(meth.upcase)
+    meth = meth.downcase
+    Kernel.send('lave'.reverse, <<-EOM, nil, __FILE__, __LINE__ + 1)
+      def #{meth}(message = nil, &block)
+        add(#{level}, message, &block)
+      end
+
+      def #{meth}?
+        level <= #{level}
+      end
+
+      def #{meth}!
+        self.level = #{level}
+      end
+    EOM
+  end
+  Logger::Severity.constants.each { |severity| make_methods(severity) }
+end
 
 module Aspera
   # Singleton object for logging
@@ -70,16 +104,18 @@ module Aspera
     # change underlying logger, but keep log level
     def logger_type=(new_log_type)
       current_severity_integer = @logger.level unless @logger.nil?
-      current_severity_integer = ENV['AS_LOG_LEVEL'] if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
+      current_severity_integer = ENV.fetch('AS_LOG_LEVEL', nil) if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
       current_severity_integer = Logger::Severity::WARN if current_severity_integer.nil?
       case new_log_type
       when :stderr
-        # typed: Logger
         @logger = Logger.new($stderr)
       when :stdout
         @logger = Logger.new($stdout)
       when :syslog
         require 'syslog/logger'
+        # the syslog class automatically creates methods from the severity names
+        # we just need to add the mapping
+        Syslog::Logger.const_get(:LEVEL_MAP)[Logger::TRACE1] = Syslog::LOG_DEBUG
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else
         raise "unknown log type: #{new_log_type.class} #{new_log_type}"

@@ -16,16 +16,15 @@ module Aspera
       private_constant :DEFAULT_OPTIONS
 
       # options come from transfer_info
-      def initialize(user_opts)
-        raise "expecting Hash (or nil), but have #{user_opts.class}" unless user_opts.nil? || user_opts.is_a?(Hash)
+      def initialize(user_opts={})
+        super(user_opts)
         # set default options and override if specified
         options = DEFAULT_OPTIONS.dup
         user_opts&.each do |k, v|
           raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           options[k] = v
         end
-        Log.log.debug{"options= #{options}"}
-        super()
+        Log.dump(:agent_options, options)
         # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
@@ -82,17 +81,17 @@ module Aspera
           case response.status
           when :RUNNING
             if !started && !response.sessionInfo.preTransferBytes.eql?(0)
-              notify_begin(@transfer_id, response.sessionInfo.preTransferBytes)
+              notify_progress(type: :session_size, session_id: @transfer_id, info: response.sessionInfo.preTransferBytes)
               started = true
-            elsif started
-              notify_progress(@transfer_id, response.transferInfo.bytesTransferred)
+            else
+              notify_progress(type: :transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
             end
           when :FAILED, :COMPLETED, :CANCELED
-            notify_end(@transfer_id)
+            notify_progress(type: :end, session_id: @transfer_id)
             raise Fasp::Error, JSON.parse(response.message)['Description'] unless :COMPLETED.eql?(response.status)
             break
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
-            # ignore
+            notify_progress(session_id: nil, type: :pre_start, info: response.status.to_s.downcase)
           else
             Log.log.error{"unknown status#{response.status}"}
           end

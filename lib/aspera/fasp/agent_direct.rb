@@ -7,6 +7,7 @@ require 'aspera/fasp/parameters'
 require 'aspera/fasp/installation'
 require 'aspera/fasp/resume_policy'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/fasp/management'
 require 'aspera/log'
 require 'socket'
 require 'timeout'
@@ -29,9 +30,8 @@ module Aspera
         quiet:             true, # by default no native ascp progress bar
         trusted_certs:     [] # list of files with trusted certificates (stores)
       }.freeze
-      # Management port start message
-      MGT_HEADER = 'FASPMGR 2'
-      private_constant :DEFAULT_OPTIONS, :MGT_HEADER
+      # spellchecker: enable
+      private_constant :DEFAULT_OPTIONS
 
       # start ascp transfer (non blocking), single or multi-session
       # job information added to @jobs
@@ -150,34 +150,33 @@ module Aspera
         Log.log.debug('fasp local shutdown')
       end
 
-      def process_management_line(line, state)
-        state[:text] += line
-        line.chomp!
-        Log.log.debug{"line=[#{line}]"}
-        case line
-        when MGT_HEADER
-          # begin event
-          state[:data] = {}
-          state[:text] = ''
-        when /^([^:]+): (.*)$/
-          # event field
-          state[:data][Regexp.last_match(1)] = Regexp.last_match(2)
-        when ''
-          # empty line is separator to end event information
-          raise 'unexpected empty line' if state[:data].nil?
-          state[:data][AgentBase::LISTENER_SESSION_ID_B] = state[:session_id]
-          notify_listeners(state[:text], state[:data])
-          case state[:data]['Type']
-          when 'INIT'
-            state[:session][:id] = state[:data]['SessionId']
-            Log.log.debug{"session id: #{state[:session][:id]}"}
-          when 'DONE', 'ERROR'
-            # TODO: check if this is always the last event
-            state[:event] = state[:data]
-          end # event type
+      # begin 'Type' => 'NOTIFICATION', 'PreTransferBytes' => size
+      # progress 'Type' => 'STATS', 'Bytescont' => size
+      # end 'Type' => 'DONE'
+
+      # @param event management port event
+      def process_progress(event)
+        session_id = event['SessionId']
+        case event['Type']
+        when 'INIT'
+          notify_progress(session_id: session_id, type: :session_start)
+        when 'NOTIFICATION' # sent from remote
+          if event.key?('PreTransferBytes')
+            notify_progress(session_id: session_id, type: :session_size, info: event['PreTransferBytes'])
+          end
+        when 'STATS' # during transfer
+          notify_progress(session_id: session_id, type: :transfer, info: event['TransferBytes'].to_i + event['StartByte'].to_i)
+        when 'DONE', 'ERROR' # end of session
+          notify_progress(session_id: session_id, type: :transfer, info: event['TransferBytes'].to_i + event['StartByte'].to_i)
+          notify_progress(session_id: session_id, type: :end)
+        when 'SESSION'
+        when 'ARGSTOP'
+        when 'FILEERROR'
+        when 'STOP'
+          # stop event when one file is completed
         else
-          raise "unexpected line:[#{line}]"
-        end # case
+          Log.log.debug{"unknown event type #{event['Type']}"}
+        end
       end
 
       # This is the low level method to start the "ascp" process
@@ -191,8 +190,6 @@ module Aspera
       def start_transfer_with_args_env(env_args, session)
         raise 'env_args must be Hash' unless env_args.is_a?(Hash)
         raise 'session must be Hash' unless session.is_a?(Hash)
-        # by default we assume an exception will be raised (for ensure block)
-        exception_raised = true
         begin
           Log.log.debug{"env_args=#{env_args.inspect}"}
           # get location of ascp executable
@@ -201,6 +198,7 @@ module Aspera
           end
           # (optional) check it exists
           raise Fasp::Error, "no such file: #{ascp_path}" unless File.exist?(ascp_path)
+          notify_progress(session_id: nil, type: :pre_start, info: 'starting ascp')
           # open an available (0) local TCP port as ascp management
           mgt_sock = TCPServer.new('127.0.0.1', 0)
           # clone arguments as we eed to modify with mgt port
@@ -222,6 +220,7 @@ module Aspera
           Log.log.debug{"before accept for pid (#{ascp_pid})"}
           # init management socket
           ascp_mgt_io = nil
+          notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
           Timeout.timeout(@options[:spawn_timeout_sec]) do
             ascp_mgt_io = mgt_sock.accept
             # management messages include file names which may be utf8
@@ -231,40 +230,35 @@ module Aspera
           end
           Log.log.debug{"after accept (#{ascp_mgt_io})"}
           session[:io] = ascp_mgt_io
-          state = {
-            session:    session,
-            session_id: ascp_pid,
-            text:       '', # exact text for event, with \n
-            data:       nil, # parsed event (hash)
-            event:      nil # this is the last full status
-          }
+          processor = Management.new
           # read management port, until socket is closed (gets returns nil)
           while (line = ascp_mgt_io.gets)
-            process_management_line(line, state)
+            event = processor.process_line(line.chomp)
+            next unless event
+            # event is ready
+            Log.dump(:management_port, event)
+            # Log.log.debug{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
+            process_progress(event)
+            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR')
           end
+          last_event = processor.last_event
           # check that last status was received before process exit
-          if state[:event].is_a?(Hash)
-            case state[:event]['Type']
-            when 'DONE'
-              # all went well
-              exception_raised = false
+          if last_event.is_a?(Hash)
+            case last_event['Type']
             when 'ERROR'
-              Log.log.error{"code: #{state[:event]['Code']}"}
-              if /bearer token/i.match?(state[:event]['Description'])
-                Log.log.error('need to regenerate token'.red)
-                if session[:token_regenerator].respond_to?(:refreshed_transfer_token)
-                  # regenerate token here, expired, or error on it
-                  # Note: in multi-session, each session will have a different one.
-                  env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
-                end
+              if /bearer token/i.match?(last_event['Description']) &&
+                  session[:token_regenerator].respond_to?(:refreshed_transfer_token)
+                # regenerate token here, expired, or error on it
+                # Note: in multi-session, each session will have a different one.
+                Log.log.warn('Regenerating bearer token')
+                env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
               end
-              raise Fasp::Error.new(state[:event]['Description'], state[:event]['Code'].to_i)
+              raise Fasp::Error.new(last_event['Description'], last_event['Code'].to_i)
+            when 'DONE'
+              nil
             else
-              raise "unexpected last event type: #{state[:event]['Type']}"
+              raise "unexpected last event type: #{last_event['Type']}"
             end # case
-          else
-            exception_raised = false
-            Log.log.debug('no status read from ascp mgt port')
           end
         rescue SystemCallError => e
           # Process.spawn
@@ -284,7 +278,7 @@ module Aspera
             if !status.success?
               message = "ascp failed with code #{status.exitstatus}"
               # raise error only if there was not already an exception
-              raise Fasp::Error, message unless exception_raised
+              raise Fasp::Error, message unless $ERROR_INFO
               # else just debug, as main exception is already here
               Log.log.debug(message)
             end
@@ -317,23 +311,20 @@ module Aspera
       private
 
       # @param options : keys(symbol): see DEFAULT_OPTIONS
-      def initialize(options=nil)
-        super()
+      def initialize(options={})
+        super(options)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @jobs = {}
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
-        if !options.nil?
-          raise "expecting Hash (or nil), but have #{options.class}" unless options.is_a?(Hash)
-          options.each do |k, v|
-            raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
-            @options[k] = v
-          end
+        options.each do |k, v|
+          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
+          @options[k] = v
         end
-        Log.log.debug{"local options= #{options}"}
         @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
+        Log.dump(:agent_options, @options)
       end
 
       # transfer thread entry

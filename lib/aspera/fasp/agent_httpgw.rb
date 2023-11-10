@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/fasp/faux_file'
 require 'aspera/log'
 require 'aspera/rest'
 require 'securerandom'
@@ -11,53 +12,6 @@ require 'json'
 
 module Aspera
   module Fasp
-    # generates a pseudo file stream
-    class FauxFile
-      # marker for faux file
-      PREFIX = 'faux:///'
-      # size suffix
-      SUFFIX = %w[k m g t p e]
-      class << self
-        def open(name)
-          return nil unless name.start_with?(PREFIX)
-          parts = name[PREFIX.length..-1].split('?')
-          raise 'Format: #{PREFIX}<file path>?<size>' unless parts.length.eql?(2)
-          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = parts[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
-          size = m[1].to_i
-          suffix = m[2]
-          SUFFIX.each do |s|
-            size *= 1024
-            break if s.eql?(suffix)
-          end
-          return FauxFile.new(parts[0], size)
-        end
-      end
-      attr_reader :path, :size
-
-      def initialize(path, size)
-        @path = path
-        @size = size
-        @offset = 0
-        # we cache large chunks, anyway most of them will be the same size
-        @chunk_by_size = {}
-      end
-
-      def read(chunk_size)
-        return nil if eof?
-        bytes_to_read = [chunk_size, @size - @offset].min
-        @offset += bytes_to_read
-        @chunk_by_size[bytes_to_read] = "\x00" * bytes_to_read unless @chunk_by_size.key?(bytes_to_read)
-        return @chunk_by_size[bytes_to_read]
-      end
-
-      def close
-      end
-
-      def eof?
-        return @offset >= @size
-      end
-    end
-
     # Start a transfer using Aspera HTTP Gateway, using web socket secure for uploads
     # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
     # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
@@ -65,7 +19,7 @@ module Aspera
     #   #     type                Contents            Ack                 Counter
     # v1
     #   0     JSON.transfer_spec  Transfer Spec       "end upload"        sent_general
-    #   1..   JSON.slice_upload   Slice data base64   "end upload"        sent_general
+    #   1..   JSON.slice_upload   File base64 chunks  "end upload"        sent_general
     # v2
     #   0     JSON.transfer_spec  Transfer Spec       "end upload"        sent_general
     #   1     JSON.slice_upload   File start          "end_slice_upload"  sent_v2_delimiter
@@ -81,15 +35,15 @@ module Aspera
       API_V2 = 'v2'
       # options available in CLI (transfer_info)
       DEFAULT_OPTIONS = {
-        url:                    nil,
-        upload_chunk_size:      64_000,
-        upload_bar_refresh_sec: 0.5,
-        api_version:            API_V2,
-        synchronous:            true
+        url:               nil,
+        upload_chunk_size: 64_000,
+        api_version:       API_V2,
+        synchronous:       false
       }.freeze
       DEFAULT_BASE_PATH = '/aspera/http-gwy'
+      THR_RECV = 'recv'
       LOG_WS_SEND = 'ws: send: '.red
-      LOG_WS_RECV = 'ws: recv: '.green
+      LOG_WS_RECV = "ws: #{THR_RECV}: ".green
       private_constant :DEFAULT_OPTIONS, :MSG_RECV_DATA_RECEIVED_SIGNAL, :MSG_RECV_SLICE_UPLOAD_SIGNAL, :API_V1, :API_V2
 
       # send message on http gw web socket
@@ -102,41 +56,38 @@ module Aspera
         Log.log.debug do
           log_data = payload.dup
           log_data[:data] = "[data #{log_data[:data].length} bytes]" if log_data.key?(:data)
-          "send_txt: #{msg_type}: #{JSON.generate(log_data)}"
+          "#{LOG_WS_SEND}json: #{msg_type}: #{JSON.generate(log_data)}"
         end
-        ws_send(JSON.generate({msg_type => payload}))
+        ws_send(ws_type: :text, data: JSON.generate({msg_type => payload}))
       end
 
-      def ws_send(data_to_send, type: :text)
-        Log.log.debug{"#{LOG_WS_SEND}sending: #{type}"}
-        @shared_info[:count][:sent_general] += 1 if type.eql?(:binary)
-        Log.log.debug{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
-        frame_generator = ::WebSocket::Frame::Outgoing::Client.new(data: data_to_send, type: type, version: @ws_handshake.version)
+      # send data on http gw web socket
+      def ws_send(ws_type:, data:)
+        Log.log.debug{"#{LOG_WS_SEND}sending: #{ws_type} (#{data&.length || 0} bytes)"}
+        @shared_info[:count][:sent_general] += 1 if ws_type.eql?(:binary)
+        frame_generator = ::WebSocket::Frame::Outgoing::Client.new(data: data, type: ws_type, version: @ws_handshake.version)
         @ws_io.write(frame_generator.to_s)
-      end
-
-      # wait for all message sent to be acknowledged by HTTPGW server, and check presence of exception
-      def wait_for_sent_msg_ack_or_end_read_thread
         if @options[:synchronous]
           @shared_info[:mutex].synchronize do
-            while (@shared_info[:count][:received_general] != @shared_info[:count][:sent_general]) ||
-                (@shared_info[:count][:received_v2_delimiter] != @shared_info[:count][:sent_v2_delimiter])
-              Log.log.debug{"#{LOG_WS_SEND}wait: counts: #{@shared_info[:count]}"}
-              @shared_info[:cond_var].wait(@shared_info[:mutex], 1.0)
-              raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
-              # if read thread exited, there will be no more updates
-              break unless @ws_read_thread.alive?
+            # if read thread exited, there will be no more updates
+            # we allow for 1 of difference else it stays blocked
+            while @ws_read_thread.alive? &&
+                @shared_info[:read_exception].nil? &&
+                (((@shared_info[:count][:sent_general] - @shared_info[:count][:received_general]) > 1) ||
+                  ((@shared_info[:count][:received_v2_delimiter] - @shared_info[:count][:sent_v2_delimiter]) > 1))
+              if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
+                Log.log.debug{"#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}"}
+              end
             end
           end
-        else
-          raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
         end
-        Log.log.debug{"#{LOG_WS_SEND}sync ok: counts: #{@shared_info[:count]}"}
+        raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
+        Log.log.debug{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
       end
 
       # message processing for read thread
       def process_received_message(message)
-        Log.log.debug{"#{LOG_WS_RECV}message: [#{message}]"}
+        Log.log.debug{"#{LOG_WS_RECV}message: [#{message}] (#{message.class})"}
         if message.eql?(MSG_RECV_DATA_RECEIVED_SIGNAL)
           @shared_info[:mutex].synchronize do
             @shared_info[:count][:received_general] += 1
@@ -169,12 +120,13 @@ module Aspera
         until @ws_io.eof?
           begin # rubocop:disable Style/RedundantBegin
             # ready byte by byte until frame is ready
-            while (frame_ok = frame_parser.next).nil?
-              # blocking read
-              frame_parser << @ws_io.read(1)
-            end
-            # Log.log.debug{"#{LOG_WS_RECV}type: #{frame_ok.class}"}
-            process_received_message(frame_ok.data)
+            # blocking read
+            byte = @ws_io.read(1)
+            Log.log.trace1{"#{LOG_WS_RECV}read: #{byte} (#{byte.class}) eof=#{@ws_io.eof?}"}
+            frame_parser << byte
+            frame_ok = frame_parser.next
+            next if frame_ok.nil?
+            process_received_message(frame_ok.data.to_s)
             Log.log.debug{"#{LOG_WS_RECV}counts: #{@shared_info[:count]}"}
           rescue => e
             Log.log.debug{"#{LOG_WS_RECV}Exception: #{e}"}
@@ -192,6 +144,9 @@ module Aspera
       end
 
       def upload(transfer_spec)
+        # identify this session uniquely
+        session_id = SecureRandom.uuid
+        notify_progress(session_id: nil, type: :pre_start, info: 'starting')
         # total size of all files
         total_bytes_to_transfer = 0
         # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
@@ -220,9 +175,8 @@ module Aspera
           files_to_read.push(file_to_add)
           total_bytes_to_transfer += item['file_size']
         end
-        # identify this session uniquely
-        session_id = SecureRandom.uuid
         upload_url = File.join(@gw_api.params[:base_url], @options[:api_version], 'upload')
+        notify_progress(session_id: nil, type: :pre_start, info: 'connecting wss')
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_session = Rest.start_http_session(upload_url)
         # get the underlying socket i/o
@@ -233,6 +187,11 @@ module Aspera
         @ws_handshake << @ws_io.readuntil("\r\n\r\n")
         raise 'Error in websocket handshake' unless @ws_handshake.finished?
         Log.log.debug{"#{LOG_WS_SEND}handshake success"}
+        # start read thread after handshake
+        @ws_read_thread = Thread.new {process_read_thread}
+        notify_progress(session_id: session_id, type: :session_start)
+        notify_progress(session_id: session_id, type: :session_size, info: total_bytes_to_transfer)
+        sleep(1)
         # data shared between main thread and read thread
         @shared_info = {
           read_exception: nil, # error message if any in callback
@@ -245,31 +204,26 @@ module Aspera
           mutex:          Mutex.new,
           cond_var:       ConditionVariable.new
         }
-        # start read thread
-        @ws_read_thread = Thread.new {process_read_thread}
         # notify progress bar
-        notify_begin(session_id, total_bytes_to_transfer)
+        notify_progress(type: :session_size, session_id: session_id, info: total_bytes_to_transfer)
         # first step send transfer spec
         Log.dump(:ws_spec, transfer_spec)
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
-        wait_for_sent_msg_ack_or_end_read_thread
         # current file index
         file_index = 0
         # aggregate size sent
         session_sent_bytes = 0
-        # last progress event
-        last_progress_time = nil
         # process each file
         transfer_spec['paths'].each do |item|
           slice_info = {
-            name:         nil,
+            name:       nil,
             # TODO: get mime type?
-            type:         '',
-            size:         item['file_size'],
-            slice:        0, # current slice index
-            # compute total number of slices
-            total_slices: ((item['file_size'] - 1) / @options[:upload_chunk_size]) + 1,
-            fileIndex:    file_index
+            type:       'application/octet-stream',
+            size:       item['file_size'],
+            slice:      0, # current slice index
+            # index of last slice (i.e number of slices - 1)
+            last_slice: (item['file_size'] - 1) / @options[:upload_chunk_size],
+            fileIndex:  file_index
           }
           file = files_to_read[file_index]
           if file.is_a?(FauxFile)
@@ -290,12 +244,11 @@ module Aspera
                 else
                   # send once, before data, at beginning
                   ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(0)
-                  ws_send(slice_bin_data, type: :binary)
-                  Log.log.debug{"#{LOG_WS_SEND}sent bin buffer: #{file_index} / #{slice_info[:slice]}"}
+                  ws_send(ws_type: :binary, data: slice_bin_data)
+                  Log.log.debug{"#{LOG_WS_SEND}buffer: file: #{file_index}, slice: #{slice_info[:slice]}/#{slice_info[:last_slice]}"}
                   # send once, after data, at end
-                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(slice_info[:total_slices] - 1)
+                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(slice_info[:last_slice])
                 end
-                wait_for_sent_msg_ack_or_end_read_thread
               rescue Errno::EPIPE => e
                 raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
                 raise e
@@ -304,25 +257,22 @@ module Aspera
                 raise e
               end
               session_sent_bytes += slice_bin_data.length
-              current_time = Time.now
-              if last_progress_time.nil? || ((current_time - last_progress_time) > @options[:upload_bar_refresh_sec])
-                notify_progress(session_id, session_sent_bytes)
-                last_progress_time = current_time
-              end
+              notify_progress(type: :transfer, session_id: session_id, info: session_sent_bytes)
               slice_info[:slice] += 1
             end
           ensure
             file.close
           end
           file_index += 1
-        end
+        end # loop on files
         # throttling may have skipped last one
-        notify_progress(session_id, session_sent_bytes)
-        notify_end(session_id)
-        Log.log.debug('Finished upload, waiting for end of read thread.')
+        notify_progress(type: :transfer, session_id: session_id, info: session_sent_bytes)
+        notify_progress(type: :end, session_id: session_id)
+        ws_send(ws_type: :close, data: nil)
+        Log.log.debug("Finished upload, waiting for end of #{THR_RECV} thread.")
         @ws_read_thread.join
-        Log.log.debug{"Read thread joined, result: #{@shared_info[:count][:received_general]} / #{@shared_info[:count][:sent_general]}"}
-        ws_send(nil, type: :close) unless @ws_io.nil?
+        Log.log.debug{'Read thread joined'}
+        # session no more used
         @ws_io = nil
         http_session&.finish
       end
@@ -389,12 +339,9 @@ module Aspera
       private
 
       def initialize(opts)
-        # init super class without arguments
-        super()
-        Log.dump(:in_options, opts)
+        super(opts)
         # set default options and override if specified
         @options = DEFAULT_OPTIONS.dup
-        raise "httpgw agent parameters (transfer_info): expecting Hash, but have #{opts.class}" unless opts.is_a?(Hash)
         opts.symbolize_keys.each do |k, v|
           raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
           @options[k] = v
@@ -417,7 +364,7 @@ module Aspera
           end
         end
         @options.freeze
-        Log.dump(:final_options, @options)
+        Log.dump(:agent_options, @options)
       end
     end # AgentHttpgw
   end

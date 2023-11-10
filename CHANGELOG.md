@@ -9,6 +9,7 @@
   * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
   * new: global: option `cert_stores` to specify alternate certificate stores
   * new: config: command `remote_certificate` to retrieve a remote certificate
+  * new: config: added logger level `trace1` and `trace2`
   * new: wizard: can detect multiple applications at the same address or url.
   * new: aoc: wizard accepts public links
   * new: aoc: support private links, and possibility to list shared folder with workspace `@json:null`
@@ -35,6 +36,7 @@
   * change(break): faspex: option `source_name` is now `remote_source`
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
   * change(break): option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
+  * change(break): replaced option `progress` with option `progressbar` (bool)
 
 * 4.14.0
 

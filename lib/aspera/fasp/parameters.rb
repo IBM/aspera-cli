@@ -23,7 +23,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -130,7 +130,7 @@ module Aspera
         missing_options = SUPPORTED_OPTIONS - options.keys
         raise "Internal: missing options: #{missing_options.join(', ')}" unless missing_options.empty?
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
-        Log.dump(:options, @options)
+        Log.dump(:parameters_options, @options)
         raise 'ascp arguments must be an Array' unless @options[:ascp_args].is_a?(Array)
         raise 'ascp arguments must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
@@ -199,7 +199,7 @@ module Aspera
         # notify multi-session was already used, anyway it was deleted by agent direct
         raise 'internal error' if @builder.read_param('multi_session')
 
-        # use web socket sesure for session ?
+        # use web socket secure for session ?
         if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])

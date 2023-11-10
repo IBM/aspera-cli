@@ -314,7 +314,7 @@ module Aspera
         # 3- in case of error, fail the process status
         unless exception_info.nil?
           # show stack trace in debug mode
-          raise exception_info[:e] if Log.instance.level.eql?(:debug)
+          raise exception_info[:e] if Log.log.debug?
           # else give hint and exit
           formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
           Process.exit(1)

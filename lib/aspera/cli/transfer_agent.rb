@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'aspera/fasp/transfer_spec'
-require 'aspera/cli/listener/logger'
-require 'aspera/cli/listener/progress_multi'
 require 'aspera/cli/info'
 
 module Aspera
@@ -48,10 +46,10 @@ module Aspera
         @config = config_plugin
         # command line can override transfer spec
         @transfer_spec_cmdline = {'create_dir' => true}
+        # options for transfer agent
         @transfer_info = {}
         # the currently selected transfer agent
         @agent = nil
-        @progress_listener = Listener::ProgressMulti.new
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
         @opt_mgr.declare(:ts, 'Override transfer spec values', types: Hash, handler: {o: self, m: :option_transfer_spec})
@@ -59,8 +57,7 @@ module Aspera
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
         @opt_mgr.declare(:src_type, 'Type of file list', values: %i[list pair], default: :list)
         @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
-        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash, handler: {o: self, m: :option_transfer_info})
-        @opt_mgr.declare(:progress, 'Type of progress bar', values: %i[none native multi], default: :native)
+        @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash, handler: {o: self, m: :transfer_info})
         @opt_mgr.parse_options!
       end
 
@@ -83,22 +80,15 @@ module Aspera
         return transfer_spec
       end
 
-      def option_transfer_info; @transfer_info; end
+      attr_reader :transfer_info
 
       # multiple option are merged
-      def option_transfer_info=(value)
-        raise 'option transfer_info shall be a Hash' unless value.is_a?(Hash)
+      def transfer_info=(value)
         @transfer_info.deep_merge!(value)
       end
 
       def agent_instance=(instance)
         @agent = instance
-        @agent.add_listener(Listener::Logger.new)
-        # use local progress bar if asked so, or if native and non local ascp (because only local ascp has native progress bar)
-        if @opt_mgr.get_option(:progress, mandatory: true).eql?(:multi) ||
-            (@opt_mgr.get_option(:progress, mandatory: true).eql?(:native) && !instance.class.to_s.eql?('Aspera::Fasp::AgentDirect'))
-          @agent.add_listener(@progress_listener)
-        end
       end
 
       # analyze options and create new agent if not already created or set
@@ -107,27 +97,23 @@ module Aspera
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
         # agent plugin is loaded on demand to avoid loading unnecessary dependencies
         require "aspera/fasp/agent_#{agent_type}"
-        agent_options = @opt_mgr.get_option(:transfer_info)
-        raise CliBadArgument, "the transfer agent configuration shall be Hash, not #{agent_options.class} (#{agent_options}), "\
-          'e.g. use @json:<json>' unless agent_options.is_a?(Hash)
+        # set keys as symbols
+        agent_options = @opt_mgr.get_option(:transfer_info).symbolize_keys
         # special cases
         case agent_type
         when :node
           if agent_options.empty?
             param_set_name = @config.get_plugin_default_config_name(:node)
             raise CliBadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
-            agent_options = @config.preset_by_name(param_set_name)
+            agent_options = @config.preset_by_name(param_set_name).symbolize_keys
           end
         when :direct
-          # special case: native progress bar
-          if @opt_mgr.get_option(:progress, mandatory: true).eql?(:native)
-            agent_options[:quiet] = false
-          end
+          # by default do not display ascp native progress bar
+          agent_options[:quiet] = true unless agent_options.key?(:quiet)
           agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
-          agent_options[:trusted_certs] ||= @config.trusted_cert_locations(files_only: true)
+          agent_options[:trusted_certs] = @config.trusted_cert_locations(files_only: true) unless agent_options.key?(:trusted_certs)
         end
-        # normalize after getting from user or default node
-        agent_options = agent_options.symbolize_keys
+        agent_options[:progress] = @config.progressbar
         # get agent instance
         new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
         self.agent_instance = new_agent
@@ -242,9 +228,7 @@ module Aspera
         Log.log.debug{"transfer agent is a #{@agent.class}"}
         @agent.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"
-        result = @agent.wait_for_transfers_completion
-        @progress_listener.reset
-        Fasp::AgentBase.validate_status_list(result)
+        result = @agent.wait_for_completion
         send_email_transfer_notification(transfer_spec, result)
         return result
       end

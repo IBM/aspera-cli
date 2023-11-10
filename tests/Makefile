@@ -209,7 +209,7 @@ $(T)serv_error: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_upload: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress=multi
+	$(EXE_MAN) server upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
 	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)
 	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.inside_folder@/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/othername"]'

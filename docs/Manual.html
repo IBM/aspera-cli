@@ -33,8 +33,6 @@ class="header-section-number">1.1</span> BUGS, FEATURES,
 CONTRIBUTION</h2>
 <p>Refer to <a href="BUGS.md">BUGS.md</a> and <a
 href="CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
-<p>One can also <a href="#createownplugin">create one’s own
-plugin</a>.</p>
 <h2 data-number="1.2" id="when-to-use-and-when-not-to-use"><span
 class="header-section-number">1.2</span> <a id="when_to_use"></a>When to
 use and when not to use</h2>
@@ -2814,24 +2812,19 @@ not allowed.</p>
 <td>URL of the HTTP GW</br>Mandatory</td>
 </tr>
 <tr class="even">
-<td>upload_bar_refresh_sec</td>
-<td>float</td>
-<td>Refresh rate for upload progress bar</td>
-</tr>
-<tr class="odd">
 <td>upload_chunk_size</td>
 <td>int</td>
-<td>Size in bytes of chunks for upload</td>
-</tr>
-<tr class="even">
-<td>api_version</td>
-<td>string</td>
-<td>v1 or v2, for force use of version</td>
+<td>Size in bytes of chunks for upload<br/>Default: 64000</td>
 </tr>
 <tr class="odd">
+<td>api_version</td>
+<td>string</td>
+<td>v1 or v2, for force use of version<br/>Default: v2</td>
+</tr>
+<tr class="even">
 <td>synchronous</td>
 <td>bool</td>
-<td>wait for each message acknowledgment</td>
+<td>wait for each message acknowledgment<br/>Default: false</td>
 </tr>
 </tbody>
 </table>
@@ -2846,7 +2839,36 @@ with a token.</p>
 class="header-section-number">4.23.5</span>
 <a id="agt_trsdk"></a>Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
-(<code>asperatransferd</code>).</p>
+(<code>asperatransferd</code>). Set option <code>transfer</code> to
+<code>trsdk</code>.</p>
+<p>Options for <code>transfer_info</code> are:</p>
+<table>
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 25%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>address</td>
+<td>string</td>
+<td>IP address listened by the daemon</br>Mandatory<br/>Default:
+127.0.0.1</td>
+</tr>
+<tr class="even">
+<td>port</td>
+<td>int</td>
+<td>port of the daemon</br>Mandatory<br/>Default: 55002</td>
+</tr>
+</tbody>
+</table>
 <p>By default it will listen on local port <code>55002</code> on
 <code>127.0.0.1</code>.</p>
 <p>The gem <code>grpc</code> was removed from dependencies, as it
@@ -4381,14 +4403,18 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb227-1"><a href
 </ul>
 <div class="sourceCode" id="cb228"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb228-1"><a href="#cb228-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
-<h2 data-number="4.26" id="scheduler"><span
-class="header-section-number">4.26</span>
+<h2 data-number="4.26" id="transfer-progress-bar"><span
+class="header-section-number">4.26</span> Transfer progress bar</h2>
+<p>Control with option <code>progressbar</code> (<code>Bool</code>), by
+default it is <code>yes</code> if the output is a terminal.</p>
+<h2 data-number="4.27" id="scheduler"><span
+class="header-section-number">4.27</span>
 <a id="scheduler"></a>Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
-<h3 data-number="4.26.1" id="windows-scheduler"><span
-class="header-section-number">4.26.1</span> Windows Scheduler</h3>
+<h3 data-number="4.27.1" id="windows-scheduler"><span
+class="header-section-number">4.27.1</span> Windows Scheduler</h3>
 <p>Windows provides the <a
 href="https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page">Task
 Scheduler</a>. It can be configured:</p>
@@ -4399,8 +4425,8 @@ href="https://learn.microsoft.com/fr-fr/windows-server/administration/windows-co
 href="https://learn.microsoft.com/en-us/powershell/module/scheduledtasks">scheduletasks</a></p></li>
 <li><p>Using <code>taskschd.msc</code> (UI)</p></li>
 </ul>
-<h3 data-number="4.26.2" id="unix-like-scheduler"><span
-class="header-section-number">4.26.2</span> Unix-like Scheduler</h3>
+<h3 data-number="4.27.2" id="unix-like-scheduler"><span
+class="header-section-number">4.27.2</span> Unix-like Scheduler</h3>
 <p>Unix-like systems (Linux, …) provide cron, configured using a <a
 href="https://www.man7.org/linux/man-pages/man5/crontab.5.html">crontab</a></p>
 <p>Linux also provides <code>anacron</code>, if tasks are hourly or
@@ -4428,8 +4454,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb230-1"><a href
 cronfile instead of conf file to allow execution on command line with
 output on command line.</p>
 </blockquote>
-<h2 data-number="4.27" id="locking-for-exclusive-execution"><span
-class="header-section-number">4.27</span> <a id="locking"></a>Locking
+<h2 data-number="4.28" id="locking-for-exclusive-execution"><span
+class="header-section-number">4.28</span> <a id="locking"></a>Locking
 for exclusive execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
@@ -4467,8 +4493,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href
 immediately exit like this:</p>
 <div class="sourceCode" id="cb233"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb233-1"><a href="#cb233-1" aria-hidden="true" tabindex="-1"></a><span class="ex">WARN</span> <span class="at">--</span> : Another instance is already running <span class="er">(</span><span class="ex">Address</span> already in use <span class="at">-</span> bind<span class="er">(</span><span class="ex">2</span><span class="kw">)</span> <span class="cf">for</span> <span class="st">&quot;127.0.0.1&quot;</span> port 12345<span class="kw">)</span><span class="bu">.</span></span></code></pre></div>
-<h2 data-number="4.28" id="provençale"><span
-class="header-section-number">4.28</span> “Provençale”</h2>
+<h2 data-number="4.29" id="provençale"><span
+class="header-section-number">4.29</span> “Provençale”</h2>
 <p><code>ascp</code>, the underlying executable implementing Aspera file
 transfer using FASP, has a capability to not only access the local file
 system (using system’s
@@ -4509,8 +4535,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb236-1"><a href
 <p>One of the adapters, used in this manual, for testing, is
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
-<h2 data-number="4.29" id="faux-for-testing"><span
-class="header-section-number">4.29</span>
+<h2 data-number="4.30" id="faux-for-testing"><span
+class="header-section-number">4.30</span>
 <a id="faux_testing"></a><code>faux:</code> for testing</h2>
 <p>This is an extract of the man page of <code>ascp</code>. This feature
 is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
@@ -4648,8 +4674,8 @@ with the basename of each file being <code>testfile</code> to
 </ul>
 <div class="sourceCode" id="cb241"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb241-1"><a href="#cb241-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1m&amp;size=0&amp;inc=2&amp;seq=sequential&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
-<h2 data-number="4.30" id="usage"><span
-class="header-section-number">4.30</span> <a id="usage"></a>Usage</h2>
+<h2 data-number="4.31" id="usage"><span
+class="header-section-number">4.31</span> <a id="usage"></a>Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.15.0.pre)
@@ -4697,7 +4723,7 @@ OPTIONS: global
     -v, --version                    Display version
     -w, --warnings                   Check for language warnings
         --ui=ENUM                    Method to start browser: text, [graphical]
-        --log-level=ENUM             Log level: debug, info, [warn], error, fatal, unknown
+        --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
         --once-only=ENUM             Process only new items (some commands): [no], yes
@@ -4742,13 +4768,13 @@ OPTIONS:
         --http-options=VALUE         Options for HTTP/S socket (Hash)
     -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
+        --progressbar=ENUM           Display progress bar: [no], yes
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
         --transfer=ENUM              Type of transfer agent: [direct], node, connect, httpgw, trsdk
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
-        --progress=ENUM              Type of progress bar: none, [native], multi
 
 
 COMMAND: shares
@@ -4938,9 +4964,9 @@ OPTIONS:
 <p><strong>Note:</strong> commands and parameter values can be written
 in short form.</p>
 </blockquote>
-<h2 data-number="4.31"
+<h2 data-number="4.32"
 id="bulk-creation-and-deletion-of-resources"><span
-class="header-section-number">4.31</span> Bulk creation and deletion of
+class="header-section-number">4.32</span> Bulk creation and deletion of
 resources</h2>
 <p>Bulk creation and deletion of resources are possible using option
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
@@ -4949,8 +4975,8 @@ instead of a simple <code>Hash</code> using the <a
 href="#extended">Extended Value Syntax</a>. This option is available
 only for some of the resources: if you need it: try and see if the
 entities you try to create or delete support this option.</p>
-<h2 data-number="4.32" id="plugins"><span
-class="header-section-number">4.32</span> Plugins</h2>
+<h2 data-number="4.33" id="plugins"><span
+class="header-section-number">4.33</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
 (just after <code>ascli</code> on the command line) is the name of the
 concerned plugin which will execute the command. Each plugin usually
@@ -4974,9 +5000,6 @@ Shares, Console, Orchestrator) use simple username/password
 authentication: HTTP Basic Authentication using options:
 <code>username</code> and <code>password</code>.</p>
 <p>Aspera on Cloud and Faspex 5 rely on Oauth.</p>
-<h3 data-number="4.32.1" id="create-your-own-plugin"><span
-class="header-section-number">4.32.1</span>
-<a id="createownplugin"></a>Create your own plugin</h3>
 <p>By default plugins are looked-up in folders specified by
 (multi-value) option <code>plugin_folder</code>:</p>
 <div class="sourceCode" id="cb245"><pre
@@ -6252,7 +6275,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb359-1"><a href
 <span id="cb359-26"><a href="#cb359-26" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair testfile.bin my_inside_folder/othername <span class="at">--notif-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;10m&quot;]}&#39;</span></span>
 <span id="cb359-27"><a href="#cb359-27" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair testfile.bin my_upload_folder/with_options <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:1,&quot;exclude_older_than&quot;:10000,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
 <span id="cb359-28"><a href="#cb359-28" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--remove-after-transfer&quot;,&quot;--remove-empty-directories&quot;,&quot;--exclude-newer-than=-8&quot;,&quot;--src-base&quot;,&quot;source_hot&quot;]}&#39;</span> source_hot</span>
-<span id="cb359-29"><a href="#cb359-29" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:1500}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>multi</span></code></pre></div>
+<span id="cb359-29"><a href="#cb359-29" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload testfile.bin <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:1500}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progressbar</span><span class="op">=</span>yes</span></code></pre></div>
 <h2 data-number="7.2"
 id="authentication-on-server-with-ssh-session"><span
 class="header-section-number">7.2</span> Authentication on Server with
@@ -8340,26 +8363,9 @@ href="https://www.npmjs.com/package/aspera">https://www.npmjs.com/package/aspera
 class="header-section-number">18.5</span> Help</h2>
 <div class="sourceCode" id="cb467"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb467-1"><a href="#cb467-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asession</span> <span class="at">-h</span></span>
-<span id="cb467-2"><a href="#cb467-2" aria-hidden="true" tabindex="-1"></a><span class="ex">USAGE</span></span>
-<span id="cb467-3"><a href="#cb467-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span></span>
-<span id="cb467-4"><a href="#cb467-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="at">-h</span><span class="kw">|</span><span class="ex">--help</span></span>
-<span id="cb467-5"><a href="#cb467-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="op">&lt;</span>transfer spec extended value<span class="op">&gt;</span></span>
-<span id="cb467-6"><a href="#cb467-6" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb467-7"><a href="#cb467-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">If</span> no argument is provided, default will be used: @json:@stdin</span>
-<span id="cb467-8"><a href="#cb467-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">-h,</span> <span class="at">--help</span> display this message</span>
-<span id="cb467-9"><a href="#cb467-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>transfer <span class="ex">spec</span> extended value<span class="op">&gt;</span> a JSON value for transfer_spec, using the prefix: @json:</span>
-<span id="cb467-10"><a href="#cb467-10" aria-hidden="true" tabindex="-1"></a>    <span class="ex">The</span> value can be either:</span>
-<span id="cb467-11"><a href="#cb467-11" aria-hidden="true" tabindex="-1"></a>       <span class="ex">the</span> JSON description itself, e.g. @json:<span class="st">&#39;{&quot;xx&quot;:&quot;yy&quot;,...}&#39;</span></span>
-<span id="cb467-12"><a href="#cb467-12" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@stdin,</span> if the JSON is provided from stdin</span>
-<span id="cb467-13"><a href="#cb467-13" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@file:</span><span class="op">&lt;</span>path<span class="op">&gt;</span>, if the JSON is provided from a file</span>
-<span id="cb467-14"><a href="#cb467-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Asynchronous</span> commands can be provided on STDIN, examples:</span>
-<span id="cb467-15"><a href="#cb467-15" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="dt">}</span></span>
-<span id="cb467-16"><a href="#cb467-16" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;xx&quot;</span><span class="op">,</span><span class="st">&quot;destination&quot;</span><span class="dt">:</span><span class="st">&quot;yy&quot;</span><span class="dt">}</span></span>
-<span id="cb467-17"><a href="#cb467-17" aria-hidden="true" tabindex="-1"></a>       <span class="ex">{</span><span class="st">&quot;type&quot;</span><span class="ex">:</span><span class="st">&quot;DONE&quot;</span><span class="ex">}</span></span>
-<span id="cb467-18"><a href="#cb467-18" aria-hidden="true" tabindex="-1"></a><span class="ex">Note:</span> debug information can be placed on STDERR, using the <span class="st">&quot;EX_loglevel&quot;</span> parameter in transfer spec <span class="er">(</span><span class="va">debug</span><span class="op">=</span>0<span class="kw">)</span></span>
-<span id="cb467-19"><a href="#cb467-19" aria-hidden="true" tabindex="-1"></a><span class="ex">EXAMPLES</span></span>
-<span id="cb467-20"><a href="#cb467-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> @json:<span class="st">&#39;{&quot;remote_host&quot;:&quot;demo.asperasoft.com&quot;,&quot;remote_user&quot;:&quot;asperaweb&quot;,&quot;ssh_port&quot;:33001,&quot;remote_password&quot;:&quot;demoaspera&quot;,&quot;direction&quot;:&quot;receive&quot;,&quot;destination_root&quot;:&quot;./test.dir&quot;,&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-tiny/200KB.1&quot;}]}&#39;</span></span>
-<span id="cb467-21"><a href="#cb467-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&#39;{&quot;remote_host&quot;:...}&#39;</span><span class="kw">|</span><span class="ex">asession</span> @json:@stdin</span></code></pre></div>
+<span id="cb467-2"><a href="#cb467-2" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;</span>internal:/Users/laurent/.rvm/rubies/ruby-3.1.3/lib/ruby/3.1.0/rubygems/core_ext/kernel_require.rb<span class="op">&gt;</span>:85:in <span class="kw">`</span><span class="ex">require</span><span class="st">&#39;: cannot load such file -- aspera/cli/listener/line_dump (LoadError)</span></span>
+<span id="cb467-3"><a href="#cb467-3" aria-hidden="true" tabindex="-1"></a><span class="st">    from &lt;internal:/Users/laurent/.rvm/rubies/ruby-3.1.3/lib/ruby/3.1.0/rubygems/core_ext/kernel_require.rb&gt;:85:in `require&#39;</span></span>
+<span id="cb467-4"><a href="#cb467-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">from</span> ../bin/asession:7:in <span class="kw">`</span><span class="op">&lt;</span>main<span class="op">&gt;</span><span class="st">&#39;</span></span></code></pre></div>
 <h1 data-number="19" id="hot-folder"><span
 class="header-section-number">19</span> Hot folder</h1>
 <h2 data-number="19.1" id="requirements"><span
@@ -8462,7 +8468,7 @@ id="example-unidirectional-synchronization-download-from-aspera-on-cloud-files">
 class="header-section-number">19.5</span> Example: unidirectional
 synchronization (download) from Aspera on Cloud Files</h2>
 <div class="sourceCode" id="cb470"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb470-1"><a href="#cb470-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progress</span><span class="op">=</span>none <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb470-1"><a href="#cb470-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progressbar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> option <code>delete_before_transfer</code>
 will delete files locally, if they are not present on remote side.</p>
@@ -8493,7 +8499,7 @@ health by:</p>
 of an Aspera server. The output can be made compatible to Nagios with
 option <code>--format=nagios</code> :</p>
 <div class="sourceCode" id="cb473"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb473-1"><a href="#cb473-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progress</span><span class="op">=</span>none</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb473-1"><a href="#cb473-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progressbar</span><span class="op">=</span>no</span></code></pre></div>
 <pre class="output"><code>OK - [transfer:ok]</code></pre>
 <div class="sourceCode" id="cb475"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health asctl status <span class="at">--cmd_prefix</span><span class="op">=</span><span class="st">&#39;sudo &#39;</span> <span class="at">--format</span><span class="op">=</span>nagios</span></code></pre></div>

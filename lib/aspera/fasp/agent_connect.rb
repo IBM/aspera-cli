@@ -14,8 +14,8 @@ module Aspera
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 3
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
-      def initialize(_options)
-        super()
+      def initialize(options)
+        super(options)
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
@@ -86,9 +86,6 @@ module Aspera
               end
               # TODO: get session id
               case transfer['status']
-              when 'completed'
-                notify_end(@connect_settings['app_id'])
-                break
               when 'initiating', 'queued'
                 if spinner.nil?
                   spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
@@ -100,11 +97,14 @@ module Aspera
                 # puts "running: sessions:#{transfer['sessions'].length}, #{transfer['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
                 if !started && (transfer['bytes_expected'] != 0)
                   spinner&.success
-                  notify_begin(@connect_settings['app_id'], transfer['bytes_expected'])
+                  notify_progress(type: :session_size, session_id: @connect_settings['app_id'], info: transfer['bytes_expected'])
                   started = true
                 else
-                  notify_progress(@connect_settings['app_id'], transfer['bytes_written'])
+                  notify_progress(type: :transfer, session_id: @connect_settings['app_id'], info: transfer['bytes_written'])
                 end
+              when 'completed'
+                notify_progress(type: :end, session_id: @connect_settings['app_id'])
+                break
               when 'failed'
                 spinner&.error
                 raise Fasp::Error, transfer['error_desc']

@@ -44,7 +44,7 @@ module Aspera
           if match_expression.start_with?(MATCH_EXEC_PREFIX)
             code = "->(f){#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
             Log.log.warn{"Use of prefix #{MATCH_EXEC_PREFIX} is deprecated (4.15), instead use: @ruby:'#{code}'"}
-            return Environment.secure_eval(code)
+            return Environment.secure_eval(code, __FILE__, __LINE__)
           end
           return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
         when NilClass then return ->(_){true}

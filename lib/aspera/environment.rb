@@ -71,9 +71,9 @@ module Aspera
       # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
       # so, tell Ruby the right way
       def fix_home
-        return unless os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV['USERPROFILE'])
-        ENV['HOME'] = ENV['USERPROFILE']
-        Log.log.debug{"Windows: set HOME to USERPROFILE: #{ENV['HOME']}"}
+        return unless os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
+        ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
+        Log.log.debug{"Windows: set HOME to USERPROFILE: #{ENV.fetch('HOME', nil)}"}
       end
 
       def empty_binding
@@ -81,8 +81,8 @@ module Aspera
       end
 
       # secure execution of Ruby code
-      def secure_eval(code)
-        Kernel.send('lave'.reverse, code, empty_binding, __FILE__, __LINE__)
+      def secure_eval(code, file, line)
+        Kernel.send('lave'.reverse, code, empty_binding, file, line)
       end
 
       # value is provided in block
@@ -114,9 +114,13 @@ module Aspera
         Log.log.warn(e.message)
       end
 
+      def terminal?
+        $stdout.tty?
+      end
+
       # @return true if we can display Unicode characters
       def use_unicode?
-        @use_unicode = $stdout.tty? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @use_unicode.nil?
+        @use_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @use_unicode.nil?
         return @use_unicode
       end
     end # self
