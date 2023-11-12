@@ -24,8 +24,8 @@ end
 unless Hash.method_defined?(:transform_keys)
   class Hash
     def transform_keys
-      return each_with_object({}){|(k, v), memo|memo[yield(k)] = v} if block_given?
-      raise 'missing block'
+      raise 'missing block' unless block_given?
+      return each_with_object({}){|(k, v), memo|memo[yield(k)] = v}
     end
   end
 end

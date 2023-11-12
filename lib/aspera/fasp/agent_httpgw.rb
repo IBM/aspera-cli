@@ -35,7 +35,7 @@ module Aspera
       API_V2 = 'v2'
       # options available in CLI (transfer_info)
       DEFAULT_OPTIONS = {
-        url:               nil,
+        url:               :required,
         upload_chunk_size: 64_000,
         api_version:       API_V2,
         synchronous:       false
@@ -207,7 +207,7 @@ module Aspera
         # notify progress bar
         notify_progress(type: :session_size, session_id: session_id, info: total_bytes_to_transfer)
         # first step send transfer spec
-        Log.dump(:ws_spec, transfer_spec)
+        Log.log.debug{Log.dump(:ws_spec, transfer_spec)}
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
         # current file index
         file_index = 0
@@ -313,7 +313,7 @@ module Aspera
         raise 'GW URL must be set' if @gw_api.nil?
         raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
         raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
-        Log.dump(:user_spec, transfer_spec)
+        Log.log.debug{Log.dump(:user_spec, transfer_spec)}
         transfer_spec['authentication'] ||= 'token'
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_SEND
@@ -340,21 +340,12 @@ module Aspera
 
       def initialize(opts)
         super(opts)
-        # set default options and override if specified
-        @options = DEFAULT_OPTIONS.dup
-        opts.symbolize_keys.each do |k, v|
-          raise "httpgw agent parameter: Unknown: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
-          @options[k] = v
-        end
-        if @options[:url].nil?
-          available = DEFAULT_OPTIONS.map { |k, v| "#{k}(#{v})"}.join(', ')
-          raise "Missing mandatory parameter for HTTP GW in transfer_info: url. Allowed parameters: #{available}."
-        end
+        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
         # remove /v1 from end of user-provided GW url: we need the base url only
         @options[:url].gsub(%r{/v1/*$}, '')
         @gw_api = Rest.new({base_url: @options[:url]})
         @api_info = @gw_api.read('v1/info')[:data]
-        Log.dump(:api_info, @api_info)
+        Log.log.debug{Log.dump(:api_info, @api_info)}
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         # is the latest supported? else revert to old api
         if !@options[:api_version].eql?(API_V1)
@@ -364,7 +355,7 @@ module Aspera
           end
         end
         @options.freeze
-        Log.dump(:agent_options, @options)
+        Log.log.debug{Log.dump(:agent_options, @options)}
       end
     end # AgentHttpgw
   end

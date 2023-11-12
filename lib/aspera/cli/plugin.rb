@@ -86,7 +86,7 @@ module Aspera
         # if not bulk, there is a single value
         params = is_bulk ? values : [values]
         Log.log.warn('Empty list given for bulk operation') if params.empty?
-        Log.dump(:bulk_operation, params)
+        Log.log.debug{Log.dump(:bulk_operation, params)}
         result_list = []
         params.each do |param|
           # init for delete

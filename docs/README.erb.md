@@ -2825,7 +2825,7 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 Control with option `progressbar` (`Bool`), by default it is `yes` if the output is a terminal.
 
-
+To display the native progress bar of `ascp`, use `--progressbar=no --transfer-info=@json:'{"quiet":false}'`.
 
 ### <a id="scheduler"></a>Scheduler
 

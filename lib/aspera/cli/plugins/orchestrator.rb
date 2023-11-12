@@ -100,7 +100,7 @@ module Aspera
           end
           result = @api_orch.call(call_args)
           result[:data] = XmlSimple.xml_in(result[:http].body, opt[:xml_opt] || {'ForceArray' => true}) if format.eql?('xml')
-          Log.dump(:data, result[:data])
+          Log.log.debug{Log.dump(:data, result[:data])}
           return result
         end
 

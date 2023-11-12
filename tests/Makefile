@@ -23,6 +23,8 @@ only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)s
 
 only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
 
+only_progress:
+
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
 TIMESTAMP=$(shell LANG=C date)
@@ -289,6 +291,14 @@ $(T)asession: $(T).exists
 	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
 	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
 	$(DIR_BIN)asession @json:@extend:'{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:server_user.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:server_user.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	@$(STOP_TEST) $@
+$(T)serv_pr1: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
+	@$(STOP_TEST) $@
+$(T)serv_pr2: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
 tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 #######################################################################################################################

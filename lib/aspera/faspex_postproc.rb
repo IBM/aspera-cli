@@ -13,7 +13,7 @@ module Aspera
     def initialize(server, parameters)
       raise 'parameters must be Hash' unless parameters.is_a?(Hash)
       @parameters = parameters.symbolize_keys
-      Log.dump(:post_proc_parameters, @parameters)
+      Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
       raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{|k|!ALLOWED_PARAMETERS.include?(k)}
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
@@ -44,7 +44,7 @@ module Aspera
         script_path = File.join(@parameters[:script_folder], script_file)
         Log.log.debug{"script=#{script_path}"}
         webhook_parameters = JSON.parse(request.body)
-        Log.dump(:webhook_parameters, webhook_parameters)
+        Log.log.debug{Log.dump(:webhook_parameters, webhook_parameters)}
         # env expects only strings
         environment = webhook_parameters.each_with_object({}) { |(k, v), h| h[k] = v.to_s }
         post_proc_pid = Process.spawn(environment, [script_path, script_path])

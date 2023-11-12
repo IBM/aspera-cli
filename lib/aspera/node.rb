@@ -167,7 +167,7 @@ module Aspera
       raise 'INTERNAL ERROR: Missing block' unless block
       # start at top folder
       folders_to_explore = [{id: top_file_id, path: top_file_path}]
-      Log.dump(:folders_to_explore, folders_to_explore)
+      Log.log.debug{Log.dump(:folders_to_explore, folders_to_explore)}
       until folders_to_explore.empty?
         current_item = folders_to_explore.shift
         Log.log.debug{"searching #{current_item[:path]}".bg_green}
@@ -179,7 +179,7 @@ module Aspera
             Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
             []
           end
-        Log.dump(:folder_contents, folder_contents)
+        Log.log.debug{Log.dump(:folder_contents, folder_contents)}
         folder_contents.each do |entry|
           relative_path = File.join(current_item[:path], entry['name'])
           Log.log.debug{"process_folder_tree checking #{relative_path}"}

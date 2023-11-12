@@ -60,7 +60,7 @@ module Aspera
         uri = URI.parse(url)
         raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
         return uri if params.nil?
-        Log.dump('params', params)
+        Log.log.debug{Log.dump('params', params)}
         raise 'Internal Error: param must be Hash' unless params.is_a?(Hash)
         query = []
         params.each do |k, v|
@@ -151,7 +151,7 @@ module Aspera
       raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
       raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
       @params = a_rest_params.clone
-      Log.dump('REST params', @params)
+      Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
       @params[:base_url] = @params[:base_url].gsub(%r{/+$}, '')
       @http_session = nil
@@ -159,7 +159,7 @@ module Aspera
       @params[:auth] ||= {type: :none}
       @params[:not_auth_codes] ||= ['401']
       @oauth = nil
-      Log.dump('REST params(2)', @params)
+      Log.log.debug{Log.dump('REST params(2)', @params)}
     end
 
     def oauth_token(force_refresh: false)
@@ -180,7 +180,7 @@ module Aspera
       end
       if call_data.key?(:json_params) && !call_data[:json_params].nil?
         req.body = JSON.generate(call_data[:json_params]) # , ascii_only: true
-        Log.dump('body JSON data', call_data[:json_params])
+        Log.log.debug{Log.dump('body JSON data', call_data[:json_params])}
         req['Content-Type'] = 'application/json'
         # call_data[:headers]['Accept']='application/json'
       end
@@ -201,7 +201,7 @@ module Aspera
       end
       # :type = :basic
       req.basic_auth(call_data[:auth][:username], call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
-      Log.dump(:req_body, req.body)
+      Log.log.debug{Log.dump(:req_body, req.body)}
       return req
     end
 
@@ -308,7 +308,7 @@ module Aspera
         else # when 'text/plain'
           result[:http].body
         end
-        Log.dump("result: parsed: #{result_mime}", result[:data])
+        Log.log.debug{Log.dump("result: parsed: #{result_mime}", result[:data])}
         Log.log.debug{"result: code=#{result[:http].code}"}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
         File.write(call_data[:save_to_file], result[:http].body) unless file_saved || call_data[:save_to_file].nil?

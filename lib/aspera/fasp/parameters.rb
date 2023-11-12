@@ -130,7 +130,7 @@ module Aspera
         missing_options = SUPPORTED_OPTIONS - options.keys
         raise "Internal: missing options: #{missing_options.join(', ')}" unless missing_options.empty?
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
-        Log.dump(:parameters_options, @options)
+        Log.log.debug{Log.dump(:parameters_options, @options)}
         raise 'ascp arguments must be an Array' unless @options[:ascp_args].is_a?(Array)
         raise 'ascp arguments must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
@@ -173,7 +173,7 @@ module Aspera
                 lines = ts_paths_array.map{|i|i['source']}
               end
               file_list_file = Aspera::TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
-              Log.dump(:file_list, lines)
+              Log.log.debug{Log.dump(:file_list, lines)}
               File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
               Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}
             end

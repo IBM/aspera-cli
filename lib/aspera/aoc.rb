@@ -167,7 +167,7 @@ module Aspera
       aoc_auth_p = aoc_rest_p[:auth]
       # analyze type of url
       url_info = AoC.link_info(url)
-      Log.dump(:url_info, url_info)
+      Log.log.debug{Log.dump(:url_info, url_info)}
       @private_link = url_info[:private_link]
       aoc_auth_p[:grant_method] = if url_info.key?(:token)
         :aoc_pub_link
@@ -312,7 +312,7 @@ module Aspera
         @context_cache[:home_file_id] = user_info['read_only_home_file_id']
       end
       raise "Cannot get user's home node id, check your default workspace or specify one" if @context_cache[:home_node_id].to_s.empty?
-      Log.dump(:context, @context_cache)
+      Log.log.debug{Log.dump(:context, @context_cache)}
       return @context_cache
     end
 
@@ -373,7 +373,7 @@ module Aspera
       pkg_meta = pkg_data['metadata']
       raise "package requires metadata: #{meta_schema}" unless pkg_data.key?('metadata')
       raise 'metadata must be an Array' unless pkg_meta.is_a?(Array)
-      Log.dump(:metadata, pkg_meta)
+      Log.log.debug{Log.dump(:metadata, pkg_meta)}
       pkg_meta.each do |field|
         raise 'metadata field must be Hash' unless field.is_a?(Hash)
         raise 'metadata field must have name' unless field.key?('name')

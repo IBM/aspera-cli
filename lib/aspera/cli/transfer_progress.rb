@@ -45,6 +45,7 @@ module Aspera
             job_size: 0, # total size of transfer (pre-calc)
             current:  0
           }
+          @title = ''
         when :session_size
           @sessions[session_id][:job_size] = info.to_i
           @progress_bar.total = total(:job_size)

@@ -11,13 +11,19 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class AgentNode < Aspera::Fasp::AgentBase
+      DEFAULT_OPTIONS = {
+        url:      :required,
+        username: :required,
+        password: :required,
+        root_id:  nil
+      }.freeze
       # option include: root_id if the node is an access key
-      attr_writer :options
+      #attr_writer :options
 
-      def initialize(options)
-        raise 'node specification must be Hash' unless options.is_a?(Hash)
-        super(options)
-        %i[url username password].each { |k| raise "missing parameter [#{k}] in node specification: #{options}" unless options.key?(k) }
+      def initialize(opts)
+        raise 'node specification must be Hash' unless opts.is_a?(Hash)
+        super(opts)
+        options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
         # root id is required for access key
         @root_id = options[:root_id]
         rest_params = { base_url: options[:url]}
@@ -34,7 +40,7 @@ module Aspera
         @node_api = Rest.new(rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
-        Log.dump(:agent_options, @options)
+        #Log.log.debug{Log.dump(:agent_options, @options)}
       end
 
       # used internally to ensure node api is set before using.
@@ -43,7 +49,7 @@ module Aspera
         return @node_api
       end
       # use this to read the node_api end point.
-      attr_reader :node_api
+      #attr_reader :node_api
 
       # use this to set the node_api end point before using the class.
       def node_api=(new_value)

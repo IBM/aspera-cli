@@ -167,7 +167,7 @@ module Aspera
         else
           raise 'At least one of `local` or `sessions` must be present in async parameters'
         end
-        Log.dump(:sync_params, sync_params)
+        Log.log.debug{Log.dump(:sync_params, sync_params)}
 
         Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{ASYNC_EXECUTABLE}\" \"#{env_args[:args].join('" "')}\""}
         res = system(env_args[:env], [ASYNC_EXECUTABLE, ASYNC_EXECUTABLE], *env_args[:args])

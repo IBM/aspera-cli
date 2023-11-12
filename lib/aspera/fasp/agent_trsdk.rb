@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:words Transfersdk
-
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
 require 'json'
@@ -18,13 +16,8 @@ module Aspera
       # options come from transfer_info
       def initialize(user_opts={})
         super(user_opts)
-        # set default options and override if specified
-        options = DEFAULT_OPTIONS.dup
-        user_opts&.each do |k, v|
-          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
-          options[k] = v
-        end
-        Log.dump(:agent_options, options)
+        options = AgentBase.options(default: DEFAULT_OPTIONS, options: user_opts)
+        Log.log.debug{Log.dump(:agent_options, options)}
         # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
@@ -76,7 +69,7 @@ module Aspera
         started = false
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
-          Log.dump(:response, response.to_h)
+          Log.log.debug{Log.dump(:response, response.to_h)}
           # Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status
           when :RUNNING

@@ -119,11 +119,11 @@ module Aspera
           when :link
             uri = URI.parse(public_link)
             link_arguments = Rest.decode_query(uri.query)
-            Log.dump(:link_arguments, link_arguments)
+            Log.log.debug{Log.dump(:link_arguments, link_arguments)}
             context = link_arguments['context']
             raise 'missing context' if context.nil?
             @pub_link_context = JSON.parse(Base64.decode64(context))
-            Log.dump(:@pub_link_context, @pub_link_context)
+            Log.log.debug{Log.dump(:@pub_link_context, @pub_link_context)}
             @api_v5 = Rest.new({
               base_url: faspex5_api_v5_url,
               headers:  {'Passcode' => @pub_link_context['passcode']}
@@ -332,10 +332,10 @@ module Aspera
           when ExtendedValue::ALL
             # TODO: if packages have same name, they will overwrite ?
             package_ids = list_packages_with_filter.map{|p|p['id']}
-            Log.dump(:package_ids, package_ids)
-            Log.dump(:skip_ids, skip_ids_persistency.data)
+            Log.log.debug{Log.dump(:package_ids, package_ids)}
+            Log.log.debug{Log.dump(:skip_ids, skip_ids_persistency.data)}
             package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
-            Log.dump(:package_ids, package_ids)
+            Log.log.debug{Log.dump(:package_ids, package_ids)}
           end
           # a single id was provided
           # TODO: check package_ids is a list of strings

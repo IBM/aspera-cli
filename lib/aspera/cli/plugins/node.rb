@@ -272,7 +272,7 @@ module Aspera
               transfer_spec.delete_if{ |_k, v| v.nil? }
               # delete this part, as the returned value contains only destination, and not sources
               # transfer_spec.delete('paths') if command.eql?(:upload)
-              Log.dump(:ts, transfer_spec)
+              Log.log.debug{Log.dump(:ts, transfer_spec)}
               transfer_spec
             end
           when :upload, :download
@@ -470,7 +470,7 @@ module Aspera
               # remote is specified by option to_folder
               apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
               transfer_spec = apifid[:api].transfer_spec_gen4(apifid[:file_id], ts_direction)
-              Log.dump(:ts, transfer_spec)
+              Log.log.debug{Log.dump(:ts, transfer_spec)}
               transfer_spec
             end
           when :upload
@@ -880,7 +880,7 @@ module Aspera
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/files', request_data)[:data]
                 resp = JSON.parse(resp) if resp.is_a?(String)
-                Log.dump(:resp, resp)
+                Log.log.debug{Log.dump(:resp, resp)}
                 return { type: :object_list, data: resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path]}
               when :modify
                 request_data.deep_merge!(validation) unless validation.nil?

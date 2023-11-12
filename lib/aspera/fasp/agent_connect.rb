@@ -4,7 +4,6 @@ require 'aspera/fasp/agent_base'
 require 'aspera/rest'
 require 'aspera/open_application'
 require 'securerandom'
-require 'tty-spinner'
 
 module Aspera
   module Fasp
@@ -27,7 +26,7 @@ module Aspera
           @connect_api = Rest.new({base_url: "#{connect_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
           connect_info = @connect_api.read('info/version')[:data]
           Log.log.info('Connect was reached') if method_index > 0
-          Log.dump(:connect_version, connect_info)
+          Log.log.debug{Log.dump(:connect_version, connect_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
           start_url = CONNECT_START_URIS[method_index]
           method_index += 1
@@ -74,10 +73,12 @@ module Aspera
       def wait_for_transfers_completion
         connect_activity_args = {'aspera_connect_settings' => @connect_settings}
         started = false
-        spinner = nil
+        pre_calc = false
+        session_id = @xfer_id
         begin
           loop do
             tr_info = @connect_api.create("transfers/info/#{@xfer_id}", connect_activity_args)[:data]
+            Log.log.trace1{Log.dump(:tr_info, tr_info)}
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']
               if transfer.nil?
@@ -87,31 +88,29 @@ module Aspera
               # TODO: get session id
               case transfer['status']
               when 'initiating', 'queued'
-                if spinner.nil?
-                  spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
-                  spinner.start
-                end
-                spinner.update(title: transfer['status'])
-                spinner.spin
+                notify_progress(session_id: nil, type: :pre_start, info: transfer['status'])
               when 'running'
-                # puts "running: sessions:#{transfer['sessions'].length}, #{transfer['sessions'].map{|i| i['bytes_transferred']}.join(',')}"
-                if !started && (transfer['bytes_expected'] != 0)
-                  spinner&.success
-                  notify_progress(type: :session_size, session_id: @connect_settings['app_id'], info: transfer['bytes_expected'])
+                if !started
+                  notify_progress(session_id: session_id, type: :session_start)
                   started = true
+                end
+                if !pre_calc && (transfer['bytes_expected'] != 0)
+                  notify_progress(type: :session_size, session_id: session_id, info: transfer['bytes_expected'])
+                  pre_calc = true
                 else
-                  notify_progress(type: :transfer, session_id: @connect_settings['app_id'], info: transfer['bytes_written'])
+                  notify_progress(type: :transfer, session_id: session_id, info: transfer['bytes_written'])
                 end
               when 'completed'
-                notify_progress(type: :end, session_id: @connect_settings['app_id'])
+                notify_progress(type: :end, session_id: session_id)
                 break
               when 'failed'
-                spinner&.error
+                notify_progress(type: :end, session_id: session_id)
                 raise Fasp::Error, transfer['error_desc']
               when 'cancelled'
-                spinner&.error
+                notify_progress(type: :end, session_id: session_id)
                 raise Fasp::Error, 'Transfer cancelled by user'
               else
+                notify_progress(type: :end, session_id: session_id)
                 raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end

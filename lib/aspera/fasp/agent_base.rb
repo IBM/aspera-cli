@@ -5,6 +5,20 @@ module Aspera
     # Base class for FASP transfer agents
     # sub classes shall implement start_transfer and shutdown
     class AgentBase
+      class << self
+        def options(default:, options:)
+          result = options.symbolize_keys
+          available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
+          result.each do |k, _v|
+            raise "Unknown transfer agent parameter: #{k}, expect one of #{available}" unless default.key?(k)
+          end
+          default.each do |k, v|
+            raise "Missing required agent parameter: #{k}. Parameters: #{available}" if v.eql?(:required) && !result.key?(k)
+            result[k] = v unless result.key?(k)
+          end
+          return result
+        end
+      end
       def wait_for_completion
         # list of: :success or "error message string"
         statuses = wait_for_transfers_completion
@@ -19,7 +33,7 @@ module Aspera
       def initialize(options)
         raise 'internal error' unless respond_to?(:start_transfer)
         raise 'internal error' unless respond_to?(:wait_for_transfers_completion)
-        Log.dump(:agent_options, options)
+        Log.log.debug{Log.dump(:agent_options, options)}
         raise "transfer agent options expecting Hash, but have #{options.class}" unless options.is_a?(Hash)
         @progress = options[:progress]
         options.delete(:progress)

@@ -231,8 +231,8 @@ module Aspera
       @generic_parameters.delete(:base_url)
       @generic_parameters.delete(:auth)
       @generic_parameters.delete(@generic_parameters[:grant_method])
-      Log.dump(:generic_parameters, @generic_parameters)
-      Log.dump(:specific_parameters, @specific_parameters)
+      Log.log.debug{Log.dump(:generic_parameters, @generic_parameters)}
+      Log.log.debug{Log.dump(:specific_parameters, @specific_parameters)}
     end
 
     public
@@ -277,7 +277,7 @@ module Aspera
       # `direct` agent is equipped with refresh code
       if !use_refresh_token && !token_data.nil?
         decoded_token = self.class.decode_token(token_data[@generic_parameters[:token_field]])
-        Log.dump('decoded_token', decoded_token) unless decoded_token.nil?
+        Log.log.debug{Log.dump('decoded_token', decoded_token)} unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
             if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time

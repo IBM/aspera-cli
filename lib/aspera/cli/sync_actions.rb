@@ -51,7 +51,7 @@ module Aspera
               async_params['sessions'].first.is_a?(Hash)
             async_params['sessions'].first.merge!(simple_session_args)
           end
-          Log.dump('async_params', async_params)
+          Log.log.debug{Log.dump('async_params', async_params)}
           Aspera::Sync.start(async_params, &block)
           return Main.result_success
         when :admin

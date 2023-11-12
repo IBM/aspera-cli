@@ -261,7 +261,7 @@ module Aspera
           object_array = fields.map { |i| new_columns.zip([i, single[i]]).to_h }
           fields = new_columns
         end
-        Log.dump(:object_array, object_array)
+        Log.log.debug{Log.dump(:object_array, object_array)}
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
         # here : fields : list of column names

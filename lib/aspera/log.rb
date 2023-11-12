@@ -47,6 +47,7 @@ module Aspera
     include Singleton
     # where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
+    @@format = :json
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
@@ -55,22 +56,20 @@ module Aspera
       # get the logger object of singleton
       def log; instance.logger; end
 
-      # dump object in debug mode
+      # dump object suitable for Log.log.debug
       # @param name string or symbol
       # @param format either pp or json format
-      def dump(name, object, format=:json)
-        log.debug do
-          result =
-            case format
-            when :json
-              JSON.pretty_generate(object) rescue PP.pp(object, +'')
-            when :ruby
-              PP.pp(object, +'')
-            else
-              raise 'wrong parameter, expect ruby or json'
-            end
-          "#{name.to_s.green} (#{format})=\n#{result}"
-        end
+      def dump(name, object)
+        result =
+          case @@format
+          when :json
+            JSON.pretty_generate(object) rescue PP.pp(object, +'')
+          when :ruby
+            PP.pp(object, +'')
+          else
+            raise 'wrong parameter, expect ruby or json'
+          end
+        "#{name.to_s.green} (#{@@format})=\n#{result}"
       end
 
       # Capture the output of $stderr and log it at debug level

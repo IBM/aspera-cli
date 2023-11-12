@@ -51,7 +51,7 @@ module Aspera
           # TODO: useful ? node only ?
           transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
-        Log.dump('ts', transfer_spec)
+        Log.log.debug{Log.dump('ts', transfer_spec)}
 
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
@@ -236,8 +236,8 @@ module Aspera
             event = processor.process_line(line.chomp)
             next unless event
             # event is ready
-            Log.dump(:management_port, event)
-            # Log.log.debug{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
+            Log.log.debug{Log.dump(:management_port, event)}
+            #Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR')
           end
@@ -318,13 +318,9 @@ module Aspera
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
         # set default options and override if specified
-        @options = DEFAULT_OPTIONS.dup
-        options.each do |k, v|
-          raise "Unknown local agent parameter: #{k}, expect one of #{DEFAULT_OPTIONS.keys.map(&:to_s).join(',')}" unless DEFAULT_OPTIONS.key?(k)
-          @options[k] = v
-        end
+        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: options)
         @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
-        Log.dump(:agent_options, @options)
+        Log.log.debug{Log.dump(:agent_options, @options)}
       end
 
       # transfer thread entry
