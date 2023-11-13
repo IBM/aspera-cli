@@ -23,7 +23,7 @@ end
 params = {}
 %i[url user pass].each do |p|
   env = "CF_HSTS_SSH_#{p.to_s.upcase}"
-  params[p] = ENV[env]
+  params[p] = ENV.fetch(env, nil)
   raise "missing env var: #{env}" unless params[p].is_a?(String)
 end
 ssh_url = URI.parse(params[:url])

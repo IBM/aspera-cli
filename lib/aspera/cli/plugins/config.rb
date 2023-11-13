@@ -183,7 +183,7 @@ module Aspera
           @option_config_file = nil
           @certificate_store = nil
           @certificate_paths = nil
-        @progressbar = nil
+          @progressbar = nil
           # option to set main folder
           options.declare(
             :home, 'Home folder for tool',
@@ -376,7 +376,7 @@ module Aspera
             end
           if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(RUBY_FUTURE_MINIMUM_VERSION)
             Log.log.warn do
-              "Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, "\
+              "Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, " \
                 "you are using #{Environment.ruby_version}"
             end
           end
@@ -1228,8 +1228,8 @@ module Aspera
             default_config_name = @config_presets[CONF_PRESET_DEFAULT][plugin_name_sym.to_s]
             if !@config_presets.key?(default_config_name)
               Log.log.error do
-                "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n"\
-                  'Please fix the issue: either create preset with one parameter: '\
+                "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
+                  'Please fix the issue: either create preset with one parameter: ' \
                   "(#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_name_sym})."
               end
             end

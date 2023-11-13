@@ -18,7 +18,7 @@ module Aspera
         root_id:  nil
       }.freeze
       # option include: root_id if the node is an access key
-      #attr_writer :options
+      # attr_writer :options
 
       def initialize(opts)
         raise 'node specification must be Hash' unless opts.is_a?(Hash)
@@ -40,7 +40,7 @@ module Aspera
         @node_api = Rest.new(rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
-        #Log.log.debug{Log.dump(:agent_options, @options)}
+        # Log.log.debug{Log.dump(:agent_options, @options)}
       end
 
       # used internally to ensure node api is set before using.
@@ -49,7 +49,7 @@ module Aspera
         return @node_api
       end
       # use this to read the node_api end point.
-      #attr_reader :node_api
+      # attr_reader :node_api
 
       # use this to set the node_api end point before using the class.
       def node_api=(new_value)

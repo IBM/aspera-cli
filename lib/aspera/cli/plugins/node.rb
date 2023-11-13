@@ -80,10 +80,10 @@ module Aspera
 
         # spellchecker: disable
         # SOAP API call to test central API
-        CENTRAL_SOAP_API_TEST = '<?xml version="1.0" encoding="UTF-8"?>'\
-          '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types">'\
-          '<soapenv:Header></soapenv:Header>'\
-          '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>'\
+        CENTRAL_SOAP_API_TEST = '<?xml version="1.0" encoding="UTF-8"?>' \
+          '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="urn:Aspera:XML:FASPSessionNET:2009/11:Types">' \
+          '<soapenv:Header></soapenv:Header>' \
+          '<soapenv:Body><typ:GetSessionInfoRequest><SessionFilter><SessionStatus>running</SessionStatus></SessionFilter></typ:GetSessionInfoRequest></soapenv:Body>' \
           '</soapenv:Envelope>'
         # spellchecker: enable
 

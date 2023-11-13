@@ -237,7 +237,7 @@ module Aspera
             next unless event
             # event is ready
             Log.log.debug{Log.dump(:management_port, event)}
-            #Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
+            # Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR')
           end

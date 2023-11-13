@@ -326,9 +326,9 @@ module Aspera
         case Aspera::Environment.os
         when Aspera::Environment::OS_WINDOWS; return [{
           expected: PRODUCT_CONNECT,
-          app_root: File.join(ENV['LOCALAPPDATA'], 'Programs', 'Aspera', 'Aspera Connect'),
-          log_root: File.join(ENV['LOCALAPPDATA'], 'Aspera', 'Aspera Connect', 'var', 'log'),
-          run_root: File.join(ENV['LOCALAPPDATA'], 'Aspera', 'Aspera Connect')
+          app_root: File.join(ENV.fetch('LOCALAPPDATA', nil), 'Programs', 'Aspera', 'Aspera Connect'),
+          log_root: File.join(ENV.fetch('LOCALAPPDATA', nil), 'Aspera', 'Aspera Connect', 'var', 'log'),
+          run_root: File.join(ENV.fetch('LOCALAPPDATA', nil), 'Aspera', 'Aspera Connect')
         }, {
           expected: PRODUCT_CLI_V1,
           app_root: File.join('C:', 'Program Files', 'Aspera', 'cli'),

@@ -91,7 +91,7 @@ module Aspera
         # log error for further analysis (file must exist to activate)
         return if log_file.nil? || !File.exist?(log_file)
         File.open(log_file, 'a+') do |f|
-          f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n"\
+          f.write("\n=#{type}=====\n#{call_context[:request].method} #{call_context[:request].path}\n#{call_context[:response].code}\n" \
             "#{JSON.generate(call_context[:data])}\n#{call_context[:messages].join("\n")}")
         end
       end

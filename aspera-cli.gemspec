@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'Execute actions using command line on IBM Aspera Server products: '\
+  spec.summary       = 'Execute actions using command line on IBM Aspera Server products: ' \
     'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, High Speed Transfer Server'
   spec.description   = 'Command line interface for IBM Aspera products'
   spec.homepage      = Aspera::Cli::SRC_URL

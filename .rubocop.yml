@@ -48,7 +48,8 @@ Style/TrailingCommaInArrayLiteral:
 Style/DateTime:
   Enabled: false
 Style/TrailingCommaInArguments:
-  Enabled: false
+  EnforcedStyleForMultiline: no_comma
+#  Enabled: false
 Style/Encoding:
   Enabled: true
 Lint/RedundantCopDisableDirective:
