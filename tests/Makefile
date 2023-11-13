@@ -1378,6 +1378,18 @@ $(T)f5_p2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
 	@$(STOP_TEST) $@
+$(T)f5_sh_folder_list: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 shared_folders list
+	@$(STOP_TEST) $@
+$(T)f5_sh_folder_br: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 shared_folders browse @extend:%name:@preset:faspex5.shfolder_name@
+	@$(STOP_TEST) $@
+$(T)f5_sh_folder_send: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shfolder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shfolder_file
+	@$(STOP_TEST) $@
 $(T)f5_p3: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
@@ -1472,5 +1484,4 @@ $(T)f5_postproc: $(T).exists
 	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold
-
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold

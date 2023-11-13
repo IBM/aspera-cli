@@ -8,8 +8,6 @@ require 'aspera/id_generator'
 require 'aspera/nagios'
 require 'aspera/environment'
 require 'securerandom'
-require 'ruby-progressbar'
-require 'tty-spinner'
 
 module Aspera
   module Cli
@@ -194,32 +192,29 @@ module Aspera
 
         # wait for package status to be in provided list
         def wait_package_status(id, status_list: PACKAGE_TERMINATED)
-          spinner = nil
-          progress = nil
-          while true
+          total_sent = false
+          loop do
             status = @api_v5.read("packages/#{id}/upload_details")[:data]
+            status['id'] = id
             # user asked to not follow
-            break if status_list.nil? || status_list.include?(status['upload_status'])
+            return status if status_list.nil?
             if status['upload_status'].eql?('submitted')
-              if spinner.nil?
-                spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
-                spinner.start
-              end
-              spinner.update(title: status['upload_status'])
-              spinner.spin
-            elsif progress.nil?
-              progress = ProgressBar.create(
-                format:     '%a %B %p%% %r Mbps %e',
-                rate_scale: lambda{|rate|rate / Environment::BYTES_PER_MEBIBIT},
-                title:      'progress',
-                total:      status['bytes_total'].to_i)
+              config.progressbar&.event(session_id: nil, type: :pre_start, info: status['upload_status'])
+            elsif !total_sent
+              config.progressbar&.event(session_id: id, type: :session_start)
+              config.progressbar&.event(session_id: id, type: :session_size, info: status['bytes_total'].to_i)
+              total_sent = true
             else
-              progress.progress = status['bytes_written'].to_i
+              config.progressbar&.event(session_id: id, type: :transfer, info: status['bytes_written'].to_i)
             end
-            sleep(0.5)
+            if status_list.include?(status['upload_status'])
+              # if status['upload_status'].eql?('completed')
+              config.progressbar&.event(session_id: id, type: :end)
+              return status
+              # end
+            end
+            sleep(1.0)
           end
-          status['id'] = id
-          return status
         end
 
         def wait_for_job(job_id)

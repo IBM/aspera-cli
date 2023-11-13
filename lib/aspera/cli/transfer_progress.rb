@@ -36,6 +36,7 @@ module Aspera
             title:       '',
             total:       nil)
         end
+        need_increment = true
         case type
         when :pre_start
           @title = info
@@ -48,13 +49,14 @@ module Aspera
           @title = ''
         when :session_size
           @sessions[session_id][:job_size] = info.to_i
-          @progress_bar.total = total(:job_size)
+          current_total = total(:job_size)
+          @progress_bar.total = current_total unless @progress_bar.total.eql?(current_total)
         when :transfer
-          if @progress_bar.total.nil?
-            @progress_bar.increment
-          else
+          if !@progress_bar.total.nil?
+            need_increment = false
             @sessions[session_id][:current] = info.to_i
-            @progress_bar.progress = total(:current)
+            current_total = total(:current)
+            @progress_bar.progress = current_total unless @progress_bar.progress.eql?(current_total)
           end
         when :end
           @title = ''
@@ -65,6 +67,7 @@ module Aspera
         end
         new_title = @sessions.length < 2 ? @title : "[#{@sessions.length}] #{@title}"
         @progress_bar.title = new_title unless @progress_bar.title.eql?(new_title)
+        @progress_bar.increment if need_increment && !@completed
       end
     end
   end

@@ -159,15 +159,25 @@ module Aspera
         session_id = event['SessionId']
         case event['Type']
         when 'INIT'
+          @precalc_sent = false
+          @precalc_last_size = nil
           notify_progress(session_id: session_id, type: :session_start)
         when 'NOTIFICATION' # sent from remote
           if event.key?('PreTransferBytes')
+            @precalc_sent = true
             notify_progress(session_id: session_id, type: :session_size, info: event['PreTransferBytes'])
           end
         when 'STATS' # during transfer
-          notify_progress(session_id: session_id, type: :transfer, info: event['TransferBytes'].to_i + event['StartByte'].to_i)
+          @precalc_last_size = event['TransferBytes'].to_i + event['StartByte'].to_i
+          notify_progress(session_id: session_id, type: :transfer, info: @precalc_last_size)
         when 'DONE', 'ERROR' # end of session
-          notify_progress(session_id: session_id, type: :transfer, info: event['TransferBytes'].to_i + event['StartByte'].to_i)
+          total_size = event['TransferBytes'].to_i + event['StartByte'].to_i
+          if !@precalc_sent
+            notify_progress(session_id: session_id, type: :session_size, info: total_size)
+          end
+          if @precalc_last_size != total_size
+            notify_progress(session_id: session_id, type: :transfer, info: total_size)
+          end
           notify_progress(session_id: session_id, type: :end)
         when 'SESSION'
         when 'ARGSTOP'

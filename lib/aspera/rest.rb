@@ -10,7 +10,6 @@ require 'net/https'
 require 'json'
 require 'base64'
 require 'cgi'
-require 'ruby-progressbar'
 
 # add cancel method to http
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
@@ -28,7 +27,8 @@ module Aspera
     @@global = { # rubocop:disable Style/ClassVars
       user_agent:              'Ruby',          # goes to HTTP request header: 'User-Agent'
       download_partial_suffix: '.http_partial', # suffix for partial download
-      session_cb:              nil              # a lambda which takes the Net::HTTP as arg, use this to change parameters
+      session_cb:              nil,             # a lambda which takes the Net::HTTP as arg, use this to change parameters
+      progressbar:             nil              # progress bar object
     }
 
     # flag for array parameters prefixed with []
@@ -271,11 +271,6 @@ module Aspera
               !result[:http]['Content-Length'].nil? &&
               !JSON_DECODE.include?(result_mime)
             total_size = result[:http]['Content-Length'].to_i
-            progress = ProgressBar.create(
-              format:     '%a %B %p%% %r KB/sec %e',
-              rate_scale: lambda{|rate|rate / 1024},
-              title:      'progress',
-              total:      total_size)
             Log.log.debug('before write file')
             target_file = call_data[:save_to_file]
             # override user's path to path in header
@@ -285,17 +280,19 @@ module Aspera
             # download with temp filename
             target_file_tmp = "#{target_file}#{@@global[:download_partial_suffix]}"
             Log.log.debug{"saving to: #{target_file}"}
+            written_size = 0
+            @@global[:progressbar]&.event(session_id: 1, type: :session_start)
+            @@global[:progressbar]&.event(session_id: 1, type: :session_size, info: total_size)
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
-                new_process = progress.progress + fragment.length
-                new_process = total_size if new_process > total_size
-                progress.progress = new_process
+                written_size += fragment.length
+                @@global[:progressbar]&.event(session_id: 1, type: :transfer, info: written_size)
               end
             end
+            @@global[:progressbar]&.event(session_id: 1, type: :end)
             # rename at the end
             File.rename(target_file_tmp, target_file)
-            progress = nil
             file_saved = true
           end # save_to_file
         end
