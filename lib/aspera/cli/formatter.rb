@@ -135,6 +135,17 @@ module Aspera
           return result.green if yes
           return result.red
         end
+
+        def auto_type(data)
+          result = {type: :other_struct, data: data}
+          result[:type] = :single_object if result[:data].is_a?(Hash)
+          if result[:data].is_a?(Array)
+            if result[:data].all?(Hash)
+              result[:type] = :object_list
+            end
+          end
+          return result
+        end
       end # self
 
       # initialize the formatter
