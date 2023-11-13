@@ -100,9 +100,6 @@ module Aspera
       WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
       HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
-      attr_accessor :option_flat_hash, :option_transpose_single, :option_format, :option_display, :option_fields, :option_table_style,
-        :option_select, :option_show_secrets
-
       class << self
         # Highlight special values
         def special(what, use_colors: $stdout.isatty)
@@ -142,28 +139,30 @@ module Aspera
 
       # initialize the formatter
       def initialize
-        @option_format = nil
-        @option_display = nil
-        @option_fields = nil
-        @option_select = nil
-        @option_table_style = nil
-        @option_flat_hash = nil
-        @option_transpose_single = nil
-        @option_show_secrets = nil
+        @options = {}
+      end
+
+      def option_handler(option_symb, operation, value=nil)
+        case operation
+        when :set then @options[option_symb] = value
+        when :get then return @options[option_symb]
+        else raise "internal error: no such operation: #{operation}"
+        end
+        nil
       end
 
       def declare_options(options)
-        options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_format}, default: :table)
-        options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_display}, default: :info)
+        options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
+        options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
         options.declare(
-          :fields, "Comma separated list of: fields, or #{ExtendedValue::ALL}, or #{ExtendedValue::DEF}", handler: {o: self, m: :option_fields},
+          :fields, "Comma separated list of: fields, or #{ExtendedValue::ALL}, or #{ExtendedValue::DEF}", handler: {o: self, m: :option_handler},
           types: [String, Array, Regexp, Proc],
           default: ExtendedValue::DEF)
-        options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_select})
-        options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_table_style}, default: ':.:')
-        options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_flat_hash}, default: true)
-        options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_transpose_single}, default: true)
-        options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_show_secrets}, default: false)
+        options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
+        options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_handler}, default: ':.:')
+        options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
       end
 
       # main output method
@@ -172,8 +171,8 @@ module Aspera
       # error: always displayed on stderr
       def display_message(message_level, message)
         case message_level
-        when :data then $stdout.puts(message) unless @option_display.eql?(:error)
-        when :info then $stdout.puts(message) if @option_display.eql?(:info)
+        when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
+        when :info then $stdout.puts(message) if @options[:display].eql?(:info)
         when :error then $stderr.puts(message)
         else raise "wrong message_level:#{message_level}"
         end
@@ -199,13 +198,13 @@ module Aspera
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
         request =
-          case @option_fields
+          case @options[:fields]
           when NilClass then [ExtendedValue::DEF]
-          when String then @option_fields.split(',')
-          when Array then @option_fields
-          when Regexp then return all_fields(data).select{|i|i.match(@option_fields)}
-          when Proc then return all_fields(data).select{|i|@option_fields.call(i)}
-          else raise "internal error: option_fields: #{@option_fields}"
+          when String then @options[:fields].split(',')
+          when Array then @options[:fields]
+          when Regexp then return all_fields(data).select{|i|i.match(@options[:fields])}
+          when Proc then return all_fields(data).select{|i|@options[:fields].call(i)}
+          else raise "internal error: option: fields: #{@options[:fields]}"
           end
         result = []
         until request.empty?
@@ -239,15 +238,15 @@ module Aspera
       # fields: list of column names
       def display_table(object_array, fields)
         raise 'internal error: no field specified' if fields.nil?
-        case @option_select
+        case @options[:select]
         when Proc
-          object_array.select!{|i|@option_select.call(i)}
+          object_array.select!{|i|@options[:select].call(i)}
         when Hash
-          @option_select.each{|k, v|object_array.select!{|i|i[k].eql?(v)}}
+          @options[:select].each{|k, v|object_array.select!{|i|i[k].eql?(v)}}
         end
         if object_array.empty?
           # no  display for csv
-          display_message(:info, Formatter.special('empty')) if @option_format.eql?(:table)
+          display_message(:info, Formatter.special('empty')) if @options[:format].eql?(:table)
           return
         end
         if object_array.length == 1 && fields.length == 1
@@ -255,7 +254,7 @@ module Aspera
           return
         end
         # Special case if only one row (it could be object_list or single_object)
-        if @option_transpose_single && object_array.length == 1
+        if @options[:transpose_single] && object_array.length == 1
           new_columns = %i[key value]
           single = object_array.first
           object_array = fields.map { |i| new_columns.zip([i, single[i]]).to_h }
@@ -265,10 +264,9 @@ module Aspera
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
         # here : fields : list of column names
-        # here: final_table_rows : array of list of value
-        case @option_format
+        case @options[:format]
         when :table
-          style = @option_table_style.chars
+          style = @options[:table_style].chars
           # display the table !
           display_message(:data, Terminal::Table.new(
             headings:  fields,
@@ -289,8 +287,8 @@ module Aspera
         raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
         raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
         Log.log.debug{"display_results: #{results[:data].class} #{results[:type]}"}
-        SecretHider.deep_remove_secret(results[:data]) unless @option_show_secrets || @option_display.eql?(:data)
-        case @option_format
+        SecretHider.deep_remove_secret(results[:data]) unless @options[:show_secrets] || @options[:display].eql?(:data)
+        case @options[:format]
         when :text
           display_message(:data, results[:data].to_s)
         when :nagios
@@ -313,7 +311,7 @@ module Aspera
             raise "internal error: expecting Array: got #{obj_list.class}" unless obj_list.is_a?(Array)
             raise 'internal error: expecting Array of Hash' unless obj_list.all?(Hash)
             # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{|obj|Flattener.new.flatten(obj)} if @option_flat_hash
+            obj_list = obj_list.map{|obj|Flattener.new.flatten(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, results[:fields]))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name

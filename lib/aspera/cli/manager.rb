@@ -24,18 +24,29 @@ module Aspera
     # option is retrieved from another object using accessor
     class AttrAccessor
       # attr_accessor :object
-      # attr_accessor :attr_symb
-      def initialize(object, attr_symb)
+      # attr_accessor :method_name
+      def initialize(object, method_name, option_name)
         @object = object
-        @attr_symb = attr_symb
+        @method = method_name
+        @option_name = option_name
+        @has_writer = @object.respond_to?(writer_method)
+        Log.log.debug{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
+        raise "internal error: #{object} does not respond to #{method_name}" unless @object.respond_to?(@method)
       end
 
       def value
-        return @object.send(@attr_symb)
+        return @object.send(@method) if @has_writer
+        return @object.send(@method, @option_name, :get)
       end
 
       def value=(val)
-        @object.send("#{@attr_symb}=", val)
+        Log.log.debug{">>>>> #{@method} #{@option_name} :set #{val}, writer=#{@has_writer}"}
+        return @object.send(writer_method, val) if @has_writer
+        return @object.send(@method, @option_name, :set, val)
+      end
+
+      def writer_method
+        return "#{@method}="
       end
     end
 
@@ -309,7 +320,7 @@ module Aspera
           raise 'internal error' unless handler.is_a?(Hash)
           raise 'internal error' unless handler.keys.sort.eql?(%i[m o])
           Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
-          opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m])
+          opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m], option_symbol)
         end
         set_option(option_symbol, default, 'default') unless default.nil?
         on_args = [description]

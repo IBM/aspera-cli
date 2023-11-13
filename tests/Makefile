@@ -23,7 +23,7 @@ only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)s
 
 only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
 
-only_progress:
+only_progress: $(T)serv_upload1 $(T)serv_upload3
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
@@ -55,6 +55,8 @@ TST_ASC_FILENAME=datafile.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
 TST_UTF_FILENAME='spécial{\#😀"'
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
+# a medium sized file for testing
+TST_MED_DATAFILE=faux:///testfile?100m
 # sync dir must be an absolute path
 TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
 ifeq ($(TST_SYNC_LCL_DIR),)
@@ -209,16 +211,28 @@ $(T)serv_error: $(T).exists
 	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_NOMAN) server -N --url=local:// ls .
 	@$(STOP_TEST) $@
-$(T)serv_upload: $(T)serv_mkdir 
+$(T)serv_upload1: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":1500}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
+	$(EXE_MAN) server upload '$(TST_MED_DATAFILE)' --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
 	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)
-	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.inside_folder@/othername --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/othername"]'
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/othername"}]}'
-	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/with_options --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@$(STOP_TEST) $@
-$(T)serv_sync: $(T)serv_upload 
+$(T)serv_upload2: $(T)serv_mkdir 
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_DATAFILE)' @extend:@preset:server.inside_folder@/othername2 --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+	@$(STOP_TEST) $@
+$(T)serv_upload3: $(T)serv_mkdir 
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/othername3"]' --transfer-info=@json:'{"quiet":false}'  --progress=no
+	@$(STOP_TEST) $@
+$(T)serv_upload4: $(T)serv_mkdir 
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/othername4"}]}'
+	@$(STOP_TEST) $@
+$(T)serv_upload5: $(T)serv_mkdir 
+	@$(START_TEST) $@
+	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/othername5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+	@$(STOP_TEST) $@
+$(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload4 $(T)serv_upload5
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
@@ -235,19 +249,19 @@ $(T)serv_upload_ex: $(T)serv_mkdir
 	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
 	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
 	@$(STOP_TEST) $@
-$(T)serv_md5: $(T)serv_upload
+$(T)serv_md5: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server md5sum @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
-$(T)serv_down_lcl: $(T)serv_upload
+$(T)serv_down_lcl: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 	@$(STOP_TEST) $@
-$(T)serv_down_from_node: $(T)serv_upload
+$(T)serv_down_from_node: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) --to-folder=@preset:server.upload_folder --transfer=node
 	@$(STOP_TEST) $@
-$(T)serv_cp: $(T)serv_upload
+$(T)serv_cp: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server cp @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) @extend:@preset:server.upload_folder@/200KB.2
 	@$(STOP_TEST) $@
@@ -300,7 +314,7 @@ $(T)serv_pr2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
+tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload4 $(T)serv_upload5 $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 #######################################################################################################################
 $(T)f4_nagios: $(T).exists
 	@$(START_TEST) $@
