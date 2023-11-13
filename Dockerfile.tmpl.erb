@@ -33,6 +33,7 @@ RUN \
   mkdir -p $sdk_install_dir && \
   chmod 755 $sdk_install_dir && \
   ascli conf ascp install <%=arg_sdk%> && \
+  ascli conf ascp info && \
   rm -f sdk.zip && \
   ascli conf ascp info
 # rootless execution
