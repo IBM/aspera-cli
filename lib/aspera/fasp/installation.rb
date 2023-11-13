@@ -56,7 +56,7 @@ module Aspera
 
       def sdk_ruby_folder
         ruby_pb_folder = File.join(sdk_folder, RB_SDK_FOLDER)
-        FileUtils.mkdir_p(ruby_pb_folder) unless Dir.exist?(ruby_pb_folder)
+        FileUtils.mkdir_p(ruby_pb_folder)
         return ruby_pb_folder
       end
 
@@ -73,7 +73,7 @@ module Aspera
       # @return the path to folder where SDK is installed
       def sdk_folder
         raise 'SDK path was ot initialized' if @sdk_dir.nil?
-        FileUtils.mkdir_p(@sdk_dir) unless Dir.exist?(@sdk_dir)
+        FileUtils.mkdir_p(@sdk_dir)
         @sdk_dir
       end
 

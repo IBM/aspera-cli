@@ -37,7 +37,7 @@ module Aspera
       raise 'value: only String supported' unless value.is_a?(String)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug{"persistency saving: #{persist_filepath}"}
-      File.delete(persist_filepath) if File.exist?(persist_filepath)
+      FileUtils.rm_f(persist_filepath)
       File.write(persist_filepath, value)
       Environment.restrict_file_access(persist_filepath)
       @cache[object_id] = value
@@ -46,7 +46,7 @@ module Aspera
     def delete(object_id)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug{"persistency deleting: #{persist_filepath}"}
-      File.delete(persist_filepath) if File.exist?(persist_filepath)
+      FileUtils.rm_f(persist_filepath)
       @cache.delete(object_id)
     end
 

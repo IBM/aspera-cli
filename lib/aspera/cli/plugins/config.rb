@@ -1206,7 +1206,7 @@ module Aspera
           raise 'no configuration loaded' if @config_presets.nil?
           current_checksum = config_checksum
           return false if @config_checksum_on_disk.eql?(current_checksum)
-          FileUtils.mkdir_p(@main_folder) unless Dir.exist?(@main_folder)
+          FileUtils.mkdir_p(@main_folder)
           Environment.restrict_file_access(@main_folder)
           Log.log.info{"Writing #{@option_config_file}"}
           formatter.display_status('Saving config file.')

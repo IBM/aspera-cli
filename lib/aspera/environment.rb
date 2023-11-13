@@ -73,7 +73,7 @@ module Aspera
       def fix_home
         return unless os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
         ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
-        Log.log.debug{"Windows: set HOME to USERPROFILE: #{ENV.fetch('HOME', nil)}"}
+        Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
       end
 
       def empty_binding
