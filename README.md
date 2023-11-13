@@ -4,6 +4,10 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
+[![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+
+
 ## Introduction
 
 Version : 4.15.0.pre
@@ -26,8 +30,6 @@ Minimum required Ruby version: >= 2.6.
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
-
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
 A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Manual.pdf).
 
@@ -2994,7 +2996,9 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-Control with option `progressbar` (`Bool`), by default it is `yes` if the output is a terminal.
+File transfer operations are monitored and a progress bar is displayed on the terminal if option `progressbar` (`Bool`) is set to `yes` (default if the output is a terminal).
+
+The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
 
 To display the native progress bar of `ascp`, use `--progressbar=no --transfer-info=@json:'{"quiet":false}'`.
 
@@ -3207,9 +3211,287 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 
 ```text
 ascli -h
-ERROR: Other(ArgumentError): wrong number of arguments (given 3, expected 0)
-ERROR: Argument: unprocessed options: ["-h"]
-Use --log-level=debug to get more details.
+NAME
+        ascli -- a command line tool for Aspera Applications (v4.15.0.pre)
+
+SYNOPSIS
+        ascli COMMANDS [OPTIONS] [ARGS]
+
+DESCRIPTION
+        Use Aspera application to perform operations on command line.
+        Documentation and examples: https://rubygems.org/gems/aspera-cli
+        execute: ascli conf doc
+        or visit: https://www.rubydoc.info/gems/aspera-cli
+        source repo: https://github.com/IBM/aspera-cli
+
+ENVIRONMENT VARIABLES
+        Any option can be set as an environment variable, refer to the manual
+
+COMMANDS
+        To list first level commands, execute: ascli
+        Note that commands can be written shortened (provided it is unique).
+
+OPTIONS
+        Options begin with a '-' (minus), and value is provided on command line.
+        Special values are supported beginning with special prefix @pfx:, where pfx is one of:
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, ruby, secret, stdin, zlib, extend, preset, vault
+        Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
+
+ARGS
+        Some commands require mandatory arguments, e.g. a path.
+
+OPTIONS: global
+        --interactive=ENUM           Use interactive input of missing params: [no], yes
+        --ask-options=ENUM           Ask even optional options: [no], yes
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
+        --display=ENUM               Output only some information: [info], data, error
+        --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
+        --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
+        --table-style=VALUE          Table display style
+        --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
+        --transpose-single=ENUM      Single object fields output vertically: no, [yes]
+        --show-secrets=ENUM          Show secrets on command output: [no], yes
+    -h, --help                       Show this message
+        --bash-comp                  Generate bash completion for command
+        --show-config                Display parameters used for the provided action
+    -v, --version                    Display version
+    -w, --warnings                   Check for language warnings
+        --ui=ENUM                    Method to start browser: text, [graphical]
+        --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
+        --logger=ENUM                Logging method: [stderr], stdout, syslog
+        --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
+        --once-only=ENUM             Process only new items (some commands): [no], yes
+        --log-secrets=ENUM           Show passwords in logs: [no], yes
+        --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
+
+COMMAND: config
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check remote_certificate smtp_settings throw vault wizard
+OPTIONS:
+        --home=VALUE                 Home folder for tool (String)
+        --config-file=VALUE          Path to YAML file with preset configuration
+        --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
+        --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
+        --property=VALUE             Name of property to set (modify operation)
+        --id=VALUE                   Resource identifier (deprecated: (4.14) Use positional identifier after verb (modify,delete,show))
+        --bulk=ENUM                  Bulk operation (only some): [no], yes
+        --bfail=ENUM                 Bulk operation error handling: no, [yes]
+    -N, --no-default                 Do not load default configuration for plugin
+        --override=ENUM              Wizard: override existing value: [no], yes
+        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
+        --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
+        --test-mode=ENUM             Wizard: skip private key check step: [no], yes
+        --pkeypath=VALUE             Wizard: path to private key for JWT
+    -P, --presetVALUE                Load the named option preset from current config file
+        --ascp-path=VALUE            Path to ascp
+        --use-product=VALUE          Use ascp from specified product
+        --smtp=VALUE                 SMTP configuration (Hash)
+        --fpac=VALUE                 Proxy auto configuration script
+        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
+        --secret=VALUE               Secret for access keys
+        --vault=VALUE                Vault for secrets (Hash)
+        --vault-password=VALUE       Vault password
+        --sdk-url=VALUE              URL to get SDK
+        --sdk-folder=VALUE           SDK folder path
+        --notif-to=VALUE             Email recipient for notification of transfers
+        --notif-template=VALUE       Email ERB template for notification of transfers
+        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --plugin-folder=VALUE        Folder where to find additional plugins
+        --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
+        --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
+        --http-options=VALUE         Options for HTTP/S socket (Hash)
+    -r, --rest-debug                 More debug for HTTP calls (REST)
+        --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
+        --progressbar=ENUM           Display progress bar: [no], yes
+        --ts=VALUE                   Override transfer spec values (Hash)
+        --to-folder=VALUE            Destination folder for transferred files
+        --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
+        --src-type=ENUM              Type of file list: [list], pair
+        --transfer=ENUM              Type of transfer agent: [direct], node, connect, httpgw, trsdk
+        --transfer-info=VALUE        Parameters for transfer agent (Hash)
+
+
+COMMAND: shares
+SUBCOMMANDS: admin files health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --type=ENUM                  Type of user/group for operations: [any], local, ldap, saml
+
+
+COMMAND: node
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --sync-name=VALUE            Sync name
+        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --root-id=VALUE              File id of top folder if using bearer tokens
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
+
+
+COMMAND: orchestrator
+SUBCOMMANDS: health info plugins processes workflow
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --result=VALUE               Specify result value as: 'work_step:parameter'
+        --synchronous=ENUM           Wait for completion: [no], yes
+        --ret-style=ENUM             How return type is requested in api: header, [arg], ext
+        --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
+
+
+COMMAND: bss
+SUBCOMMANDS: subscription
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+
+
+COMMAND: alee
+SUBCOMMANDS: entitlement
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+
+
+COMMAND: ats
+SUBCOMMANDS: access_key api_key aws_trust_policy cluster
+OPTIONS:
+        --ibm-api-key=VALUE          IBM API key, see https://cloud.ibm.com/iam/apikeys
+        --instance=VALUE             ATS instance in ibm cloud
+        --ats-key=VALUE              ATS key identifier (ats_xxx)
+        --ats-secret=VALUE           ATS key secret
+        --params=VALUE               Parameters access key creation (@json:)
+        --cloud=VALUE                Cloud provider
+        --region=VALUE               Cloud region
+
+
+COMMAND: faspex5
+SUBCOMMANDS: admin bearer_token gateway health packages postprocessing shared_folders user version
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --client-id=VALUE            OAuth client identifier
+        --client-secret=VALUE        OAuth client secret
+        --redirect-uri=VALUE         OAuth redirect URI for web authentication
+        --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+        --link=VALUE                 Public link authorization (specific operations)
+        --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"] or ALL
+        --shared-folder=VALUE        Send package with files from shared folder
+        --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
+
+
+COMMAND: cos
+SUBCOMMANDS: node
+OPTIONS:
+        --bucket=VALUE               Bucket name
+        --endpoint=VALUE             Storage endpoint url
+        --apikey=VALUE               Storage API key
+        --crn=VALUE                  Resource instance id
+        --service-credentials=VALUE  IBM Cloud service credentials (Hash)
+        --region=VALUE               Storage region
+        --identity=VALUE             Authentication url (https://iam.cloud.ibm.com/identity)
+
+
+COMMAND: faspex
+SUBCOMMANDS: address_book dropbox health login_methods me package source v4
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --link=VALUE                 Public link for specific operation
+        --delivery-info=VALUE        Package delivery information (Hash)
+        --remote-source=VALUE        Remote source for package send (id or %name:)
+        --storage=VALUE              Faspex local storage definition (for browsing source)
+        --recipient=VALUE            Use if recipient is a dropbox (with *)
+        --box=ENUM                   Package box: [inbox], archive, sent
+
+
+COMMAND: preview
+SUBCOMMANDS: check events scan show test trevents
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
+        --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
+        --skip-types=VALUE           Skip types in comma separated list
+        --previews-folder=VALUE      Preview folder in storage root
+        --temp-folder=VALUE          Path to temp folder
+        --skip-folders=VALUE         List of folder to skip
+        --base=VALUE                 Basename of output for for test
+        --scan-path=VALUE            Subpath in folder id to start scan in (default=/)
+        --scan-id=VALUE              Folder id in storage to start scan in, default is access key main folder id
+        --mimemagic=ENUM             Use Mime type detection of gem mimemagic: [no], yes
+        --overwrite=ENUM             When to overwrite result file: always, never, [mtime]
+        --file-access=ENUM           How to read and write files in repository: [local], remote
+        --max-size=VALUE             Maximum size (in bytes) of preview file
+        --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
+        --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
+        --thumb-img-size=VALUE       Png: non-video: height (and width)
+        --thumb-text-font=VALUE      Png: plaintext: font to render text with imagemagick convert (identify -list font)
+        --video-conversion=ENUM      Mp4: method for preview generation: [reencode], blend, clips
+        --video-png-conv=ENUM        Mp4: method for thumbnail generation: [fixed], animated
+        --video-scale=VALUE          Mp4: all: video scale (ffmpeg)
+        --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
+        --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
+        --blend-keyframes=VALUE      Mp4: blend: # key frames
+        --blend-pauseframes=VALUE    Mp4: blend: # pause frames
+        --blend-transframes=VALUE    Mp4: blend: # transition blend frames
+        --blend-fps=VALUE            Mp4: blend: frame per second
+        --clips-count=VALUE          Mp4: clips: number of clips
+        --clips-length=VALUE         Mp4: clips: length in seconds of each clips
+
+
+COMMAND: aoc
+SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: web, [jwt]
+        --client-id=VALUE            OAuth API client identifier
+        --client-secret=VALUE        OAuth API client secret
+        --scope=VALUE                OAuth scope for AoC API calls
+        --redirect-uri=VALUE         OAuth API client redirect URI
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           RSA private key passphrase
+        --workspace=VALUE            Name of workspace (String, NilClass)
+        --new-user-option=VALUE      New user creation option for unknown package recipients
+        --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
+
+
+COMMAND: server
+SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --ssh-keys=VALUE             SSH key path list (Array or single)
+        --passphrase=VALUE           SSH private key passphrase
+        --ssh-options=VALUE          SSH options (Hash)
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
+
+
+COMMAND: console
+SUBCOMMANDS: health transfer
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             Username to log in
+        --password=VALUE             User's password
+        --filter-from=DATE           Only after date
+        --filter-to=DATE             Only before date
 
 
 ```
@@ -4591,13 +4873,13 @@ server sync admin status --sync-info=@json:'{"name":"sync2"}'
 server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"/data/local_sync"}]}'
 server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
-server upload 'TST_MED_DATAFILE' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
 server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
+server upload 'testfile.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","filepairlist.txt"]}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"my_inside_folder/othername4"}]}'
-server upload --src-type=pair 'TST_MED_DATAFILE' my_inside_folder/othername2 --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+server upload --src-type=pair 'testfile.bin' my_inside_folder/othername2 --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","my_inside_folder/othername3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
 server upload --src-type=pair testfile.bin my_upload_folder/othername5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
@@ -5305,6 +5587,7 @@ faspex5 packages receive --box=my_shinbox "my_package_id" --to-folder=.
 faspex5 packages receive --box=my_workgroup --group-type=workgroups "my_package_id" --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
+faspex5 packages send --shared-folder=%name:my_shfolder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shfolder_file
 faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
@@ -5315,6 +5598,8 @@ faspex5 packages status "my_package_id"
 faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
 faspex5 shared browse %name:my_src
 faspex5 shared list
+faspex5 shared_folders browse %name:my_shfolder_name
+faspex5 shared_folders list
 faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
 ```

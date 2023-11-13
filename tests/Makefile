@@ -53,10 +53,12 @@ EXE_END_IGN=>/dev/null 2>&1 || true
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
 TST_ASC_FILENAME=datafile.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
-TST_UTF_FILENAME='spécial{\#😀"'
+TST_UTF_FILENAME=spécial{\#😀"
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 # a medium sized file for testing
-TST_MED_DATAFILE=faux:///testfile?100m
+TST_MED_FILENAME=testfile
+TST_MED_LCL_PATH=faux:///$(TST_MED_FILENAME)?100m
+
 # sync dir must be an absolute path
 TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
 ifeq ($(TST_SYNC_LCL_DIR),)
@@ -82,10 +84,10 @@ clean::
 $(T).exists:
 	mkdir -p $(T)
 	echo 'This is a small test file' > $(TST_ASC_LCL_PATH)
-	echo 'This is a small test file' > $(TST_UTF_LCL_PATH)
+	echo 'This is a small test file' > "$(TST_UTF_LCL_PATH)"
 	@$(STOP_TEST) $@
 clean::
-	rm -f $(TST_ASC_LCL_PATH) $(TST_UTF_LCL_PATH)
+	rm -f $(TST_ASC_LCL_PATH) "$(TST_UTF_LCL_PATH)"
 	rm -fr $(T)
 	rm -f $(DIR_TOP).rspec_status
 #######################################################################################################################
@@ -213,12 +215,12 @@ $(T)serv_error: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_upload1: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload '$(TST_MED_DATAFILE)' --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
-	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME)
+	$(EXE_MAN) server upload '$(TST_MED_LCL_PATH)' --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
+	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)
 	@$(STOP_TEST) $@
 $(T)serv_upload2: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_DATAFILE)' @extend:@preset:server.inside_folder@/othername2 --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","10m"]}'
+	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_LCL_PATH)' @extend:@preset:server.inside_folder@/othername2 --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 	@$(STOP_TEST) $@
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@

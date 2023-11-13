@@ -10,7 +10,7 @@ module Aspera
     # Display a picture in the terminal, either using coloured characters or iTerm2
     class Terminal
       # Rainbow only supports 8-bit colors
-      # quantum depth is 8 or 16, see: convert xc: -format "%q" info:
+      # quantum depth is 8 or 16, see: `convert xc: -format "%q" info:`
       SHIFT_FOR_8_BIT = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
       # env vars to detect terminal type
       TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
@@ -19,8 +19,14 @@ module Aspera
       # TODO: retrieve terminal font ratio using some termcap ?
       # ratio = font height / font width
       DEFAULT_FONT_RATIO = 32.0 / 14.0
-      private_constant :SHIFT_FOR_8_BIT, :ITERM_NAMES, :TERM_ENV_VARS, :DEFAULT_FONT_RATIO
+      private_constant :SHIFT_FOR_8_BIT, :TERM_ENV_VARS, :ITERM_NAMES, :DEFAULT_FONT_RATIO
       class << self
+        # @return [String] the image as text, or the iTerm2 escape sequence
+        # @param blob [String] the image as a binary string
+        # @param reserve [Integer] number of lines to reserve for other text than the image
+        # @param text [Boolean] true to display the image as text, false to use iTerm2
+        # @param double [Boolean] true to use colors on half lines, false to use colors on full lines
+        # @param font_ratio [Float] ratio = font height / font width
         def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
           return iterm_display_image(blob) if iterm_supported? && !text
           image = Magick::ImageList.new.from_blob(blob)
@@ -56,8 +62,10 @@ module Aspera
         end
 
         # display image in iTerm2
+        # https://iterm2.com/documentation-images.html
         def iterm_display_image(blob)
           # image = Magick::ImageList.new.from_blob(blob)
+          # parameters for iTerm2 image display
           arguments = {
             inline:              1,
             preserveAspectRatio: 1,
@@ -66,7 +74,7 @@ module Aspera
             # height:              image.rows
           }.map { |k, v| "#{k}=#{v}" }.join(';')
           # \a is BEL, \e is ESC : https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
-          # https://iterm2.com/documentation-images.html
+          # escape sequence for iTerm2 image display
           return "\e]1337;File=#{arguments}:#{Base64.encode64(blob)}\a"
         end
 

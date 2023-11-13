@@ -4,6 +4,10 @@
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
+[![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
+
+
 ## Introduction
 
 Version : <%=gemspec.version.to_s%>
@@ -24,8 +28,6 @@ Minimum required Ruby <%=ruby_version%>.
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
 
 Release notes: see [CHANGELOG.md](CHANGELOG.md)
-
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
 A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Manual.pdf).
 
@@ -2823,7 +2825,9 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-Control with option `progressbar` (`Bool`), by default it is `yes` if the output is a terminal.
+File transfer operations are monitored and a progress bar is displayed on the terminal if option `progressbar` (`Bool`) is set to `yes` (default if the output is a terminal).
+
+The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
 
 To display the native progress bar of `ascp`, use `--progressbar=no --transfer-info=@json:'{"quiet":false}'`.
 

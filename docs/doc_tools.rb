@@ -121,7 +121,7 @@ REPLACEMENTS = [
   [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
   # hidden parameters to make test work
   [/OPTST_[A-Z0-5]+/, ''],
-  [/TST_(UTF|ASC)_(FILENAME|LCL_PATH)/, 'testfile.bin'],
+  [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'testfile.bin'],
   ['TST_SYNC_LCL_DIR', '/data/local_sync'],
   ['HSTS_UPLOADED_FILE', 'testfile.bin'],
   ['HSTS_FOLDER_UPLOAD', 'folder_1'],
