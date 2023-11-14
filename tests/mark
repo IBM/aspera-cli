@@ -17,7 +17,7 @@ case "$1" in
         EXE=$(ls $t|wc -l)
         terminal_width=$(tput cols)
         bars=$(($EXE * $terminal_width / $NUM))
-        printf '=%.0s' $(seq 1 $bars)
+        printf '■%.0s' $(seq 1 $bars)
         echo
         ;;
     *)
