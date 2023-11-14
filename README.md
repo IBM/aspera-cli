@@ -7,7 +7,6 @@
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 
-
 ## Introduction
 
 Version : 4.15.0.pre
@@ -1331,11 +1330,13 @@ The following decoders are supported:
 | path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 | preset  | String    | Hash    | get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | extend  | String    | String  | evaluates embedded extended value syntax in string
+| re      | String    | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
 | ruby    | String    | any     | execute specified Ruby code
 | secret  | None      | String  | Ask password interactively (hides input)
 | stdin   | None      | String  | read from stdin (no value on right)
 | uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
 | val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
+| yaml    | String    | any     | decode YAML
 | zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
@@ -1386,7 +1387,7 @@ ascli config echo @csvt:@file:test.csv
 +------+---------------------+
 ```
 
-Example: create a JSON with values coming from a preset named "config" of config file
+Example: create a `Hash` with values coming from a preset named `config`
 
 ```bash
 ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
@@ -1399,6 +1400,24 @@ ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version
 | hello   | true      |
 | version | 4.14.0    |
 +---------+-----------+
+```
+
+Example: Create a `Hash` from YAML provided as **heredoc**:
+
+```bash
+ascli conf echo @yaml:@stdin: --format=json<<EOF
+key1: value1
+key2:
+- item1
+- item2
+key3:
+  key4: value4
+  key5: value5
+EOF
+```
+
+```json
+{"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
@@ -3085,37 +3104,32 @@ The first instance will sleep 30 seconds, the second one will immediately exit l
 WARN -- : Another instance is already running (Address already in use - bind(2) for "127.0.0.1" port 12345).
 ```
 
-### "Proven&ccedil;ale"
+### "Proven&ccedil;al"
 
-`ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others. This mechanism is call **PVCL**. Several **PVCL** adapters are available, some are embedded in `ascp`
-, some are provided om shared libraries and must be activated. (e.g. using `trapd`)
+`ascp`, the underlying executable implementing Aspera file transfer using FASP, has a capability to not only access the local file system (using system's `open`,`read`,`write`,`close` primitives), but also to do the same operations on other data storage such as S3, Hadoop and others.
+This mechanism is called **PVCL** (from **Proven&ccedil;al**, a restaurant located in Sophia Antipolis).
+Several **PVCL** adapters are available, one is embedded in `ascp`, the others are provided in shared libraries and must be activated.
 
 The list of supported **PVCL** adapters can be retrieved with command:
 
 ```bash
-ascli conf ascp info
+ascli conf ascp info --fields=@re:'^pvcl'
 ```
 
 ```output
-+--------------------+-----------------------------------------------------------+
-| key                | value                                                     |
-+--------------------+-----------------------------------------------------------+
------8<-----snip-----8<-----
-| product_name       | IBM Aspera SDK                                            |
-| product_version    | 4.0.1.182389                                              |
-| process            | pvcl                                                      |
-| shares             | pvcl                                                      |
-| noded              | pvcl                                                      |
-| faux               | pvcl                                                      |
-| file               | pvcl                                                      |
-| stdio              | pvcl                                                      |
-| stdio-tar          | pvcl                                                      |
-+--------------------+-----------------------------------------------------------+
+process v1
+shares v1
+noded v1
+faux v1
+file v1
+stdio v1
+stdio-tar v1
 ```
 
 Here we can see the adapters: `process`, `shares`, `noded`, `faux`, `file`, `stdio`, `stdio-tar`.
 
-Those adapters can be used wherever a file path is used in `ascp` including configuration. They act as a pseudo "drive".
+Those adapters can be used wherever a file path is used in `ascp` including configuration.
+They act as a pseudo "drive".
 
 The simplified format is:
 
@@ -3123,7 +3137,8 @@ The simplified format is:
 <adapter>:///<sub file path>?<arg1>=<val1>&...
 ```
 
-One of the adapters, used in this manual, for testing, is `faux`. It is a pseudo file system allowing generation of file data without actual storage (on source or destination).
+One of the adapters, used in this manual, for testing, is `faux`.
+It is a pseudo file system allowing generation of file data without actual storage (on source or destination).
 
 ### <a id="faux_testing"></a>`faux:` for testing
 
@@ -3234,7 +3249,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, ruby, secret, stdin, zlib, extend, preset, vault
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, yaml, zlib, extend, preset, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS

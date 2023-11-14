@@ -1330,6 +1330,7 @@ The following decoders are supported:
 | stdin   | None      | String  | read from stdin (no value on right)
 | uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
 | val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
+| yaml    | String    | any     | decode YAML
 | zlib    | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
@@ -1380,7 +1381,7 @@ toto,titi@tutu.tata
 +------+---------------------+
 ```
 
-Example: create a JSON with values coming from a preset named "config" of config file
+Example: create a `Hash` with values coming from a preset named `config`
 
 ```bash
 <%=cmd%> config echo @json:@extend:'{"hello":true,"version":"@preset:config.version@"}'
@@ -1393,6 +1394,24 @@ Example: create a JSON with values coming from a preset named "config" of config
 | hello   | true      |
 | version | 4.14.0    |
 +---------+-----------+
+```
+
+Example: Create a `Hash` from YAML provided as **heredoc**:
+
+```bash
+<%=cmd%> conf echo @yaml:@stdin: --format=json<<EOF
+key1: value1
+key2:
+- item1
+- item2
+key3:
+  key4: value4
+  key5: value5
+EOF
+```
+
+```json
+{"key1":"value1","key2":["item1","item2"],"key3":{"key4":"value4","key5":"value5"}}
 ```
 
 ### <a id="conffolder"></a>Configuration and Persistency Folder
