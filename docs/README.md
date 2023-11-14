@@ -1,6 +1,6 @@
 # Notes on documentation generation
 
-`docs/README.erb.md` uses markdown format with embedded ruby macros (erb).
+`docs/README.erb.md` uses markdown format with embedded ruby macros (`erb`).
 
 `/README.md` is generated after compilation of `docs/README.erb.md`.
 

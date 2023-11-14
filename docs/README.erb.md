@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cspell:ignore devkit zcvf zxvf noded secondfile filesize sedemo eudemo webmail csum eascp loglevel cronfile magick keepalive inotify eastus bluemix trev sshfp struct genkey passout ibmaspera unpermitted schtasks taskschd d<%=cmd%> -->
+<!-- cspell:ignore Serban Antipolis -->
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
@@ -196,7 +196,7 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Container
 
-The container image is: [<%=containerimage%>](https://hub.docker.com/r/<%=containerimage%>).
+The container image is: [`<%=containerimage%>`](https://hub.docker.com/r/<%=containerimage%>).
 The container contains: Ruby, <%=tool%> and the Aspera Transfer SDK.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
@@ -304,12 +304,12 @@ A convenience sample script is also provided: download the script [`d<%=cmd%>`](
 
 Some environment variables can be set for this script to adapt its behavior:
 
-| env var      | description                        | default                  | example                  |
-|--------------|------------------------------------|--------------------------|--------------------------|
-| <%=evp%>HOME | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
-| docker_args  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| image        | container image name               | <%=containerimage%>      |                          |
-| version      | container image version            | latest                   | `4.8.0.pre`              |
+| env var        | description                        | default                  | example                  |
+|----------------|------------------------------------|--------------------------|--------------------------|
+| `<%=evp%>HOME` | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
+| `docker_args`  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
+| `image`        | container image name               | `<%=containerimage%>`    |                          |
+| `version`      | container image version            | latest                   | `4.8.0.pre`              |
 
 The wrapping script maps the folder `$<%=evp%>HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
 (value expected in the container).
@@ -335,7 +335,7 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 
 > **Note:** The local file (`samplefile.txt`) is specified relative to storage view from container (`/xferfiles`) mapped to the host folder `$HOME/xferdir`
 >
-> **Note:** Do not use too many volumes, as the AUFS limits the number.
+> **Note:** Do not use too many volumes, as the legacy `aufs` limits the number. (anyway, prefer to use `overlay2`)
 
 #### Container: Offline installation
 
@@ -484,16 +484,16 @@ rvm version
 Manual installation:
 
 - Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
-- Download the latest Ruby installer **with devkit**. (Msys2 is needed to install some native extensions, such as `grpc`)
+- Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
 - Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
-- At the end of the installation procedure, the Msys2 installer is automatically executed, select option 3 (msys and mingw)
+- At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and mingw)
 - then install the aspera-cli gem and Aspera SDK (see next sections)
 
 Automated installation, with internet access:
 
 The ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
 
-Download theruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
+Download the ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
 
 ```bat
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
@@ -771,10 +771,10 @@ The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which intera
 - Transfer parameters can be altered by modification of <%=trspec%>, this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
 - Supports FaspStream creation (using Node API)
-- Supports Watchfolder creation (using Node API)
+- Supports "Watchfolder" creation (using Node API)
 - Additional command plugins can be written by the user
 - Supports download of faspex and Aspera on Cloud "external" links
-- Supports "legacy" ssh based FASP transfers and remote commands (ascmd)
+- Supports "legacy" ssh based FASP transfers and remote commands (`ascmd`)
 
 Basic usage is displayed by executing:
 
@@ -823,7 +823,7 @@ Typically, Windows executables use the [microsoft library for this parsing](http
 As far as <%=tool%> is concerned: the executable is Ruby.
 It has its own parsing algorithm, close to a Linux shell parsing.
 
-Thanksfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
+Thankfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
 One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
 
 The following examples give the same result on Windows:
@@ -848,7 +848,7 @@ The following examples give the same result on Windows:
 
 More details: on Windows, `cmd.exe` is typically used to start <%tool%>.
 `cmd.exe` handles some special characters: `^"<>|%&`.
-Basically it handles I/O redirections (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
+Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
@@ -865,7 +865,7 @@ Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 
 - space characters: split arguments (space, tab, newline)
 - backslash: `\` escape single special character
-- globbing characters: `*?[]{}` for file globbing
+- globing characters: `*?[]{}` for file globing
 - double quotes: `"`
 - single quotes: `'`
 
@@ -1315,24 +1315,24 @@ The following decoders are supported:
 | decoder | parameter | returns | description |
 |---------|-----------|---------|-------------|
 | base64  | String    | String  | decode a base64 encoded string
-| csvt    | String    | Array   | decode a titled CSV value
-| env     | String    | String  | read from a named env var name, e.g.--password=@env:MYPASSVAR
-| file    | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-| json    | String    | any     | decode JSON values (convenient to provide complex structures)
-| lines   | String    | Array   | split a string in multiple lines and return an array
-| list    | String    | Array   | split a string in multiple items taking first character as separator and return an array
-| none    | None      | Nil     | A null value
-| path    | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
+| `csvt`  | String    | Array   | decode a titled CSV value
+| `env`   | String    | String  | read from a named env var name, e.g. `--password=@env:MYPASSVAR`
+| `file`  | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
+| `json`  | String    | Any     | decode JSON values (convenient to provide complex structures)
+| `lines` | String    | Array   | split a string in multiple lines and return an array
+| `list`  | String    | Array   | split a string in multiple items taking first character as separator and return an array
+| `none`  | None      | Nil     | A null value
+| `path`  | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
 | preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
 | extend  | String    | String  | evaluates embedded extended value syntax in string
-| re      | String    | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
-| ruby    | String    | any     | execute specified Ruby code
+| `re`    | String    | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
+| `ruby`  | String    | Any     | execute specified Ruby code
 | secret  | None      | String  | Ask password interactively (hides input)
-| stdin   | None      | String  | read from stdin (no value on right)
-| uri     | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
-| val     | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
-| yaml    | String    | any     | decode YAML
-| zlib    | String    | String  | un-compress data
+| `stdin` | None      | String  | read from stdin (no value on right)
+| `uri`   | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
+| `val`   | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
+| `yaml`  | String    | Any     | decode YAML
+| `zlib`  | String    | String  | un-compress data
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -1565,7 +1565,7 @@ Plugin `config` provides general commands for <%=tool%>:
 - <%=prstt%>, config file operations
 - wizard
 - vault
-- ascp
+- `ascp`
 
 The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
 When <%=tool%> starts, it looks for the `default` <%=prstt%> and checks the value for `config`.
@@ -1704,7 +1704,7 @@ The wizard is a command that asks the user for information and creates a <%=prst
 
 It takes an optional argument: the URL of the application, and an **option**: `query` which allows limiting the detection to a given plugin.
 
-The simplest invication is:
+The simplest invocation is:
 
 ```bash
 <%=cmd%> config wizard
@@ -1980,7 +1980,7 @@ To trust a certificate (e.g. self-signed), provided that the `CN` is correct, sa
 <%=cmd%> conf remote_certificate https://localhost:9092 > myserver.pem
 ```
 
-> **Note:** the saved certificateb shows the CN as first line.
+> **Note:** the saved certificate shows the CN as first line.
 
 Then, use this file as certificate store (e.g. here, Node API):
 
@@ -2000,7 +2000,7 @@ The following options can be specified in the option `query`:
 |------------|-------------|
 | text       | display text instead of image (Bool) |
 | double     | display double text resolution (half characters) (Bool) |
-| font_ratio | Font height/width ratio interminal (Float) |
+| font_ratio | Font height/width ratio in terminal (Float) |
 
 ### <a id="graphical"></a>Graphical Interactions: Browser and Text Editor
 
@@ -2087,13 +2087,13 @@ Example:
 
 There are several types of network connections, each of them use a different mechanism to define a (forward) **proxy**:
 
-- Ruby HTTP: REST and HTTPGW client
-- Legacy Aspera HTTP/S Fallback and ascp wss
+- Ruby HTTP: REST and HTTP Gateway client
+- Legacy Aspera HTTP/S Fallback and `ascp` wss
 - Aspera FASP
 
 Refer to the following sections.
 
-### Proxy for REST and HTTPGW
+### Proxy for REST and HTTP Gateway
 
 There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
 
@@ -2336,16 +2336,16 @@ The `transfer_info` option accepts the following optional parameters to control 
 
 | Name                 | Type  | Description |
 |----------------------|-------|-------------|
-| wss                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| ascp_args            | Array | Array of strings with native ascp arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
-| spawn_timeout_sec    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
-| spawn_delay_sec      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
-| multi_incr_udp       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
-| resume               | Hash  | Resume<br/>parameters<br/>See below |
-| resume.iter_max      | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
-| resume.sleep_initial | int   | Resume<br/>First Sleep before retry<br/>Default: 2 |
-| resume.sleep_factor  | int   | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
-| resume.sleep_max     | int   | Resume<br/>Default: 60 |
+| `wss`                | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| `ascp_args`          | Array | Array of strings with native `ascp` arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
+| `spawn_timeout_sec`  | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
+| `spawn_delay_sec`    | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
+| `multi_incr_udp`     | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
+| `resume`             | Hash  | Resume<br/>parameters<br/>See below |
+| `resume.iter_max`    | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
+| `resume.sleep_initial` | int   | Resume<br/>First Sleep before retry<br/>Default: 2 |
+| `resume.sleep_factor`  | int   | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
+| `resume.sleep_max`   | int   | Resume<br/>Default: 60 |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
@@ -2354,7 +2354,7 @@ Sleep between iterations is:
 max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
 ```
 
-Some transfer errors are considered "retryable" (e.g. timeout) and some other not (e.g. wrong password).
+Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
 The list of known protocol errors and retry level can be listed:
 
 ```bash
@@ -2721,7 +2721,7 @@ Example: Source file `200KB.1` is renamed `sample1` on destination:
 
 #### Source directory structure on destination
 
-This section is not specific to <%=tool%> it is `ascp` behaviour.
+This section is not specific to <%=tool%> it is `ascp` behavior.
 
 The transfer destination is normally expected to designate a destination folder.
 
@@ -2732,7 +2732,7 @@ But there is one exception: The destination specifies the new item name when the
 - destination is not an existing folder
 - the `dirname` of destination is an existing folder
 
-For this reason it is recommended to set `create_dir` to `true` for consistent behaviour between single and multiple items transfer, this is the default in <%=tool%>.
+For this reason it is recommended to set `create_dir` to `true` for consistent behavior between single and multiple items transfer, this is the default in <%=tool%>.
 
 If a simple source file list is provided (no `destination` in `paths`, i.e. no `file_pair_list` provided), the destination folder is used as destination folder for each source file, and source file folder names are not preserved.
 
@@ -2864,7 +2864,7 @@ It can be configured:
 
 - Using utility [`schtasks.exe`](https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/schtasks-create)
 
-- Using powershell function [scheduletasks](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
+- Using powershell function [`scheduletasks`](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks)
 
 - Using `taskschd.msc` (UI)
 
@@ -2896,7 +2896,7 @@ crontab<<EOF
 EOF
 ```
 
-> **Note:** The logging options are kept here in the cronfile instead of conf file to allow execution on command line with output on command line.
+> **Note:** The logging options are kept here in the cron file instead of conf file to allow execution on command line with output on command line.
 
 ### <a id="locking"></a>Locking for exclusive execution
 
@@ -3034,7 +3034,7 @@ Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
 
 Examples:
 
-- Upload 20 gibibytes of random data to file myfile to directory /Upload
+- Upload 20 gibibyte of random data to file `myfile` to directory /Upload
 
 ```bash
 <%=cmd%> server upload faux:///myfile\?20g --to-folder=/Upload
@@ -3939,7 +3939,7 @@ In this case:
 
 ### Packages
 
-The webmail-like application.
+The web-mail-like application.
 
 #### Send a Package
 
@@ -4437,7 +4437,7 @@ It recursively scans storage to find files/folders matching a criteria and then 
 `[filter_expr]` is either:
 
 - Optional (default) : all files and folder are selected
-- type `String` : the expression is similar to shell globbing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
+- type `String` : the expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
 - Type `Proc` : the expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
 
 Examples of expressions:
@@ -4533,14 +4533,14 @@ Use the command `<%=cmd%> node stream create --ts=@json:<value>`, with <%=trspec
 {"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
 ```
 
-### Watchfolder
+### "Watchfolder"
 
 Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
 
 <%=tool%> supports remote operations through the node API. Operations are:
 
-- Start watchd and watchfolderd services running as a system user having access to files
-- configure a watchfolder to define automated transfers
+- Start `watchd` and `watchfolderd` services running as a system user having access to files
+- configure a "watchfolder" to define automated transfers
 
 ```bash
 <%=cmd%> node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -4643,7 +4643,7 @@ For example they are used in Aspera on Cloud.
 This is also available for developers for any application integrating Aspera.
 In this API, files, users and groups are identified by an id (a String, e.g. `"125"`, not necessarily numerical).
 
-Bearer tokens are typically generated by the authentification application, and then recognized by the node API.
+Bearer tokens are typically generated by the authentication application, and then recognized by the node API.
 A bearer token is authorized on the node by creating `permissions` on a **folder**.
 
 Bearer tokens can be generated using command `bearer_token`: it takes two arguments:
@@ -4825,7 +4825,7 @@ This is the general purpose and **recommended** method to use.
 
 Activation is in two steps:
 
-- The admninistrator must create an API client in Faspex with JWT support
+- The administrator must create an API client in Faspex with JWT support
 
   This operation is generally done only once:
 
@@ -4872,7 +4872,7 @@ Example:
 
 ### Faspex 5 web authentication
 
-The admninistrator must create an API client in Faspex for an external web app support:
+The administrator must create an API client in Faspex for an external web app support:
 
 - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
 - Do not Activate JWT
@@ -5000,9 +5000,9 @@ The following parameters in option `query` are supported:
 
 Admin only: If the value `ALL` is provided to option `box`, then all packages are selected.
 
-### Faspex 5: List all shared inboxes and workgroups
+### Faspex 5: List all shared inboxes and work groups
 
-If ypou are a regular, user, list workgroups you belong to:
+If you are a regular user, to list work groups you belong to:
 
 ```bash
 <%=cmd%> faspex5 admin res workgroup list
@@ -5240,7 +5240,7 @@ Example:
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
 
-### Operation on dropboxes
+### Operation on "dropboxes"
 
 Example:
 
@@ -5327,10 +5327,10 @@ It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Ser
 Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
 There are two possibilities to provide credentials.
-If you already have the endpoint, apikey and CRN, use the first method.
+If you already have the endpoint, API key and CRN, use the first method.
 If you don't have credentials but have access to the IBM Cloud console, then use the second method.
 
-### Using endpoint, apikey and Resource Instance ID (CRN)
+### Using endpoint, API key and Resource Instance ID (CRN)
 
 If you have those parameters already, then following options shall be provided:
 
@@ -5511,9 +5511,9 @@ If you use a value different than 16777216, then specify it using option `max_si
 <%=tool%> requires the following external tools available in the `PATH`:
 
 - ImageMagick : `convert` `composite`
-- OptiPNG : `optipng`
-- FFmpeg : `ffmpeg` `ffprobe`
-- Libreoffice : `libreoffice`
+- "OptiPNG" : `optipng`
+- "FFmpeg" : `ffmpeg` `ffprobe`
+- "Libreoffice" : `libreoffice`
 
 Here shown on Redhat/CentOS.
 
@@ -5525,7 +5525,7 @@ To check if all tools are found properly, execute:
 <%=cmd%> preview check
 ```
 
-#### Image: ImageMagick and optipng
+#### Image: ImageMagick and `optipng`
 
 ```bash
 dnf install -y ImageMagick optipng
@@ -5545,7 +5545,7 @@ The easiest method is to download and install the latest released version of ffm
 curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz|(mkdir -p /opt && cd /opt && rm -f ffmpeg /usr/bin/{ffmpeg,ffprobe} && rm -fr ffmpeg-*-amd64-static && tar xJvf - && ln -s ffmpeg-* ffmpeg && ln -s /opt/ffmpeg/{ffmpeg,ffprobe} /usr/bin)
 ```
 
-#### Office: Unoconv and Libreoffice
+#### Office: `unoconv` and Libreoffice
 
 If you don't want to have preview for office documents or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
 
@@ -5695,28 +5695,28 @@ The mp4 video preview file is only for category `video`
 
 File type is primarily based on file extension detected by the node API and translated info a mime type returned by the node API.
 
-### mimemagic
+### `mimemagic`
 
 By default, the Mime type used for conversion is the one returned by the node API, based on file name extension.
 
 It is also possible to detect the mime type using option `mimemagic`.
 To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`.
 
-This requires to manually install the mimemagic gem: `gem install mimemagic`.
+This requires to manually install the `mimemagic` gem: `gem install mimemagic`.
 
-In this case the `preview` command will first analyze the file content using mimemagic, and if no match, will try by extension.
+In this case the `preview` command will first analyze the file content using `mimemagic`, and if no match, will try by extension.
 
 If the `mimemagic` gem complains about missing mime info file:
 
 - any OS:
 
   - Examine the error message
-  - Download the file: [freedesktop.org.xml.in](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
-  - move and rename this file to one of the locations expected by mimemagic as specified in the error message
+  - Download the file: [`freedesktop.org.xml.in`](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
+  - move and rename this file to one of the locations expected by `mimemagic` as specified in the error message
 
 - Windows:
 
-  - Download the file: [freedesktop.org.xml.in](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
+  - Download the file: [`freedesktop.org.xml.in`](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
   - Place this file in the root of Ruby (or elsewhere): `C:\RubyVV-x64\freedesktop.org.xml.in`
   - Set a global variable using `SystemPropertiesAdvanced.exe` or using `cmd` (replace `VV` with version) to the exact path of this file:
 
@@ -5881,7 +5881,7 @@ There are special "extended" <%=trspec%> parameters supported by `asession`:
 
 ### Comparison of interfaces
 
-| feature/tool | asession | `ascp` | FaspManager | Transfer SDK |
+| feature/tool | `asession` | `ascp` | FaspManager | Transfer SDK |
 |--------------|----------|--------|-------------|--------------|
 | language integration | any | any | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | many |
 | required additional components to `ascp` | Ruby<br/>Aspera | - | library<br/>(headers) | daemon |
@@ -5971,7 +5971,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
 
-> **Note:** file detection is not based on events (inotify, etc...), but on a simple folder scan on source side.
+> **Note:** file detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
 >
 > **Note:** parameters may be saved in a <%=prst%> and used with `-P`.
 
@@ -6113,7 +6113,7 @@ References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "C
 Some Ruby gems dependencies require compilation of native parts (C).
 This also requires Ruby header files.
 If Ruby was installed as a Linux Packages, then also install Ruby development package:
-`ruby-dev` ir `ruby-devel`, depending on distribution.
+`ruby-dev` or `ruby-devel`, depending on distribution.
 
 ### ED255519 key not supported
 

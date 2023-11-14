@@ -32,7 +32,7 @@ If you want to contribute, please:
 - Add tests for it. This is important so I don't break it in a future version unintentionally.
 - **Bonus Points** go out to anyone who also updates `CHANGELOG.md` :)
 - Send a pull request on GitHub.
-- run Rubocop to comply for coding standards
+- run `rubocop` to comply for coding standards
 
 ## Architecture
 
@@ -219,7 +219,7 @@ make single
 
 This is based on tool `rubyc` (gem `ruby-packer`): either place the executable in folder `tmp`, or the architecture-specific version will be automatically downloaded.
 
-> **Note:** Perl Findbin is needed, install on Linux with:
+> **Note:** Perl `Findbin` is needed, install on Linux with:
 
 ```bash
 sudo dnf install -y perl perl-FindBin perl-IPC-Cmd
@@ -231,4 +231,4 @@ sudo dnf install -y perl perl-FindBin perl-IPC-Cmd
   - <https://github.com/rest-client/rest-client>
   - <https://github.com/oauth-xx/oauth2>
 - use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
-- Package a single-file executable for various architectures with <https://github.com/pmq20/ruby-packer> (rubyc)
+- Package a single-file executable for various architectures with <https://github.com/pmq20/ruby-packer> (`rubyc`)

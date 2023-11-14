@@ -1,191 +1,51 @@
-version: "0.2"
-ignorePaths:
-  - "**/*.pptx"
-  - "**/*.lock"
-  - "**/*.gem"
-  - "**/*.log"
-  - "**/*.html"
-  - "**/*.pdf"
-  - "coverage/**"
-  - "/tmp/**"
-  - ".rspec_status/**"
-  - "local/**"
-  - ".secrets.baseline"
-dictionaryDefinitions:
-  - name: aspera
-    path: aspera.dict
-    addWords: true
-  - name: ruby
-    path: ruby.dict
-    addWords: true
-dictionaries:
-  - aspera
-  - ruby
-words: []
-import: []
-enableFiletypes:
-  - shellscript
-ignoreRegExpList:
-  - Email
-  - >-
-    /ftp:[^\s]*/g
-patterns:
-  - name: markdown_code_block
-    pattern: "/^\\s*```(.|\\n)+?^\\s*```/gm"
-  - name: markdown_code_inline
-    pattern: "/`[^`]+`/g"
-  - name: preset_samples
-    pattern: "/-P[a-z]+/g"
-  - name: my_var_names
-    pattern: "/my[a-z]+/g"
-languageSettings:
-  - languageId: markdown
-    ignoreRegExpList:
-      - markdown_code_block
-      - markdown_code_inline
-      - preset_samples
-ignoreWords:
-  - containerimage
-  - cygwin
-  - automake
-  - devel
-  - gemdir
-  - msys
-  - myserver
-  - myvar
-  - mykey
-  - myfile
-  - mytitle
-  - myconf
-  - mypreset
-  - mylabel
-  - mysample
-  - myfilelist
-  - mydir
-  - myorg
-  - mytemplate
-  - myworkspace
-  - mybucket
-  - mysecret
-  - myname
-  - mysourcefile
-  - mydestfolder
-  - myext
-  - myaccount
-  - myaccesskey
-  - myproxy
-  - mypassvar
-  - mycos
-  - myblob
-  - testfile
-  - syncdir
-  - lolo
-  - kenji
-  - jsonpp
-  - notif
-  - privkeyfile
-  - anacron
-  - initdemo
-  - samplefile
-  - geminstadd
-  - posix
-  - userprofile
-  - homedrive
-  - homepath
-  - localappdata
-  - ibmcloud
-  - optipng
-  - ffprobe
-  - unoconv
-  - ghostscript
-  - mimemagic
-  - freedesktop
-  - inotify1
-  - rubocop
-  - multipass
-  - rubyc
-  - dockerhub
-  - martinlaurent
-  - noman
-  - symb
-  - shortval
-  - cmdline
-  - descr
-  - optionval
-  - tmpl
-  - optparse
-  - isatty
-  - getpass
-  - servlet
-  - creds
-  - tmpdir
-  - trevents
-  - retryable
-  - nodeadmin
-  - userdata
-  - keychain
-  - aslmcli
-  - lprt
-  - tspec
-  - textify
-  - readuntil
-  - apfid
-  - nodegen
-  - dropboxes
-  - paygo
-  - xmlsimple
-  - bfail # parameter
-  - pkeypath # parameter
-  - filelists # file part
-  - demoserver # preset name
-  - setx # cmd command
-  - serban
-  - imgtag # env var for docker ascli
-  - loglevel # env var asession
-  - filelist # env var asession
-  - demoaspera
-  - transferspec # tag in doc
-  - usershome # tag in doc
-  - optst # tag in makefile
-  - bytescont # tag in progress bar
-  - progressbar # ruby gem
-  - trustpolicy # aws API
-  - ibmaspera # AoC
-  - asperafiles # AoC
-  - csum # ascp arg
-  - metafile # ascp arg
-  - xattr # ascp arg
-  - xattrs # ascp arg
-  - datagram
-  - asperanoded
-  - sshfp # ascp
-  - dnat # ascp
-  - dnats # ascp
-  - protobuf
-  - entsrv
-  - precalc
-  - keepalive
-  - transferd # ascli id
-  - mlia
-  - asperalm
-  - asyncs # node api
-  - fnid # node api
-  - rund # node api
-  - watchfolders # node api
-  - EXTV
-  - PRIVKEY
-  - PVALUE
-  - reencode
-  - conv
-  - transframes
-  - passcode
-  - xrds
-  - wmembership
-  - dmembership
-  - workgroups
-  - mklink
-  - mkfile
-  - apifid
-  - snid
-  - asperabrowser
-  - asperabrowserurl
+{
+  "version": "0.2",
+  "ignorePaths": ["*.dict", ".cspell.json"],
+  "dictionaryDefinitions": [
+    {
+      "name": "aspera",
+      "path": "aspera.dict",
+      "addWords": true
+    },
+    {
+      "name": "ruby",
+      "path": "ruby.dict",
+      "addWords": true
+    }
+  ],
+  "useGitignore": true,
+  "dictionaries": ["aspera", "ruby", "technical"],
+  "words": [],
+  "ignoreWords": [],
+  "import": [],
+  "enableFiletypes": ["markdown", "ruby", "shellscript"],
+  "patterns": [
+    {
+      "name": "markdown_code_block",
+      "pattern": "/^\\s*```(.|\\n)+?^\\s*```/gm"
+    },
+    {
+      "name": "markdown_code_inline",
+      "pattern": "/`.*?`/g"
+    },
+    {
+      "name": "quoted_special_words",
+      "pattern": "/\".*?\"/g"
+    },
+    {
+      "name": "embedded_ruby_code_block",
+      "pattern": "/<%[^%]*%>/g"
+    }
+  ],
+  "languageSettings": [
+    {
+      "languageId": "markdown",
+      "ignoreRegExpList": [
+        "markdown_code_block",
+        "markdown_code_inline",
+        "quoted_special_words",
+        "embedded_ruby_code_block"
+      ]
+    }
+  ]
+}
