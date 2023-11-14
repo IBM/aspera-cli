@@ -728,8 +728,11 @@ module Aspera
                 case line
                 when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
                   data[Regexp.last_match(1)] = Regexp.last_match(3)
-                when /^DBG Added module group:"([^"]+)" name:"([^"]+)", version:"([^"]+)" interface:"([^"]+)"$/
-                  data[Regexp.last_match(2)] = "#{Regexp.last_match(4)} #{Regexp.last_match(1)} v#{Regexp.last_match(3)}"
+                when /^DBG Added module group:"(?<libname>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
+                  c = Regexp.last_match.named_captures.symbolize_keys
+                  data[c[:interface]] ||= {}
+                  data[c[:interface]][c[:libname]] ||= []
+                  data[c[:interface]][c[:libname]].push("#{c[:scheme]} v#{c[:version]}")
                 when %r{^DBG License result \(/license/(\S+)\): (.+)$}
                   data[Regexp.last_match(1)] = Regexp.last_match(2)
                 when /^LOG (.+) version ([0-9.]+)$/
@@ -750,7 +753,7 @@ module Aspera
                 data['openssldir'] = m[1]
               end
             end if File.file?(ascp_file)
-            data['keypass'] = Fasp::Installation.instance.bypass_pass
+            data['uuid'] = Fasp::Installation.instance.ssh_cert_uuid
             # log is "-" no need to display
             data.delete('log')
             # show command line transfer spec

@@ -200,7 +200,7 @@ module Aspera
       end
 
       # default bypass key phrase
-      def bypass_pass
+      def ssh_cert_uuid
         return format('%08x-%04x-%04x-%04x-%04x%08x', *DataRepository.instance.data(3).unpack('NnnnnN'))
       end
 

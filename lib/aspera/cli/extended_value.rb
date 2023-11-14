@@ -57,6 +57,7 @@ module Aspera
           list:   lambda{|v|v[1..-1].split(v[0])},
           none:   lambda{|v|ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
           path:   lambda{|v|File.expand_path(v)},
+          re:     lambda{|v|Regexp.new(v)},
           ruby:   lambda{|v|Environment.secure_eval(v, __FILE__, __LINE__)},
           secret: lambda{|v|ExtendedValue.assert_no_value(v, :secret); $stdin.getpass('secret> ')}, # rubocop:disable Style/Semicolon
           stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon

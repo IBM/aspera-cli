@@ -230,7 +230,7 @@ module Aspera
           @job_spec.delete('wss_port')
           # add SSH bypass keys when authentication is token and no auth is provided
           if @job_spec.key?('token') && !@job_spec.key?('remote_password')
-            # @job_spec['remote_password'] = Installation.instance.bypass_pass # not used: no passphrase
+            # @job_spec['remote_password'] = Installation.instance.ssh_cert_uuid # not used: no passphrase
             Installation.instance.bypass_keys.each { |key| env_args[:args].unshift('-i', key) }
           end
         end

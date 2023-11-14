@@ -50,14 +50,18 @@ EXE_END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else ec
 # enclose tests whose status is ignored, mainly optional cleanups, for restarts
 EXE_BEG_IGN=$(EXE_COMMON)
 EXE_END_IGN=>/dev/null 2>&1 || true
+# simple command line to percent-encode
+URL_ENCODER=ruby -r uri -e 'puts URI.encode_www_form_component(ARGV.first)'
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
 TST_ASC_FILENAME=datafile.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
-TST_UTF_FILENAME=spécial{\#😀"
+# This file name contains special characters, it must be quoted when used in shell
+TST_UTF_FILENAME=𒐫spécial{\#😀بツ
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 # a medium sized file for testing
-TST_MED_FILENAME=testfile
-TST_MED_LCL_PATH=faux:///$(TST_MED_FILENAME)?100m
+TST_MED_FILENAME=$(TST_UTF_FILENAME)
+# needs to be quoted, as there is shell special character: "?"
+TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
 
 # sync dir must be an absolute path
 TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
