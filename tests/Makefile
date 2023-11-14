@@ -33,8 +33,9 @@ TIMESTAMP=$(shell LANG=C date)
 TEST_CONFIG=$(DIR_TMP)sample.conf
 TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
+CLI_HOME=$(DIR_PRIV)ascli_home/
 # tests use config file in test folder
-EXE_COMMON=$(EXETESTB) --home=$(DIR_PRIV)ascli_home --config-file=$(TEST_CONF_FILE_PATH)
+EXE_COMMON=$(EXETESTB) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXE_COMMON) --warnings
@@ -249,6 +250,7 @@ $(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_uploa
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TST_SYNC_LCL_DIR)"}}'
 	@$(STOP_TEST) $@
 $(T)serv_upload_ex: $(T)serv_mkdir
+	@$(START_TEST) $@
 	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)filelist.txt
 	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)filepairlist.txt
 	$(EXE_NOMAN) config echo @extend:@preset:server.inside_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
@@ -364,7 +366,7 @@ $(T)f4_pri: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f4_prl: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex package recv --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user
+	$(EXE_BEG_FAI) faspex package recv --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)f4_prall: $(T).exists
 	@$(START_TEST) $@
@@ -413,8 +415,7 @@ $(T)f4_db1: $(T).exists
 	pkgid=$$($(EXE_MAN) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}')&&\
 	$(EXE_MAN) faspex package recv $${pkgid} --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
-tfaspex: $(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1
-#  $(T)f4_prl
+tfaspex: $(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1 $(T)f4_prl
 #######################################################################################################################
 $(T)cons_nagios: $(T).exists
 	@$(START_TEST) $@
@@ -436,10 +437,9 @@ $(T)cons2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)cons3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'
+	$(EXE_BEG_FAI) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
-tconsole: $(T)cons_nagios $(T)cons_wizard $(T)cons1 $(T)cons2
-#  $(T)cons3
+tconsole: $(T)cons_nagios $(T)cons_wizard $(T)cons1 $(T)cons2 $(T)cons3
 $(T)nd_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node health
@@ -551,9 +551,7 @@ tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)
 
 $(T)aocfxgw: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc gateway https://localhost:12345/aspera/faspex &\
-		jobs -p > $(DIR_TMP)server_pid
-	sleep 2
+	$(EXE_MAN) aoc gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
@@ -1005,6 +1003,7 @@ $(T)at12: $(T).exists
 	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=my_secret_here
 	@$(STOP_TEST) $@
 $(T)at13: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_BEG_FAI) ats access_key delete ak2ibmcloud$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)at14: $(T).exists
@@ -1108,14 +1107,14 @@ $(T)conf_ascp_6: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_ascp_7: $(T).exists
 	@$(START_TEST) $@
-	rm -fr $(HOME)/.aspera/sdk
+	rm -fr "$$($(EXE_NOMAN) --show-config --fields=sdk_folder)"
 	$(EXE_MAN) config ascp install
-	rm -fr $(T)sdk_test_dir
-	$(EXE_MAN) config ascp install --sdk-folder=$(T)sdk_test_dir
+	rm -fr $(DIR_TMP)sdk_test_dir
+	$(EXE_MAN) config ascp install --sdk-folder=$(DIR_TMP)sdk_test_dir
 	@$(STOP_TEST) $@
 $(T)conf_ascp_8: $(T)conf_ascp_7
 	@$(START_TEST) $@
-	$(EXE_MAN) config ascp info --sdk-folder=$(T)sdk_test_dir
+	$(EXE_MAN) config ascp info --sdk-folder=$(DIR_TMP)sdk_test_dir
 	@$(STOP_TEST) $@
 $(T)conf_pset_1: $(T).exists
 	@$(START_TEST) $@
@@ -1144,6 +1143,7 @@ $(T)conf_pset_6: $(T).exists
 	$(EXE_MAN) $(TMP_CONF) config preset update conf_name --p1=v1 --p2=v2
 	@$(STOP_TEST) $@
 $(T)conf_open: $(T).exists
+	@$(START_TEST) $@
 	@echo $@ open configuration file in text editor
 	$(EXE_MAN) $(TMP_CONF) config open
 	@$(STOP_TEST) $@
@@ -1165,6 +1165,7 @@ $(T)conf_gem: $(T).exists
 	$(EXE_NOMAN) $(TMP_CONF) config initdemo
 	@$(STOP_TEST) $@
 $(T)conf_vault: $(T).exists
+	@$(START_TEST) $@
 	set -x&&\
 	vault_file=$$(cd $(DIR_TMP);pwd -P)/sample_vault.bin&&\
 	rm -f $$vault_file&&\
@@ -1196,8 +1197,8 @@ $(T)conf_help: $(T).exists
 $(T)conf_plugins: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config plugin list
-	$(EXE_MAN) config plugin create mycommand $(T)
-	$(EXE_NOMAN) mycommand --plugin-folder=$(T)
+	$(EXE_MAN) config plugin create mycommand $(DIR_TMP)
+	$(EXE_NOMAN) mycommand --plugin-folder=$(DIR_TMP)
 	@$(STOP_TEST) $@
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
@@ -1234,7 +1235,7 @@ $(T)conf_pac: $(T).exists
 $(T)conf_check_gem: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config check_update
-	rm -f $(HOME)/.aspera/ascli/persist_store/version_last_check.txt
+	rm -f $(CLI_HOME)persist_store/version_last_check.txt
 	$(EXE_MAN) config check_update
 	@$(STOP_TEST) $@
 $(T)conf_doc: $(T).exists
@@ -1281,35 +1282,35 @@ $(T)prev_check: $(T).exists
 	@$(STOP_TEST) $@
 $(T)prev_dcm: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview test --base=$@ @preset:file.dcm
+	$(EXE_MAN) preview test --base=$(DIR_TMP)$$(basename $@) @preset:file.dcm
 	@$(STOP_TEST) $@
 $(T)prev_pdf: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.pdf
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.pdf
 	@$(STOP_TEST) $@
 $(T)prev_docx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.docx
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.docx
 	@$(STOP_TEST) $@
 $(T)prev_mxf_blend: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview test --base=$@ @preset:file.mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
+	$(EXE_MAN) preview test --base=$(DIR_TMP)$$(basename $@) @preset:file.mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 	@$(STOP_TEST) $@
 $(T)prev_mpg_png_fix: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.mpg --video-png-conv=fixed
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.mpg --video-png-conv=fixed
 	@$(STOP_TEST) $@
 $(T)prev_mpg_png_ani: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.mpg --video-png-conv=animated
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.mpg --video-png-conv=animated
 	@$(STOP_TEST) $@
 $(T)prev_mpg_reencode: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.mpg mp4 --video-conversion=reencode
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.mpg mp4 --video-conversion=reencode
 	@$(STOP_TEST) $@
 $(T)prev_mpg_clips: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) preview show --base=$@ @preset:file.mpg mp4 --video-conversion=clips
+	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.mpg mp4 --video-conversion=clips
 	@$(STOP_TEST) $@
 $(T)prev_events: $(T).exists
 	@$(START_TEST) $@
@@ -1475,19 +1476,15 @@ $(T)f5_wizard: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_fxgw: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 gateway https://localhost:12345/aspera/faspex &\
-		jobs -p > $(DIR_TMP)server_pid
-	sleep 2
+	$(EXE_MAN) faspex5 gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
 	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
 	sleep 3
 	kill -USR1 $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
 $(T)f5_postproc: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}' &\
-	jobs -p > $(DIR_TMP)server_pid
-	sleep 10
+	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)server_pid @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"}}' & sleep 10
 	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc

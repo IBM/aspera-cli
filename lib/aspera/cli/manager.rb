@@ -361,7 +361,7 @@ module Aspera
           on_args.push(symbol_to_option(option_symbol, nil))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
-        else raise 'internal error'
+        else raise "internal error: Unknown type for values: #{values} / #{values.class}"
         end
         Log.log.debug{"on_args=#{on_args}"}
       end

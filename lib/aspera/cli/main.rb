@@ -157,6 +157,7 @@ module Aspera
         options.declare(:once_only, 'Process only new items (some commands)', values: :bool, default: false)
         options.declare(:log_secrets, 'Show passwords in logs', values: :bool, handler: {o: SecretHider, m: :log_secrets})
         options.declare(:clean_temp, 'Cleanup temporary files on exit', values: :bool, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
+        options.declare(:pid_file, 'Write process identifier to file, delete on exit', types: String)
         # parse declared options
         options.parse_options!
       end
@@ -275,6 +276,12 @@ module Aspera
               execute_command = false
               Log.log.warn{"Another instance is already running (#{e.message})."}
             end
+          end
+          pid_file = options.get_option(:pid_file)
+          if !pid_file.nil?
+            File.write(pid_file, Process.pid)
+            Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
+            at_exit{File.delete(pid_file)}
           end
           # execute and display (if not exclusive execution)
           formatter.display_results(command_plugin.execute_action) if execute_command

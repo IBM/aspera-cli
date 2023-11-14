@@ -10,6 +10,7 @@
   * new: global: option `cert_stores` to specify alternate certificate stores
   * new: global: uniform progress bar for any type of transfer.
   * new: global: add extended value types: `re` and `yaml`
+  * new: global: option `pid_file` to write tool's PID during execution, deleted on exit
   * new: config: command `remote_certificate` to retrieve a remote certificate
   * new: config: added logger level `trace1` and `trace2`
   * new: wizard: can detect multiple applications at the same address or url.
