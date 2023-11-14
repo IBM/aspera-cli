@@ -15,7 +15,7 @@ module Aspera
     ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
     # prefix for ruby code for filter (deprecated)
     MATCH_EXEC_PREFIX = 'exec:'
-    MATCH_TYPES = [String, Proc, NilClass].freeze
+    MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
     HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
     PATH_SEPARATOR = '/'
     TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
@@ -40,6 +40,7 @@ module Aspera
       def file_matcher(match_expression)
         case match_expression
         when Proc then return match_expression
+        when Regexp then return ->(f){f['name'].match?(match_expression)}
         when String
           if match_expression.start_with?(MATCH_EXEC_PREFIX)
             code = "->(f){#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
@@ -311,6 +312,7 @@ module Aspera
           transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
         end
         info = read('info')[:data]
+        # get the transfer user from info on access key
         transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
         # get settings from name.value array to hash key.value
         settings = info['settings']&.each_with_object({}){|i, h|h[i['name']] = i['value']}
