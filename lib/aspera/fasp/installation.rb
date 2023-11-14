@@ -167,7 +167,7 @@ module Aspera
             cert.public_key = private_key.public_key
             cert.serial = 0x0
             cert.version = 2
-            cert.sign(private_key, OpenSSL::Digest.new('SHA1'))
+            cert.sign(private_key, OpenSSL::Digest.new('SHA512'))
             check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true) {private_key.to_pem}
             check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) {cert.to_pem}
           end
