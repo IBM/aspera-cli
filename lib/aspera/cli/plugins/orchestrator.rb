@@ -192,7 +192,7 @@ module Aspera
               unless result_location.nil?
                 result[:type] = :status
                 fields = result_location.split(':')
-                raise CliBadArgument, "Expects: work_step:result_name : #{result_location}" if fields.length != 2
+                raise Cli::BadArgument, "Expects: work_step:result_name : #{result_location}" if fields.length != 2
                 call_params['explicit_output_step'] = fields[0]
                 call_params['explicit_output_variable'] = fields[1]
                 # implicitly, call is synchronous

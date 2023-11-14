@@ -146,7 +146,7 @@ module Aspera
           # return product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
-            raise CliError, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
+            raise Cli::Error, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
             return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
           end
 
@@ -266,7 +266,7 @@ module Aspera
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
           proxy_creds = options.get_option(:proxy_credentials)
           if !proxy_creds.nil?
-            raise CliBadArgument, "proxy_credentials shall have two elements (#{proxy_creds.length})" unless proxy_creds.length.eql?(2)
+            raise Cli::BadArgument, "proxy_credentials shall have two elements (#{proxy_creds.length})" unless proxy_creds.length.eql?(2)
             @proxy_credentials = {user: proxy_creds[0], pass: proxy_creds[1]}
             @pac_exec.proxy_user = @proxy_credentials[:user]
             @pac_exec.proxy_pass = @proxy_credentials[:pass]
@@ -427,7 +427,7 @@ module Aspera
             Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
             # get javascript object only
             found = connect_versions_javascript.match(/^.*? = (.*);/)
-            raise CliError, 'Problem when getting connect versions from internet' if found.nil?
+            raise Cli::Error, 'Problem when getting connect versions from internet' if found.nil?
             all_data = JSON.parse(found[1])
             @connect_versions = all_data['entries']
           end
@@ -491,14 +491,14 @@ module Aspera
         # @param config_name name of the preset in config file
         # @param include_path used to detect and avoid include loops
         def preset_by_name(config_name, include_path=[])
-          raise CliError, 'loop in include' if include_path.include?(config_name)
+          raise Cli::Error, 'loop in include' if include_path.include?(config_name)
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets
           config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            raise CliError, "Expecting Hash for sub key: #{include_path} (#{current.class})" unless current.is_a?(Hash)
+            raise Cli::Error, "Expecting Hash for sub key: #{include_path} (#{current.class})" unless current.is_a?(Hash)
             include_path.push(name)
             current = current[name]
-            raise CliError, "No such config preset: #{include_path}" if current.nil?
+            raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
           end
           current = self.class.protect_presets(current) unless current.is_a?(String)
           return ExtendedValue.instance.evaluate(current)
@@ -591,7 +591,7 @@ module Aspera
             Log.log.warn{"Renamed config file to #{new_name}."}
             Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
           end
-          raise CliError, e.to_s
+          raise Cli::Error, e.to_s
         end
 
         # find plugins in defined paths
@@ -663,7 +663,7 @@ module Aspera
           if %i[info version].include?(command)
             connect_id = options.get_next_argument('id or title')
             one_res = connect_versions.find{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
-            raise CliNoSuchId.new(:connect, connect_id) if one_res.nil?
+            raise Cli::NoSuchIdentifier.new(:connect, connect_id) if one_res.nil?
           end
           case command
           when :list
@@ -1073,7 +1073,7 @@ module Aspera
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called
           wiz_plugin_class = self.class.plugin_class(identification[:product])
-          raise CliBadArgument, "Detected: #{identification[:product]}, but this application has no wizard" unless wiz_plugin_class.respond_to?(:wizard)
+          raise Cli::BadArgument, "Detected: #{identification[:product]}, but this application has no wizard" unless wiz_plugin_class.respond_to?(:wizard)
           # instantiate plugin: command line options will be known, e.g. private_key
           plugin_instance = wiz_plugin_class.new(@agents)
           wiz_params = {
@@ -1129,9 +1129,9 @@ module Aspera
           # init defaults if necessary
           @config_presets[CONF_PRESET_DEFAULT] ||= {}
           option_override = options.get_option(:override, mandatory: true)
-          raise CliError, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
+          raise Cli::Error, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
             if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULT].key?(identification[:product])
-          raise CliError, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
+          raise Cli::Error, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
             if !option_override && @config_presets.key?(wiz_preset_name)
           @config_presets[wiz_preset_name] = wizard_result[:preset_value].stringify_keys
           test_args = wizard_result[:test_args]
@@ -1235,7 +1235,7 @@ module Aspera
                   "(#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_name_sym})."
               end
             end
-            raise CliError, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
+            raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
             return default_config_name
           end
           return nil
@@ -1301,7 +1301,7 @@ module Aspera
                 raise 'not implemented for this OS'
               end
             else
-              raise CliBadArgument, "Unknown vault type: #{vault_type}"
+              raise Cli::BadArgument, "Unknown vault type: #{vault_type}"
             end
           end
           raise 'No vault defined' if @vault.nil?

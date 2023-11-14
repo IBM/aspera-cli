@@ -50,7 +50,7 @@ module Aspera
         when :session_size
           @sessions[session_id][:job_size] = info.to_i
           current_total = total(:job_size)
-          @progress_bar.total = current_total unless @progress_bar.total.eql?(current_total)
+          @progress_bar.total = current_total unless current_total.eql?(@progress_bar.total) || current_total < @progress_bar.progress
         when :transfer
           if !@progress_bar.total.nil?
             need_increment = false

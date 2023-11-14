@@ -291,9 +291,9 @@ module Aspera
           transfer.shutdown
         rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
         rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
-        rescue CliBadArgument => e;                 exception_info = {e: e, t: 'Argument', usage: true}
-        rescue CliNoSuchId => e;                    exception_info = {e: e, t: 'Identifier'}
-        rescue CliError => e;                       exception_info = {e: e, t: 'Tool', usage: true}
+        rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
+        rescue Cli::NoSuchIdentifier => e;          exception_info = {e: e, t: 'Identifier'}
+        rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
         rescue Fasp::Error => e;                    exception_info = {e: e, t: 'FASP(ascp)'}
         rescue Aspera::RestCallError => e;          exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}

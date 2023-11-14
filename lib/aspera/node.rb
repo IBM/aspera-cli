@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/error'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
@@ -49,7 +50,7 @@ module Aspera
           end
           return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
         when NilClass then return ->(_){true}
-        else raise Cli::CliBadArgument, "Invalid match expression type: #{match_expression.class}"
+        else raise Cli::BadArgument, "Invalid match expression type: #{match_expression.class}"
         end
       end
 

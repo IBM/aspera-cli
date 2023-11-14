@@ -245,7 +245,7 @@ module Aspera
                 return {type: :single_object, data: result.stringify_keys}
               end
             rescue Aspera::AsCmd::Error => e
-              raise CliBadArgument, e.extended_message
+              raise Cli::BadArgument, e.extended_message
             end
           else raise 'internal error: unexpected action'
           end

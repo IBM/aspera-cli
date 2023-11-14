@@ -1,26 +1,15 @@
 # frozen_string_literal: true
 
+require 'aspera/cli/extended_value'
+require 'aspera/cli/error'
 require 'aspera/colors'
 require 'aspera/log'
 require 'aspera/secret_hider'
-require 'aspera/cli/extended_value'
 require 'optparse'
 require 'io/console'
 
 module Aspera
   module Cli
-    # raised by cli on error conditions
-    class CliError < StandardError; end
-
-    # raised when an unexpected argument is provided
-    class CliBadArgument < Aspera::Cli::CliError; end
-
-    class CliNoSuchId < Aspera::Cli::CliError
-      def initialize(res_type, res_id)
-        super("No such #{res_type} identifier: #{res_id}")
-      end
-    end
-
     # option is retrieved from another object using accessor
     class AttrAccessor
       # attr_accessor :object
@@ -40,7 +29,7 @@ module Aspera
       end
 
       def value=(val)
-        Log.log.debug{">>>>> #{@method} #{@option_name} :set #{val}, writer=#{@has_writer}"}
+        Log.log.trace1{"AttrAccessor: = #{@method} #{@option_name} :set #{val}, writer=#{@has_writer}"}
         return @object.send(writer_method, val) if @has_writer
         return @object.send(@method, @option_name, :set, val)
       end
@@ -83,8 +72,8 @@ module Aspera
           matching_exact = allowed_values.select{|i| i.to_s.eql?(shortval)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{|i| i.to_s.start_with?(shortval)}
-          raise CliBadArgument, bad_arg_message_multi("unknown value for #{descr}: #{shortval}", allowed_values) if matching.empty?
-          raise CliBadArgument, bad_arg_message_multi("ambiguous shortcut for #{descr}: #{shortval}", matching) unless matching.length.eql?(1)
+          raise Cli::BadArgument, bad_arg_message_multi("unknown value for #{descr}: #{shortval}", allowed_values) if matching.empty?
+          raise Cli::BadArgument, bad_arg_message_multi("ambiguous shortcut for #{descr}: #{shortval}", matching) unless matching.length.eql?(1)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
@@ -105,7 +94,7 @@ module Aspera
         def validate_type(what, descr, value, type_list)
           return nil if type_list.nil?
           raise 'internal error: types must be a Class Array' unless type_list.is_a?(Array) && type_list.all?(Class)
-          raise CliBadArgument,
+          raise Cli::BadArgument,
             "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
             type_list.any?{|t|value.is_a?(t)}
         end
@@ -215,7 +204,7 @@ module Aspera
         if result.is_a?(String) && type.eql?([Integer])
           str_result = result
           result = Integer(str_result, exception: false)
-          raise CliBadArgument, "Invalid integer: #{str_result}" if result.nil?
+          raise Cli::BadArgument, "Invalid integer: #{str_result}" if result.nil?
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if !aliases.nil? && aliases.key?(result)
@@ -248,7 +237,7 @@ module Aspera
         # Log.log.debug{"interactive=#{@ask_missing_mandatory}"}
         if result.nil?
           if !@ask_missing_mandatory
-            raise CliBadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
+            raise Cli::BadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
             expected = :single
@@ -266,7 +255,7 @@ module Aspera
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol, value, where='code override')
-        raise CliBadArgument, "Unknown option: #{option_symbol}" unless @declared_options.key?(option_symbol)
+        raise Cli::BadArgument, "Unknown option: #{option_symbol}" unless @declared_options.key?(option_symbol)
         attributes = @declared_options[option_symbol]
         Log.log.warn("#{option_symbol}: Option is deprecated: #{attributes[:deprecation]}") if attributes[:deprecation]
         value = ExtendedValue.instance.evaluate(value)
@@ -404,7 +393,7 @@ module Aspera
             result[name] = value
             @unprocessed_cmd_line_options.delete(optionval) if remove_from_remaining
           else
-            raise CliBadArgument, "wrong option format: #{optionval}"
+            raise Cli::BadArgument, "wrong option format: #{optionval}"
           end
         end
         return result
@@ -470,8 +459,8 @@ module Aspera
 
       def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory
-          raise CliBadArgument, self.class.bad_arg_message_multi("missing: #{descr}", expected) if expected.is_a?(Array)
-          raise CliBadArgument, "missing argument (#{expected}): #{descr}"
+          raise Cli::BadArgument, self.class.bad_arg_message_multi("missing: #{descr}", expected) if expected.is_a?(Array)
+          raise Cli::BadArgument, "missing argument (#{expected}): #{descr}"
         end
         result = nil
         sensitive = type.eql?(:option) && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]

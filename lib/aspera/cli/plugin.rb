@@ -62,7 +62,7 @@ module Aspera
           if block
             res_id = yield(m[1], ExtendedValue.instance.evaluate(m[2]))
           else
-            raise CliBadArgument, "Percent syntax for #{description} not supported in this context"
+            raise Cli::BadArgument, "Percent syntax for #{description} not supported in this context"
           end
         end
         return res_id
@@ -196,7 +196,7 @@ module Aspera
           # check it is suitable
           URI.encode_www_form(query) unless query.nil?
         rescue StandardError => e
-          raise CliBadArgument, "Query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+          raise Cli::BadArgument, "Query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
         end
         return query
       end
@@ -235,10 +235,10 @@ module Aspera
           type = [type] unless type.is_a?(Array)
           raise "Internal error, check types must be a Class, not #{type.map(&:class).join(',')}" unless type.all?(Class)
           if bulk
-            raise CliBadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
-            raise CliBadArgument, "Value must be a #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
+            raise Cli::BadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
+            raise Cli::BadArgument, "Value must be a #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
           else
-            raise CliBadArgument, "Value must be a #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
+            raise Cli::BadArgument, "Value must be a #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
           end
         end
         return value

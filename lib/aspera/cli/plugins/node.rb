@@ -2,6 +2,7 @@
 
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
+require 'aspera/fasp/transfer_spec'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
@@ -9,7 +10,6 @@ require 'aspera/node'
 require 'aspera/aoc'
 require 'aspera/sync'
 require 'aspera/oauth'
-require 'aspera/fasp/transfer_spec'
 require 'base64'
 require 'zlib'
 
@@ -511,7 +511,7 @@ module Aspera
               source_paths = [{'source' => source_folder.pop}]
               source_folder = source_folder.join(Aspera::Node::PATH_SEPARATOR)
             end
-            raise CliBadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
+            raise Cli::BadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             apifid = @api_node.resolve_api_fid(top_file_id, File.join(source_folder, file_name))
             apifid[:api].call(
@@ -659,17 +659,17 @@ module Aspera
         end
 
         # @return [Integer] id of the sync
-        # @raise [CliBadArgument] if no such sync, or not by name
+        # @raise [Cli::BadArgument] if no such sync, or not by name
         # @param [String] field name of the field to search
         # @param [String] value value of the field to search
         def ssync_lookup(field, value)
-          raise CliBadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
+          raise Cli::BadArgument, "Only search by name is supported (#{field})" unless field.eql?('name')
           @api_node.read('asyncs')[:data]['ids'].each do |id|
             sync_info = @api_node.read("asyncs/#{id}")[:data]['configuration']
             # name is unique, so we can return
             return id if sync_info[field].eql?(value)
           end
-          raise CliBadArgument, "no such sync: #{field}=#{value}"
+          raise Cli::BadArgument, "no such sync: #{field}=#{value}"
         end
 
         ACTIONS = %i[

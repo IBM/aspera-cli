@@ -104,7 +104,7 @@ module Aspera
         when :node
           if agent_options.empty?
             param_set_name = @config.get_plugin_default_config_name(:node)
-            raise CliBadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
+            raise Cli::BadArgument, "No default node configured. Please specify #{Manager.option_name_to_line(:transfer_info)}" if param_set_name.nil?
             agent_options = @config.preset_by_name(param_set_name).symbolize_keys
           end
         when :direct
@@ -161,21 +161,21 @@ module Aspera
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
           file_list = @opt_mgr.get_next_argument('source file list', expected: :multiple)
-          raise CliBadArgument, 'specify at least one file on command line or use ' \
+          raise Cli::BadArgument, 'specify at least one file on command line or use ' \
             "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
             Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline, @opt_mgr.get_option(:transfer_info))
-          raise CliBadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
+          raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
         when Array
           Log.log.debug('getting file list as extended value')
-          raise CliBadArgument, 'sources must be a Array of String' if !file_list.reject{|f|f.is_a?(String)}.empty?
+          raise Cli::BadArgument, 'sources must be a Array of String' if !file_list.reject{|f|f.is_a?(String)}.empty?
         else
-          raise CliBadArgument, "sources must be a Array, not #{file_list.class}"
+          raise Cli::BadArgument, "sources must be a Array, not #{file_list.class}"
         end
         # here, file_list is an Array or String
         if !@transfer_paths.nil?
@@ -186,7 +186,7 @@ module Aspera
           # when providing a list, just specify source
           @transfer_paths = file_list.map{|i|{'source' => i}}
         when :pair
-          raise CliBadArgument, "When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
+          raise Cli::BadArgument, "When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
           @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
         else raise 'Unsupported src_type'
         end

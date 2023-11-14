@@ -104,7 +104,7 @@ module Aspera
           when :node
             ak_data = ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
             server_data = @ats_api_pub.all_servers.find {|i| i['id'].start_with?(ak_data['transfer_server_id'])}
-            raise CliError, 'no such server found' if server_data.nil?
+            raise Cli::Error, 'no such server found' if server_data.nil?
             node_url = server_data['transfer_setup_url']
             api_node = Aspera::Node.new(params: {
               base_url: node_url,

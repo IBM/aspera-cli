@@ -281,7 +281,7 @@ module Aspera
 
       # use mime magic to find mime type based on file content (magic numbers)
       def mime_from_file(filepath)
-        # moved here, as mimemagic can cause installation issues
+        # moved here, as `mimemagic` can cause installation issues
         require 'mimemagic'
         require 'mimemagic/version'
         require 'mimemagic/overlay' if MimeMagic::VERSION.start_with?('0.3.')

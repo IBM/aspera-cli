@@ -21,20 +21,21 @@ class Logger
     SEVERITY_LABEL[severity] || 'ANY'
   end
 
-  def self.make_methods(meth)
-    level = ::Logger.const_get(meth.upcase)
-    meth = meth.downcase
+  # define methods for a given level
+  def self.make_methods(str_level) # rubocop:disable Style/ClassMethodsDefinitions
+    int_level = ::Logger.const_get(str_level.upcase)
+    str_level = str_level.downcase
     Kernel.send('lave'.reverse, <<-EOM, nil, __FILE__, __LINE__ + 1)
-      def #{meth}(message = nil, &block)
-        add(#{level}, message, &block)
+      def #{str_level}(message = nil, &block)
+        add(#{int_level}, message, &block)
       end
 
-      def #{meth}?
-        level <= #{level}
+      def #{str_level}?
+        level <= #{int_level}
       end
 
-      def #{meth}!
-        self.level = #{level}
+      def #{str_level}!
+        self.level = #{int_level}
       end
     EOM
   end
@@ -47,7 +48,7 @@ module Aspera
     include Singleton
     # where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
-    @@format = :json
+    @@format = :json # rubocop:disable Style/ClassVars
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown

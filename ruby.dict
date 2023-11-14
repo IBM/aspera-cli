@@ -45,3 +45,4 @@ fnmatch
 FNM_DOTMATCH
 binread
 xmlsimple
+rubocop

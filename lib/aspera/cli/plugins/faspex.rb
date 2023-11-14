@@ -77,7 +77,7 @@ module Aspera
           # extract elements from anonymous faspex link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
-            raise CliBadArgument, 'Public link does not match Faspex format' unless (m = public_uri.path.match(%r{^(.*)/(external.*)$}))
+            raise Cli::BadArgument, 'Public link does not match Faspex format' unless (m = public_uri.path.match(%r{^(.*)/(external.*)$}))
             base = m[1]
             subpath = m[2]
             port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
@@ -93,7 +93,7 @@ module Aspera
           # get faspe: URI from entry in xml, and fix problems..
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
-              raise CliBadArgument, 'package has no link (deleted?)' if raise_no_link
+              raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
               return nil
             end
             result = entry['link'].find{|e| e['rel'].eql?('package')}['href']
@@ -107,7 +107,7 @@ module Aspera
           def get_source_id_by_name(source_name, source_list)
             match_source = source_list.find { |i| i['name'].eql?(source_name) }
             return match_source['id'] unless match_source.nil?
-            raise CliError, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
+            raise Cli::Error, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
           end
         end
 
@@ -226,7 +226,7 @@ module Aspera
           # pub link user
           link_data = self.class.get_link_data(public_link_url)
           if !['external/submissions/new', 'external/dropbox_submissions/new'].include?(link_data[:subpath])
-            raise CliBadArgument, "pub link is #{link_data[:subpath]}, expecting external/submissions/new"
+            raise Cli::BadArgument, "pub link is #{link_data[:subpath]}, expecting external/submissions/new"
           end
           create_path = link_data[:subpath].split('/')[0..-2].join('/')
           package_create_params[:passcode] = link_data[:query]['passcode']
@@ -283,7 +283,7 @@ module Aspera
               }
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)
-              raise CliBadArgument, 'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
+              raise Cli::BadArgument, 'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
               # actual parameter to faspex API
               package_create_params = {'delivery' => delivery_info}
               public_link_url = options.get_option(:link)
@@ -293,7 +293,7 @@ module Aspera
                 first_source = delivery_info['sources'].first
                 first_source['paths'].push(*transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
-                  raise CliBadArgument, 'only name as selector, or give id' unless field.eql?('name')
+                  raise Cli::BadArgument, 'only name as selector, or give id' unless field.eql?('name')
                   source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
                   self.class.get_source_id_by_name(value, source_list)
                 end
@@ -308,7 +308,7 @@ module Aspera
                   # no transfer spec if remote source: handled by faspex
                   return {data: [pkg_created['links']['status']], type: :value_list, name: 'link'}
                 end
-                raise CliBadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
+                raise Cli::BadArgument, 'expecting one session exactly' if pkg_created['xfer_sessions'].length != 1
                 transfer_spec = pkg_created['xfer_sessions'].first
                 # use source from cmd line, this one only contains destination (already in dest root)
                 transfer_spec.delete('paths')
@@ -362,7 +362,7 @@ module Aspera
               else
                 link_data = self.class.get_link_data(link_url)
                 if !link_data[:subpath].start_with?(PUB_LINK_EXTERNAL_MATCH)
-                  raise CliBadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
+                  raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
                 end
                 # NOTE: unauthenticated API (authorization is in url params)
                 api_public_link = Rest.new({base_url: link_data[:base_url]})
@@ -373,7 +373,7 @@ module Aspera
                   headers: {'Accept' => 'application/xml'})
                 if !package_creation_data[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
-                  raise CliError, 'Unexpected response: package not found ?'
+                  raise Cli::Error, 'Unexpected response: package not found ?'
                 end
                 package_entry = XmlSimple.xml_in(package_creation_data[:http].body, {'ForceArray' => false})
                 Log.log.debug{Log.dump(:package_entry, package_entry)}
@@ -422,21 +422,21 @@ module Aspera
               return {type: :object_list, data: source_list}
             else # :info :node
               source_id = instance_identifier do |field, value|
-                raise CliBadArgument, 'only name as selector, or give id' unless field.eql?('name')
+                raise Cli::BadArgument, 'only name as selector, or give id' unless field.eql?('name')
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
               source_name = source_list.find{|i|i['id'].eql?(source_id)}['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
-              raise CliError, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
+              raise Cli::Error, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
               source_hash.each do |name, storage|
-                raise CliError, "storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
+                raise Cli::Error, "storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
                 [KEY_NODE, KEY_PATH].each do |key|
-                  raise CliError, "storage '#{name}' must have a '#{key}'" unless storage.key?(key)
+                  raise Cli::Error, "storage '#{name}' must have a '#{key}'" unless storage.key?(key)
                 end
               end
               if !source_hash.key?(source_name)
-                raise CliError, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
+                raise Cli::Error, "No such storage in config file: \"#{source_name}\" in [#{source_hash.keys.join(', ')}]"
               end
               source_info = source_hash[source_name]
               Log.log.debug{Log.dump(:source_info, source_info)}
@@ -445,7 +445,7 @@ module Aspera
                 return {data: source_info, type: :single_object}
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
-                raise CliError, "bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
+                raise Cli::Error, "bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug{"node=#{node_config}"}
                 api_node = Rest.new({
                   base_url: node_config['url'],

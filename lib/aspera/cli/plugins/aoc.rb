@@ -112,7 +112,7 @@ module Aspera
             end
             myself = object.aoc_api.read('self')[:data]
             if auto_set_pub_key
-              raise CliError, 'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
+              raise Cli::Error, 'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
               formatter.display_status('Updating profile with the public key.')
               aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
             end
@@ -187,6 +187,11 @@ module Aspera
           create_values = {subpath: new_base_path, secret_finder: @agents[:config]}
           # create an API object with the same options, but with a different subpath
           return Aspera::AoC.new(**OPTIONS_NEW.each_with_object(create_values) { |i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
+        rescue ArgumentError => e
+          if (m = e.message.match(/missing keyword: :(.*)$/))
+            raise Cli::Error, "Missing option: #{m[1]}"
+          end
+          raise
         end
 
         def aoc_api
@@ -198,7 +203,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
-            raise CliBadArgument, 'only selection by name is supported' unless field.eql?('name')
+            raise Cli::BadArgument, 'only selection by name is supported' unless field.eql?('name')
             aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
         end

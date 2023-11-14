@@ -413,7 +413,7 @@ module Aspera
             if @access_remote
               # NOTE: the filter "name", it's why we take the first one
               @previews_folder_entry = get_folder_entries(@access_key_self['root_file_id'], {name: @option_previews_folder}).first
-              raise CliError, "Folder #{@option_previews_folder} does not exist on node. " \
+              raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
                 'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
               raise 'only local storage allowed in this mode' unless @access_key_self['storage']['type'].eql?('local')
@@ -422,9 +422,9 @@ module Aspera
               @local_storage_root = @local_storage_root[PVCL_LOCAL_STORAGE.length..-1] if @local_storage_root.start_with?(PVCL_LOCAL_STORAGE)
               # TODO: windows could have "C:" ?
               raise "not local storage: #{@local_storage_root}" unless @local_storage_root.start_with?('/')
-              raise CliError, "Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
+              raise Cli::Error, "Local storage root folder #{@local_storage_root} does not exist." unless File.directory?(@local_storage_root)
               @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
-              raise CliError, "Folder #{@local_preview_folder} does not exist locally. " \
+              raise Cli::Error, "Folder #{@local_preview_folder} does not exist locally. " \
                 'Please create it, or specify an alternate name.' unless File.directory?(@local_preview_folder)
               # protection to avoid clash of file id for two different access keys
               marker_file = File.join(@local_preview_folder, AK_MARKER_FILE)

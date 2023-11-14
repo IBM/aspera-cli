@@ -341,7 +341,7 @@ module Aspera
             param_file_list = {}
             begin
               param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
-            rescue Aspera::Cli::CliBadArgument
+            rescue Cli::BadArgument
               # paths is optional
             end
             download_params = {

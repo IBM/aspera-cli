@@ -31,8 +31,8 @@ module Aspera
             # get service credentials, Hash, e.g. @json:@file:...
             service_credentials = options.get_option(:service_credentials)
             storage_endpoint = options.get_option(:endpoint)
-            raise CliBadArgument, 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
-            raise CliBadArgument, 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
+            raise Cli::BadArgument, 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
+            raise Cli::BadArgument, 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
             if service_credentials.nil?
               service_api_key = options.get_option(:apikey, mandatory: true)
               instance_id = options.get_option(:crn, mandatory: true)
