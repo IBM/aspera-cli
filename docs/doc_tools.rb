@@ -102,13 +102,13 @@ REPLACEMENTS = [
   [/^.*\$\(EXE_MAN\) +/, ''],
   [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
   [/\$\(EXE_END_FAI.?\)$/, ''],
+  # replace file_vars
+  [/\$\((cat|basename) ([^)]+)\)/, '\2'],
   # replace makefile macros
   [/\$\(([^) ]*)\)/, '\1'],
-  # replace file_vars
-  [/\(cat ([^)]+)\)/, '\1'],
   # remove multi command mark
   [/\)?&&\\$/, ''],
-  [/ &\\$/, ''],
+  [/ & sleep .*/, ''],
   # remove redirection to file
   [/ *> *[^(}][^ ]*$/, ''],
   # remove folder macro

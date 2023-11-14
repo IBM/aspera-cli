@@ -6,11 +6,10 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.mak
 
-# folder where flag files for integration tests are generated
+# folder where flag files for tests are generated: use this folder only for those flags, as it is used for progress bar
 T=$(DIR_TMP)t/
 
 all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver torc tnsync tnsyncs tconfig tats tcos tf5 tprev
-# tnagios: already included
 
 # tests that require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive

@@ -1607,9 +1607,9 @@ config ascp connect version 'Aspera Connect for Windows' download 'Windows Insta
 config ascp connect version 'Aspera Connect for Windows' list
 config ascp connect version 'Aspera Connect for Windows' open documentation
 config ascp errors
-config ascp info --sdk-folder=Tsdk_test_dir
+config ascp info --sdk-folder=sdk_test_dir
 config ascp install
-config ascp install --sdk-folder=Tsdk_test_dir
+config ascp install --sdk-folder=sdk_test_dir
 config ascp products list
 config ascp products use 'Aspera Connect'
 config ascp show
@@ -1648,7 +1648,7 @@ config genkey mykey
 config genkey mykey 4096
 config initdemo
 config open
-config plugin create mycommand T
+config plugin create mycommand
 config plugin list
 config preset delete conf_name
 config preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
@@ -3278,6 +3278,7 @@ OPTIONS: global
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
+        --pid-file=VALUE             Write process identifier to file, delete on exit (String)
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check remote_certificate smtp_settings throw vault wizard
@@ -4687,7 +4688,7 @@ aoc files upload --to-folder=/ testfile.bin --url=my_publink_folder_nopass
 aoc files upload --to-folder=/testsrc testfile.bin
 aoc files upload --workspace=my_other_workspace --to-folder=my_other_folder testfile.bin --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
-aoc gateway https://localhost:12345/aspera/faspex
+aoc gateway --pid-file=server_pid https://localhost:12345/aspera/faspex
 aoc org --url=my_publink_recv_from_aocuser
 aoc organization
 aoc packages browse "my_package_id" /contents
@@ -5592,7 +5593,7 @@ faspex5 admin res workgroups list
 faspex5 admin smtp show
 faspex5 admin smtp test my_email_external
 faspex5 bearer_token
-faspex5 gateway https://localhost:12345/aspera/faspex
+faspex5 gateway --pid-file=server_pid https://localhost:12345/aspera/faspex
 faspex5 health
 faspex5 packages list --box=my_shinbox
 faspex5 packages list --box=my_workgroup --group-type=workgroups
@@ -5610,7 +5611,7 @@ faspex5 packages show "my_package_id"
 faspex5 packages show --box=my_shinbox "my_package_id"
 faspex5 packages show --box=my_workgroup --group-type=workgroups "my_package_id"
 faspex5 packages status "my_package_id"
-faspex5 postprocessing @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"},"certificate":{"key":"../local/k","cert":"../local/c","chain":"../local/ch"}}'
+faspex5 postprocessing --pid-file=server_pid @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"}}'
 faspex5 shared browse %name:my_src
 faspex5 shared list
 faspex5 shared_folders browse %name:my_shfolder_name

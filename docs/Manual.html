@@ -1758,9 +1758,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb131-1"><a href
 <span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp connect version <span class="st">&#39;Aspera Connect for Windows&#39;</span> list</span>
 <span id="cb131-5"><a href="#cb131-5" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp connect version <span class="st">&#39;Aspera Connect for Windows&#39;</span> open documentation</span>
 <span id="cb131-6"><a href="#cb131-6" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp errors</span>
-<span id="cb131-7"><a href="#cb131-7" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp info <span class="at">--sdk-folder</span><span class="op">=</span>Tsdk_test_dir</span>
+<span id="cb131-7"><a href="#cb131-7" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp info <span class="at">--sdk-folder</span><span class="op">=</span>sdk_test_dir</span>
 <span id="cb131-8"><a href="#cb131-8" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp install</span>
-<span id="cb131-9"><a href="#cb131-9" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp install <span class="at">--sdk-folder</span><span class="op">=</span>Tsdk_test_dir</span>
+<span id="cb131-9"><a href="#cb131-9" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp install <span class="at">--sdk-folder</span><span class="op">=</span>sdk_test_dir</span>
 <span id="cb131-10"><a href="#cb131-10" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp products list</span>
 <span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
 <span id="cb131-12"><a href="#cb131-12" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp show</span>
@@ -1799,7 +1799,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb131-1"><a href
 <span id="cb131-45"><a href="#cb131-45" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> genkey mykey 4096</span>
 <span id="cb131-46"><a href="#cb131-46" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> initdemo</span>
 <span id="cb131-47"><a href="#cb131-47" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> open</span>
-<span id="cb131-48"><a href="#cb131-48" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin create mycommand T</span>
+<span id="cb131-48"><a href="#cb131-48" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin create mycommand</span>
 <span id="cb131-49"><a href="#cb131-49" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> plugin list</span>
 <span id="cb131-50"><a href="#cb131-50" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset delete conf_name</span>
 <span id="cb131-51"><a href="#cb131-51" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> preset initialize conf_name @json:<span class="st">&#39;{&quot;p1&quot;:&quot;v1&quot;,&quot;p2&quot;:&quot;v2&quot;}&#39;</span></span>
@@ -4754,6 +4754,7 @@ OPTIONS: global
         --once-only=ENUM             Process only new items (some commands): [no], yes
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
+        --pid-file=VALUE             Write process identifier to file, delete on exit (String)
 
 COMMAND: config
 SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check remote_certificate smtp_settings throw vault wizard
@@ -6119,7 +6120,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb345-1"><a href
 <span id="cb345-77"><a href="#cb345-77" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc testfile.bin</span>
 <span id="cb345-78"><a href="#cb345-78" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder testfile.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
 <span id="cb345-79"><a href="#cb345-79" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> files v3 info</span>
-<span id="cb345-80"><a href="#cb345-80" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> gateway https://localhost:12345/aspera/faspex</span>
+<span id="cb345-80"><a href="#cb345-80" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> gateway <span class="at">--pid-file</span><span class="op">=</span>server_pid https://localhost:12345/aspera/faspex</span>
 <span id="cb345-81"><a href="#cb345-81" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> org <span class="at">--url</span><span class="op">=</span>my_publink_recv_from_aocuser</span>
 <span id="cb345-82"><a href="#cb345-82" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> organization</span>
 <span id="cb345-83"><a href="#cb345-83" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages browse <span class="st">&quot;my_package_id&quot;</span> /contents</span>
@@ -7069,7 +7070,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href
 <span id="cb407-16"><a href="#cb407-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp show</span>
 <span id="cb407-17"><a href="#cb407-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp test my_email_external</span>
 <span id="cb407-18"><a href="#cb407-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> bearer_token</span>
-<span id="cb407-19"><a href="#cb407-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway https://localhost:12345/aspera/faspex</span>
+<span id="cb407-19"><a href="#cb407-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway <span class="at">--pid-file</span><span class="op">=</span>server_pid https://localhost:12345/aspera/faspex</span>
 <span id="cb407-20"><a href="#cb407-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
 <span id="cb407-21"><a href="#cb407-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_shinbox</span>
 <span id="cb407-22"><a href="#cb407-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups</span>
@@ -7087,7 +7088,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href
 <span id="cb407-34"><a href="#cb407-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_shinbox <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb407-35"><a href="#cb407-35" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups <span class="st">&quot;my_package_id&quot;</span></span>
 <span id="cb407-36"><a href="#cb407-36" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages status <span class="st">&quot;my_package_id&quot;</span></span>
-<span id="cb407-37"><a href="#cb407-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;},&quot;certificate&quot;:{&quot;key&quot;:&quot;../local/k&quot;,&quot;cert&quot;:&quot;../local/c&quot;,&quot;chain&quot;:&quot;../local/ch&quot;}}&#39;</span></span>
+<span id="cb407-37"><a href="#cb407-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> postprocessing <span class="at">--pid-file</span><span class="op">=</span>server_pid @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;tests&quot;}}&#39;</span></span>
 <span id="cb407-38"><a href="#cb407-38" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared browse %name:my_src</span>
 <span id="cb407-39"><a href="#cb407-39" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared list</span>
 <span id="cb407-40"><a href="#cb407-40" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> shared_folders browse %name:my_shfolder_name</span>
