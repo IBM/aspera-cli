@@ -15,18 +15,18 @@ module Aspera
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(options)
         super(options)
-        @connect_settings = {
+        @client_settings = {
           'app_id' => SecureRandom.uuid
         }
         raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          connect_url = Products.connect_uri
-          Log.log.debug{"found: #{connect_url}"}
-          @connect_api = Rest.new({base_url: "#{connect_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
-          connect_info = @connect_api.read('info/version')[:data]
+          client_url = Products.aspera_client_uri
+          Log.log.debug{"found: #{client_url}"}
+          @client_api = Rest.new({base_url: "#{client_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
+          client_info = @client_api.read('info/version')[:data]
           Log.log.info('Connect was reached') if method_index > 0
-          Log.log.debug{Log.dump(:connect_version, connect_info)}
+          Log.log.debug{Log.dump(:client_version, client_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
           start_url = START_URIS[method_index]
           method_index += 1
@@ -45,8 +45,8 @@ module Aspera
         if transfer_spec['direction'] == 'send'
           Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
           transfer_spec.delete('paths')
-          selection = @connect_api.create('windows/select-open-file-dialog/', {
-            'aspera_connect_settings' => @connect_settings,
+          selection = @client_api.create('windows/select-open-file-dialog/', {
+            'aspera_client_settings' => @client_settings,
             'title'                   => 'Select Files',
             'suggestedName'           => '',
             'allowMultipleSelection'  => true,
@@ -57,8 +57,8 @@ module Aspera
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
-        connect_transfer_args = {
-          'aspera_connect_settings' => @connect_settings.merge({
+        client_transfer_args = {
+          'aspera_client_settings' => @client_settings.merge({
             'request_id'    => @request_id,
             'allow_dialogs' => true
           }),
@@ -66,18 +66,18 @@ module Aspera
             'transfer_spec' => transfer_spec
           }]}
         # asynchronous anyway
-        res = @connect_api.create('transfers/start', connect_transfer_args)[:data]
+        res = @client_api.create('transfers/start', client_transfer_args)[:data]
         @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
       end
 
       def wait_for_transfers_completion
-        connect_activity_args = {'aspera_connect_settings' => @connect_settings}
+        client_activity_args = {'aspera_client_settings' => @client_settings}
         started = false
         pre_calc = false
         session_id = @xfer_id
         begin
           loop do
-            tr_info = @connect_api.create("transfers/info/#{@xfer_id}", connect_activity_args)[:data]
+            tr_info = @client_api.create("transfers/info/#{@xfer_id}", client_activity_args)[:data]
             Log.log.trace1{Log.dump(:tr_info, tr_info)}
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']
