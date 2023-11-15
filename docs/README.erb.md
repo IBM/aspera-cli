@@ -196,7 +196,7 @@ An internet connection is required for the installation. If you don't have inter
 
 ### Container
 
-The container image is: [`<%=containerimage%>`](https://hub.docker.com/r/<%=containerimage%>).
+The container image is: [`<%=container_image%>`](https://hub.docker.com/r/<%=container_image%>).
 The container contains: Ruby, <%=tool%> and the Aspera Transfer SDK.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
@@ -209,7 +209,7 @@ podman --version
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
 ```bash
-podman run --tty --interactive --entrypoint bash <%=containerimage%>:latest
+podman run --tty --interactive --entrypoint bash <%=container_image%>:latest
 ```
 
 Then, execute individual <%=tool%> commands such as:
@@ -236,13 +236,13 @@ If you want to run the image with a shell, execute with option: `--entrypoint ba
 The container can also be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
-podman run --rm --tty --interactive <%=containerimage%>:latest
+podman run --rm --tty --interactive <%=container_image%>:latest
 ```
 
 For more convenience, you may define a shell alias:
 
 ```bash
-alias <%=cmd%>='podman run --rm --tty --interactive <%=containerimage%>:latest'
+alias <%=cmd%>='podman run --rm --tty --interactive <%=container_image%>:latest'
 ```
 
 Then, you can execute the container like a local command:
@@ -285,7 +285,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=containerimage%>:latest"
+alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
 ```
 
 ```bash
@@ -308,7 +308,7 @@ Some environment variables can be set for this script to adapt its behavior:
 |----------------|------------------------------------|--------------------------|--------------------------|
 | `<%=evp%>HOME` | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
 | `docker_args`  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| `image`        | container image name               | `<%=containerimage%>`    |                          |
+| `image`        | container image name               | `<%=container_image%>`    |                          |
 | `version`      | container image version            | latest                   | `4.8.0.pre`              |
 
 The wrapping script maps the folder `$<%=evp%>HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
@@ -342,8 +342,8 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 - First create the image archive:
 
 ```bash
-podman pull <%=containerimage%>
-podman save <%=containerimage%>|gzip><%=cmd%>_image_latest.tar.gz
+podman pull <%=container_image%>
+podman save <%=container_image%>|gzip><%=cmd%>_image_latest.tar.gz
 ```
 
 - Then, on air-gapped system:
@@ -381,7 +381,7 @@ dnf install singularity-ce
 Build an image like this:
 
 ```bash
-singularity build <%=cmd%>.sif docker://<%=containerimage%>
+singularity build <%=cmd%>.sif docker://<%=container_image%>
 ```
 
 Then, start <%=tool%> like this:

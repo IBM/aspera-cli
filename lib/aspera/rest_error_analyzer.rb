@@ -60,6 +60,9 @@ module Aspera
     # add a simple error handler
     # check that key exists and is string under specified path (hash)
     # adds other keys as secondary information
+    # @param name [String] name of error handler (for logs)
+    # @param always [boolean] if true, always add error message, even if response code is 2XX
+    # @param path [Array] path to error message in response
     def add_simple_handler(name:, always: false, path:)
       path.freeze
       add_handler(name) do |type, call_context|

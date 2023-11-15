@@ -3,7 +3,10 @@
   "ignorePaths": [
     "*.dict",
     ".cspell.json",
-    "lib/aspera/data"
+    "lib/aspera/data",
+    "**/*.tex",
+    "**/*.html",
+    "**/*.pptx"
   ],
   "dictionaryDefinitions": [
     {
@@ -21,7 +24,8 @@
   "dictionaries": [
     "aspera",
     "ruby",
-    "technical"
+    "technical",
+    "shell"
   ],
   "words": [],
   "ignoreWords": [],

@@ -1,4 +1,4 @@
-# define common variables to be used in other Makefiles
+# define common variables to be used in other Makefile
 # required: DIR_TOP (can be empty if cwd)
 DIR_BIN=$(DIR_TOP)bin/
 DIR_LIB=$(DIR_TOP)lib/
@@ -17,12 +17,10 @@ TMPL_CONF_FILE_PATH=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
 # must be same value as Aspera::Cli::PROGRAM_NAME
-EXENAME=ascli
+CLI_NAME=ascli
 
-# how tool is called without argument
-# use only if another config file is used
-# else use EXE_MAN or EXE_NOMAN
-EXETESTB=$(DIR_BIN)$(EXENAME)
+# path to CLI for execution (not using PATH)
+CLI_PATH=$(DIR_BIN)$(CLI_NAME)
 
 GEMSPEC=$(DIR_TOP)$(GEM_NAME).gemspec
 
@@ -53,8 +51,8 @@ $(TEST_CONF_FILE_PATH):
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
 	cd $(DIR_TOP). && bundle config set --local without $(GEM_NAME)
 	cd $(DIR_TOP). && bundle install
-	rm -f $$HOME/.rvm/gems/*/bin/as{cli,ession}
-	rm -f $$HOME/.rvm/rubies/*/bin/as{cli,ession}
+	rm -f $$HOME/.rvm/*/*/bin/ascli
+	rm -f $$HOME/.rvm/*/*/bin/asession
 	touch $@
 clean::
 	rm -f $(DIR_TOP).gems_checked

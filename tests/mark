@@ -1,7 +1,7 @@
 #!/bin/bash
-# ls -1 ../tmp/t|sort > x.fromdir
-# grep -B1 START_TEST "$d"Makefile|grep ': '|cut -f1 -d:|cut -f2 -d\)|sort > x.frommake
-# code -d x.fromdir x.frommake
+# ls -1 ../tmp/t|sort > tests_in_folder.txt
+# grep -B1 START_TEST "$d"Makefile|grep ': '|cut -f1 -d:|cut -f2 -d\)|sort > tests_in_make.txt
+# code -d tests_in_folder.txt tests_in_make.txt
 if test -z "$1" -o -z "$2"; then
     echo "Usage: $0 <begin|end> <file>" 1>&2
     exit 1

@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# cspell:ignore opprst prst lprt prsts trspec prstt geminstadd transferspec martinlaurent
+
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
@@ -34,8 +36,8 @@ def trspec; '[*transfer-spec*](#transferspec)'; end
 # in title
 def prstt; opprst.capitalize; end
 
-# container image in dockerhub
-def containerimage; 'martinlaurent/ascli'; end
+# container image in docker hub
+def container_image; 'martinlaurent/ascli'; end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
@@ -89,7 +91,7 @@ def generate_help(varname)
 end
 
 def include_usage
-  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)}, '\1/usershome\2')
+  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)}, '\1/user_home\2')
 end
 
 def include_asession
@@ -119,13 +121,11 @@ REPLACEMENTS = [
   [/\$\{([a-z_0-9]+)\}/, 'my_\1'],
   # remove extraneous quotes on JSON
   [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
-  # hidden parameters to make test work
-  [/OPTST_[A-Z0-5]+/, ''],
-  [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'testfile.bin'],
+  [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'test_file.bin'],
   ['TST_SYNC_LCL_DIR', '/data/local_sync'],
-  ['HSTS_UPLOADED_FILE', 'testfile.bin'],
+  ['HSTS_UPLOADED_FILE', 'test_file.bin'],
   ['HSTS_FOLDER_UPLOAD', 'folder_1'],
-  [%q['"CF_LOCAL_SYNC_DIR"'], 'syncdir'],
+  [%q['"CF_LOCAL_SYNC_DIR"'], 'sync_dir'],
   ['Test Package TIMESTAMP', 'Important files delivery'],
   ['AOC_EXTERNAL_EMAIL', 'external.user@example.com'],
   ['EMAIL_ADDR', 'internal.user@example.com'],
@@ -210,6 +210,6 @@ def generate_doc
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
   if !all_test_commands_by_plugin.empty?
     $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
-    raise 'Remediate: remove from doc using EXE_NOMAN or add section in doc'
+    raise 'Remediate: remove from doc using EXE_NO_MAN or add section in doc'
   end
 end

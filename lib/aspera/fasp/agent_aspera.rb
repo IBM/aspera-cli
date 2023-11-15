@@ -47,10 +47,10 @@ module Aspera
           transfer_spec.delete('paths')
           selection = @client_api.create('windows/select-open-file-dialog/', {
             'aspera_client_settings' => @client_settings,
-            'title'                   => 'Select Files',
-            'suggestedName'           => '',
-            'allowMultipleSelection'  => true,
-            'allowedFileTypes'        => ''})[:data]
+            'title'                  => 'Select Files',
+            'suggestedName'          => '',
+            'allowMultipleSelection' => true,
+            'allowedFileTypes'       => ''})[:data]
           transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']}}
         end
         @request_id = SecureRandom.uuid
@@ -62,7 +62,7 @@ module Aspera
             'request_id'    => @request_id,
             'allow_dialogs' => true
           }),
-          'transfer_specs'          => [{
+          'transfer_specs'         => [{
             'transfer_spec' => transfer_spec
           }]}
         # asynchronous anyway

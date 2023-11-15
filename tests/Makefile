@@ -1,5 +1,11 @@
 ##################################
 # Integration tests
+# cspell:ignoreRegExp /[^a-z]t[a-z]+/ 
+# cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/
+# cspell:ignoreRegExp /\\n/
+# cspell:ignoreRegExp / -r/
+# cspell:ignore ifeq killall
+# cspell:ignore workgroups
 
 # root folder is one level up
 DIR_TOP=../
@@ -34,12 +40,12 @@ TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
 CLI_HOME=$(DIR_PRIV)ascli_home/
 # tests use config file in test folder
-EXE_COMMON=$(EXETESTB) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
-# "EXE_MAN" and "EXE_NOMAN" are used to call the tool in the testing environment
+EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
+# "EXE_MAN" and "EXE_NO_MAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXE_COMMON) --warnings
-# "EXE_NOMAN" when the command is not needed in documentation
-EXE_NOMAN=$(EXE_COMMON)
+# "EXE_NO_MAN" when the command is not needed in documentation
+EXE_NO_MAN=$(EXE_COMMON)
 # enclose tests that shall result in error
 EXE_BEG_ERR=if $(EXE_COMMON)
 EXE_SHW_ERR=;then echo "No error: problem";exit 1;else echo "Test ok";fi
@@ -53,9 +59,10 @@ EXE_END_IGN=>/dev/null 2>&1 || true
 # simple command line to percent-encode
 URL_ENCODER=ruby -r uri -e 'puts URI.encode_www_form_component(ARGV.first)'
 # testing file generated locally (special shell characters must be escaped for shell, special makefile characters escaped)
-TST_ASC_FILENAME=datafile.bin
+TST_ASC_FILENAME=data_file.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
 # This file name contains special characters, it must be quoted when used in shell
+# cspell:disable-next-line
 TST_UTF_FILENAME=𒐫spécial{\#😀بツ
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 # a medium sized file for testing
@@ -64,7 +71,7 @@ TST_MED_FILENAME=$(TST_UTF_FILENAME)
 TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
 
 # sync dir must be an absolute path
-TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/testsync123
+TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/test_sync123
 ifeq ($(TST_SYNC_LCL_DIR),)
 $(error "TST_SYNC_LCL_DIR is empty, see error above")
 endif
@@ -74,7 +81,7 @@ STOP_TEST=$(DIR_TOP)tests/mark end
 
 # flush cached tokens
 clean::
-	$(EXE_NOMAN) config flush
+	$(EXE_NO_MAN) config flush
 
 ###########
 # Coverage
@@ -98,9 +105,9 @@ clean::
 $(T)unit: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
-	CF_HSTS_SSH_URL=$$($(EXE_NOMAN) config preset get server_user url) \
-	CF_HSTS_SSH_USER=$$($(EXE_NOMAN) config preset get server_user username) \
-	CF_HSTS_SSH_PASS=$$($(EXE_NOMAN) config preset get server_user password) \
+	CF_HSTS_SSH_URL=$$($(EXE_NO_MAN) config preset get server_user url) \
+	CF_HSTS_SSH_USER=$$($(EXE_NO_MAN) config preset get server_user username) \
+	CF_HSTS_SSH_PASS=$$($(EXE_NO_MAN) config preset get server_user password) \
 	bundle exec rake spec
 	@$(STOP_TEST) $@
 tunit: $(T)unit
@@ -108,7 +115,7 @@ tunit: $(T)unit
 $(T)shares_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) shares health
-	$(EXE_NOMAN) shares health --url=https://wrong.example.com
+	$(EXE_NO_MAN) shares health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(T)shares_detect: $(T).exists
 	@$(START_TEST) $@
@@ -215,7 +222,7 @@ $(T)serv_error: $(T).exists
 	$(EXE_BEG_ERR) server -N --url=foo:// ls .$(EXE_END_ERR)
 	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
-	$(EXE_NOMAN) server -N --url=local:// ls .
+	$(EXE_NO_MAN) server -N --url=local:// ls .
 	@$(STOP_TEST) $@
 $(T)serv_upload1: $(T)serv_mkdir 
 	@$(START_TEST) $@
@@ -224,26 +231,26 @@ $(T)serv_upload1: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_upload2: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_LCL_PATH)' @extend:@preset:server.inside_folder@/othername2 --notify-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_LCL_PATH)' @extend:@preset:server.inside_folder@/other_name_2 --notify-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 	@$(STOP_TEST) $@
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/othername3"]' --transfer-info=@json:'{"quiet":false}'  --progress=no
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}'  --progress=no
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/othername4"}]}'
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}'
 	@$(STOP_TEST) $@
 $(T)serv_upload5: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/othername5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@$(STOP_TEST) $@
 $(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload4 $(T)serv_upload5
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"mysync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TST_SYNC_LCL_DIR)","reset":true}]}'
-	$(EXE_MAN) server sync admin status mysync --sync-info=@json:'{"sessions":[{"name":"mysync","local_dir":"$(TST_SYNC_LCL_DIR)"}]}'
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TST_SYNC_LCL_DIR)","reset":true}]}'
+	$(EXE_MAN) server sync admin status my_sync --sync-info=@json:'{"sessions":[{"name":"my_sync","local_dir":"$(TST_SYNC_LCL_DIR)"}]}'
 	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
 	$(EXE_BEG_FAI) server sync admin status --sync-info=@json:'{"name":"sync2"}' $(EXE_END_FAI)
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TST_SYNC_LCL_DIR)"}}'
@@ -251,10 +258,10 @@ $(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_uploa
 $(T)serv_upload_ex: $(T)serv_mkdir
 	@$(START_TEST) $@
 	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)filelist.txt
-	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)filepairlist.txt
-	$(EXE_NOMAN) config echo @extend:@preset:server.inside_folder@/othername --format=text >> $(DIR_TMP)filepairlist.txt
+	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)file_pair_list.txt
+	$(EXE_NO_MAN) config echo @extend:@preset:server.inside_folder@/other_name --format=text >> $(DIR_TMP)file_pair_list.txt
 	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
-	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"$(DIR_TMP)filepairlist.txt"'"]}'
+	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"$(DIR_TMP)file_pair_list.txt"'"]}'
 	@$(STOP_TEST) $@
 $(T)serv_md5: $(T)serv_upload1
 	@$(START_TEST) $@
@@ -308,7 +315,7 @@ $(T)serv_key: $(T).exists
 $(T)asession: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
-	remote_host=$$($(EXE_NOMAN) config preset get server_user url)&&\
+	remote_host=$$($(EXE_NO_MAN) config preset get server_user url)&&\
 	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
 	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
 	$(DIR_BIN)asession @json:@extend:'{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:server_user.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:server_user.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
@@ -329,11 +336,11 @@ $(T)f4_nagios: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f4_nagios_fail: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) faspex health --url=https://wrong.example.com
+	$(EXE_NO_MAN) faspex health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(T)f4_detect: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) config detect @preset:faspex4_user.url
+	$(EXE_NO_MAN) config detect @preset:faspex4_user.url
 	@$(STOP_TEST) $@
 $(T)f4_wizard: $(T).exists
 	@$(START_TEST) $@
@@ -351,13 +358,13 @@ $(T)f4_pack_send: $(T).exists
 $(T)f4_prs: $(T)f4_pack_send
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}' > $(DIR_TMP)f4_prs1
-	$(EXE_NOMAN) faspex package recv $$(cat $(DIR_TMP)f4_prs1) --to-folder=$(DIR_TMP).
+	$(EXE_NO_MAN) faspex package recv $$(cat $(DIR_TMP)f4_prs1) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex package list --box=sent --fields=package_id --format=csv --display=data --query=@json:'{"max":1}' > $(DIR_TMP)f4_prs2
 	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_prs2) --to-folder=$(DIR_TMP). --box=sent
 	@$(STOP_TEST) $@
 $(T)f4_pri: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}' > $(DIR_TMP)f4_pri1
+	$(EXE_NO_MAN) faspex package list --fields=package_id --format=csv --display=data --query=@json:'{"max":1}' > $(DIR_TMP)f4_pri1
 	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_pri1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f4_prl: $(T).exists
@@ -414,11 +421,11 @@ tfaspex: $(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pac
 $(T)cons_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) console health
-	$(EXE_NOMAN) console health --url=https://wrong.example.com
+	$(EXE_NO_MAN) console health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(T)cons_wizard: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) config detect @preset:console_admin.url
+	$(EXE_NO_MAN) config detect @preset:console_admin.url
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:console_admin.url console --preset=console_admin
 	@$(STOP_TEST) $@
 $(T)cons1: $(T).exists
@@ -437,7 +444,7 @@ tconsole: $(T)cons_nagios $(T)cons_wizard $(T)cons1 $(T)cons2 $(T)cons3
 $(T)nd_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node health
-	$(EXE_NOMAN) node health --url=https://wrong.example.com
+	$(EXE_NO_MAN) node health --url=https://wrong.example.com
 	@$(STOP_TEST) $@
 $(T)nd_wizard: $(T).exists
 	@$(START_TEST) $@
@@ -452,12 +459,12 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node browse / -r
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
-	$(EXE_BEG_IGN) node delete /todelete $(EXE_END_IGN)
-	$(EXE_MAN) node mkdir @extend:@preset:server.upload_folder@/todelete
-	$(EXE_MAN) node mklink @extend:@preset:server.upload_folder@/todelete @extend:@preset:server.upload_folder@/tdlink
-	$(EXE_MAN) node mkfile @extend:@preset:server.upload_folder@/delfile1 "hello world"
-	$(EXE_MAN) node rename @preset:server.upload_folder delfile1 delfile
-	$(EXE_MAN) node delete @list:@extend:,@preset:server.upload_folder@/todelete,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/delfile
+	$(EXE_BEG_IGN) node delete /a_folder $(EXE_END_IGN)
+	$(EXE_MAN) node mkdir @extend:@preset:server.upload_folder@/a_folder
+	$(EXE_MAN) node mklink @extend:@preset:server.upload_folder@/a_folder @extend:@preset:server.upload_folder@/tdlink
+	$(EXE_MAN) node mkfile @extend:@preset:server.upload_folder@/a_file1 "hello world"
+	$(EXE_MAN) node rename @preset:server.upload_folder a_file1 a_file
+	$(EXE_MAN) node delete @list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file
 	@$(STOP_TEST) $@
 $(T)nd2: $(T).exists
 	@$(START_TEST) $@
@@ -546,7 +553,7 @@ tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)
 $(T)aocfxgw: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
-	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
+	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
 $(T)aocg1: $(T).exists
@@ -584,7 +591,7 @@ $(T)aocg8: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_webauth: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) aoc --preset=aoc_web user profile show
+	$(EXE_NO_MAN) aoc --preset=aoc_web user profile show
 	@$(STOP_TEST) $@
 taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocg7 $(T)aocg8
 $(T)aocfbr: $(T).exists
@@ -607,8 +614,8 @@ $(T)aoc_tstsrc: $(T).exists
 $(T)aoc_tstdst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_BEG_IGN) aoc files delete /testdst$(EXE_END_IGN)
-	$(EXE_NOMAN) aoc files mkdir /somefolder
-	$(EXE_MAN) aoc files rename /somefolder testdst
+	$(EXE_NO_MAN) aoc files mkdir /some_folder
+	$(EXE_MAN) aoc files rename /some_folder testdst
 	@$(STOP_TEST) $@
 $(T)aocfupl: $(T)aoc_tstsrc
 	@$(START_TEST) $@
@@ -660,33 +667,33 @@ $(T)aocfsync2: $(T).exists
 	$(EXE_BEG_FAI) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
 	$(EXE_BEG_FAI) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
-$(T)aocffid: $(T)aocftr
+$(T)aoc_file_id: $(T)aocftr
 	@$(START_TEST) $@
-	$(EXE_NOMAN) aoc files br testdst/$(TST_ASC_FILENAME) --fields=id --format=csv --display=data > $(DIR_TMP)aocffid
-	$(EXE_MAN) aoc files show %id:$$(cat $(DIR_TMP)aocffid)
+	$(EXE_NO_MAN) aoc files br testdst/$(TST_ASC_FILENAME) --fields=id --format=csv --display=data > $(DIR_TMP)aoc_file_id
+	$(EXE_MAN) aoc files show %id:$$(cat $(DIR_TMP)aoc_file_id)
 	$(EXE_MAN) aoc files show /
 	$(EXE_MAN) aoc files show testdst/$(TST_ASC_FILENAME)
 	$(EXE_BEG_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
-	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.mpg video_file.mpg
+	$(EXE_NO_MAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.mpg video_file.mpg
 	@echo 'waiting for preview'
 	sleep 60
-	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.jpg image_file.jpg
+	$(EXE_NO_MAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.jpg image_file.jpg
 	$(EXE_MAN) aoc files permission @preset:aoc.test_folder list
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":true}'
-	$(EXE_NOMAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":false}'
-	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
+	$(EXE_NO_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":false}'
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NO_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
 	@$(STOP_TEST) $@
 #	$(EXE_MAN) aoc files modify @preset:aoc.test_folder
 $(T)aocfpub: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.publink_folder_nopass
-	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.publink_folder_pass --password=@preset:aoc.publink_password
-	$(EXE_MAN) aoc files upload --to-folder=/ $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.publink_folder_nopass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.public_link_folder_no_pass
+	$(EXE_MAN) aoc files browse / -N --url=@preset:aoc.public_link_folder_pass --password=@preset:aoc.public_link_password
+	$(EXE_MAN) aoc files upload --to-folder=/ $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_folder_no_pass
 	@$(STOP_TEST) $@
 $(T)aoc_lnk_priv: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files browse / --url=@preset:aoc.privlink
+	$(EXE_MAN) aoc files browse / --url=@preset:aoc.private_link
 	@$(STOP_TEST) $@
 $(T)aocshlk2: $(T).exists
 	@$(START_TEST) $@
@@ -700,7 +707,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aocffid $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(TST_ASC_LCL_PATH)
@@ -715,7 +722,7 @@ $(T)aocp2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"per_page":1}' > $(DIR_TMP)package_id3
+	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"per_page":1}' > $(DIR_TMP)package_id3
 	$(EXE_MAN) aoc packages recv $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /contents
 	@$(STOP_TEST) $@
@@ -725,35 +732,35 @@ $(T)aocp4: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp5: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc org -N --url=@preset:aoc.publink_recv_from_aocuser
+	$(EXE_MAN) aoc org -N --url=@preset:aoc.public_link_recv_from_aoc_user
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_sh: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.publink_send_shd_inbox
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_shared_inbox
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_usr: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.publink_send_aoc_user --password=@preset:aoc.publink_send_use_pass
+	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_aoc_user --password=@preset:aoc.public_link_send_use_pass
 	@$(STOP_TEST) $@
 $(T)aocp_send_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_long: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_short: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.shbx_ws @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shbx_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aocp_recv_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shbx_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 	@$(STOP_TEST) $@
 $(T)aocp_list_shbx: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shbx_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 	@$(STOP_TEST) $@
 taocp: $(T)aoc_pack_send1 $(T)aoc_pack_send2 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send_pub_sh $(T)aocp_send_pub_usr $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short $(T)aocp_recv_shbx $(T)aocp_list_shbx
 $(T)aocadm1: $(T).exists
@@ -822,7 +829,7 @@ $(T)aoccltreg: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token list
-	$(EXE_NOMAN) --preset=aoc_admin aoc admin res client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' > $(DIR_TMP)client_reg_id
+	$(EXE_NO_MAN) --preset=aoc_admin aoc admin res client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' > $(DIR_TMP)client_reg_id
 	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token delete $$(cat $(DIR_TMP)client_reg_id)
 	@$(STOP_TEST) $@
 taocadm: $(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
@@ -893,7 +900,7 @@ taoc: taocgen taocf taocp taocadm taocts taocauto
 
 $(T)orch_wizard: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) config detect @preset:orch_user.url
+	$(EXE_NO_MAN) config detect @preset:orch_user.url
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:orch_user.url orchestrator --username=test --password=test
 	@$(STOP_TEST) $@
 $(T)orch_nagios: $(T).exists
@@ -1044,9 +1051,9 @@ tnsync: $(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2
 $(T)sync_create: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
-	hostport=$$($(EXE_NOMAN) config preset get server_user url|cut -f3 -d/)&&\
-	host=$${hostport%:*}&&\
-	port=$${hostport#*:}&&\
+	host_port=$$($(EXE_NO_MAN) config preset get server_user url|cut -f3 -d/)&&\
+	host=$${host_port%:*}&&\
+	port=$${host_port#*:}&&\
 	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
 	$(EXE_MAN) node ssync list
 	@$(STOP_TEST) $@
@@ -1098,7 +1105,7 @@ $(T)conf_ascp_6: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_ascp_7: $(T).exists
 	@$(START_TEST) $@
-	rm -fr "$$($(EXE_NOMAN) --show-config --fields=sdk_folder)"
+	rm -fr "$$($(EXE_NO_MAN) --show-config --fields=sdk_folder)"
 	$(EXE_MAN) config ascp install
 	rm -fr $(DIR_TMP)sdk_test_dir
 	$(EXE_MAN) config ascp install --sdk-folder=$(DIR_TMP)sdk_test_dir
@@ -1111,7 +1118,7 @@ $(T)conf_pset_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) $(TMP_CONF) config preset set conf_name param value
 	$(EXE_MAN) $(TMP_CONF) config preset unset conf_name param
-	$(EXE_NOMAN) config preset lookup --url=@preset:faspex4_user.url --username=@preset:faspex4_user.username
+	$(EXE_NO_MAN) config preset lookup --url=@preset:faspex4_user.url --username=@preset:faspex4_user.username
 	@$(STOP_TEST) $@
 $(T)conf_pset_2: $(T).exists
 	@$(START_TEST) $@
@@ -1153,42 +1160,42 @@ $(T)conf_gem: $(T).exists
 	$(EXE_MAN) config gem name
 	$(EXE_MAN) config folder
 	$(EXE_MAN) $(TMP_CONF) config initdemo
-	$(EXE_NOMAN) $(TMP_CONF) config initdemo
+	$(EXE_NO_MAN) $(TMP_CONF) config initdemo
 	@$(STOP_TEST) $@
 $(T)conf_vault: $(T).exists
 	@$(START_TEST) $@
 	cd $(DIR_TMP) && echo $$(pwd -P)/sample_vault.bin > $(DIR_TMP)vault_file
 	rm -f $$(cat $(DIR_TMP)vault_file)
-	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault @json:'{"type":"file","name":"'"$$(cat $(DIR_TMP)vault_file)"'"}'
-	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault_password _simple_one_
-	$(EXE_MAN) $(TMP_CONF) config vault create mylabel @json:'{"password":"my_password_here","description":"my secret"}'
+	$(EXE_NO_MAN) $(TMP_CONF) config preset set GLOBAL vault @json:'{"type":"file","name":"'"$$(cat $(DIR_TMP)vault_file)"'"}'
+	$(EXE_NO_MAN) $(TMP_CONF) config preset set GLOBAL vault_password _simple_one_
+	$(EXE_MAN) $(TMP_CONF) config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
 	$(EXE_MAN) $(TMP_CONF) config vault list
-	$(EXE_MAN) $(TMP_CONF) config vault show mylabel
-	$(EXE_NOMAN) $(TMP_CONF) config preset ask mypreset <<< $$'username\npassword\n\ntheuser\nthepass\n'
-	$(EXE_NOMAN) $(TMP_CONF) config preset secure mypreset
+	$(EXE_MAN) $(TMP_CONF) config vault show my_label
+	$(EXE_NO_MAN) $(TMP_CONF) config preset ask my_preset <<< $$'username\npassword\n\nthe_user\nthe_pass\n'
+	$(EXE_NO_MAN) $(TMP_CONF) config preset secure my_preset
 	new_pass=_other_one_&&\
-	$(EXE_NOMAN) $(TMP_CONF) config vault password $${new_pass}&&\
-	$(EXE_NOMAN) $(TMP_CONF) config preset set GLOBAL vault_password $${new_pass}
+	$(EXE_NO_MAN) $(TMP_CONF) config vault password $${new_pass}&&\
+	$(EXE_NO_MAN) $(TMP_CONF) config preset set GLOBAL vault_password $${new_pass}
 	$(EXE_MAN) $(TMP_CONF) config vault list
-	$(EXE_MAN) $(TMP_CONF) config vault delete mylabel
-	$(EXE_MAN) $(TMP_CONF) config echo @vault:mypreset.password
+	$(EXE_MAN) $(TMP_CONF) config vault delete my_label
+	$(EXE_MAN) $(TMP_CONF) config echo @vault:my_preset.password
 	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad$(EXE_END_ERR)
 	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad.password$(EXE_END_ERR)
-	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:mypreset.bad$(EXE_END_ERR)
+	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:my_preset.bad$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_help: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) -h
-	$(EXE_NOMAN) --bash-comp
+	$(EXE_NO_MAN) -h
+	$(EXE_NO_MAN) --bash-comp
 	$(EXE_MAN) config coffee
 	$(EXE_MAN) config coffee --ui=text
-	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NOMAN) config coffee --ui=text
+	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NO_MAN) config coffee --ui=text
 	@$(STOP_TEST) $@
 $(T)conf_plugins: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config plugin list
-	$(EXE_MAN) config plugin create mycommand $(DIR_TMP)
-	$(EXE_NOMAN) mycommand --plugin-folder=$(DIR_TMP)
+	$(EXE_MAN) config plugin create my_command $(DIR_TMP)
+	$(EXE_NO_MAN) my_command --plugin-folder=$(DIR_TMP)
 	@$(STOP_TEST) $@
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
@@ -1208,11 +1215,11 @@ $(T)conf_detect: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_genkey: $(T).exists
 	@$(START_TEST) $@
-	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
-	$(EXE_MAN) config genkey $(DIR_TMP)mykey
-	rm -f $(DIR_TMP)mykey $(DIR_TMP)mykey.pub
-	$(EXE_MAN) config genkey $(DIR_TMP)mykey 4096
-	$(EXE_BEG_ERR) config genkey $(DIR_TMP)mykey not_int$(EXE_END_ERR)
+	rm -f $(DIR_TMP)my_key $(DIR_TMP)my_key.pub
+	$(EXE_MAN) config genkey $(DIR_TMP)my_key
+	rm -f $(DIR_TMP)my_key $(DIR_TMP)my_key.pub
+	$(EXE_MAN) config genkey $(DIR_TMP)my_key 4096
+	$(EXE_BEG_ERR) config genkey $(DIR_TMP)my_key not_int$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_smtp: $(T).exists
 	@$(START_TEST) $@
@@ -1249,7 +1256,7 @@ $(T)conf_echo: $(T).exists
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) config echo @zlib:@stdin:
 	set -xe&&\
 	for f in text ruby json jsonpp yaml table csv;do \
-	  $(EXE_NOMAN) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
+	  $(EXE_NO_MAN) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
 	done
 	@$(STOP_TEST) $@
 $(T)conf_interactive: $(T).exists
@@ -1304,7 +1311,7 @@ $(T)prev_mpg_clips: $(T).exists
 	@$(STOP_TEST) $@
 $(T)prev_events: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) --preset=preview_ak node upload @preset:file.mxf @preset:file.docx --ts=@json:'{"target_rate_kbps":1000000}'
+	$(EXE_NO_MAN) --preset=preview_ak node upload @preset:file.mxf @preset:file.docx --ts=@json:'{"target_rate_kbps":1000000}'
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
 	@$(STOP_TEST) $@
@@ -1324,7 +1331,7 @@ thot:
 	mkdir source_hot
 	$(EXE_BEG_IGN) server delete @extend:@preset:server.upload_folder@/target_hot$(EXE_END_IGN)
 	$(EXE_MAN) server mkdir @extend:@preset:server.upload_folder@/target_hot
-	echo hello > source_hot/newfile
+	echo hello > source_hot/new_file
 	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
@@ -1381,15 +1388,15 @@ $(T)f5_sh_folder_list: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_sh_folder_br: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 shared_folders browse @extend:%name:@preset:faspex5.shfolder_name@
+	$(EXE_MAN) faspex5 shared_folders browse @extend:%name:@preset:faspex5.shared_folder_name@
 	@$(STOP_TEST) $@
 $(T)f5_sh_folder_send: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shfolder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shfolder_file
+	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shared_folder_file
 	@$(STOP_TEST) $@
 $(T)f5_p3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)f5_p31
+	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)f5_p31
 	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"my_secret_here"}'
@@ -1397,19 +1404,19 @@ $(T)f5_p3: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shinbox@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
-	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shinbox
-	$(EXE_NOMAN) faspex5 packages list --box=@preset:faspex5.shinbox --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)pack_shbox_id1
-	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shinbox $$(cat $(DIR_TMP)pack_shbox_id1)
-	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shinbox $$(cat $(DIR_TMP)pack_shbox_id1) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_inbox_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shared_inbox_name
+	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.shared_inbox_name --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)package_box_id1
+	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shared_inbox_name $$(cat $(DIR_TMP)package_box_id1)
+	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shared_inbox_name $$(cat $(DIR_TMP)package_box_id1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(TST_ASC_LCL_PATH)
 	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups
-	$(EXE_NOMAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)pack_wrkgrp_id1
-	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)pack_wrkgrp_id1)
-	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)pack_wrkgrp_id1) --to-folder=$(DIR_TMP).
+	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)workgroup_package_id1
+	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)workgroup_package_id1)
+	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)workgroup_package_id1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_sh_fold: $(T).exists
 	@$(START_TEST) $@
@@ -1422,7 +1429,7 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res shared_inboxes list
-	$(EXE_MAN) faspex5 admin res shared_inboxes members %name:'ascli shinbox' list
+	$(EXE_MAN) faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res saml_configs list
 	$(EXE_MAN) faspex5 admin res metadata_profiles list
@@ -1434,10 +1441,10 @@ $(T)f5_adm: $(T).exists
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res node list 
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res registrations list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' create %name:john@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:john@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite %name:'ascli shinbox' johnny@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members %name:'ascli shinbox' delete %name:johnny@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ create %name:john@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:john@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_inbox_name@ johnny@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:johnny@example.com
 	$(EXE_MAN) --preset=f5_admin faspex5 admin smtp show
 	$(EXE_MAN) --preset=f5_admin faspex5 admin smtp test @preset:misc.email_external
 	@$(STOP_TEST) $@
@@ -1448,23 +1455,23 @@ $(T)f5_user: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_error: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) faspex5 health --url=wrong
+	$(EXE_NO_MAN) faspex5 health --url=wrong
 	@$(STOP_TEST) $@
 $(T)f5_webauth: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NOMAN) --preset=f5_web faspex5 version
+	$(EXE_NO_MAN) --preset=f5_web faspex5 version
 	@$(STOP_TEST) $@
 $(T)f5_wizard: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
 	$(EXE_BEG_ERR) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_END_ERR)
 	$(EXE_MAN) -N config detect @preset:faspex5_user.url
-	$(EXE_NOMAN) config detect @preset:faspex5_user.url
+	$(EXE_NO_MAN) config detect @preset:faspex5_user.url
 	@$(STOP_TEST) $@
 $(T)f5_fxgw: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
-	$(EXE_NOMAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
+	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
 	sleep 3
 	kill -USR1 $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
