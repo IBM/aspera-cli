@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore passcode xrds workgroups dmembership wmembership
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/config'
@@ -90,7 +91,7 @@ module Aspera
             return result
           end
 
-          # get faspe: URI from entry in xml, and fix problems..
+          # get Fasp::Uri::SCHEME URI from entry in xml, and fix problems..
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
               raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
@@ -344,7 +345,7 @@ module Aspera
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
-                  raise 'Not Found. Dropbox and Workgroup packages can use the link option with faspe:' if found_package_link.nil?
+                  raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Fasp::Uri::SCHEME}" if found_package_link.nil?
                   pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
@@ -357,7 +358,7 @@ module Aspera
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                   pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
                 end
-              when /^faspe:/
+              when /^#{Fasp::Uri::SCHEME}:/o
                 pkg_id_uri = [{id: 'package', uri: link_url}]
               else
                 link_data = self.class.get_link_data(link_url)
@@ -393,7 +394,7 @@ module Aspera
                   statuses = [:success]
                 else
                   transfer_spec = Fasp::Uri.new(id_uri[:uri]).transfer_spec
-                  # NOTE: only external users have token in faspe: link !
+                  # NOTE: only external users have token in Fasp::Uri::SCHEME link !
                   if !transfer_spec.key?('token')
                     sanitized = id_uri[:uri].gsub('&', '&amp;')
                     xml_payload =

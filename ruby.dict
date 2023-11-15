@@ -46,3 +46,12 @@ FNM_DOTMATCH
 binread
 xmlsimple
 rubocop
+servlet
+mimemagic
+tmpdir
+isatty
+getpass
+ruby-progressbar
+optparse
+readuntil
+ENOENT

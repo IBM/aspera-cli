@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore precalc
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/node'

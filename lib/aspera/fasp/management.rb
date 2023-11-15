@@ -4,6 +4,7 @@ module Aspera
   module Fasp
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Management
+      # cspell: disable
       OPERATIONS = %w[
         NOP
         START
@@ -192,6 +193,8 @@ module Aspera
                           ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay].freeze
       BOOLEAN_FIELDS = %w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled
                           MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect].freeze
+      # cspell: enable
+
       class << self
         # translates legacy event into enhanced (JSON) event
         def enhanced_event_format(event)
@@ -208,7 +211,7 @@ module Aspera
             h[new_name] = value
           end
         end
-      end # class << self
+end # class << self
       def initialize
         @event_build = nil
         @last_event = nil

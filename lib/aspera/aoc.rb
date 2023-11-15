@@ -28,7 +28,7 @@ module Aspera
   class AoC < Aspera::Rest
     PRODUCT_NAME = 'Aspera on Cloud'
     # Production domain of AoC
-    PROD_DOMAIN = 'ibmaspera.com'
+    PROD_DOMAIN = 'ibmaspera.com' # cspell:disable-line
     # to avoid infinite loop in pub link redirection
     MAX_AOC_URL_REDIRECT = 10
     # Well-known AoC globals client apps
@@ -491,7 +491,7 @@ module Aspera
       }
     end
 
-    # Add transferspec
+    # Add transfer spec
     # callback in Aspera::Node (transfer_spec_gen4)
     def add_ts_tags(transfer_spec:, app_info:)
       # translate transfer direction to upload/download

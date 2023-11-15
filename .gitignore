@@ -4,7 +4,6 @@
 /simplecov.log
 /tmp/
 /.*_checked
-/nameversion.mak
 .DS_Store
 # rspec failure tracking
 /.rspec_status

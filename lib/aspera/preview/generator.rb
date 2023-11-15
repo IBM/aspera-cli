@@ -2,7 +2,7 @@
 
 # ffmpeg options:
 # spellchecker:ignore pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
-# spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos
+# spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes
 
 require 'open3'
 require 'aspera/preview/options'
@@ -39,11 +39,11 @@ module Aspera
         @options = options
         @temp_folder = File.join(main_temp_dir, @source_file_path.split('/').last.gsub(/\s/, '_').gsub(/\W/, ''))
         # extract preview format from extension of target file
-        @preview_format_symb = File.extname(@destination_file_path).gsub(/^\./, '').to_sym
+        @preview_format_sym = File.extname(@destination_file_path).gsub(/^\./, '').to_sym
         conversion_type = FileTypes.instance.conversion_type(@source_file_path, api_mime_type)
-        @processing_method = "convert_#{conversion_type}_to_#{@preview_format_symb}"
+        @processing_method = "convert_#{conversion_type}_to_#{@preview_format_sym}"
         if conversion_type.eql?(:video)
-          case @preview_format_symb
+          case @preview_format_sym
           when :mp4
             @processing_method = "#{@processing_method}_using_#{@options.video_conversion}"
           when :png
@@ -52,7 +52,7 @@ module Aspera
         end
         @processing_method = @processing_method.to_sym
         Log.log.debug{"method: #{@processing_method}"}
-        raise "no processing know for #{conversion_type} -> #{@preview_format_symb}" unless respond_to?(@processing_method, true)
+        raise "no processing know for #{conversion_type} -> #{@preview_format_sym}" unless respond_to?(@processing_method, true)
       end
 
       # create preview as specified in constructor
@@ -66,7 +66,7 @@ module Aspera
         rescue StandardError => e
           Log.log.error{"Ignoring: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
-          FileUtils.cp(File.expand_path(@preview_format_symb.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
+          FileUtils.cp(File.expand_path(@preview_format_sym.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
         ensure
           FileUtils.rm_rf(@temp_folder)
         end
@@ -120,8 +120,8 @@ module Aspera
       # generate n clips starting at offset
       def convert_video_to_mp4_using_clips
         p_duration = Utils.video_get_duration(@source_file_path)
-        filelist = File.join(this_tmpdir, 'clip_files.txt')
-        File.open(filelist, 'w+') do |f|
+        file_list_file = File.join(this_tmpdir, 'clip_files.txt')
+        File.open(file_list_file, 'w+') do |f|
           1.upto(@options.clips_count.to_i) do |i|
             offset_seconds = get_offset(p_duration, @options.video_start_sec.to_i, @options.clips_count.to_i, i)
             tmp_file_name = format('clip%04d.mp4', i)
@@ -139,10 +139,11 @@ module Aspera
         end
         # concat clips
         Utils.ffmpeg(
-          in_f: filelist,
+          in_f: file_list_file,
           in_p: ['-f', 'concat'],
           out_f: @destination_file_path,
           out_p: ['-codec', 'copy'])
+        File.delete(file_list_file)
       end
 
       # do a simple re-encoding

@@ -31,7 +31,7 @@ module Aspera
         # Temp folder for file lists, must contain only file lists
         # because of garbage collection takes any file there
         # this could be refined, as , for instance, on macos, temp folder is already user specific
-        @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists')
+        @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists') # cspell:disable-line
         @param_description_cache = nil
         # @return normalized description of transfer spec parameters, direct from yaml
         def description
@@ -69,8 +69,8 @@ module Aspera
                 else
                   raise "error: #{param}"
                 end.map{|n|"{#{n}}"}.join('|')
-                conv = options[:cli].key?(:convert) ? '(conversion)' : ''
-                "#{options[:cli][:switch]} #{conv}#{values}"
+                conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
+                "#{options[:cli][:switch]} #{conversion_tag}#{values}"
               when :special then Cli::Formatter.special('special')
               when :ignore then Cli::Formatter.special('ignored')
               else
@@ -140,7 +140,7 @@ module Aspera
         # is the file list provided through EX_ parameters?
         ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @options[:ascp_args])
         # set if paths is mandatory in ts
-        @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided
+        @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided # cspell:words keepalive
         # get paths in transfer spec (after setting if it is mandatory)
         ts_paths_array = @builder.read_param('paths')
         if ascp_file_list_provided && !ts_paths_array.nil?
@@ -231,7 +231,7 @@ module Aspera
           # add SSH bypass keys when authentication is token and no auth is provided
           if @job_spec.key?('token') && !@job_spec.key?('remote_password')
             # @job_spec['remote_password'] = Installation.instance.ssh_cert_uuid # not used: no passphrase
-            Installation.instance.bypass_keys.each { |key| env_args[:args].unshift('-i', key) }
+            Installation.instance.aspera_token_ssh_key_paths.each { |key| env_args[:args].unshift('-i', key) }
           end
         end
 
@@ -266,7 +266,7 @@ module Aspera
 
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
-          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_cert_privkey))
+          env_args[:args].unshift('-Y', Installation.instance.path(:fallback_private_key))
           env_args[:args].unshift('-I', Installation.instance.path(:fallback_certificate))
         end
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:words httpport targetrate minrate bwcap createpath lockpolicy lockminrate
+# cspell:words httpport targetrate minrate bwcap createpath lockpolicy lockminrate faspe
 
 require 'aspera/log'
 require 'aspera/rest'
@@ -10,6 +10,7 @@ module Aspera
   module Fasp
     # translates a "faspe:" URI (used in Faspex 4) into transfer spec hash
     class Uri
+      SCHEME = 'faspe'
       def initialize(fasp_link)
         @fasp_uri = URI.parse(fasp_link.gsub(' ', '%20'))
         # TODO: check scheme is faspe

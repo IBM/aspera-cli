@@ -150,39 +150,43 @@ module Aspera
         Log.log.debug('fasp local shutdown')
       end
 
+      # cspell:disable
       # begin 'Type' => 'NOTIFICATION', 'PreTransferBytes' => size
       # progress 'Type' => 'STATS', 'Bytescont' => size
       # end 'Type' => 'DONE'
+      # cspell:enable
 
       # @param event management port event
       def process_progress(event)
         session_id = event['SessionId']
         case event['Type']
         when 'INIT'
-          @precalc_sent = false
-          @precalc_last_size = nil
+          @pre_calc_sent = false
+          @pre_calc_last_size = nil
           notify_progress(session_id: session_id, type: :session_start)
         when 'NOTIFICATION' # sent from remote
           if event.key?('PreTransferBytes')
-            @precalc_sent = true
+            @pre_calc_sent = true
             notify_progress(session_id: session_id, type: :session_size, info: event['PreTransferBytes'])
           end
         when 'STATS' # during transfer
-          @precalc_last_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          notify_progress(session_id: session_id, type: :transfer, info: @precalc_last_size)
+          @pre_calc_last_size = event['TransferBytes'].to_i + event['StartByte'].to_i
+          notify_progress(session_id: session_id, type: :transfer, info: @pre_calc_last_size)
         when 'DONE', 'ERROR' # end of session
           total_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          if !@precalc_sent && !total_size.zero?
+          if !@pre_calc_sent && !total_size.zero?
             notify_progress(session_id: session_id, type: :session_size, info: total_size)
           end
-          if @precalc_last_size != total_size
+          if @pre_calc_last_size != total_size
             notify_progress(session_id: session_id, type: :transfer, info: total_size)
           end
           notify_progress(session_id: session_id, type: :end)
+          # cspell:disable
         when 'SESSION'
         when 'ARGSTOP'
         when 'FILEERROR'
         when 'STOP'
+          # cspell:enable
           # stop event when one file is completed
         else
           Log.log.debug{"unknown event type #{event['Type']}"}
@@ -249,7 +253,7 @@ module Aspera
             Log.log.debug{Log.dump(:management_port, event)}
             # Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
             process_progress(event)
-            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR')
+            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
           last_event = processor.last_event
           # check that last status was received before process exit

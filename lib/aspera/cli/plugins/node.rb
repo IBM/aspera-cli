@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
 require 'aspera/fasp/transfer_spec'

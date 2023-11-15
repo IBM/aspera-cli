@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore csvt jsonpp
 require 'aspera/uri_reader'
 require 'aspera/environment'
 require 'json'

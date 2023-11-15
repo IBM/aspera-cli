@@ -7,12 +7,12 @@ require 'securerandom'
 
 module Aspera
   module Fasp
-    class AgentConnect < Aspera::Fasp::AgentBase
+    class AgentAspera < Aspera::Fasp::AgentBase
       # try twice the main init url in sequence
-      CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/']
+      START_URIS = ['aspera://']
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 3
-      private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
+      private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(options)
         super(options)
         @connect_settings = {
@@ -28,7 +28,7 @@ module Aspera
           Log.log.info('Connect was reached') if method_index > 0
           Log.log.debug{Log.dump(:connect_version, connect_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
-          start_url = CONNECT_START_URIS[method_index]
+          start_url = START_URIS[method_index]
           method_index += 1
           raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?
           Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
@@ -121,6 +121,6 @@ module Aspera
         end
         return [:success]
       end # wait
-    end # AgentConnect
+    end # AgentAspera
   end
 end

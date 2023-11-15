@@ -1612,7 +1612,7 @@ config ascp info --sdk-folder=sdk_test_dir
 config ascp install
 config ascp install --sdk-folder=sdk_test_dir
 config ascp products list
-config ascp products use 'Aspera Connect'
+config ascp products use 'IBM Aspera Connect'
 config ascp show
 config ascp spec
 config ascp use /usr/bin/ascp
@@ -1639,7 +1639,7 @@ config echo @uri:https://ifconfig.me
 config echo @vault:mypreset.password
 config echo @zlib:@stdin:
 config echo hello
-config email_test --notif-to=my_email_external
+config email_test --notify-to=my_email_external
 config flush_tokens
 config folder
 config gem name
@@ -1667,12 +1667,12 @@ config vault list
 config vault show mylabel
 config wizard https://console.example.com/path console
 config wizard https://faspex4.example.com/path faspex --username=test --password=test
-config wizard https://faspex5.example.com/path faspex5 --pkeypath=my_private_key
+config wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
 config wizard https://node.example.com/path node --username=test --password=test
 config wizard https://orch.example.com/path orchestrator --username=test --password=test
 config wizard https://shares.example.com/path shares --username=test --password=test
-config wizard my_org aoc --pkeypath= --username=my_user_email
-config wizard my_org aoc --pkeypath= --username=my_user_email --use-generic-client=yes
+config wizard my_org aoc --key-path= --username=my_user_email
+config wizard my_org aoc --key-path= --username=my_user_email --use-generic-client=yes
 ```
 
 #### Format of file
@@ -3016,11 +3016,11 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-File transfer operations are monitored and a progress bar is displayed on the terminal if option `progressbar` (`Bool`) is set to `yes` (default if the output is a terminal).
+File transfer operations are monitored and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
 The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
 
-To display the native progress bar of `ascp`, use `--progressbar=no --transfer-info=@json:'{"quiet":false}'`.
+To display the native progress bar of `ascp`, use `--progress-bar=no --transfer-info=@json:'{"quiet":false}'`.
 
 ### <a id="scheduler"></a>Scheduler
 
@@ -3297,7 +3297,7 @@ OPTIONS:
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
-        --pkeypath=VALUE             Wizard: path to private key for JWT
+        --key-path=VALUE             Wizard: path to private key for JWT
     -P, --presetVALUE                Load the named option preset from current config file
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
@@ -3309,8 +3309,8 @@ OPTIONS:
         --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
-        --notif-to=VALUE             Email recipient for notification of transfers
-        --notif-template=VALUE       Email ERB template for notification of transfers
+        --notify-to=VALUE            Email recipient for notification of transfers
+        --notify-template=VALUE      Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
@@ -3319,7 +3319,7 @@ OPTIONS:
         --http-options=VALUE         Options for HTTP/S socket (Hash)
     -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
-        --progressbar=ENUM           Display progress bar: [no], yes
+        --progress-bar=ENUM          Display progress bar: [no], yes
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -3592,7 +3592,7 @@ option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
-option: pkeypath>
+option: key_path>
 using existing key:
 /Users/myself/.aspera/ascli/aspera_aoc_key
 Using global client_id.
@@ -3965,7 +3965,7 @@ The activity app can be queried with:
 ascli aoc admin analytics transfers
 ```
 
-It can also support filters and send notification using option `notif_to`. a template is defined using option `notif_template` :
+It can also support filters and send notification using option `notify_to`. a template is defined using option `notify_template` :
 
 `mytemplate.erb`:
 
@@ -3988,7 +3988,7 @@ The environment provided contains the following additional variable:
 Example:
 
 ```bash
-ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=active --notif-template=@file:mytemplate.erb
+ascli aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=active --notify-template=@file:mytemplate.erb
 ```
 
 Options:
@@ -4610,7 +4610,7 @@ For instructions, refer to section `find` for plugin `node`.
 ### AoC sample commands
 
 ```bash
-aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=my_email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 aoc admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key delete ak1ibmcloud
@@ -4892,11 +4892,11 @@ server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"n
 server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
 server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
-server upload 'testfile.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
+server upload 'testfile.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","filepairlist.txt"]}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"testfile.bin","destination":"my_inside_folder/othername4"}]}'
-server upload --src-type=pair 'testfile.bin' my_inside_folder/othername2 --notif-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+server upload --src-type=pair 'testfile.bin' my_inside_folder/othername2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 server upload --src-type=pair --sources=@json:'["testfile.bin","my_inside_folder/othername3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
 server upload --src-type=pair testfile.bin my_upload_folder/othername5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
@@ -5452,7 +5452,7 @@ Multiple applications detected:
 product> faspex5
 Using: Faspex at https://faspex5.example.com/aspera/faspex
 Please provide the path to your private RSA key, or nothing to generate one:
-option: pkeypath>
+option: key_path>
 Using existing key:
 /Users/someuser/.aspera/ascli/my_key
 option: username> someuser@example.com
@@ -5603,7 +5603,7 @@ faspex5 packages receive --box=my_shinbox pack_shbox_id1 --to-folder=.
 faspex5 packages receive --box=my_workgroup --group-type=workgroups pack_wrkgrp_id1 --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
-faspex5 packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"abc123_yo"}'
+faspex5 packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
 faspex5 packages send --shared-folder=%name:my_shfolder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shfolder_file
 faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' testfile.bin
@@ -5935,12 +5935,12 @@ The value is a `Hash` with the following keys:
 
 ### Email notification on transfer
 
-Like for any transfer, a notification can be sent by email using parameters: `notif_to` and `notif_template` .
+Like for any transfer, a notification can be sent by email using parameters: `notify_to` and `notify_template` .
 
 Example:
 
 ```bash
-ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
+ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notify-to=aspera.user1@gmail.com --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: Package sent: <%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
@@ -6606,16 +6606,16 @@ Check settings with `smtp_settings` command. Send test email with `email_test`.
 
 ```bash
 ascli config --smtp=@preset:smtp_google smtp
-ascli config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
+ascli config --smtp=@preset:smtp_google email --notify-to=sample.dest@example.com
 ```
 
 ### Notifications for transfer status
 
 An e-mail notification can be sent upon transfer success and failure (one email per transfer job, one job being possibly multi session, and possibly after retry).
 
-To activate, use option `notif_to`.
+To activate, use option `notify_to`.
 
-A default e-mail template is used, but it can be overridden with option `notif_template`.
+A default e-mail template is used, but it can be overridden with option `notify_template`.
 
 The environment provided contains the following additional variables:
 
@@ -6806,7 +6806,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 ### Example: unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
-ascli aoc files download . --to-folder=. --lock-port=12345 --progressbar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
@@ -6838,7 +6838,7 @@ Typically, the health check uses the REST API of the application with the follow
 `ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```bash
-ascli server health transfer --to-folder=/Upload --format=nagios --progressbar=no
+ascli server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
 ```
 
 ```output

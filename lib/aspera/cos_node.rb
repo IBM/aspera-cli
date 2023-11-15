@@ -8,7 +8,7 @@ require 'xmlsimple'
 module Aspera
   class CosNode < Aspera::Node
     class << self
-      def parameters_from_svc_creds(service_credentials, bucket_region)
+      def parameters_from_svc_credentials(service_credentials, bucket_region)
         # check necessary contents
         raise 'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
         %w[apikey resource_instance_id endpoints].each do |field|

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore ascmd smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist codeset lc_ctype ascmdtypes
 require 'aspera/log'
 
 module Aspera
@@ -75,7 +76,7 @@ module Aspera
     # key = name of type
     TYPES_DESCR = {
       result: {decode: :field_list,
-               fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :substruct}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
+               fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :sub_struct}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
                         {name: :info, is_a: :info}, {name: :success, is_a: nil, special: :return_true}, {name: :exit, is_a: nil},
                         {name: :df, is_a: :mnt, special: :restart_on_first}, {name: :md5sum, is_a: :md5sum}]},
       stat:   {decode: :field_list,
@@ -162,7 +163,7 @@ module Aspera
               result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)
             when :return_true
               result[field_info[:name]] = true
-            when :substruct
+            when :sub_struct
               result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{|r|parse(r[:buffer], field_info[:is_a], indent_level)}
             when :multiple
               result[field_info[:name]] ||= []

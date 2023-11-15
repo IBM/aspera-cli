@@ -1766,7 +1766,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb131-1"><a href
 <span id="cb131-8"><a href="#cb131-8" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp install</span>
 <span id="cb131-9"><a href="#cb131-9" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp install <span class="at">--sdk-folder</span><span class="op">=</span>sdk_test_dir</span>
 <span id="cb131-10"><a href="#cb131-10" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp products list</span>
-<span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
+<span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp products use <span class="st">&#39;IBM Aspera Connect&#39;</span></span>
 <span id="cb131-12"><a href="#cb131-12" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp show</span>
 <span id="cb131-13"><a href="#cb131-13" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp spec</span>
 <span id="cb131-14"><a href="#cb131-14" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> ascp use /usr/bin/ascp</span>
@@ -1793,7 +1793,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb131-1"><a href
 <span id="cb131-35"><a href="#cb131-35" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> echo @vault:mypreset.password</span>
 <span id="cb131-36"><a href="#cb131-36" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> echo @zlib:@stdin:</span>
 <span id="cb131-37"><a href="#cb131-37" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> echo hello</span>
-<span id="cb131-38"><a href="#cb131-38" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> email_test <span class="at">--notif-to</span><span class="op">=</span>my_email_external</span>
+<span id="cb131-38"><a href="#cb131-38" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> email_test <span class="at">--notify-to</span><span class="op">=</span>my_email_external</span>
 <span id="cb131-39"><a href="#cb131-39" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> flush_tokens</span>
 <span id="cb131-40"><a href="#cb131-40" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> folder</span>
 <span id="cb131-41"><a href="#cb131-41" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> gem name</span>
@@ -1821,12 +1821,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb131-1"><a href
 <span id="cb131-63"><a href="#cb131-63" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> vault show mylabel</span>
 <span id="cb131-64"><a href="#cb131-64" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://console.example.com/path console</span>
 <span id="cb131-65"><a href="#cb131-65" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex4.example.com/path faspex <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb131-66"><a href="#cb131-66" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex5.example.com/path faspex5 <span class="at">--pkeypath</span><span class="op">=</span>my_private_key</span>
+<span id="cb131-66"><a href="#cb131-66" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://faspex5.example.com/path faspex5 <span class="at">--key-path</span><span class="op">=</span>my_private_key</span>
 <span id="cb131-67"><a href="#cb131-67" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb131-68"><a href="#cb131-68" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb131-69"><a href="#cb131-69" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb131-70"><a href="#cb131-70" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb131-71"><a href="#cb131-71" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--pkeypath</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
+<span id="cb131-70"><a href="#cb131-70" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb131-71"><a href="#cb131-71" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
 <h3 data-number="4.9.6" id="format-of-file"><span
 class="header-section-number">4.9.6</span> Format of file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
@@ -4438,13 +4438,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb230-1"><a href
 <h2 data-number="4.26" id="transfer-progress-bar"><span
 class="header-section-number">4.26</span> Transfer progress bar</h2>
 <p>File transfer operations are monitored and a progress bar is
-displayed on the terminal if option <code>progressbar</code>
+displayed on the terminal if option <code>progress_bar</code>
 (<code>Bool</code>) is set to <code>yes</code> (default if the output is
 a terminal).</p>
 <p>The same progress bar is used for any type of transfer, using
 <code>ascp</code>, server to server, using HTTPS, etc…</p>
 <p>To display the native progress bar of <code>ascp</code>, use
-<code>--progressbar=no --transfer-info=@json:'{"quiet":false}'</code>.</p>
+<code>--progress-bar=no --transfer-info=@json:'{"quiet":false}'</code>.</p>
 <h2 data-number="4.27" id="scheduler"><span
 class="header-section-number">4.27</span>
 <a id="scheduler"></a>Scheduler</h2>
@@ -4778,7 +4778,7 @@ OPTIONS:
         --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
-        --pkeypath=VALUE             Wizard: path to private key for JWT
+        --key-path=VALUE             Wizard: path to private key for JWT
     -P, --presetVALUE                Load the named option preset from current config file
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
@@ -4790,8 +4790,8 @@ OPTIONS:
         --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
-        --notif-to=VALUE             Email recipient for notification of transfers
-        --notif-template=VALUE       Email ERB template for notification of transfers
+        --notify-to=VALUE            Email recipient for notification of transfers
+        --notify-template=VALUE      Email ERB template for notification of transfers
         --version-check-days=VALUE   Period in days to check new version (zero to disable)
         --plugin-folder=VALUE        Folder where to find additional plugins
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
@@ -4800,7 +4800,7 @@ OPTIONS:
         --http-options=VALUE         Options for HTTP/S socket (Hash)
     -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
-        --progressbar=ENUM           Display progress bar: [no], yes
+        --progress-bar=ENUM          Display progress bar: [no], yes
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -5062,7 +5062,7 @@ option: url&gt; https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
-option: pkeypath&gt;
+option: key_path&gt;
 using existing key:
 /Users/myself/.aspera/ascli/aspera_aoc_key
 Using global client_id.
@@ -5451,8 +5451,8 @@ class="header-section-number">5.4.5</span> Activity</h3>
 <div class="sourceCode" id="cb278"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb278-1"><a href="#cb278-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin analytics transfers</span></code></pre></div>
 <p>It can also support filters and send notification using option
-<code>notif_to</code>. a template is defined using option
-<code>notif_template</code> :</p>
+<code>notify_to</code>. a template is defined using option
+<code>notify_template</code> :</p>
 <p><code>mytemplate.erb</code>:</p>
 <div class="sourceCode" id="cb279"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb279-1"><a href="#cb279-1" aria-hidden="true" tabindex="-1"></a><span class="ex">From:</span> <span class="op">&lt;</span>%=from_name%<span class="op">&gt;</span> <span class="op">&lt;&lt;%=from_email%&gt;&gt;</span></span>
@@ -5471,7 +5471,7 @@ variable:</p>
 </ul>
 <p>Example:</p>
 <div class="sourceCode" id="cb280"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb280-1"><a href="#cb280-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin analytics transfers <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notif-to</span><span class="op">=</span>active <span class="at">--notif-template</span><span class="op">=</span>@file:mytemplate.erb</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb280-1"><a href="#cb280-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin analytics transfers <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notify-to</span><span class="op">=</span>active <span class="at">--notify-template</span><span class="op">=</span>@file:mytemplate.erb</span></code></pre></div>
 <p>Options:</p>
 <ul>
 <li><code>once_only</code> keep track of last date it was called, so
@@ -6047,7 +6047,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb344-1"><a href
 <h2 data-number="5.8" id="aoc-sample-commands"><span
 class="header-section-number">5.8</span> AoC sample commands</h2>
 <div class="sourceCode" id="cb345"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb345-1"><a href="#cb345-1" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin analytics transfers organization <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notif-to</span><span class="op">=</span>my_email_external <span class="at">--notif-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: &lt;%=ev[&quot;files_completed&quot;]%&gt; files received\n\n&lt;%=ev.to_yaml%&gt;}&#39;</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb345-1"><a href="#cb345-1" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin analytics transfers organization <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: &lt;%=ev[&quot;files_completed&quot;]%&gt; files received\n\n&lt;%=ev.to_yaml%&gt;}&#39;</span></span>
 <span id="cb345-2"><a href="#cb345-2" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb345-3"><a href="#cb345-3" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb345-4"><a href="#cb345-4" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> admin ats access_key delete ak1ibmcloud</span>
@@ -6302,11 +6302,11 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb361-1"><a href
 <span id="cb361-21"><a href="#cb361-21" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;my_inside_folder&quot;},&quot;reset&quot;:true,&quot;quiet&quot;:false}&#39;</span></span>
 <span id="cb361-22"><a href="#cb361-22" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span></span>
 <span id="cb361-23"><a href="#cb361-23" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
-<span id="cb361-24"><a href="#cb361-24" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="st">&#39;testfile.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progressbar</span><span class="op">=</span>yes</span>
+<span id="cb361-24"><a href="#cb361-24" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="st">&#39;testfile.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress-bar</span><span class="op">=</span>yes</span>
 <span id="cb361-25"><a href="#cb361-25" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;filelist.txt&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder</span>
 <span id="cb361-26"><a href="#cb361-26" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-pair-list&quot;,&quot;filepairlist.txt&quot;]}&#39;</span></span>
 <span id="cb361-27"><a href="#cb361-27" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;testfile.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/othername4&quot;}]}&#39;</span></span>
-<span id="cb361-28"><a href="#cb361-28" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;testfile.bin&#39;</span> my_inside_folder/othername2 <span class="at">--notif-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
+<span id="cb361-28"><a href="#cb361-28" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;testfile.bin&#39;</span> my_inside_folder/othername2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
 <span id="cb361-29"><a href="#cb361-29" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;testfile.bin&quot;,&quot;my_inside_folder/othername3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
 <span id="cb361-30"><a href="#cb361-30" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair testfile.bin my_upload_folder/othername5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:1,&quot;exclude_older_than&quot;:10000,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
 <span id="cb361-31"><a href="#cb361-31" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--remove-after-transfer&quot;,&quot;--remove-empty-directories&quot;,&quot;--exclude-newer-than=-8&quot;,&quot;--src-base&quot;,&quot;source_hot&quot;]}&#39;</span> source_hot</span></code></pre></div>
@@ -6926,7 +6926,7 @@ Multiple applications detected:
 product&gt; faspex5
 Using: Faspex at https://faspex5.example.com/aspera/faspex
 Please provide the path to your private RSA key, or nothing to generate one:
-option: pkeypath&gt;
+option: key_path&gt;
 Using existing key:
 /Users/someuser/.aspera/ascli/my_key
 option: username&gt; someuser@example.com
@@ -7085,7 +7085,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href
 <span id="cb407-25"><a href="#cb407-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups pack_wrkgrp_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb407-26"><a href="#cb407-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb407-27"><a href="#cb407-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
-<span id="cb407-28"><a href="#cb407-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive f5_p31 <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;abc123_yo&quot;}&#39;</span></span>
+<span id="cb407-28"><a href="#cb407-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive f5_p31 <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_secret_here&quot;}&#39;</span></span>
 <span id="cb407-29"><a href="#cb407-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--shared-folder</span><span class="op">=</span>%name:my_shfolder_name @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> my_shfolder_file</span>
 <span id="cb407-30"><a href="#cb407-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shinbox&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> testfile.bin</span>
 <span id="cb407-31"><a href="#cb407-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_workgroup&quot;]}&#39;</span> testfile.bin</span>
@@ -7491,10 +7491,11 @@ Faspex</li>
 class="header-section-number">10.4</span> Email notification on
 transfer</h2>
 <p>Like for any transfer, a notification can be sent by email using
-parameters: <code>notif_to</code> and <code>notif_template</code> .</p>
+parameters: <code>notify_to</code> and <code>notify_template</code>
+.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb430"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb430-1"><a href="#cb430-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test pkg 1&quot;,&quot;recipients&quot;:[&quot;aspera.user1@gmail.com&quot;]}&#39;</span> ~/Documents/Samples/200KB.1 <span class="at">--notif-to</span><span class="op">=</span>aspera.user1@gmail.com <span class="at">--notif-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: Package sent: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;metadata&quot;][&quot;_pkg_name&quot;]%&gt; files received\n\nTo user: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;recipients&quot;].first[&quot;email&quot;]%&gt;}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb430-1"><a href="#cb430-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test pkg 1&quot;,&quot;recipients&quot;:[&quot;aspera.user1@gmail.com&quot;]}&#39;</span> ~/Documents/Samples/200KB.1 <span class="at">--notify-to</span><span class="op">=</span>aspera.user1@gmail.com <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: Package sent: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;metadata&quot;][&quot;_pkg_name&quot;]%&gt; files received\n\nTo user: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;recipients&quot;].first[&quot;email&quot;]%&gt;}&#39;</span></span></code></pre></div>
 <p>In this example the notification template is directly provided on
 command line. Package information placed in the message are directly
 taken from the tags in transfer spec. The template can be placed in a
@@ -8231,16 +8232,16 @@ class="header-section-number">17.3</span> Test</h2>
 email with <code>email_test</code>.</p>
 <div class="sourceCode" id="cb464"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb464-1"><a href="#cb464-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google smtp</span>
-<span id="cb464-2"><a href="#cb464-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google email <span class="at">--notif-to</span><span class="op">=</span>sample.dest@example.com</span></code></pre></div>
+<span id="cb464-2"><a href="#cb464-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google email <span class="at">--notify-to</span><span class="op">=</span>sample.dest@example.com</span></code></pre></div>
 <h2 data-number="17.4" id="notifications-for-transfer-status"><span
 class="header-section-number">17.4</span> Notifications for transfer
 status</h2>
 <p>An e-mail notification can be sent upon transfer success and failure
 (one email per transfer job, one job being possibly multi session, and
 possibly after retry).</p>
-<p>To activate, use option <code>notif_to</code>.</p>
+<p>To activate, use option <code>notify_to</code>.</p>
 <p>A default e-mail template is used, but it can be overridden with
-option <code>notif_template</code>.</p>
+option <code>notify_template</code>.</p>
 <p>The environment provided contains the following additional
 variables:</p>
 <ul>
@@ -8523,7 +8524,7 @@ id="example-unidirectional-synchronization-download-from-aspera-on-cloud-files">
 class="header-section-number">19.5</span> Example: unidirectional
 synchronization (download) from Aspera on Cloud Files</h2>
 <div class="sourceCode" id="cb472"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb472-1"><a href="#cb472-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progressbar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb472-1"><a href="#cb472-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progress-bar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> option <code>delete_before_transfer</code>
 will delete files locally, if they are not present on remote side.</p>
@@ -8554,7 +8555,7 @@ health by:</p>
 of an Aspera server. The output can be made compatible to Nagios with
 option <code>--format=nagios</code> :</p>
 <div class="sourceCode" id="cb475"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progressbar</span><span class="op">=</span>no</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progress-bar</span><span class="op">=</span>no</span></code></pre></div>
 <pre class="output"><code>OK - [transfer:ok]</code></pre>
 <div class="sourceCode" id="cb477"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb477-1"><a href="#cb477-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health asctl status <span class="at">--cmd_prefix</span><span class="op">=</span><span class="st">&#39;sudo &#39;</span> <span class="at">--format</span><span class="op">=</span>nagios</span></code></pre></div>

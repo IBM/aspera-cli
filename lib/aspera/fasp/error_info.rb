@@ -5,11 +5,11 @@
 module Aspera
   module Fasp
     # from https://www.google.com/search?q=FASP+error+codes
-    # Note that the fact that an error is retryable is not internally defined by protocol, it's client-side responsibility
+    # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
     # rubocop:disable Layout/MultilineHashKeyLineBreaks
     # rubocop:disable Layout/FirstHashElementLineBreak
     ERROR_INFO = {
-      # id   retryable      mnemo                       message                                              additional info
+      # id   retry-able     mnemo                       message                                              additional info
       1  => { r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
       2  => { r: false, c: 'ASCP',                        m: 'Generic SCP error',                              a: 'ASCP error'},
       3  => { r: false, c: 'AMBIGUOUS_TARGET',            m: 'Target incorrectly specified',                   a: 'Ambiguous target'},

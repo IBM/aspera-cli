@@ -8,7 +8,7 @@
 # cli.switch     : ascp: switch for ascp command line
 # cli.convert    : ascp: transform value: either a Hash with conversion values, or name of class
 # cli.variable   : ascp: name of env var
-# cspell:words dgram
+# cspell:words dgram dnat dnats faspmgr asperanoded xattrs keepalive datagram
 ---
 cipher:
   :desc: "In transit encryption type."

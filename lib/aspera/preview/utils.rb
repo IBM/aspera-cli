@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore ffprobe optipng unoconv
 require 'English'
 require 'tmpdir'
 require 'fileutils'
@@ -29,10 +30,10 @@ module Aspera
           tools_to_check = EXTERNAL_TOOLS.dup
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
-          tools_to_check.each do |command_symb|
-            external_command(command_symb, ['-h'], log_error: false)
+          tools_to_check.each do |command_sym|
+            external_command(command_sym, ['-h'], log_error: false)
           rescue Errno::ENOENT => e
-            raise "missing #{command_symb} binary: #{e}"
+            raise "missing #{command_sym} binary: #{e}"
           rescue
             nil
           end
@@ -41,17 +42,17 @@ module Aspera
         # execute external command
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
-        def external_command(command_symb, command_args, log_error: true)
-          raise "unexpected command #{command_symb}" unless EXTERNAL_TOOLS.include?(command_symb)
+        def external_command(command_sym, command_args, log_error: true)
+          raise "unexpected command #{command_sym}" unless EXTERNAL_TOOLS.include?(command_sym)
           # build command line, and quote special characters
-          command_line = command_args.clone.unshift(command_symb).map{|i| shell_quote(i.to_s)}.join(' ')
+          command_line = command_args.clone.unshift(command_sym).map{|i| shell_quote(i.to_s)}.join(' ')
           Log.log.debug{"cmd=#{command_line}".blue}
           stdout, stderr, status = Open3.capture3(command_line)
           if log_error && !status.success?
             Log.log.error{"status: #{status}"}
             Log.log.error{"stdout: #{stdout}"}
             Log.log.error{"stderr: #{stderr}"}
-            raise "#{command_symb} error #{status}"
+            raise "#{command_sym} error #{status}"
           end
           return {status: status, stdout: stdout}
         end

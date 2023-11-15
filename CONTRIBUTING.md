@@ -1,5 +1,5 @@
 # Contributing
-<!-- cspell:words passin GEMVERS -->
+<!-- cspell:words passin -->
 ## Reporting Issues and Vulnerabilities
 
 You can report issues at <https://github.com/IBM/aspera-cli/issues>
@@ -192,11 +192,11 @@ make dpush
 
 ### Specific version image build
 
-It is possible to build a specific version by setting envvar `GEMVERS` and `make` with option `-e`:
+It is possible to build a specific version by setting envvar `GEM_VERSION` and `make` with option `-e`:
 
 ```bash
-GEMVERS=4.11.0 make -e docker
-GEMVERS=4.11.0 make -e dpush
+GEM_VERSION=4.11.0 make -e docker
+GEM_VERSION=4.11.0 make -e dpush
 ```
 
 ### Development version image build

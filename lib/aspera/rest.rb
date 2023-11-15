@@ -28,7 +28,7 @@ module Aspera
       user_agent:              'Ruby',          # goes to HTTP request header: 'User-Agent'
       download_partial_suffix: '.http_partial', # suffix for partial download
       session_cb:              nil,             # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      progressbar:             nil              # progress bar object
+      progress_bar:            nil # progress bar object
     }
 
     # flag for array parameters prefixed with []
@@ -224,7 +224,7 @@ module Aspera
     # :type (:none, :basic, :oauth2, :url)
     # :username   [:basic]
     # :password   [:basic]
-    # :url_creds  [:url] a hash
+    # :url_query  [:url] a hash
     # :*          [:oauth2] see Oauth class
     def call(call_data)
       raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
@@ -244,7 +244,7 @@ module Aspera
         call_data[:headers]['Authorization'] = oauth_token unless call_data[:headers].key?('Authorization')
       when :url
         call_data[:url_params] ||= {}
-        call_data[:auth][:url_creds].each do |key, value|
+        call_data[:auth][:url_query].each do |key, value|
           call_data[:url_params][key] = value
         end
       else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
@@ -281,16 +281,16 @@ module Aspera
             target_file_tmp = "#{target_file}#{@@global[:download_partial_suffix]}"
             Log.log.debug{"saving to: #{target_file}"}
             written_size = 0
-            @@global[:progressbar]&.event(session_id: 1, type: :session_start)
-            @@global[:progressbar]&.event(session_id: 1, type: :session_size, info: total_size)
+            @@global[:progress_bar]&.event(session_id: 1, type: :session_start)
+            @@global[:progress_bar]&.event(session_id: 1, type: :session_size, info: total_size)
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 written_size += fragment.length
-                @@global[:progressbar]&.event(session_id: 1, type: :transfer, info: written_size)
+                @@global[:progress_bar]&.event(session_id: 1, type: :transfer, info: written_size)
               end
             end
-            @@global[:progressbar]&.event(session_id: 1, type: :end)
+            @@global[:progress_bar]&.event(session_id: 1, type: :end)
             # rename at the end
             File.rename(target_file_tmp, target_file)
             file_saved = true

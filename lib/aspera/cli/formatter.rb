@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore jsonpp
 require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'terminal-table'
@@ -153,10 +154,10 @@ module Aspera
         @options = {}
       end
 
-      def option_handler(option_symb, operation, value=nil)
+      def option_handler(option_symbol, operation, value=nil)
         case operation
-        when :set then @options[option_symb] = value
-        when :get then return @options[option_symb]
+        when :set then @options[option_symbol] = value
+        when :get then return @options[option_symbol]
         else raise "internal error: no such operation: #{operation}"
         end
         nil

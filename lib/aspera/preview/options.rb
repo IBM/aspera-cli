@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# cspell:ignore reencode conv transframes pauseframes
+
 module Aspera
   module Preview
     # generator options. Used as parameter to preview generator object.

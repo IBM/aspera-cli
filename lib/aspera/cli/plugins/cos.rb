@@ -10,7 +10,6 @@ module Aspera
       class Cos < Aspera::Cli::Plugin
         def initialize(env)
           super(env)
-          @service_creds = nil
           options.declare(:bucket, 'Bucket name')
           options.declare(:endpoint, 'Storage endpoint url')
           options.declare(:apikey, 'Storage API key')
@@ -37,7 +36,7 @@ module Aspera
               service_api_key = options.get_option(:apikey, mandatory: true)
               instance_id = options.get_option(:crn, mandatory: true)
             else
-              params = CosNode.parameters_from_svc_creds(service_credentials, options.get_option(:region, mandatory: true))
+              params = CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true))
               storage_endpoint = params[:storage_endpoint]
               service_api_key = params[:service_api_key]
               instance_id = params[:instance_id]

@@ -319,6 +319,7 @@ module Aspera
           when :subscription
             org = aoc_api.read('organization')[:data]
             bss_api = api_from_options('bss/platform')
+            # cspell:disable
             graphql_query = "
     query ($organization_id: ID!) {
       aoc (organization_id: $organization_id) {
@@ -367,6 +368,7 @@ module Aspera
       }
     }
   "
+            # cspell:enable
             result = bss_api.create('graphql', {'variables' => {'organization_id' => org['id']}, 'query' => graphql_query})[:data]['data']
             return {type: :single_object, data: result['aoc']['bssSubscription']}
           when :ats
@@ -416,7 +418,7 @@ module Aspera
               end
               events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", query_read_delete(default: filter))[:data][event_type]
               start_date_persistency&.save
-              if !options.get_option(:notif_to).nil?
+              if !options.get_option(:notify_to).nil?
                 events.each do |tr_event|
                   config.send_email_template(values: {ev: tr_event})
                 end

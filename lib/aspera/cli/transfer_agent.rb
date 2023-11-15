@@ -14,7 +14,7 @@ module Aspera
       # special value for --sources : read file list from transfer spec (--ts)
       FILE_LIST_FROM_TRANSFER_SPEC = '@ts'
       FILE_LIST_OPTIONS = [FILE_LIST_FROM_ARGS, FILE_LIST_FROM_TRANSFER_SPEC, 'Array'].freeze
-      DEFAULT_TRANSFER_NOTIF_TMPL = <<~END_OF_TEMPLATE
+      DEFAULT_TRANSFER_NOTIFY_TEMPLATE = <<~END_OF_TEMPLATE
         From: <%=from_name%> <<%=from_email%>>
         To: <<%=to%>>
         Subject: <%=subject%>
@@ -27,7 +27,7 @@ module Aspera
       private_constant :FILE_LIST_FROM_ARGS,
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
-        :DEFAULT_TRANSFER_NOTIF_TMPL
+        :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
       TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
 
       class << self
@@ -45,7 +45,7 @@ module Aspera
         @opt_mgr = opt_mgr
         @config = config_plugin
         # command line can override transfer spec
-        @transfer_spec_cmdline = {'create_dir' => true}
+        @transfer_spec_command_line = {'create_dir' => true}
         # options for transfer agent
         @transfer_info = {}
         # the currently selected transfer agent
@@ -61,20 +61,20 @@ module Aspera
         @opt_mgr.parse_options!
       end
 
-      def option_transfer_spec; @transfer_spec_cmdline; end
+      def option_transfer_spec; @transfer_spec_command_line; end
 
       # multiple option are merged
       def option_transfer_spec=(value)
         raise 'option ts shall be a Hash' unless value.is_a?(Hash)
-        @transfer_spec_cmdline.deep_merge!(value)
+        @transfer_spec_command_line.deep_merge!(value)
       end
 
       # add other transfer spec parameters
-      def option_transfer_spec_deep_merge(ts); @transfer_spec_cmdline.deep_merge!(ts); end
+      def option_transfer_spec_deep_merge(ts); @transfer_spec_command_line.deep_merge!(ts); end
 
       # @return [Hash] transfer spec with updated values from command line, including removed values
       def updated_ts(transfer_spec={})
-        transfer_spec.deep_merge!(@transfer_spec_cmdline)
+        transfer_spec.deep_merge!(@transfer_spec_command_line)
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil?}
         return transfer_spec
@@ -113,7 +113,7 @@ module Aspera
           agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
           agent_options[:trusted_certs] = @config.trusted_cert_locations(files_only: true) unless agent_options.key?(:trusted_certs)
         end
-        agent_options[:progress] = @config.progressbar
+        agent_options[:progress] = @config.progress_bar
         # get agent instance
         new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
         self.agent_instance = new_agent
@@ -127,7 +127,7 @@ module Aspera
         dest_folder = @opt_mgr.get_option(:to_folder)
         # do not expand path, if user wants to expand path: user @path:
         return dest_folder unless dest_folder.nil?
-        dest_folder = @transfer_spec_cmdline['destination_root']
+        dest_folder = @transfer_spec_command_line['destination_root']
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
@@ -153,7 +153,7 @@ module Aspera
         # return cache if set
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority : get paths from transfer spec on command line
-        @transfer_paths = @transfer_spec_cmdline['paths'] if @transfer_spec_cmdline.key?('paths')
+        @transfer_paths = @transfer_spec_command_line['paths'] if @transfer_spec_command_line.key?('paths')
         # is there a source list option ?
         file_list = @opt_mgr.get_option(:sources)
         case file_list
@@ -167,7 +167,7 @@ module Aspera
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
-            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_cmdline, @opt_mgr.get_option(:transfer_info))
+            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_command_line, @opt_mgr.get_option(:transfer_info))
           raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
@@ -204,23 +204,23 @@ module Aspera
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE
           # init default if required in any case
-          @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
+          @transfer_spec_command_line['destination_root'] ||= destination_folder(transfer_spec['direction'])
         when Fasp::TransferSpec::DIRECTION_SEND
           if transfer_spec.dig('tags', Fasp::TransferSpec::TAG_RESERVED, 'node', 'access_key')
             # gen4
-            @transfer_spec_cmdline.delete('destination_root') if @transfer_spec_cmdline.key?('destination_root_id')
+            @transfer_spec_command_line.delete('destination_root') if @transfer_spec_command_line.key?('destination_root_id')
           elsif transfer_spec.key?('token')
             # gen3
             # in that case, destination is set in return by application (API/upload_setup)
             # but to_folder was used in initial API call
-            @transfer_spec_cmdline.delete('destination_root')
+            @transfer_spec_command_line.delete('destination_root')
           else
             # init default if required
-            @transfer_spec_cmdline['destination_root'] ||= destination_folder(transfer_spec['direction'])
+            @transfer_spec_command_line['destination_root'] ||= destination_folder(transfer_spec['direction'])
           end
         end
         # update command line paths, unless destination already has one
-        @transfer_spec_cmdline['paths'] = transfer_spec['paths'] || ts_source_paths
+        @transfer_spec_command_line['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
         updated_ts(transfer_spec)
         # create transfer agent
@@ -234,7 +234,7 @@ module Aspera
       end
 
       def send_email_transfer_notification(transfer_spec, statuses)
-        return if @opt_mgr.get_option(:notif_to).nil?
+        return if @opt_mgr.get_option(:notify_to).nil?
         global_status = self.class.session_status(statuses)
         email_vars = {
           global_transfer_status: global_status,
@@ -242,7 +242,7 @@ module Aspera
           body:                   "Transfer is: #{global_status}",
           ts:                     transfer_spec
         }
-        @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIF_TMPL, values: email_vars)
+        @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: email_vars)
       end
 
       # shut down if agent requires it

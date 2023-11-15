@@ -1,6 +1,10 @@
 {
   "version": "0.2",
-  "ignorePaths": ["*.dict", ".cspell.json"],
+  "ignorePaths": [
+    "*.dict",
+    ".cspell.json",
+    "lib/aspera/data"
+  ],
   "dictionaryDefinitions": [
     {
       "name": "aspera",
@@ -14,11 +18,19 @@
     }
   ],
   "useGitignore": true,
-  "dictionaries": ["aspera", "ruby", "technical"],
+  "dictionaries": [
+    "aspera",
+    "ruby",
+    "technical"
+  ],
   "words": [],
   "ignoreWords": [],
   "import": [],
-  "enableFiletypes": ["markdown", "ruby", "shellscript"],
+  "enableFiletypes": [
+    "makefile",
+    "markdown",
+    "shellscript"
+  ],
   "patterns": [
     {
       "name": "markdown_code_block",
@@ -35,6 +47,10 @@
     {
       "name": "embedded_ruby_code_block",
       "pattern": "/<%[^%]*%>/g"
+    },
+    {
+      "name": "makefile_only_comments",
+      "pattern": "/^[^#]/"
     }
   ],
   "languageSettings": [
@@ -46,6 +62,20 @@
         "quoted_special_words",
         "embedded_ruby_code_block"
       ]
+    },
+    {
+      "languageId": "makefile",
+      "ignoreRegExpList": [
+        "makefile_only_comments"
+      ]
+    }
+  ],
+  "overrides": [
+    {
+      "filename": "**/Makefile",
+      "languageId": "cpp",
+      "enabled": true
+      // Add any other specific configurations for Makefiles
     }
   ]
 }

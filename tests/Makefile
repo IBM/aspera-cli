@@ -219,12 +219,12 @@ $(T)serv_error: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_upload1: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload '$(TST_MED_LCL_PATH)' --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progressbar=yes
+	$(EXE_MAN) server upload '$(TST_MED_LCL_PATH)' --to-folder=@preset:server.inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 	$(EXE_MAN) server browse @extend:@preset:server.inside_folder@/$(TST_MED_FILENAME)
 	@$(STOP_TEST) $@
 $(T)serv_upload2: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_LCL_PATH)' @extend:@preset:server.inside_folder@/othername2 --notif-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+	$(EXE_MAN) server upload --src-type=pair '$(TST_MED_LCL_PATH)' @extend:@preset:server.inside_folder@/othername2 --notify-to=@preset:misc.email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 	@$(STOP_TEST) $@
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@
@@ -795,7 +795,7 @@ $(T)aoc14: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc15: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=@preset:misc.email_external --notif-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=@preset:misc.email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@$(STOP_TEST) $@
 $(T)aocarself: $(T).exists
 	@$(START_TEST) $@
@@ -1076,7 +1076,7 @@ $(T)conf_ascp_1: $(T).exists
 $(T)conf_ascp_2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config ascp products list
-	$(EXE_MAN) $(TMP_CONF) config ascp products use 'Aspera Connect'
+	$(EXE_MAN) $(TMP_CONF) config ascp products use 'IBM Aspera Connect'
 	$(EXE_MAN) $(TMP_CONF) config ascp use /usr/bin/ascp
 	@$(STOP_TEST) $@
 $(T)conf_ascp_3: $(T).exists
@@ -1193,12 +1193,12 @@ $(T)conf_plugins: $(T).exists
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --pkeypath= --username=@preset:aoc.user_email --use-generic-client=yes
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path= --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
 $(T)conf_wizard_gen: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --pkeypath= --username=@preset:aoc.user_email
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path= --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(T)conf_detect: $(T).exists
 	@$(START_TEST) $@
@@ -1216,7 +1216,7 @@ $(T)conf_genkey: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_smtp: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config email_test --notif-to=@preset:misc.email_external
+	$(EXE_MAN) config email_test --notify-to=@preset:misc.email_external
 	@$(STOP_TEST) $@
 $(T)conf_pac: $(T).exists
 	@$(START_TEST) $@
@@ -1392,7 +1392,7 @@ $(T)f5_p3: $(T).exists
 	$(EXE_NOMAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data > $(DIR_TMP)f5_p31
 	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
-	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"abc123_yo"}'
+	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists
@@ -1456,7 +1456,7 @@ $(T)f5_webauth: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_wizard: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --pkeypath=@preset:file.private_key --preset=faspex5_user
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
 	$(EXE_BEG_ERR) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_END_ERR)
 	$(EXE_MAN) -N config detect @preset:faspex5_user.url
 	$(EXE_NOMAN) config detect @preset:faspex5_user.url

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore ascmd zmode zuid zgid fasping
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
 require 'aspera/ascmd'

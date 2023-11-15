@@ -8,12 +8,17 @@ require 'openssl'
 module Aspera
   class WebServerSimple < WEBrick::HTTPServer
     CERT_PARAMETERS = %i[key cert chain].freeze
+    GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
+    ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
+
+    private_constant :CERT_PARAMETERS, :GENERIC_ISSUER, :ONE_YEAR_SECONDS
+
     class << self
       # generates and adds self signed cert to provided webrick options
-      def fill_self_signed_cert(cert, key)
-        cert.subject = cert.issuer = OpenSSL::X509::Name.parse('/C=FR/O=Test/OU=Test/CN=Test')
+      def fill_self_signed_cert(cert, key, digest = 'SHA256')
+        cert.subject = cert.issuer = OpenSSL::X509::Name.parse(GENERIC_ISSUER)
         cert.not_before = Time.now
-        cert.not_after = Time.now + 365 * 24 * 60 * 60
+        cert.not_after = Time.now + ONE_YEAR_SECONDS
         cert.public_key = key.public_key
         cert.serial = 0x0
         cert.version = 2
@@ -26,7 +31,7 @@ module Aspera
           # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
         ]
         cert.add_extension(ef.create_extension('authorityKeyIdentifier', 'keyid:always,issuer:always'))
-        cert.sign(key, OpenSSL::Digest.new('SHA256'))
+        cert.sign(key, OpenSSL::Digest.new(digest))
       end
     end
 

@@ -24,19 +24,21 @@ EXENAME=ascli
 # else use EXE_MAN or EXE_NOMAN
 EXETESTB=$(DIR_BIN)$(EXENAME)
 
-GEMSPEC=$(DIR_TOP)$(GEMNAME).gemspec
+GEMSPEC=$(DIR_TOP)$(GEM_NAME).gemspec
+
+NAME_VERSION=$(DIR_TMP)name_version.mak
 
 # must be first target
 all::
 
-$(DIR_TOP)nameversion.mak: $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
-	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEMNAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
-	sed -n "s/.*'\([^']*\)'.*/GEMVERS=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
-include $(DIR_TOP)nameversion.mak
-PATH_GEMFILE=$(DIR_TOP)$(GEMNAME)-$(GEMVERS).gem
+$(NAME_VERSION): $(DIR_TMP).exists $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
+	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEM_NAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
+	sed -n "s/.*'\([^']*\)'.*/GEM_VERSION=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
+include $(NAME_VERSION)
+PATH_GEMFILE=$(DIR_TOP)$(GEM_NAME)-$(GEM_VERSION).gem
 # gem file is generated in top folder
 clean::
-	rm -f $(DIR_TOP)nameversion.mak
+	rm -f $(NAME_VERSION)
 
 clean::
 
@@ -49,7 +51,7 @@ $(TEST_CONF_FILE_PATH):
 	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
 # ensure required ruby gems are installed
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
-	cd $(DIR_TOP). && bundle config set --local without $(GEMNAME)
+	cd $(DIR_TOP). && bundle config set --local without $(GEM_NAME)
 	cd $(DIR_TOP). && bundle install
 	rm -f $$HOME/.rvm/gems/*/bin/as{cli,ession}
 	rm -f $$HOME/.rvm/rubies/*/bin/as{cli,ession}

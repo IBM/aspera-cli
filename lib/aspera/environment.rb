@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore USERPROFILE HOMEDRIVE HOMEPATH LC_CTYPE msys aarch
 require 'aspera/log'
 require 'rbconfig'
 

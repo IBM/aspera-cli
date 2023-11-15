@@ -110,7 +110,7 @@ module Aspera
           when :arg_pass
             rest_params[:auth] = {
               type:      :url,
-              url_creds: {
+              url_query: {
                 'login'    => options.get_option(:username, mandatory: true),
                 'password' => options.get_option(:password, mandatory: true) }}
           when :head_basic

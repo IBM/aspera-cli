@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore trevents
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/preview/generator'
 require 'aspera/preview/options'

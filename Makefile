@@ -1,4 +1,5 @@
 # This Makefile expects being run with bash or zsh shell inside the top folder
+# cspell:ignore firstword noout pubout 
 
 # DIR_TOP: main folder of this project (with trailing slash)
 # if "" (empty) or "./" : execute "make" inside the main folder
@@ -12,35 +13,35 @@ doc:
 	cd $(DIR_DOC) && make
 test: unsigned_gem
 	cd $(DIR_TST) && make
-fulltest: doc test
+test_full: doc test
 clean::
 	rm -fr $(DIR_TMP)
 	cd $(DIR_DOC) && make clean
 	cd $(DIR_TST) && make clean
 	rm -f Gemfile.lock
-delgen::
-	cd $(DIR_DOC) && make delgen
+clean_doc::
+	cd $(DIR_DOC) && make clean_doc
 ##################################
 # Gem build
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
-	gem build $(GEMNAME)
+	gem build $(GEM_NAME)
 # check that the signing key is present
 gem_check_signing_key:
 	@echo "Checking env var: SIGNING_KEY"
 	@if test -z "$$SIGNING_KEY";then echo "Error: Missing env var SIGNING_KEY" 1>&2;exit 1;fi
 	@if test ! -e "$$SIGNING_KEY";then echo "Error: No such file: $$SIGNING_KEY" 1>&2;exit 1;fi
 # force rebuild of gem and sign it, then check signature
-signed_gem: gemclean gem_check_signing_key $(PATH_GEMFILE)
+signed_gem: clean_gem gem_check_signing_key $(PATH_GEMFILE)
 	@tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
 	@echo "Ok: gem is signed"
 # build gem without signature for development and test
 unsigned_gem: $(PATH_GEMFILE)
-gemclean:
+clean_gem:
 	rm -f $(PATH_GEMFILE)
-	rm -f $(DIR_TOP)$(GEMNAME)-*.gem
+	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
-clean:: gemclean
+clean:: clean_gem
 ##################################
 # Gem certificate
 # updates the existing certificate, keeping the maintainer email
@@ -73,9 +74,9 @@ check-cert-key: $(DIR_TMP).exists gem_check_signing_key
 release: all
 	gem push $(PATH_GEMFILE)
 version:
-	@echo $(GEMVERS)
+	@echo $(GEM_VERSION)
 # in case of big problem on released gem version, it can be deleted from rubygems
-# gem yank -v $(GEMVERS) $(GEMNAME) 
+# gem yank -v $(GEM_VERSION) $(GEM_NAME) 
 
 ##################################
 # GIT
@@ -87,7 +88,7 @@ changes:
 ##################################
 # Docker image
 DOCKER_REPO=martinlaurent/ascli
-DOCKER_IMG_VERSION=$(GEMVERS)
+DOCKER_IMG_VERSION=$(GEM_VERSION)
 DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
@@ -98,7 +99,7 @@ $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 # no dependency: always re-generate
 dockerfile_release:
 	erb -T 2 \
-		arg_gem=$(GEMNAME):$(GEMVERS) \
+		arg_gem=$(GEM_NAME):$(GEM_VERSION) \
 		arg_sdk=$(LOCAL_SDK_FILE) \
 		Dockerfile.tmpl.erb > Dockerfile
 docker: dockerfile_release $(LOCAL_SDK_FILE)
@@ -121,16 +122,16 @@ clean::
 	rm -f Dockerfile
 ##################################
 # Single executable using https://github.com/pmq20/ruby-packer
-CLIEXEC=$(DIR_TMP)$(EXENAME).$(shell uname -ms|tr ' ' '-')
+CLI_EXECUTABLE=$(DIR_TMP)$(EXENAME).$(shell uname -ms|tr ' ' '-')
 RUBY_PACKER=$(DIR_TOP)examples/rubyc
-single:$(CLIEXEC)
-$(CLIEXEC):
+single:$(CLI_EXECUTABLE)
+$(CLI_EXECUTABLE):
 	@set -e && for v in '' -ruby -ruby-api;do\
 		echo "Version ($$v): $$($(RUBY_PACKER) -$$v-version)";\
 	done
-	$(RUBY_PACKER) -o $(CLIEXEC) $(EXETESTB)
+	$(RUBY_PACKER) -o $(CLI_EXECUTABLE) $(EXETESTB)
 clean::
-	rm -f $(CLIEXEC)
+	rm -f $(CLI_EXECUTABLE)
 ##################################
 # utils
 # https://github.com/Yelp/detect-secrets

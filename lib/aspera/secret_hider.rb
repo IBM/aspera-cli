@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore FILEPASS
 require 'logger'
 
 module Aspera

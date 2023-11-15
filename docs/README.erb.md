@@ -2845,11 +2845,11 @@ Example: parameter to download a faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-File transfer operations are monitored and a progress bar is displayed on the terminal if option `progressbar` (`Bool`) is set to `yes` (default if the output is a terminal).
+File transfer operations are monitored and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
 The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
 
-To display the native progress bar of `ascp`, use `--progressbar=no --transfer-info=@json:'{"quiet":false}'`.
+To display the native progress bar of `ascp`, use `--progress-bar=no --transfer-info=@json:'{"quiet":false}'`.
 
 ### <a id="scheduler"></a>Scheduler
 
@@ -3139,7 +3139,7 @@ option: url> https://myorg.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
-option: pkeypath>
+option: key_path>
 using existing key:
 /Users/myself/.aspera/<%=cmd%>/aspera_aoc_key
 Using global client_id.
@@ -3512,7 +3512,7 @@ The activity app can be queried with:
 <%=cmd%> aoc admin analytics transfers
 ```
 
-It can also support filters and send notification using option `notif_to`. a template is defined using option `notif_template` :
+It can also support filters and send notification using option `notify_to`. a template is defined using option `notify_template` :
 
 `mytemplate.erb`:
 
@@ -3535,7 +3535,7 @@ The environment provided contains the following additional variable:
 Example:
 
 ```bash
-<%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notif-to=active --notif-template=@file:mytemplate.erb
+<%=cmd%> aoc admin analytics transfers --once-only=yes --lock-port=12345 --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=active --notify-template=@file:mytemplate.erb
 ```
 
 Options:
@@ -4789,7 +4789,7 @@ Multiple applications detected:
 product> faspex5
 Using: Faspex at https://faspex5.example.com/aspera/faspex
 Please provide the path to your private RSA key, or nothing to generate one:
-option: pkeypath>
+option: key_path>
 Using existing key:
 /Users/someuser/.aspera/<%=cmd%>/my_key
 option: username> someuser@example.com
@@ -5230,12 +5230,12 @@ The value is a `Hash` with the following keys:
 
 ### Email notification on transfer
 
-Like for any transfer, a notification can be sent by email using parameters: `notif_to` and `notif_template` .
+Like for any transfer, a notification can be sent by email using parameters: `notify_to` and `notify_template` .
 
 Example:
 
 ```bash
-<%=cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notif-to=aspera.user1@gmail.com --notif-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
+<%=cmd%> faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipients":["aspera.user1@gmail.com"]}' ~/Documents/Samples/200KB.1 --notify-to=aspera.user1@gmail.com --notify-template=@ruby:'%Q{From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>\nTo: <<%='<'%>%=to%>>\nSubject: Package sent: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["metadata"]["_pkg_name"]%> files received\n\nTo user: <%='<'%>%=ts["tags"]["aspera"]["faspex"]["recipients"].first["email"]%>}'
 ```
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
@@ -5822,16 +5822,16 @@ Check settings with `smtp_settings` command. Send test email with `email_test`.
 
 ```bash
 <%=cmd%> config --smtp=@preset:smtp_google smtp
-<%=cmd%> config --smtp=@preset:smtp_google email --notif-to=sample.dest@example.com
+<%=cmd%> config --smtp=@preset:smtp_google email --notify-to=sample.dest@example.com
 ```
 
 ### Notifications for transfer status
 
 An e-mail notification can be sent upon transfer success and failure (one email per transfer job, one job being possibly multi session, and possibly after retry).
 
-To activate, use option `notif_to`.
+To activate, use option `notify_to`.
 
-A default e-mail template is used, but it can be overridden with option `notif_template`.
+A default e-mail template is used, but it can be overridden with option `notify_template`.
 
 The environment provided contains the following additional variables:
 
@@ -6002,7 +6002,7 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 ### Example: unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
-<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progressbar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+<%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
 > **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
@@ -6034,7 +6034,7 @@ Typically, the health check uses the REST API of the application with the follow
 <%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
 ```bash
-<%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progressbar=no
+<%=cmd%> server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
 ```
 
 ```output

@@ -40,6 +40,8 @@
   * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
   * change(break): option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
   * change(break): replaced option `progress` with option `progressbar` (bool)
+  * change(break): renamed option `pkeypath` to `key_path`
+  * change(break): renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`
 
 * 4.14.0
 
@@ -47,7 +49,7 @@
   * new: percent selector for entities identifier
   * new: faspex5: shared inbox and workgroup membership management
   * new: faspex5: invite external user to shared inbox
-  * new: faspex5: package list and receive from workgroups and shared inboxes
+  * new: faspex5: package list and receive from workgroup and shared inbox
   * new: config: Command `ascp info` shows default transfer spec.
   * new: httpgw: synchronous and asynchronous upload modes
   * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
@@ -134,7 +136,7 @@
   * new: improved documentation on faspex and aoc package send
   * fix: `node do` command fixed
   * fix: improved secret hiding from logs
-  * change(break): removed rarely commands nodeadmin, configuration, userdata, ctl from plugin `server`
+  * change(break): removed rarely commands `nodeadmin`, `configuration`, `userdata`, `ctl` from plugin `server`
     as well as option `cmd_prefix`
   * change: `ascli` runs as user `cliuser` instead of `root` in container
   * change: default access right for config folder is now user only, including private keys
@@ -255,7 +257,7 @@
   * new: check new gem version periodically
   * new: the --fields= option, support -_field_name_ to remove a field from default fields
   * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
-  * new: mimemagic is now optional, needs manual install for `preview`, compatible with version 0.4.x
+  * new: `mimemagic` is now optional, needs manual install for `preview`, compatible with version 0.4.x
   * new: AoC a password can be provided for a public link
   * new: `conf doc` take an optional parameter to go to a section
   * new: initial support for Faspex 5 Beta 1

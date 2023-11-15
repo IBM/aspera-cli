@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# cspell:ignore initdemo genkey asperasoft
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
@@ -7,6 +8,7 @@ require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/fasp/installation'
+require 'aspera/fasp/products'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/fasp/error_info'
@@ -53,10 +55,10 @@ module Aspera
         SERVER_COMMAND = 'server'
         APP_NAME_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
-        CONNECT_VERSIONS = 'connectversions.js'
+        CONNECT_VERSIONS = 'connectversions.js' # cspell: disable-line
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
         DEMO = 'demo'
-        DEMO_SERVER_PRESET = 'demoserver'
+        DEMO_SERVER_PRESET = 'demoserver' # cspell: disable-line
         AOC_PATH_API_CLIENTS = 'admin/api-clients'
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
@@ -66,12 +68,12 @@ module Aspera
           This email was sent to test #{PROGRAM_NAME}.
         END_OF_TEMPLATE
         # special extended values
-        EXTV_PRESET = :preset
-        EXTV_VAULT = :vault
+        EXTEND_PRESET = :preset
+        EXTEND_VAULT = :vault
         PRESET_DIG_SEPARATOR = '.'
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
-        DEFAULT_PRIVKEY_LENGTH = 4096
+        DEFAULT_PRIV_KEY_LENGTH = 4096
         COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'
@@ -92,8 +94,8 @@ module Aspera
           :AOC_PATH_API_CLIENTS,
           :DEMO_SERVER_PRESET,
           :EMAIL_TEST_TEMPLATE,
-          :EXTV_PRESET,
-          :EXTV_VAULT,
+          :EXTEND_PRESET,
+          :EXTEND_VAULT,
           :DEFAULT_CHECK_NEW_VERSION_DAYS,
           :DEFAULT_PRIV_KEY_FILENAME,
           :SERVER_COMMAND,
@@ -101,10 +103,11 @@ module Aspera
           :COFFEE_IMAGE,
           :WIZARD_RESULT_KEYS,
           :SELF_SIGNED_CERT,
-          :PERSISTENCY_FOLDER
+          :PERSISTENCY_FOLDER,
+          :DEFAULT_PRIV_KEY_LENGTH
 
         class << self
-          def generate_rsa_private_key(path:, length: DEFAULT_PRIVKEY_LENGTH)
+          def generate_rsa_private_key(path:, length: DEFAULT_PRIV_KEY_LENGTH)
             require 'openssl'
             priv_key = OpenSSL::PKey::RSA.new(length)
             File.write(path, priv_key.to_s)
@@ -183,7 +186,7 @@ module Aspera
           @option_config_file = nil
           @certificate_store = nil
           @certificate_paths = nil
-          @progressbar = nil
+          @progress_bar = nil
           # option to set main folder
           options.declare(
             :home, 'Home folder for tool',
@@ -206,8 +209,8 @@ module Aspera
           # read config file (set @config_presets)
           read_config_file
           # add preset handler (needed for smtp)
-          ExtendedValue.instance.set_handler(EXTV_PRESET, lambda{|v|preset_by_name(v)})
-          ExtendedValue.instance.set_handler(EXTV_VAULT, lambda{|v|vault_value(v)})
+          ExtendedValue.instance.set_handler(EXTEND_PRESET, lambda{|v|preset_by_name(v)})
+          ExtendedValue.instance.set_handler(EXTEND_VAULT, lambda{|v|vault_value(v)})
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           options.parse_options!
@@ -218,7 +221,7 @@ module Aspera
           options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
           options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
           options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
-          options.declare(:pkeypath, 'Wizard: path to private key for JWT')
+          options.declare(:key_path, 'Wizard: path to private key for JWT')
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
@@ -230,8 +233,8 @@ module Aspera
           options.declare(:vault_password, 'Vault password')
           options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
           options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
-          options.declare(:notif_to, 'Email recipient for notification of transfers')
-          options.declare(:notif_template, 'Email ERB template for notification of transfers')
+          options.declare(:notify_to, 'Email recipient for notification of transfers')
+          options.declare(:notify_template, 'Email ERB template for notification of transfers')
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
           options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
@@ -240,9 +243,9 @@ module Aspera
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
           options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
-          options.declare(:progressbar, 'Display progress bar', values: :bool, default: Environment.terminal?)
+          options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           options.parse_options!
-          @progressbar = TransferProgress.new if options.get_option(:progressbar)
+          @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
           sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
           if sdk_folder.nil?
@@ -264,26 +267,26 @@ module Aspera
           pac_script = options.get_option(:fpac)
           # create PAC executor
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
-          proxy_creds = options.get_option(:proxy_credentials)
-          if !proxy_creds.nil?
-            raise Cli::BadArgument, "proxy_credentials shall have two elements (#{proxy_creds.length})" unless proxy_creds.length.eql?(2)
-            @proxy_credentials = {user: proxy_creds[0], pass: proxy_creds[1]}
+          proxy_user_pass = options.get_option(:proxy_credentials)
+          if !proxy_user_pass.nil?
+            raise Cli::BadArgument, "proxy_credentials shall have two elements (#{proxy_user_pass.length})" unless proxy_user_pass.length.eql?(2)
+            @proxy_credentials = {user: proxy_user_pass[0], pass: proxy_user_pass[1]}
             @pac_exec.proxy_user = @proxy_credentials[:user]
             @pac_exec.proxy_pass = @proxy_credentials[:pass]
           end
           Rest.set_parameters(
             user_agent:  PROGRAM_NAME,
             session_cb:  lambda{|http_session|update_http_session(http_session)},
-            progressbar: @progressbar)
+            progress_bar: @progress_bar)
           Oauth.persist_mgr = persistency if @option_cache_tokens
-          Fasp::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
+          Fasp::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
           Aspera::RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
           Aspera::RestErrorsAspera.register_handlers
         end
 
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_http_options
-        attr_reader :option_ignore_cert_host_port, :progressbar
+        attr_reader :option_ignore_cert_host_port, :progress_bar
 
         def trusted_cert_locations=(path_list)
           path_list = [path_list] unless path_list.is_a?(Array)
@@ -711,16 +714,9 @@ module Aspera
           when :show # shows files used
             return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
           when :info # shows files used
-            data = Fasp::Installation::FILES.each_with_object({}) do |v, m|
-              m[v.to_s] =
-                begin
-                  Fasp::Installation.instance.path(v)
-                rescue => e
-                  e.message
-                end
-            end
+            data = Fasp::Installation.instance.file_paths
             # read PATHs from ascp directly, and pvcl modules as well
-            Open3.popen3(Fasp::Installation.instance.path(:ascp), '-DDL-') do |_stdin, _stdout, stderr, thread|
+            Open3.popen3(data['ascp'], '-DDL-') do |_stdin, _stdout, stderr, thread|
               last_line = ''
               while (line = stderr.gets)
                 line.chomp!
@@ -728,11 +724,11 @@ module Aspera
                 case line
                 when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
                   data[Regexp.last_match(1)] = Regexp.last_match(3)
-                when /^DBG Added module group:"(?<libname>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
+                when /^DBG Added module group:"(?<module>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
                   c = Regexp.last_match.named_captures.symbolize_keys
                   data[c[:interface]] ||= {}
-                  data[c[:interface]][c[:libname]] ||= []
-                  data[c[:interface]][c[:libname]].push("#{c[:scheme]} v#{c[:version]}")
+                  data[c[:interface]][c[:module]] ||= []
+                  data[c[:interface]][c[:module]].push("#{c[:scheme]} v#{c[:version]}")
                 when %r{^DBG License result \(/license/(\S+)\): (.+)$}
                   data[Regexp.last_match(1)] = Regexp.last_match(2)
                 when /^LOG (.+) version ([0-9.]+)$/
@@ -747,7 +743,7 @@ module Aspera
               end
             end
             # ascp's openssl directory
-            ascp_file = Fasp::Installation.instance.path(:ascp)
+            ascp_file = data['ascp']
             File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |match|
               if (m = match.match(/OPENSSLDIR.*"(.*)"/))
                 data['openssldir'] = m[1]
@@ -763,7 +759,7 @@ module Aspera
             command = options.get_next_command(%i[list use])
             case command
             when :list
-              return {type: :object_list, data: Fasp::Installation.instance.installed_products, fields: %w[name app_root]}
+              return {type: :object_list, data: Fasp::Products.installed_products, fields: %w[name app_root]}
             when :use
               default_product = options.get_next_argument('product name')
               Fasp::Installation.instance.use_ascp_from_product(default_product)
@@ -931,7 +927,7 @@ module Aspera
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
-            private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIVKEY_LENGTH)
+            private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIV_KEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
           when :remote_certificate
@@ -1083,11 +1079,11 @@ module Aspera
           if options.known_options.key?(:private_key) &&
               (!wiz_plugin_class.respond_to?(:private_key_required?) || wiz_plugin_class.private_key_required?(wiz_url))
             # lets see if path to priv key is provided
-            private_key_path = options.get_option(:pkeypath)
+            private_key_path = options.get_option(:key_path)
             # give a chance to provide
             if private_key_path.nil?
               formatter.display_status('Please provide the path to your private RSA key, or nothing to generate one:')
-              private_key_path = options.get_option(:pkeypath, mandatory: true).to_s
+              private_key_path = options.get_option(:key_path, mandatory: true).to_s
               # private_key_path = File.expand_path(private_key_path)
             end
             # else generate path
@@ -1097,7 +1093,7 @@ module Aspera
             if File.exist?(private_key_path)
               formatter.display_status('Using existing key:')
             else
-              formatter.display_status("Generating #{DEFAULT_PRIVKEY_LENGTH} bit RSA key...")
+              formatter.display_status("Generating #{DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
               Config.generate_rsa_private_key(path: private_key_path)
               formatter.display_status('Created key:')
             end
@@ -1172,8 +1168,8 @@ module Aspera
 
         # send email using ERB template
         def send_email_template(email_template_default: nil, values: {})
-          values[:to] ||= options.get_option(:notif_to, mandatory: true)
-          notif_template = options.get_option(:notif_template, mandatory: email_template_default.nil?) || email_template_default
+          values[:to] ||= options.get_option(:notify_to, mandatory: true)
+          notify_template = options.get_option(:notify_template, mandatory: email_template_default.nil?) || email_template_default
           mail_conf = email_settings
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
@@ -1190,7 +1186,7 @@ module Aspera
             template_binding.local_variable_set(k, v)
           end
           # execute template
-          msg_with_headers = ERB.new(notif_template).result(template_binding)
+          msg_with_headers = ERB.new(notify_template).result(template_binding)
           Log.log.debug{Log.dump(:msg_with_headers, msg_with_headers)}
           require 'net/smtp'
           smtp = Net::SMTP.new(mail_conf[:server], mail_conf[:port])

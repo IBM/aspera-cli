@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:words logdir
+# cspell:words logdir bidi watchd cooloff asyncadmin
 
 require 'aspera/command_line_builder'
 require 'aspera/fasp/installation'
@@ -126,7 +126,7 @@ module Aspera
               hash[param] = transfer_spec[ts_param]
             end
             sync_params['remote']['connect_mode'] ||= sync_params['remote'].key?('ws_port') ? 'ws' : 'ssh'
-            sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
+            sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
             update_remote_dir(sync_params['remote'], 'path', transfer_spec)
           end
           env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
@@ -141,7 +141,7 @@ module Aspera
                   session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
                 end
               end
-              session['private_key_paths'] = Fasp::Installation.instance.bypass_keys if transfer_spec.key?('token')
+              session['private_key_paths'] = Fasp::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
               update_remote_dir(session, 'remote_dir', transfer_spec)
             end
           end
