@@ -667,8 +667,10 @@ $(T)aocffid: $(T)aocftr
 	$(EXE_MAN) aoc files show /
 	$(EXE_MAN) aoc files show testdst/$(TST_ASC_FILENAME)
 	$(EXE_BEG_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
-	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.mpg video_file.mpg & sleep 60
-	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.jpg image_file.mpg
+	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.mpg video_file.mpg
+	@echo 'waiting for preview'
+	sleep 60
+	$(EXE_NOMAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.jpg image_file.jpg
 	$(EXE_MAN) aoc files permission @preset:aoc.test_folder list
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":true}'
