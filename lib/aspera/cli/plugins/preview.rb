@@ -314,7 +314,7 @@ module Aspera
             #  download original file to temp folder
             do_transfer(Fasp::TransferSpec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end
-          Log.log.info{"source: #{entry['id']}: #{entry['path']})"}
+          Log.log.info{"source: #{entry['id']}: #{entry['path']}"}
           gen_infos.each do |gen_info|
             gen_info[:generator].generate rescue nil
           end
