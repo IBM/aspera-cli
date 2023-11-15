@@ -899,7 +899,7 @@ module Aspera
             OpenApplication.instance.uri(options.get_option(:asperabrowserurl) + '?goto=' + encoded_params)
             return Main.result_status('done')
           when :basic_token
-            return Main.result_status(Rest.basic_creds(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+            return Main.result_status(Rest.basic_token(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', type: String))
             token_info = options.get_next_argument('user and group identification', type: Hash)

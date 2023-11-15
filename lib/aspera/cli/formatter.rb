@@ -194,8 +194,11 @@ module Aspera
       end
 
       def display_item_count(number, total)
+        number = number.to_i
+        total = total.to_i
+        return if total.eql?(0) && number.eql?(0)
         count_msg = "Items: #{number}/#{total}"
-        count_msg = count_msg.bg_red unless number.to_i.eql?(total.to_i)
+        count_msg = count_msg.bg_red unless number.eql?(total)
         display_status(count_msg)
       end
 

@@ -43,7 +43,7 @@ module Aspera
     JSON_DECODE = ['application/json', 'application/vnd.api+json', 'application/x-javascript'].freeze
 
     class << self
-      def basic_creds(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
+      def basic_token(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
       # used to build a parameter list prefixed with "[]"
       # @param values [Array] list of values

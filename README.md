@@ -3227,7 +3227,6 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 
 ```text
 ascli -h
-W, [2023-11-14T18:52:22.742411 #53627]  WARN -- : No config file found. New configuration file: toto
 NAME
         ascli -- a command line tool for Aspera Applications (v4.15.0.pre)
 
@@ -4626,7 +4625,7 @@ aoc admin res application list
 aoc admin res client list
 aoc admin res client_access_key list
 aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-aoc admin res client_registration_token delete my_clt_reg_id
+aoc admin res client_registration_token delete client_reg_id
 aoc admin res client_registration_token list
 aoc admin res contact list
 aoc admin res dropbox list
@@ -4652,9 +4651,9 @@ aoc admin resource node do %name:my_ak_name --secret=my_ak_secret v3 events
 aoc admin resource workspace list
 aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 aoc admin subscription
-aoc automation workflow action my_wf_id create @json:'{"name":"toto"}' \
+aoc automation workflow action wf_id create @json:'{"name":"toto"}' \
 aoc automation workflow create @json:'{"name":"test_workflow"}'
-aoc automation workflow delete my_wf_id
+aoc automation workflow delete wf_id
 aoc automation workflow list
 aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
 aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
@@ -4676,7 +4675,7 @@ aoc files rename /somefolder testdst
 aoc files short_link private create /testdst
 aoc files short_link private list /testdst
 aoc files short_link public create testdst
-aoc files show %id:my_file_id
+aoc files show %id:aocffid
 aoc files show /
 aoc files show testdst/testfile.bin
 aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
@@ -4693,12 +4692,12 @@ aoc files v3 info
 aoc gateway --pid-file=server_pid https://localhost:12345/aspera/faspex
 aoc org --url=my_publink_recv_from_aocuser
 aoc organization
-aoc packages browse "my_package_id" /contents
+aoc packages browse package_id3 /contents
 aoc packages list
 aoc packages list --query=@json:'{"dropbox_name":"my_shbx_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-aoc packages recv "my_package_id" --to-folder=.
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
 aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"my_shbx_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+aoc packages recv package_id3 --to-folder=.
 aoc packages send --workspace=my_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_shbx_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' testfile.bin
 aoc packages send --workspace=my_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_shbx_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' testfile.bin
 aoc packages send --workspace=my_shbx_ws @json:'{"name":"Important files delivery","recipients":["my_shbx_name"]}' testfile.bin
@@ -5357,7 +5356,7 @@ ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_fold
 ### Node sample commands
 
 ```bash
-node --url=https://tst.example.com/path --password="Bearer $bearer_666" --root-id=$root_id access_key do self br /
+node --url=https://tst.example.com/path --password="Bearer bearer_666" --root-id=root_id access_key do self br /
 node access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 node access_key delete my_username
 node access_key do my_ak_name browse /
@@ -5373,7 +5372,7 @@ node access_key do my_ak_name rename /folder1 folder2
 node access_key do my_ak_name show %id:1
 node access_key do my_ak_name show /testfile1
 node access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
-node access_key do self permission %id:$root_id create @json:'{"access_type":"user","access_id":"666"}'
+node access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
 node access_key do self show / --fields=id
 node access_key list
 node access_key set_bearer_key self @file:my_private_key
@@ -5600,19 +5599,19 @@ faspex5 health
 faspex5 packages list --box=my_shinbox
 faspex5 packages list --box=my_workgroup --group-type=workgroups
 faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
-faspex5 packages receive "my_package_id" --to-folder=. --ts=@json:'{"content_protection_password":"abc123_yo"}'
-faspex5 packages receive --box=my_shinbox "my_package_id" --to-folder=.
-faspex5 packages receive --box=my_workgroup --group-type=workgroups "my_package_id" --to-folder=.
+faspex5 packages receive --box=my_shinbox pack_shbox_id1 --to-folder=.
+faspex5 packages receive --box=my_workgroup --group-type=workgroups pack_wrkgrp_id1 --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
+faspex5 packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"abc123_yo"}'
 faspex5 packages send --shared-folder=%name:my_shfolder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shfolder_file
 faspex5 packages send @json:'{"title":"test title","recipients":["my_shinbox"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' testfile.bin
 faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' testfile.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
-faspex5 packages show "my_package_id"
-faspex5 packages show --box=my_shinbox "my_package_id"
-faspex5 packages show --box=my_workgroup --group-type=workgroups "my_package_id"
-faspex5 packages status "my_package_id"
+faspex5 packages show --box=my_shinbox pack_shbox_id1
+faspex5 packages show --box=my_workgroup --group-type=workgroups pack_wrkgrp_id1
+faspex5 packages show f5_p31
+faspex5 packages status f5_p31
 faspex5 postprocessing --pid-file=server_pid @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"}}'
 faspex5 shared browse %name:my_src
 faspex5 shared list
@@ -6007,12 +6006,12 @@ faspex package list --fields=package_id --format=csv --display=data --query=@jso
 faspex package list --query=@json:'{"max":5}'
 faspex package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}'
 faspex package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}'
-faspex package recv "my_package_id" --to-folder=.
-faspex package recv "my_package_id" --to-folder=. --box=sent
 faspex package recv --to-folder=. --link=https://app.example.com/recv_from_user_path
 faspex package recv ALL --to-folder=. --once-only=yes --query=@json:'{"max":10}'
-faspex package recv my_pkgid --recipient="*my_dbx" --to-folder=.
-faspex package recv my_pkgid --recipient="*my_wkg" --to-folder=.
+faspex package recv f4_db_id1 --recipient="*my_dbx" --to-folder=.
+faspex package recv f4_db_id2 --recipient="*my_wkg" --to-folder=.
+faspex package recv f4_pri1 --to-folder=.
+faspex package recv f4_prs2 --to-folder=. --box=sent
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_dbx"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_wkg"]}' testfile.bin
 faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal","my_username"]}' testfile.bin

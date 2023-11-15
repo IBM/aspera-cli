@@ -85,7 +85,7 @@ module Aspera
       def metering_api(entitlement_id, customer_id, api_domain=PROD_DOMAIN)
         return Rest.new({
           base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
-          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_creds(entitlement_id, customer_id)}
+          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
         })
       end
 

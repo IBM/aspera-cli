@@ -277,7 +277,7 @@ module Aspera
       when :basic
         ak_name = params[:auth][:username]
         raise 'ERROR: no secret in node object' unless params[:auth][:password]
-        ak_token = Rest.basic_creds(params[:auth][:username], params[:auth][:password])
+        ak_token = Rest.basic_token(params[:auth][:username], params[:auth][:password])
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}

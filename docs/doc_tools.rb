@@ -103,7 +103,7 @@ REPLACEMENTS = [
   [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
   [/\$\(EXE_END_FAI.?\)$/, ''],
   # replace file_vars
-  [/\$\((cat|basename) ([^)]+)\)/, '\2'],
+  [/\$\$\((cat|basename) ([^)]+)\)/, '\2'],
   # replace makefile macros
   [/\$\(([^) ]*)\)/, '\1'],
   # remove multi command mark

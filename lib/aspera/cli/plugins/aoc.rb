@@ -219,10 +219,8 @@ module Aspera
           raise 'Query must be Hash' unless base_query.is_a?(Hash)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           base_query['per_page'] = 1000 unless base_query.key?('per_page')
-          max_items = base_query[MAX_ITEMS]
-          base_query.delete(MAX_ITEMS)
-          max_pages = base_query[MAX_PAGES]
-          base_query.delete(MAX_PAGES)
+          max_items = base_query.delete(MAX_ITEMS)
+          max_pages = base_query.delete(MAX_PAGES)
           item_list = []
           total_count = nil
           current_page = base_query['page']
@@ -239,9 +237,10 @@ module Aspera
             break if add_items.empty?
             # append new items to full list
             item_list += add_items
-            break if !max_pages.nil? && page_count > max_pages
-            break if !max_items.nil? && item_list.count > max_items
+            break if !max_items.nil? && item_list.count >= max_items
+            break if !max_pages.nil? && page_count >= max_pages
           end
+          item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
           return {list: item_list, total: total_count}
         end
 
