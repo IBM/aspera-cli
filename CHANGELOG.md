@@ -2,46 +2,51 @@
 
 * 4.15.0.pre
 
-  * new: global: added resolution hints for well known issues.
-  * new: global: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
-  * new: global: option `fields` now supports `RegExp`
-  * new: global: option `home` to set the main folder for configuration and cache
-  * new: global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
-  * new: global: option `cert_stores` to specify alternate certificate stores
-  * new: global: uniform progress bar for any type of transfer.
-  * new: global: add extended value types: `re` and `yaml`
-  * new: global: option `pid_file` to write tool's PID during execution, deleted on exit
-  * new: config: command `remote_certificate` to retrieve a remote certificate
-  * new: config: added logger level `trace1` and `trace2`
-  * new: wizard: can detect multiple applications at the same address or url.
-  * new: aoc: wizard accepts public links
-  * new: aoc: support private links, and possibility to list shared folder with workspace `@json:null`
-  * new: orchestrator: error analysis for workflow start
-  * new: httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
-  * new: node: added command `transfer sessions` to list all sessions of all transfers
-  * new: node: generate bearer token from private key and user information
-  * new: node: access node API with bearer token as credentials
-  * new: agent: `direct` allows ignoring certificate for wss using http options
-  * new: preview: command `show` generates a preview and displays it in terminal
-  * fix: Ruby warning: `net/protocol.rb:68: warning: already initialized constant Net::ProtocRetryError` solved by removing dependency on `net-smtp` from gem spec (already in base ruby).
-  * change(break): config: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
-  * change(break): sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
-  * change(break): sync: replaced option `sync_session` with optional positional parameter.
-  * change(break): preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
-  * change(break): removed extended value handler `incps`, as it is never used (use `extend` instead).
-  * change(break): node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
-  * change(break): aoc: selection by name uses percent selector instead of option or parameter `name`
-  * change(break): aoc: removed option `link`: use `url` instead
-  * change(break): aoc: in command `short_link`, place type before command, e.g. `short_link private create /blah`
-  * change(break): aoc: replaced option `operation` with mandatory positional parameter for command `files transfer`
-  * change(break): aoc: replaced option `from_folder` with mandatory positional parameter for command `files transfer`
-  * change(break): faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
-  * change(break): faspex: option `source_name` is now `remote_source`
-  * change(break): orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
-  * change(break): option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
-  * change(break): replaced option `progress` with option `progressbar` (bool)
-  * change(break): renamed option `pkeypath` to `key_path`
-  * change(break): renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`
+  * General: removed many redundant options, more consistency between plugins, see below in "break".
+  * New Features:
+    * global: added resolution hints for well known issues.
+    * global: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+    * global: option `fields` now supports `RegExp`
+    * global: option `home` to set the main folder for configuration and cache
+    * global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
+    * global: option `cert_stores` to specify alternate certificate stores
+    * global: uniform progress bar for any type of transfer.
+    * global: add extended value types: `re` and `yaml`
+    * global: option `pid_file` to write tool's PID during execution, deleted on exit
+    * config: command `remote_certificate` to retrieve a remote certificate
+    * config: added logger level `trace1` and `trace2`
+    * wizard: can detect multiple applications at the same address or url.
+    * aoc: wizard accepts public links
+    * aoc: support private links, and possibility to list shared folder with workspace `@json:null`
+    * orchestrator: error analysis for workflow start
+    * httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
+    * node: added command `transfer sessions` to list all sessions of all transfers
+    * node: generate bearer token from private key and user information
+    * node: access node API with bearer token as credentials
+    * agent: `direct` allows ignoring certificate for wss using http options
+    * preview: command `show` generates a preview and displays it in terminal
+  * Issues Fixed:
+    * Ruby warning: `net/protocol.rb:68: warning: already initialized constant Net::ProtocRetryError` solved by removing dependency on `net-smtp` from gem spec (already in base ruby).
+  * Breaking Changes:
+    * global: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
+    * global: renamed option `pkeypath` to `key_path`
+    * global: renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`
+    * global: removed extended value handler `incps`, as it is never used (use `extend` instead).
+    * global: option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
+    * global: replaced option `progress` with option `progressbar` (bool)
+    * faspex5: removed option and `auth` type `link`: simply provide the public link as `url`
+    * faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
+    * faspex: option `source_name` is now `remote_source`
+    * aoc: selection by name uses percent selector instead of option or parameter `name`
+    * aoc: removed option `link`: use `url` instead
+    * aoc: in command `short_link`, place type before command, e.g. `short_link private create /blah`
+    * aoc: replaced option `operation` with mandatory positional parameter for command `files transfer`
+    * aoc: replaced option `from_folder` with mandatory positional parameter for command `files transfer`
+    * orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
+    * node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
+    * sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
+    * sync: replaced option `sync_session` with optional positional parameter.
+    * preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
 
 * 4.14.0
 

@@ -211,7 +211,8 @@ module Aspera
             h[new_name] = value
           end
         end
-end # class << self
+      end # class << self
+
       def initialize
         @event_build = nil
         @last_event = nil

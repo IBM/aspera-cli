@@ -47,6 +47,3 @@ module Aspera
     end
   end
 end
-
-
-

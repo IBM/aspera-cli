@@ -21,7 +21,7 @@ module Aspera
         raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          client_url = get_aspera_url
+          client_url = aspera_client_api_url
           Log.log.debug{"found: #{client_url}"}
           my_client = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: client_url))
           client_info = my_client.get_info
@@ -51,7 +51,7 @@ module Aspera
         end
       end
 
-      def get_aspera_url
+      def aspera_client_api_url
         log_file = File.join(Dir.home, 'Library', 'Logs', 'IBM Aspera', 'ibm-aspera-desktop.log')
         url = nil
         File.open(log_file, 'r') do |file|
