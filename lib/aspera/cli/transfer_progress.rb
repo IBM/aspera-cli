@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'tty-spinner'
 require 'ruby-progressbar'
 
 module Aspera

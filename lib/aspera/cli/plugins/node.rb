@@ -367,7 +367,7 @@ module Aspera
             return nagios.result
           when :events
             events = @api_node.read('events', query_read_delete)[:data]
-            return { type: :object_list, data: events}
+            return { type: :object_list, data: events, fields: ->(f){!f.start_with?('data')} }
           when :info
             nd_info = @api_node.read('info')[:data]
             return { type: :single_object, data: nd_info}

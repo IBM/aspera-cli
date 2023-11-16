@@ -1445,6 +1445,9 @@ $(T)f5_adm: $(T).exists
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:john@example.com
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_inbox_name@ johnny@example.com
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:johnny@example.com
+	@$(STOP_TEST) $@
+$(T)f5_smtp: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin smtp show
 	$(EXE_MAN) --preset=f5_admin faspex5 admin smtp test @preset:misc.email_external
 	@$(STOP_TEST) $@
@@ -1481,4 +1484,4 @@ $(T)f5_postproc: $(T).exists
 	kill -INT $$(cat $(DIR_TMP)server_pid)
 	@$(STOP_TEST) $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc
+tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc

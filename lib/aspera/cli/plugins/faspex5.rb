@@ -8,6 +8,7 @@ require 'aspera/id_generator'
 require 'aspera/nagios'
 require 'aspera/environment'
 require 'securerandom'
+require 'tty-spinner'
 
 module Aspera
   module Cli
@@ -298,7 +299,7 @@ module Aspera
             path: api_path).select(&filter)
         end
 
-        def package_receive
+        def package_receive(package_ids)
           # prepare persistency if needed
           skip_ids_persistency = nil
           if options.get_option(:once_only, mandatory: true)
@@ -311,13 +312,6 @@ module Aspera
                 options.get_option(:url, mandatory: true),
                 options.get_option(:username, mandatory: true)]))
           end
-          package_ids =
-            if @pub_link_context&.key?('package_id')
-              @pub_link_context['package_id']
-            else
-              # one or several packages
-              instance_identifier
-            end
           case package_ids
           when PACKAGE_ALL_INIT
             raise 'Only with option once_only' unless skip_ids_persistency
@@ -377,21 +371,15 @@ module Aspera
         end
 
         def package_action
-          command = options.get_next_command(%i[list show browse status delete send receive])
+          command = options.get_next_command(%i[show browse status delete receive send list])
+          package_id =
+            if %i[receive show browse status delete].include?(command)
+              @pub_link_context&.key?('package_id') ? @pub_link_context['package_id'] : instance_identifier
+            end
           case command
-          when :list
-            return {
-              type:   :object_list,
-              data:   list_packages_with_filter,
-              fields: %w[id title release_date total_bytes total_files created_time state]
-            }
           when :show
-            id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-            id ||= instance_identifier
-            return {type: :single_object, data: @api_v5.read("packages/#{id}")[:data]}
+            return {type: :single_object, data: @api_v5.read("packages/#{package_id}")[:data]}
           when :browse
-            id = @pub_link_context['package_id'] if @pub_link_context&.key?('package_id')
-            id ||= instance_identifier
             path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
             # TODO: support multi-page listing ?
             params = {
@@ -401,22 +389,24 @@ module Aspera
             }
             result = @api_v5.call({
               operation:   'POST',
-              subpath:     "packages/#{id}/files/received",
+              subpath:     "packages/#{package_id}/files/received",
               headers:     {'Accept' => 'application/json'},
               url_params:  params,
               json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
             formatter.display_item_count(result['item_count'], result['total_count'])
             return {type: :object_list, data: result['items']}
           when :status
-            status = wait_package_status(instance_identifier, status_list: nil)
+            status = wait_package_status(package_id, status_list: nil)
             return {type: :single_object, data: status}
           when :delete
-            ids = instance_identifier
+            ids = package_id
             ids = [ids] unless ids.is_a?(Array)
             raise 'Package identifier must be a single id or an Array' unless ids.is_a?(Array) && ids.all?(String)
             # API returns 204, empty on success
             @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
             return Main.result_status('Package(s) deleted')
+          when :receive
+            return package_receive(package_id)
           when :send
             parameters = value_create_modify(command: command)
             normalize_recipients(parameters)
@@ -449,8 +439,12 @@ module Aspera
               end
               return {type: :single_object, data: result}
             end
-          when :receive
-            return package_receive
+          when :list
+            return {
+              type:   :object_list,
+              data:   list_packages_with_filter,
+              fields: %w[id title release_date total_bytes total_files created_time state]
+            }
           end # case package
         end
 
