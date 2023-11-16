@@ -21,10 +21,20 @@ module Aspera
         raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          client_url = Products.aspera_client_uri
+          client_url = get_aspera_url
           Log.log.debug{"found: #{client_url}"}
-          @client_api = Rest.new({base_url: "#{client_url}/v5/connect", headers: {'Origin' => Rest.user_agent}}) # could use v6 also now
-          client_info = @client_api.read('info/version')[:data]
+          my_client = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: client_url))
+          client_info = my_client.get_info
+          @application_id = 'aspera_2c45aa46-c43a-4a04-9726-28abc18aefeb'
+          # my_transfer_id = '0513fe85-65cf-465b-ad5f-18fd40d8c69f'
+          # my_client.get_all_transfers({app_id: @application_id})
+          # my_client.get_transfer(app_id: @application_id, transfer_id: my_transfer_id)
+          # my_client.start_transfer(app_id: @application_id,transfer_spec: {})
+          # my_client.remove_transfer
+          # my_client.stop_transfer
+          # my_client.modify_transfer
+          # my_client.show_directory({app_id: @application_id, transfer_id: my_transfer_id})
+          # my_client.get_files_list({app_id: @application_id, transfer_id: my_transfer_id})
           Log.log.info('Connect was reached') if method_index > 0
           Log.log.debug{Log.dump(:client_version, client_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
@@ -39,6 +49,20 @@ module Aspera
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
         end
+      end
+
+      def get_aspera_url
+        log_file = File.join(Dir.home, 'Library', 'Logs', 'IBM Aspera', 'ibm-aspera-desktop.log')
+        url = nil
+        File.open(log_file, 'r') do |file|
+          file.each_line do |line|
+            line = line.chomp
+            if (m = line.match(/JSON-RPC server listening on (.*)/))
+              url = "http://#{m[1]}"
+            end
+          end
+        end
+        return url
       end
 
       def start_transfer(transfer_spec, token_regenerator: nil)

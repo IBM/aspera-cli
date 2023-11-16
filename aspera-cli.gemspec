@@ -40,6 +40,7 @@ Gem::Specification.new do |spec|
   # see also Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION
   spec.required_ruby_version = '>= 2.6'
   # dependency gems for runtime
+  spec.add_runtime_dependency('blankslate', '~> 3.1')
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
   # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby

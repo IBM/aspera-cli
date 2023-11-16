@@ -8,7 +8,7 @@ DIR_TOP=
 
 include $(DIR_TOP)common.mak
 
-all:: doc signed_gem
+all:: $(DIR_TOP).gems_checked doc signed_gem
 doc:
 	cd $(DIR_DOC) && make
 test: unsigned_gem
@@ -39,6 +39,8 @@ unsigned_gem: $(PATH_GEMFILE)
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
+clean_gems:
+	gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[^-]*$$//'|sort -u)
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean:: clean_gem
