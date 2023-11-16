@@ -199,7 +199,7 @@ SDK. To use the container, ensure that you have <code>podman</code> (or
 <div class="sourceCode" id="cb14"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> <span class="at">--version</span></span></code></pre></div>
 <h3 data-number="3.1.1" id="container-quick-start"><span
-class="header-section-number">3.1.1</span> Container: quick start</h3>
+class="header-section-number">3.1.1</span> Container: Quick start</h3>
 <p><strong>Wanna start quickly ?</strong> With an interactive shell ?
 Execute this:</p>
 <div class="sourceCode" id="cb15"><pre
@@ -435,7 +435,7 @@ OS-specific install method. If you have a simpler better way to install
 Ruby : use it !</p>
 <h3 data-number="3.2.1"
 id="generic-rvm-single-user-installation-not-root"><span
-class="header-section-number">3.2.1</span> Generic: RVM: single user
+class="header-section-number">3.2.1</span> Generic: RVM: Single user
 installation (not root)</h3>
 <p>Use this method which provides more flexibility.</p>
 <p>Install <code>rvm</code>: follow <a
@@ -460,7 +460,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href=
 installation</a>.</p>
 <h3 data-number="3.2.2"
 id="generic-rvm-global-installation-as-root"><span
-class="header-section-number">3.2.2</span> Generic: RVM: global
+class="header-section-number">3.2.2</span> Generic: RVM: Global
 installation (as root)</h3>
 <p>Follow the same method as single user install, but execute as
 “root”.</p>
@@ -549,7 +549,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb47-1"><a href=
 <a href="docs/install.bat">docs/install.bat</a></p>
 </blockquote>
 <h3 data-number="3.2.4" id="macos-pre-installed-or-brew"><span
-class="header-section-number">3.2.4</span> macOS: pre-installed or
+class="header-section-number">3.2.4</span> macOS: Pre-installed or
 <code>brew</code></h3>
 <p>macOS 10.13+ (High Sierra) comes with a recent Ruby. So you can use
 it directly. You will need to install aspera-cli using <code>sudo</code>
@@ -561,7 +561,7 @@ already you can install Ruby with it:</p>
 <div class="sourceCode" id="cb49"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install ruby</span></code></pre></div>
 <h3 data-number="3.2.5" id="linux-package"><span
-class="header-section-number">3.2.5</span> Linux: package</h3>
+class="header-section-number">3.2.5</span> Linux: Package</h3>
 <p>If your Linux distribution provides a standard Ruby package, you can
 use it provided that the version supported.</p>
 <p><strong>Example:</strong> RHEL 8+, Rocky Linux 8+, Centos 8 Stream:
@@ -1693,13 +1693,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb124-1"><a href
 <span id="cb124-3"><a href="#cb124-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset list</span></code></pre></div>
 <h3 data-number="4.9.2" id="special-option-preset-config"><span
 class="header-section-number">4.9.2</span> <a id="lprtconf"></a>Special
-Option preset: config</h3>
+Option preset: <code>config</code></h3>
 <p>This preset name is reserved and contains a single key:
 <code>version</code>. This is the version of <code>ascli</code> which
 created the file.</p>
 <h3 data-number="4.9.3" id="special-option-preset-default"><span
 class="header-section-number">4.9.3</span> <a id="lprtdef"></a>Special
-Option preset: default</h3>
+Option preset: <code>default</code></h3>
 <p>This preset name is reserved and contains an array of key-value ,
 where the key is the name of a plugin, and the value is the name of
 another preset.</p>
@@ -5050,7 +5050,7 @@ authentication (HTTP Basic authentication is not supported).</p>
 configuration is also possible.</p>
 <h2 data-number="5.1" id="configuration-using-wizard"><span
 class="header-section-number">5.1</span>
-<a id="aocwizard"></a>Configuration: using Wizard</h2>
+<a id="aocwizard"></a>Configuration: Using Wizard</h2>
 <p><code>ascli</code> provides a configuration wizard.</p>
 <p>The wizard guides you through the steps to create a new configuration
 preset for Aspera on Cloud.</p>
@@ -5082,7 +5082,7 @@ to it, provide url and plugin name:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb252-1"><a href="#cb252-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard myorg aoc</span></code></pre></div>
 <h2 data-number="5.2" id="configuration-using-manual-setup"><span
 class="header-section-number">5.2</span>
-<a id="aocmanual"></a>Configuration: using manual setup</h2>
+<a id="aocmanual"></a>Configuration: Using manual setup</h2>
 <blockquote>
 <p><strong>Note:</strong> If you used the wizard (recommended): skip
 this section.</p>
@@ -5664,7 +5664,7 @@ users</h3>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb308-1"><a href="#cb308-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res user list <span class="at">--fields</span><span class="op">=</span>email <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;member_of_any_workspace&quot;:false}&#39;</span></span></code></pre></div>
 <h3 data-number="5.4.20"
 id="example-create-a-group-add-to-workspace-and-add-user-to-group"><span
-class="header-section-number">5.4.20</span> Example: create a group, add
+class="header-section-number">5.4.20</span> Example: Create a group, add
 to workspace and add user to group</h3>
 <ul>
 <li>Create the group and take note of <code>id</code></li>
@@ -5733,13 +5733,13 @@ home, in a workspace.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb316-1"><a href="#cb316-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-Paoc_show</span> aoc files transfer <span class="at">--from-folder</span><span class="op">=</span><span class="st">&#39;IBM Cloud SJ&#39;</span> <span class="at">--to-folder</span><span class="op">=</span><span class="st">&#39;AWS Singapore&#39;</span> 100GB.file <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:&quot;1000000&quot;,&quot;multi_session&quot;:10,&quot;multi_session_threshold&quot;:1}&#39;</span></span></code></pre></div>
 <h3 data-number="5.4.22"
 id="example-create-registration-key-to-register-a-node"><span
-class="header-section-number">5.4.22</span> Example: create registration
+class="header-section-number">5.4.22</span> Example: Create registration
 key to register a node</h3>
 <div class="sourceCode" id="cb317"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb317-1"><a href="#cb317-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res client create @json:<span class="st">&#39;{&quot;data&quot;:{&quot;name&quot;:&quot;laurentnode&quot;,&quot;client_subject_scopes&quot;:[&quot;alee&quot;,&quot;aejd&quot;],&quot;client_subject_enabled&quot;:true}}&#39;</span> <span class="at">--fields</span><span class="op">=</span>token <span class="at">--format</span><span class="op">=</span>csv</span></code></pre></div>
 <pre class="output"><code>jfqslfdjlfdjfhdjklqfhdkl</code></pre>
 <h3 data-number="5.4.23" id="example-delete-all-registration-keys"><span
-class="header-section-number">5.4.23</span> Example: delete all
+class="header-section-number">5.4.23</span> Example: Delete all
 registration keys</h3>
 <div class="sourceCode" id="cb319"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb319-1"><a href="#cb319-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res client list <span class="at">--fields</span><span class="op">=</span>id <span class="at">--format</span><span class="op">=</span>csv<span class="kw">|</span><span class="ex">ascli</span> aoc admin res client delete @lines:@stdin: <span class="at">--bulk</span><span class="op">=</span>yes</span></code></pre></div>
@@ -6159,7 +6159,7 @@ authentication</p></li>
 key authentication</p></li>
 </ul>
 <h2 data-number="6.1" id="ibm-cloud-ats-creation-of-api-key"><span
-class="header-section-number">6.1</span> IBM Cloud ATS : creation of api
+class="header-section-number">6.1</span> IBM Cloud ATS : Creation of api
 key</h2>
 <p>This section is about using ATS with an IBM cloud subscription. If
 you are using ATS as part of AoC, then authentication is through AoC,
@@ -6744,7 +6744,7 @@ They are used respectively to build the default value of
 </blockquote>
 <h3 data-number="8.11.1" id="bearer-token-environment"><span
 class="header-section-number">8.11.1</span> Bearer token:
-environment</h3>
+Environment</h3>
 <ul>
 <li><p>If a self-managed Aspera node is used, then a “node user admin”
 must be created: It has no <code>docroot</code> but has at least one
@@ -6762,7 +6762,7 @@ the access key.</p></li>
 </ul>
 <h3 data-number="8.11.2" id="bearer-token-preparation"><span
 class="header-section-number">8.11.2</span> Bearer token:
-preparation</h3>
+Preparation</h3>
 <p>Let’s assume that the access key was created, and a default
 configuration is set to use this <strong>access key</strong>.</p>
 <ul>
@@ -6792,7 +6792,7 @@ signature of the bearer token.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb394-1"><a href="#cb394-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node access_key modify %id:self @ruby:<span class="st">&#39;{token_verification_key: File.read(&quot;&#39;</span><span class="va">$my_private_pem</span><span class="st">&#39;.pub&quot;)}&#39;</span></span></code></pre></div></li>
 </ul>
 <h3 data-number="8.11.3" id="bearer-token-configuration-for-user"><span
-class="header-section-number">8.11.3</span> Bearer token: configuration
+class="header-section-number">8.11.3</span> Bearer token: Configuration
 for user</h3>
 <ul>
 <li><p>Select a folder for which we want to grant access to a user, and
@@ -6819,7 +6819,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb397-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb398-1"><a href="#cb398-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node bearer_token @file:./myorgkey.pem @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;&#39;</span><span class="va">$my_user_id</span><span class="st">&#39;&quot;,&quot;_validity&quot;:3600}&#39;</span> <span class="op">&gt;</span> bearer.txt</span></code></pre></div></li>
 </ul>
 <h3 data-number="8.11.4" id="bearer-token-user-side"><span
-class="header-section-number">8.11.4</span> Bearer token: user side</h3>
+class="header-section-number">8.11.4</span> Bearer token: User side</h3>
 <p>Now, let’s assume we are the user, the only information received
 are:</p>
 <ul>
@@ -7130,7 +7130,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href
 <span id="cb407-42"><a href="#cb407-42" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile modify @json:<span class="st">&#39;{&quot;preference&quot;:{&quot;connect_disabled&quot;:false}}&#39;</span></span>
 <span id="cb407-43"><a href="#cb407-43" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> user profile show</span></code></pre></div>
 <h2 data-number="9.5" id="faspex-5-inbox-selection"><span
-class="header-section-number">9.5</span> Faspex 5: inbox selection</h2>
+class="header-section-number">9.5</span> Faspex 5: Inbox selection</h2>
 <p>By default, package operations (send, receive, list) are done on the
 user’s inbox.</p>
 <p>To select another inbox, use option <code>box</code> with one of the
@@ -7282,7 +7282,7 @@ numerical <code>id</code> or by name using percent selector:
 e.g. <code>--shared-folder=3</code></p>
 </blockquote>
 <h2 data-number="9.14" id="faspex-5-receive-all-packages-cargo"><span
-class="header-section-number">9.14</span> Faspex 5: receive all packages
+class="header-section-number">9.14</span> Faspex 5: Receive all packages
 (cargo)</h2>
 <p>To receive all packages, only once, through persistency of already
 received packages:</p>
@@ -7451,7 +7451,7 @@ calls (using parameter: <code>count</code> and <code>page</code>). By
 default <code>count</code> is <code>0</code> (<code>10</code>), it can
 be increased to issue less HTTP calls.</p>
 <h3 data-number="10.1.4" id="example-list-packages-in-dropbox"><span
-class="header-section-number">10.1.4</span> Example: list packages in
+class="header-section-number">10.1.4</span> Example: List packages in
 dropbox</h3>
 <div class="sourceCode" id="cb426"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb426-1"><a href="#cb426-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package list <span class="at">--box</span><span class="op">=</span>inbox <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*my_dropbox&#39;</span> <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:20,&quot;pmax&quot;:2,&quot;count&quot;:20}&#39;</span></span></code></pre></div>
@@ -7802,7 +7802,7 @@ progress output nor error messages.</p>
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22">IBM
 Developer Portal</a>.</p>
 <h2 data-number="15.2" id="async-json-options-mapping"><span
-class="header-section-number">15.2</span> async JSON: options
+class="header-section-number">15.2</span> async JSON: Options
 mapping</h2>
 <p><code>ascli</code> defines a JSON equivalent to regular
 <code>async</code>options. It is based on a JSON representation of
@@ -8529,7 +8529,7 @@ the OS native scheduler, e.g. every minutes, or 5 minutes, etc… Refer to
 section <a href="#scheduler">Scheduler</a>. (on use of option
 <code>lock_port</code>)</p>
 <h2 data-number="19.3" id="example-upload-hot-folder"><span
-class="header-section-number">19.3</span> Example: upload hot
+class="header-section-number">19.3</span> Example: Upload hot
 folder</h2>
 <div class="sourceCode" id="cb470"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb470-1"><a href="#cb470-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_hot <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;remove_after_transfer&quot;:true,&quot;remove_empty_directories&quot;:true,&quot;exclude_newer_than:-8,&quot;src_base&quot;:&quot;source_hot&quot;}&#39;</span></span></code></pre></div>
@@ -8541,7 +8541,7 @@ the execution period, then the subsequent execution is skipped
 (<code>lock_port</code>) preventing multiple concurrent runs.</p>
 <h2 data-number="19.4"
 id="example-unidirectional-synchronization-upload-to-server"><span
-class="header-section-number">19.4</span> Example: unidirectional
+class="header-section-number">19.4</span> Example: Unidirectional
 synchronization (upload) to server</h2>
 <div class="sourceCode" id="cb471"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb471-1"><a href="#cb471-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_sync <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_sync <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;exclude_newer_than&quot;:-8,&quot;src_base&quot;:&quot;source_sync&quot;}&#39;</span></span></code></pre></div>
@@ -8549,7 +8549,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb471-1"><a href
 Cloud, Shares, Node:</p>
 <h2 data-number="19.5"
 id="example-unidirectional-synchronization-download-from-aspera-on-cloud-files"><span
-class="header-section-number">19.5</span> Example: unidirectional
+class="header-section-number">19.5</span> Example: Unidirectional
 synchronization (download) from Aspera on Cloud Files</h2>
 <div class="sourceCode" id="cb472"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb472-1"><a href="#cb472-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progress-bar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>

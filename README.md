@@ -208,7 +208,7 @@ To use the container, ensure that you have `podman` (or `docker`) installed.
 podman --version
 ```
 
-#### Container: quick start
+#### Container: Quick start
 
 **Wanna start quickly ?** With an interactive shell ? Execute this:
 
@@ -423,7 +423,7 @@ The recommended installation method is `rvm` for Unix-like systems (Linux, AIX, 
 If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
 If you have a simpler better way to install Ruby : use it !
 
-#### Generic: RVM: single user installation (not root)
+#### Generic: RVM: Single user installation (not root)
 
 Use this method which provides more flexibility.
 
@@ -457,7 +457,7 @@ rvm install 3.2.2
 
 Ruby is now installed for the user, go to [Gem installation](#the_gem).
 
-#### Generic: RVM: global installation (as root)
+#### Generic: RVM: Global installation (as root)
 
 Follow the same method as single user install, but execute as "root".
 
@@ -545,7 +545,7 @@ ascli conf ascp install --sdk-url=file:///sdk.zip
 
 > **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
 
-#### macOS: pre-installed or `brew`
+#### macOS: Pre-installed or `brew`
 
 macOS 10.13+ (High Sierra) comes with a recent Ruby.
 So you can use it directly.
@@ -561,7 +561,7 @@ Alternatively, if you use [Homebrew](https://brew.sh/) already you can install R
 brew install ruby
 ```
 
-#### Linux: package
+#### Linux: Package
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
@@ -1538,11 +1538,11 @@ ascli config preset over
 ascli config preset list
 ```
 
-#### <a id="lprtconf"></a>Special Option preset: config
+#### <a id="lprtconf"></a>Special Option preset: `config`
 
 This preset name is reserved and contains a single key: `version`. This is the version of `ascli` which created the file.
 
-#### <a id="lprtdef"></a>Special Option preset: default
+#### <a id="lprtdef"></a>Special Option preset: `default`
 
 This preset name is reserved and contains an array of key-value , where the key is the name of a plugin, and the value is the name of another preset.
 
@@ -3575,7 +3575,7 @@ Aspera on Cloud API requires the use of Oauth v2 mechanism for authentication (H
 
 It is recommended to use the wizard to set it up, although manual configuration is also possible.
 
-### <a id="aocwizard"></a>Configuration: using Wizard
+### <a id="aocwizard"></a>Configuration: Using Wizard
 
 `ascli` provides a configuration wizard.
 
@@ -3614,7 +3614,7 @@ If you already know the application, and want to limit the detection to it, prov
 ascli config wizard myorg aoc
 ```
 
-### <a id="aocmanual"></a>Configuration: using manual setup
+### <a id="aocmanual"></a>Configuration: Using manual setup
 
 > **Note:** If you used the wizard (recommended): skip this section.
 
@@ -4220,7 +4220,7 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
-#### Example: create a group, add to workspace and add user to group
+#### Example: Create a group, add to workspace and add user to group
 
 - Create the group and take note of `id`
 
@@ -4300,7 +4300,7 @@ Then, transfer between those:
 ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
-#### Example: create registration key to register a node
+#### Example: Create registration key to register a node
 
 ```bash
 ascli aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
@@ -4310,7 +4310,7 @@ ascli aoc admin res client create @json:'{"data":{"name":"laurentnode","client_s
 jfqslfdjlfdjfhdjklqfhdkl
 ```
 
-#### Example: delete all registration keys
+#### Example: Delete all registration keys
 
 ```bash
 ascli aoc admin res client list --fields=id --format=csv|ascli aoc admin res client delete @lines:@stdin: --bulk=yes
@@ -4721,7 +4721,7 @@ ATS is usable either :
 
 - or from an IBM Cloud subscription : ascli ats : use IBM Cloud API key authentication
 
-### IBM Cloud ATS : creation of api key
+### IBM Cloud ATS : Creation of api key
 
 This section is about using ATS with an IBM cloud subscription.
 If you are using ATS as part of AoC, then authentication is through AoC, not IBM Cloud.
@@ -5265,7 +5265,7 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 > They are not part of the API and are removed from the final payload.
 > They are used respectively to build the default value of `scope` and `expires_at`.
 
-#### Bearer token: environment
+#### Bearer token: Environment
 
 - If a self-managed Aspera node is used, then a "node user admin" must be created:
   It has no `docroot` but has at least one file restriction (for testing, one can use `*` to accept creation of an access key with any storage root path).
@@ -5278,7 +5278,7 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 - An access key shall be created to grant access for transfers to its storage.
   The access_key and its secrets represent an administrative access to the storage as it has access rights to the whole storage of the access key.
 
-#### Bearer token: preparation
+#### Bearer token: Preparation
 
 Let's assume that the access key was created, and a default configuration is set to use this **access key**.
 
@@ -5307,7 +5307,7 @@ Let's assume that the access key was created, and a default configuration is set
   ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
   ```
 
-#### Bearer token: configuration for user
+#### Bearer token: Configuration for user
 
 - Select a folder for which we want to grant access to a user, and get its identifier:
 
@@ -5338,7 +5338,7 @@ Let's assume that the access key was created, and a default configuration is set
   ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' > bearer.txt
   ```
 
-#### Bearer token: user side
+#### Bearer token: User side
 
 Now, let's assume we are the user, the only information received are:
 
@@ -5624,7 +5624,7 @@ faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
 faspex5 user profile show
 ```
 
-### Faspex 5: inbox selection
+### Faspex 5: Inbox selection
 
 By default, package operations (send, receive, list) are done on the user's inbox.
 
@@ -5776,7 +5776,7 @@ ascli faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_reci
 
 > **Note:** The shared folder can be identified by its numerical `id` or by name using percent selector: `%<field>:<value>`. e.g. `--shared-folder=3`
 
-### Faspex 5: receive all packages (cargo)
+### Faspex 5: Receive all packages (cargo)
 
 To receive all packages, only once, through persistency of already received packages:
 
@@ -5876,7 +5876,7 @@ The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/cat
 If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`).
 By default `count` is `0` (`10`), it can be increased to issue less HTTP calls.
 
-#### Example: list packages in dropbox
+#### Example: List packages in dropbox
 
 ```bash
 ascli faspex package list --box=inbox --recipient='*my_dropbox' --query=@json:'{"max":20,"pmax":2,"count":20}'
@@ -6230,7 +6230,7 @@ But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-### async JSON: options mapping
+### async JSON: Options mapping
 
 `ascli` defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
@@ -6787,7 +6787,7 @@ Virtually any transfer on a "repository" on a regular basis might emulate a hot 
 Once `ascli` parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
 Refer to section [Scheduler](#scheduler). (on use of option `lock_port`)
 
-### Example: upload hot folder
+### Example: Upload hot folder
 
 ```bash
 ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
@@ -6798,7 +6798,7 @@ Source files are deleted after transfer.
 Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
 If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
 
-### Example: unidirectional synchronization (upload) to server
+### Example: Unidirectional synchronization (upload) to server
 
 ```bash
 ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
@@ -6806,7 +6806,7 @@ ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=1234
 
 This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node:
 
-### Example: unidirectional synchronization (download) from Aspera on Cloud Files
+### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
 ```bash
 ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'

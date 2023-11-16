@@ -32,7 +32,11 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
 	set -x &&\
 	if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 	date=$$(date $$ref '+%Y/%m/%d') &&\
-	pandoc --defaults=pandoc_md_pdf.yaml --variable=date:$$date -o $@ $(DIR_TOP)README.md
+	pandoc \
+		--defaults=pandoc_md_pdf.yaml \
+		--variable=date:$$date \
+		--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)"\
+		-o $@ $(DIR_TOP)README.md
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \
@@ -48,6 +52,7 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 DOC_FILES=$(DIR_DOC)README.erb.md $(CLI_PATH) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC)
 $(DIR_TOP)README.md: $(DOC_FILES) $(DIR_DOC)doc_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(DIR_LIB)aspera/fasp/parameters.yaml $(GEMSPEC)
 	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DOC_FILES) > $@
+	! grep '^#.*: [a-z]' README.erb.md
 
 clean_doc::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(DIR_TOP)README.md
