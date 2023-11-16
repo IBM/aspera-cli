@@ -3400,10 +3400,9 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
+        --auth=ENUM                  OAuth type of authentication: boot, web, [jwt]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
-        --link=VALUE                 Public link authorization (specific operations)
         --box=VALUE                  Package inbox, either shared inbox name or one of ["inbox", "inbox_history", "inbox_all", "inbox_all_history", "outbox", "outbox_history", "pending", "pending_history", "all"] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
@@ -5427,12 +5426,16 @@ node upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate
 
 IBM Aspera's newer self-managed application.
 
-3 authentication methods are supported:
+3 authentication methods are supported (option `auth`):
 
-- jwt : general purpose, private-key based authentication
-- link : public link authentication
-- web : requires authentication with web browser
-- boot : use authentication token copied from browser (experimental)
+| Method       | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| `jwt`        | General purpose, private-key based authentication                   |
+| `web`        | Requires authentication with web browser                            |
+| `boot`       | Use authentication token copied from browser (experimental)         |
+| `public_link`| Public link authentication (set when option `url` is a public link) |
+
+> **Note:** If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
 For a quick start, one can use the wizard, which will help creating a [option preset](#lprt):
 

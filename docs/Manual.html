@@ -4881,10 +4881,9 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: boot, link, web, [jwt]
+        --auth=ENUM                  OAuth type of authentication: boot, web, [jwt]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
-        --link=VALUE                 Public link authorization (specific operations)
         --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;] or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
@@ -6903,14 +6902,43 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb400-1"><a href
 class="header-section-number">9</span> <a id="faspex5"></a>Plugin:
 <code>faspex5</code>: IBM Aspera Faspex v5</h1>
 <p>IBM Aspera’s newer self-managed application.</p>
-<p>3 authentication methods are supported:</p>
-<ul>
-<li>jwt : general purpose, private-key based authentication</li>
-<li>link : public link authentication</li>
-<li>web : requires authentication with web browser</li>
-<li>boot : use authentication token copied from browser
-(experimental)</li>
-</ul>
+<p>3 authentication methods are supported (option
+<code>auth</code>):</p>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 84%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>jwt</code></td>
+<td>General purpose, private-key based authentication</td>
+</tr>
+<tr class="even">
+<td><code>web</code></td>
+<td>Requires authentication with web browser</td>
+</tr>
+<tr class="odd">
+<td><code>boot</code></td>
+<td>Use authentication token copied from browser (experimental)</td>
+</tr>
+<tr class="even">
+<td><code>public_link</code></td>
+<td>Public link authentication (set when option <code>url</code> is a
+public link)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> If you have a Faspex 5 public link, provide
+it, unchanged, through the option <code>url</code></p>
+</blockquote>
 <p>For a quick start, one can use the wizard, which will help creating a
 <a href="#lprt">option preset</a>:</p>
 <div class="sourceCode" id="cb401"><pre

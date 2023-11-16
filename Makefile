@@ -8,6 +8,8 @@ DIR_TOP=
 
 include $(DIR_TOP)common.mak
 
+GEMSPEC_FILE=$(DIR_TOP)$(GEM_NAME).gemspec
+
 all:: $(DIR_TOP).gems_checked doc signed_gem
 doc:
 	cd $(DIR_DOC) && make
@@ -24,7 +26,8 @@ clean_doc::
 ##################################
 # Gem build
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
-	gem build $(GEM_NAME)
+	gem build $(GEMSPEC_FILE)
+	gem specification $(PATH_GEMFILE) version
 # check that the signing key is present
 gem_check_signing_key:
 	@echo "Checking env var: SIGNING_KEY"
@@ -48,7 +51,7 @@ clean:: clean_gem
 # Gem certificate
 # updates the existing certificate, keeping the maintainer email
 update-cert: gem_check_signing_key
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	gem cert \
 	--re-sign \
 	--certificate $$cert_chain \
@@ -56,18 +59,18 @@ update-cert: gem_check_signing_key
 	--days 1100
 # creates a new certificate, taking the maintainer email from gemspec
 new-cert: gem_check_signing_key
-	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	gem cert \
 	--build $$maintainer_email \
 	--private-key $$SIGNING_KEY \
 	--days 1100
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	mv gem-public_cert.pem $$cert_chain
 show-cert:
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	openssl x509 -noout -text -in $$cert_chain|head -n 13
 check-cert-key: $(DIR_TMP).exists gem_check_signing_key
-	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(DIR_TOP)aspera-cli.gemspec)&&\
+	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	openssl x509 -noout -pubkey -in $$cert_chain > $(DIR_TMP)cert.pub
 	@openssl rsa -pubout -passin pass:_value_ -in $$SIGNING_KEY > $(DIR_TMP)sign.pub
 	@if cmp -s $(DIR_TMP)cert.pub $(DIR_TMP)sign.pub;then echo "Ok: certificate and key match";else echo "Error: certificate and key do not match" 1>&2;exit 1;fi

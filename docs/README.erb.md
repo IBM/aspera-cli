@@ -4764,12 +4764,16 @@ Let's use it:
 
 IBM Aspera's newer self-managed application.
 
-3 authentication methods are supported:
+3 authentication methods are supported (option `auth`):
 
-- jwt : general purpose, private-key based authentication
-- link : public link authentication
-- web : requires authentication with web browser
-- boot : use authentication token copied from browser (experimental)
+| Method       | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| `jwt`        | General purpose, private-key based authentication                   |
+| `web`        | Requires authentication with web browser                            |
+| `boot`       | Use authentication token copied from browser (experimental)         |
+| `public_link`| Public link authentication (set when option `url` is a public link) |
+
+> **Note:** If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
 For a quick start, one can use the wizard, which will help creating a <%=prst%>:
 

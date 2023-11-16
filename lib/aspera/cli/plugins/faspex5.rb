@@ -88,6 +88,10 @@ module Aspera
               test_args:    'user profile show'
             }
           end
+
+          def public_link?(url)
+            url.include?('/public/')
+          end
         end
 
         def initialize(env)
@@ -95,51 +99,52 @@ module Aspera
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.declare(:auth, 'OAuth type of authentication', values: %i[boot link].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
+          options.declare(:auth, 'OAuth type of authentication', values: %i[boot].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
-          options.declare(:link, 'Public link authorization (specific operations)')
           options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{ExtendedValue::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
         end
 
+        def api_url
+          return "#{@faspex5_api_base_url}/api/v5"
+        end
+
+        def auth_api_url
+          return "#{@faspex5_api_base_url}/auth"
+        end
+
         def set_api
-          public_link = options.get_option(:link)
-          unless public_link.nil?
-            @faspex5_api_base_url = public_link.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
-            options.set_option(:auth, :link)
-          end
-          @faspex5_api_base_url ||= options.get_option(:url, mandatory: true).gsub(%r{/+$}, '')
-          @faspex5_api_auth_url = "#{@faspex5_api_base_url}/auth"
-          faspex5_api_v5_url = "#{@faspex5_api_base_url}/api/v5"
-          case options.get_option(:auth, mandatory: true)
-          when :link
-            uri = URI.parse(public_link)
-            link_arguments = Rest.decode_query(uri.query)
-            Log.log.debug{Log.dump(:link_arguments, link_arguments)}
-            context = link_arguments['context']
-            raise 'missing context' if context.nil?
-            @pub_link_context = JSON.parse(Base64.decode64(context))
-            Log.log.debug{Log.dump(:@pub_link_context, @pub_link_context)}
+          # get endpoint, remove unnecessary trailing slashes
+          @faspex5_api_base_url = options.get_option(:url, mandatory: true).gsub(%r{/+$}, '')
+          auth_type = self.class.public_link?(@faspex5_api_base_url) ? :public_link : options.get_option(:auth, mandatory: true)
+          case auth_type
+          when :public_link
+            encoded_context = Rest.decode_query(URI.parse(@faspex5_api_base_url).query)['context']
+            raise 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
+            @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
+            Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
+            # ok, we have the additional parameters, get the base url
+            @faspex5_api_base_url = @faspex5_api_base_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             @api_v5 = Rest.new({
-              base_url: faspex5_api_v5_url,
+              base_url: api_url,
               headers:  {'Passcode' => @pub_link_context['passcode']}
             })
           when :boot
             # the password here is the token copied directly from browser in developer mode
             @api_v5 = Rest.new({
-              base_url: faspex5_api_v5_url,
+              base_url: api_url,
               headers:  {'Authorization' => options.get_option(:password, mandatory: true)}
             })
           when :web
             # opens a browser and ask user to auth using web
             @api_v5 = Rest.new({
-              base_url: faspex5_api_v5_url,
+              base_url: api_url,
               auth:     {
                 type:         :oauth2,
-                base_url:     @faspex5_api_auth_url,
+                base_url:     auth_api_url,
                 grant_method: :web,
                 client_id:    options.get_option(:client_id, mandatory: true),
                 web:          {redirect_uri: options.get_option(:redirect_uri, mandatory: true)}
@@ -147,10 +152,10 @@ module Aspera
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
             @api_v5 = Rest.new({
-              base_url: faspex5_api_v5_url,
+              base_url: api_url,
               auth:     {
                 type:         :oauth2,
-                base_url:     @faspex5_api_auth_url,
+                base_url:     auth_api_url,
                 grant_method: :jwt,
                 client_id:    app_client_id,
                 jwt:          {
@@ -530,7 +535,7 @@ module Aspera
                 display_fields = Formatter.all_but('user_profile_data_attributes')
               when :oauth_clients
                 display_fields = Formatter.all_but('public_key')
-                adm_api = Rest.new(@api_v5.params.merge({base_url: @faspex5_api_auth_url}))
+                adm_api = Rest.new(@api_v5.params.merge({base_url: auth_api_url}))
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
               end
