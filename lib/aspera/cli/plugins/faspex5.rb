@@ -335,25 +335,25 @@ module Aspera
           # TODO: check package_ids is a list of strings
           package_ids = [package_ids] if package_ids.is_a?(String)
           result_transfer = []
+          param_file_list = {}
+          begin
+            param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
+          rescue Cli::BadArgument
+            # paths is optional
+          end
+          download_params = {
+            type:          'received',
+            transfer_type: TRANSFER_CONNECT
+          }
+          box = options.get_option(:box)
+          case box
+          when /outbox/ then download_params[:type] = 'sent'
+          when *API_LIST_MAILBOX_TYPES then nil # nothing to do
+          else # shared inbox / workgroup
+            download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
+          end
           package_ids.each do |pkg_id|
             formatter.display_status("Receiving package #{pkg_id}")
-            param_file_list = {}
-            begin
-              param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
-            rescue Cli::BadArgument
-              # paths is optional
-            end
-            download_params = {
-              type:          'received',
-              transfer_type: TRANSFER_CONNECT
-            }
-            box = options.get_option(:box)
-            case box
-            when /outbox/ then download_params[:type] = 'sent'
-            when *API_LIST_MAILBOX_TYPES then nil # nothing to do
-            else # shared inbox / workgroup
-              download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
-            end
             # TODO: allow from sent as well ?
             transfer_spec = @api_v5.call(
               operation:   'POST',
