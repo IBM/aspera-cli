@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.15.0.pre
+* 4.15.0
 
   * General: removed many redundant options, more consistency between plugins, see below in "break".
   * New Features:
