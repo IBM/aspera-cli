@@ -10,7 +10,7 @@ src="https://bestpractices.coreinfrastructure.org/projects/5861/badge"
 alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
-<p>Version : 4.15.0</p>
+<p>Version : 4.16.0.pre</p>
 <p>Laurent/2016-2023</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
@@ -105,7 +105,7 @@ accessible:</p>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--version</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">4.15.0</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">4.16.0.pre</span></span></code></pre></div>
 <h2 data-number="2.1" id="first-use"><span
 class="header-section-number">2.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
@@ -237,7 +237,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href=
 <p>Then, you can execute the container like a local command:</p>
 <div class="sourceCode" id="cb19"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
-<pre class="text"><code>4.15.0</code></pre>
+<pre class="text"><code>4.16.0.pre</code></pre>
 <p>In order to keep persistency of configuration on the host, you should
 specify your user’s config folder as a volume for the container. To
 enable write access, a possibility is to run as <code>root</code> in the
@@ -555,7 +555,7 @@ class="header-section-number">3.2.4</span> macOS: Pre-installed or
 it directly. You will need to install aspera-cli using <code>sudo</code>
 :</p>
 <div class="sourceCode" id="cb48"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> gem install aspera-cli</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> gem install aspera-cli <span class="at">--pre</span></span></code></pre></div>
 <p>Alternatively, if you use <a href="https://brew.sh/">Homebrew</a>
 already you can install Ruby with it:</p>
 <div class="sourceCode" id="cb49"><pre
@@ -634,7 +634,7 @@ class="header-section-number">3.3</span>
 <p>Once you have Ruby and rights to install gems: Install the gem and
 its dependencies:</p>
 <div class="sourceCode" id="cb58"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli <span class="at">--pre</span></span></code></pre></div>
 <p>To upgrade to the latest version:</p>
 <div class="sourceCode" id="cb59"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> update aspera-cli</span></code></pre></div>
@@ -4722,7 +4722,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb243-1"><a href
 class="header-section-number">4.31</span> <a id="usage"></a>Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.15.0)
+        ascli -- a command line tool for Aspera Applications (v4.16.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
