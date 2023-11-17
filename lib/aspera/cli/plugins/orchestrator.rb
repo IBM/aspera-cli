@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/node'
+require 'aspera/cli/basic_auth_plugin'
+require 'aspera/nagios'
 require 'xmlsimple'
 
 module Aspera
@@ -13,7 +14,6 @@ module Aspera
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
             urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
-
             urls.each do |base_url|
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)

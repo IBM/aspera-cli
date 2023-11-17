@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'aspera/rest'
 require 'aspera/aoc'
 
 module Aspera

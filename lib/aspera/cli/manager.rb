@@ -3,10 +3,10 @@
 require 'aspera/cli/extended_value'
 require 'aspera/cli/error'
 require 'aspera/colors'
-require 'aspera/log'
 require 'aspera/secret_hider'
-require 'optparse'
+require 'aspera/log'
 require 'io/console'
+require 'optparse'
 
 module Aspera
   module Cli

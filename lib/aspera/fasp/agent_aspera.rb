@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/agent_base'
 require 'aspera/rest'
+require 'aspera/json_rpc'
 require 'aspera/open_application'
 require 'securerandom'
 
@@ -14,29 +15,24 @@ module Aspera
       SLEEP_SEC_BETWEEN_RETRY = 3
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(options)
+        @application_id = SecureRandom.uuid
         super(options)
-        @client_settings = {
-          'app_id' => SecureRandom.uuid
-        }
-        raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
+        raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          client_url = aspera_client_api_url
-          Log.log.debug{"found: #{client_url}"}
-          my_client = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: client_url))
-          client_info = my_client.get_info
-          @application_id = 'aspera_2c45aa46-c43a-4a04-9726-28abc18aefeb'
-          # my_transfer_id = '0513fe85-65cf-465b-ad5f-18fd40d8c69f'
-          # my_client.get_all_transfers({app_id: @application_id})
-          # my_client.get_transfer(app_id: @application_id, transfer_id: my_transfer_id)
-          # my_client.start_transfer(app_id: @application_id,transfer_spec: {})
-          # my_client.remove_transfer
-          # my_client.stop_transfer
-          # my_client.modify_transfer
-          # my_client.show_directory({app_id: @application_id, transfer_id: my_transfer_id})
-          # my_client.get_files_list({app_id: @application_id, transfer_id: my_transfer_id})
-          Log.log.info('Connect was reached') if method_index > 0
+          @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
+          client_info = @client_app_api.get_info
           Log.log.debug{Log.dump(:client_version, client_info)}
+          # my_transfer_id = '0513fe85-65cf-465b-ad5f-18fd40d8c69f'
+          # @client_app_api.get_all_transfers({app_id: @application_id})
+          # @client_app_api.get_transfer(app_id: @application_id, transfer_id: my_transfer_id)
+          # @client_app_api.start_transfer(app_id: @application_id,transfer_spec: {})
+          # @client_app_api.remove_transfer
+          # @client_app_api.stop_transfer
+          # @client_app_api.modify_transfer
+          # @client_app_api.show_directory({app_id: @application_id, transfer_id: my_transfer_id})
+          # @client_app_api.get_files_list({app_id: @application_id, transfer_id: my_transfer_id})
+          Log.log.info('Client was reached') if method_index > 0
         rescue StandardError => e # Errno::ECONNREFUSED
           start_url = START_URIS[method_index]
           method_index += 1
@@ -66,32 +62,12 @@ module Aspera
       end
 
       def start_transfer(transfer_spec, token_regenerator: nil)
-        if transfer_spec['direction'] == 'send'
-          Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
-          transfer_spec.delete('paths')
-          selection = @client_api.create('windows/select-open-file-dialog/', {
-            'aspera_client_settings' => @client_settings,
-            'title'                  => 'Select Files',
-            'suggestedName'          => '',
-            'allowMultipleSelection' => true,
-            'allowedFileTypes'       => ''})[:data]
-          transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']}}
-        end
         @request_id = SecureRandom.uuid
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
-        client_transfer_args = {
-          'aspera_client_settings' => @client_settings.merge({
-            'request_id'    => @request_id,
-            'allow_dialogs' => true
-          }),
-          'transfer_specs'         => [{
-            'transfer_spec' => transfer_spec
-          }]}
-        # asynchronous anyway
-        res = @client_api.create('transfers/start', client_transfer_args)[:data]
-        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
+        @client_app_api.start_transfer(app_id: @application_id,transfer_spec: transfer_spec)
+        # @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
       end
 
       def wait_for_transfers_completion

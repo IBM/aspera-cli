@@ -3,7 +3,6 @@
 # cspell:ignoreRegExp /[^a-z]t[a-z]+/ 
 # cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/
 # cspell:ignoreRegExp /\\n/
-# cspell:ignoreRegExp / -r/
 # cspell:ignore ifeq killall
 # cspell:ignore workgroups
 
@@ -239,7 +238,7 @@ $(T)serv_upload3: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}'
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}' --transfer=trsdk
 	@$(STOP_TEST) $@
 $(T)serv_upload5: $(T)serv_mkdir 
 	@$(START_TEST) $@
@@ -456,7 +455,7 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 	$(EXE_MAN) node license
 	$(EXE_MAN) node api_details
-	$(EXE_MAN) node browse / -r
+	$(EXE_MAN) node browse / --log-level=trace2
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
 	$(EXE_BEG_IGN) node delete /a_folder $(EXE_END_IGN)
@@ -1352,7 +1351,7 @@ $(T)tcos_info2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)tcos_info3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node info
+	$(EXE_MAN) cos node info --log-level=trace2
 	@$(STOP_TEST) $@
 $(T)tcos_show: $(T).exists
 	@$(START_TEST) $@

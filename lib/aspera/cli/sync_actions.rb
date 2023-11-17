@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugin'
 require 'aspera/sync'
 
 module Aspera

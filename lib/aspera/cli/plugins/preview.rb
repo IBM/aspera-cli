@@ -13,7 +13,6 @@ require 'aspera/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
 require 'aspera/id_generator'
-require 'date'
 require 'securerandom'
 
 module Aspera
@@ -28,8 +27,11 @@ module Aspera
         PREVIEW_BASENAME = 'preview'
         # subfolder in system tmp folder
         TMP_DIR_PREFIX = 'prev_tmp'
+        # same value as in aspera.conf
         DEFAULT_PREVIEWS_FOLDER = 'previews'
+        # mark that this is used by a particular access key
         AK_MARKER_FILE = '.aspera_access_key'
+        # URL prefix for local storage
         PVCL_LOCAL_STORAGE = 'file:///'
         LOG_LIMITER_SEC = 30.0
         private_constant :PREV_GEN_TAG,
@@ -236,6 +238,7 @@ module Aspera
         def get_infos_remote(gen_infos, entry)
           # store source directly here
           local_original_filepath = File.join(@tmp_folder, entry['name'])
+          # require 'date'
           # original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))

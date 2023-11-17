@@ -8,8 +8,8 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/cli/hints'
-require 'aspera/log'
 require 'aspera/secret_hider'
+require 'aspera/log'
 
 module Aspera
   module Cli
@@ -294,7 +294,7 @@ module Aspera
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
         rescue Cli::NoSuchIdentifier => e;          exception_info = {e: e, t: 'Identifier'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
-        rescue Fasp::Error => e;                    exception_info = {e: e, t: 'FASP(ascp)'}
+        rescue Fasp::Error => e;                    exception_info = {e: e, t: 'Transfer'}
         rescue Aspera::RestCallError => e;          exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
         rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}

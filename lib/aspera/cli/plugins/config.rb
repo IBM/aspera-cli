@@ -12,17 +12,16 @@ require 'aspera/fasp/products'
 require 'aspera/fasp/parameters'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/fasp/error_info'
+require 'aspera/keychain/encrypted_hash'
+require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
 require 'aspera/open_application'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
-require 'aspera/keychain/encrypted_hash'
-require 'aspera/keychain/macos_security'
 require 'aspera/persistency_folder'
-require 'aspera/aoc'
+require 'aspera/line_logger'
 require 'aspera/rest'
-require 'xmlsimple'
-require 'base64'
+require 'aspera/log'
 require 'open3'
 require 'date'
 require 'erb'
@@ -44,14 +43,11 @@ module Aspera
         GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
-        # default redirect for AoC web auth
-        DEFAULT_REDIRECT = 'http://localhost:12345'
         # folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         PERSISTENCY_FOLDER = 'persist_store'
         RUBY_FILE_EXT = '.rb'
         ASPERA = 'aspera'
-        AOC_COMMAND = 'aoc'
         SERVER_COMMAND = 'server'
         APP_NAME_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
@@ -59,7 +55,6 @@ module Aspera
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
         DEMO = 'demo'
         DEMO_SERVER_PRESET = 'demoserver' # cspell: disable-line
-        AOC_PATH_API_CLIENTS = 'admin/api-clients'
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
@@ -72,7 +67,7 @@ module Aspera
         EXTEND_VAULT = :vault
         PRESET_DIG_SEPARATOR = '.'
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        DEFAULT_PRIV_KEY_FILENAME = 'aspera_aoc_key' # pragma: allowlist secret
+        DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
         DEFAULT_PRIV_KEY_LENGTH = 4096
         COFFEE_IMAGE = 'https://enjoyjava.com/wp-content/uploads/2018/01/How-to-make-strong-coffee.jpg'
         WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
@@ -84,14 +79,11 @@ module Aspera
           :CONF_PRESET_VERSION,
           :CONF_PRESET_DEFAULT,
           :CONF_PRESET_GLOBAL,
-          :DEFAULT_REDIRECT,
           :ASPERA_PLUGINS_FOLDERNAME,
           :RUBY_FILE_EXT,
           :ASPERA,
-          :AOC_COMMAND,
           :DEMO,
           :TRANSFER_SDK_ARCHIVE_URL,
-          :AOC_PATH_API_CLIENTS,
           :DEMO_SERVER_PRESET,
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
@@ -179,7 +171,6 @@ module Aspera
           @option_ignore_cert_host_port = []
           @option_http_options = {}
           @ssl_warned_urls = []
-          @option_rest_debug = false
           @option_cache_tokens = true
           @proxy_credentials = nil
           @main_folder = nil
@@ -213,37 +204,41 @@ module Aspera
           ExtendedValue.instance.set_handler(EXTEND_VAULT, lambda{|v|vault_value(v)})
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
-          options.parse_options!
-          # declare generic plugin options only after handlers are declared
-          Plugin.declare_generic_options(options)
-          options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
-          options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
-          options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
-          options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
-          options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
-          options.declare(:key_path, 'Wizard: path to private key for JWT')
-          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
-          options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
-          options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
-          options.declare(:smtp, 'SMTP configuration', types: Hash)
-          options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials (user and password)', types: Array)
+          # vault options
           options.declare(:secret, 'Secret for access keys')
           options.declare(:vault, 'Vault for secrets', types: Hash)
           options.declare(:vault_password, 'Vault password')
-          options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
-          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
-          options.declare(:notify_to, 'Email recipient for notification of transfers')
-          options.declare(:notify_template, 'Email ERB template for notification of transfers')
+          options.parse_options!
+          # declare generic plugin options only after handlers are declared
+          Plugin.declare_generic_options(options)
+          # configuration options
+          options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
+          options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
+          # wizard options
+          options.declare(:override, 'Wizard: override existing value', values: :bool, default: :no)
+          options.declare(:default, 'Wizard: set as default configuration for specified plugin (also: update)', values: :bool, default: true)
+          options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
+          options.declare(:key_path, 'Wizard: path to private key for JWT')
+          # Transfer SDK options
+          options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
+          options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
+          options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
+          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
+          options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
+          # email options
+          options.declare(:smtp, 'SMTP configuration', types: Hash)
+          options.declare(:notify_to, 'Email recipient for notification of transfers')
+          options.declare(:notify_template, 'Email ERB template for notification of transfers')
+          # HTTP options
           options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
           options.declare(:ignore_certificate, 'List of HTTPS url where to no validate certificate', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
           options.declare(:cert_stores, 'List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
-          options.declare(:rest_debug, 'More debug for HTTP calls (REST)', values: :none, short: 'r') { @option_rest_debug = true }
           options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
-          options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
+          options.declare(:fpac, 'Proxy auto configuration script')
+          options.declare(:proxy_credentials, 'HTTP proxy credentials (user and password)', types: Array)
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
@@ -351,7 +346,7 @@ module Aspera
         # called every time a new REST HTTP session is opened to set user-provided options
         # @param http_session [Net::HTTP] the newly created HTTP/S session object
         def update_http_session(http_session)
-          http_session.set_debug_output($stdout) if @option_rest_debug
+          http_session.set_debug_output(LineLogger.new(:trace2)) if Log.instance.logger.trace2?
           # Rest.io_http_session(http_session).debug_output = Log.log
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           http_session.cert_store = @certificate_store if @certificate_store

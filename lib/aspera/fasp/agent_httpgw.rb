@@ -328,12 +328,11 @@ module Aspera
       # wait for completion of all jobs started
       # @return list of :success or error message
       def wait_for_transfers_completion
+        # well ... transfer was done in "start"
         return [:success]
       end
 
-      # terminates monitor thread
-      def shutdown; end
-
+      # TODO: is that useful?
       def url=(api_url); end
 
       private

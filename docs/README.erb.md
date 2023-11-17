@@ -1110,7 +1110,7 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 Exceptions:
 
 - some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
-- some options (flags) don't take a value, e.g. `-r`
+- some options (flags) don't take a value, e.g. `-N`
 - the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
 ```bash
@@ -2050,10 +2050,12 @@ When <%=tool%> is used interactively in a shell, the shell itself will usually l
 
 ### Learning Aspera Product APIs (REST)
 
-<%=tool%> uses mainly Aspera applications REST APIs.
-To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display exact content of HTTP requests and responses.
+<%=tool%> uses mainly REST APIs to interact with Aspera applications.
 
-In order to get traces of execution, use argument : `--log-level=debug`
+To get traces of execution, with dump of API calls, use argument : `--log-level=debug`.
+
+To display HTTP/S traffic set option `log_level` to `trace2`: `--log-level=trace2`.
+It will display the exact content of HTTP requests and responses.
 
 ### <a id="http_options"></a>HTTP socket parameters
 
@@ -2528,8 +2530,11 @@ Options for `transfer_info` are:
 
 | Name     | Type   | Description |
 |----------|--------|-------------|
-| address  | string | IP address listened by the daemon</br>Mandatory<br/>Default: 127.0.0.1 |
-| port     | int    | port of the daemon</br>Mandatory<br/>Default: 55002 |
+| url      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: grpc://127.0.0.1:0 |
+| external | bool   | Use external daemon, do not start<br/>Default: false |
+| keep     | bool   | Keep the daemon running after exiting <%=tool%><br/>Default: false |
+
+> **Note:** if port zero is specified in the URL, then the daemon will listen on a random available port.
 
 The gem `grpc` was removed from dependencies, as it requires compilation of a native part.
 So, to use the Transfer SDK you should install this gem:

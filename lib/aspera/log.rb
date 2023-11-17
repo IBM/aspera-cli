@@ -114,8 +114,13 @@ module Aspera
       when :syslog
         require 'syslog/logger'
         # the syslog class automatically creates methods from the severity names
-        # we just need to add the mapping
-        Syslog::Logger.const_get(:LEVEL_MAP)[Logger::TRACE1] = Syslog::LOG_DEBUG
+        # we just need to add the mapping (but syslog lowest is DEBUG)
+        1.upto(Logger::TRACE_MAX).each do |level|
+          Syslog::Logger.const_get(:LEVEL_MAP)[Logger.const_get("TRACE#{level}")] = Syslog::LOG_DEBUG
+        end
+        Logger::Severity.constants.each do |severity|
+          Syslog::Logger.make_methods(severity.downcase)
+        end
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else
         raise "unknown log type: #{new_log_type.class} #{new_log_type}"

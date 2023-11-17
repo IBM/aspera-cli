@@ -12,22 +12,25 @@ module Aspera
     ASCP_ENV_SECRETS = %w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
     # keys in hash that contain secrets
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
-    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS].flatten.freeze
-    FALSE_POSITIVES = [/^access_key$/].freeze
+    HTTP_SECRETS = %w[Authorization].freeze
+    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
+    KEY_FALSE_POSITIVES = [/^access_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # CLI manager get/set options
-      /(?<begin>[sg]et (#{KEY_SECRETS.join('|')})=).*(?<end>)/,
+      /(?<begin>[sg]et (?:#{KEY_SECRETS.join('|')})=).*(?<end>)/,
       # env var ascp exec
-      /(?<begin> (#{ASCP_ENV_SECRETS.join('|')})=)(\\.|[^ ])*(?<end> )/,
-      # rendered JSON
-      /(?<begin>["':][^"]*(#{ALL_SECRETS.join('|')})[^"]*["']?[=>: ]+")[^"]+(?<end>")/,
+      /(?<begin> (?:#{ASCP_ENV_SECRETS.join('|')})=)(\\.|[^ ])*(?<end> )/,
+      # rendered JSON or Ruby
+      /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>?(?:=>|:) *")[^"]+(?<end>")/,
       # option "secret"
       /(?<begin>"[^"]*(secret)[^"]*"=>{)[^}]+(?<end>})/,
       # option "secrets"
       /(?<begin>(secrets)={)[^}]+(?<end>})/,
       # private key values
-      /(?<begin>--+BEGIN .+ KEY--+)[[:ascii:]]+?(?<end>--+?END .+ KEY--+)/
+      /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)/,
+      # cred in http dump
+      /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
     private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :ALL_SECRETS, :REGEX_LOG_REPLACES
     @log_secrets = false
@@ -52,7 +55,7 @@ module Aspera
         # only Strings can be secrets, not booleans, or hash, arrays
         return false unless keyword.is_a?(String) && value.is_a?(String)
         # those are not secrets
-        return false if FALSE_POSITIVES.any?{|f|f.match?(keyword)}
+        return false if KEY_FALSE_POSITIVES.any?{|f|f.match?(keyword)}
         # check if keyword (name) contains an element that designate it as a secret
         ALL_SECRETS.any?{|kw|keyword.include?(kw)}
       end

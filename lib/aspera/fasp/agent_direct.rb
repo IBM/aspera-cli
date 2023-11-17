@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'English'
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/error'
 require 'aspera/fasp/parameters'
@@ -13,6 +12,7 @@ require 'socket'
 require 'timeout'
 require 'securerandom'
 require 'shellwords'
+require 'English'
 
 module Aspera
   module Fasp

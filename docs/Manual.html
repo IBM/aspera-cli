@@ -1125,7 +1125,7 @@ name (e.g. <code>--log-level=debug</code>)</li>
 <li>some options accept a short form, e.g. <code>-Ptoto</code> is
 equivalent to <code>--preset=toto</code>, refer to the manual or
 <code>-h</code>.</li>
-<li>some options (flags) don’t take a value, e.g. <code>-r</code></li>
+<li>some options (flags) don’t take a value, e.g. <code>-N</code></li>
 <li>the special option <code>--</code> stops option processing and is
 ignored, following command line arguments are taken as arguments,
 including the ones starting with a <code>-</code>. Example:</li>
@@ -2268,12 +2268,13 @@ itself will usually log executed commands in the history file.</p>
 <h2 data-number="4.16" id="learning-aspera-product-apis-rest"><span
 class="header-section-number">4.16</span> Learning Aspera Product APIs
 (REST)</h2>
-<p><code>ascli</code> uses mainly Aspera applications REST APIs. To
-display HTTP calls, use argument <code>-r</code> or
-<code>--rest-debug</code>, this is useful to display exact content of
-HTTP requests and responses.</p>
-<p>In order to get traces of execution, use argument :
-<code>--log-level=debug</code></p>
+<p><code>ascli</code> uses mainly REST APIs to interact with Aspera
+applications.</p>
+<p>To get traces of execution, with dump of API calls, use argument :
+<code>--log-level=debug</code>.</p>
+<p>To display HTTP/S traffic set option <code>log_level</code> to
+<code>trace2</code>: <code>--log-level=trace2</code>. It will display
+the exact content of HTTP requests and responses.</p>
 <h2 data-number="4.17" id="http-socket-parameters"><span
 class="header-section-number">4.17</span> <a id="http_options"></a>HTTP
 socket parameters</h2>
@@ -2891,18 +2892,28 @@ class="header-section-number">4.23.5</span>
 </thead>
 <tbody>
 <tr class="odd">
-<td>address</td>
+<td>url</td>
 <td>string</td>
-<td>IP address listened by the daemon</br>Mandatory<br/>Default:
-127.0.0.1</td>
+<td>IP address and port listened by the
+daemon</br>Mandatory<br/>Default: grpc://127.0.0.1:0</td>
 </tr>
 <tr class="even">
-<td>port</td>
-<td>int</td>
-<td>port of the daemon</br>Mandatory<br/>Default: 55002</td>
+<td>external</td>
+<td>bool</td>
+<td>Use external daemon, do not start<br/>Default: false</td>
+</tr>
+<tr class="odd">
+<td>keep</td>
+<td>bool</td>
+<td>Keep the daemon running after exiting
+<code>ascli</code><br/>Default: false</td>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Note:</strong> if port zero is specified in the URL, then the
+daemon will listen on a random available port.</p>
+</blockquote>
 <p>The gem <code>grpc</code> was removed from dependencies, as it
 requires compilation of a native part. So, to use the Transfer SDK you
 should install this gem:</p>
@@ -4767,6 +4778,9 @@ SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file 
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
+        --secret=VALUE               Secret for access keys
+        --vault=VALUE                Vault for secrets (Hash)
+        --vault-password=VALUE       Vault password
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set (modify operation)
@@ -4774,33 +4788,28 @@ OPTIONS:
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
+    -P, --presetVALUE                Load the named option preset from current config file
+        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --plugin-folder=VALUE        Folder where to find additional plugins
         --override=ENUM              Wizard: override existing value: [no], yes
-        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
         --key-path=VALUE             Wizard: path to private key for JWT
-    -P, --presetVALUE                Load the named option preset from current config file
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
-        --smtp=VALUE                 SMTP configuration (Hash)
-        --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
-        --secret=VALUE               Secret for access keys
-        --vault=VALUE                Vault for secrets (Hash)
-        --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
+        --progress-bar=ENUM          Display progress bar: [no], yes
+        --smtp=VALUE                 SMTP configuration (Hash)
         --notify-to=VALUE            Email recipient for notification of transfers
         --notify-template=VALUE      Email ERB template for notification of transfers
-        --version-check-days=VALUE   Period in days to check new version (zero to disable)
-        --plugin-folder=VALUE        Folder where to find additional plugins
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
         --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
-    -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
-        --progress-bar=ENUM          Display progress bar: [no], yes
+        --fpac=VALUE                 Proxy auto configuration script
+        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -6304,7 +6313,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb361-1"><a href
 <span id="cb361-24"><a href="#cb361-24" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="st">&#39;test_file.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress-bar</span><span class="op">=</span>yes</span>
 <span id="cb361-25"><a href="#cb361-25" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;filelist.txt&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder</span>
 <span id="cb361-26"><a href="#cb361-26" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-pair-list&quot;,&quot;file_pair_list.txt&quot;]}&#39;</span></span>
-<span id="cb361-27"><a href="#cb361-27" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span></span>
+<span id="cb361-27"><a href="#cb361-27" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>trsdk</span>
 <span id="cb361-28"><a href="#cb361-28" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;test_file.bin&#39;</span> my_inside_folder/other_name_2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
 <span id="cb361-29"><a href="#cb361-29" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;test_file.bin&quot;,&quot;my_inside_folder/other_name_3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
 <span id="cb361-30"><a href="#cb361-30" aria-hidden="true" tabindex="-1"></a><span class="ex">server</span> upload <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:1,&quot;exclude_older_than&quot;:10000,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
@@ -6862,7 +6871,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb400-1"><a href
 <span id="cb400-27"><a href="#cb400-27" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> async show ALL</span>
 <span id="cb400-28"><a href="#cb400-28" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> basic_token</span>
 <span id="cb400-29"><a href="#cb400-29" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> bearer_token @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span></span>
-<span id="cb400-30"><a href="#cb400-30" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> browse / <span class="at">-r</span></span>
+<span id="cb400-30"><a href="#cb400-30" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> browse / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
 <span id="cb400-31"><a href="#cb400-31" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
 <span id="cb400-32"><a href="#cb400-32" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> delete my_upload_folder/test_file.bin</span>
 <span id="cb400-33"><a href="#cb400-33" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
@@ -7767,7 +7776,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb443-1"><a href
 <span id="cb443-2"><a href="#cb443-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
 <span id="cb443-3"><a href="#cb443-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node access_key show self</span>
 <span id="cb443-4"><a href="#cb443-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb443-5"><a href="#cb443-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info</span>
+<span id="cb443-5"><a href="#cb443-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
 <span id="cb443-6"><a href="#cb443-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node upload test_file.bin</span></code></pre></div>
 <h1 data-number="15" id="ibm-aspera-sync"><span
 class="header-section-number">15</span> <a id="async"></a>IBM Aspera

@@ -68,9 +68,9 @@ module Aspera
           faspex_pkg_parameters = JSON.parse(request.body)
           Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
           faspex_package_create_result =
-            if @app_api.is_a?(Aspera::AoC)
+            if @app_api.class.name.eql?('Aspera::AoC')
               faspex4_send_to_aoc(faspex_pkg_parameters)
-            elsif @app_api.is_a?(Aspera::Rest)
+            elsif @app_api.class.name.eql?('Aspera::Rest')
               faspex4_send_to_faspex5(faspex_pkg_parameters)
             else
               raise "No such adapter: #{@app_api.class}"

@@ -3,39 +3,49 @@
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
 require 'json'
+require 'uri'
 
 module Aspera
   module Fasp
     class AgentTrsdk < Aspera::Fasp::AgentBase
       DEFAULT_OPTIONS = {
-        address: '127.0.0.1',
-        port:    55_002
+        url:      'grpc://127.0.0.1:0',
+        external: false,
+        keep:     false
       }.freeze
       private_constant :DEFAULT_OPTIONS
 
       # options come from transfer_info
       def initialize(user_opts={})
         super(user_opts)
-        options = AgentBase.options(default: DEFAULT_OPTIONS, options: user_opts)
-        Log.log.debug{Log.dump(:agent_options, options)}
+        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: user_opts)
+        daemon_uri = URI.parse(@options[:url])
+        raise Fasp::Error, "invalid url #{@options[:url]}" unless daemon_uri.scheme.eql?('grpc')
+        Log.log.debug{Log.dump(:agent_options, @options)}
         # load and create SDK stub
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
-        @transfer_client = Transfersdk::TransferService::Stub.new("#{options[:address]}:#{options[:port]}", :this_channel_is_insecure)
+        # it stays
+        @daemon_pid = nil
         begin
+          @transfer_client = Transfersdk::TransferService::Stub.new("#{daemon_uri.host}:#{daemon_uri.port}", :this_channel_is_insecure)
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug{"daemon info: #{get_info_response}"}
+          Log.log.warn{'attached to existing daemon'} unless @options[:external] || @options[:keep]
+          at_exit{shutdown}
         rescue GRPC::Unavailable
-          Log.log.warn('no daemon present, starting daemon...')
+          raise if @options[:external]
+          raise "daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_uri}}" unless @daemon_pid.nil?
+          Log.log.warn('no daemon present, starting daemon...') if @options[:external]
           # location of daemon binary
           bin_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
           # config file and logs are created in same folder
-          conf_file = File.join(bin_folder, 'sdk.conf')
+          generated_config_file_path = File.join(bin_folder, 'sdk.conf')
           log_base = File.join(bin_folder, 'transferd')
           # create a config file for daemon
           config = {
-            address:      options[:address],
-            port:         options[:port],
+            address:      daemon_uri.host,
+            port:         daemon_uri.port,
             fasp_runtime: {
               use_embedded: false,
               user_defined: {
@@ -44,10 +54,30 @@ module Aspera
               }
             }
           }
-          File.write(conf_file, config.to_json)
-          trd_pid = Process.spawn(Installation.instance.path(:transferd), '--config', conf_file, out: "#{log_base}.out", err: "#{log_base}.err")
-          Process.detach(trd_pid)
-          sleep(2.0)
+          File.write(generated_config_file_path, config.to_json)
+          @daemon_pid = Process.spawn(Installation.instance.path(:transferd), '--config', generated_config_file_path, out: "#{log_base}.out", err: "#{log_base}.err")
+          begin
+            # wait for process to initialize
+            Timeout.timeout(2.0) do
+              _, status = Process.wait2(@daemon_pid)
+              raise "transfer daemon exited with status #{status.exitstatus}. Check files: #{log_base}.out #{log_base}.err"
+            end
+          rescue Timeout::Error
+            nil
+          end
+          Log.log.debug{"daemon started with pid #{@daemon_pid}"}
+          Process.detach(@daemon_pid) if @options[:keep]
+          if daemon_uri.port.eql?(0)
+            # if port is zero, a dynamic port was created, get it
+            File.open("#{log_base}.out", 'r') do |file|
+              file.each_line do |line|
+                if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
+                  daemon_uri.port = m[2].to_i
+                  # no "break" , need to keep last one
+                end
+              end
+            end
+          end
           retry
         end
       end
@@ -66,23 +96,32 @@ module Aspera
       end
 
       def wait_for_transfers_completion
-        started = false
+        # set to true when we know the total size of the transfer
+        session_started = false
+        bytes_expected = nil
         # monitor transfer status
         @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
           Log.log.debug{Log.dump(:response, response.to_h)}
           # Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status
           when :RUNNING
-            if !started && !response.sessionInfo.preTransferBytes.eql?(0)
-              notify_progress(type: :session_size, session_id: @transfer_id, info: response.sessionInfo.preTransferBytes)
-              started = true
-            else
-              notify_progress(type: :transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
+            if !session_started
+              notify_progress(session_id: @transfer_id, type: :session_start)
+              session_started = true
             end
-          when :FAILED, :COMPLETED, :CANCELED
+            if bytes_expected.nil? &&
+                !response.sessionInfo.preTransferBytes.eql?(0)
+              bytes_expected = response.sessionInfo.preTransferBytes
+              notify_progress(type: :session_size, session_id: @transfer_id, info: bytes_expected)
+            end
+            notify_progress(type: :transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
+          when :COMPLETED
+            notify_progress(type: :transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
             notify_progress(type: :end, session_id: @transfer_id)
-            raise Fasp::Error, JSON.parse(response.message)['Description'] unless :COMPLETED.eql?(response.status)
             break
+          when :FAILED, :CANCELED
+            notify_progress(type: :end, session_id: @transfer_id)
+            raise Fasp::Error, JSON.parse(response.message)['Description']
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
             notify_progress(session_id: nil, type: :pre_start, info: response.status.to_s.downcase)
           else
@@ -91,6 +130,16 @@ module Aspera
         end
         # TODO: return status
         return []
+      end
+
+      def shutdown
+        if !@options[:keep] && !@daemon_pid.nil?
+          Log.log.debug("stopping daemon #{@daemon_pid}")
+          Process.kill('INT', @daemon_pid)
+          _, status = Process.wait2(@daemon_pid)
+          Log.log.debug("daemon stopped #{status}")
+          @daemon_pid = nil
+        end
       end
     end
   end

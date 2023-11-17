@@ -100,7 +100,6 @@ module Aspera
       # generic method
       def wait_for_transfers_completion
         # set to true when we know the total size of the transfer
-        total_size_sent = false
         session_started = false
         bytes_expected = nil
         # lets emulate management events to display progress bar
@@ -118,12 +117,11 @@ module Aspera
             message = transfer_data['status']
             message = "#{message} (#{transfer_data['error_desc']})" if !transfer_data['error_desc']&.empty?
             notify_progress(session_id: nil, type: :pre_start, info: message)
-            if !total_size_sent &&
+            if bytes_expected.nil? &&
                 transfer_data['precalc'].is_a?(Hash) &&
                 transfer_data['precalc']['status'].eql?('ready')
               bytes_expected = transfer_data['precalc']['bytes_expected']
               notify_progress(type: :session_size, session_id: @transfer_id, info: bytes_expected)
-              total_size_sent = true
             end
             notify_progress(type: :transfer, session_id: @transfer_id, info: transfer_data['bytes_transferred'])
           when 'completed'

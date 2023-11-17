@@ -3,6 +3,7 @@
 # cspell:ignore csvt jsonpp
 require 'aspera/uri_reader'
 require 'aspera/environment'
+require 'aspera/log'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -46,6 +47,8 @@ module Aspera
       private
 
       def initialize
+        # base handlers
+        # other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
         @handlers = {
           val:    lambda{|v|v},
           base64: lambda{|v|Base64.decode64(v)},
@@ -65,7 +68,6 @@ module Aspera
           yaml:   lambda{|v|YAML.load(v)},
           zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
           extend: lambda{|v|ExtendedValue.instance.evaluate_all(v)}
-          # other handlers can be set using set_handler, e.g. preset is reader in config plugin
         }
       end
 
@@ -105,6 +107,7 @@ module Aspera
         return value
       end # evaluate
 
+      # find inner extended values
       def evaluate_all(value)
         regex = Regexp.new("^(.*)#{ext_re}([^@]*)@(.*)$")
         while (m = value.match(regex))

@@ -2,10 +2,10 @@
 
 module Aspera
   module Fasp
-    # Base class for FASP transfer agents
-    # sub classes shall implement start_transfer and shutdown
+    # Base class for transfer agents
     class AgentBase
       class << self
+        # compute options from user provided and default options
         def options(default:, options:)
           result = options.symbolize_keys
           available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
@@ -33,6 +33,7 @@ module Aspera
       def initialize(options)
         raise 'internal error' unless respond_to?(:start_transfer)
         raise 'internal error' unless respond_to?(:wait_for_transfers_completion)
+        # method `shutdown` is optional
         Log.log.debug{Log.dump(:agent_options, options)}
         raise "transfer agent options expecting Hash, but have #{options.class}" unless options.is_a?(Hash)
         @progress = options[:progress]

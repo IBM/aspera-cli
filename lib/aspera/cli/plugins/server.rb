@@ -3,8 +3,8 @@
 # cspell:ignore ascmd zmode zuid zgid fasping
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
-require 'aspera/ascmd'
 require 'aspera/fasp/transfer_spec'
+require 'aspera/ascmd'
 require 'aspera/ssh'
 require 'aspera/nagios'
 require 'tempfile'

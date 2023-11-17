@@ -34,6 +34,8 @@
     * global: removed extended value handler `incps`, as it is never used (use `extend` instead).
     * global: option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
     * global: replaced option `progress` with option `progressbar` (bool)
+    * global: removed option `rest_debug` and `-r`, replaced with `--log-level=trace2`
+    * global: the default file name for private key when using wizard is change from `aspera_aoc_key` to `my_private_key.pem`
     * faspex5: removed option and `auth` type `link`: simply provide the public link as `url`
     * faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
     * faspex: option `source_name` is now `remote_source`
@@ -47,6 +49,7 @@
     * sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
     * sync: replaced option `sync_session` with optional positional parameter.
     * preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
+    * trsdk: parameters `host` and `port` in option `transfer_info` are replaced with parameter `url`, like `grpc://host:port`
 
 * 4.14.0
 

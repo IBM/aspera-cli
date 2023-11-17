@@ -1116,7 +1116,7 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 Exceptions:
 
 - some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
-- some options (flags) don't take a value, e.g. `-r`
+- some options (flags) don't take a value, e.g. `-N`
 - the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
 
 ```bash
@@ -2126,10 +2126,12 @@ When `ascli` is used interactively in a shell, the shell itself will usually log
 
 ### Learning Aspera Product APIs (REST)
 
-`ascli` uses mainly Aspera applications REST APIs.
-To display HTTP calls, use argument `-r` or `--rest-debug`, this is useful to display exact content of HTTP requests and responses.
+`ascli` uses mainly REST APIs to interact with Aspera applications.
 
-In order to get traces of execution, use argument : `--log-level=debug`
+To get traces of execution, with dump of API calls, use argument : `--log-level=debug`.
+
+To display HTTP/S traffic set option `log_level` to `trace2`: `--log-level=trace2`.
+It will display the exact content of HTTP requests and responses.
 
 ### <a id="http_options"></a>HTTP socket parameters
 
@@ -2604,8 +2606,11 @@ Options for `transfer_info` are:
 
 | Name     | Type   | Description |
 |----------|--------|-------------|
-| address  | string | IP address listened by the daemon</br>Mandatory<br/>Default: 127.0.0.1 |
-| port     | int    | port of the daemon</br>Mandatory<br/>Default: 55002 |
+| url      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: grpc://127.0.0.1:0 |
+| external | bool   | Use external daemon, do not start<br/>Default: false |
+| keep     | bool   | Keep the daemon running after exiting `ascli`<br/>Default: false |
+
+> **Note:** if port zero is specified in the URL, then the daemon will listen on a random available port.
 
 The gem `grpc` was removed from dependencies, as it requires compilation of a native part.
 So, to use the Transfer SDK you should install this gem:
@@ -3286,6 +3291,9 @@ SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file 
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
+        --secret=VALUE               Secret for access keys
+        --vault=VALUE                Vault for secrets (Hash)
+        --vault-password=VALUE       Vault password
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set (modify operation)
@@ -3293,33 +3301,28 @@ OPTIONS:
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
+    -P, --presetVALUE                Load the named option preset from current config file
+        --version-check-days=VALUE   Period in days to check new version (zero to disable)
+        --plugin-folder=VALUE        Folder where to find additional plugins
         --override=ENUM              Wizard: override existing value: [no], yes
-        --use-generic-client=ENUM    Wizard: AoC: use global or org specific jwt client id: no, [yes]
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
         --key-path=VALUE             Wizard: path to private key for JWT
-    -P, --presetVALUE                Load the named option preset from current config file
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
-        --smtp=VALUE                 SMTP configuration (Hash)
-        --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
-        --secret=VALUE               Secret for access keys
-        --vault=VALUE                Vault for secrets (Hash)
-        --vault-password=VALUE       Vault password
         --sdk-url=VALUE              URL to get SDK
         --sdk-folder=VALUE           SDK folder path
+        --progress-bar=ENUM          Display progress bar: [no], yes
+        --smtp=VALUE                 SMTP configuration (Hash)
         --notify-to=VALUE            Email recipient for notification of transfers
         --notify-template=VALUE      Email ERB template for notification of transfers
-        --version-check-days=VALUE   Period in days to check new version (zero to disable)
-        --plugin-folder=VALUE        Folder where to find additional plugins
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
         --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
-    -r, --rest-debug                 More debug for HTTP calls (REST)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
-        --progress-bar=ENUM          Display progress bar: [no], yes
+        --fpac=VALUE                 Proxy auto configuration script
+        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
@@ -4894,7 +4897,7 @@ server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts
 server upload 'test_file.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
-server upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}'
+server upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=trsdk
 server upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 server upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
 server upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
@@ -5384,7 +5387,7 @@ node async show 1
 node async show ALL
 node basic_token
 node bearer_token @file:my_private_key @json:'{"user_id":"666"}'
-node browse / -r
+node browse / --log-level=trace2
 node delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 node delete my_upload_folder/test_file.bin
 node download my_upload_folder/test_file.bin --to-folder=.
@@ -6201,7 +6204,7 @@ cos --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_api
 cos --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:service_creds.json node info
 cos node access_key show self
 cos node download test_file.bin --to-folder=.
-cos node info
+cos node info --log-level=trace2
 cos node upload test_file.bin
 ```
 

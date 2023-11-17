@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/log'
 require 'ruby-progressbar'
 
 module Aspera

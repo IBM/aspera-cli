@@ -17,6 +17,10 @@ module Aspera
   module Cli
     module Plugins
       class Aoc < Aspera::Cli::BasicAuthPlugin
+        AOC_PATH_API_CLIENTS = 'admin/api-clients'
+        # default redirect for AoC web auth
+        DEFAULT_REDIRECT = 'http://localhost:12345'
+        private_constant :AOC_PATH_API_CLIENTS, :DEFAULT_REDIRECT
         class << self
           def application_name
             'Aspera on Cloud'
@@ -53,6 +57,8 @@ module Aspera
             # set vars to look like object
             options = object.options
             formatter = object.formatter
+            options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
+            options.parse_options!
             instance_url = options.get_option(:url, mandatory: true)
             pub_link_info = AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
