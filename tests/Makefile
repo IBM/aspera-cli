@@ -80,7 +80,7 @@ STOP_TEST=$(DIR_TOP)tests/mark end
 
 # flush cached tokens
 clean::
-	$(EXE_NO_MAN) config flush
+	-$(EXE_NO_MAN) config flush
 
 ###########
 # Coverage
