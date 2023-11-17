@@ -1335,7 +1335,9 @@ class="header-section-number">4.5.6</span>
 values for <code>object_list</code></h3>
 <p>Table output can be filtered using option <code>select</code>. This
 parameter is either a <code>Hash</code> or <code>Proc</code>. The
-<code>Proc</code> takes as argument a line in the table.</p>
+<code>Proc</code> takes as argument a line (<code>Hash</code>) in the
+table and is a Ruby lambda expression that returns <code>true</code> or
+<code>false</code>.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb99"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res user list <span class="at">--fields</span><span class="op">=</span>name,email,ats_admin <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;name&quot;}&#39;</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ats_admin&quot;:true}&#39;</span></span></code></pre></div>
@@ -1352,7 +1354,7 @@ filtering parameters to the API when listing elements.</p>
 </blockquote>
 <p>In above example, the same result is obtained with option:</p>
 <div class="sourceCode" id="cb101"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--select=@ruby:</span><span class="st">&#39;-&gt;(u){u[&quot;ats_admin&quot;]}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--select=@ruby:</span><span class="st">&#39;-&gt;(i){i[&quot;ats_admin&quot;]}&#39;</span></span></code></pre></div>
 <h2 data-number="4.6" id="extended-value-syntax"><span
 class="header-section-number">4.6</span> <a id="extended"></a>Extended
 Value Syntax</h2>
@@ -4828,7 +4830,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events find health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in

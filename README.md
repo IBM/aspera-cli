@@ -1275,7 +1275,7 @@ Examples:
 
 Table output can be filtered using option `select`.
 This parameter is either a `Hash` or `Proc`.
-The `Proc` takes as argument a line in the table.
+The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda expression that returns `true` or `false`.
 
 Example:
 
@@ -1297,7 +1297,7 @@ ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sor
 In above example, the same result is obtained with option:
 
 ```bash
---select=@ruby:'->(u){u["ats_admin"]}'
+--select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
 ### <a id="extended"></a>Extended Value Syntax
@@ -3341,7 +3341,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events find health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
