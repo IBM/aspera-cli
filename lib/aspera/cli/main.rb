@@ -53,6 +53,15 @@ module Aspera
           raise global_status unless global_status.eql?(:success)
           return {type: :object_list, data: status_table}
         end
+
+        def result_picture_in_terminal(options, blob)
+          require 'aspera/preview/terminal'
+          terminal_options = options.get_option(:query, default: {}).symbolize_keys
+          allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+          unknown_options = terminal_options.keys - allowed_options
+          raise "invalid options: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
+          return Main.result_status(Preview::Terminal.build(blob, **terminal_options))
+        end
       end # self
 
       private

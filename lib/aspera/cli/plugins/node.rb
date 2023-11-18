@@ -536,12 +536,7 @@ module Aspera
               subpath: "files/#{apifid[:file_id]}/preview",
               headers: {'Accept' => 'image/png'}
             )
-            require 'aspera/preview/terminal'
-            terminal_options = options.get_option(:query, default: {}).symbolize_keys
-            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
-            unknown_options = terminal_options.keys - allowed_options
-            raise "invalid options: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
-            return Main.result_status(Preview::Terminal.build(result[:http].body, **terminal_options))
+            return Main.result_picture_in_terminal(options, result[:http].body)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
             command_perm = options.get_next_command(%i[list create delete])

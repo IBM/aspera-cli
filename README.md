@@ -219,9 +219,9 @@ podman run --tty --interactive --entrypoint bash martinlaurent/ascli:latest
 Then, execute individual `ascli` commands such as:
 
 ```bash
-ascli conf init
-ascli conf preset overview
-ascli conf ascp info
+ascli config init
+ascli config preset overview
+ascli config ascp info
 ascli server ls /
 ```
 
@@ -259,8 +259,7 @@ ascli -v
 4.16.0.pre
 ```
 
-In order to keep persistency of configuration on the host,
-you should specify your user's config folder as a volume for the container.
+In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
 To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/ascli`).
 Add options:
 
@@ -304,7 +303,7 @@ asclish
 
 A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
-> **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli conf gem path)/../examples/dascli ascli`
+> **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../examples/dascli ascli`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -331,7 +330,7 @@ mkdir -p $xferdir
 chmod -R 777 $xferdir
 export docker_args="--volume $xferdir:/xferfiles"
 
-./ascli conf init
+./ascli config init
 
 echo 'Local file to transfer' > $xferdir/samplefile.txt
 ./ascli server upload /xferfiles/samplefile.txt --to-folder=/Upload
@@ -540,7 +539,7 @@ gem install --force --local *.gem
 - install the SDK
 
 ```bash
-ascli conf ascp install --sdk-url=file:///sdk.zip
+ascli config ascp install --sdk-url=file:///sdk.zip
 ```
 
 > **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
@@ -664,7 +663,7 @@ To de-activate this feature, globally set the option `version_check_days` to `0`
 To check if a new version is available (independently of `version_check_days`):
 
 ```bash
-ascli conf check_update
+ascli config check_update
 ```
 
 ### <a id="fasp_prot"></a>FASP Protocol
@@ -678,7 +677,7 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 This can be installed either be installing an Aspera transfer software, or using an embedded command:
 
 ```bash
-ascli conf ascp install
+ascli config ascp install
 ```
 
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
@@ -688,7 +687,7 @@ curl -Lso sdk.zip https://ibm.biz/aspera_sdk
 ```
 
 ```bash
-ascli conf ascp install --sdk-url=file:///sdk.zip
+ascli config ascp install --sdk-url=file:///sdk.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -727,7 +726,7 @@ cd $HOME && tar zcvf rvm-ascli.tgz .rvm
 - Get the Aspera SDK.
 
 ```bash
-ascli conf --show-config --fields=sdk_url
+ascli config --show-config --fields=sdk_url
 ```
 
 - Download the SDK archive from that URL.
@@ -747,7 +746,7 @@ tar zxvf rvm-ascli.tgz
 
 source ~/.rvm/scripts/rvm
 
-ascli conf ascp install --sdk-url=file:///sdk.zip
+ascli config ascp install --sdk-url=file:///sdk.zip
 ```
 
 - Add those lines to shell init (`.profile`)
@@ -837,19 +836,19 @@ The following examples give the same result on Windows:
 - single quote protects the double quote
 
   ```cmd
-   conf echo @json:'{"url":"https://..."}'
+  ascli config echo @json:'{"url":"https://..."}'
   ```
 
 - triple double quotes are replaced with a single double quote
 
   ```cmd
-   conf echo @json:{"""url""":"""https://..."""}
+  ascli config echo @json:{"""url""":"""https://..."""}
   ```
 
 - double quote is escaped with backslash within double quotes
 
   ```cmd
-   conf echo @json:"{\"url\":\"https://...\"}"
+  ascli config echo @json:"{\"url\":\"https://...\"}"
   ```
 
 More details: on Windows, `cmd.exe` is typically used to start .
@@ -888,7 +887,7 @@ In case of doubt of argument values after parsing, one can test using command `c
 Example: The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
-ascli conf echo 1 2 3
+ascli config echo 1 2 3
 ```
 
 ```ruby
@@ -910,9 +909,9 @@ Double quotes are processed by the shell to create a single string argument.
 For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
 ```bash
-ascli conf echo "Hello World" --format=text
-ascli conf echo 'Hello World' --format=text
-ascli conf echo Hello\ World --format=text
+ascli config echo "Hello World" --format=text
+ascli config echo 'Hello World' --format=text
+ascli config echo Hello\ World --format=text
 ```
 
 ```output
@@ -928,8 +927,8 @@ Even if the variable contains spaces it makes only one argument to `ascli` becau
 
 ```bash
 MYVAR="Hello World"
-ascli conf echo @json:'{"title":"'$MYVAR'"}' --format=json
-ascli conf echo @json:{\"title\":\"$MYVAR\"} --format=json
+ascli config echo @json:'{"title":"'$MYVAR'"}' --format=json
+ascli config echo @json:{\"title\":\"$MYVAR\"} --format=json
 ```
 
 ```json
@@ -942,8 +941,8 @@ Double quote is a shell special character.
 Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
 
 ```bash
-ascli conf echo \"
-ascli conf echo '"'
+ascli config echo \"
+ascli config echo '"'
 ```
 
 ```output
@@ -953,9 +952,9 @@ ascli conf echo '"'
 Double quote in JSON is a little tricky because `"` is special both for the shell and JSON. Both shell and JSON syntax allow to protect `"`, but only the shell allows protection using single quote.
 
 ```bash
-ascli conf echo @json:'"\""' --format=text
-ascli conf echo @json:\"\\\"\" --format=text
-ascli conf echo @ruby:\'\"\' --format=text
+ascli config echo @json:'"\""' --format=text
+ascli config echo @json:\"\\\"\" --format=text
+ascli config echo @ruby:\'\"\' --format=text
 ```
 
 ```output
@@ -988,9 +987,9 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 - Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
 
 ```bash
-ascli conf echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
-ascli conf echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
-ascli conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
+ascli config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
+ascli config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
+ascli config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
 ```
 
 ```json
@@ -1002,7 +1001,7 @@ ascli conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
 If `ascli` is used interactively (a user typing on terminal), it is easy to require the user to type values:
 
 ```bash
-ascli conf echo @ruby:"{'title'=>gets.chomp}" --format=json
+ascli config echo @ruby:"{'title'=>gets.chomp}" --format=json
 ```
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
@@ -1012,13 +1011,13 @@ ascli conf echo @ruby:"{'title'=>gets.chomp}" --format=json
 If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
 
 ```bash
-xargs -a lines.txt -d \\n ascli conf echo
+xargs -a lines.txt -d \\n ascli config echo
 ```
 
 This is equivalent to execution of:
 
 ```bash
-ascli conf echo [line1] [line2] [line3] ...
+ascli config echo [line1] [line2] [line3] ...
 ```
 
 If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
@@ -1037,8 +1036,8 @@ Using those values will not require any escaping of characters since values do n
 If the value is to be assigned directly to an option of ascli, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
 
 ```bash
-ascli conf echo @file:title.txt --format=text
-ascli conf echo @env:MYTITLE --format=text
+ascli config echo @file:title.txt --format=text
+ascli config echo @env:MYTITLE --format=text
 ```
 
 ```output
@@ -1048,8 +1047,8 @@ Test " ' & \
 If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
 
 ```bash
-ascli conf echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
-ascli conf echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
+ascli config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
+ascli config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
 ```
 
 ```json
@@ -1078,7 +1077,7 @@ ascli command subcommand --option-name=VAL1 VAL2
 - the command has one additional **positional argument**: `VAL2`
 
 If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
-For example `ascli conf pre ov` is the same as `ascli config preset overview`.
+For example `ascli config pre ov` is the same as `ascli config preset overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -1089,7 +1088,7 @@ Commands are typically entity types or verbs to act on those entities.
 Example:
 
 ```bash
-ascli conf ascp info
+ascli config ascp info
 ```
 
 - `ascli` is the executable executed by the shell
@@ -1136,7 +1135,7 @@ Options can be placed anywhere on command line and evaluated in order.
 Options are typically:
 
 - optional : to change the default behavior
-- mandatory : so they can be placed in a config file, for example: connection information
+- mandatory : so they can be placed in a configuration file, for example: connection information
 
 The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -1150,7 +1149,7 @@ Options values can be displayed for a given command by providing the `--show-con
 
 Parameters are typically designed as options if:
 
-- it is a mandatory parameters that would benefit from being set in a config file or environment variable
+- it is a mandatory parameters that would benefit from being set in a configuration file or environment variable
 - it is optional
 
 #### Positional Arguments
@@ -1161,8 +1160,8 @@ It could also be designed as an option, but since it is mandatory and typically 
 
 The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
 
-The disadvantage is that it is not possible to define a default value in a config file or environment variable like for options.
-Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the config file or environment variable.
+The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
+Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the configuration file or environment variable.
 
 If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
 
@@ -1406,7 +1405,7 @@ ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version
 Example: Create a `Hash` from YAML provided as **heredoc**:
 
 ```bash
-ascli conf echo @yaml:@stdin: --format=json<<EOF
+ascli config echo @yaml:@stdin: --format=json<<EOF
 key1: value1
 key2:
 - item1
@@ -1568,7 +1567,7 @@ ascli config preset get default _plugin_name_
 
 Plugin `config` provides general commands for `ascli`:
 
-- Option preset, config file operations
+- Option preset, configuration file operations
 - wizard
 - vault
 - `ascp`
@@ -1584,19 +1583,19 @@ If set, it loads the options independently of the plugin used.
 Show current default (global) Option preset (`config` plugin):
 
 ```console
-$ ascli conf preset get default config
+$ ascli config preset get default config
 global_common_defaults
 ```
 
 ```bash
-ascli conf preset set GLOBAL version_check_days 0
+ascli config preset set GLOBAL version_check_days 0
 ```
 
 If the default global Option preset is not set, and you want to use a different name:
 
 ```bash
-ascli conf preset set my_common_defaults version_check_days 0
-ascli conf preset set default config my_common_defaults
+ascli config preset set my_common_defaults version_check_days 0
+ascli config preset set default config my_common_defaults
 ```
 
 #### Config sample commands
@@ -1619,6 +1618,7 @@ config ascp use /usr/bin/ascp
 config check_update
 config coffee
 config coffee --ui=text
+config coffee --ui=text --query=@json:'{"text":"true"}'
 config detect https://faspex4.example.com/path
 config detect https://faspex5.example.com/path
 config detect https://node.example.com/path
@@ -1789,14 +1789,14 @@ ascli config wizard
 #### Example of configuration for a plugin
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
-only username/password and url are required (either on command line, or from config file).
+only username/password and url are required (either on command line, or from configuration file).
 Those can usually be provided on the command line:
 
 ```bash
 ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
-This can also be provisioned in a config file:
+This can also be provisioned in a configuration file:
 
 - Build [option preset](#lprt)
 
@@ -1877,7 +1877,7 @@ It is possible to store and use secrets encrypted in a file.
 --vault=@json:'{"type":"file","name":"vault.bin"}'
 ```
 
-`name` is the file path, absolute or relative to the config folder `ASCLI_HOME`.
+`name` is the file path, absolute or relative to the configuration folder `ASCLI_HOME`.
 
 #### Vault: Operations
 
@@ -1891,12 +1891,12 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-ascli conf vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
+ascli config vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
 ```
 
 #### <a id="config_finder"></a>Configuration Finder
 
-When a secret is needed by a sub command, the command can search for existing configurations in the config file.
+When a secret is needed by a sub command, the command can search for existing configurations in the configuration file.
 
 The lookup is done by comparing the service URL and username (or access key).
 
@@ -1906,17 +1906,17 @@ A passwords can be saved in clear in a [option preset](#lprt) together with othe
 Example:
 
 ```bash
-ascli conf preset update myconf --url=... --username=... --password=...
+ascli config preset update myconf --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
 ```bash
-ascli conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+ascli config preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
 ```
 
 ```bash
-ascli conf vault create myconf @json:'{"password":"my_password_here"}'
+ascli config vault create myconf @json:'{"password":"my_password_here"}'
 ```
 
 > **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -2014,8 +2014,8 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 > **Note:** One can display those values like this:
 
 ```bash
-ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
-ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
+ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
+ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
 `ascp` also needs to validate certificates when using **WSS**.
@@ -2023,13 +2023,13 @@ ascli conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 > **Note:** `ascli` overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
 
 ```bash
-strings $(ascli conf ascp info --fields=ascp)|grep -w OPENSSLDIR
+strings $(ascli config ascp info --fields=ascp)|grep -w OPENSSLDIR
 ```
 
 or
 
 ```bash
-ascli conf ascp info --fields=openssldir
+ascli config ascp info --fields=openssldir
 ```
 
 To update trusted root certificates for `ascli`:
@@ -2039,13 +2039,13 @@ Typically done by updating the system's root certificate store.
 An up-to-date version of the certificate bundle can be retrieved with:
 
 ```bash
-ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 ```
 
 To download that certificate store:
 
 ```bash
-ascli conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
 ```
 
 Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
@@ -2053,7 +2053,7 @@ Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
 To trust a certificate (e.g. self-signed), provided that the `CN` is correct, save the certificate to a file:
 
 ```bash
-ascli conf remote_certificate https://localhost:9092 > myserver.pem
+ascli config remote_certificate https://localhost:9092 > myserver.pem
 ```
 
 > **Note:** the saved certificate shows the CN as first line.
@@ -2061,7 +2061,7 @@ ascli conf remote_certificate https://localhost:9092 > myserver.pem
 Then, use this file as certificate store (e.g. here, Node API):
 
 ```bash
-ascli conf echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
+ascli config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
 ```
 
 ### Image and video thumbnails
@@ -2113,13 +2113,13 @@ Examples:
 - display debugging log on `stdout`:
 
 ```bash
-ascli conf pre over --log-level=debug --logger=stdout
+ascli config pre over --log-level=debug --logger=stdout
 ```
 
 - log errors to `syslog`:
 
 ```bash
-ascli conf pre over --log-level=error --logger=syslog
+ascli config pre over --log-level=error --logger=syslog
 ```
 
 When `ascli` is used interactively in a shell, the shell itself will usually log executed commands in the history file.
@@ -2153,7 +2153,7 @@ Values are in set **seconds** and can be of type either integer or float.
 Default values are the ones of Ruby:
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
-Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
+Like any other option, those can be set either on command line, or in configuration file, either in a global preset or server-specific one.
 
 Example:
 
@@ -2197,7 +2197,7 @@ The result of a PAC file can be tested with command: `config proxy_check`.
 Example, using command line option:
 
 ```bash
-ascli conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:3128;DIRECT";}' http://example.com
+ascli config proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:3128;DIRECT";}' http://example.com
 ```
 
 ```text
@@ -2493,7 +2493,7 @@ asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```
 
-But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli conf ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
+But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli config ascp info --fields=aspera_conf` and modify sections `default` and `trunks` like this for a global 100 Mbps virtual link:
 
 ```xml
 <?xml version='1.0' encoding='UTF-8'?>
@@ -2539,7 +2539,7 @@ But this command is not available on clients, so edit the file `aspera.conf`, yo
 
 It is also possible to set a schedule with different time and days, for example for the value of `schedule`:
 
-```text
+```shell
 start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000
 ```
 
@@ -2666,7 +2666,7 @@ The use of a [*transfer-spec*](#transferspec) instead of `ascp` parameters has t
 ### <a id="transferparams"></a>Transfer Parameters
 
 All standard [*transfer-spec*](#transferspec) parameters can be specified.
-[*transfer-spec*](#transferspec) can also be saved/overridden in the config file.
+[*transfer-spec*](#transferspec) can also be saved/overridden in the configuration file.
 
 References:
 
@@ -3072,7 +3072,7 @@ crontab<<EOF
 EOF
 ```
 
-> **Note:** The logging options are kept here in the cron file instead of conf file to allow execution on command line with output on command line.
+> **Note:** Logging options are kept here in the cron file instead of configuration file to allow execution on command line with output on command line.
 
 ### <a id="locking"></a>Locking for exclusive execution
 
@@ -3119,7 +3119,7 @@ Several **PVCL** adapters are available, one is embedded in `ascp`, the others a
 The list of supported **PVCL** adapters can be retrieved with command:
 
 ```bash
-ascli conf ascp info --fields=@re:'^pvcl'
+ascli config ascp info --fields=@re:'^pvcl'
 ```
 
 ```output
@@ -3533,7 +3533,7 @@ For instance, the plugin `faspex` allows operations on the application "Aspera F
 Available plugins can be found using command:
 
 ```bash
-ascli conf plugin list
+ascli config plugin list
 ```
 
 ```output
@@ -3561,7 +3561,7 @@ ascli --show-config --select=@json:'{"key":"plugin_folder"}'
 You can create the skeleton of a new plugin like this:
 
 ```bash
-ascli conf plugin create foo .
+ascli config plugin create foo .
 ```
 
 ```output
@@ -3602,7 +3602,7 @@ option: username> john@example.com
 Updating profile with new key
 creating new config preset: aoc_myorg
 Setting config preset as default for aspera
-saving config file
+saving configuration file
 Done.
 You can test with:
 ascli aoc user profile show
@@ -3782,7 +3782,7 @@ Execute:
 ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/ascli/my_private_key --username=someuser@example.com
 ```
 
-> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
+> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the configuration file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
 
@@ -4268,7 +4268,7 @@ In this example, a user has access to a workspace where two shared folders are l
 First, setup the environment (skip if already done)
 
 ```bash
-ascli conf wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
+ascli config wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
 ```
 
 ```output
@@ -4287,7 +4287,7 @@ Once updated or validated, press enter.
 
 creating new config preset: aoc_sedemo
 Setting config preset as default for aspera
-saving config file
+saving configuration file
 Done.
 You can test with:
 ascli aoc user profile show
@@ -5213,7 +5213,7 @@ ascli aoc files thumbnail /preview_samples/Aspera.mpg
 
 > **Note:** To specify the file by its file id, use the selector syntax: `%id:_file_id_here_`
 >
-> **Note:** To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
+> **Note:** To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL` or use option: ``
 
 ### Create access key
 
@@ -5289,7 +5289,7 @@ Let's assume that the access key was created, and a default configuration is set
 
   ```bash
   my_private_pem=./myorgkey.pem
-  ascli conf genkey $my_private_pem
+  ascli config genkey $my_private_pem
   ```
 
   > **Note:** This key is not used for authentication, it is used to sign bearer tokens.
@@ -5481,7 +5481,7 @@ Setting config preset as default for faspex5
 Done.
 You can test with:
 ascli faspex5 user profile show
-Saving config file.
+Saving configuration file.
 ```
 
 > **Note:** Include the public key `BEGIN` and `END` lines when pasting in the user profile.
@@ -5532,9 +5532,9 @@ As usual, typically a user will create preset to avoid having to type these opti
 Example:
 
 ```bash
-ascli conf preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
+ascli config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
-ascli conf preset set default faspx5 myf5
+ascli config preset set default faspx5 myf5
 
 ascli faspex5 user profile show
 ```
@@ -5570,7 +5570,7 @@ For `boot` method: (will be removed in future)
 Use this token as password and use `--auth=boot`.
 
 ```bash
-ascli conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
+ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
 ### Faspex 5 sample commands
@@ -5963,9 +5963,8 @@ ascli faspex v4 dropbox delete 36
 
 ### Remote sources
 
-Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
-the node API is used, for this it is required to add a section ":storage" that links
-a storage name to a node config and sub path.
+Faspex lacks an API to list the contents of a remote source (available in web UI).
+To workaround this, the node API is used, for this it is required to add a section ":storage" that links a storage name to a node configuration and sub path.
 
 Example:
 
@@ -6116,8 +6115,8 @@ If you have those parameters already, then following options shall be provided:
 For example, let us create a default configuration:
 
 ```bash
-ascli conf preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-ascli conf preset set default cos mycos
+ascli config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+ascli config preset set default cos mycos
 ```
 
 Then, jump to the transfer example.
@@ -6180,8 +6179,8 @@ The required options for this method are:
 For example, let us create a default configuration:
 
 ```bash
-ascli conf preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-ascli conf preset set default cos mycos
+ascli config preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+ascli config preset set default cos mycos
 ```
 
 ### Operations, transfers
@@ -6807,7 +6806,7 @@ If a transfer takes more than the execution period, then the subsequent executio
 ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
 ```
 
-This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node:
+This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node.
 
 ### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
@@ -6851,14 +6850,6 @@ ascli server health transfer --to-folder=/Upload --format=nagios --progress-bar=
 OK - [transfer:ok]
 ```
 
-```bash
-ascli server health asctl status --cmd_prefix='sudo ' --format=nagios
-```
-
-```output
-OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
-```
-
 ## Ruby Module: `Aspera`
 
 Main components:
@@ -6868,10 +6859,6 @@ Main components:
 - `Aspera::Cli`: `ascli`.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
-
-## Changes (Release notes)
-
-See [CHANGELOG.md](CHANGELOG.md)
 
 ## History
 
@@ -6898,8 +6885,9 @@ It had the advantage of being relatively easy to installed, as a single executab
 Enjoy a coffee on me:
 
 ```bash
-ascli conf coffee
-ascli conf coffee --ui=text
+ascli config coffee --ui=text
+ascli config coffee --ui=text --query=@json:'{"text":"true"}'
+ascli config coffee
 ```
 
 ## Common problems
@@ -6908,7 +6896,7 @@ ascli conf coffee --ui=text
 
 Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
 
-Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
+Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the configuration file):
 
 ```bash
 --ts=@json:'{"sshfp":null}'

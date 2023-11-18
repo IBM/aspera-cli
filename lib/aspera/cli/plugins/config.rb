@@ -984,8 +984,7 @@ module Aspera
             return wizard_find(apps)
           when :coffee
             if OpenApplication.instance.url_method.eql?(:text)
-              require 'aspera/preview/terminal'
-              return Main.result_status(Preview::Terminal.build(Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body))
+              return Main.result_picture_in_terminal(options, Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body)
             end
             OpenApplication.instance.uri(COFFEE_IMAGE)
             return Main.result_nothing

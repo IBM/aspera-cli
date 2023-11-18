@@ -215,9 +215,9 @@ podman run --tty --interactive --entrypoint bash <%=container_image%>:latest
 Then, execute individual <%=tool%> commands such as:
 
 ```bash
-<%=cmd%> conf init
-<%=cmd%> conf preset overview
-<%=cmd%> conf ascp info
+<%=cmd%> config init
+<%=cmd%> config preset overview
+<%=cmd%> config ascp info
 <%=cmd%> server ls /
 ```
 
@@ -255,8 +255,7 @@ Then, you can execute the container like a local command:
 <%=gemspec.version.to_s%>
 ```
 
-In order to keep persistency of configuration on the host,
-you should specify your user's config folder as a volume for the container.
+In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
 To enable write access, a possibility is to run as `root` in the container (and set the default configuration folder to `/home/cliuser/.aspera/<%=cmd%>`).
 Add options:
 
@@ -300,7 +299,7 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 
 A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
 
-> **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> conf gem path)/../examples/d<%=cmd%> <%=cmd%>`
+> **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> config gem path)/../examples/d<%=cmd%> <%=cmd%>`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -327,7 +326,7 @@ mkdir -p $xferdir
 chmod -R 777 $xferdir
 export docker_args="--volume $xferdir:/xferfiles"
 
-./<%=cmd%> conf init
+./<%=cmd%> config init
 
 echo 'Local file to transfer' > $xferdir/samplefile.txt
 ./<%=cmd%> server upload /xferfiles/samplefile.txt --to-folder=/Upload
@@ -534,7 +533,7 @@ gem install --force --local *.gem
 - install the SDK
 
 ```bash
-<%=cmd%> conf ascp install --sdk-url=file:///sdk.zip
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
 
 > **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
@@ -658,7 +657,7 @@ To de-activate this feature, globally set the option `version_check_days` to `0`
 To check if a new version is available (independently of `version_check_days`):
 
 ```bash
-<%=cmd%> conf check_update
+<%=cmd%> config check_update
 ```
 
 ### <a id="fasp_prot"></a>FASP Protocol
@@ -672,7 +671,7 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 This can be installed either be installing an Aspera transfer software, or using an embedded command:
 
 ```bash
-<%=cmd%> conf ascp install
+<%=cmd%> config ascp install
 ```
 
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
@@ -682,7 +681,7 @@ curl -Lso sdk.zip https://ibm.biz/aspera_sdk
 ```
 
 ```bash
-<%=cmd%> conf ascp install --sdk-url=file:///sdk.zip
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
@@ -721,7 +720,7 @@ cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 - Get the Aspera SDK.
 
 ```bash
-<%=cmd%> conf --show-config --fields=sdk_url
+<%=cmd%> config --show-config --fields=sdk_url
 ```
 
 - Download the SDK archive from that URL.
@@ -741,7 +740,7 @@ tar zxvf rvm-<%=cmd%>.tgz
 
 source ~/.rvm/scripts/rvm
 
-<%=cmd%> conf ascp install --sdk-url=file:///sdk.zip
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
 
 - Add those lines to shell init (`.profile`)
@@ -831,19 +830,19 @@ The following examples give the same result on Windows:
 - single quote protects the double quote
 
   ```cmd
-  <%cmd%> conf echo @json:'{"url":"https://..."}'
+  <%=cmd%> config echo @json:'{"url":"https://..."}'
   ```
 
 - triple double quotes are replaced with a single double quote
 
   ```cmd
-  <%cmd%> conf echo @json:{"""url""":"""https://..."""}
+  <%=cmd%> config echo @json:{"""url""":"""https://..."""}
   ```
 
 - double quote is escaped with backslash within double quotes
 
   ```cmd
-  <%cmd%> conf echo @json:"{\"url\":\"https://...\"}"
+  <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
   ```
 
 More details: on Windows, `cmd.exe` is typically used to start <%tool%>.
@@ -882,7 +881,7 @@ In case of doubt of argument values after parsing, one can test using command `c
 Example: The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
-<%=cmd%> conf echo 1 2 3
+<%=cmd%> config echo 1 2 3
 ```
 
 ```ruby
@@ -904,9 +903,9 @@ Double quotes are processed by the shell to create a single string argument.
 For **POSIX shells**, single quotes can also be used in this case, or protect the special character ` ` (space) with a backslash. <!-- markdownlint-disable-line -->
 
 ```bash
-<%=cmd%> conf echo "Hello World" --format=text
-<%=cmd%> conf echo 'Hello World' --format=text
-<%=cmd%> conf echo Hello\ World --format=text
+<%=cmd%> config echo "Hello World" --format=text
+<%=cmd%> config echo 'Hello World' --format=text
+<%=cmd%> config echo Hello\ World --format=text
 ```
 
 ```output
@@ -922,8 +921,8 @@ Even if the variable contains spaces it makes only one argument to <%=tool%> bec
 
 ```bash
 MYVAR="Hello World"
-<%=cmd%> conf echo @json:'{"title":"'$MYVAR'"}' --format=json
-<%=cmd%> conf echo @json:{\"title\":\"$MYVAR\"} --format=json
+<%=cmd%> config echo @json:'{"title":"'$MYVAR'"}' --format=json
+<%=cmd%> config echo @json:{\"title\":\"$MYVAR\"} --format=json
 ```
 
 ```json
@@ -936,8 +935,8 @@ Double quote is a shell special character.
 Like any shell special character, it can be protected either by preceding with a backslash or by enclosing in a single quote.
 
 ```bash
-<%=cmd%> conf echo \"
-<%=cmd%> conf echo '"'
+<%=cmd%> config echo \"
+<%=cmd%> config echo '"'
 ```
 
 ```output
@@ -947,9 +946,9 @@ Like any shell special character, it can be protected either by preceding with a
 Double quote in JSON is a little tricky because `"` is special both for the shell and JSON. Both shell and JSON syntax allow to protect `"`, but only the shell allows protection using single quote.
 
 ```bash
-<%=cmd%> conf echo @json:'"\""' --format=text
-<%=cmd%> conf echo @json:\"\\\"\" --format=text
-<%=cmd%> conf echo @ruby:\'\"\' --format=text
+<%=cmd%> config echo @json:'"\""' --format=text
+<%=cmd%> config echo @json:\"\\\"\" --format=text
+<%=cmd%> config echo @ruby:\'\"\' --format=text
 ```
 
 ```output
@@ -982,9 +981,9 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 - Then, since the value will be evaluated by shell, any shell special characters must be protected, either using preceding `\` for each character to protect, or by enclosing in single quote:
 
 ```bash
-<%=cmd%> conf echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
-<%=cmd%> conf echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
-<%=cmd%> conf echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
+<%=cmd%> config echo @json:{\"title\":\"Test\ \\\"\ \'\ \&\ \\\\\"} --format=json
+<%=cmd%> config echo @json:'{"title":"Test \" '\'' & \\"}' --format=json
+<%=cmd%> config echo @ruby:"{'title'=>%q{Test \" ' & \\\\}}" --format=json
 ```
 
 ```json
@@ -996,7 +995,7 @@ Both `"` and `\` are special characters for JSON and Ruby and can be protected w
 If <%=tool%> is used interactively (a user typing on terminal), it is easy to require the user to type values:
 
 ```bash
-<%=cmd%> conf echo @ruby:"{'title'=>gets.chomp}" --format=json
+<%=cmd%> config echo @ruby:"{'title'=>gets.chomp}" --format=json
 ```
 
 `gets` is Ruby's method of terminal input (terminated by `\n`), and `chomp` removes the trailing `\n`.
@@ -1006,13 +1005,13 @@ If <%=tool%> is used interactively (a user typing on terminal), it is easy to re
 If you need to provide a list of command line argument from lines that are in a file, on Linux you can use the `xargs` command:
 
 ```bash
-xargs -a lines.txt -d \\n <%=cmd%> conf echo
+xargs -a lines.txt -d \\n <%=cmd%> config echo
 ```
 
 This is equivalent to execution of:
 
 ```bash
-<%=cmd%> conf echo [line1] [line2] [line3] ...
+<%=cmd%> config echo [line1] [line2] [line3] ...
 ```
 
 If there are spaces in the lines, those are not taken as separator, as we provide option `-d \\n` to `xargs`.
@@ -1031,8 +1030,8 @@ Using those values will not require any escaping of characters since values do n
 If the value is to be assigned directly to an option of <%=cmd%>, then you can directly use the content of the file or env var using the `@file:` or `@env:` readers:
 
 ```bash
-<%=cmd%> conf echo @file:title.txt --format=text
-<%=cmd%> conf echo @env:MYTITLE --format=text
+<%=cmd%> config echo @file:title.txt --format=text
+<%=cmd%> config echo @env:MYTITLE --format=text
 ```
 
 ```output
@@ -1042,8 +1041,8 @@ Test " ' & \
 If the value to be used is in a more complex structure, then the `@ruby:` modifier can be used: it allows any Ruby code in expression, including reading from file or env var. In those cases, there is no character to protect because values are not parsed by the shell, or JSON or even Ruby.
 
 ```bash
-<%=cmd%> conf echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
-<%=cmd%> conf echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
+<%=cmd%> config echo @ruby:"{'title'=>File.read('title.txt')}" --format=json
+<%=cmd%> config echo @ruby:"{'title'=>ENV['MYTITLE']}" --format=json
 ```
 
 ```json
@@ -1072,7 +1071,7 @@ For example:
 - the command has one additional **positional argument**: `VAL2`
 
 If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
-For example `<%=cmd%> conf pre ov` is the same as `<%=cmd%> config preset overview`.
+For example `<%=cmd%> config pre ov` is the same as `<%=cmd%> config preset overview`.
 
 The value of options and arguments is evaluated with the [Extended Value Syntax](#extended).
 
@@ -1083,7 +1082,7 @@ Commands are typically entity types or verbs to act on those entities.
 Example:
 
 ```bash
-<%=cmd%> conf ascp info
+<%=cmd%> config ascp info
 ```
 
 - <%=tool%> is the executable executed by the shell
@@ -1130,7 +1129,7 @@ Options can be placed anywhere on command line and evaluated in order.
 Options are typically:
 
 - optional : to change the default behavior
-- mandatory : so they can be placed in a config file, for example: connection information
+- mandatory : so they can be placed in a configuration file, for example: connection information
 
 The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -1144,7 +1143,7 @@ Options values can be displayed for a given command by providing the `--show-con
 
 Parameters are typically designed as options if:
 
-- it is a mandatory parameters that would benefit from being set in a config file or environment variable
+- it is a mandatory parameters that would benefit from being set in a configuration file or environment variable
 - it is optional
 
 #### Positional Arguments
@@ -1155,8 +1154,8 @@ It could also be designed as an option, but since it is mandatory and typically 
 
 The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
 
-The disadvantage is that it is not possible to define a default value in a config file or environment variable like for options.
-Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the config file or environment variable.
+The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
+Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the configuration file or environment variable.
 
 If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
 
@@ -1400,7 +1399,7 @@ Example: create a `Hash` with values coming from a preset named `config`
 Example: Create a `Hash` from YAML provided as **heredoc**:
 
 ```bash
-<%=cmd%> conf echo @yaml:@stdin: --format=json<<EOF
+<%=cmd%> config echo @yaml:@stdin: --format=json<<EOF
 key1: value1
 key2:
 - item1
@@ -1562,7 +1561,7 @@ Operations on this preset are done using regular `config` operations:
 
 Plugin `config` provides general commands for <%=tool%>:
 
-- <%=prstt%>, config file operations
+- <%=prstt%>, configuration file operations
 - wizard
 - vault
 - `ascp`
@@ -1578,19 +1577,19 @@ If set, it loads the options independently of the plugin used.
 Show current default (global) <%=prstt%> (`config` plugin):
 
 ```console
-$ <%=cmd%> conf preset get default config
+$ <%=cmd%> config preset get default config
 global_common_defaults
 ```
 
 ```bash
-<%=cmd%> conf preset set GLOBAL version_check_days 0
+<%=cmd%> config preset set GLOBAL version_check_days 0
 ```
 
 If the default global <%=prstt%> is not set, and you want to use a different name:
 
 ```bash
-<%=cmd%> conf preset set my_common_defaults version_check_days 0
-<%=cmd%> conf preset set default config my_common_defaults
+<%=cmd%> config preset set my_common_defaults version_check_days 0
+<%=cmd%> config preset set default config my_common_defaults
 ```
 
 #### Config sample commands
@@ -1713,14 +1712,14 @@ The simplest invocation is:
 #### Example of configuration for a plugin
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
-only username/password and url are required (either on command line, or from config file).
+only username/password and url are required (either on command line, or from configuration file).
 Those can usually be provided on the command line:
 
 ```bash
 <%=cmd%> shares repo browse / --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
-This can also be provisioned in a config file:
+This can also be provisioned in a configuration file:
 
 - Build <%=prst%>
 
@@ -1801,7 +1800,7 @@ It is possible to store and use secrets encrypted in a file.
 --vault=@json:'{"type":"file","name":"vault.bin"}'
 ```
 
-`name` is the file path, absolute or relative to the config folder `<%=evp%>HOME`.
+`name` is the file path, absolute or relative to the configuration folder `<%=evp%>HOME`.
 
 #### Vault: Operations
 
@@ -1815,12 +1814,12 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-<%=cmd%> conf vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
+<%=cmd%> config vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
 ```
 
 #### <a id="config_finder"></a>Configuration Finder
 
-When a secret is needed by a sub command, the command can search for existing configurations in the config file.
+When a secret is needed by a sub command, the command can search for existing configurations in the configuration file.
 
 The lookup is done by comparing the service URL and username (or access key).
 
@@ -1830,17 +1829,17 @@ A passwords can be saved in clear in a <%=prst%> together with other account inf
 Example:
 
 ```bash
-<%=cmd%> conf preset update myconf --url=... --username=... --password=...
+<%=cmd%> config preset update myconf --url=... --username=... --password=...
 ```
 
 For a more secure storage one can do:
 
 ```bash
-<%=cmd%> conf preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
+<%=cmd%> config preset update myconf --url=... --username=... --password=@val:@vault:myconf.password
 ```
 
 ```bash
-<%=cmd%> conf vault create myconf @json:'{"password":"my_password_here"}'
+<%=cmd%> config vault create myconf @json:'{"password":"my_password_here"}'
 ```
 
 > **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -1938,8 +1937,8 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 > **Note:** One can display those values like this:
 
 ```bash
-<%=cmd%> conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
-<%=cmd%> conf echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
+<%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
+<%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
 `ascp` also needs to validate certificates when using **WSS**.
@@ -1947,13 +1946,13 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 > **Note:** <%=tool%> overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
 
 ```bash
-strings $(ascli conf ascp info --fields=ascp)|grep -w OPENSSLDIR
+strings $(<%=cmd%> config ascp info --fields=ascp)|grep -w OPENSSLDIR
 ```
 
 or
 
 ```bash
-<%=cmd%> conf ascp info --fields=openssldir
+<%=cmd%> config ascp info --fields=openssldir
 ```
 
 To update trusted root certificates for <%=tool%>:
@@ -1963,13 +1962,13 @@ Typically done by updating the system's root certificate store.
 An up-to-date version of the certificate bundle can be retrieved with:
 
 ```bash
-<%=cmd%> conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 ```
 
 To download that certificate store:
 
 ```bash
-<%=cmd%> conf echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
 ```
 
 Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
@@ -1977,7 +1976,7 @@ Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
 To trust a certificate (e.g. self-signed), provided that the `CN` is correct, save the certificate to a file:
 
 ```bash
-<%=cmd%> conf remote_certificate https://localhost:9092 > myserver.pem
+<%=cmd%> config remote_certificate https://localhost:9092 > myserver.pem
 ```
 
 > **Note:** the saved certificate shows the CN as first line.
@@ -1985,7 +1984,7 @@ To trust a certificate (e.g. self-signed), provided that the `CN` is correct, sa
 Then, use this file as certificate store (e.g. here, Node API):
 
 ```bash
-<%=cmd%> conf echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
+<%=cmd%> config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
 ```
 
 ### Image and video thumbnails
@@ -2037,13 +2036,13 @@ Examples:
 - display debugging log on `stdout`:
 
 ```bash
-<%=cmd%> conf pre over --log-level=debug --logger=stdout
+<%=cmd%> config pre over --log-level=debug --logger=stdout
 ```
 
 - log errors to `syslog`:
 
 ```bash
-<%=cmd%> conf pre over --log-level=error --logger=syslog
+<%=cmd%> config pre over --log-level=error --logger=syslog
 ```
 
 When <%=tool%> is used interactively in a shell, the shell itself will usually log executed commands in the history file.
@@ -2077,7 +2076,7 @@ Values are in set **seconds** and can be of type either integer or float.
 Default values are the ones of Ruby:
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
-Like any other option, those can be set either on command line, or in config file, either in a global preset or server-specific one.
+Like any other option, those can be set either on command line, or in configuration file, either in a global preset or server-specific one.
 
 Example:
 
@@ -2121,7 +2120,7 @@ The result of a PAC file can be tested with command: `config proxy_check`.
 Example, using command line option:
 
 ```bash
-<%=cmd%> conf proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:3128;DIRECT";}' http://example.com
+<%=cmd%> config proxy_check --fpac='function FindProxyForURL(url, host) {return "PROXY proxy.example.com:3128;DIRECT";}' http://example.com
 ```
 
 ```text
@@ -2417,7 +2416,7 @@ asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```
 
-But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `<%=cmd%> conf ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
+But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `<%=cmd%> config ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
 
 ```xml
 <?xml version='1.0' encoding='UTF-8'?>
@@ -2590,7 +2589,7 @@ The use of a <%=trspec%> instead of `ascp` parameters has the advantage of:
 ### <a id="transferparams"></a>Transfer Parameters
 
 All standard <%=trspec%> parameters can be specified.
-<%=trspec%> can also be saved/overridden in the config file.
+<%=trspec%> can also be saved/overridden in the configuration file.
 
 References:
 
@@ -2901,7 +2900,7 @@ crontab<<EOF
 EOF
 ```
 
-> **Note:** The logging options are kept here in the cron file instead of conf file to allow execution on command line with output on command line.
+> **Note:** Logging options are kept here in the cron file instead of configuration file to allow execution on command line with output on command line.
 
 ### <a id="locking"></a>Locking for exclusive execution
 
@@ -2948,7 +2947,7 @@ Several **PVCL** adapters are available, one is embedded in `ascp`, the others a
 The list of supported **PVCL** adapters can be retrieved with command:
 
 ```bash
-<%=cmd%> conf ascp info --fields=@re:'^pvcl'
+<%=cmd%> config ascp info --fields=@re:'^pvcl'
 ```
 
 ```output
@@ -3083,7 +3082,7 @@ For instance, the plugin `faspex` allows operations on the application "Aspera F
 Available plugins can be found using command:
 
 ```bash
-<%=cmd%> conf plugin list
+<%=cmd%> config plugin list
 ```
 
 ```output
@@ -3111,7 +3110,7 @@ By default plugins are looked-up in folders specified by (multi-value) option `p
 You can create the skeleton of a new plugin like this:
 
 ```bash
-<%=cmd%> conf plugin create foo .
+<%=cmd%> config plugin create foo .
 ```
 
 ```output
@@ -3152,7 +3151,7 @@ option: username> john@example.com
 Updating profile with new key
 creating new config preset: aoc_myorg
 Setting config preset as default for aspera
-saving config file
+saving configuration file
 Done.
 You can test with:
 <%=cmd%> aoc user profile show
@@ -3332,7 +3331,7 @@ Execute:
 <%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=someuser@example.com
 ```
 
-> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the config file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
+> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the configuration file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
 
@@ -3818,7 +3817,7 @@ In this example, a user has access to a workspace where two shared folders are l
 First, setup the environment (skip if already done)
 
 ```bash
-<%=cmd%> conf wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
+<%=cmd%> config wizard --url=https://sedemo.ibmaspera.com --username=someuser@example.com
 ```
 
 ```output
@@ -3837,7 +3836,7 @@ Once updated or validated, press enter.
 
 creating new config preset: aoc_sedemo
 Setting config preset as default for aspera
-saving config file
+saving configuration file
 Done.
 You can test with:
 <%=cmd%> aoc user profile show
@@ -4617,7 +4616,7 @@ Previews are mainly used in AoC, this also works with AoC:
 
 > **Note:** To specify the file by its file id, use the selector syntax: `%id:_file_id_here_`
 >
-> **Note:** To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL`
+> **Note:** To force textual display of the preview on **iTerm**, prefix command with: `env -u TERM_PROGRAM -u LC_TERMINAL` or use option: ``
 
 ### Create access key
 
@@ -4693,7 +4692,7 @@ Let's assume that the access key was created, and a default configuration is set
 
   ```bash
   my_private_pem=./myorgkey.pem
-  <%=cmd%> conf genkey $my_private_pem
+  <%=cmd%> config genkey $my_private_pem
   ```
 
   > **Note:** This key is not used for authentication, it is used to sign bearer tokens.
@@ -4821,7 +4820,7 @@ Setting config preset as default for faspex5
 Done.
 You can test with:
 <%=cmd%> faspex5 user profile show
-Saving config file.
+Saving configuration file.
 ```
 
 > **Note:** Include the public key `BEGIN` and `END` lines when pasting in the user profile.
@@ -4872,9 +4871,9 @@ As usual, typically a user will create preset to avoid having to type these opti
 Example:
 
 ```bash
-<%=cmd%> conf preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
+<%=cmd%> config preset update myf5 --auth=jwt --client-id=_client_id_here_ --client-secret=my_secret_here --username=_username_here_ --private-key=@file:.../path/to/key.pem
 
-<%=cmd%> conf preset set default faspx5 myf5
+<%=cmd%> config preset set default faspx5 myf5
 
 <%=cmd%> faspex5 user profile show
 ```
@@ -4910,7 +4909,7 @@ For `boot` method: (will be removed in future)
 Use this token as password and use `--auth=boot`.
 
 ```bash
-<%=cmd%> conf preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
+<%=cmd%> config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
 ### Faspex 5 sample commands
@@ -5261,9 +5260,8 @@ Example:
 
 ### Remote sources
 
-Faspex lacks an API to list the contents of a remote source (available in web UI). To workaround this,
-the node API is used, for this it is required to add a section ":storage" that links
-a storage name to a node config and sub path.
+Faspex lacks an API to list the contents of a remote source (available in web UI).
+To workaround this, the node API is used, for this it is required to add a section ":storage" that links a storage name to a node configuration and sub path.
 
 Example:
 
@@ -5351,8 +5349,8 @@ If you have those parameters already, then following options shall be provided:
 For example, let us create a default configuration:
 
 ```bash
-<%=cmd%> conf preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
-<%=cmd%> conf preset set default cos mycos
+<%=cmd%> config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=abcdefgh --crn=crn:v1:bluemix:public:iam-identity::a/xxxxxxx
+<%=cmd%> config preset set default cos mycos
 ```
 
 Then, jump to the transfer example.
@@ -5415,8 +5413,8 @@ The required options for this method are:
 For example, let us create a default configuration:
 
 ```bash
-<%=cmd%> conf preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
-<%=cmd%> conf preset set default cos mycos
+<%=cmd%> config preset update mycos --bucket=laurent --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+<%=cmd%> config preset set default cos mycos
 ```
 
 ### Operations, transfers
@@ -6006,7 +6004,7 @@ If a transfer takes more than the execution period, then the subsequent executio
 <%=cmd%> server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
 ```
 
-This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node:
+This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node.
 
 ### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
 
@@ -6050,14 +6048,6 @@ Typically, the health check uses the REST API of the application with the follow
 OK - [transfer:ok]
 ```
 
-```bash
-<%=cmd%> server health asctl status --cmd_prefix='sudo ' --format=nagios
-```
-
-```output
-OK - [NP:running, MySQL:running, Mongrels:running, Background:running, DS:running, DB:running, Email:running, Apache:running]
-```
-
 ## Ruby Module: `Aspera`
 
 Main components:
@@ -6067,10 +6057,6 @@ Main components:
 - `Aspera::Cli`: <%=tool%>.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
-
-## Changes (Release notes)
-
-See [CHANGELOG.md](CHANGELOG.md)
 
 ## History
 
@@ -6097,8 +6083,9 @@ It had the advantage of being relatively easy to installed, as a single executab
 Enjoy a coffee on me:
 
 ```bash
-<%=cmd%> conf coffee
-<%=cmd%> conf coffee --ui=text
+<%=cmd%> config coffee --ui=text
+<%=cmd%> config coffee --ui=text --query=@json:'{"text":"true"}'
+<%=cmd%> config coffee
 ```
 
 ## Common problems
@@ -6107,7 +6094,7 @@ Enjoy a coffee on me:
 
 Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
 
-Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the config file):
+Workaround on client side: To ignore the certificate (SSH fingerprint) add option on client side (this option can also be added permanently to the configuration file):
 
 ```bash
 --ts=@json:'{"sshfp":null}'

@@ -33,12 +33,12 @@ only_progress: $(T)serv_upload1 $(T)serv_upload3
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
 TIMESTAMP=$(shell LANG=C date)
 
-# temp conf file that is modified, to avoid the test configuration file
+# temp configuration file that is modified, to avoid the test configuration file
 TEST_CONFIG=$(DIR_TMP)sample.conf
 TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
 CLI_HOME=$(DIR_PRIV)ascli_home/
-# tests use config file in test folder
+# use configuration file in test folder
 EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_MAN" and "EXE_NO_MAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
@@ -1188,7 +1188,7 @@ $(T)conf_help: $(T).exists
 	$(EXE_NO_MAN) --bash-comp
 	$(EXE_MAN) config coffee
 	$(EXE_MAN) config coffee --ui=text
-	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NO_MAN) config coffee --ui=text
+	$(EXE_MAN) config coffee --ui=text --query=@json:'{"text":"true"}'
 	@$(STOP_TEST) $@
 $(T)conf_plugins: $(T).exists
 	@$(START_TEST) $@
