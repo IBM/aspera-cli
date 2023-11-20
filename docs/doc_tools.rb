@@ -185,7 +185,6 @@ def include_commands
   return all.join("\n")
 end
 
-KEPT_GLOBAL_SECTIONS = %w[config default].freeze
 REMOVED_OPTIONS = %w[insecure].freeze
 KEEP_HOSTS = %w[localhost 127.0.0.1].freeze
 SAMPLE_EMAIL = 'my_user@example.com'
@@ -197,11 +196,13 @@ def generate_generic_conf
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
   o = YAML.load_file(local_config)
-  # o[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i, m|m[i] = 'your value here'}
   o.each do |k, h|
-    next if KEPT_GLOBAL_SECTIONS.include?(k)
     h.each do |p, v|
       next unless v.is_a?(String)
+      if k.eql?('config') && p.eql?('version')
+        h[p] = '4.0'
+        next
+      end
       if v.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
         h[p] = SAMPLE_EMAIL
         next
