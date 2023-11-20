@@ -12,3 +12,5 @@ docs/README.erb.md contains various macros, see `doc_tools.rb` :
 * `<%=opprst%>` option preset
 * `<%=prst%>` link to preset section, name and link to preset
 * `<%=prstt%>` preset in title
+
+The font used is : IBM Plex, see <https://www.ibm.com/plex/>
