@@ -1740,7 +1740,7 @@ the options independently of the plugin used.</p>
 <blockquote>
 <p><strong>Note:</strong> If no global default is set by the user,
 <code>ascli</code> will use <code>global_common_defaults</code> when
-setting global parameters (e.g. <code>conf ascp use</code>)</p>
+setting global parameters (e.g. <code>config ascp use</code>)</p>
 <p><strong>Note:</strong> If you don’t know the name of the global
 preset, you can use <code>GLOBAL</code> to refer to it.</p>
 </blockquote>
@@ -1753,7 +1753,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb129-1"><a href
 <p>If the default global Option preset is not set, and you want to use a
 different name:</p>
 <div class="sourceCode" id="cb130"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set my_common_defaults version_check_days 0</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set GLOBAL version_check_days 0</span>
 <span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config my_common_defaults</span></code></pre></div>
 <h3 data-number="4.9.5" id="config-sample-commands"><span
 class="header-section-number">4.9.5</span> Config sample commands</h3>
@@ -1881,10 +1881,8 @@ shall use the <code>@val:</code> prefix. Example:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set my_aoc_org private_key @val:@file:<span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
 <p>This creates the <a href="#lprt">option preset</a>:</p>
 <div class="sourceCode" id="cb134"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a><span class="co">...</span></span>
-<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a><span class="co">my_aoc_org:</span></span>
-<span id="cb134-3"><a href="#cb134-3" aria-hidden="true" tabindex="-1"></a><span class="co">  private_key: @file:&quot;/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span>
-<span id="cb134-4"><a href="#cb134-4" aria-hidden="true" tabindex="-1"></a><span class="co">...</span></span></code></pre></div>
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_aoc_org</span><span class="kw">:</span></span>
+<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">private_key</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@file:/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
 <p>So, the key file will be read only at execution time, but not be
 embedded in the configuration file.</p>
 <h3 data-number="4.9.7" id="evaluation-order-of-options"><span
@@ -1909,9 +1907,10 @@ if the value is a <code>Hash</code>, it uses it as options values.</li>
 <p>Parameters are evaluated in the order of command line.</p>
 <p>To avoid loading the default <a href="#lprt">option preset</a> for a
 plugin, use: <code>-N</code></p>
-<p>On command line, words in parameter names are separated by a dash, in
-configuration file, separator is an underscore. E.g. –xxx-yyy on command
-line gives xxx_yyy in configuration file.</p>
+<p>On command line, words in parameter names are separated by a dash
+(<code>-</code>). In configuration file, separator is an underscore.
+E.g. <code>--xxx-yyy</code> on command line gives <code>xxx_yyy</code>
+in configuration file.</p>
 <p>The main plugin name is <code>config</code>, so it is possible to
 define a default <a href="#lprt">option preset</a> for the main plugin
 with:</p>
@@ -2713,7 +2712,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb207-1"><a href
 <span id="cb207-4"><a href="#cb207-4" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&#39;set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2&#39;</span></span></code></pre></div>
 <p>But this command is not available on clients, so edit the file
 <code>aspera.conf</code>, you can find the location with:
-<code>ascli config ascp info --fields=aspera_conf</code> and modify
+<code>ascli config ascp info --fields=aspera_conf</code> and modify the
 sections <code>default</code> and <code>trunks</code> like this for a
 global 100 Mbps virtual link:</p>
 <div class="sourceCode" id="cb208"><pre
@@ -2758,7 +2757,7 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb208-1"><a href="
 <span id="cb208-39"><a href="#cb208-39" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">CONF</span>&gt;</span></code></pre></div>
 <p>It is also possible to set a schedule with different time and days,
 for example for the value of <code>schedule</code>:</p>
-<pre class="shell"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
+<pre class="text"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
 <h3 data-number="4.23.2" id="ibm-aspera-connect-client-gui"><span
 class="header-section-number">4.23.2</span> <a id="agt_connect"></a>IBM
 Aspera Connect Client GUI</h3>
@@ -4153,7 +4152,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb216-1"><a href
 of String</strong></p>
 <blockquote>
 <p><strong>Note:</strong> extended values can be tested with the command
-<code>conf echo</code></p>
+<code>config echo</code></p>
 </blockquote>
 <p>Examples:</p>
 <ul>

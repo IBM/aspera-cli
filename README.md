@@ -1576,7 +1576,7 @@ The default preset for `config` is read for any plugin invocation, this allows s
 When `ascli` starts, it looks for the `default` Option preset and checks the value for `config`.
 If set, it loads the options independently of the plugin used.
 
-> **Note:** If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+> **Note:** If no global default is set by the user, `ascli` will use `global_common_defaults` when setting global parameters (e.g. `config ascp use`)
 >
 > **Note:** If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
@@ -1594,7 +1594,7 @@ ascli config preset set GLOBAL version_check_days 0
 If the default global Option preset is not set, and you want to use a different name:
 
 ```bash
-ascli config preset set my_common_defaults version_check_days 0
+ascli config preset set GLOBAL version_check_days 0
 ascli config preset set default config my_common_defaults
 ```
 
@@ -1719,10 +1719,8 @@ ascli config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/ascli/m
 This creates the [option preset](#lprt):
 
 ```yaml
-...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/ascli/my_private_key"
-...
+  private_key: "@file:/Users/laurent/.aspera/ascli/my_private_key"
 ```
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
@@ -1743,8 +1741,9 @@ Parameters are evaluated in the order of command line.
 
 To avoid loading the default [option preset](#lprt) for a plugin, use: `-N`
 
-On command line, words in parameter names are separated by a dash, in configuration file, separator
-is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration file.
+On command line, words in parameter names are separated by a dash (`-`).
+In configuration file, separator is an underscore.
+E.g. `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
 
 The main plugin name is `config`, so it is possible to define a default [option preset](#lprt) for the main plugin with:
 
@@ -2493,7 +2492,7 @@ asconfigurator -x 'set_node_data;transfer_in_bandwidth_aggregate_trunk_id,1'
 asconfigurator -x 'set_node_data;transfer_out_bandwidth_aggregate_trunk_id,2'
 ```
 
-But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli config ascp info --fields=aspera_conf` and modify sections `default` and `trunks` like this for a global 100 Mbps virtual link:
+But this command is not available on clients, so edit the file `aspera.conf`, you can find the location with: `ascli config ascp info --fields=aspera_conf` and modify the sections `default` and `trunks` like this for a global 100 Mbps virtual link:
 
 ```xml
 <?xml version='1.0' encoding='UTF-8'?>
@@ -2539,7 +2538,7 @@ But this command is not available on clients, so edit the file `aspera.conf`, yo
 
 It is also possible to set a schedule with different time and days, for example for the value of `schedule`:
 
-```shell
+```text
 start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000
 ```
 
@@ -2832,7 +2831,7 @@ So, by default, the list of files to transfer will be simply specified on the co
 
 - an [Extended Value](#extended) with type **Array of String**
 
-  > **Note:** extended values can be tested with the command `conf echo`
+  > **Note:** extended values can be tested with the command `config echo`
 
   Examples:
 

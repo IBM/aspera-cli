@@ -13,8 +13,8 @@ variables:
   urlcolor: blue
   geometry: margin=15mm
 metadata-files:
-  - metadata.yaml
+  - manual_pandoc_metadata.yaml
 resource-path:
   - .
 include-in-header:
-  - template.tex
+  - manual_template.tex

@@ -27,16 +27,16 @@ clean_doc::
 # +pipe_tables
 # Date in PDF header is either the last checked in date or today if file has been modified
 # sudo tlmgr install fvextra
-$(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_TMP).exists
+$(MANUAL_PDF): $(DIR_TMP).exists $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_DOC)manual_pandoc_metadata.yaml $(DIR_DOC)manual_template.tex
 	rm -f $@
 	set -x &&\
-	if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
-	date=$$(date $$ref '+%Y/%m/%d') &&\
-	pandoc \
-		--defaults=pandoc_md_pdf.yaml \
-		--variable=date:$$date \
-		--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)"\
-		-o $@ $(DIR_TOP)README.md
+		if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
+		date=$$(date $$ref '+%Y/%m/%d') &&\
+		pandoc \
+			--defaults=manual_pandoc_defaults.yaml \
+			--variable=date:$$date \
+			--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)"\
+			-o $@ $(DIR_TOP)README.md
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \

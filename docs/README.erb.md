@@ -1570,7 +1570,7 @@ The default preset for `config` is read for any plugin invocation, this allows s
 When <%=tool%> starts, it looks for the `default` <%=prstt%> and checks the value for `config`.
 If set, it loads the options independently of the plugin used.
 
-> **Note:** If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global parameters (e.g. `conf ascp use`)
+> **Note:** If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global parameters (e.g. `config ascp use`)
 >
 > **Note:** If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
@@ -1588,7 +1588,7 @@ global_common_defaults
 If the default global <%=prstt%> is not set, and you want to use a different name:
 
 ```bash
-<%=cmd%> config preset set my_common_defaults version_check_days 0
+<%=cmd%> config preset set GLOBAL version_check_days 0
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
@@ -1642,10 +1642,8 @@ Values in the configuration also follow the [Extended Value Syntax](#extended).
 This creates the <%=prst%>:
 
 ```yaml
-...
 my_aoc_org:
-  private_key: @file:"/Users/laurent/.aspera/<%=cmd%>/my_private_key"
-...
+  private_key: "@file:/Users/laurent/.aspera/<%=cmd%>/my_private_key"
 ```
 
 So, the key file will be read only at execution time, but not be embedded in the configuration file.
@@ -1666,8 +1664,9 @@ Parameters are evaluated in the order of command line.
 
 To avoid loading the default <%=prst%> for a plugin, use: `-N`
 
-On command line, words in parameter names are separated by a dash, in configuration file, separator
-is an underscore. E.g. --xxx-yyy  on command line gives xxx_yyy in configuration file.
+On command line, words in parameter names are separated by a dash (`-`).
+In configuration file, separator is an underscore.
+E.g. `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
 
 The main plugin name is `config`, so it is possible to define a default <%=prst%> for the main plugin with:
 
@@ -2660,7 +2659,7 @@ So, by default, the list of files to transfer will be simply specified on the co
 
 - an [Extended Value](#extended) with type **Array of String**
 
-  > **Note:** extended values can be tested with the command `conf echo`
+  > **Note:** extended values can be tested with the command `config echo`
 
   Examples:
 
