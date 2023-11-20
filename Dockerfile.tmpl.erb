@@ -1,26 +1,26 @@
-FROM ruby:3.2.2
+# Embedded Ruby template
+# lines beginning with "#erb:" are embedded ruby lines, processing is done in Makefile so there is no syntax error in Dockerfile
+# arg: arg_gem: specify a gemfile or a gem version
+# arg: arg_sdk: specify a sdk file or empty (download from default url)
 # cspell:ignore cliuser optipng
-# cspell:ignoreRegExp /<%[^%]*%>/g
-<%# Embedded Ruby template -%>
-<%# arg: arg_gem: specify a gemfile or a gem version -%>
-<%# arg: arg_sdk: specify a sdk file or empty (download from default url) -%>
-<%# Review this version periodically from : https://hub.docker.com/_/ruby -%>
-<% if arg_gem.end_with?('.gem') %>
+# Review the version of ruby to be used periodically from : https://hub.docker.com/_/ruby
+FROM ruby:3.2.2
+#erb: if arg_gem.end_with?('.gem')
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .
 # if a gem file was provided, once copied in container: use the basename only
-<% arg_gem=File.basename(arg_gem) %>
-<% end %>
-# install globally, does not need to be in user's home, must be outside /home/cliuser/.aspera/ascli which will be a volume
+#erb: arg_gem=File.basename(arg_gem)
+#erb: end
+# Install globally, does not need to be in user's home, must be outside /home/cliuser/.aspera/ascli which will be a volume
 ARG sdk_install_dir=/aspera_sdk
 # set SDK location in container
 ENV ASCLI_SDK_FOLDER=$sdk_install_dir
-<% unless arg_sdk.empty? %>
+#erb: unless arg_sdk.empty?
 # SDK file is available locally, then copy it
 COPY <%=arg_sdk%> .
 # if a sdk file was provided, once copied in container: use the basename only with file url
-<% arg_sdk='--sdk-url=file:///'+File.basename(arg_sdk) %>
-<% end %>
+#erb: arg_sdk='--sdk-url=file:///'+File.basename(arg_sdk)
+#erb: end
 # Install aspera-cli gem (beta or release), optional gems and other packages
 RUN \
   apt-get update && \
@@ -36,8 +36,7 @@ RUN \
   chmod 755 $sdk_install_dir && \
   ascli conf ascp install <%=arg_sdk%> && \
   ascli conf ascp info && \
-  rm -f sdk.zip && \
-  ascli conf ascp info
+  rm -f sdk.zip
 # rootless execution
 USER cliuser
 # The default dir when starting the docker container.

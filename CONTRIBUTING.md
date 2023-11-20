@@ -197,7 +197,7 @@ A template is used as it allows some level of customization to tell where to tak
 Then, to push to the image registry (both tags: version and `latest`):
 
 ```bash
-make dpush
+make docker_push
 ```
 
 ### Specific version image build
@@ -206,7 +206,7 @@ It is possible to build a specific version by setting envvar `GEM_VERSION` and `
 
 ```bash
 GEM_VERSION=4.11.0 make -e docker
-GEM_VERSION=4.11.0 make -e dpush
+GEM_VERSION=4.11.0 make -e docker_push
 ```
 
 ### Development version image build
@@ -215,8 +215,8 @@ To build/push a beta/development container:
 it does not create the `latest` tag, it uses the gem file generated locally.
 
 ```bash
-make dockerbeta
-make dpushversion
+make docker_beta
+make docker_push_version
 ```
 
 ## Single executable build

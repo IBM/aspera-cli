@@ -4,6 +4,8 @@
 # DIR_TOP: main folder of this project (with trailing slash)
 # if "" (empty) or "./" : execute "make" inside the main folder
 # alternatively : $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")/
+
+# cspell:ignore pubkey gemdir oneline demoaspera
 DIR_TOP=
 
 include $(DIR_TOP)common.mak
@@ -92,36 +94,31 @@ changes:
 
 ##################################
 # Docker image
-DOCKER_REPO=martinlaurent/ascli
+DOCKER_REPO=$(shell cat $(DIR_DOC)docker_repository.txt)
 DOCKER_IMG_VERSION=$(GEM_VERSION)
 DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
 SDK_URL=https://ibm.biz/aspera_transfer_sdk
+PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/' < Dockerfile.tmpl.erb | erb -T 2
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 dockerfile_release:
-	erb -T 2 \
-		arg_gem=$(GEM_NAME):$(GEM_VERSION) \
-		arg_sdk=$(LOCAL_SDK_FILE) \
-		Dockerfile.tmpl.erb > Dockerfile
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
 docker: dockerfile_release $(LOCAL_SDK_FILE)
 	docker build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
 dockerfile_beta:
-	erb -T 2 \
-		arg_gem=$(PATH_GEMFILE) \
-		arg_sdk=$(LOCAL_SDK_FILE) \
-		Dockerfile.tmpl.erb > Dockerfile
-dockerbeta: dockerfile_beta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
+docker_beta: dockerfile_beta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
 	docker build --squash --tag $(DOCKER_TAG_VERSION) .
-dockertest:
+docker_test:
 	docker run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
-dpush: dpushversion dpushlatest
-dpushversion:
+docker_push: docker_push_version docker_push_latest
+docker_push_version:
 	docker push $(DOCKER_TAG_VERSION)
-dpushlatest:
+docker_push_latest:
 	docker push $(DOCKER_TAG_LATEST)
 clean::
 	rm -f Dockerfile
@@ -140,7 +137,7 @@ clean::
 ##################################
 # utils
 # https://github.com/Yelp/detect-secrets
-scaninit:
+scan_init:
 	detect-secrets scan --exclude-files '^.secrets.baseline$$' --exclude-secrets '_here_' --exclude-secrets '^my_' --exclude-secrets '^your ' --exclude-secrets demoaspera
 scan:
 	detect-secrets scan --baseline .secrets.baseline

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# cspell:ignore opprst prst lprt prsts trspec prstt geminstadd transferspec martinlaurent
+# cspell:ignore opprst prst lprt prsts trspec prstt geminstadd transferspec passcode emea
 
 # Tools used in README.erb.md
 
@@ -37,7 +37,7 @@ def trspec; '[*transfer-spec*](#transferspec)'; end
 def prstt; opprst.capitalize; end
 
 # container image in docker hub
-def container_image; 'martinlaurent/ascli'; end
+def container_image; File.read('docker_repository.txt').strip; end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
