@@ -48,6 +48,16 @@ Plugins are located in lib/aspera/cli/plugins
 
 Transfer agents: lib/aspera/fasp
 
+## Ruby version
+
+install ruby with RVM.
+
+Cleanup installed gems in rvm to start fresh:
+
+```bash
+make cleanup_gems
+```
+
 ## Running Tests
 
 First, a testing environment must be created:

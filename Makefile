@@ -43,7 +43,7 @@ clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
 clean_gems:
-	gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[^-]*$$//'|sort -u)
+	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean:: clean_gem

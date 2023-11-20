@@ -18,7 +18,7 @@ all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH)
+$(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH) $(DIR_DOC)doc_tools.rb
 	$(DOC_TOOL) generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
@@ -51,7 +51,7 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 #.PHONY: $(DIR_TOP)README.md
 DOC_FILES=$(DIR_DOC)README.erb.md $(CLI_PATH) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC)
 $(DIR_TOP)README.md: $(DOC_FILES) $(DIR_DOC)doc_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(DIR_LIB)aspera/fasp/parameters.yaml $(GEMSPEC)
-	ruby -I . -I $(DIR_LIB). -r doc_tools -e generate_doc $(DOC_FILES) > $@
+	$(DOC_TOOL) generate_doc $(DOC_FILES) > $@
 	! grep '^#.*: [a-z]' README.erb.md
 
 clean_doc::

@@ -187,17 +187,65 @@ end
 
 KEPT_GLOBAL_SECTIONS = %w[config default].freeze
 REMOVED_OPTIONS = %w[insecure].freeze
+KEEP_HOSTS = %w[localhost 127.0.0.1].freeze
+SAMPLE_EMAIL = 'my_user@example.com'
+SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
 
 # main function to generate template configuration file for tests
+# hide sensitive information
 def generate_generic_conf
-  n = {}
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
-  YAML.load_file(local_config).each do |k, v|
-    next if k.start_with?('nt_') # no template
-    n[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i, m|m[i] = 'your value here'}
+  o = YAML.load_file(local_config)
+  # o[k] = KEPT_GLOBAL_SECTIONS.include?(k) ? v : v.keys.reject{|l|REMOVED_OPTIONS.include?(l)}.each_with_object({}){|i, m|m[i] = 'your value here'}
+  o.each do |k, h|
+    next if KEPT_GLOBAL_SECTIONS.include?(k)
+    h.each do |p, v|
+      next unless v.is_a?(String)
+      if v.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
+        h[p] = SAMPLE_EMAIL
+        next
+      end
+      if p.eql?('client_id')
+        h[p] = 'my_client_id'
+      end
+      if p.eql?('bucket_name') || p.eql?('bucket')
+        h[p] = 'my_bucket'
+      end
+      begin
+        uri = URI.parse(v)
+        raise '' if uri.scheme.nil?
+        next if KEEP_HOSTS.include?(uri.host)
+        if uri.host.eql?('aspera.pub')
+          h[p] = SHORT_LINK
+          next
+        end
+        uri.host = if uri.host.end_with?('.ibmaspera.com')
+          'example.ibmaspera.com'
+        else
+          uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example')
+        end
+        if uri.query.is_a?(String)
+          uri.query = uri.query.gsub(/&?token=[^&]*/, 'token=some_token')
+          uri.query = uri.query.gsub(/&?passcode=[^&]*/, 'token=some_passcode')
+        end
+        h[p] = uri.to_s
+      rescue
+        nil
+      end
+      case p
+      when 'url'
+      when 'username'
+        h[p] = v.include?('@') ? SAMPLE_EMAIL : 'my_user'
+        next
+      when /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
+        h[p] = 'your value here'
+        next
+      end
+      next unless v.start_with?('https://')
+    end
   end
-  puts(n.to_yaml)
+  puts(o.to_yaml)
 end
 
 # main function to generate README.md
