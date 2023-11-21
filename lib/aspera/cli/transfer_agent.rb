@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/info'
 
@@ -28,7 +29,7 @@ module Aspera
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
-      TRANSFER_AGENTS = %i[direct node connect httpgw trsdk].freeze
+      TRANSFER_AGENTS = Fasp::AgentBase.agent_list.freeze
 
       class << self
         # @return :success if all sessions statuses returned by "start" are success

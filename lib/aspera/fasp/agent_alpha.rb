@@ -8,7 +8,7 @@ require 'securerandom'
 
 module Aspera
   module Fasp
-    class AgentAspera < Aspera::Fasp::AgentBase
+    class AgentAlpha < Aspera::Fasp::AgentBase
       # try twice the main init url in sequence
       START_URIS = ['aspera://']
       # delay between each try to start connect
@@ -66,53 +66,42 @@ module Aspera
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
-        @client_app_api.start_transfer(app_id: @application_id,transfer_spec: transfer_spec)
-        # @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
+        result = @client_app_api.start_transfer(app_id: @application_id, desktop_spec: {}, transfer_spec: transfer_spec)
+        @xfer_id = result['uuid']
       end
 
       def wait_for_transfers_completion
-        client_activity_args = {'aspera_client_settings' => @client_settings}
         started = false
         pre_calc = false
-        session_id = @xfer_id
         begin
           loop do
-            tr_info = @client_api.create("transfers/info/#{@xfer_id}", client_activity_args)[:data]
-            Log.log.trace1{Log.dump(:tr_info, tr_info)}
-            if tr_info['transfer_info'].is_a?(Hash)
-              transfer = tr_info['transfer_info']
-              if transfer.nil?
-                Log.log.warn('no session in Connect')
-                break
+            transfer = @client_app_api.get_transfer(app_id: @application_id, transfer_id: @xfer_id)
+            case transfer['status']
+            when 'initiating', 'queued'
+              notify_progress(session_id: nil, type: :pre_start, info: transfer['status'])
+            when 'running'
+              if !started
+                notify_progress(session_id: @xfer_id, type: :session_start)
+                started = true
               end
-              # TODO: get session id
-              case transfer['status']
-              when 'initiating', 'queued'
-                notify_progress(session_id: nil, type: :pre_start, info: transfer['status'])
-              when 'running'
-                if !started
-                  notify_progress(session_id: session_id, type: :session_start)
-                  started = true
-                end
-                if !pre_calc && (transfer['bytes_expected'] != 0)
-                  notify_progress(type: :session_size, session_id: session_id, info: transfer['bytes_expected'])
-                  pre_calc = true
-                else
-                  notify_progress(type: :transfer, session_id: session_id, info: transfer['bytes_written'])
-                end
-              when 'completed'
-                notify_progress(type: :end, session_id: session_id)
-                break
-              when 'failed'
-                notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, transfer['error_desc']
-              when 'cancelled'
-                notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, 'Transfer cancelled by user'
+              if !pre_calc && (transfer['bytes_expected'] != 0)
+                notify_progress(type: :session_size, session_id: @xfer_id, info: transfer['bytes_expected'])
+                pre_calc = true
               else
-                notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
+                notify_progress(type: :transfer, session_id: @xfer_id, info: transfer['bytes_written'])
               end
+            when 'completed'
+              notify_progress(type: :end, session_id: @xfer_id)
+              break
+            when 'failed'
+              notify_progress(type: :end, session_id: @xfer_id)
+              raise Fasp::Error, transfer['error_desc']
+            when 'cancelled'
+              notify_progress(type: :end, session_id: @xfer_id)
+              raise Fasp::Error, 'Transfer cancelled by user'
+            else
+              notify_progress(type: :end, session_id: @xfer_id)
+              raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
             end
             sleep(1)
           end
@@ -121,6 +110,6 @@ module Aspera
         end
         return [:success]
       end # wait
-    end # AgentAspera
+    end # AgentAlpha
   end
 end

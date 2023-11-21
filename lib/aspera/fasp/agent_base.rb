@@ -18,7 +18,13 @@ module Aspera
           end
           return result
         end
-      end
+
+        def agent_list
+          Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|
+            file.start_with?('agent_') && !file.eql?('agent_base.rb')
+          end.map{|file|file.sub(/^agent_/, '').sub(/\.rb$/, '').to_sym}
+        end
+    end
       def wait_for_completion
         # list of: :success or "error message string"
         statuses = wait_for_transfers_completion
