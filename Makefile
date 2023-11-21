@@ -1,11 +1,8 @@
 # This Makefile expects being run with bash or zsh shell inside the top folder
-# cspell:ignore firstword noout pubout 
 
 # DIR_TOP: main folder of this project (with trailing slash)
 # if "" (empty) or "./" : execute "make" inside the main folder
 # alternatively : $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")/
-
-# cspell:ignore pubkey gemdir oneline demoaspera
 DIR_TOP=
 
 include $(DIR_TOP)common.mak
@@ -44,7 +41,7 @@ unsigned_gem: $(PATH_GEMFILE)
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
-clean_gems:
+clean_gems: clean
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
@@ -143,3 +140,4 @@ scan:
 	detect-secrets scan --baseline .secrets.baseline
 tidy:
 	rubocop $(DIR_LIB).
+# cspell:ignore pubkey gemdir oneline demoaspera firstword noout pubout
