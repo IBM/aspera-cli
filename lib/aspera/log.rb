@@ -39,6 +39,7 @@ class Logger
       end
     EOM
   end
+  # declare methods for all levels
   Logger::Severity.constants.each { |severity| make_methods(severity) }
 end
 
@@ -123,7 +124,7 @@ module Aspera
         end
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
       else
-        raise "unknown log type: #{new_log_type.class} #{new_log_type}"
+        raise "unknown log type: #{new_log_type}, use one of: #{LOG_TYPES.join(', ')}"
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
