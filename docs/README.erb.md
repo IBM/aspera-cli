@@ -134,7 +134,8 @@ If you want to use <%=tool%> with another server, and in order to make further c
 ```
 
 ```output
-updated: myserver
+Updated: myserver
+Saving config file.
 ```
 
 ```bash
@@ -142,7 +143,8 @@ updated: myserver
 ```
 
 ```output
-updated: default &rarr; server to myserver
+Updated: default: server <- myserver
+Saving config file.
 ```
 
 ```bash
@@ -4590,7 +4592,7 @@ Then execute the following command:
 
 This will get transfer information from the SHOD instance and tell the Azure ATS instance to download files.
 
-### node file information
+### Node file information
 
 When node api is used with an **Access key**, extra information can be retrieved, such as preview.
 
@@ -5452,7 +5454,7 @@ In this case, some of the `sync` parameters are filled by the related plugin usi
 
 Two JSON syntax are supported for option `sync_info`.
 
-### async JSON: API format
+### `async` JSON: API format
 
 It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
 This is the preferred syntax and allows a single session definition.
@@ -5460,7 +5462,7 @@ But there is no progress output nor error messages.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-### async JSON: Options mapping
+### `async` JSON: Options mapping
 
 <%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
@@ -5973,7 +5975,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 >
 > **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 
-#### server side and configuration
+#### Server side and configuration
 
 Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
 

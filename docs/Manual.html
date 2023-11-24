@@ -138,10 +138,12 @@ options. The following example will:</p>
 </ul>
 <div class="sourceCode" id="cb6"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update myserver <span class="at">--url</span><span class="op">=</span>ssh://demo.asperasoft.com:33001 <span class="at">--username</span><span class="op">=</span>asperaweb <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
-<pre class="output"><code>updated: myserver</code></pre>
+<pre class="output"><code>Updated: myserver
+Saving config file.</code></pre>
 <div class="sourceCode" id="cb8"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default server myserver</span></code></pre></div>
-<pre class="output"><code>updated: default &amp;rarr; server to myserver</code></pre>
+<pre class="output"><code>Updated: default: server &lt;- myserver
+Saving config file.</code></pre>
 <div class="sourceCode" id="cb10"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server browse /aspera-test-dir-large</span></code></pre></div>
 <pre class="output"><code>+------------+-----------+-----------+--------------+---------------------------+-------+
@@ -4817,7 +4819,7 @@ OPTIONS:
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: [direct], node, connect, httpgw, trsdk
+        --transfer=ENUM              Type of transfer agent: trsdk, [direct], httpgw, connect, node, alpha
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 
@@ -6611,7 +6613,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb385-1"><a href
 <p>This will get transfer information from the SHOD instance and tell
 the Azure ATS instance to download files.</p>
 <h2 data-number="8.9" id="node-file-information"><span
-class="header-section-number">8.9</span> node file information</h2>
+class="header-section-number">8.9</span> Node file information</h2>
 <p>When node api is used with an <strong>Access key</strong>, extra
 information can be retrieved, such as preview.</p>
 <blockquote>
@@ -7805,7 +7807,8 @@ token).</p>
 </blockquote>
 <p>Two JSON syntax are supported for option <code>sync_info</code>.</p>
 <h2 data-number="15.1" id="async-json-api-format"><span
-class="header-section-number">15.1</span> async JSON: API format</h2>
+class="header-section-number">15.1</span> <code>async</code> JSON: API
+format</h2>
 <p>It is the same payload as specified on the option <code>--conf</code>
 of <code>async</code> or in node API <code>/asyncs</code>. This is the
 preferred syntax and allows a single session definition. But there is no
@@ -7814,8 +7817,8 @@ progress output nor error messages.</p>
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22">IBM
 Developer Portal</a>.</p>
 <h2 data-number="15.2" id="async-json-options-mapping"><span
-class="header-section-number">15.2</span> async JSON: Options
-mapping</h2>
+class="header-section-number">15.2</span> <code>async</code> JSON:
+Options mapping</h2>
 <p><code>ascli</code> defines a JSON equivalent to regular
 <code>async</code>options. It is based on a JSON representation of
 <code>async</code> command line options. It allows definition of
@@ -8523,7 +8526,7 @@ provided with parameter <code>ascp_args</code> of option
 <code>transfer_info</code> .</p>
 </blockquote>
 <h3 data-number="19.2.2" id="server-side-and-configuration"><span
-class="header-section-number">19.2.2</span> server side and
+class="header-section-number">19.2.2</span> Server side and
 configuration</h3>
 <p>Virtually any transfer on a “repository” on a regular basis might
 emulate a hot folder.</p>
