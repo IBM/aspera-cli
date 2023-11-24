@@ -87,9 +87,10 @@ module Aspera
 
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
       def init_agents_and_options
-        # first thing : manage debug level (allows debugging of option parser)
-        early_debug_setup
+        # create formatter, in case there is an exception, it is used to display.
         @agents[:formatter] = Formatter.new
+        # second : manage debug level (allows debugging of option parser)
+        early_debug_setup
         @agents[:options] = Manager.new(PROGRAM_NAME)
         # give command line arguments to option manager
         options.parse_command_line(@argv)
@@ -228,6 +229,8 @@ module Aspera
           when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
           when /^--logger=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
           end
+        rescue => e
+          $stderr.puts("Error: #{e}")
         end
       end
 
