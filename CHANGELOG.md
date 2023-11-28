@@ -2,6 +2,8 @@
 
 * 4.16.0
 
+  * global: option `output` to redirect to a file instead of stdout
+
 * 4.15.0
 
   * General: removed many redundant options, more consistency between plugins, see below in "break".

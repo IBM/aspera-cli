@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/web_server_simple'
+require 'webrick'
 require 'aspera/log'
 require 'json'
 

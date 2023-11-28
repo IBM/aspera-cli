@@ -302,34 +302,34 @@ behavior:</p>
 <thead>
 <tr class="header">
 <th>env var</th>
-<th>description</th>
-<th>default</th>
-<th>example</th>
+<th>Description</th>
+<th>Default</th>
+<th>Example</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><code>ASCLI_HOME</code></td>
-<td>configuration folder (persistency)</td>
+<td>Configuration folder (persistency)</td>
 <td><code>$HOME/.aspera/ascli</code></td>
 <td><code>$HOME/.ascli_config</code></td>
 </tr>
 <tr class="even">
 <td><code>docker_args</code></td>
-<td>additional options to <code>podman</code></td>
+<td>Additional options to <code>podman</code></td>
 <td>&lt;empty&gt;</td>
 <td><code>--volume /Users:/Users</code></td>
 </tr>
 <tr class="odd">
 <td><code>image</code></td>
-<td>container image name</td>
+<td>Container image name</td>
 <td><code>martinlaurent/ascli</code></td>
 <td></td>
 </tr>
 <tr class="even">
 <td><code>version</code></td>
-<td>container image version</td>
-<td>latest</td>
+<td>Container image version</td>
+<td>Latest</td>
 <td><code>4.8.0.pre</code></td>
 </tr>
 </tbody>
@@ -1214,6 +1214,7 @@ message</li>
 class="header-section-number">4.5</span> Output</h2>
 <p>Command execution will result in output (terminal, stdout/stderr).
 The information displayed depends on the action.</p>
+<p>To redirect results to a file, use option <code>output</code>.</p>
 <h3 data-number="4.5.1" id="types-of-output-data"><span
 class="header-section-number">4.5.1</span> Types of output data</h3>
 <p>Depending on action, the output will contain:</p>
@@ -1259,25 +1260,8 @@ parameter, supporting:</p>
 <li><code>yaml</code> : YAML</li>
 <li><code>csv</code> : Comma Separated Values</li>
 </ul>
-<h3 data-number="4.5.3" id="entity-identifier"><span
-class="header-section-number">4.5.3</span> Entity identifier</h3>
-<p>When a command is executed on a single entity, the entity is
-identified by a unique identifier that follows the command:
-e.g. <code>ascli aoc admin res user show 1234</code> where
-<code>1234</code> is the user’s identifier.</p>
-<blockquote>
-<p><strong>Note:</strong> The legacy option <code>id</code> is
-deprecated: <code>--id=1234</code> as it does not provide the
-possibility to have sub-entities.</p>
-</blockquote>
-<p>Only some commands provide the following capability: If the entity
-can also be uniquely identified by a name, then the name can be used
-instead of the identifier, using the <strong>percent selector</strong>:
-<code>ascli aoc admin res user show %name:john</code> where
-<code>john</code> is the user name.</p>
-<p>Syntax: <code>%&lt;field&gt;:&lt;value&gt;</code></p>
-<h3 data-number="4.5.4" id="verbosity-of-output"><span
-class="header-section-number">4.5.4</span> Verbosity of output</h3>
+<h3 data-number="4.5.3" id="verbosity-of-output"><span
+class="header-section-number">4.5.3</span> Verbosity of output</h3>
 <p>Output messages are categorized in 3 types:</p>
 <ul>
 <li><code>info</code> output contain additional information, such as
@@ -1299,9 +1283,9 @@ messages</li>
 <code>display</code> is <code>data</code>, to allows piping results. To
 hide secrets from output, set option <code>show_secrets</code> to
 <code>no</code>.</p>
-<h3 data-number="4.5.5"
+<h3 data-number="4.5.4"
 id="option-fields-selection-of-output-object-properties"><span
-class="header-section-number">4.5.5</span> Option: <code>fields</code>:
+class="header-section-number">4.5.4</span> Option: <code>fields</code>:
 Selection of output object properties</h3>
 <p>By default, a table output will display one line per entry, and
 columns for each properties. Depending on the command, columns may
@@ -1330,9 +1314,9 @@ and add <code>b</code></li>
 <li><code>@ruby:'/^server/'</code> : Display all properties whose name
 begin with <code>server</code></li>
 </ul>
-<h3 data-number="4.5.6"
+<h3 data-number="4.5.5"
 id="option-select-filter-on-columns-values-for-object_list"><span
-class="header-section-number">4.5.6</span>
+class="header-section-number">4.5.5</span>
 <a id="option_select"></a>Option: <code>select</code>: Filter on columns
 values for <code>object_list</code></h3>
 <p>Table output can be filtered using option <code>select</code>. This
@@ -1357,6 +1341,25 @@ filtering parameters to the API when listing elements.</p>
 <p>In above example, the same result is obtained with option:</p>
 <div class="sourceCode" id="cb101"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--select=@ruby:</span><span class="st">&#39;-&gt;(i){i[&quot;ats_admin&quot;]}&#39;</span></span></code></pre></div>
+<h3 data-number="4.5.6" id="percent-selector"><span
+class="header-section-number">4.5.6</span> Percent selector</h3>
+<p>The percent selector allows identification of an entity by another
+unique identifier other than the native identifier.</p>
+<p>When a command is executed on a single entity, the entity is
+identified by a unique identifier that follows the command:
+e.g. <code>ascli aoc admin res user show 1234</code> where
+<code>1234</code> is the user’s identifier.</p>
+<p>Some commands provide the following capability: If the entity can
+also be uniquely identified by a name, then the name can be used instead
+of the identifier, using the <strong>percent selector</strong>:
+<code>ascli aoc admin res user show %name:john</code> where
+<code>john</code> is the user name.</p>
+<p>Syntax: <code>%&lt;field&gt;:&lt;value&gt;</code></p>
+<blockquote>
+<p><strong>Note:</strong> The legacy option <code>id</code> is
+deprecated: <code>--id=1234</code> (options have a single value and thus
+do not provide the possibility to identify sub-entities)</p>
+</blockquote>
 <h2 data-number="4.6" id="extended-value-syntax"><span
 class="header-section-number">4.6</span> <a id="extended"></a>Extended
 Value Syntax</h2>
@@ -1377,44 +1380,44 @@ and are recognized by the prefix: <code>@</code> and suffix
 <p>The following decoders are supported:</p>
 <table>
 <colgroup>
-<col style="width: 21%" />
-<col style="width: 26%" />
+<col style="width: 23%" />
+<col style="width: 23%" />
 <col style="width: 21%" />
 <col style="width: 30%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th>decoder</th>
-<th>parameter</th>
-<th>returns</th>
-<th>description</th>
+<th>Decoder</th>
+<th>Parameter</th>
+<th>Returns</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>base64</td>
+<td><code>base64</code></td>
 <td>String</td>
 <td>String</td>
-<td>decode a base64 encoded string</td>
+<td>Decode a base64 encoded string</td>
 </tr>
 <tr class="even">
 <td><code>csvt</code></td>
 <td>String</td>
 <td>Array</td>
-<td>decode a titled CSV value</td>
+<td>Decode a titled CSV value</td>
 </tr>
 <tr class="odd">
 <td><code>env</code></td>
 <td>String</td>
 <td>String</td>
-<td>read from a named env var name,
+<td>Read from a named env var name,
 e.g. <code>--password=@env:MYPASSVAR</code></td>
 </tr>
 <tr class="even">
 <td><code>file</code></td>
 <td>String</td>
 <td>String</td>
-<td>read value from specified file (prefix <code>~/</code> is replaced
+<td>Read value from specified file (prefix <code>~/</code> is replaced
 with the users home folder),
 e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 </tr>
@@ -1422,19 +1425,19 @@ e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 <td><code>json</code></td>
 <td>String</td>
 <td>Any</td>
-<td>decode JSON values (convenient to provide complex structures)</td>
+<td>Decode JSON values (convenient to provide complex structures)</td>
 </tr>
 <tr class="even">
 <td><code>lines</code></td>
 <td>String</td>
 <td>Array</td>
-<td>split a string in multiple lines and return an array</td>
+<td>Split a string in multiple lines and return an array</td>
 </tr>
 <tr class="odd">
 <td><code>list</code></td>
 <td>String</td>
 <td>Array</td>
-<td>split a string in multiple items taking first character as separator
+<td>Split a string in multiple items taking first character as separator
 and return an array</td>
 </tr>
 <tr class="even">
@@ -1447,23 +1450,23 @@ and return an array</td>
 <td><code>path</code></td>
 <td>String</td>
 <td>String</td>
-<td>performs path expansion on specified path (prefix <code>~/</code> is
+<td>Performs path expansion on specified path (prefix <code>~/</code> is
 replaced with the users home folder),
 e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 </tr>
 <tr class="even">
-<td>preset</td>
+<td><code>preset</code></td>
 <td>String</td>
 <td>Hash</td>
-<td>get whole option preset value by name. Sub-values can also be used
+<td>Get whole option preset value by name. Sub-values can also be used
 using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <code>conf[foo][bar]</code></td>
 </tr>
 <tr class="odd">
-<td>extend</td>
+<td><code>extend</code></td>
 <td>String</td>
 <td>String</td>
-<td>evaluates embedded extended value syntax in string</td>
+<td>Evaluates embedded extended value syntax in string</td>
 </tr>
 <tr class="even">
 <td><code>re</code></td>
@@ -1475,10 +1478,10 @@ using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <td><code>ruby</code></td>
 <td>String</td>
 <td>Any</td>
-<td>execute specified Ruby code</td>
+<td>Execute specified Ruby code</td>
 </tr>
 <tr class="even">
-<td>secret</td>
+<td><code>secret</code></td>
 <td>None</td>
 <td>String</td>
 <td>Ask password interactively (hides input)</td>
@@ -1487,20 +1490,20 @@ using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <td><code>stdin</code></td>
 <td>None</td>
 <td>String</td>
-<td>read from stdin (no value on right)</td>
+<td>Read from stdin (no value on right)</td>
 </tr>
 <tr class="even">
 <td><code>uri</code></td>
 <td>String</td>
 <td>String</td>
-<td>read value from specified URL,
+<td>Read value from specified URL,
 e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 </tr>
 <tr class="odd">
 <td><code>val</code></td>
 <td>String</td>
 <td>String</td>
-<td>prevent decoders on the right to be decoded.
+<td>Prevent decoders on the right to be decoded.
 e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
 to value <code>@file:foo</code>.</td>
 </tr>
@@ -1508,13 +1511,13 @@ to value <code>@file:foo</code>.</td>
 <td><code>yaml</code></td>
 <td>String</td>
 <td>Any</td>
-<td>decode YAML</td>
+<td>Decode YAML</td>
 </tr>
 <tr class="odd">
 <td><code>zlib</code></td>
 <td>String</td>
 <td>String</td>
-<td>un-compress data</td>
+<td>Un-compress zlib data</td>
 </tr>
 </tbody>
 </table>
@@ -2194,18 +2197,18 @@ It’s also available when using the <code>show</code> command of
 <table>
 <thead>
 <tr class="header">
-<th>option</th>
-<th>description</th>
+<th>Option</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>text</td>
-<td>display text instead of image (Bool)</td>
+<td>Display text instead of image (Bool)</td>
 </tr>
 <tr class="even">
 <td>double</td>
-<td>display double text resolution (half characters) (Bool)</td>
+<td>Display double text resolution (half characters) (Bool)</td>
 </tr>
 <tr class="odd">
 <td>font_ratio</td>
@@ -2298,8 +2301,8 @@ adjusted using option <code>http_options</code>:</p>
 <table>
 <thead>
 <tr class="header">
-<th>parameter</th>
-<th>default</th>
+<th>Parameter</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
@@ -2562,9 +2565,9 @@ parameters to control multi-session, Web Socket Session and Resume
 policy:</p>
 <table>
 <colgroup>
-<col style="width: 52%" />
-<col style="width: 16%" />
-<col style="width: 30%" />
+<col style="width: 54%" />
+<col style="width: 15%" />
+<col style="width: 29%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -2797,17 +2800,17 @@ option <code>transfer_info</code> are:</p>
 <tr class="even">
 <td>username</td>
 <td>string</td>
-<td>node api user or access key</br>Mandatory</td>
+<td>Node api user or access key</br>Mandatory</td>
 </tr>
 <tr class="odd">
 <td>password</td>
 <td>string</td>
-<td>password, secret or bearer token</br>Mandatory</td>
+<td>Password, secret or bearer token</br>Mandatory</td>
 </tr>
 <tr class="even">
 <td>root_id</td>
 <td>string</td>
-<td>password or secret</br>Mandatory only for bearer token</td>
+<td>Password or secret</br>Mandatory only for bearer token</td>
 </tr>
 </tbody>
 </table>
@@ -2854,17 +2857,20 @@ not allowed.</p>
 <tr class="even">
 <td>upload_chunk_size</td>
 <td>int</td>
-<td>Size in bytes of chunks for upload<br/>Default: 64000</td>
+<td>Size in bytes of chunks for upload<br/>Default:
+<code>64000</code></td>
 </tr>
 <tr class="odd">
 <td>api_version</td>
 <td>string</td>
-<td>v1 or v2, for force use of version<br/>Default: v2</td>
+<td>Force use of version (<code>v1</code>, <code>v2</code>)<br/>Default:
+<code>v2</code></td>
 </tr>
 <tr class="even">
 <td>synchronous</td>
 <td>bool</td>
-<td>wait for each message acknowledgment<br/>Default: false</td>
+<td>Wait for each message acknowledgment<br/>Default:
+<code>false</code></td>
 </tr>
 </tbody>
 </table>
@@ -4757,6 +4763,7 @@ OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
+        --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
@@ -5468,15 +5475,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb278-1"><a href
 <code>notify_template</code> :</p>
 <p><code>mytemplate.erb</code>:</p>
 <div class="sourceCode" id="cb279"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb279-1"><a href="#cb279-1" aria-hidden="true" tabindex="-1"></a><span class="ex">From:</span> <span class="op">&lt;</span>%=from_name%<span class="op">&gt;</span> <span class="op">&lt;&lt;%=from_email%&gt;&gt;</span></span>
-<span id="cb279-2"><a href="#cb279-2" aria-hidden="true" tabindex="-1"></a><span class="st">To: &lt;&lt;%=ev[&#39;user_email&#39;]%&gt;&gt;</span></span>
-<span id="cb279-3"><a href="#cb279-3" aria-hidden="true" tabindex="-1"></a><span class="st">Subject: &lt;%=ev[&#39;files_completed&#39;]%&gt; files received</span></span>
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb279-1"><a href="#cb279-1" aria-hidden="true" tabindex="-1"></a><span class="fu">From</span><span class="kw">:</span><span class="at"> &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;</span></span>
+<span id="cb279-2"><a href="#cb279-2" aria-hidden="true" tabindex="-1"></a><span class="fu">To</span><span class="kw">:</span><span class="at"> &lt;&lt;%=ev[&#39;user_email&#39;]%&gt;&gt;</span></span>
+<span id="cb279-3"><a href="#cb279-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Subject</span><span class="kw">:</span><span class="at"> &lt;%=ev[&#39;files_completed&#39;]%&gt; files received</span></span>
 <span id="cb279-4"><a href="#cb279-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb279-5"><a href="#cb279-5" aria-hidden="true" tabindex="-1"></a><span class="st">Dear &lt;%=ev[:user_email.to_s]%&gt;,</span></span>
-<span id="cb279-6"><a href="#cb279-6" aria-hidden="true" tabindex="-1"></a><span class="st">We received &lt;%=ev[&#39;files_completed&#39;]%&gt; files for a total of &lt;%=ev[&#39;transferred_bytes&#39;]%&gt; bytes, starting with file:</span></span>
-<span id="cb279-7"><a href="#cb279-7" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;%=ev[&#39;content&#39;]%&gt;</span></span>
+<span id="cb279-5"><a href="#cb279-5" aria-hidden="true" tabindex="-1"></a><span class="at">Dear &lt;%=ev[:user_email.to_s]%&gt;,</span></span>
+<span id="cb279-6"><a href="#cb279-6" aria-hidden="true" tabindex="-1"></a><span class="fu">We received &lt;%=ev[&#39;files_completed&#39;]%&gt; files for a total of &lt;%=ev[&#39;transferred_bytes&#39;]%&gt; bytes, starting with file</span><span class="kw">:</span></span>
+<span id="cb279-7"><a href="#cb279-7" aria-hidden="true" tabindex="-1"></a><span class="at">&lt;%=ev[&#39;content&#39;]%&gt;</span></span>
 <span id="cb279-8"><a href="#cb279-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb279-9"><a href="#cb279-9" aria-hidden="true" tabindex="-1"></a><span class="st">Thank you.</span></span></code></pre></div>
+<span id="cb279-9"><a href="#cb279-9" aria-hidden="true" tabindex="-1"></a><span class="at">Thank you.</span></span></code></pre></div>
 <p>The environment provided contains the following additional
 variable:</p>
 <ul>
@@ -7336,57 +7343,56 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href
 <tr class="odd">
 <td>url</td>
 <td>string</td>
-<td><a href="http://localhost:8080"
-class="uri">http://localhost:8080</a></td>
-<td>Defines the base url on which requests are listened</td>
+<td>http://localhost:8080</td>
+<td>Base url on which requests are listened</td>
 </tr>
 <tr class="even">
 <td>certificate</td>
 <td>hash</td>
 <td>nil</td>
-<td>used to define certificate if https is used</td>
+<td>Certificate information (if HTTPS)</td>
 </tr>
 <tr class="odd">
 <td>certificate.key</td>
 <td>string</td>
 <td>nil</td>
-<td>path to private key file</td>
+<td>Path to private key file</td>
 </tr>
 <tr class="even">
 <td>certificate.cert</td>
 <td>string</td>
 <td>nil</td>
-<td>path to certificate</td>
+<td>Path to certificate</td>
 </tr>
 <tr class="odd">
 <td>certificate.chain</td>
 <td>string</td>
 <td>nil</td>
-<td>path to intermediary certificates</td>
+<td>Path to intermediary certificates</td>
 </tr>
 <tr class="even">
 <td>processing</td>
 <td>hash</td>
 <td>nil</td>
-<td>behavior of post processing</td>
+<td>Behavior of post processing</td>
 </tr>
 <tr class="odd">
 <td>processing.script_folder</td>
 <td>string</td>
 <td>.</td>
-<td>prefix added to script path</td>
+<td>Prefix added to script path</td>
 </tr>
 <tr class="even">
 <td>processing.fail_on_error</td>
 <td>bool</td>
 <td>false</td>
-<td>if true and process exit with non zero, then fail</td>
+<td>Fail if true and process exit with non zero</td>
 </tr>
 <tr class="odd">
 <td>processing.timeout_seconds</td>
 <td>integer</td>
 <td>60</td>
-<td>processing script is killed if takes more time</td>
+<td>Max. execution time before script is killed</td>
 </tr>
 </tbody>
 </table>
@@ -7593,11 +7599,11 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb434-1"><a href
 <span id="cb434-3"><a href="#cb434-3" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> health</span>
 <span id="cb434-4"><a href="#cb434-4" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> login_methods</span>
 <span id="cb434-5"><a href="#cb434-5" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> me</span>
-<span id="cb434-6"><a href="#cb434-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--box</span><span class="op">=</span>sent <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--format</span><span class="op">=</span>csv <span class="at">--display</span><span class="op">=</span>data <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
-<span id="cb434-7"><a href="#cb434-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--format</span><span class="op">=</span>csv <span class="at">--display</span><span class="op">=</span>data <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
+<span id="cb434-6"><a href="#cb434-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--box</span><span class="op">=</span>sent <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs2</span>
+<span id="cb434-7"><a href="#cb434-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs1</span>
 <span id="cb434-8"><a href="#cb434-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:5}&#39;</span></span>
-<span id="cb434-9"><a href="#cb434-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
-<span id="cb434-10"><a href="#cb434-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span></span>
+<span id="cb434-9"><a href="#cb434-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id1</span>
+<span id="cb434-10"><a href="#cb434-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id2</span>
 <span id="cb434-11"><a href="#cb434-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--link</span><span class="op">=</span>https://app.example.com/recv_from_user_path</span>
 <span id="cb434-12"><a href="#cb434-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:10}&#39;</span></span>
 <span id="cb434-13"><a href="#cb434-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_db_id1 <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
@@ -8194,49 +8200,49 @@ with the following fields:</p>
 <td><code>tls</code></td>
 <td>true</td>
 <td>true</td>
-<td>enable STARTTLS (port 587)</td>
+<td>Enable STARTTLS (port 587)</td>
 </tr>
 <tr class="odd">
 <td><code>ssl</code></td>
 <td>false</td>
 <td>false</td>
-<td>enable TLS (port 465)</td>
+<td>Enable TLS (port 465)</td>
 </tr>
 <tr class="even">
 <td><code>port</code></td>
 <td>587 or 465 or 25</td>
 <td>587</td>
-<td>port for service</td>
+<td>Port for service</td>
 </tr>
 <tr class="odd">
 <td><code>domain</code></td>
 <td>domain of server</td>
 <td>gmail.com</td>
-<td>email domain of user</td>
+<td>Email domain of user</td>
 </tr>
 <tr class="even">
 <td><code>username</code></td>
 <td>-</td>
 <td>john@example.com</td>
-<td>user to authenticate on SMTP server, leave empty for open auth.</td>
+<td>User to authenticate on SMTP server, leave empty for open auth.</td>
 </tr>
 <tr class="odd">
 <td><code>password</code></td>
 <td>-</td>
 <td>my_password_here</td>
-<td>password for above username</td>
+<td>Password for above username</td>
 </tr>
 <tr class="even">
 <td><code>from_email</code></td>
 <td>username if defined</td>
 <td>johnny@example.com</td>
-<td>address used if receiver replies</td>
+<td>Address used if receiver replies</td>
 </tr>
 <tr class="odd">
 <td><code>from_name</code></td>
 <td>same as email</td>
 <td>John Wayne</td>
-<td>display name of sender</td>
+<td>Display name of sender</td>
 </tr>
 </tbody>
 </table>
@@ -8350,60 +8356,60 @@ href="#transferspec"><em>transfer-spec</em></a>.</p>
 </blockquote>
 <h2 data-number="18.1" id="comparison-of-interfaces"><span
 class="header-section-number">18.1</span> Comparison of interfaces</h2>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 23%" />
-<col style="width: 16%" />
+<col style="width: 25%" />
+<col style="width: 15%" />
+<col style="width: 36%" />
+<col style="width: 8%" />
 <col style="width: 13%" />
-<col style="width: 22%" />
-<col style="width: 23%" />
 </colgroup>
 <thead>
 <tr class="header">
 <th>feature/tool</th>
-<th><code>asession</code></th>
-<th><code>ascp</code></th>
-<th>FaspManager</th>
 <th>Transfer SDK</th>
+<th>FaspManager</th>
+<th><code>ascp</code></th>
+<th><code>asession</code></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>language integration</td>
-<td>any</td>
-<td>any</td>
+<td>Many</td>
 <td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td>
-<td>many</td>
+<td>Any</td>
+<td>Any</td>
 </tr>
 <tr class="even">
 <td>required additional components to <code>ascp</code></td>
-<td>Ruby<br/>Aspera</td>
+<td>Daemon</td>
+<td>Library<br/>(+headers)</td>
 <td>-</td>
-<td>library<br/>(headers)</td>
-<td>daemon</td>
+<td>Ruby<br/>Aspera gem</td>
 </tr>
 <tr class="odd">
 <td>startup</td>
+<td>Daemon</td>
+<td>API</td>
+<td>Command line arguments</td>
 <td>JSON on stdin<br/>(standard
 APIs:<br/>JSON.generate<br/>Process.spawn)</td>
-<td>command line arguments</td>
-<td>API</td>
-<td>daemon</td>
 </tr>
 <tr class="even">
 <td>events</td>
+<td>Poll</td>
+<td>Callback</td>
+<td>Possibility to open management port<br/>and proprietary text
+syntax</td>
 <td>JSON on stdout</td>
-<td>none by default<br/>or need to open management port<br/>and
-proprietary text syntax</td>
-<td>callback</td>
-<td>callback</td>
 </tr>
 <tr class="odd">
 <td>platforms</td>
-<td>any with Ruby and <code>ascp</code></td>
-<td>any with <code>ascp</code> (and SDK if compiled)</td>
-<td>any with <code>ascp</code></td>
-<td>any with <code>ascp</code> and transfer daemon</td>
+<td>Any with <code>ascp</code> and transfer daemon</td>
+<td>Any with <code>ascp</code> (and SDK if compiled)</td>
+<td>Any with <code>ascp</code></td>
+<td>Any with Ruby and <code>ascp</code></td>
 </tr>
 </tbody>
 </table>

@@ -122,7 +122,8 @@ To test with Aspera demo transfer server, setup the environment and then test:
 +------------+--------+-----------+-------+---------------------------+-----------------------+
 ```
 
-If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options. The following example will:
+If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options.
+The following example will:
 
 - create a <%=prst%>
 - define it as default for `server` plugin
@@ -305,12 +306,12 @@ A convenience sample script is also provided: download the script [`d<%=cmd%>`](
 
 Some environment variables can be set for this script to adapt its behavior:
 
-| env var        | description                        | default                  | example                  |
+| env var        | Description                        | Default                  | Example                  |
 |----------------|------------------------------------|--------------------------|--------------------------|
-| `<%=evp%>HOME` | configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
-| `docker_args`  | additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| `image`        | container image name               | `<%=container_image%>`    |                          |
-| `version`      | container image version            | latest                   | `4.8.0.pre`              |
+| `<%=evp%>HOME` | Configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
+| `docker_args`  | Additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
+| `image`        | Container image name               | `<%=container_image%>`    |                          |
+| `version`      | Container image version            | Latest                   | `4.8.0.pre`              |
 
 The wrapping script maps the folder `$<%=evp%>HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
 (value expected in the container).
@@ -1181,6 +1182,8 @@ The behavior can be controlled with:
 Command execution will result in output (terminal, stdout/stderr).
 The information displayed depends on the action.
 
+To redirect results to a file, use option `output`.
+
 #### Types of output data
 
 Depending on action, the output will contain:
@@ -1214,17 +1217,6 @@ The style of output can be set using the `format` parameter, supporting:
 - `jsonpp` : JSON pretty printed
 - `yaml` : YAML
 - `csv` : Comma Separated Values
-
-#### Entity identifier
-
-When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command: e.g. `<%=cmd%> aoc admin res user show 1234` where `1234` is the user's identifier.
-
-> **Note:** The legacy option `id` is deprecated: `--id=1234` as it does not provide the possibility to have sub-entities.
-
-Only some commands provide the following capability:
-If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin res user show %name:john` where `john` is the user name.
-
-Syntax: `%<field>:<value>`
 
 #### Verbosity of output
 
@@ -1295,6 +1287,20 @@ In above example, the same result is obtained with option:
 --select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
+#### Percent selector
+
+The percent selector allows identification of an entity by another unique identifier other than the native identifier.
+
+When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command:
+e.g. `<%=cmd%> aoc admin res user show 1234` where `1234` is the user's identifier.
+
+Some commands provide the following capability:
+If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin res user show %name:john` where `john` is the user name.
+
+Syntax: `%<field>:<value>`
+
+> **Note:** The legacy option `id` is deprecated: `--id=1234` (options have a single value and thus do not provide the possibility to identify sub-entities)
+
 ### <a id="extended"></a>Extended Value Syntax
 
 Most options and arguments are specified by a simple string (e.g. username or url).
@@ -1313,27 +1319,27 @@ Decoders act like a function with its parameter on right hand side and are recog
 
 The following decoders are supported:
 
-| decoder | parameter | returns | description |
-|---------|-----------|---------|-------------|
-| base64  | String    | String  | decode a base64 encoded string
-| `csvt`  | String    | Array   | decode a titled CSV value
-| `env`   | String    | String  | read from a named env var name, e.g. `--password=@env:MYPASSVAR`
-| `file`  | String    | String  | read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-| `json`  | String    | Any     | decode JSON values (convenient to provide complex structures)
-| `lines` | String    | Array   | split a string in multiple lines and return an array
-| `list`  | String    | Array   | split a string in multiple items taking first character as separator and return an array
-| `none`  | None      | Nil     | A null value
-| `path`  | String    | String  | performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
-| preset  | String    | Hash    | get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
-| extend  | String    | String  | evaluates embedded extended value syntax in string
-| `re`    | String    | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
-| `ruby`  | String    | Any     | execute specified Ruby code
-| secret  | None      | String  | Ask password interactively (hides input)
-| `stdin` | None      | String  | read from stdin (no value on right)
-| `uri`   | String    | String  | read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
-| `val`   | String    | String  | prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
-| `yaml`  | String    | Any     | decode YAML
-| `zlib`  | String    | String  | un-compress data
+| Decoder  | Parameter| Returns | Description |
+|----------|----------|---------|-------------|
+| `base64` | String   | String  | Decode a base64 encoded string
+| `csvt`   | String   | Array   | Decode a titled CSV value
+| `env`    | String   | String  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR`
+| `file`   | String   | String  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
+| `json`   | String   | Any     | Decode JSON values (convenient to provide complex structures)
+| `lines`  | String   | Array   | Split a string in multiple lines and return an array
+| `list`   | String   | Array   | Split a string in multiple items taking first character as separator and return an array
+| `none`   | None     | Nil     | A null value
+| `path`   | String   | String  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
+| `preset` | String   | Hash    | Get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
+| `extend` | String   | String  | Evaluates embedded extended value syntax in string
+| `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
+| `ruby`   | String   | Any     | Execute specified Ruby code
+| `secret` | None     | String  | Ask password interactively (hides input)
+| `stdin`  | None     | String  | Read from stdin (no value on right)
+| `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
+| `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
+| `yaml`   | String   | Any     | Decode YAML
+| `zlib`   | String   | String  | Un-compress zlib data
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -1996,10 +2002,10 @@ It's also available when using the `show` command of `preview` plugin.
 
 The following options can be specified in the option `query`:
 
-| option     | description |
+| Option     | Description |
 |------------|-------------|
-| text       | display text instead of image (Bool) |
-| double     | display double text resolution (half characters) (Bool) |
+| text       | Display text instead of image (Bool) |
+| double     | Display double text resolution (half characters) (Bool) |
 | font_ratio | Font height/width ratio in terminal (Float) |
 
 ### <a id="graphical"></a>Graphical Interactions: Browser and Text Editor
@@ -2066,7 +2072,7 @@ To ignore SSL certificate for specific address/port, use option `ignore_certific
 
 HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 
-| parameter            | default |
+| Parameter            | Default |
 |----------------------|---------|
 | `read_timeout`       | 60      |
 | `write_timeout`      | 60      |
@@ -2336,18 +2342,18 @@ Refer to section [FASP](#client).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
 
-| Name                 | Type  | Description |
-|----------------------|-------|-------------|
-| `wss`                | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `ascp_args`          | Array | Array of strings with native `ascp` arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
-| `spawn_timeout_sec`  | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
-| `spawn_delay_sec`    | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
-| `multi_incr_udp`     | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
-| `resume`             | Hash  | Resume<br/>parameters<br/>See below |
-| `resume.iter_max`    | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
+| Name                   | Type  | Description |
+|------------------------|-------|-------------|
+| `wss`                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| `ascp_args`            | Array | Array of strings with native `ascp` arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
+| `spawn_timeout_sec`    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
+| `spawn_delay_sec`      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
+| `multi_incr_udp`       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
+| `resume`               | Hash  | Resume<br/>parameters<br/>See below |
+| `resume.iter_max`      | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
 | `resume.sleep_initial` | int   | Resume<br/>First Sleep before retry<br/>Default: 2 |
 | `resume.sleep_factor`  | int   | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
-| `resume.sleep_max`   | int   | Resume<br/>Default: 60 |
+| `resume.sleep_max`     | int   | Resume<br/>Default: 60 |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is:
@@ -2479,9 +2485,9 @@ Parameters provided in option `transfer_info` are:
 | Name     | Type   | Description |
 |----------|--------|-------------|
 | url      | string | URL of the node API</br>Mandatory |
-| username | string | node api user or access key</br>Mandatory |
-| password | string | password, secret or bearer token</br>Mandatory |
-| root_id  | string | password or secret</br>Mandatory only for bearer token |
+| username | string | Node api user or access key</br>Mandatory |
+| password | string | Password, secret or bearer token</br>Mandatory |
+| root_id  | string | Password or secret</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
 
@@ -2509,9 +2515,9 @@ Parameters provided in option `transfer_info` are:
 | Name                   | Type   | Description                           |
 |------------------------|--------|---------------------------------------|
 | url                    | string | URL of the HTTP GW</br>Mandatory      |
-| upload_chunk_size      | int    | Size in bytes of chunks for upload<br/>Default: 64000    |
-| api_version            | string | v1 or v2, for force use of version<br/>Default: v2       |
-| synchronous            | bool   | wait for each message acknowledgment<br/>Default: false  |
+| upload_chunk_size      | int    | Size in bytes of chunks for upload<br/>Default: `64000`    |
+| api_version            | string | Force use of version (`v1`, `v2`)<br/>Default: `v2`       |
+| synchronous            | bool   | Wait for each message acknowledgment<br/>Default: `false`  |
 
 Example:
 
@@ -3521,7 +3527,7 @@ It can also support filters and send notification using option `notify_to`. a te
 
 `mytemplate.erb`:
 
-```bash
+```yaml
 From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>
 To: <<%='<'%>%=ev['user_email']%>>
 Subject: <%='<'%>%=ev['files_completed']%> files received
@@ -5106,15 +5112,15 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | string  | <http://localhost:8080>  | Defines the base url on which requests are listened |
-| certificate                | hash    | nil                    | used to define certificate if https is used         |
-| certificate.key            | string  | nil                    | path to private key file                            |
-| certificate.cert           | string  | nil                    | path to certificate                                 |
-| certificate.chain          | string  | nil                    | path to intermediary certificates                   |
-| processing                 | hash    | nil                    | behavior of post processing                        |
-| processing.script_folder   | string  | .                      | prefix added to script path                         |
-| processing.fail_on_error   | bool    | false                  | if true and process exit with non zero, then fail   |
-| processing.timeout_seconds | integer | 60                     | processing script is killed if takes more time      |
+| url                        | string  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
+| certificate                | hash    | nil                    | Certificate information (if HTTPS)                  |
+| certificate.key            | string  | nil                    | Path to private key file                            |
+| certificate.cert           | string  | nil                    | Path to certificate                                 |
+| certificate.chain          | string  | nil                    | Path to intermediary certificates                   |
+| processing                 | hash    | nil                    | Behavior of post processing                         |
+| processing.script_folder   | string  | .                      | Prefix added to script path                         |
+| processing.fail_on_error   | bool    | false                  | Fail if true and process exit with non zero         |
+| processing.timeout_seconds | integer | 60                     | Max. execution time before script is killed         |
 
 Parameter `url` defines:
 
@@ -5773,14 +5779,14 @@ The `smtp` option is a `Hash` (extended value) with the following fields:
 | field        | default             | example                    | description                      |
 |--------------|---------------------|----------------------------|----------------------------------|
 | `server`     | -                   | smtp.gmail.com             | SMTP server address              |
-| `tls`        | true                | true                       | enable STARTTLS (port 587)       |
-| `ssl`        | false               | false                      | enable TLS (port 465)            |
-| `port`       | 587 or 465 or 25    | 587                        | port for service                 |
-| `domain`     | domain of server    | gmail.com                  | email domain of user             |
-| `username`   | -                   | john@example.com           | user to authenticate on SMTP server, leave empty for open auth. |
-| `password`   | -                   | my_password_here           | password for above username      |
-| `from_email` | username if defined | johnny@example.com         | address used if receiver replies |
-| `from_name`  | same as email       | John Wayne                 | display name of sender           |
+| `tls`        | true                | true                       | Enable STARTTLS (port 587)       |
+| `ssl`        | false               | false                      | Enable TLS (port 465)            |
+| `port`       | 587 or 465 or 25    | 587                        | Port for service                 |
+| `domain`     | domain of server    | gmail.com                  | Email domain of user             |
+| `username`   | -                   | john@example.com           | User to authenticate on SMTP server, leave empty for open auth. |
+| `password`   | -                   | my_password_here           | Password for above username      |
+| `from_email` | username if defined | johnny@example.com         | Address used if receiver replies |
+| `from_name`  | same as email       | John Wayne                 | Display name of sender           |
 <!-- markdownlint-enable MD034 -->
 
 ### Example of configuration
@@ -5889,13 +5895,13 @@ There are special "extended" <%=trspec%> parameters supported by `asession`:
 
 ### Comparison of interfaces
 
-| feature/tool | `asession` | `ascp` | FaspManager | Transfer SDK |
-|--------------|----------|--------|-------------|--------------|
-| language integration | any | any | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | many |
-| required additional components to `ascp` | Ruby<br/>Aspera | - | library<br/>(headers) | daemon |
-| startup | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) | command line arguments | API | daemon |
-| events | JSON on stdout | none by default<br/>or need to open management port<br/>and proprietary text syntax | callback | callback |
-| platforms | any with Ruby and `ascp` | any with `ascp` (and SDK if compiled) | any with `ascp` | any with `ascp` and transfer daemon |
+| feature/tool          | Transfer SDK | FaspManager                      | `ascp` | `asession` |
+|-----------------------|--------------|---------------------------------|--------|------------|
+| language integration  | Many         | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | Any    | Any        |
+| required additional components to `ascp` | Daemon       | Library<br/>(+headers) | - | Ruby<br/>Aspera gem |
+| startup               | Daemon       | API | Command line arguments | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) |
+| events                | Poll     | Callback | Possibility to open management port<br/>and proprietary text syntax | JSON on stdout |
+| platforms             | Any with `ascp` and transfer daemon | Any with `ascp` (and SDK if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
 ### Simple session
 

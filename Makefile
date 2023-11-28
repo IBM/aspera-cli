@@ -41,14 +41,18 @@ unsigned_gem: $(PATH_GEMFILE)
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
-clean_gems: clean
-	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
+clean_gems: clean_gems_installed
+	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
+install_gems: $(DIR_TOP).gems_checked
+# grpc is installed on the side , if needed
+install_all_gems: install_gems
+	gem install grpc
 clean:: clean_gem
 ##################################
 # Gem certificate
-# updates the existing certificate, keeping the maintainer email
+# Update the existing certificate, keeping the maintainer email
 update-cert: gem_check_signing_key
 	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	gem cert \
@@ -56,7 +60,7 @@ update-cert: gem_check_signing_key
 	--certificate $$cert_chain \
 	--private-key $$SIGNING_KEY \
 	--days 1100
-# creates a new certificate, taking the maintainer email from gemspec
+# Create a new certificate, taking the maintainer email from gemspec
 new-cert: gem_check_signing_key
 	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
 	gem cert \
@@ -140,4 +144,6 @@ scan:
 	detect-secrets scan --baseline .secrets.baseline
 tidy:
 	rubocop $(DIR_LIB).
+reek:
+	reek -c $(DIR_TOP).reek.yml
 # cspell:ignore pubkey gemdir oneline demoaspera firstword noout pubout

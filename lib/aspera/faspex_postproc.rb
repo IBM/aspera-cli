@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'English'
-require 'aspera/web_server_simple'
-require 'aspera/log'
 require 'json'
 require 'timeout'
+require 'English'
+require 'webrick'
+require 'aspera/log'
 
 module Aspera
   # this class answers the Faspex /send API and creates a package on Aspera on Cloud

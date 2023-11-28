@@ -31,7 +31,7 @@ module Aspera
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
           tools_to_check.each do |command_sym|
-            external_command(command_sym, ['-h'], log_error: false)
+            external_command(command_sym, ['-h'])
           rescue Errno::ENOENT => e
             raise "missing #{command_sym} binary: #{e}"
           rescue
@@ -42,7 +42,7 @@ module Aspera
         # execute external command
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
-        def external_command(command_sym, command_args, log_error: true)
+        def external_command(command_sym, command_args)
           raise "unexpected command #{command_sym}" unless EXTERNAL_TOOLS.include?(command_sym)
           # build command line, and quote special characters
           command_line = command_args.clone.unshift(command_sym).map{|i| shell_quote(i.to_s)}.join(' ')

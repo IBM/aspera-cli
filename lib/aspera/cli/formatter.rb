@@ -156,7 +156,15 @@ module Aspera
 
       def option_handler(option_symbol, operation, value=nil)
         case operation
-        when :set then @options[option_symbol] = value
+        when :set
+          @options[option_symbol] = value
+          if option_symbol.eql?(:output)
+            $stdout = if value.eql?('-')
+              STDOUT # rubocop:disable Style/GlobalStdStream
+            else
+              File.open(value, 'w')
+            end
+          end
         when :get then return @options[option_symbol]
         else raise "internal error: no such operation: #{operation}"
         end
@@ -165,6 +173,7 @@ module Aspera
 
       def declare_options(options)
         options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
+        options.declare(:output, 'Destination for results', types: String, handler: {o: self, m: :option_handler})
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
         options.declare(
           :fields, "Comma separated list of: fields, or #{ExtendedValue::ALL}, or #{ExtendedValue::DEF}", handler: {o: self, m: :option_handler},
