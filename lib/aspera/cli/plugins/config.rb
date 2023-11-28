@@ -666,10 +666,10 @@ module Aspera
           case command
           when :list
             return {type: :object_list, data: connect_versions, fields: %w[id title version]}
-          when :info # shows files used
+          when :info
             one_res.delete('links')
             return {type: :single_object, data: one_res}
-          when :version # shows files used
+          when :version
             all_links = one_res['links']
             command = options.get_next_command(%i[list download open])
             if %i[download open].include?(command)
@@ -678,7 +678,7 @@ module Aspera
               raise 'no such value' if one_link.nil?
             end
             case command
-            when :list # shows files used
+            when :list
               return {type: :object_list, data: all_links}
             when :download
               folder_dest = transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
@@ -706,47 +706,10 @@ module Aspera
             formatter.display_status("ascp version: #{ascp_version}")
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
-          when :show # shows files used
+          when :show
             return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
-          when :info # shows files used
-            data = Fasp::Installation.instance.file_paths
-            # read PATHs from ascp directly, and pvcl modules as well
-            Open3.popen3(data['ascp'], '-DDL-') do |_stdin, _stdout, stderr, thread|
-              last_line = ''
-              while (line = stderr.gets)
-                line.chomp!
-                last_line = line
-                case line
-                when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
-                  data[Regexp.last_match(1)] = Regexp.last_match(3)
-                when /^DBG Added module group:"(?<module>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
-                  c = Regexp.last_match.named_captures.symbolize_keys
-                  data[c[:interface]] ||= {}
-                  data[c[:interface]][c[:module]] ||= []
-                  data[c[:interface]][c[:module]].push("#{c[:scheme]} v#{c[:version]}")
-                when %r{^DBG License result \(/license/(\S+)\): (.+)$}
-                  data[Regexp.last_match(1)] = Regexp.last_match(2)
-                when /^LOG (.+) version ([0-9.]+)$/
-                  data['product_name'] = Regexp.last_match(1)
-                  data['product_version'] = Regexp.last_match(2)
-                when /^LOG Initializing FASP version ([^,]+),/
-                  data['ascp_version'] = Regexp.last_match(1)
-                end
-              end
-              if !thread.value.exitstatus.eql?(1) && !data.key?('root')
-                raise last_line
-              end
-            end
-            # ascp's openssl directory
-            ascp_file = data['ascp']
-            File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |match|
-              if (m = match.match(/OPENSSLDIR.*"(.*)"/))
-                data['openssldir'] = m[1]
-              end
-            end if File.file?(ascp_file)
-            data['uuid'] = Fasp::Installation.instance.ssh_cert_uuid
-            # log is "-" no need to display
-            data.delete('log')
+          when :info
+            data = Fasp::Installation.instance.ascp_info
             # show command line transfer spec
             data['ts'] = transfer.updated_ts
             return {type: :single_object, data: data}

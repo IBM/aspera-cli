@@ -93,8 +93,8 @@ module Aspera
       end
 
       # analyze options and create new agent if not already created or set
-      def set_agent_by_options
-        return nil unless @agent.nil?
+      def agent_instance
+        return @agent unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
         # agent plugin is loaded on demand to avoid loading unnecessary dependencies
         require "aspera/fasp/agent_#{agent_type}"
@@ -118,7 +118,8 @@ module Aspera
         # get agent instance
         new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
         self.agent_instance = new_agent
-        return nil
+        Log.log.debug{"transfer agent is a #{@agent.class}"}
+        return @agent
       end
 
       # return destination folder for transfers
@@ -200,7 +201,7 @@ module Aspera
       # @param rest_token [Rest] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
-        raise 'transfer_spec must be hash' unless transfer_spec.is_a?(Hash)
+        raise 'transfer_spec must be Hash' unless transfer_spec.is_a?(Hash)
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE
@@ -225,11 +226,9 @@ module Aspera
         # updated transfer spec with command line
         updated_ts(transfer_spec)
         # create transfer agent
-        set_agent_by_options
-        Log.log.debug{"transfer agent is a #{@agent.class}"}
-        @agent.start_transfer(transfer_spec, token_regenerator: rest_token)
+        agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"
-        result = @agent.wait_for_completion
+        result = agent_instance.wait_for_completion
         send_email_transfer_notification(transfer_spec, result)
         return result
       end

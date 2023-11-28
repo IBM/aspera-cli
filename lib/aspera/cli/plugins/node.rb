@@ -11,6 +11,7 @@ require 'aspera/node'
 require 'aspera/aoc'
 require 'aspera/sync'
 require 'aspera/oauth'
+require 'aspera/node_simulator'
 require 'base64'
 require 'zlib'
 
@@ -678,7 +679,8 @@ module Aspera
           central
           asperabrowser
           basic_token
-          bearer_token].concat(COMMON_ACTIONS).freeze
+          bearer_token
+          simulator].concat(COMMON_ACTIONS).freeze
 
         def execute_action(command=nil, prefix_path=nil)
           command ||= options.get_next_command(ACTIONS)
@@ -901,6 +903,21 @@ module Aspera
             token_info = options.get_next_argument('user and group identification', type: Hash)
             access_key = options.get_option(:username, mandatory: true)
             return Main.result_status(Aspera::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
+          when :simulator
+            require 'aspera/node_simulator'
+            parameters = value_create_modify(command: command)
+            parameters = parameters.symbolize_keys
+            raise 'Missing key: url' unless parameters.key?(:url)
+            uri = URI.parse(parameters[:url])
+            server = WebServerSimple.new(uri, certificate: parameters[:certificate])
+            server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], transfer)
+            # on ctrl-c, tell server main loop to exit
+            trap('INT') { server.shutdown }
+            formatter.display_status("Node Simulator listening on #{uri.port}")
+            Log.log.info{"Listening on #{uri.port}"}
+            # this is blocking until server exits
+            server.start
+            return Main.result_status('Simulator terminated')
           end # case command
           raise 'ERROR: shall not reach this line'
         end # execute_action

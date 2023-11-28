@@ -175,6 +175,48 @@ module Aspera
         return exe_version
       end
 
+      def ascp_info
+        data = file_paths
+        # read PATHs from ascp directly, and pvcl modules as well
+        Open3.popen3(data['ascp'], '-DDL-') do |_stdin, _stdout, stderr, thread|
+          last_line = ''
+          while (line = stderr.gets)
+            line.chomp!
+            last_line = line
+            case line
+            when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
+              data[Regexp.last_match(1)] = Regexp.last_match(3)
+            when /^DBG Added module group:"(?<module>[^"]+)" name:"(?<scheme>[^"]+)", version:"(?<version>[^"]+)" interface:"(?<interface>[^"]+)"$/
+              c = Regexp.last_match.named_captures.symbolize_keys
+              data[c[:interface]] ||= {}
+              data[c[:interface]][c[:module]] ||= []
+              data[c[:interface]][c[:module]].push("#{c[:scheme]} v#{c[:version]}")
+            when %r{^DBG License result \(/license/(\S+)\): (.+)$}
+              data[Regexp.last_match(1)] = Regexp.last_match(2)
+            when /^LOG (.+) version ([0-9.]+)$/
+              data['product_name'] = Regexp.last_match(1)
+              data['product_version'] = Regexp.last_match(2)
+            when /^LOG Initializing FASP version ([^,]+),/
+              data['ascp_version'] = Regexp.last_match(1)
+            end
+          end
+          if !thread.value.exitstatus.eql?(1) && !data.key?('root')
+            raise last_line
+          end
+        end
+        # ascp's openssl directory
+        ascp_file = data['ascp']
+        File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |match|
+          if (m = match.match(/OPENSSLDIR.*"(.*)"/))
+            data['openssldir'] = m[1]
+          end
+        end if File.file?(ascp_file)
+        data['uuid'] = ssh_cert_uuid
+        # log is "-" no need to display
+        data.delete('log')
+        return data
+      end
+
       # download aspera SDK or use local file
       # extracts ascp binary for current system architecture
       # @return ascp version (from execution)

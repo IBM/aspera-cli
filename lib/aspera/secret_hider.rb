@@ -14,7 +14,7 @@ module Aspera
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     HTTP_SECRETS = %w[Authorization].freeze
     ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
-    KEY_FALSE_POSITIVES = [/^access_key$/].freeze
+    KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # CLI manager get/set options
