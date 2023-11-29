@@ -666,21 +666,54 @@ $(T)aocfsync2: $(T).exists
 	$(EXE_BEG_FAI) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
 	$(EXE_BEG_FAI) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
-$(T)aoc_file_id: $(T)aocftr
+$(T)aoc_file_id_1: $(T)aocftr
 	@$(START_TEST) $@
 	$(EXE_NO_MAN) aoc files br testdst/$(TST_ASC_FILENAME) --fields=id --format=csv --display=data --output=$(DIR_TMP)aoc_file_id
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_2: $(T)aocftr
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files show %id:$$(cat $(DIR_TMP)aoc_file_id)
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_3: $(T)aocftr
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files show /
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_4: $(T)aocftr
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files show testdst/$(TST_ASC_FILENAME)
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_5: $(T)aocftr
+	@$(START_TEST) $@
 	$(EXE_BEG_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_6: $(T)aoc_file_id_5
+	@$(START_TEST) $@
 	$(EXE_NO_MAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.mpg video_file.mpg
 	@echo 'waiting for preview'
 	sleep 60
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_7: $(T)aoc_file_id_5
+	@$(START_TEST) $@
 	$(EXE_NO_MAN) aoc files upload --to-folder=@preset:aoc.test_folder --src-type=pair @preset:file.jpg image_file.jpg
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_8: $(T)aoc_file_id_5
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files permission @preset:aoc.test_folder list
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_9: $(T)aoc_file_id_6
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_10: $(T)aoc_file_id_6
+	@$(START_TEST) $@
 	$(EXE_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":true}'
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_11: $(T)aoc_file_id_6
+	@$(START_TEST) $@
 	$(EXE_NO_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg --query=@json:'{"text":true,"double":false}'
+	@$(STOP_TEST) $@
+$(T)aoc_file_id_12: $(T)aoc_file_id_6
+	@$(START_TEST) $@
 	env -u TERM_PROGRAM -u LC_TERMINAL $(EXE_NO_MAN) aoc files thumbnail @extend:@preset:aoc.test_folder@/video_file.mpg
 	@$(STOP_TEST) $@
 #	$(EXE_MAN) aoc files modify @preset:aoc.test_folder
@@ -706,7 +739,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(TST_ASC_LCL_PATH)

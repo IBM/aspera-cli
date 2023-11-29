@@ -3349,7 +3349,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service slash space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
@@ -4907,7 +4907,7 @@ server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","
 server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
 server upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=trsdk
 server upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
-server upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
+server upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
 server upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ```
@@ -6255,6 +6255,8 @@ Several parameters can be used to tune several aspects:
 - Methods for detection of new files needing generation
 - Methods for generation of video preview
 - Parameters for video handling
+
+See also <https://github.com/IBM/aspera-on-cloud-file-previews>
 
 ### Aspera Server configuration
 

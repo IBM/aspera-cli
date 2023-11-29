@@ -8,6 +8,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/cli/hints'
+require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/log'
 
@@ -55,7 +56,6 @@ module Aspera
         end
 
         def result_picture_in_terminal(options, blob)
-          require 'aspera/preview/terminal'
           terminal_options = options.get_option(:query, default: {}).symbolize_keys
           allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
           unknown_options = terminal_options.keys - allowed_options

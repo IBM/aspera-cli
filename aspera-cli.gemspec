@@ -55,8 +55,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('xml-simple', '~> 1.0')
   # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
   # spec.add_development_dependency('grpc', '~> 1.0') # for transferSDK
-  spec.add_development_dependency('mimemagic', '~> 0.3') # for preview
-  spec.add_development_dependency('rmagick', '~> 5.3')
+  # spec.add_development_dependency('mimemagic', '~> 0.3') # for preview
+  # spec.add_development_dependency('rmagick', '~> 5.3') # for terminal view
   # development gems
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('rake', '~> 13.0')

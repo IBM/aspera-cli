@@ -45,10 +45,13 @@ install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
+OPTIONAL_GEMS=grpc mimemagic rmagick
+clean_optional_gems:
+	gem uninstall $(OPTIONAL_GEMS)
 install_gems: $(DIR_TOP).gems_checked
 # grpc is installed on the side , if needed
-install_all_gems: install_gems
-	gem install grpc
+install_optional_gems: install_gems
+	gem install $(OPTIONAL_GEMS)
 clean:: clean_gem
 ##################################
 # Gem certificate

@@ -2,7 +2,6 @@
 
 # cspell:words Magick MAGICKCORE ITERM mintty winsize termcap
 
-require 'rmagick' # https://rmagick.github.io/index.html
 require 'rainbow'
 require 'io/console'
 module Aspera
@@ -10,8 +9,6 @@ module Aspera
     # Display a picture in the terminal, either using coloured characters or iTerm2
     class Terminal
       # Rainbow only supports 8-bit colors
-      # quantum depth is 8 or 16, see: `convert xc: -format "%q" info:`
-      SHIFT_FOR_8_BIT = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
       # env vars to detect terminal type
       TERM_ENV_VARS = %w[TERM_PROGRAM LC_TERMINAL].freeze
       # terminal names that support iTerm2 image display
@@ -19,7 +16,7 @@ module Aspera
       # TODO: retrieve terminal font ratio using some termcap ?
       # ratio = font height / font width
       DEFAULT_FONT_RATIO = 32.0 / 14.0
-      private_constant :SHIFT_FOR_8_BIT, :TERM_ENV_VARS, :ITERM_NAMES, :DEFAULT_FONT_RATIO
+      private_constant :TERM_ENV_VARS, :ITERM_NAMES, :DEFAULT_FONT_RATIO
       class << self
         # @return [String] the image as text, or the iTerm2 escape sequence
         # @param blob [String] the image as a binary string
@@ -29,6 +26,8 @@ module Aspera
         # @param font_ratio [Float] ratio = font height / font width
         def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
           return iterm_display_image(blob) if iterm_supported? && !text
+          # do not require statically, as the package is optional
+          require 'rmagick' # https://rmagick.github.io/index.html
           image = Magick::ImageList.new.from_blob(blob)
           (term_rows, term_columns) = IO.console.winsize
           term_rows -= reserve
@@ -36,11 +35,13 @@ module Aspera
           fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
           height_ratio = double ? 2.0 : 1.0
           image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
+          # quantum depth is 8 or 16, see: `convert xc: -format "%q" info:`
+          shift_for_8_bit = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
           # get all pixel colors, adjusted for Rainbow
           pixel_colors = []
           image.each_pixel do |pixel, col, row|
             pixel_rgb = [pixel.red, pixel.green, pixel.blue]
-            pixel_rgb = pixel_rgb.map { |color| color >> SHIFT_FOR_8_BIT } unless SHIFT_FOR_8_BIT.eql?(0)
+            pixel_rgb = pixel_rgb.map { |color| color >> shift_for_8_bit } unless shift_for_8_bit.eql?(0)
             # init 2-dim array
             pixel_colors[row] ||= []
             pixel_colors[row][col] = pixel_rgb
