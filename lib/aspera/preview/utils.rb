@@ -48,7 +48,7 @@ module Aspera
           command_line = command_args.clone.unshift(command_sym).map{|i| shell_quote(i.to_s)}.join(' ')
           Log.log.debug{"cmd=#{command_line}".blue}
           stdout, stderr, status = Open3.capture3(command_line)
-          if log_error && !status.success?
+          if !status.success?
             Log.log.error{"status: #{status}"}
             Log.log.error{"stdout: #{stdout}"}
             Log.log.error{"stderr: #{stderr}"}
