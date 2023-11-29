@@ -9,7 +9,6 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/fasp/management'
 require 'aspera/log'
 require 'socket'
-require 'timeout'
 require 'securerandom'
 require 'shellwords'
 require 'English'
@@ -20,8 +19,8 @@ module Aspera
     class AgentDirect < Aspera::Fasp::AgentBase
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
-        spawn_timeout_sec: 3,
-        spawn_delay_sec:   2,
+        spawn_timeout_sec: 2,
+        spawn_delay_sec:   2, # optional delay to start between sessions
         wss:               true, # true: if both SSH and wss in ts: prefer wss
         multi_incr_udp:    true,
         resume:            {},
@@ -30,15 +29,17 @@ module Aspera
         quiet:             true, # by default no native ascp progress bar
         trusted_certs:     [] # list of files with trusted certificates (stores)
       }.freeze
+      LISTEN_ADDRESS = '127.0.0.1'
+      LISTEN_AVAILABLE_PORT = 0 # 0 means any available port
       # spellchecker: enable
-      private_constant :DEFAULT_OPTIONS
+      private_constant :DEFAULT_OPTIONS, :LISTEN_ADDRESS
 
-      # start ascp transfer (non blocking), single or multi-session
+      # method of Aspera::Fasp::AgentBase
+      # start ascp transfer(s) (non blocking), single or multi-session
       # session information added to @sessions
       # @param transfer_spec [Hash] aspera transfer specification
+      # @param token_regenerator [Object] object with method refreshed_transfer_token
       def start_transfer(transfer_spec, token_regenerator: nil)
-        # group sessions into a job
-        the_job_id = SecureRandom.uuid
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
         # if there are aspera tags
@@ -53,7 +54,6 @@ module Aspera
           transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
         Log.log.debug{Log.dump('ts', transfer_spec)}
-
         # Compute this before using transfer spec because it potentially modifies the transfer spec
         # (even if the var is not used in single session)
         multi_session_info = nil
@@ -78,18 +78,17 @@ module Aspera
           end
         end
 
-        # compute known arguments and environment variables
-        env_args = Parameters.new(transfer_spec, @options).ascp_args
-
         # generic session information
         session = {
-          job_id:            the_job_id,        # job id
+          id:                nil, # SessionId from INIT message in mgt port
+          job_id:            SecureRandom.uuid, # job id (regroup sessions)
+          ts:                transfer_spec,     # transfer spec
           thread:            nil,               # Thread object monitoring management port, not nil when pushed to :sessions
           error:             nil,               # exception if failed
           io:                nil,               # management port server socket
-          id:                nil,               # SessionId from INIT message in mgt port
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
-          env_args:          env_args           # env vars and args to ascp (from transfer spec)
+          # env vars and args to ascp (from transfer spec)
+          env_args:          Parameters.new(transfer_spec, @options).ascp_args
         }
 
         if multi_session_info.nil?
@@ -115,8 +114,7 @@ module Aspera
             @sessions.push(this_session)
           end
         end
-        Log.log.debug('started session thread(s)')
-        return the_job_id
+        return session[:job_id]
       end # start_transfer
 
       # wait for completion of all jobs started
@@ -198,19 +196,17 @@ module Aspera
         raise 'session must be Hash' unless session.is_a?(Hash)
         begin
           Log.log.debug{"env_args=#{env_args.inspect}"}
-          # get location of ascp executable
-          ascp_path = @mutex.synchronize do
-            Fasp::Installation.instance.path(env_args[:ascp_version])
-          end
-          # (optional) check it exists
-          raise Fasp::Error, "no such file: #{ascp_path}" unless File.exist?(ascp_path)
-          notify_progress(session_id: nil, type: :pre_start, info: 'starting ascp')
+          notify_progress(session_id: nil, type: :pre_start, info: 'starting')
+          # we use Socket directly, instead of TCPServer, s it gives access to lower level options
+          mgt_server = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
           # open an available (0) local TCP port as ascp management
-          mgt_sock = TCPServer.new('127.0.0.1', 0)
-          # clone arguments as we eed to modify with mgt port
-          ascp_arguments = env_args[:args].clone
-          # add management port on the selected local port
-          ascp_arguments.unshift('-M', mgt_sock.addr[1].to_s)
+          # Socket.pack_sockaddr_in(LISTEN_AVAILABLE_PORT, LISTEN_ADDRESS)
+          mgt_server.bind(Addrinfo.tcp(LISTEN_ADDRESS, LISTEN_AVAILABLE_PORT))
+          # clone arguments and add mgt port
+          ascp_arguments = ['-M', mgt_server.local_address.ip_port.to_s].concat(env_args[:args])
+          # mgt_server.addr[1]
+          # get location of ascp executable
+          ascp_path = Fasp::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
           Log.log.debug do
             [
@@ -221,20 +217,23 @@ module Aspera
             ].flatten.join(' ')
           end
           # start ascp in separate process
-          ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments)
-          # in parent, wait for connection to socket max 3 seconds
-          Log.log.debug{"before accept for pid (#{ascp_pid})"}
-          # init management socket
-          ascp_mgt_io = nil
+          ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments, close_others: true)
+          Log.log.debug{"spawned pid #{ascp_pid}"}
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
-          Timeout.timeout(@options[:spawn_timeout_sec]) do
-            ascp_mgt_io = mgt_sock.accept
-            # management messages include file names which may be utf8
-            # by default socket is US-ASCII
-            # TODO: use same value as Encoding.default_external
-            ascp_mgt_io.set_encoding(Encoding::UTF_8)
-          end
-          Log.log.debug{"after accept (#{ascp_mgt_io})"}
+          Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
+          mgt_server.listen(1)
+          # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
+          readable, _, _ = IO.select([mgt_server], nil, nil, @options[:spawn_timeout_sec])
+          Log.log.debug('after select, before accept')
+          raise Fasp::Error, 'timeout waiting mgt port connect (select not readable)' unless readable
+          # There is a connection to accept
+          client_socket, _client_addrinfo = mgt_server.accept
+          Log.log.debug('after accept')
+          ascp_mgt_io = client_socket.to_io
+          # management messages include file names which may be utf8
+          # by default socket is US-ASCII
+          # TODO: use same value as Encoding.default_external
+          ascp_mgt_io.set_encoding(Encoding::UTF_8)
           session[:io] = ascp_mgt_io
           processor = Management.new
           # read management port, until socket is closed (gets returns nil)
@@ -242,7 +241,7 @@ module Aspera
             event = processor.process_line(line.chomp)
             next unless event
             # event is ready
-            Log.log.debug{Log.dump(:management_port, event)}
+            Log.log.trace1{Log.dump(:management_port, event)}
             # Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
@@ -269,8 +268,6 @@ module Aspera
         rescue SystemCallError => e
           # Process.spawn
           raise Fasp::Error, e.message
-        rescue Timeout::Error
-          raise Fasp::Error, 'timeout waiting mgt port connect'
         rescue Interrupt
           raise Fasp::Error, 'transfer interrupted by user'
         ensure
@@ -289,6 +286,7 @@ module Aspera
               Log.log.debug(message)
             end
           end
+          mgt_server.close
         end # begin-ensure
       end # start_transfer_with_args_env
 

@@ -5484,6 +5484,8 @@ Several parameters can be used to tune several aspects:
 - Methods for generation of video preview
 - Parameters for video handling
 
+See also <https://github.com/IBM/aspera-on-cloud-file-previews>
+
 ### Aspera Server configuration
 
 Specify the previews folder as shown in:

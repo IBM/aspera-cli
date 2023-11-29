@@ -234,7 +234,7 @@ $(T)serv_upload2: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}'  --progress=no
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
 	@$(START_TEST) $@
@@ -1398,7 +1398,7 @@ $(T)f5_p3: $(T).exists
 	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)f5_p31
 	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
-	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP).  --ts=@json:'{"content_protection_password":"my_secret_here"}'
+	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists

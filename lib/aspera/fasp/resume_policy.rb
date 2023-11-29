@@ -43,9 +43,10 @@ module Aspera
           begin
             # call provided block
             yield
+            # exit retry loop if success
             break
           rescue Fasp::Error => e
-            Log.log.warn{"An error occurred: #{e.message}"}
+            Log.log.warn{"An error occurred during transfer: #{e.message}"}
             # failure in ascp
             if e.retryable?
               # exit if we exceed the max number of retry
