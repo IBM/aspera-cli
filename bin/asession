@@ -75,10 +75,12 @@ client = Aspera::Fasp::AgentDirect.new({quiet: true})
 job_id = client.start_transfer(transfer_spec)
 # async commands
 Thread.new do
+  # we assume here a single session
+  session_id = client.sessions_by_job(job_id).first
   begin # rubocop:disable Style/RedundantBegin
     loop do
       data = JSON.parse($stdin.gets)
-      client.send_command(job_id, 0, data)
+      client.send_command(session_id, data)
     end
   rescue
     Process.exit(1)

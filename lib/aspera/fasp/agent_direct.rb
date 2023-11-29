@@ -34,13 +34,14 @@ module Aspera
       private_constant :DEFAULT_OPTIONS
 
       # start ascp transfer (non blocking), single or multi-session
-      # job information added to @jobs
+      # session information added to @sessions
       # @param transfer_spec [Hash] aspera transfer specification
       def start_transfer(transfer_spec, token_regenerator: nil)
+        # group sessions into a job
         the_job_id = SecureRandom.uuid
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
-        # if there is aspera tags
+        # if there are aspera tags
         if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED].is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
@@ -48,7 +49,7 @@ module Aspera
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
           transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
           Log.log.debug{"xfer id=#{transfer_spec['xfer_id']}"}
-          # TODO: useful ? node only ?
+          # TODO: useful ? node only ? seems to be a timeout for retry in node
           transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
         Log.log.debug{Log.dump('ts', transfer_spec)}
@@ -80,14 +81,9 @@ module Aspera
         # compute known arguments and environment variables
         env_args = Parameters.new(transfer_spec, @options).ascp_args
 
-        # transfer job can be multi session
-        xfer_job = {
-          id:       the_job_id,
-          sessions: [] # all sessions as below
-        }
-
         # generic session information
         session = {
+          job_id:            the_job_id,        # job id
           thread:            nil,               # Thread object monitoring management port, not nil when pushed to :sessions
           error:             nil,               # exception if failed
           io:                nil,               # management port server socket
@@ -100,7 +96,7 @@ module Aspera
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
           session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
-          xfer_job[:sessions].push(session)
+          @sessions.push(session)
         else
           Log.log.debug('Starting multi session threads')
           1.upto(multi_session_info[:count]) do |i|
@@ -110,19 +106,16 @@ module Aspera
             this_session = session.clone
             this_session[:env_args] = this_session[:env_args].clone
             this_session[:env_args][:args] = this_session[:env_args][:args].clone
+            # set multi session part
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             this_session[:env_args][:args].unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @options[:multi_incr_udp]
+            # finally start the thread
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
-            xfer_job[:sessions].push(this_session)
+            @sessions.push(this_session)
           end
         end
         Log.log.debug('started session thread(s)')
-
-        # add job to list of jobs
-        @jobs[the_job_id] = xfer_job
-        Log.log.debug{"jobs: #{@jobs.keys.count}"}
-
         return the_job_id
       end # start_transfer
 
@@ -132,16 +125,14 @@ module Aspera
         Log.log.debug('wait_for_transfers_completion')
         # set to non-nil to exit loop
         result = []
-        @jobs.each do |_id, job|
-          job[:sessions].each do |session|
-            Log.log.debug{"join #{session[:thread]}"}
-            session[:thread].join
-            result.push(session[:error] || :success)
-          end
+        @sessions.each do |session|
+          Log.log.debug{"join #{session[:thread]}"}
+          session[:thread].join
+          result.push(session[:error] || :success)
         end
         Log.log.debug('all transfers joined')
         # since all are finished and we return the result, clear statuses
-        @jobs.clear
+        @sessions.clear
         return result
       end
 
@@ -198,6 +189,7 @@ module Aspera
       # start ascp with management port.
       # raises FaspError on error
       # if there is a thread info: set and broadcast session id
+      # runs in separate thread
       # @param env_args a hash containing :args :env :ascp_version
       # @param session this session information
       # could be private method
@@ -300,17 +292,27 @@ module Aspera
         end # begin-ensure
       end # start_transfer_with_args_env
 
-      # send command of management port to ascp session
+      # @return [Array] list of sessions for a job
+      def sessions_by_job(job_id)
+        @sessions.select{|s| s[:session_uuid].eql?(job_id)}
+      end
+
+      # @return [Hash] session information
+      def session_by_id(id)
+        matches = @sessions.select{|s| s[:id].eql?(id)}
+        raise 'no such session' if matches.empty?
+        raise 'more than one session' if matches.length > 1
+        return matches.first
+      end
+
+      # send command of management port to ascp session (used in `asession)
       # @param job_id identified transfer process
       # @param session_index index of session (for multi session)
       # @param data command on mgt port, examples:
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
-      def send_command(job_id, session_index, data)
-        job = @jobs[job_id]
-        raise 'no such job' if job.nil?
-        session = job[:sessions][session_index]
-        raise 'no such session' if session.nil?
+      def send_command(session_uuid, data)
+        session = session_by_id(session_uuid)
         Log.log.debug{"command: #{data}"}
         # build command
         command = data
@@ -327,14 +329,14 @@ module Aspera
       # @param options : keys(symbol): see DEFAULT_OPTIONS
       def initialize(options={})
         super(options)
-        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
-        @jobs = {}
-        # mutex protects global data accessed by threads
-        @mutex = Mutex.new
         # set default options and override if specified
         @options = AgentBase.options(default: DEFAULT_OPTIONS, options: options)
-        @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
         Log.log.debug{Log.dump(:agent_options, @options)}
+        @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
+        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
+        @sessions = []
+        # mutex protects global data accessed by threads
+        @mutex = Mutex.new
       end
 
       # transfer thread entry
