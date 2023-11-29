@@ -89,6 +89,16 @@ ENABLE_COVERAGE=1 make test
 
 Once tests are completed, or during test, consult the page: [coverage/index.html](coverage/index.html)
 
+## Optional gems
+
+Some gems are optional: `rmagick` and `grpc`, as they require compilation of native code.
+To run them: `make optional`
+
+Some tests require interactive input.
+To run them: `make interactive`
+
+To run every test: `make full`
+
 ## Build
 
 By default the gem is built signed: `make`.

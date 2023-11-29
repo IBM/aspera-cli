@@ -48,7 +48,7 @@ $(TEST_CONF_FILE_PATH):
 # Ensure required ruby gems are installed
 # remove ascli and asession from rvm bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
-	cd $(DIR_TOP). && bundle config set --local without $(GEM_NAME) && bundle config set --local with development
+	cd $(DIR_TOP). && bundle config set --local with development
 	cd $(DIR_TOP). && bundle install
 	rm -f $$HOME/.rvm/*/*/bin/ascli
 	rm -f $$HOME/.rvm/*/*/bin/asession

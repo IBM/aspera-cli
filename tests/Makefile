@@ -14,13 +14,20 @@ include $(DIR_TOP)common.mak
 # folder where flag files for tests are generated: use this folder only for those flags, as it is used for progress bar
 T=$(DIR_TMP)t/
 
+# test group: principal
 all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver torc tnsync tnsyncs tconfig tats tcos tf5 tprev
 
-# tests that require user interaction
+# test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
+use_rmagick: $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
+use_grpc: $(T)serv_upload4
+
+# test group: require optional gems
+optional: use_rmagick use_grpc
+
 # all tests, including interactive ones
-full: all interactive
+full: all interactive optional
 
 # just to test nagios, but those are tested in the respective plugins
 only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
@@ -244,7 +251,7 @@ $(T)serv_upload5: $(T)serv_mkdir
 	@$(START_TEST) $@
 	$(EXE_MAN) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@$(STOP_TEST) $@
-$(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload4 $(T)serv_upload5
+$(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
@@ -327,7 +334,7 @@ $(T)serv_pr2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload4 $(T)serv_upload5 $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
+tserver: $(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5 $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key
 #######################################################################################################################
 $(T)f4_nagios: $(T).exists
 	@$(START_TEST) $@
@@ -739,7 +746,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
-taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
+taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(TST_ASC_LCL_PATH)
@@ -1315,7 +1322,7 @@ $(T)conf_hint: $(T).exists
 	$(EXE_BEG_ERR) config throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
 	$(EXE_BEG_ERR) config throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
 	@$(STOP_TEST) $@
-tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_coffee_3 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
+tconfig: $(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint
 
 $(T)prev_check: $(T).exists
 	@$(START_TEST) $@

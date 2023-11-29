@@ -103,6 +103,7 @@ module Aspera
             sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session = session.clone
+            this_session[:ts] = this_session[:ts].clone
             this_session[:env_args] = this_session[:env_args].clone
             this_session[:env_args][:args] = this_session[:env_args][:args].clone
             # set multi session part
@@ -292,7 +293,7 @@ module Aspera
 
       # @return [Array] list of sessions for a job
       def sessions_by_job(job_id)
-        @sessions.select{|s| s[:session_uuid].eql?(job_id)}
+        @sessions.select{|s| s[:job_id].eql?(job_id)}
       end
 
       # @return [Hash] session information
@@ -309,8 +310,8 @@ module Aspera
       # @param data command on mgt port, examples:
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
-      def send_command(session_uuid, data)
-        session = session_by_id(session_uuid)
+      def send_command(job_id, data)
+        session = session_by_id(job_id)
         Log.log.debug{"command: #{data}"}
         # build command
         command = data
@@ -321,6 +322,7 @@ module Aspera
           .join("\n")
         session[:io].puts(command)
       end
+      attr_reader :sessions
 
       private
 
