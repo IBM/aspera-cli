@@ -27,17 +27,21 @@ CLI_PATH=$(DIR_BIN)$(CLI_NAME)
 
 GEMSPEC=$(DIR_TOP)$(GEM_NAME).gemspec
 
+# create Makefile file with macros GEM_NAME and GEM_VERSION
 NAME_VERSION=$(DIR_TMP)name_version.mak
-
 $(NAME_VERSION): $(DIR_TMP).exists $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
 	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEM_NAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
 	sed -n "s/.*'\([^']*\)'.*/GEM_VERSION=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
 include $(NAME_VERSION)
 PATH_GEMFILE=$(DIR_TOP)$(GEM_NAME)-$(GEM_VERSION).gem
+# override GEM_VERSION with beta version
+BETA_VERSION_FILE=$(DIR_TMP)beta_version
+MAKE_BETA=GEM_VERSION=$$(cat $(BETA_VERSION_FILE)) make -e
+$(BETA_VERSION_FILE):
+	echo $(GEM_VERSION).$$(date +%Y%m%d%H%M) > $(BETA_VERSION_FILE)
 # gem file is generated in top folder
 clean::
 	rm -f $(NAME_VERSION)
-
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@

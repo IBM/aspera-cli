@@ -9,7 +9,7 @@ module Aspera
         def options(default:, options:)
           result = options.symbolize_keys
           available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
-          result.each do |k, v|
+          result.each do |k, _v|
             raise "Unknown transfer agent parameter: #{k}, expect one of #{available}" unless default.key?(k)
             # check it is the expected type: too limiting, as we can have an Integer or Float, or symbol and string
             # raise "Invalid value for transfer agent parameter: #{k}, expect #{default[k].class.name}" unless default[k].nil? || v.is_a?(default[k].class)

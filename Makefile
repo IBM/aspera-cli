@@ -38,6 +38,11 @@ signed_gem: clean_gem gem_check_signing_key $(PATH_GEMFILE)
 	@echo "Ok: gem is signed"
 # build gem without signature for development and test
 unsigned_gem: $(PATH_GEMFILE)
+beta_gem:
+	rm -f $(BETA_VERSION_FILE)
+	make build_beta_gem
+build_beta_gem: $(BETA_VERSION_FILE)
+	$(MAKE_BETA) unsigned_gem
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
@@ -45,6 +50,7 @@ install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
+# gems that require native build are made optional
 OPTIONAL_GEMS=grpc mimemagic rmagick
 clean_optional_gems:
 	gem uninstall $(OPTIONAL_GEMS)
