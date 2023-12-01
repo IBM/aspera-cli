@@ -26,8 +26,16 @@ module Aspera
         # @param font_ratio [Float] ratio = font height / font width
         def build(blob, reserve: 3, text: false, double: true, font_ratio: DEFAULT_FONT_RATIO)
           return iterm_display_image(blob) if iterm_supported? && !text
-          # do not require statically, as the package is optional
-          require 'rmagick' # https://rmagick.github.io/index.html
+          begin
+            # do not require statically, as the package is optional
+            require 'rmagick' # https://rmagick.github.io/index.html
+          rescue LoadError => e
+            Log.log.error('Install missing gem: gem install rmagick')
+            # fallback to iterm, if supported
+            return iterm_display_image(blob) if iterm_supported?
+            Log.log.error('Cant display picture.')
+            raise e
+          end
           image = Magick::ImageList.new.from_blob(blob)
           (term_rows, term_columns) = IO.console.winsize
           term_rows -= reserve
