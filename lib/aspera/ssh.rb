@@ -2,15 +2,17 @@
 
 require 'net/ssh'
 
-# HACK: deactivate ed25519 and ecdsa private keys from ssh identities, as it usually cause problems
-old_verbose = $VERBOSE
-$VERBOSE = nil
-begin
-  module Net; module SSH; module Authentication; class Session; private; def default_keys; %w[~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa]; end; end; end; end; end # rubocop:disable Layout/AccessModifierIndentation, Layout/EmptyLinesAroundAccessModifier, Layout/LineLength, Style/Semicolon
-rescue StandardError
-  # ignore errors
+if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
+  # HACK: deactivate ed25519 and ecdsa private keys from ssh identities, as it usually cause problems
+  old_verbose = $VERBOSE
+  $VERBOSE = nil
+  begin
+    module Net; module SSH; module Authentication; class Session; private; def default_keys; %w[~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa]; end; end; end; end; end # rubocop:disable Layout/AccessModifierIndentation, Layout/EmptyLinesAroundAccessModifier, Layout/LineLength, Style/Semicolon
+  rescue StandardError
+    # ignore errors
+  end
+  $VERBOSE = old_verbose
 end
-$VERBOSE = old_verbose
 
 module Aspera
   # A simple wrapper around Net::SSH

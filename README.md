@@ -6234,37 +6234,6 @@ cos node info --log-level=trace2
 cos node upload test_file.bin
 ```
 
-## <a id="async"></a>IBM Aspera Sync
-
-An interface for the `async` utility is provided in the following plugins:
-
-- server sync
-- node sync
-- aoc files sync (uses node)
-- shares files sync (uses node)
-
-The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of `ascli`.
-
-In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
-
-> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
-
-Two JSON syntax are supported for option `sync_info`.
-
-### `async` JSON: API format
-
-It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
-This is the preferred syntax and allows a single session definition.
-But there is no progress output nor error messages.
-
-Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
-
-### `async` JSON: Options mapping
-
-`ascli` defines a JSON equivalent to regular `async`options.
-It is based on a JSON representation of `async` command line options.
-It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
-
 ## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
 
 The `preview` generates thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
@@ -6573,6 +6542,149 @@ preview test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"te
 preview trevents --once-only=yes --skip-types=office --log-level=info
 ```
 
+## <a id="async"></a>IBM Aspera Sync
+
+An interface for the `async` utility is provided in the following plugins:
+
+- server sync
+- node sync
+- aoc files sync (uses node)
+- shares files sync (uses node)
+
+The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of `ascli`.
+
+In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
+
+> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
+
+Two JSON syntax are supported for option `sync_info`.
+
+### `async` JSON: API format
+
+It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
+This is the preferred syntax and allows a single session definition.
+But there is no progress output nor error messages.
+
+Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
+
+### `async` JSON: Options mapping
+
+`ascli` defines a JSON equivalent to regular `async`options.
+It is based on a JSON representation of `async` command line options.
+It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+## Hot folder
+
+### Requirements
+
+`ascli` maybe used as a simple hot folder engine.
+A hot folder being defined as a tool that:
+
+- locally (or remotely) detects new files in a top folder
+- send detected files to a remote (respectively, local) repository
+- only sends new files, do not re-send already sent files
+- optionally: sends only files that are not still **growing**
+- optionally: after transfer of files, deletes or moves to an archive
+
+In addition: the detection should be made **continuously** or on specific time/date.
+
+### Setup procedure
+
+The general idea is to rely on :
+
+- existing `ascp` features for detection and transfer
+- take advantage of `ascli` configuration capabilities and server side knowledge
+- the OS scheduler for reliability and continuous operation
+
+#### `ascp` features
+
+Interesting `ascp` features are found in its arguments: (see `ascp` manual):
+
+- `ascp` already takes care of sending only **new** files: option `-k 1,2,3` (`resume_policy`)
+- `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
+- `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
+- `--src-base` (`src_base`) if top level folder name shall not be created on destination
+
+> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `ts` option.
+>
+> **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters.
+>
+> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
+
+#### Server side and configuration
+
+Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
+
+> **Note:** file detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
+>
+> **Note:** parameters may be saved in a [option preset](#lprt) and used with `-P`.
+
+#### Scheduling
+
+Once `ascli` parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
+Refer to section [Scheduler](#scheduler). (on use of option `lock_port`)
+
+### Example: Upload hot folder
+
+```bash
+ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
+```
+
+The local folder (here, relative path: `source_hot`) is sent (upload) to an aspera server.
+Source files are deleted after transfer.
+Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
+If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
+
+### Example: Unidirectional synchronization (upload) to server
+
+```bash
+ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
+```
+
+This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node.
+
+### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
+
+```bash
+ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
+```
+
+> **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
+>
+> **Note:** options `progress` and `display` limit output for headless operation (e.g. cron job)
+
+## Health check and Nagios
+
+Most plugin provide a `health` command that will check the health status of the application. Example:
+
+```bash
+ascli console health
+```
+
+```output
++--------+-------------+------------+
+| status | component   | message    |
++--------+-------------+------------+
+| ok     | console api | accessible |
++--------+-------------+------------+
+```
+
+Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
+
+- issuing a transfer to the server
+- checking web app status with `asctl all:status`
+- checking daemons process status
+
+`ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
+
+```bash
+ascli server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
+```
+
+```output
+OK - [transfer:ok]
+```
+
 ## SMTP for email notifications
 
 `ascli` can send email, for that setup SMTP configuration. This is done with option `smtp`.
@@ -6767,118 +6879,6 @@ EXAMPLES
 
 ```
 
-## Hot folder
-
-### Requirements
-
-`ascli` maybe used as a simple hot folder engine.
-A hot folder being defined as a tool that:
-
-- locally (or remotely) detects new files in a top folder
-- send detected files to a remote (respectively, local) repository
-- only sends new files, do not re-send already sent files
-- optionally: sends only files that are not still **growing**
-- optionally: after transfer of files, deletes or moves to an archive
-
-In addition: the detection should be made **continuously** or on specific time/date.
-
-### Setup procedure
-
-The general idea is to rely on :
-
-- existing `ascp` features for detection and transfer
-- take advantage of `ascli` configuration capabilities and server side knowledge
-- the OS scheduler for reliability and continuous operation
-
-#### `ascp` features
-
-Interesting `ascp` features are found in its arguments: (see `ascp` manual):
-
-- `ascp` already takes care of sending only **new** files: option `-k 1,2,3` (`resume_policy`)
-- `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
-- `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
-- `--src-base` (`src_base`) if top level folder name shall not be created on destination
-
-> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transferspec), with `ts` option.
->
-> **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transferspec) parameters.
->
-> **Note:** Only for the [`direct`](#agt_direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
-
-#### Server side and configuration
-
-Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
-
-> **Note:** file detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
->
-> **Note:** parameters may be saved in a [option preset](#lprt) and used with `-P`.
-
-#### Scheduling
-
-Once `ascli` parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
-Refer to section [Scheduler](#scheduler). (on use of option `lock_port`)
-
-### Example: Upload hot folder
-
-```bash
-ascli server upload source_hot --to-folder=/Upload/target_hot --lock-port=12345 --ts=@json:'{"remove_after_transfer":true,"remove_empty_directories":true,"exclude_newer_than:-8,"src_base":"source_hot"}'
-```
-
-The local folder (here, relative path: `source_hot`) is sent (upload) to an aspera server.
-Source files are deleted after transfer.
-Growing files will be sent only once they don't grow anymore (based on an 8-second cool-off period).
-If a transfer takes more than the execution period, then the subsequent execution is skipped (`lock_port`) preventing multiple concurrent runs.
-
-### Example: Unidirectional synchronization (upload) to server
-
-```bash
-ascli server upload source_sync --to-folder=/Upload/target_sync --lock-port=12345 --ts=@json:'{"resume_policy":"sparse_csum","exclude_newer_than":-8,"src_base":"source_sync"}'
-```
-
-This can also be used with other folder-based applications: Aspera on Cloud, Shares, Node.
-
-### Example: Unidirectional synchronization (download) from Aspera on Cloud Files
-
-```bash
-ascli aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
-```
-
-> **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
->
-> **Note:** options `progress` and `display` limit output for headless operation (e.g. cron job)
-
-## Health check and Nagios
-
-Most plugin provide a `health` command that will check the health status of the application. Example:
-
-```bash
-ascli console health
-```
-
-```output
-+--------+-------------+------------+
-| status | component   | message    |
-+--------+-------------+------------+
-| ok     | console api | accessible |
-+--------+-------------+------------+
-```
-
-Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
-
-- issuing a transfer to the server
-- checking web app status with `asctl all:status`
-- checking daemons process status
-
-`ascli` can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
-
-```bash
-ascli server health transfer --to-folder=/Upload --format=nagios --progress-bar=no
-```
-
-```output
-OK - [transfer:ok]
-```
-
 ## Ruby Module: `Aspera`
 
 Main components:
@@ -6921,6 +6921,8 @@ ascli config coffee
 
 ## Common problems
 
+`ascli` detects common problems and provides hints to solve them.
+
 ### Error: "Remote host is not who we expected"
 
 Cause: `ascp` >= 4.x checks fingerprint of highest server host key, including ECDSA. `ascp` < 4.0 (3.9.6 and earlier) support only to RSA level (and ignore ECDSA presented by server). `aspera.conf` supports a single fingerprint.
@@ -6944,9 +6946,10 @@ If Ruby was installed as a Linux Packages, then also install Ruby development pa
 
 ### ED255519 key not supported
 
-ED25519 keys are deactivated since version 0.9.24 so this type of key will just be ignored.
+ED25519 keys are deactivated since `ascli` version 0.9.24 as it requires additional gems that require native compilation and thus caused problems.
+This type of key will just be ignored.
 
-Without this deactivation, if such key was present the following error was generated:
+Without this deactivation, if such key was present in user's `.ssh` folder then the following error was generated:
 
 ```output
 OpenSSH keys only supported if ED25519 is available
@@ -6954,3 +6957,5 @@ OpenSSH keys only supported if ED25519 is available
 
 Which meant that you do not have Ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
+
+To re-activate, set env var `ASCLI_ENABLE_ED25519` to `true`.
