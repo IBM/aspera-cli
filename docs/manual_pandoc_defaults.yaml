@@ -1,4 +1,4 @@
-# Pandoc options
+# Pandoc options : 
 #verbosity: INFO
 from: markdown_mmd
 to: pdf
@@ -17,4 +17,7 @@ metadata-files:
 resource-path:
   - .
 include-in-header:
-  - manual_template.tex
+  - manual_include_in_header.tex
+include-after-body:
+  - manual_include_after_body.tex
+

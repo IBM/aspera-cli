@@ -27,7 +27,7 @@ clean_doc::
 # +pipe_tables
 # Date in PDF header is either the last checked in date or today if file has been modified
 # sudo tlmgr install fvextra
-$(MANUAL_PDF): $(DIR_TMP).exists $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_DOC)manual_pandoc_metadata.yaml $(DIR_DOC)manual_template.tex
+$(MANUAL_PDF): $(DIR_TMP).exists $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_DOC)manual_pandoc_metadata.yaml $(DIR_DOC)manual_include_in_header.tex $(DIR_DOC)manual_include_after_body.tex
 	rm -f $@
 	set -x &&\
 		if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
