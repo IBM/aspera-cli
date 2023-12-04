@@ -461,7 +461,7 @@ Ruby is now installed for the user, go to [Gem installation](#the_gem).
 
 #### Generic: RVM: Global installation (as root)
 
-Follow the same method as single user install, but execute as "root".
+Follow the same method as single user install, but execute as `root`.
 
 As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
 One can install in another location with :
@@ -779,10 +779,10 @@ The `aspera-cli` Gem provides a command line interface (CLI) which interacts wit
 - Transfer parameters can be altered by modification of [*transfer-spec*](#transferspec), this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
 - Supports FaspStream creation (using Node API)
-- Supports "Watchfolder" creation (using Node API)
+- Supports **Watchfolder** creation (using Node API)
 - Additional command plugins can be written by the user
 - Supports download of faspex and Aspera on Cloud "external" links
-- Supports "legacy" ssh based FASP transfers and remote commands (`ascmd`)
+- Supports **Legacy** SSH based FASP transfers and remote commands (`ascmd`)
 
 Basic usage is displayed by executing:
 
@@ -1206,10 +1206,10 @@ Depending on action, the output will contain:
 By default, result of type single_object and object_list are displayed using format `table`.
 The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
 
-In a table format, when displaying "objects" (single, or list), by default, sub object are
+In a table format, when displaying **Objects** (single, or list), by default, sub object are
 flattened (option `flat_hash`). So, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
 Setting `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
-When in flatten mode, it is possible to filter fields by "dotted" field name.
+When in flatten mode, it is possible to filter fields by compound field name using dot as separator.
 
 Object lists are displayed one per line, with attributes as columns. Single objects are transposed: one attribute per line.
 If transposition of single object is not desired, use option: `transpose_single` set to `no`.
@@ -2402,7 +2402,7 @@ There are currently 3 agents, set with option `transfer`:
 - [`trsdk`](#agt_trsdk) : use of Aspera Transfer SDK
 
 > **Note:** All transfer operations are seen from the point of view of the agent.
-For example, a node agent executing an "upload", or "package send" operation
+For example, a node agent executing an **upload**, or **package send** operation
 will effectively push files to the related server from the agent node.
 
 `ascli` standardizes on the use of a [*transfer-spec*](#transferspec) instead of **native** `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
@@ -3142,7 +3142,7 @@ stdio-tar v1
 Here we can see the adapters: `process`, `shares`, `noded`, `faux`, `file`, `stdio`, `stdio-tar`.
 
 Those adapters can be used wherever a file path is used in `ascp` including configuration.
-They act as a pseudo "drive".
+They act as a **pseudo drive**.
 
 The simplified format is:
 
@@ -3191,7 +3191,7 @@ where:
 | Name   | Type | Description |
 |--------|------|-------------|
 |count   |int   |mandatory|Number of files<br/>Mandatory|
-|file    |string|Basename for files<br>Default: "file"|
+|file    |string|Basename for files<br>Default: `file`|
 |size    |int   |Size of first file.<br>Default: 0|
 |inc     |int   |Increment applied to determine next file size<br>Default: 0|
 |seq     |enum  |Sequence in determining next file size<br/>Values: random, sequential<br/>Default: sequential|
@@ -3536,7 +3536,7 @@ This option is available only for some of the resources: if you need it: try and
 `ascli` uses a plugin mechanism.
 The first level command (just after `ascli` on the command line) is the name of the concerned plugin which will execute the command.
 Each plugin usually represents commands sent to a specific application.
-For instance, the plugin `faspex` allows operations on the application "Aspera Faspex".
+For instance, the plugin `faspex` allows operations on **Aspera Faspex**.
 
 Available plugins can be found using command:
 
@@ -3616,7 +3616,7 @@ You can test with:
 ascli aoc user profile show
 ```
 
-Optionally, it is possible to create a new organization-specific "integration", i.e. client application identification.
+Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
 If you already know the application, and want to limit the detection to it, provide url and plugin name:
@@ -3643,7 +3643,7 @@ For a **quick start**, follow the mandatory and sufficient section: [API Client 
 
 For a more convenient, browser-less, experience follow the [JWT](#jwt) section (auth=jwt) in addition to Client Registration.
 
-In Oauth, a "Bearer" token is generated to authenticate REST calls.
+In Oauth, a **Bearer** token is generated to authenticate REST calls.
 Bearer tokens are valid for a period of time defined (by the AoC app, configurable by admin) at its creation.
 `ascli` saves generated tokens in its configuration folder, tries to re-use them or regenerates them when they have expired.
 
@@ -3659,17 +3659,17 @@ Let's start by a registration with web based authentication (auth=web):
 
 - Open a web browser, log to your instance: e.g. `https://myorg.ibmaspera.com/`
 - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
-- Click "Create New"
-  - Client Name: `ascli`
-  - Redirect URIs: `http://localhost:12345`
-  - Origins: `localhost`
-  - uncheck "Prompt users to allow client to access"
+- Click **Create New**
+  - **Client Name**: `ascli`
+  - **Redirect URIs**: `http://localhost:12345`
+  - **Origins**: `localhost`
+  - uncheck **Prompt users to allow client to access**
   - leave the JWT part for now
-- Save
+- **Save**
 
 > **Note:** for web based authentication, `ascli` listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For ``ascli`, HTTP is required, and 12345 is the default port.
 
-Once the client is registered, a "Client ID" and "Secret" are created, these values will be used in the next step.
+Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
 
 #### <a id="aocpreset"></a>[option preset](#lprt) for Aspera on Cloud
 
@@ -3711,9 +3711,9 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
   - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
   - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
   - Click on the previously created application
-  - select tab : "JSON Web Token Auth"
-  - Modify options if necessary, for instance: activate both options in section "Settings"
-  - Click "Save"
+  - select tab : **JSON Web Token Auth**
+  - Modify options if necessary, for instance: activate both options in section **Settings**
+  - **Save**
 
 - Using command line
 
@@ -3747,9 +3747,9 @@ Open the previously generated public key located here: `$HOME/.aspera/ascli/my_p
 
 - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
 - Click on the user's icon (top right)
-- Select "Account Settings"
-- Paste the **Public Key** in the "Public Key" section
-- Click on "Submit"
+- Select **Account Settings**
+- Paste the Public Key PEM value in the **Public Key** section
+- Click on **Submit**
 
 ##### Using command line
 
@@ -3780,9 +3780,9 @@ modified
 
 To activate default use of JWT authentication for `ascli` using the [option preset](#lprt), do the following:
 
-- change auth method to JWT
-- provide location of private key
-- provide username to login as (OAuth "subject")
+- Change auth method to JWT
+- Provide location of private key
+- Provide username to login as (OAuth **subject**)
 
 Execute:
 
@@ -3790,7 +3790,10 @@ Execute:
 ascli config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/ascli/my_private_key --username=someuser@example.com
 ```
 
-> **Note:** the private key argument represents the actual PEM string. In order to read the content from a file, use the `@file:` prefix. But if the @file: argument is used as is, it will read the file and set in the configuration file. So to keep the "@file" tag in the configuration file, the `@val:` prefix is added.
+> **Note:** the private key argument represents the actual PEM string.
+In order to read the content from a file, use the `@file:` prefix.
+But if the @file: argument is used as is, it will read the file and set in the configuration file.
+So, to keep the `@file:` tag in the configuration file, the `@val:` prefix is added.
 
 After this last step, commands do not require web login anymore.
 
@@ -3845,7 +3848,7 @@ ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 
 The `admin` command allows several administrative tasks (and require admin privilege).
 
-It allows actions (create, update, delete) on "resources": users, group, nodes, workspace, etc... with the `admin resource` command.
+It allows actions (create, update, delete) on **resources**: users, group, nodes, workspace, etc... with the `admin resource` command.
 
 #### Listing resources
 
@@ -4016,7 +4019,7 @@ The option `default_ports` ([yes]/no) allows ascli to retrieve the server ports 
 
 #### Using ATS
 
-Refer to section "Examples" of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
+Refer to section **Examples** of [ATS](#ats) and substitute command `ats` with `aoc admin ats`.
 
 #### Files with type `link`
 
@@ -4115,7 +4118,7 @@ ascli aoc user workspaces list
 +------+----------------------------+
 ```
 
-#### Example: Create a sub access key in a "node"
+#### Example: Create a sub access key in a `node`
 
 Creation of a sub-access key is like creation of access key with the following difference: authentication to node API is made with accesskey (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
@@ -4225,7 +4228,7 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 +-------------------------------+
 ```
 
-#### Example: List "Limited" users
+#### Example: List **Limited** users
 
 ```bash
 ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
@@ -4301,7 +4304,7 @@ You can test with:
 ascli aoc user profile show
 ```
 
-This creates the option preset "aoc_&lt;org name&gt;" to allow seamless command line access and sets it as default for aspera on cloud.
+This creates the option preset `aoc_[org name]` to allow seamless command line access and sets it as default for aspera on cloud.
 
 Then, create two shared folders located in two regions, in your files home, in a workspace.
 
@@ -4343,12 +4346,12 @@ ascli aoc admin res client list --fields=id --format=csv|ascli aoc admin res cli
 AoC nodes as actually composed with two related entities:
 
 - An access key created on the Transfer Server (HSTS/ATS)
-- a `node` resource in the AoC application.
+- A `node` resource in the AoC application.
 
 The web UI allows creation of both entities in one shot.
 For more flexibility, `ascli` allows this in two separate steps.
 
-> **Note:** When selecting "Use existing access key" in the web UI, this actually skips access key creation (first step).
+> **Note:** When selecting **Use existing access key** in the web UI, this actually skips access key creation (first step).
 
 So, for example, the creation of a node using ATS in IBM Cloud looks like (see other example in this manual):
 
@@ -4387,7 +4390,7 @@ Refer to section [File list](#file_list)
 
 > **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file id` API).
 
-Source files are located on "Aspera on cloud", when :
+Source files are located on **Aspera on cloud**, when :
 
 - the server is Aspera on Cloud, and executing a download or recv
 - the agent is Aspera on Cloud, and executing an upload or send
@@ -4546,7 +4549,7 @@ For creation, parameters are the same as for node API [permissions](https://deve
 `ascli` expects the same payload for creation, but it will automatically populate required tags if needed.
 
 Also, the pseudo key `with` is available: it will lookup the name in the contacts and fill the proper type and id.
-The pseudo parameter `link_name` allows changing default "shared as" name.
+The pseudo parameter `link_name` allows changing default **shared as** name.
 
 - List permissions on a shared folder as user
 
@@ -5101,7 +5104,7 @@ The following are examples of `ruby_lambda` to be provided in the following temp
   ->(f){f["name"].match?(/\.gif$/)}
   ```
 
-`ascli` commands can be piped in order to combine operations, such as "find and delete":
+`ascli` commands can be piped in order to combine operations, such as **find and delete**:
 
 ```bash
 ascli node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' --fields=path --format=csv | ascli node --bulk=yes delete @lines:@stdin:
@@ -5142,14 +5145,14 @@ Use the command `ascli node stream create --ts=@json:<value>`, with [*transfer-s
 {"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
 ```
 
-### "Watchfolder"
+### Watchfolder
 
 Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
 
 `ascli` supports remote operations through the node API. Operations are:
 
 - Start `watchd` and `watchfolderd` services running as a system user having access to files
-- configure a "watchfolder" to define automated transfers
+- Configure a **watchfolder** to define automated transfers
 
 ```bash
 ascli node service create @json:'{"id":"mywatchd","type":"WATCHD","run_as":{"user":"user1"}}'
@@ -5186,8 +5189,8 @@ updated
 Scenario: Access to a **Shares on Demand** (SHOD) server on AWS is provided by a partner.
 We need to transfer files from this third party SHOD instance into our Azure BLOB storage.
 Simply create an **Aspera Transfer Service** instance, which provides access to the node API.
-Then create a configuration for the **SHOD** instance in the configuration file: in section "shares", a configuration named: aws_shod.
-Create another configuration for the Azure ATS instance: in section "node", named azure_ats.
+Then create a configuration for the **SHOD** instance in the configuration file: in section **shares**, a configuration named: `aws_shod`.
+Create another configuration for the Azure ATS instance: in section **node**, named `azure_ats`.
 Then execute the following command:
 
 ```bash
@@ -5278,7 +5281,7 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 
 #### Bearer token: Environment
 
-- If a self-managed Aspera node is used, then a "node user admin" must be created:
+- If a self-managed Aspera node is used, then a **node user admin** must be created:
   It has no `docroot` but has at least one file restriction (for testing, one can use `*` to accept creation of an access key with any storage root path).
   Refer to the Aspera HSTS documentation.
 
@@ -5828,21 +5831,21 @@ The following parameters are supported:
 
 Parameter `url` defines:
 
-- if http or https is used
-- the local port
-- the "domain", i.e. main path of url
+- if `http` or `https` is used
+- the local port number
+- the **base path**, i.e. the path under which requests are received.
 
 When a request is received the following happens:
 
 - the processor get the path of the url called
-- it removes the "domain
+- it removes the **base path**
 - it prepends it with the value of `script_folder`
 - it executes the script
 - upon success, a success code is returned
 
 In Faspex 5, configure like this:
 
-`Webhook endpoint URI` : `http://localhost:8080/processing/script1.sh`
+**Webhook endpoint URI** : `http://localhost:8080/processing/script1.sh`
 
 Then, the postprocessing script executed will be `script1.sh`.
 
@@ -5882,7 +5885,7 @@ As inboxes may be large, it is possible to use the following query parameters:
 
 (SQL query is `LIMIT <startIndex>, <count>`)
 
-The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under "Services (API v.3)".
+The API is listed in [Faspex 4 API Reference](https://developer.ibm.com/apis/catalog/?search=faspex) under **Services (API v.3)**.
 
 If no parameter `max` or `pmax` is provided, then all packages will be listed in the inbox, which result in paged API calls (using parameter: `count` and `page`).
 By default `count` is `0` (`10`), it can be increased to issue less HTTP calls.
@@ -5959,7 +5962,7 @@ ascli faspex package send --delivery-info=@json:'{"title":"test pkg 1","recipien
 
 In this example the notification template is directly provided on command line. Package information placed in the message are directly taken from the tags in transfer spec. The template can be placed in a file using modifier: `@file:`
 
-### Operation on "dropboxes"
+### Operation on dropboxes
 
 Example:
 
@@ -5972,7 +5975,7 @@ ascli faspex v4 dropbox delete 36
 ### Remote sources
 
 Faspex lacks an API to list the contents of a remote source (available in web UI).
-To workaround this, the node API is used, for this it is required to add a section ":storage" that links a storage name to a node configuration and sub path.
+To workaround this, the node API is used, for this it is required to set option: `storage` that links a storage name to a node configuration and sub path.
 
 Example:
 
@@ -6044,7 +6047,23 @@ faspex v4 workgroup list
 
 ## <a id="shares"></a>Plugin: `shares`: IBM Aspera Shares v1
 
-Aspera Shares supports the "node API" for the file transfer part.
+Aspera Shares supports the **node API** for the file transfer part.
+
+Supported commands are listed in Share's API documentation:
+
+<https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction>
+
+Example:
+
+```bash
+ascli shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
+
+share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
+
+user_id=$(ascli shares admin user list --select=@json:'{"username":"entity1"}' --fields=id)
+
+ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
+```
 
 ### Shares 1 sample commands
 
@@ -6298,10 +6317,10 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 `ascli` requires the following external tools available in the `PATH`:
 
-- ImageMagick : `convert` `composite`
-- "OptiPNG" : `optipng`
-- "FFmpeg" : `ffmpeg` `ffprobe`
-- "Libreoffice" : `libreoffice`
+- **ImageMagick** : `convert` `composite`
+- **OptiPNG** : `optipng`
+- **FFmpeg** : `ffmpeg` `ffprobe`
+- **Libreoffice** : `libreoffice`
 
 Here shown on Redhat/CentOS.
 
@@ -6430,7 +6449,7 @@ case "$*" in *trev*) tmout=10m ;; *) tmout=30m ;; esac
 
 - `trevents` : only recently uploaded files will be tested (transfer events)
 - `events` : only recently uploaded files will be tested (file events: not working)
-- `scan` : recursively scan all files under the access key&apos;s "storage root"
+- `scan` : recursively scan all files under the access key&apos;s **storage root**
 - `test` : test using a local file
 
 Once candidate are selected, once candidates are selected,
@@ -6671,12 +6690,12 @@ If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON 
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
-There are special "extended" [*transfer-spec*](#transferspec) parameters supported by `asession`:
+There are special **extended** [*transfer-spec*](#transferspec) parameters supported by `asession`:
 
 - `EX_loglevel` to change log level of `ascli`
 - `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
 
-> **Note:** In addition, many "EX_" [*transfer-spec*](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transferspec).
+> **Note:** In addition, many (deprecated) `EX_` [*transfer-spec*](#transferspec) parameters are supported for the [`direct`](#agt_direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transferspec).
 
 ### Comparison of interfaces
 
@@ -6704,7 +6723,7 @@ asession < session.json
 
 ### Asynchronous commands and Persistent session
 
-`asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in `ascp` manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be "snake" style, for example: `LongParameter` -&gt; `long_parameter`
+`asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in `ascp` manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be **snake** style, for example: `LongParameter` -&gt; `long_parameter`
 
 This is particularly useful for a persistent session ( with the [*transfer-spec*](#transferspec) parameter: `"keepalive":true` )
 
@@ -6758,10 +6777,10 @@ A hot folder being defined as a tool that:
 - locally (or remotely) detects new files in a top folder
 - send detected files to a remote (respectively, local) repository
 - only sends new files, do not re-send already sent files
-- optionally: sends only files that are not still "growing"
+- optionally: sends only files that are not still **growing**
 - optionally: after transfer of files, deletes or moves to an archive
 
-In addition: the detection should be made "continuously" or on specific time/date.
+In addition: the detection should be made **continuously** or on specific time/date.
 
 ### Setup procedure
 
@@ -6788,7 +6807,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 #### Server side and configuration
 
-Virtually any transfer on a "repository" on a regular basis might emulate a hot folder.
+Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
 
 > **Note:** file detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
 >

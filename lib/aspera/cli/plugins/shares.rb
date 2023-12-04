@@ -140,7 +140,8 @@ module Aspera
                 return entity_command(share_command, api_shares_admin, 'data/shares')
                 # return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
               when :user_permissions, :group_permissions
-                return entity_action(api_shares_admin, "data/shares/#{instance_identifier}/#{share_command}")
+                share_id = instance_identifier
+                return entity_action(api_shares_admin, "data/shares/#{share_id}/#{share_command}")
               end
             end
           end
