@@ -58,6 +58,13 @@ Cleanup installed gems in rvm to start fresh:
 make cleanup_gems
 ```
 
+## Documentation
+
+Documentation is generated with `pandoc` and `LaTeX`.
+Plus IBM font `Plex` is used.
+
+TODO: document installation of doc tool chain.
+
 ## Running Tests
 
 First, a testing environment must be created:
@@ -78,6 +85,31 @@ make
 
 When new commands are added to the CLI, new tests shall be added to the test suite.
 
+### Special tests
+
+Some gems are optional: `rmagick` and `grpc`, as they require compilation of native code which may cause problems.
+By default, tests that use those gems are skipped.
+To run them: `make optional`.
+Those tests also require the optional gems to be installed: `make install_optional_gems`.
+
+Some other tests require interactive input. To run them: `make interactive`
+
+To run every test: `make full`
+
+### Pre-release tests
+
+For preparation of a release, do the following:
+
+1. Select a ruby version to test with: `rvm use 3.2.2`
+2. Remove all gems: `make clean_gems`
+3. Starts tests: `make test`
+4. Install optional gems: `make install_optional_gems`
+5. Test remaining cases: `make optional` and `make interactive`
+
+This ensures that optional gems do not prevent `ascli` to run.
+
+To test additional Ruby version, repeat the procedure with other Ruby versions.
+
 ## Coverage
 
 A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
@@ -88,16 +120,6 @@ ENABLE_COVERAGE=1 make test
 ```
 
 Once tests are completed, or during test, consult the page: [coverage/index.html](coverage/index.html)
-
-## Optional gems
-
-Some gems are optional: `rmagick` and `grpc`, as they require compilation of native code.
-To run them: `make optional`
-
-Some tests require interactive input.
-To run them: `make interactive`
-
-To run every test: `make full`
 
 ## Build
 
