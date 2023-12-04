@@ -2613,11 +2613,11 @@ Options for `transfer_info` are:
 
 | Name     | Type   | Description |
 |----------|--------|-------------|
-| url      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: grpc://127.0.0.1:0 |
-| external | bool   | Use external daemon, do not start<br/>Default: false |
-| keep     | bool   | Keep the daemon running after exiting `ascli`<br/>Default: false |
+| `url`      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
+| `external` | bool   | Use external daemon, do not start<br/>Default: `false` |
+| `keep`     | bool   | Keep the daemon running after exiting `ascli`<br/>Default: `false` |
 
-> **Note:** if port zero is specified in the URL, then the daemon will listen on a random available port.
+> **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
 
 The gem `grpc` was removed from dependencies, as it requires compilation of a native part.
 So, to use the Transfer SDK you should install this gem:

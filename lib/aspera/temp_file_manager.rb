@@ -42,7 +42,7 @@ module Aspera
       new_file
     end
 
-    # same as above but in global temp folder
+    # same as above but in global temp folder, with user's name
     def new_file_path_global(base_name)
       username =
         begin

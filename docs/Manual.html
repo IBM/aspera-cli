@@ -2904,27 +2904,29 @@ class="header-section-number">4.23.5</span>
 </thead>
 <tbody>
 <tr class="odd">
-<td>url</td>
+<td><code>url</code></td>
 <td>string</td>
 <td>IP address and port listened by the
-daemon</br>Mandatory<br/>Default: grpc://127.0.0.1:0</td>
+daemon</br>Mandatory<br/>Default: <code>:0</code></td>
 </tr>
 <tr class="even">
-<td>external</td>
+<td><code>external</code></td>
 <td>bool</td>
-<td>Use external daemon, do not start<br/>Default: false</td>
+<td>Use external daemon, do not start<br/>Default:
+<code>false</code></td>
 </tr>
 <tr class="odd">
-<td>keep</td>
+<td><code>keep</code></td>
 <td>bool</td>
 <td>Keep the daemon running after exiting
-<code>ascli</code><br/>Default: false</td>
+<code>ascli</code><br/>Default: <code>false</code></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p><strong>Note:</strong> if port zero is specified in the URL, then the
-daemon will listen on a random available port.</p>
+<p><strong>Note:</strong> If port zero is specified in the URL, then the
+daemon will listen on a random available port. If no address is
+specified, then <code>127.0.0.1</code> is used.</p>
 </blockquote>
 <p>The gem <code>grpc</code> was removed from dependencies, as it
 requires compilation of a native part. So, to use the Transfer SDK you

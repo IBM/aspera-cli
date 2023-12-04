@@ -2,46 +2,82 @@
 
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/installation'
+require 'aspera/temp_file_manager'
 require 'json'
 require 'uri'
 
 module Aspera
   module Fasp
     class AgentTrsdk < Aspera::Fasp::AgentBase
+      # see https://github.com/grpc/grpc/blob/master/doc/naming.md
+      # https://grpc.io/docs/guides/custom-name-resolution/
+      LOCAL_SOCKET_ADDR = '127.0.0.1'
+      PORT_SEP = ':'
+      # port zero means select a random available high port
+      AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
       DEFAULT_OPTIONS = {
-        url:      'grpc://127.0.0.1:0',
-        external: false,
-        keep:     false
+        url:      AUTO_LOCAL_TCP_PORT,
+        external: false,         # expect that an external daemon is already running
+        keep:     false          # do not shutdown daemon on exit
       }.freeze
       private_constant :DEFAULT_OPTIONS
+
+      class << self
+        # Well, the port number is only in log file
+        def daemon_port_from_log(log_file)
+          result = nil
+          # if port is zero, a dynamic port was created, get it
+          File.open(log_file, 'r') do |file|
+            file.each_line do |line|
+              # Well, it's tricky to depend on log
+              if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
+                result = m[2].to_i
+                # no "break" , need to read last matching log line
+              end
+            end
+          end
+          raise 'Port not found in daemon logs' if result.nil?
+          Log.log.debug{"Got port #{result} from log"}
+          return result
+        end
+      end
 
       # options come from transfer_info
       def initialize(user_opts={})
         super(user_opts)
         @options = AgentBase.options(default: DEFAULT_OPTIONS, options: user_opts)
-        daemon_uri = URI.parse(@options[:url])
-        raise Fasp::Error, "invalid url #{@options[:url]}" unless daemon_uri.scheme.eql?('grpc')
+        is_local_auto_port = @options[:url].eql?(AUTO_LOCAL_TCP_PORT)
+        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@options[:keep] || @options[:external])
         Log.log.debug{Log.dump(:agent_options, @options)}
-        # load and create SDK stub
+        # load SDK stub class on demand, as it's an optional gem
         $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
-        # it stays
+        # keep PID for optional shutdown
         @daemon_pid = nil
+        daemon_endpoint = @options[:url]
+        Log.log.debug{Log.dump(:daemon_endpoint, daemon_endpoint)}
+        # retry loop
         begin
-          @transfer_client = Transfersdk::TransferService::Stub.new("#{daemon_uri.host}:#{daemon_uri.port}", :this_channel_is_insecure)
+          # no address: local bind
+          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
+          # Create stub (without credentials)
+          @transfer_client = Transfersdk::TransferService::Stub.new(daemon_endpoint, :this_channel_is_insecure)
+          # Initiate actual connection
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
-          Log.log.debug{"daemon info: #{get_info_response}"}
-          Log.log.warn{'attached to existing daemon'} unless @options[:external] || @options[:keep]
+          Log.log.debug{"Daemon info: #{get_info_response}"}
+          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || @options[:external] || @options[:keep]
           at_exit{shutdown}
-        rescue GRPC::Unavailable
-          raise if @options[:external]
-          raise "daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_uri}}" unless @daemon_pid.nil?
+        rescue GRPC::Unavailable => e
+          # if transferd is external: do not start it, or other error
+          raise if @options[:external] || !e.message.include?('failed to connect')
+          # we already tried to start a daemon, but it failed
+          raise "Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}" unless @daemon_pid.nil?
           Log.log.warn('no daemon present, starting daemon...') if @options[:external]
           # location of daemon binary
-          bin_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
-          # config file and logs are created in same folder
-          generated_config_file_path = File.join(bin_folder, 'sdk.conf')
-          log_base = File.join(bin_folder, 'transferd')
+          sdk_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
+          # transferd only supports local ip and port
+          daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
+          raise "Invalid daemon URI #{daemon_endpoint}" unless daemon_uri.scheme.eql?('ipv4')
           # create a config file for daemon
           config = {
             address:      daemon_uri.host,
@@ -49,35 +85,35 @@ module Aspera
             fasp_runtime: {
               use_embedded: false,
               user_defined: {
-                bin: bin_folder,
-                etc: bin_folder
+                bin: sdk_folder,
+                etc: sdk_folder
               }
             }
           }
-          File.write(generated_config_file_path, config.to_json)
-          @daemon_pid = Process.spawn(Installation.instance.path(:transferd), '--config', generated_config_file_path, out: "#{log_base}.out", err: "#{log_base}.err")
+          # config file and logs are created in same folder
+          transferd_base_tmp = TempFileManager.instance.new_file_path_global('transferd')
+          Log.log.debug{"transferd base tmp #{transferd_base_tmp}"}
+          conf_file = "#{transferd_base_tmp}.conf"
+          log_stdout = "#{transferd_base_tmp}.out"
+          log_stderr = "#{transferd_base_tmp}.err"
+          File.write(conf_file, config.to_json)
+          @daemon_pid = Process.spawn(Installation.instance.path(:transferd), '--config', conf_file, out: log_stdout, err: log_stderr)
           begin
-            # wait for process to initialize
+            # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do
+              # this returns if process dies (within 2 seconds)
               _, status = Process.wait2(@daemon_pid)
-              raise "transfer daemon exited with status #{status.exitstatus}. Check files: #{log_base}.out #{log_base}.err"
+              raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{log_stdout} and #{log_stderr}"
             end
           rescue Timeout::Error
             nil
           end
-          Log.log.debug{"daemon started with pid #{@daemon_pid}"}
+          Log.log.debug{"Daemon started with pid #{@daemon_pid}"}
           Process.detach(@daemon_pid) if @options[:keep]
-          if daemon_uri.port.eql?(0)
-            # if port is zero, a dynamic port was created, get it
-            File.open("#{log_base}.out", 'r') do |file|
-              file.each_line do |line|
-                if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
-                  daemon_uri.port = m[2].to_i
-                  # no "break" , need to keep last one
-                end
-              end
-            end
-          end
+          at_exit {shutdown}
+          # update port for next connection attempt (if auto high port was requested)
+          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{self.class.daemon_port_from_log(log_stdout)}" if is_local_auto_port
+          # local daemon started, try again
           retry
         end
       end
@@ -133,8 +169,12 @@ module Aspera
       end
 
       def shutdown
-        if !@options[:keep] && !@daemon_pid.nil?
-          Log.log.debug("stopping daemon #{@daemon_pid}")
+        stop_daemon unless @options[:keep]
+      end
+
+      def stop_daemon
+        if !@daemon_pid.nil?
+          Log.log.debug("Stopping daemon #{@daemon_pid}")
           Process.kill('INT', @daemon_pid)
           _, status = Process.wait2(@daemon_pid)
           Log.log.debug("daemon stopped #{status}")
