@@ -13,7 +13,8 @@ module Aspera
     # keys in hash that contain secrets
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     HTTP_SECRETS = %w[Authorization].freeze
-    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
+    # (can be modified)
+    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
@@ -32,7 +33,7 @@ module Aspera
       # cred in http dump
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
-    private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :ALL_SECRETS, :REGEX_LOG_REPLACES
+    private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :REGEX_LOG_REPLACES
     @log_secrets = false
     class << self
       attr_accessor :log_secrets

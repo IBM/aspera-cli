@@ -32,9 +32,7 @@ module Aspera
     # to avoid infinite loop in pub link redirection
     MAX_AOC_URL_REDIRECT = 10
     # Well-known AoC globals client apps
-    GLOBAL_CLIENT_APPS = %w[aspera.global-cli-client aspera.drive].freeze
-    # index offset in data repository of client app
-    DATA_REPO_INDEX_START = 4
+    GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.start_with?('aspera.')}.freeze
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
     # path in URL of public links
@@ -50,7 +48,6 @@ module Aspera
 
     private_constant :MAX_AOC_URL_REDIRECT,
       :GLOBAL_CLIENT_APPS,
-      :DATA_REPO_INDEX_START,
       :COOKIE_PREFIX_CONSOLE_AOC,
       :PUBLIC_LINK_PATHS,
       :JWT_AUDIENCE,
@@ -71,10 +68,9 @@ module Aspera
     # class static methods
     class << self
       # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
-      def get_client_info(client_name=GLOBAL_CLIENT_APPS.first)
-        client_index = GLOBAL_CLIENT_APPS.index(client_name)
-        raise "no such pre-defined client: #{client_name}" if client_index.nil?
-        return client_name, Base64.urlsafe_encode64(DataRepository.instance.data(DATA_REPO_INDEX_START + client_index))
+      def get_client_info(client_name=nil)
+        client_key = client_name.nil ? GLOBAL_CLIENT_APPS.first : client_name.to_sym
+        return client_name, DataRepository.instance.item(client_key)
       end
 
       # base API url depends on domain, which could be "qa.xxx"

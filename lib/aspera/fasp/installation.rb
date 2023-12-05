@@ -117,15 +117,10 @@ module Aspera
           file = transferd_filepath
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
-          type = k.to_s[-3..-1]
-          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem") do
-            # generate PEM from DER
-            OpenSSL::PKey.const_get(type.upcase).new(DataRepository.instance.data(type.eql?('dsa') ? 1 : 2)).to_pem
-          end
+          type = k.to_s[-3..-1].to_sym
+          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem") {DataRepository.instance.item(type)}
         when :aspera_license
-          file = check_or_create_sdk_file('aspera-license') do
-            Zlib::Inflate.inflate(DataRepository.instance.data(6))
-          end
+          file = check_or_create_sdk_file('aspera-license') {DataRepository.instance.item(:license)}
         when :aspera_conf
           file = check_or_create_sdk_file('aspera.conf') {DEFAULT_ASPERA_CONF}
         when :fallback_certificate, :fallback_private_key
@@ -150,7 +145,7 @@ module Aspera
 
       # default bypass key phrase
       def ssh_cert_uuid
-        return format('%08x-%04x-%04x-%04x-%04x%08x', *DataRepository.instance.data(3).unpack('NnnnnN'))
+        return DataRepository.instance.item(:uuid)
       end
 
       def aspera_token_ssh_key_paths
