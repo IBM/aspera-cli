@@ -206,7 +206,6 @@ module Aspera
             data['openssldir'] = m[1]
           end
         end if File.file?(ascp_file)
-        data['uuid'] = ssh_cert_uuid
         # log is "-" no need to display
         data.delete('log')
         return data

@@ -713,6 +713,10 @@ module Aspera
             data = Fasp::Installation.instance.ascp_info
             # show command line transfer spec
             data['ts'] = transfer.updated_ts
+            # add keys
+            DataRepository::ELEMENTS.each_with_object(data){|i, h|h[i.to_s] = DataRepository.instance.item(i)}
+            # declare those as secrets
+            SecretHider::ADDITIONAL_KEYS_TO_HIDE.push(*DataRepository::ELEMENTS.map(&:to_s))
             return {type: :single_object, data: data}
           when :products
             command = options.get_next_command(%i[list use])
@@ -859,7 +863,6 @@ module Aspera
           wizard
           detect
           coffee
-          keys
           ascp
           email_test
           smtp_settings
@@ -953,10 +956,6 @@ module Aspera
             end
             OpenApplication.instance.uri(COFFEE_IMAGE)
             return Main.result_nothing
-          when :keys
-            # declare those as secrets
-            SecretHider::ALL_SECRETS.push(*DataRepository::ELEMENTS.map(&:to_s))
-            return {type: :single_object, data: DataRepository::ELEMENTS.each_with_object({}){|i, h|h[i] = DataRepository.instance.item(i)}}
           when :ascp
             execute_action_ascp
           when :gem

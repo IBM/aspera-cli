@@ -6,6 +6,8 @@ require 'logger'
 module Aspera
   # remove secret from logs and output
   class SecretHider
+    # configurable:
+    ADDITIONAL_KEYS_TO_HIDE = []
     # display string for hidden secrets
     HIDDEN_PASSWORD = '🔑'
     # env vars for ascp with secrets
@@ -13,8 +15,7 @@ module Aspera
     # keys in hash that contain secrets
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     HTTP_SECRETS = %w[Authorization].freeze
-    # (can be modified)
-    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten
+    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
@@ -33,7 +34,7 @@ module Aspera
       # cred in http dump
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
-    private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :REGEX_LOG_REPLACES
+    private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :KEY_FALSE_POSITIVES, :REGEX_LOG_REPLACES
     @log_secrets = false
     class << self
       attr_accessor :log_secrets
@@ -57,6 +58,7 @@ module Aspera
         return false unless keyword.is_a?(String) && value.is_a?(String)
         # those are not secrets
         return false if KEY_FALSE_POSITIVES.any?{|f|f.match?(keyword)}
+        return true if ADDITIONAL_KEYS_TO_HIDE.include?(keyword)
         # check if keyword (name) contains an element that designate it as a secret
         ALL_SECRETS.any?{|kw|keyword.include?(kw)}
       end

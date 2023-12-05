@@ -2,7 +2,11 @@
 
 * 4.16.0
 
-  * global: option `output` to redirect to a file instead of stdout
+  * New Features:
+    * global: option `output` to redirect to a file instead of stdout
+    * config: keys added to `config ascp info`
+  * Issues Fixed:
+    * wizard: was failing due to "require" of optional gem.
 
 * 4.15.0
 
