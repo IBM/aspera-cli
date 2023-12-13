@@ -49,8 +49,6 @@ module Aspera
 
         def initialize(env)
           super(env)
-          options.declare(:type, 'Type of user/group for operations', values: %i[any local ldap saml], default: :any)
-          options.parse_options!
         end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
@@ -84,55 +82,10 @@ module Aspera
             return Node.new(@agents, api: api_shares_node).execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
-            admin_command = options.get_next_command(%i[user group share node].freeze)
+            admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
             case admin_command
             when :node
               return entity_action(api_shares_admin, 'data/nodes')
-            when :user, :group
-              entity_type = admin_command
-              entities_location = options.get_option(:type, mandatory: true)
-              entities_path = "data/#{entities_location}_#{entity_type}s"
-              entity_action = nil
-              case entities_location
-              when :any
-                entities_path = "data/#{entity_type}s"
-                entity_action = %i[list show delete]
-                entity_action.concat(USR_GRP_SETTINGS)
-                entity_action.push(:users) if entity_type.eql?(:group)
-                entity_action.freeze
-              when :local
-                entity_action = %i[list show create modify delete].freeze
-              when :ldap
-                entity_action = %i[add].freeze
-              when :saml
-                entity_action = %i[import].freeze
-              end
-              entity_verb = options.get_next_command(entity_action)
-              # entity_path = "#{entities_path}/#{instance_identifier}" if %i[app_authorizations share_permissions].include?(entity_verb)
-              case entity_verb
-              when *Plugin::ALL_OPS
-                display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
-                display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:any)
-                return entity_command(entity_verb, api_shares_admin, entities_path, display_fields: display_fields)
-              when :import
-                return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
-                  entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
-                  raise 'expecting Hash' unless entity_parameters.is_a?(Hash)
-                  SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
-                  entity_parameters.each_key do |p|
-                    raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
-                  end
-                  api_shares_admin.create("#{entities_path}/import", entity_parameters)[:data]
-                end
-              when :add
-                return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
-                  api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
-                end
-              when *USR_GRP_SETTINGS
-                group_id = instance_identifier
-                entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
-                return entity_action(api_shares_admin, entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
-              end
             when :share
               share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
               case share_command
@@ -142,6 +95,53 @@ module Aspera
               when :user_permissions, :group_permissions
                 share_id = instance_identifier
                 return entity_action(api_shares_admin, "data/shares/#{share_id}/#{share_command}")
+              end
+            when :transfer_settings
+              xfer_settings_command = options.get_next_command(%i[show modify])
+              return entity_command(xfer_settings_command, api_shares_admin, 'data/transfer_settings', is_singleton: true)
+            when :user, :group
+              entity_type = admin_command
+              entities_location = options.get_next_command(%i[all local ldap saml])
+              entities_path = "data/#{entities_location}_#{entity_type}s"
+              entity_action = nil
+              case entities_location
+              when :all
+                entities_path = "data/#{entity_type}s"
+                entity_action = %i[list show delete]
+                entity_action.concat(USR_GRP_SETTINGS)
+                entity_action.push(:users) if entity_type.eql?(:group)
+                entity_action.freeze
+              when :local
+                entity_action = %i[list show delete create modify].freeze
+              when :ldap
+                entity_action = %i[add].freeze
+              when :saml
+                entity_action = %i[import].freeze
+              end
+              entity_verb = options.get_next_command(entity_action)
+              case entity_verb
+              when *Plugin::ALL_OPS # list, show, delete, create, modify
+                display_fields = entity_type.eql?(:user) ? %w[id username first_name last_name email] : nil
+                display_fields.push(:directory_user) if entity_type.eql?(:user) && entities_location.eql?(:all)
+                return entity_command(entity_verb, api_shares_admin, entities_path, display_fields: display_fields)
+              when *USR_GRP_SETTINGS # transfer_settings, app_authorizations, share_permissions
+                group_id = instance_identifier
+                entities_path = "#{entities_path}/#{group_id}/#{entity_verb}"
+                return entity_action(api_shares_admin, entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
+              when :import # saml
+                return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
+                  entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
+                  raise 'expecting Hash' unless entity_parameters.is_a?(Hash)
+                  SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
+                  entity_parameters.each_key do |p|
+                    raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
+                  end
+                  api_shares_admin.create("#{entities_path}/import", entity_parameters)[:data]
+                end
+              when :add # ldap
+                return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
+                  api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
+                end
               end
             end
           end
