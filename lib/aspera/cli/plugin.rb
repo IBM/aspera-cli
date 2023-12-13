@@ -180,10 +180,10 @@ module Aspera
       end
 
       # implement generic rest operations on given resource path
-      def entity_action(rest_api, res_class_path, **opts)
+      def entity_action(rest_api, res_class_path, **opts, &block)
         # res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
         command = options.get_next_command(ALL_OPS)
-        return entity_command(command, rest_api, res_class_path, **opts)
+        return entity_command(command, rest_api, res_class_path, **opts, &block)
       end
 
       # query parameters in URL suitable for REST list/GET and delete/DELETE
