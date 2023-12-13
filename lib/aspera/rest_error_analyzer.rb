@@ -90,6 +90,7 @@ module Aspera
       # @param msg one error message  to add to list
       def add_error(call_context, type, msg)
         call_context[:messages].push(msg)
+        Log.log.trace1{"Found error: #{type}: #{msg}"}
         log_file = instance.log_file
         # log error for further analysis (file must exist to activate)
         return if log_file.nil? || !File.exist?(log_file)
