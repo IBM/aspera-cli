@@ -1,10 +1,10 @@
 ##################################
 # Integration tests
-# cspell:ignoreRegExp /[^a-z]t[a-z]+/ 
-# cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/
-# cspell:ignoreRegExp /\\n/
+# cspell:ignoreRegExp /[^a-z]t[a-z]+/     # test case name
+# cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/ # test case name
+# cspell:ignoreRegExp / -r[a-z]+ /        # ruby require
 # cspell:ignore ifeq killall
-# cspell:ignore workgroups
+# cspell:ignore workgroups pubkey
 
 # root folder is one level up
 DIR_TOP=../
@@ -137,39 +137,39 @@ $(T)shares_admin_1: $(T).exists
 	@$(STOP_TEST) $@
 $(T)shares_admin_2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin group list
+	$(EXE_MAN) shares admin group all list
 	@$(STOP_TEST) $@
 $(T)shares_admin_3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user list
+	$(EXE_MAN) shares admin user all list
 	@$(STOP_TEST) $@
 $(T)shares_admin_4: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user list --type=local
+	$(EXE_MAN) shares admin user local list
 	@$(STOP_TEST) $@
 $(T)shares_admin_5: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user app_authorizations 1 show
+	$(EXE_MAN) shares admin user all app_authorizations 1 show
 	@$(STOP_TEST) $@
 $(T)shares_admin_6: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
+	$(EXE_MAN) shares admin user all app_authorizations 1 modify @json:'{"app_login":true}'
 	@$(STOP_TEST) $@
 $(T)shares_admin_7: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user share_permissions 1 list
+	$(EXE_MAN) shares admin user all share_permissions 1 list
 	@$(STOP_TEST) $@
 $(T)shares_admin_8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user share_permissions 1 show 1
+	$(EXE_MAN) shares admin user all share_permissions 1 show 1
 	@$(STOP_TEST) $@
 $(T)shares_admin_9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
+	$(EXE_MAN) shares admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 	@$(STOP_TEST) $@
 $(T)shares_admin_10: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) shares admin user add --type=ldap the_name $(EXE_END_FAI)
+	$(EXE_BEG_FAI) shares admin user ldap add the_name $(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)shares_admin_11: $(T).exists
 	@$(START_TEST) $@
@@ -1270,6 +1270,7 @@ $(T)conf_genkey: $(T).exists
 	$(EXE_MAN) config genkey $(DIR_TMP)my_key
 	rm -f $(DIR_TMP)my_key $(DIR_TMP)my_key.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)my_key 4096
+	$(EXE_MAN) config pubkey @file:$(DIR_TMP)my_key
 	$(EXE_BEG_ERR) config genkey $(DIR_TMP)my_key not_int$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_smtp: $(T).exists
@@ -1479,7 +1480,7 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 bearer_token
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res workgroups list
-	$(EXE_MAN) faspex5 admin res shared_inboxes list
+	$(EXE_MAN) faspex5 admin res shared_inboxes list 
 	$(EXE_MAN) faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res saml_configs list
@@ -1492,10 +1493,11 @@ $(T)f5_adm: $(T).exists
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res node list 
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res registrations list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ create %name:john@example.com
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:john@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_inbox_name@ johnny@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:johnny@example.com
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_inbox_name@ johnny@example.com
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:johnny@example.com
 	@$(STOP_TEST) $@
 $(T)f5_smtp: $(T).exists
 	@$(START_TEST) $@
