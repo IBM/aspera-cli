@@ -21,6 +21,8 @@ module Aspera
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 6', path: ['message'])
         RestErrorAnalyzer.instance.add_handler('Type 7: errors[]') do |type, call_context|
           next unless call_context[:data].is_a?(Hash) && call_context[:data]['errors'].is_a?(Hash)
+          # special for Shares: false positive ? (update global transfer_settings)
+          next if call_context[:data].key?('min_connect_version')
           call_context[:data]['errors'].each do |k, v|
             RestErrorAnalyzer.add_error(call_context, type, "#{k}: #{v}")
           end
