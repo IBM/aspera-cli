@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore initdemo genkey asperasoft
+# cspell:ignore initdemo genkey pubkey asperasoft
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
@@ -855,6 +855,7 @@ module Aspera
           open
           documentation
           genkey
+          pubkey
           remote_certificate
           gem
           plugins
@@ -893,6 +894,9 @@ module Aspera
             private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIV_KEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
+          when :pubkey # get pub key
+            private_key_pem = options.get_next_argument('private key PEM value')
+            return Main.result_status(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
           when :remote_certificate
             remote_url = options.get_next_argument('remote URL')
             @option_insecure = true
@@ -1056,7 +1060,7 @@ module Aspera
               formatter.display_status('Using existing key:')
             else
               formatter.display_status("Generating #{DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
-              Config.generate_rsa_private_key(path: private_key_path)
+              self.class.generate_rsa_private_key(path: private_key_path)
               formatter.display_status('Created key:')
             end
             formatter.display_status(private_key_path)
