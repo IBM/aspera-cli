@@ -431,7 +431,8 @@ Use this method which provides more flexibility.
 
 Install `rvm`: follow [https://rvm.io/](https://rvm.io/) :
 
-Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
+Execute the shell/curl command.
+As regular user, it install in the user's home: `~/.rvm` .
 
 ```bash
 \curl -sSL https://get.rvm.io | bash -s stable
@@ -512,6 +513,12 @@ Installation without network:
 It is essentially the same procedure, but instead of retrieving files from internet, one copies the files from a machine with internet access, and then install from those archives:
 
 - Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/>
+
+  ```bash
+  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  curl -o ${v##*/} $v
+  ```
+
 - Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
 
   ```bat
@@ -756,6 +763,12 @@ ascli config ascp install --sdk-url=file:///sdk.zip
 
 ```bash
 source ~/.rvm/scripts/rvm
+```
+
+> **Note:** Alternatively, to retrieve all necessary gems, execute:
+
+```bash
+gem install aspera-cli -N -i my_gems
 ```
 
 ## <a id="cli"></a>Command Line Interface: `ascli`
@@ -1669,6 +1682,7 @@ config preset show conf_name
 config preset unset conf_name param
 config preset update conf_name --p1=v1 --p2=v2
 config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
+config pubkey @file:my_key
 config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
 config vault delete my_label
 config vault list
@@ -1961,6 +1975,12 @@ ascli config genkey ${PRIVKEYFILE} 4096
 ```
 
 > **Note:** `ascli` uses the `openssl` library.
+
+To display the public key of a private key:
+
+```bash
+ascli config pubkey @file:${PRIVKEYFILE}
+```
 
 To display the version of **openssl** used in `ascli`:
 
@@ -2564,7 +2584,7 @@ Parameters provided in option `transfer_info` are:
 | url      | string | URL of the node API</br>Mandatory |
 | username | string | Node api user or access key</br>Mandatory |
 | password | string | Password, secret or bearer token</br>Mandatory |
-| root_id  | string | Password or secret</br>Mandatory only for bearer token |
+| root_id  | string | Root file id</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [option preset](#lprt) :
 
@@ -3295,7 +3315,7 @@ OPTIONS: global
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check remote_certificate smtp_settings throw vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
@@ -3345,7 +3365,6 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
         --password=VALUE             User's password
-        --type=ENUM                  Type of user/group for operations: [any], local, ldap, saml
 
 
 COMMAND: node
@@ -5603,6 +5622,7 @@ faspex5 admin res registrations list
 faspex5 admin res saml_configs list
 faspex5 admin res shared_inboxes invite %name:my_shared_inbox_name johnny@example.com
 faspex5 admin res shared_inboxes list
+faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
 faspex5 admin res shared_inboxes members %name:my_shared_inbox_name create %name:john@example.com
 faspex5 admin res shared_inboxes members %name:my_shared_inbox_name delete %name:john@example.com
 faspex5 admin res shared_inboxes members %name:my_shared_inbox_name delete %name:johnny@example.com
@@ -6068,18 +6088,18 @@ ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$u
 ### Shares 1 sample commands
 
 ```bash
-shares admin group list
+shares admin group all list
 shares admin node list
 shares admin share list --fields=DEF,-status,status_message
 shares admin share user_permissions 1 list
-shares admin user add --type=ldap the_name
-shares admin user app_authorizations 1 modify @json:'{"app_login":true}'
-shares admin user app_authorizations 1 show
-shares admin user import --type=saml @json:'{"id":"the_id","name_id":"the_name"}'
-shares admin user list
-shares admin user list --type=local
-shares admin user share_permissions 1 list
-shares admin user share_permissions 1 show 1
+shares admin user all app_authorizations 1 modify @json:'{"app_login":true}'
+shares admin user all app_authorizations 1 show
+shares admin user all list
+shares admin user all share_permissions 1 list
+shares admin user all share_permissions 1 show 1
+shares admin user ldap add the_name
+shares admin user local list
+shares admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 shares files browse /
 shares files delete my_share1/test_file.bin
 shares files download --to-folder=. my_share1/test_file.bin

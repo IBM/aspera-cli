@@ -425,7 +425,8 @@ Use this method which provides more flexibility.
 
 Install `rvm`: follow [https://rvm.io/](https://rvm.io/) :
 
-Execute the shell/curl command. As regular user, it install in the user's home: `~/.rvm` .
+Execute the shell/curl command.
+As regular user, it install in the user's home: `~/.rvm` .
 
 ```bash
 \curl -sSL https://get.rvm.io | bash -s stable
@@ -506,6 +507,12 @@ Installation without network:
 It is essentially the same procedure, but instead of retrieving files from internet, one copies the files from a machine with internet access, and then install from those archives:
 
 - Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/>
+
+  ```bash
+  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  curl -o ${v##*/} $v
+  ```
+
 - Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
 
   ```bat
@@ -750,6 +757,12 @@ source ~/.rvm/scripts/rvm
 
 ```bash
 source ~/.rvm/scripts/rvm
+```
+
+> **Note:** Alternatively, to retrieve all necessary gems, execute:
+
+```bash
+gem install aspera-cli -N -i my_gems
 ```
 
 ## <a id="cli"></a>Command Line Interface: <%=tool%>
@@ -1885,6 +1898,12 @@ The key is not passphrase protected.
 
 > **Note:** <%=tool%> uses the `openssl` library.
 
+To display the public key of a private key:
+
+```bash
+<%=cmd%> config pubkey @file:${PRIVKEYFILE}
+```
+
 To display the version of **openssl** used in <%=tool%>:
 
 ```bash
@@ -2487,7 +2506,7 @@ Parameters provided in option `transfer_info` are:
 | url      | string | URL of the node API</br>Mandatory |
 | username | string | Node api user or access key</br>Mandatory |
 | password | string | Password, secret or bearer token</br>Mandatory |
-| root_id  | string | Password or secret</br>Mandatory only for bearer token |
+| root_id  | string | Root file id</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured <%=prst%> :
 

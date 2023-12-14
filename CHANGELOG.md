@@ -5,8 +5,12 @@
   * New Features:
     * global: option `output` to redirect to a file instead of stdout
     * config: keys added to `config ascp info`
+    * config: added command `pubkey` to extract public key from private key
+    * faspex5: added `shared_folders` management
   * Issues Fixed:
     * wizard: was failing due to "require" of optional gem.
+  * Breaking Changes:
+    * shares: option `type` for users and groups is replaced with mandatory positional argument with same value.
 
 * 4.15.0
 
