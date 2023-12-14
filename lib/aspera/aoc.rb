@@ -31,8 +31,9 @@ module Aspera
     PROD_DOMAIN = 'ibmaspera.com' # cspell:disable-line
     # to avoid infinite loop in pub link redirection
     MAX_AOC_URL_REDIRECT = 10
+    CLIENT_ID_PREFIX = 'aspera.'
     # Well-known AoC globals client apps
-    GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.start_with?('aspera.')}.freeze
+    GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.start_with?(CLIENT_ID_PREFIX)}.freeze
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
     # path in URL of public links
@@ -69,8 +70,8 @@ module Aspera
     class << self
       # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
       def get_client_info(client_name=nil)
-        client_key = client_name.nil ? GLOBAL_CLIENT_APPS.first : client_name.to_sym
-        return client_name, DataRepository.instance.item(client_key)
+        client_key = client_name.nil? ? GLOBAL_CLIENT_APPS.first : client_name.to_sym
+        return client_key, DataRepository.instance.item(client_key)
       end
 
       # base API url depends on domain, which could be "qa.xxx"
@@ -248,7 +249,7 @@ module Aspera
           Log.log.debug{"ignoring error: #{e}"}
           {}
         end
-      USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = 'unknown' if @cache_user_info[f].nil?}
+      USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = nil if @cache_user_info[f].nil?}
       return @cache_user_info
     end
 
@@ -509,7 +510,7 @@ module Aspera
       # Console cookie
       ################
       # we are sure that fields are not nil
-      cookie_elements = [app_info[:app], current_user_info['name'], current_user_info['email']].map{|e|Base64.strict_encode64(e)}
+      cookie_elements = [app_info[:app], current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{|e|Base64.strict_encode64(e)}
       cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
       transfer_spec['cookie'] = cookie_elements.join(':')
       # Application tags
