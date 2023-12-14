@@ -22,9 +22,10 @@ interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
 use_rmagick: $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
 use_grpc: $(T)serv_upload4
+use_mimemmagic: $(T)prev_dcm_mm
 
 # test group: require optional gems
-optional: use_rmagick use_grpc
+optional: use_rmagick use_grpc use_mimemmagic
 
 # all tests, including interactive ones
 full: all interactive optional
@@ -1332,6 +1333,10 @@ $(T)prev_check: $(T).exists
 $(T)prev_dcm: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview test --base=$(DIR_TMP)$$(basename $@) @preset:file.dcm
+	@$(STOP_TEST) $@
+$(T)prev_dcm_mm: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) preview test --mimemagic=yes --base=$(DIR_TMP)$$(basename $@) @preset:file.dcm
 	@$(STOP_TEST) $@
 $(T)prev_pdf: $(T).exists
 	@$(START_TEST) $@

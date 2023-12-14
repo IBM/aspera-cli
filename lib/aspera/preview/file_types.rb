@@ -187,6 +187,8 @@ module Aspera
         'mml'          => :office,
         'mono'         => :image,
         'mpr'          => :image,
+        'mpg'          => :video,
+        'mpeg'         => :video,
         'mrsid'        => :image,
         'mrw'          => :image,
         'mtv'          => :image,
