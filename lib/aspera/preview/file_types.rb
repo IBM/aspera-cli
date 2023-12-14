@@ -66,7 +66,7 @@ module Aspera
       end
 
       # use mime magic to find mime type based on file content (magic numbers)
-      def mime_from_file(filepath)
+      def file_to_mime(filepath)
         # moved here, as `mimemagic` can cause installation issues
         require 'mimemagic'
         require 'mimemagic/version'
@@ -93,7 +93,7 @@ module Aspera
         conversion_type = mime_to_type(mimetype) if !mimetype.nil?
         # 2- else, from computed mime type (if available)
         if conversion_type.nil? && @use_mimemagic
-          detected_mime = mime_from_file(filepath)
+          detected_mime = file_to_mime(filepath)
           if !detected_mime.nil?
             conversion_type = mime_to_type(detected_mime)
             if !mimetype.nil?

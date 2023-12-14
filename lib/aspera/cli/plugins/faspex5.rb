@@ -319,6 +319,7 @@ module Aspera
                 options.get_option(:url, mandatory: true),
                 options.get_option(:username, mandatory: true)]))
           end
+          packages = []
           case package_ids
           when PACKAGE_ALL_INIT
             raise 'Only with option once_only' unless skip_ids_persistency
@@ -327,15 +328,19 @@ module Aspera
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when ExtendedValue::ALL
             # TODO: if packages have same name, they will overwrite ?
-            package_ids = list_packages_with_filter.map{|p|p['id']}
-            Log.log.debug{Log.dump(:package_ids, package_ids)}
-            Log.log.debug{Log.dump(:skip_ids, skip_ids_persistency.data)}
-            package_ids.reject!{|i|skip_ids_persistency.data.include?(i)} if skip_ids_persistency
-            Log.log.debug{Log.dump(:package_ids, package_ids)}
+            packages = list_packages_with_filter
+            Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
+            Log.log.trace1{Log.dump(:skip_ids, skip_ids_persistency.data)}
+            packages.reject!{|p|skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
+            Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
+          else
+            # a single id was provided, or a list of ids
+            package_ids = [package_ids] unless package_ids.is_a?(Array)
+            raise 'Expecting a single package id or a list of ids' unless package_ids.is_a?(Array)
+            raise 'Package id shall be String' unless package_ids.all?(String)
+            # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")[:data]}
+            packages = package_ids.map{|pkg_id|{'id'=>pkg_id}}
           end
-          # a single id was provided
-          # TODO: check package_ids is a list of strings
-          package_ids = [package_ids] if package_ids.is_a?(String)
           result_transfer = []
           param_file_list = {}
           begin
@@ -354,7 +359,10 @@ module Aspera
           else # shared inbox / workgroup
             download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
           end
-          package_ids.each do |pkg_id|
+          # user can skip content protection decryption by setting this to null
+          enforce_content_protection = !transfer.option_transfer_spec.key?('content_protection')
+          packages.each do |package|
+            pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
             # TODO: allow from sent as well ?
             transfer_spec = @api_v5.call(
@@ -364,6 +372,11 @@ module Aspera
               url_params:  download_params,
               json_params: param_file_list
             )[:data]
+            if enforce_content_protection && transfer_spec['content_protection'].eql?('decrypt')
+              transfer_spec['content_protection_password'] = options.prompt_user_input('content protection password', true)
+            else
+              transfer_spec.delete('content_protection_password')
+            end
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)

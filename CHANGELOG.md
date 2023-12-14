@@ -7,6 +7,7 @@
     * config: keys added to `config ascp info`
     * config: added command `pubkey` to extract public key from private key
     * faspex5: added `shared_folders` management
+    * faspex5: if package has content protection, ask passphrase interactively, unless `content_protection=null` in `ts`
   * Issues Fixed:
     * wizard: was failing due to "require" of optional gem.
   * Breaking Changes:

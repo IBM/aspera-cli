@@ -2569,11 +2569,11 @@ Agents.</p>
 class="header-section-number">4.23.1</span>
 <a id="agt_direct"></a>Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
-<code>ascp</code>. This is the default agent for <code>ascli</code>.
-This is equivalent to option <code>--transfer=direct</code>.
-<code>ascli</code> will search locally installed Aspera products,
-including SDK, and use <code>ascp</code> from that component. Refer to
-section <a href="#client">FASP</a>.</p>
+<code>ascp</code>. This is the default agent for <code>ascli</code>
+(option <code>--transfer=direct</code>). <code>ascli</code> will search
+locally installed Aspera products, including SDK, and use
+<code>ascp</code> from that component. Refer to section <a
+href="#client">FASP</a>.</p>
 <p>The <code>transfer_info</code> option accepts the following optional
 parameters to control multi-session, Web Socket Session and Resume
 policy:</p>
@@ -7241,11 +7241,19 @@ metadata and the value is directly the metadata value.</p>
 <h2 data-number="9.8" id="faspex-5-receive-a-package"><span
 class="header-section-number">9.8</span> Faspex 5: Receive a
 package</h2>
-<p>The (numeric) identifier of the package t receive is given as
+<p>The (numeric) identifier of the package to receive is given as
 argument to command <code>faspex5 packages receive</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> option <code>box</code> applies.</p>
 </blockquote>
+<p>It can also be a <code>Array</code> for multiple packages,
+e.g. <code>@list:,1,2,3</code>.</p>
+<p>Special id <code>ALL</code> retrieves all packages. Special id
+<code>INIT</code> initializes the persistency of already received
+packages.</p>
+<p>If a package is password protected, then the content protection
+password is asked interactively. To skip this, use option:
+<code>--ts=@json:'{"content_protection":null}'</code>.</p>
 <h2 data-number="9.9" id="faspex-5-list-packages"><span
 class="header-section-number">9.9</span> Faspex 5: List packages</h2>
 <p>The following parameters in option <code>query</code> are
@@ -8162,7 +8170,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb463-1"><a href
 <span id="cb463-9"><a href="#cb463-9" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
 <span id="cb463-10"><a href="#cb463-10" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
 <span id="cb463-11"><a href="#cb463-11" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb463-12"><a href="#cb463-12" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> trevents <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
+<span id="cb463-12"><a href="#cb463-12" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb463-13"><a href="#cb463-13" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> trevents <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
 <h1 data-number="16" id="ibm-aspera-sync"><span
 class="header-section-number">16</span> <a id="async"></a>IBM Aspera
 Sync</h1>

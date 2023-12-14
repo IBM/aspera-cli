@@ -2354,8 +2354,7 @@ Specific options for agents are provided with option `transfer_info`, cumulative
 #### <a id="agt_direct"></a>Direct
 
 The `direct` agent directly executes a local `ascp`.
-This is the default agent for <%=tool%>.
-This is equivalent to option `--transfer=direct`.
+This is the default agent for <%=tool%> (option `--transfer=direct`).
 <%=tool%> will search locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#client).
 
@@ -5021,9 +5020,17 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 
 ### Faspex 5: Receive a package
 
-The (numeric) identifier of the package t receive is given as argument to command `faspex5 packages receive`.
+The (numeric) identifier of the package to receive is given as argument to command `faspex5 packages receive`.
 
 > **Note:** option `box` applies.
+
+It can also be a `Array` for multiple packages, e.g. `@list:,1,2,3`.
+
+Special id `ALL` retrieves all packages.
+Special id `INIT` initializes the persistency of already received packages.
+
+If a package is password protected, then the content protection password is asked interactively.
+To skip this, use option: `--ts=@json:'{"content_protection":null}'`.
 
 ### Faspex 5: List packages
 
