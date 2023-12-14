@@ -65,10 +65,6 @@ module Aspera
         super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end # rubocop:disable Style/Semicolon
 
       def message; "ascmd: #{@errstr} (#{@errno})"; end
-
-      # TODO : delete : attr_reader :errno #, :errstr, :command
-      # TODO : delete :def args; @arguments; end
-
       def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments.join(',')}"; end
     end # Error
 
