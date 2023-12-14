@@ -25,7 +25,7 @@ module Aspera
         TRANSFER_CONNECT = 'connect'
         ADMIN_RESOURCES = %i[
           accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
-          metadata_profiles email_notifications
+          metadata_profiles email_notifications alternate_addresses
         ].freeze
         JOB_RUNNING = %w[queued working].freeze
         STANDARD_PATH = '/aspera/faspex'
@@ -242,15 +242,14 @@ module Aspera
         # get a (full or partial) list of all entities of a given type
         # @param type [String] the type of entity to list (just a name)
         # @param query [Hash,nil] additional query parameters
-        # @param path [String] optional prefix to add to the path (nil or empty string: no prefix)
+        # @param real_path [String] real path if it's n ot just the type
         # @param item_list_key [String] key in the result to get the list of items
-        def list_entities(type:, path: nil, query: nil, item_list_key: nil)
+        def list_entities(type:, real_path: nil, query: nil, item_list_key: nil)
           query = {} if query.nil?
           type = type.to_s if type.is_a?(Symbol)
           item_list_key = type if item_list_key.nil?
           raise "internal error: Invalid type #{type.class}" unless type.is_a?(String)
-          full_path = type
-          full_path = "#{path}/#{full_path}" unless path.nil? || path.empty?
+          full_path = real_path.nil? ? type : real_path
           result = []
           offset = 0
           max_items = query.delete(MAX_ITEMS)
@@ -275,13 +274,16 @@ module Aspera
         end
 
         # lookup an entity id from its name
-        def lookup_entity_by_field(type:, value:, field: 'name', query: :default, path: nil, item_list_key: nil)
-          query = {'q'=> value} if query.eql?(:default)
-          found = list_entities(type: type, path: path, query: query, item_list_key: item_list_key).select{|i|i[field].eql?(value)}
+        def lookup_entity_by_field(type:, value:, field: 'name', query: :default, real_path: nil, item_list_key: nil)
+          if query.eql?(:default)
+            raise 'Default query is on name only' unless field.eql?('name')
+            query = {'q'=> value}
+          end
+          found = list_entities(type: type, real_path: real_path, query: query, item_list_key: item_list_key).select{|i|i[field].eql?(value)}
           case found.length
           when 0 then raise "No #{type} with #{field} = #{value}"
           when 1 then return found.first
-          else raise "Found #{found.length} #{path} with #{field} = #{value}"
+          else raise "Found #{found.length} #{real_path} with #{field} = #{value}"
           end
         end
 
@@ -290,18 +292,18 @@ module Aspera
           filter = options.get_next_argument('filter', mandatory: false, type: Proc, default: ->(_x){true})
           # translate box name to API prefix (with ending slash)
           box = options.get_option(:box)
-          api_path =
+          real_path =
             case box
-            when ExtendedValue::ALL then '' # only admin can list all packages globally
-            when *API_LIST_MAILBOX_TYPES then box
+            when ExtendedValue::ALL then 'packages' # only admin can list all packages globally
+            when *API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
-              "#{group_type}/#{lookup_entity_by_field(type: group_type, value: box)['id']}"
+              "#{group_type}/#{lookup_entity_by_field(type: group_type, value: box)['id']}/packages"
             end
           return list_entities(
             type: 'packages',
             query:  query_read_delete(default: {}),
-            path: api_path).select(&filter)
+            real_path: real_path).select(&filter)
         end
 
         def package_receive(package_ids)
@@ -523,11 +525,14 @@ module Aspera
               id_as_arg = false
               display_fields = nil
               adm_api = @api_v5
+              special_query = :default
               available_commands = [].concat(Plugin::ALL_OPS)
               case res_type
               when :metadata_profiles
                 res_path = 'configuration/metadata_profiles'
                 list_key = 'profiles'
+              when :alternate_addresses
+                res_path = 'configuration/alternate_addresses'
               when :email_notifications
                 list_key = false
                 id_as_arg = 'type'
@@ -538,11 +543,26 @@ module Aspera
                 adm_api = Rest.new(@api_v5.params.merge({base_url: auth_api_url}))
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
+                special_query = {'all': true}
+              when :nodes
+                available_commands.push(:shared_folders)
               end
               res_command = options.get_next_command(available_commands)
               case res_command
               when *Plugin::ALL_OPS
-                return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg)
+                return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg) do |field, value|
+                  lookup_entity_by_field(
+                    type: res_type, real_path: res_path, field: field, value: value, query: special_query)['id']
+                end
+              when :shared_folders
+                node_id = instance_identifier do |field, value|
+                  lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']
+                end
+                sh_path = "#{res_path}/#{node_id}/shared_folders"
+                return entity_action(adm_api, sh_path, item_list_key: 'shared_folders') do |field, value|
+                         lookup_entity_by_field(
+                           type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
+                       end
               when :invite_external_collaborator
                 shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']}
                 creation_payload = value_create_modify(command: res_command, type: [Hash, String])
@@ -550,7 +570,9 @@ module Aspera
                 res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
                 result = adm_api.create(res_path, creation_payload)[:data]
                 formatter.display_status(result['message'])
-                result = lookup_entity_by_field(type: 'members', path: "#{res_type}/#{shared_inbox_id}", value: creation_payload['email_address'], query: {})
+                result = lookup_entity_by_field(
+                  type: 'members', real_path: "#{res_type}/#{shared_inbox_id}/members", value: creation_payload['email_address'],
+                  query: {})
                 return {type: :single_object, data: result}
               when :members, :saml_groups
                 res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']}
