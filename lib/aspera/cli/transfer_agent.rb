@@ -225,6 +225,10 @@ module Aspera
         @transfer_spec_command_line['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
         updated_ts(transfer_spec)
+        # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
+        if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
+          transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', true)
+        end
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"

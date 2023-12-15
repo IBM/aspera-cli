@@ -359,8 +359,6 @@ module Aspera
           else # shared inbox / workgroup
             download_params[:recipient_workgroup_id] = lookup_entity_by_field(type: options.get_option(:group_type), value: box)['id']
           end
-          # user can skip content protection decryption by setting this to null
-          enforce_content_protection = !transfer.option_transfer_spec.key?('content_protection')
           packages.each do |package|
             pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
@@ -372,11 +370,6 @@ module Aspera
               url_params:  download_params,
               json_params: param_file_list
             )[:data]
-            if enforce_content_protection && transfer_spec['content_protection'].eql?('decrypt')
-              transfer_spec['content_protection_password'] = options.prompt_user_input('content protection password', true)
-            else
-              transfer_spec.delete('content_protection_password')
-            end
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)
