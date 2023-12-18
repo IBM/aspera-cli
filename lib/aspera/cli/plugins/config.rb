@@ -710,8 +710,9 @@ module Aspera
           when :show
             return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
           when :info
+            # collect info from ascp executable
             data = Fasp::Installation.instance.ascp_info
-            # show command line transfer spec
+            # add command line transfer spec
             data['ts'] = transfer.updated_ts
             # add keys
             DataRepository::ELEMENTS.each_with_object(data){|i, h|h[i.to_s] = DataRepository.instance.item(i)}
