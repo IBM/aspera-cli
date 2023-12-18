@@ -102,7 +102,7 @@ module Aspera
           options.declare(:auth, 'OAuth type of authentication', values: %i[boot].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
-          options.declare(:box, "Package inbox, either shared inbox name or one of #{API_LIST_MAILBOX_TYPES} or #{ExtendedValue::ALL}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of: #{API_LIST_MAILBOX_TYPES.join(', ')} or #{ExtendedValue::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
