@@ -30,9 +30,7 @@ module Aspera
             if col_titles.nil?
               col_titles = values
             else
-              entry = {}
-              col_titles.each{|title|entry[title] = values.shift}
-              hash_array.push(entry)
+              hash_array.push(col_titles.zip(values).to_h)
             end
           end
           Log.log.warn('Titled CSV file without any line') if hash_array.empty?
@@ -63,7 +61,7 @@ module Aspera
           path:   lambda{|v|File.expand_path(v)},
           re:     lambda{|v|Regexp.new(v)},
           ruby:   lambda{|v|Environment.secure_eval(v, __FILE__, __LINE__)},
-          secret: lambda{|v|ExtendedValue.assert_no_value(v, :secret); $stdin.getpass('secret> ')}, # rubocop:disable Style/Semicolon
+          secret: lambda{|v|prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
           yaml:   lambda{|v|YAML.load(v)},
           zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
