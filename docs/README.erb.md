@@ -727,13 +727,13 @@ The procedure:
 cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 ```
 
-- Get the Aspera SDK.
+- Show the Aspera SDK URL
 
 ```bash
-<%=cmd%> config --show-config --fields=sdk_url
+<%=cmd%> --show-config --fields=sdk_url
 ```
 
-- Download the SDK archive from that URL.
+- Download the SDK archive from that URL
 
 ```bash
 curl -Lso sdk.zip https://ibm.biz/aspera_sdk
@@ -1070,11 +1070,11 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
 The tokenization of the command line is typically done by the shell, refer to the previous section [Command Line Parsing](#parsing).
 
-<%=tool%> considers three types of command line arguments:
+<%=tool%> handles three types of command line arguments:
 
 - Commands
-- Options
 - Positional Arguments
+- Options
 
 For example:
 
@@ -1094,6 +1094,7 @@ The value of options and arguments is evaluated with the [Extended Value Syntax]
 #### Commands
 
 Commands are typically entity types or verbs to act on those entities.
+Its value is a `String` that must belong to a fixed list of values in a given context.
 
 Example:
 
@@ -1102,9 +1103,9 @@ Example:
 ```
 
 - <%=tool%> is the executable executed by the shell
-- `conf` is the first level command, and is also the name f the plugin to be used
-- `ascp` is the second level command, and is also the name of the component (singleton)
-- `info` is the third level command, and is also the action to be performed
+- `conf` is the first level command: name of the plugin to be used
+- `ascp` is the second level command: name of the component (singleton)
+- `info` is the third level command: action to be performed
 
 Typically, commands are located at the **beginning** of the command line.
 Order is significant.
@@ -1113,6 +1114,21 @@ If wrong, or no command is provided when expected, an error message is displayed
 
 Some sub-commands appear after entity selection, e.g. `<%=cmd%> aoc admin res node do 8669 browse /`: `browse` is a sub-command of `node`.
 
+#### Positional Arguments
+
+Positional Arguments are typically mandatory values for a command, such as entity creation data.
+
+It could also be designed as an option, but since it is mandatory and typically creation parameters need not be set in a configuration file, then it is better to use a positional argument, and not define specific options.
+
+The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
+
+The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
+Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the configuration file or environment variable (using `@preset:`).
+
+If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see below).
+
+A few positional arguments are optional, they are located at the end of the command line.
+
 #### Options
 
 All options, e.g. `--log-level=debug`, are command line arguments that:
@@ -1120,13 +1136,15 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 - start with `--`
 - have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
 - have a value, separated from name with a `=`
-- can be used by prefix, provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug` (avoid)
+- can be used by prefix (avoid), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
 
 Exceptions:
 
 - some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
 - some options (flags) don't take a value, e.g. `-N`
-- the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. Example:
+- the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. 
+
+Example:
 
 ```bash
 <%=cmd%> config echo -- --sample
@@ -1138,14 +1156,12 @@ Exceptions:
 
 > **Note:** Here, `--sample` is taken as an argument, and not as an option, due to `--`.
 
-Options may have an (hardcoded) default value.
+Options may have a (hardcoded) default value.
 
-Options can be placed anywhere on command line and evaluated in order.
+Options can be placed anywhere on command line and are evaluated in order.
 
-Options are typically:
-
-- optional : to change the default behavior
-- mandatory : so they can be placed in a configuration file, for example: connection information
+Options are typically optional: to change the default behavior.
+But some are mandatory, so they can be placed in a configuration file, for example: connection information.
 
 The value for **any** options can come from the following locations (in this order, last value evaluated overrides previous value):
 
@@ -1155,27 +1171,14 @@ The value for **any** options can come from the following locations (in this ord
 
 Environment variable starting with prefix: <%=evp%> are taken as option values, e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
 
-Options values can be displayed for a given command by providing the `--show-config` option: `<%=cmd%> node --show-config`
+Option `show_config` dry runs the configuration, and then returns currently set values for options.
+`<%=cmd%> --show-config` outputs global options only, and `<%=cmd%> [plugin] --show-config` outputs global and plugin default options.
+In addition, option `--show-config` can be added at the end of any full command line, this displays the options that would be used for the command.
 
-Parameters are typically designed as options if:
+A parameter is typically designed as option if:
 
-- it is a mandatory parameters that would benefit from being set in a configuration file or environment variable
-- it is optional
-
-#### Positional Arguments
-
-Positional Arguments are typically mandatory values for a command, such as entity creation data.
-
-It could also be designed as an option, but since it is mandatory and typically creation parameters need not be set in a configuration file, then it is better to use a positional argument, and not define specific options.
-
-The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
-
-The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
-Nevertheless, [Extended Values](#extended) syntax is supported, so it is possible to retrieve a value from the configuration file or environment variable.
-
-If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended)), or use the `--` separator (see above).
-
-Very few positional arguments are optional, they are located at the end of the command line.
+- it is optional, or
+- it is a mandatory parameter that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
 
 ### Interactive Input
 

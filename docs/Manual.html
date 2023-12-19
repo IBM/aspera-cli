@@ -709,12 +709,12 @@ gem</li>
 <div class="sourceCode" id="cb65"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$HOME</span> <span class="kw">&amp;&amp;</span> <span class="fu">tar</span> zcvf rvm-ascli.tgz .rvm</span></code></pre></div>
 <ul>
-<li>Get the Aspera SDK.</li>
+<li>Show the Aspera SDK URL</li>
 </ul>
 <div class="sourceCode" id="cb66"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--show-config</span> <span class="at">--fields</span><span class="op">=</span>sdk_url</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--fields</span><span class="op">=</span>sdk_url</span></code></pre></div>
 <ul>
-<li>Download the SDK archive from that URL.</li>
+<li>Download the SDK archive from that URL</li>
 </ul>
 <div class="sourceCode" id="cb67"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> sdk.zip https://ibm.biz/aspera_sdk</span></code></pre></div>
@@ -1069,12 +1069,11 @@ Arguments</h2>
 separated by spaces (the <code>argv</code> of C). The tokenization of
 the command line is typically done by the shell, refer to the previous
 section <a href="#parsing">Command Line Parsing</a>.</p>
-<p><code>ascli</code> considers three types of command line
-arguments:</p>
+<p><code>ascli</code> handles three types of command line arguments:</p>
 <ul>
 <li>Commands</li>
-<li>Options</li>
 <li>Positional Arguments</li>
+<li>Options</li>
 </ul>
 <p>For example:</p>
 <div class="sourceCode" id="cb97"><pre
@@ -1097,18 +1096,19 @@ href="#extended">Extended Value Syntax</a>.</p>
 <h3 data-number="4.3.1" id="commands"><span
 class="header-section-number">4.3.1</span> Commands</h3>
 <p>Commands are typically entity types or verbs to act on those
-entities.</p>
+entities. Its value is a <code>String</code> that must belong to a fixed
+list of values in a given context.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb98"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info</span></code></pre></div>
 <ul>
 <li><code>ascli</code> is the executable executed by the shell</li>
-<li><code>conf</code> is the first level command, and is also the name f
-the plugin to be used</li>
-<li><code>ascp</code> is the second level command, and is also the name
-of the component (singleton)</li>
-<li><code>info</code> is the third level command, and is also the action
-to be performed</li>
+<li><code>conf</code> is the first level command: name of the plugin to
+be used</li>
+<li><code>ascp</code> is the second level command: name of the component
+(singleton)</li>
+<li><code>info</code> is the third level command: action to be
+performed</li>
 </ul>
 <p>Typically, commands are located at the <strong>beginning</strong> of
 the command line. Order is significant. The provided command must match
@@ -1118,68 +1118,8 @@ list of supported commands is displayed.</p>
 <p>Some sub-commands appear after entity selection,
 e.g. <code>ascli aoc admin res node do 8669 browse /</code>:
 <code>browse</code> is a sub-command of <code>node</code>.</p>
-<h3 data-number="4.3.2" id="options"><span
-class="header-section-number">4.3.2</span> Options</h3>
-<p>All options, e.g. <code>--log-level=debug</code>, are command line
-arguments that:</p>
-<ul>
-<li>start with <code>--</code></li>
-<li>have a name, in lowercase, using <code>-</code> as word separator in
-name (e.g. <code>--log-level=debug</code>)</li>
-<li>have a value, separated from name with a <code>=</code></li>
-<li>can be used by prefix, provided that it is unique. E.g.
-<code>--log-l=debug</code> is the same as <code>--log-level=debug</code>
-(avoid)</li>
-</ul>
-<p>Exceptions:</p>
-<ul>
-<li>some options accept a short form, e.g. <code>-Ptoto</code> is
-equivalent to <code>--preset=toto</code>, refer to the manual or
-<code>-h</code>.</li>
-<li>some options (flags) don’t take a value, e.g. <code>-N</code></li>
-<li>the special option <code>--</code> stops option processing and is
-ignored, following command line arguments are taken as arguments,
-including the ones starting with a <code>-</code>. Example:</li>
-</ul>
-<div class="sourceCode" id="cb99"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo <span class="at">--</span> <span class="at">--sample</span></span></code></pre></div>
-<div class="sourceCode" id="cb100"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;--sample&quot;</span></span></code></pre></div>
-<blockquote>
-<p><strong>Note:</strong> Here, <code>--sample</code> is taken as an
-argument, and not as an option, due to <code>--</code>.</p>
-</blockquote>
-<p>Options may have an (hardcoded) default value.</p>
-<p>Options can be placed anywhere on command line and evaluated in
-order.</p>
-<p>Options are typically:</p>
-<ul>
-<li>optional : to change the default behavior</li>
-<li>mandatory : so they can be placed in a configuration file, for
-example: connection information</li>
-</ul>
-<p>The value for <strong>any</strong> options can come from the
-following locations (in this order, last value evaluated overrides
-previous value):</p>
-<ul>
-<li><a href="#configfile">Configuration file</a></li>
-<li>Environment variable</li>
-<li>Command line</li>
-</ul>
-<p>Environment variable starting with prefix: ASCLI_ are taken as option
-values, e.g. <code>ASCLI_OPTION_NAME</code> is for
-<code>--option-name</code>.</p>
-<p>Options values can be displayed for a given command by providing the
-<code>--show-config</code> option:
-<code>ascli node --show-config</code></p>
-<p>Parameters are typically designed as options if:</p>
-<ul>
-<li>it is a mandatory parameters that would benefit from being set in a
-configuration file or environment variable</li>
-<li>it is optional</li>
-</ul>
-<h3 data-number="4.3.3" id="positional-arguments"><span
-class="header-section-number">4.3.3</span> Positional Arguments</h3>
+<h3 data-number="4.3.2" id="positional-arguments"><span
+class="header-section-number">4.3.2</span> Positional Arguments</h3>
 <p>Positional Arguments are typically mandatory values for a command,
 such as entity creation data.</p>
 <p>It could also be designed as an option, but since it is mandatory and
@@ -1193,12 +1133,75 @@ the position) and the value is clearly mandatory.</p>
 in a configuration file or environment variable like for options.
 Nevertheless, <a href="#extended">Extended Values</a> syntax is
 supported, so it is possible to retrieve a value from the configuration
-file or environment variable.</p>
+file or environment variable (using <code>@preset:</code>).</p>
 <p>If a Positional Arguments begins with <code>-</code>, then either use
 the <code>@val:</code> syntax (see <a href="#extended">Extended
-Values</a>), or use the <code>--</code> separator (see above).</p>
-<p>Very few positional arguments are optional, they are located at the
-end of the command line.</p>
+Values</a>), or use the <code>--</code> separator (see below).</p>
+<p>A few positional arguments are optional, they are located at the end
+of the command line.</p>
+<h3 data-number="4.3.3" id="options"><span
+class="header-section-number">4.3.3</span> Options</h3>
+<p>All options, e.g. <code>--log-level=debug</code>, are command line
+arguments that:</p>
+<ul>
+<li>start with <code>--</code></li>
+<li>have a name, in lowercase, using <code>-</code> as word separator in
+name (e.g. <code>--log-level=debug</code>)</li>
+<li>have a value, separated from name with a <code>=</code></li>
+<li>can be used by prefix (avoid), provided that it is unique. E.g.
+<code>--log-l=debug</code> is the same as
+<code>--log-level=debug</code></li>
+</ul>
+<p>Exceptions:</p>
+<ul>
+<li>some options accept a short form, e.g. <code>-Ptoto</code> is
+equivalent to <code>--preset=toto</code>, refer to the manual or
+<code>-h</code>.</li>
+<li>some options (flags) don’t take a value, e.g. <code>-N</code></li>
+<li>the special option <code>--</code> stops option processing and is
+ignored, following command line arguments are taken as arguments,
+including the ones starting with a <code>-</code>.</li>
+</ul>
+<p>Example:</p>
+<div class="sourceCode" id="cb99"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo <span class="at">--</span> <span class="at">--sample</span></span></code></pre></div>
+<div class="sourceCode" id="cb100"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;--sample&quot;</span></span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> Here, <code>--sample</code> is taken as an
+argument, and not as an option, due to <code>--</code>.</p>
+</blockquote>
+<p>Options may have a (hardcoded) default value.</p>
+<p>Options can be placed anywhere on command line and are evaluated in
+order.</p>
+<p>Options are typically optional: to change the default behavior. But
+some are mandatory, so they can be placed in a configuration file, for
+example: connection information.</p>
+<p>The value for <strong>any</strong> options can come from the
+following locations (in this order, last value evaluated overrides
+previous value):</p>
+<ul>
+<li><a href="#configfile">Configuration file</a></li>
+<li>Environment variable</li>
+<li>Command line</li>
+</ul>
+<p>Environment variable starting with prefix: ASCLI_ are taken as option
+values, e.g. <code>ASCLI_OPTION_NAME</code> is for
+<code>--option-name</code>.</p>
+<p>Option <code>show_config</code> dry runs the configuration, and then
+returns currently set values for options.
+<code>ascli --show-config</code> outputs global options only, and
+<code>ascli [plugin] --show-config</code> outputs global and plugin
+default options. In addition, option <code>--show-config</code> can be
+added at the end of any full command line, this displays the options
+that would be used for the command.</p>
+<p>A parameter is typically designed as option if:</p>
+<ul>
+<li>it is optional, or</li>
+<li>it is a mandatory parameter that would benefit from being set
+persistently (i.e. in a configuration file or environment variable,
+e.g. URL and credentials).</li>
+</ul>
 <h2 data-number="4.4" id="interactive-input"><span
 class="header-section-number">4.4</span> Interactive Input</h2>
 <p>Some options and parameters are mandatory and other optional. By
@@ -4915,7 +4918,7 @@ OPTIONS:
         --auth=ENUM                  OAuth type of authentication: boot, web, [jwt]
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
-        --box=VALUE                  Package inbox, either shared inbox name or one of [&quot;inbox&quot;, &quot;inbox_history&quot;, &quot;inbox_all&quot;, &quot;inbox_all_history&quot;, &quot;outbox&quot;, &quot;outbox_history&quot;, &quot;pending&quot;, &quot;pending_history&quot;, &quot;all&quot;] or ALL
+        --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
         --shared-folder=VALUE        Send package with files from shared folder
         --group-type=ENUM            Type of shared box: [shared_inboxes], workgroups
 

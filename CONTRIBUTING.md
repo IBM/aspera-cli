@@ -234,21 +234,23 @@ make docker_push
 
 ### Specific version image build
 
-It is possible to build a specific version by setting envvar `GEM_VERSION` and `make` with option `-e`:
+To build a specific version: set envvar `GEM_VERSION` and `make` with option `-e`:
 
 ```bash
 GEM_VERSION=4.11.0 make -e docker
 GEM_VERSION=4.11.0 make -e docker_push
 ```
 
+> **Note:** This does not use the gem locally, only the docker file is used locally, the gem is installed from rubygems.org.
+
 ### Development version image build
 
 To build/push a beta/development container:
-it does not create the `latest` tag, it uses the gem file generated locally.
+it does not create the `latest` tag, it uses the gem file generated locally with a special version number.
 
 ```bash
 make docker_beta
-make docker_push_version
+make docker_push_beta
 ```
 
 ## Single executable build

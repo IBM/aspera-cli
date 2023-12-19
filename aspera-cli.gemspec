@@ -46,6 +46,7 @@ Gem::Specification.new do |spec|
   # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
   spec.add_runtime_dependency('mime-types', '~> 3.5')
   spec.add_runtime_dependency('net-ssh', '~> 7.0')
+  spec.add_runtime_dependency('rainbow', '~> 3.0')
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
   spec.add_runtime_dependency('rubyzip', '~> 2.0')
   spec.add_runtime_dependency('symmetric-encryption', '~> 4.6')
