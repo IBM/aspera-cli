@@ -647,6 +647,22 @@ If you already have a Java JVM on your system (`java`), it is possible to use `j
 
 > **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
 
+#### Optional gems
+
+Some additional gems can be installed to provide additional features:
+
+- `rmagick` : to generate thumbnails of images
+- `grpc` : to use the transfer SDK (gRPC)
+- `mimemagic` : to detect MIME type of files for `preview` command
+
+Install like this:
+
+```bash
+gem install rmagick grpc mimemagic
+```
+
+> **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
+
 ### <a id="the_gem"></a>`<%=gemspec.name%>` gem
 
 Once you have Ruby and rights to install gems: Install the gem and its dependencies:

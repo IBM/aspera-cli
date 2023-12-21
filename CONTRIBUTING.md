@@ -104,7 +104,7 @@ For preparation of a release, do the following:
 2. Remove all gems: `make clean_gems`
 3. Starts tests: `make test`
 4. Install optional gems: `make install_optional_gems`
-5. Test remaining cases: `make optional` and `make interactive`
+5. Test remaining cases: `cd tests` and then `make optional` and `make interactive`
 
 This ensures that optional gems do not prevent `ascli` to run.
 
