@@ -7,7 +7,7 @@
 : "${imgtag=$image:$version}"
 # set env var `docker` to podman, to use podman
 : "${docker:=docker}"
-# set env var docker_args to add options to docker run (transform var into array) # spellcheck disable=SC2086
+# set env var `docker_args` to add options to docker run (then, transform this var into array) # spellcheck disable=SC2086
 read -a add_dock_args <<< $docker_args
 # set env var ASCLI_HOME to set the config folder on host
 : "${ASCLI_HOME:=$HOME/.aspera/ascli}"
@@ -24,7 +24,7 @@ exec $docker run \
 --interactive \
 --user root \
 --env ASCLI_HOME="$ascli_home_container" \
---volume "$ASCLI_HOME:$ascli_home_container" \
+--volume "$ASCLI_HOME:$ascli_home_container:z" \
 "${add_dock_args[@]}" \
 "$imgtag" \
 "$@"
