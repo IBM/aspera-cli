@@ -407,9 +407,9 @@ $(T)f4_v4: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=faspex4_admin faspex v4 dropbox list
 	$(EXE_MAN) --preset=faspex4_admin faspex v4 dmembership list
-	$(EXE_MAN) faspex v4 workgroup list
-	$(EXE_MAN) faspex v4 wmembership list
-	$(EXE_MAN) faspex v4 user list
+	$(EXE_MAN) --preset=faspex4_admin faspex v4 workgroup list
+	$(EXE_MAN) --preset=faspex4_admin faspex v4 wmembership list
+	$(EXE_MAN) --preset=faspex4_admin faspex v4 user list
 	$(EXE_MAN) faspex v4 metadata_profile list
 	@$(STOP_TEST) $@
 $(T)f4_db1: $(T).exists
