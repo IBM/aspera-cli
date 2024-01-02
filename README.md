@@ -12,7 +12,7 @@
 
 Version : 4.16.0.pre
 
-Laurent/2016-2023
+Laurent/2016-2024
 
 This gem provides the `ascli` CLI (Command Line Interface) to IBM Aspera software.
 
@@ -3635,7 +3635,7 @@ Here is a sample invocation :
 
 ```text
 ascli config wizard
-option: url> https://myorg.ibmaspera.com
+option: url> https://_your_instance_.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
@@ -3653,14 +3653,18 @@ You can test with:
 ascli aoc user profile show
 ```
 
+> **Note:** In above example, replace `https://_your_instance_.ibmaspera.com` with your actual AoC URL.
+
 Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
 If you already know the application, and want to limit the detection to it, provide url and plugin name:
 
 ```bash
-ascli config wizard myorg aoc
+ascli config wizard _your_instance_ aoc
 ```
+
+> **Note:** In above example, replace `_your_instance_` with the first part of your actual AoC URL: `https://_your_instance_.ibmaspera.com`.
 
 ### <a id="aocmanual"></a>Configuration: Using manual setup
 
@@ -3694,7 +3698,8 @@ Else you can use a specific OAuth API client_id, the first step is to declare `a
 
 Let's start by a registration with web based authentication (auth=web):
 
-- Open a web browser, log to your instance: e.g. `https://myorg.ibmaspera.com/`
+- Open a web browser, log to your instance: e.g. `https://_your_instance_.ibmaspera.com/`
+  (use your actual AoC instance URL)
 - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
 - Click **Create New**
   - **Client Name**: `ascli`
@@ -3704,7 +3709,7 @@ Let's start by a registration with web based authentication (auth=web):
   - leave the JWT part for now
 - **Save**
 
-> **Note:** for web based authentication, `ascli` listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For ``ascli`, HTTP is required, and 12345 is the default port.
+> **Note:** For web based authentication, `ascli` listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For ``ascli`, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
 
@@ -3712,15 +3717,17 @@ Once the client is registered, a **Client ID** and **Secret** are created, these
 
 If you did not use the wizard, you can also manually create a [option preset](#lprt) for `ascli` in its configuration file.
 
-Lets create an [option preset](#lprt) called: `my_aoc_org` using `ask` interactive input (client info from previous step):
+Lets create a [option preset](#lprt) called: `my_aoc_org` using `ask` for interactive input (client info from previous step):
 
 ```bash
 ascli config preset ask my_aoc_org url client_id client_secret
-option: url> https://myorg.ibmaspera.com/
+option: url> https://_your_instance_.ibmaspera.com/
 option: client_id> my_client_id_here
 option: client_secret> my_client_secret_here
 updated: my_aoc_org
 ```
+
+> **Note:** In above example, replace `https://_your_instance_.ibmaspera.com` with your actual AoC URL.
 
 (This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
@@ -3745,7 +3752,8 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 
 - Graphically
 
-  - Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
+  - Open a web browser, log to your instance: `https://_your_instance_.ibmaspera.com/`
+    (Use your actual AoC instance URL)
   - Go to Apps &rarr; Admin &rarr; Organization &rarr; Integrations
   - Click on the previously created application
   - select tab : **JSON Web Token Auth**
@@ -3782,7 +3790,8 @@ The public key must be assigned to your user. This can be done in two manners:
 
 Open the previously generated public key located here: `$HOME/.aspera/ascli/my_private_key.pub`
 
-- Open a web browser, log to your instance: `https://myorg.ibmaspera.com/`
+- Open a web browser, log to your instance: `https://_your_instance_.ibmaspera.com/`
+  (Use your actual AoC instance URL)
 - Click on the user's icon (top right)
 - Select **Account Settings**
 - Paste the Public Key PEM value in the **Public Key** section

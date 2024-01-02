@@ -11,7 +11,7 @@ alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
 <p>Version : 4.16.0.pre</p>
-<p>Laurent/2016-2023</p>
+<p>Laurent/2016-2024</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
 <p><code>ascli</code> is a also great tool to learn Aspera APIs.</p>
@@ -5108,7 +5108,7 @@ preset for Aspera on Cloud.</p>
 <p>The first</p>
 <p>Here is a sample invocation :</p>
 <pre class="text"><code>ascli config wizard
-option: url&gt; https://myorg.ibmaspera.com
+option: url&gt; https://_your_instance_.ibmaspera.com
 Detected: Aspera on Cloud
 Preparing preset: aoc_myorg
 Please provide path to your private RSA key, or empty to generate one:
@@ -5124,13 +5124,23 @@ saving configuration file
 Done.
 You can test with:
 ascli aoc user profile show</code></pre>
+<blockquote>
+<p><strong>Note:</strong> In above example, replace
+<code>https://_your_instance_.ibmaspera.com</code> with your actual AoC
+URL.</p>
+</blockquote>
 <p>Optionally, it is possible to create a new organization-specific
 integration, i.e. client application identification. For this, specify
 the option: <code>--use-generic-client=no</code>.</p>
 <p>If you already know the application, and want to limit the detection
 to it, provide url and plugin name:</p>
 <div class="sourceCode" id="cb256"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb256-1"><a href="#cb256-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard myorg aoc</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb256-1"><a href="#cb256-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard _your_instance_ aoc</span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> In above example, replace
+<code>_your_instance_</code> with the first part of your actual AoC URL:
+<code>https://_your_instance_.ibmaspera.com</code>.</p>
+</blockquote>
 <h2 data-number="5.2" id="configuration-using-manual-setup"><span
 class="header-section-number">5.2</span>
 <a id="aocmanual"></a>Configuration: Using manual setup</h2>
@@ -5178,7 +5188,8 @@ documentation: Registering an API Client</a> ).</p>
 (auth=web):</p>
 <ul>
 <li>Open a web browser, log to your instance:
-e.g. <code>https://myorg.ibmaspera.com/</code></li>
+e.g. <code>https://_your_instance_.ibmaspera.com/</code> (use your
+actual AoC instance URL)</li>
 <li>Go to Apps → Admin → Organization → Integrations</li>
 <li>Click <strong>Create New</strong>
 <ul>
@@ -5192,7 +5203,7 @@ e.g. <code>https://myorg.ibmaspera.com/</code></li>
 <li><strong>Save</strong></li>
 </ul>
 <blockquote>
-<p><strong>Note:</strong> for web based authentication,
+<p><strong>Note:</strong> For web based authentication,
 <code>ascli</code> listens on a local port (e.g. specified by the
 redirect_uri, in this example: 12345), and the browser will provide the
 OAuth code there. For `<code>ascli</code>, HTTP is required, and 12345
@@ -5207,15 +5218,20 @@ href="#lprt">option preset</a> for Aspera on Cloud</h3>
 <p>If you did not use the wizard, you can also manually create a <a
 href="#lprt">option preset</a> for <code>ascli</code> in its
 configuration file.</p>
-<p>Lets create an <a href="#lprt">option preset</a> called:
-<code>my_aoc_org</code> using <code>ask</code> interactive input (client
-info from previous step):</p>
+<p>Lets create a <a href="#lprt">option preset</a> called:
+<code>my_aoc_org</code> using <code>ask</code> for interactive input
+(client info from previous step):</p>
 <div class="sourceCode" id="cb257"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb257-1"><a href="#cb257-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset ask my_aoc_org url client_id client_secret</span>
-<span id="cb257-2"><a href="#cb257-2" aria-hidden="true" tabindex="-1"></a><span class="ex">option:</span> url<span class="op">&gt;</span> https://myorg.ibmaspera.com/</span>
+<span id="cb257-2"><a href="#cb257-2" aria-hidden="true" tabindex="-1"></a><span class="ex">option:</span> url<span class="op">&gt;</span> https://_your_instance_.ibmaspera.com/</span>
 <span id="cb257-3"><a href="#cb257-3" aria-hidden="true" tabindex="-1"></a><span class="ex">option:</span> client_id<span class="op">&gt;</span> my_client_id_here</span>
 <span id="cb257-4"><a href="#cb257-4" aria-hidden="true" tabindex="-1"></a><span class="ex">option:</span> client_secret<span class="op">&gt;</span> my_client_secret_here</span>
 <span id="cb257-5"><a href="#cb257-5" aria-hidden="true" tabindex="-1"></a><span class="ex">updated:</span> my_aoc_org</span></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> In above example, replace
+<code>https://_your_instance_.ibmaspera.com</code> with your actual AoC
+URL.</p>
+</blockquote>
 <p>(This can also be done in one line using the command
 <code>config preset update my_aoc_org --url=...</code>)</p>
 <p>Define this <a href="#lprt">option preset</a> as default
@@ -5244,7 +5260,8 @@ be authorized in Aspera on Cloud. This can be done in two manners:</p>
 <li><p>Graphically</p>
 <ul>
 <li>Open a web browser, log to your instance:
-<code>https://myorg.ibmaspera.com/</code></li>
+<code>https://_your_instance_.ibmaspera.com/</code> (Use your actual AoC
+instance URL)</li>
 <li>Go to Apps → Admin → Organization → Integrations</li>
 <li>Click on the previously created application</li>
 <li>select tab : <strong>JSON Web Token Auth</strong></li>
@@ -5274,7 +5291,8 @@ class="header-section-number">5.2.5.1</span> Graphically</h4>
 <code>$HOME/.aspera/ascli/my_private_key.pub</code></p>
 <ul>
 <li>Open a web browser, log to your instance:
-<code>https://myorg.ibmaspera.com/</code></li>
+<code>https://_your_instance_.ibmaspera.com/</code> (Use your actual AoC
+instance URL)</li>
 <li>Click on the user’s icon (top right)</li>
 <li>Select <strong>Account Settings</strong></li>
 <li>Paste the Public Key PEM value in the <strong>Public Key</strong>
