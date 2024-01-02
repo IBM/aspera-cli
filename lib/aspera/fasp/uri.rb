@@ -8,12 +8,12 @@ require 'aspera/command_line_builder'
 
 module Aspera
   module Fasp
-    # translates a "faspe:" URI (used in Faspex 4) into transfer spec hash
+    # translates a "faspe:" URI (used in Faspex 4) into transfer spec (Hash)
     class Uri
       SCHEME = 'faspe'
       def initialize(fasp_link)
         @fasp_uri = URI.parse(fasp_link.gsub(' ', '%20'))
-        # TODO: check scheme is faspe
+        # TODO: check scheme is 'faspe'
       end
 
       def transfer_spec

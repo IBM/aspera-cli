@@ -75,7 +75,7 @@ module Aspera
             }
           end
 
-          # extract elements from anonymous faspex link
+          # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
             raise Cli::BadArgument, 'Public link does not match Faspex format' unless (m = public_uri.path.match(%r{^(.*)/(external.*)$}))
@@ -91,16 +91,13 @@ module Aspera
             return result
           end
 
-          # get Fasp::Uri::SCHEME URI from entry in xml, and fix problems..
+          # get Fasp::Uri::SCHEME URI from entry in xml, and fix problems.
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
               raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
               return nil
             end
             result = entry['link'].find{|e| e['rel'].eql?('package')}['href']
-            # tags in the end of URL is not well % encoded... there are "=" that should be %3D
-            # TODO: enter ticket to Faspex ?
-            # ##XXif m=result.match(/(=+)$/);result.gsub!(/=+$/,"#{"%3D"*m[1].length}");end
             return result
           end
 
