@@ -147,6 +147,7 @@ module Aspera
           return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
           resp = rest_api.read(res_class_path, old_query_read_delete)
+          return Main.result_empty if resp[:http].code == '204'
           data = resp[:data]
           # TODO: not generic : which application is this for ?
           if resp[:http]['Content-Type'].start_with?('application/vnd.api+json')
