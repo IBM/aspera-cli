@@ -7,8 +7,6 @@ DIR_TOP=
 
 include $(DIR_TOP)common.mak
 
-GEMSPEC_FILE=$(DIR_TOP)$(GEM_NAME).gemspec
-
 all:: $(DIR_TOP).gems_checked doc signed_gem
 doc:
 	cd $(DIR_DOC) && make
@@ -25,7 +23,7 @@ clean_doc::
 ##################################
 # Gem build
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
-	gem build $(GEMSPEC_FILE)
+	gem build $(GEMSPEC)
 	gem specification $(PATH_GEMFILE) version
 # check that the signing key is present
 gem_check_signing_key:
@@ -63,7 +61,7 @@ clean:: clean_gem
 # Gem certificate
 # Update the existing certificate, keeping the maintainer email
 update-cert: gem_check_signing_key
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
 	gem cert \
 	--re-sign \
 	--certificate $$cert_chain \
@@ -71,18 +69,18 @@ update-cert: gem_check_signing_key
 	--days 1100
 # Create a new certificate, taking the maintainer email from gemspec
 new-cert: gem_check_signing_key
-	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
+	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
 	gem cert \
 	--build $$maintainer_email \
 	--private-key $$SIGNING_KEY \
 	--days 1100
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
 	mv gem-public_cert.pem $$cert_chain
 show-cert:
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
+	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
 	openssl x509 -noout -text -in $$cert_chain|head -n 13
 check-cert-key: $(DIR_TMP).exists gem_check_signing_key
-	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC_FILE))&&\
+	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
 	openssl x509 -noout -pubkey -in $$cert_chain > $(DIR_TMP)cert.pub
 	@openssl rsa -pubout -passin pass:_value_ -in $$SIGNING_KEY > $(DIR_TMP)sign.pub
 	@if cmp -s $(DIR_TMP)cert.pub $(DIR_TMP)sign.pub;then echo "Ok: certificate and key match";else echo "Error: certificate and key do not match" 1>&2;exit 1;fi
@@ -109,10 +107,9 @@ DOCKER_IMG_VERSION=$(GEM_VERSION)
 DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
-SDK_URL=https://ibm.biz/aspera_transfer_sdk
 PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/' < Dockerfile.tmpl.erb | erb -T 2
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
-	curl -L $(SDK_URL) -o $(LOCAL_SDK_FILE)
+	curl -L $$($(CLI_PATH) --show-config --fields=sdk_url) -o $(LOCAL_SDK_FILE)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 dockerfile_release:
