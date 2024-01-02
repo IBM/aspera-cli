@@ -191,14 +191,14 @@ module Aspera
     private
 
     # [M]=mandatory [D]=has default value [0]=accept nil
-    # :base_url            [M]  URL of authentication API
+    # :base_url            [M] URL of authentication API
     # :auth
-    # :grant_method        [M]  :generic, :web, :jwt, custom
+    # :grant_method        [M] :generic, :web, :jwt, [custom types]
     # :client_id           [0]
     # :client_secret       [0]
     # :scope               [0]
-    # :path_token          [D]  API end point to create a token
-    # :token_field         [D]  field in result that contains the token
+    # :path_token          [D] API end point to create a token
+    # :token_field         [D] field in result that contains the token
     # :jwt:private_key_obj [M] for type :jwt
     # :jwt:payload         [M] for type :jwt
     # :jwt:headers         [0] for type :jwt
@@ -207,10 +207,8 @@ module Aspera
     # :generic             [M] for type :generic
     def initialize(a_params)
       Log.log.debug{"auth=#{a_params}"}
-      # replace default values
+      # set default values if not set in parameters common to all types
       @generic_parameters = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
-      # legacy
-      @generic_parameters[:grant_method] ||= @generic_parameters.delete(:crtype) if @generic_parameters.key?(:crtype) # cspell: disable-line
       # check that type is known
       self.class.token_creator(@generic_parameters[:grant_method])
       # specific parameters for the creation type
@@ -226,8 +224,9 @@ module Aspera
         redirect_max: 2
       }
       rest_params[:auth] = a_params[:auth] if a_params.key?(:auth)
+      # this is the OAuth API
       @api = Rest.new(rest_params)
-      # if needed use from api
+      # if those are needed use from @api
       @generic_parameters.delete(:base_url)
       @generic_parameters.delete(:auth)
       @generic_parameters.delete(@generic_parameters[:grant_method])
@@ -266,7 +265,7 @@ module Aspera
         @generic_parameters[:grant_method],
         self.class.id_creator(@generic_parameters[:grant_method]).call(self), # array, so we flatten later
         @generic_parameters[:scope],
-        @api.params.dig(%i[auth username])
+        @api.params.dig(*%i[auth username])
       ].flatten)
 
       # get token_data from cache (or nil), token_data is what is returned by /token
