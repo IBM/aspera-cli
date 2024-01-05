@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cspell:ignore Serban Antipolis -->
+<!-- cspell:ignore Serban Antipolis optipng -->
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
@@ -500,9 +500,9 @@ Manual installation:
 
 Automated installation, with internet access:
 
-The ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
+The Ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
 
-Download the ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
+Download the Ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
 
 ```bat
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
@@ -512,7 +512,7 @@ Installation without network:
 
 It is essentially the same procedure, but instead of retrieving files from internet, one copies the files from a machine with internet access, and then install from those archives:
 
-- Download the `exe` ruby installer from <https://rubyinstaller.org/downloads/>
+- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
 
   ```bash
   v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
@@ -576,13 +576,13 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 
 **Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
 
-- Check available ruby versions:
+- Check available Ruby versions:
 
   ```bash
   dnf module list ruby
   ```
 
-- If ruby was already installed with an older version, remove it:
+- If Ruby was already installed with an older version, remove it:
 
   ```bash
   dnf module -y reset ruby
@@ -1164,7 +1164,7 @@ Exceptions:
 
 - some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
 - some options (flags) don't take a value, e.g. `-N`
-- the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`. 
+- the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`.
 
 Example:
 
@@ -1287,7 +1287,7 @@ Elements of the list can be:
 - `ALL` : all columns available
 - -property : remove property from the current list
 - property : add property to the current list
-- a ruby `RegEx` : using `@ruby:'/.../'`
+- a Ruby `RegEx` : using `@ruby:'/.../'`
 
 Examples:
 
@@ -1378,6 +1378,9 @@ The following decoders are supported:
 | `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
 | `yaml`   | String   | Any     | Decode YAML
 | `zlib`   | String   | String  | Un-compress zlib data
+
+> **Note:** A few commands support a value of type `Proc` (lambda expression).
+For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value of attribute `attr` of the `Hash` `i`.
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -3099,7 +3102,7 @@ For example, on Linux it is convenient to create a wrapping script, e.g. `cron_a
 
 ```bash
 #!/bin/bash
-# load the ruby environment
+# load the Ruby environment
 . /etc/profile.d/rvm.sh
 rvm use 2.6 --quiet
 # set a timeout protection, just in case ascli is frozen 
@@ -5700,16 +5703,19 @@ To select another inbox, use option `box` with one of the following values:
 - `pending`
 - `pending_history`
 - `all`
-- `ALL` (**admin only**)
+- `ALL` (**admin only**, all inboxes of all users)
 - **name of a shared inbox or workgroup**
 
-> **Note:** specify if the box is a shared inbox or a workgroup using option `group_type` with either `shared_inboxes` or `workgroups`
+> **Note:** In case the name of the `box` is specific, use option `group_type` with either `shared_inboxes` or `workgroups` to be more specific.
 
 ### Faspex 5: Send a package
 
-The `Hash` creation parameter provided to command `faspex5 packages send` corresponds to the Faspex 5 API: `POST /packages`.
+The `Hash` creation parameter provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
+
+The interface is the one of the API (Refer to Faspex5 API documentation, or look at request in browser).
 
 Required fields are `title` and `recipients`.
+
 Example using `@json:` format:
 
 ```json
@@ -5718,15 +5724,16 @@ Example using `@json:` format:
 
 `recipient_type` is one of (Refer to API):
 
-- user
-- workgroup
-- external_user
-- distribution_list
-- shared_inbox
+- `user`
+- `workgroup`
+- `external_user`
+- `distribution_list`
+- `shared_inbox`
 
-`ascli` adds some convenience: The API expects the field `recipients` to be an `Array` of `Hash`, each with field `name` and optionally `recipient_type`.
-It is also possible to provide an `Array` of `String`, with simply a recipient name.
-Then `ascli` will lookup existing contacts among all possible types, use it if a single match is found, and set the `name` and `recipient_type` accordingly.
+`ascli` adds some convenience:
+The API expects the field `recipients` to be an `Array` of `Hash`, each with field `name` and optionally `recipient_type`.
+`ascli` also accepts an `Array` of `String`, with simply a recipient name.
+Then, `ascli` will lookup existing contacts among all possible types, use it if a single match is found, and set the `name` and `recipient_type` accordingly.
 Else an exception is sent.
 
 > **Note:** The lookup is case insensitive and on partial matches.
@@ -5735,47 +5742,73 @@ Else an exception is sent.
 {"title":"some title","recipients":["user@example.com"]}
 ```
 
-If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an Array of values (from the list above). e.g. :
+If the lookup needs to be only on certain types, you can specify the field: `recipient_types` with either a single value or an `Array` of values (from the list above). e.g. :
 
 ```json
 {"title":"test title","recipient_types":"user","recipients":["user1@example.com","user2@example.com"]}
 ```
 
-### Faspex 5:  Send a package with metadata
+### Faspex 5: Send a package with metadata
 
-The interface is the one of the API (Refer to API documentation, or look at request in browser):
+It's the same as sending a package, but with an extra field `metadata` in the package info.
 
-```bash
-ascli faspex5 packages send @json:'{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}' 'faux:///test1?k1'
+```json
+{"title":"test title","recipients":["my shared inbox"],"metadata":{"Confidential":"Yes","Drop menu":"Option 1"}}
 ```
 
 Basically, add the field `metadata`, with one key per metadata and the value is directly the metadata value.
-
-### Faspex 5: Receive a package
-
-The (numeric) identifier of the package to receive is given as argument to command `faspex5 packages receive`.
-
-> **Note:** option `box` applies.
-
-It can also be a `Array` for multiple packages, e.g. `@list:,1,2,3`.
-
-Special id `ALL` retrieves all packages.
-Special id `INIT` initializes the persistency of already received packages.
-
-If a package is password protected, then the content protection password is asked interactively.
-To skip this, use option: `--ts=@json:'{"content_protection":null}'`.
+(Refer to API documentation for more details).
 
 ### Faspex 5: List packages
 
-The following parameters in option `query` are supported:
+Option `box` can be used to list packages from a specific box (see **Inbox selection** above).
 
-- `q` : a filter on name (case insensitive, matches if value is contained in name)
-- `max` : maximum number of items to retrieve (stop pages when the maximum is passed)
-- `pmax` : maximum number of pages to request (stop pages when the maximum is passed)
-- `offset` : native api parameter, in general do not use (added by `ascli`)
-- `limit` : native api parameter, number of items par api call, in general do not use (added by `ascli`)
+Option `query` can be used to filter the list of packages, based on native API parameters, directly sent to [Faspex 5 API `GET /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#getAllPackages).
 
-Admin only: If the value `ALL` is provided to option `box`, then all packages are selected.
+| parameter | Type    | description |
+|-----------|---------|-------------|
+| `offset`  | Native  | Managed by `ascli`: Offset of first package. Default: 0
+| `limit`   | Native  | Managed by `ascli`: # of packages per API call. Default: 100
+| `q`       | Native  | General search string (case insensitive, matches if value is contained in several fields)
+| ...       | Native  | Other native parameters are supported (Refer to API documentation)
+| `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed)
+| `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed)
+
+A positional parameter in last position, of type `Proc`, can be used to filter the list of packages.
+This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
+But the disadvantage is that the filtering is done in `ascli` and not in Faspex 5, so it is less efficient.
+
+Examples:
+
+- List only released packages: (filtering is done in Faspex)
+
+  ```bash
+  ascli faspex5 packages list --query=@json:'{"status":"released"}'
+  ```
+
+- Same, using filtering in `ascli`:
+
+  ```bash
+  ascli faspex5 packages list @ruby:'->(p){p["state"].eql?("released")}'
+  ```
+
+### Faspex 5: Receive a package
+
+To receive one, or several packages at once, use command `faspex5 packages receive`.
+Provide either a single package id, or an extended value `Array` of package ids, e.g. `@list:,1,2,3` as argument.
+
+The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
+I.e. options `box` and `query`, as well as last positional parameter `Proc` (filter).
+
+Option `--once-only=yes` can be used, for "cargo-like" behavior.
+
+Special package id `ALL` selects all packages (of the selected box).
+In this case, typically, only `released` packages should be downloaded, so use option `--query=@json:'{"status":"released"}'`.
+
+Special package id `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
+
+If a package is password protected, then the content protection password is asked interactively.
+To skip this, use option: `--ts=@json:'{"content_protection":null}'`, or provide the password instead of `null`.
 
 ### Faspex 5: List all shared inboxes and work groups
 
@@ -5850,7 +5883,7 @@ ascli faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_reci
 To receive all packages, only once, through persistency of already received packages:
 
 ```bash
-ascli faspex5 packages receive ALL --once-only=yes
+ascli faspex5 packages receive ALL --once-only=yes --query=@json:'{"status":"released"}'
 ```
 
 To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:

@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cspell:ignore Serban Antipolis -->
+<!-- cspell:ignore Serban Antipolis optipng -->
 <p><a href="https://badge.fury.io/rb/aspera-cli"><img
 src="https://badge.fury.io/rb/aspera-cli.svg" alt="Gem Version" /></a>
 <a href="https://github.com/IBM/aspera-cli/actions"><img
@@ -499,11 +499,11 @@ and mingw)</li>
 sections)</li>
 </ul>
 <p>Automated installation, with internet access:</p>
-<p>The ruby installer supports silent installation, to see the options,
+<p>The Ruby installer supports silent installation, to see the options,
 execute it with <code>/help</code>, or refer to the <a
 href="https://github.com/oneclick/rubyinstaller2/wiki/FAQ">Ruby
 Installer FAQ</a></p>
-<p>Download the ruby installer executable from <a
+<p>Download the Ruby installer executable from <a
 href="https://rubyinstaller.org/downloads/"
 class="uri">https://rubyinstaller.org/downloads/</a> and then
 install:</p>
@@ -514,7 +514,7 @@ class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb43-1"><a href
 from internet, one copies the files from a machine with internet access,
 and then install from those archives:</p>
 <ul>
-<li><p>Download the <code>exe</code> ruby installer from <a
+<li><p>Download the <code>exe</code> Ruby installer from <a
 href="https://rubyinstaller.org/downloads/"
 class="uri">https://rubyinstaller.org/downloads/</a></p>
 <div class="sourceCode" id="cb44"><pre
@@ -572,10 +572,10 @@ use it provided that the version supported.</p>
 <p><strong>Example:</strong> RHEL 8+, Rocky Linux 8+, Centos 8 Stream:
 with extensions to compile native gems</p>
 <ul>
-<li><p>Check available ruby versions:</p>
+<li><p>Check available Ruby versions:</p>
 <div class="sourceCode" id="cb51"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> module list ruby</span></code></pre></div></li>
-<li><p>If ruby was already installed with an older version, remove
+<li><p>If Ruby was already installed with an older version, remove
 it:</p>
 <div class="sourceCode" id="cb52"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> module <span class="at">-y</span> reset ruby</span></code></pre></div></li>
@@ -1331,7 +1331,7 @@ when not set)</li>
 <li><code>ALL</code> : all columns available</li>
 <li>-property : remove property from the current list</li>
 <li>property : add property to the current list</li>
-<li>a ruby <code>RegEx</code> : using <code>@ruby:'/.../'</code></li>
+<li>a Ruby <code>RegEx</code> : using <code>@ruby:'/.../'</code></li>
 </ul>
 <p>Examples:</p>
 <ul>
@@ -1551,6 +1551,13 @@ to value <code>@file:foo</code>.</td>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Note:</strong> A few commands support a value of type
+<code>Proc</code> (lambda expression). For example, the <strong>Extended
+Value</strong> <code>@ruby:'-&gt;(i){i["attr"]}'</code> is a lambda
+expression that returns the value of attribute <code>attr</code> of the
+<code>Hash</code> <code>i</code>.</p>
+</blockquote>
 <p>To display the result of an extended value, use the
 <code>config echo</code> command.</p>
 <p>The <code>extend</code> decoder is useful to evaluate embedded
@@ -4527,7 +4534,7 @@ e.g. <code>cron_ascli</code> that will setup the environment (e.g. Ruby)
 to properly start <code>ascli</code>:</p>
 <div class="sourceCode" id="cb235"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb235-1"><a href="#cb235-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb235-2"><a href="#cb235-2" aria-hidden="true" tabindex="-1"></a><span class="co"># load the ruby environment</span></span>
+<span id="cb235-2"><a href="#cb235-2" aria-hidden="true" tabindex="-1"></a><span class="co"># load the Ruby environment</span></span>
 <span id="cb235-3"><a href="#cb235-3" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> /etc/profile.d/rvm.sh</span>
 <span id="cb235-4"><a href="#cb235-4" aria-hidden="true" tabindex="-1"></a><span class="ex">rvm</span> use 2.6 <span class="at">--quiet</span></span>
 <span id="cb235-5"><a href="#cb235-5" aria-hidden="true" tabindex="-1"></a><span class="co"># set a timeout protection, just in case ascli is frozen </span></span>
@@ -7222,40 +7229,45 @@ following values:</p>
 <li><code>pending</code></li>
 <li><code>pending_history</code></li>
 <li><code>all</code></li>
-<li><code>ALL</code> (<strong>admin only</strong>)</li>
+<li><code>ALL</code> (<strong>admin only</strong>, all inboxes of all
+users)</li>
 <li><strong>name of a shared inbox or workgroup</strong></li>
 </ul>
 <blockquote>
-<p><strong>Note:</strong> specify if the box is a shared inbox or a
-workgroup using option <code>group_type</code> with either
-<code>shared_inboxes</code> or <code>workgroups</code></p>
+<p><strong>Note:</strong> In case the name of the <code>box</code> is
+specific, use option <code>group_type</code> with either
+<code>shared_inboxes</code> or <code>workgroups</code> to be more
+specific.</p>
 </blockquote>
 <h2 data-number="9.6" id="faspex-5-send-a-package"><span
 class="header-section-number">9.6</span> Faspex 5: Send a package</h2>
 <p>The <code>Hash</code> creation parameter provided to command
-<code>faspex5 packages send</code> corresponds to the Faspex 5 API:
-<code>POST /packages</code>.</p>
-<p>Required fields are <code>title</code> and <code>recipients</code>.
-Example using <code>@json:</code> format:</p>
+<code>faspex5 packages send [extended value: Hash with package info ] [files...]</code>
+corresponds to the Faspex 5 API: <code>POST /packages</code>.</p>
+<p>The interface is the one of the API (Refer to Faspex5 API
+documentation, or look at request in browser).</p>
+<p>Required fields are <code>title</code> and
+<code>recipients</code>.</p>
+<p>Example using <code>@json:</code> format:</p>
 <div class="sourceCode" id="cb412"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb412-1"><a href="#cb412-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;some title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;recipient_type&quot;</span><span class="fu">:</span><span class="st">&quot;user&quot;</span><span class="fu">,</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;user@example.com&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <p><code>recipient_type</code> is one of (Refer to API):</p>
 <ul>
-<li>user</li>
-<li>workgroup</li>
-<li>external_user</li>
-<li>distribution_list</li>
-<li>shared_inbox</li>
+<li><code>user</code></li>
+<li><code>workgroup</code></li>
+<li><code>external_user</code></li>
+<li><code>distribution_list</code></li>
+<li><code>shared_inbox</code></li>
 </ul>
 <p><code>ascli</code> adds some convenience: The API expects the field
 <code>recipients</code> to be an <code>Array</code> of
 <code>Hash</code>, each with field <code>name</code> and optionally
-<code>recipient_type</code>. It is also possible to provide an
+<code>recipient_type</code>. <code>ascli</code> also accepts an
 <code>Array</code> of <code>String</code>, with simply a recipient name.
-Then <code>ascli</code> will lookup existing contacts among all possible
-types, use it if a single match is found, and set the <code>name</code>
-and <code>recipient_type</code> accordingly. Else an exception is
-sent.</p>
+Then, <code>ascli</code> will lookup existing contacts among all
+possible types, use it if a single match is found, and set the
+<code>name</code> and <code>recipient_type</code> accordingly. Else an
+exception is sent.</p>
 <blockquote>
 <p><strong>Note:</strong> The lookup is case insensitive and on partial
 matches.</p>
@@ -7264,102 +7276,167 @@ matches.</p>
 class="sourceCode json"><code class="sourceCode json"><span id="cb413-1"><a href="#cb413-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;some title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;user@example.com&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <p>If the lookup needs to be only on certain types, you can specify the
 field: <code>recipient_types</code> with either a single value or an
-Array of values (from the list above). e.g. :</p>
+<code>Array</code> of values (from the list above). e.g. :</p>
 <div class="sourceCode" id="cb414"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb414-1"><a href="#cb414-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;test title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipient_types&quot;</span><span class="fu">:</span><span class="st">&quot;user&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;user1@example.com&quot;</span><span class="ot">,</span><span class="st">&quot;user2@example.com&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
 <h2 data-number="9.7" id="faspex-5-send-a-package-with-metadata"><span
 class="header-section-number">9.7</span> Faspex 5: Send a package with
 metadata</h2>
-<p>The interface is the one of the API (Refer to API documentation, or
-look at request in browser):</p>
+<p>It’s the same as sending a package, but with an extra field
+<code>metadata</code> in the package info.</p>
 <div class="sourceCode" id="cb415"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb415-1"><a href="#cb415-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my shared inbox&quot;],&quot;metadata&quot;:{&quot;Confidential&quot;:&quot;Yes&quot;,&quot;Drop menu&quot;:&quot;Option 1&quot;}}&#39;</span> <span class="st">&#39;faux:///test1?k1&#39;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb415-1"><a href="#cb415-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;test title&quot;</span><span class="fu">,</span><span class="dt">&quot;recipients&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;my shared inbox&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;metadata&quot;</span><span class="fu">:{</span><span class="dt">&quot;Confidential&quot;</span><span class="fu">:</span><span class="st">&quot;Yes&quot;</span><span class="fu">,</span><span class="dt">&quot;Drop menu&quot;</span><span class="fu">:</span><span class="st">&quot;Option 1&quot;</span><span class="fu">}}</span></span></code></pre></div>
 <p>Basically, add the field <code>metadata</code>, with one key per
-metadata and the value is directly the metadata value.</p>
-<h2 data-number="9.8" id="faspex-5-receive-a-package"><span
-class="header-section-number">9.8</span> Faspex 5: Receive a
+metadata and the value is directly the metadata value. (Refer to API
+documentation for more details).</p>
+<h2 data-number="9.8" id="faspex-5-list-packages"><span
+class="header-section-number">9.8</span> Faspex 5: List packages</h2>
+<p>Option <code>box</code> can be used to list packages from a specific
+box (see <strong>Inbox selection</strong> above).</p>
+<p>Option <code>query</code> can be used to filter the list of packages,
+based on native API parameters, directly sent to <a
+href="https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#getAllPackages">Faspex
+5 API <code>GET /packages</code></a>.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 27%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>parameter</th>
+<th>Type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>offset</code></td>
+<td>Native</td>
+<td>Managed by <code>ascli</code>: Offset of first package. Default:
+0</td>
+</tr>
+<tr class="even">
+<td><code>limit</code></td>
+<td>Native</td>
+<td>Managed by <code>ascli</code>: # of packages per API call. Default:
+100</td>
+</tr>
+<tr class="odd">
+<td><code>q</code></td>
+<td>Native</td>
+<td>General search string (case insensitive, matches if value is
+contained in several fields)</td>
+</tr>
+<tr class="even">
+<td>…</td>
+<td>Native</td>
+<td>Other native parameters are supported (Refer to API
+documentation)</td>
+</tr>
+<tr class="odd">
+<td><code>max</code></td>
+<td>Special</td>
+<td>Maximum number of items to retrieve (stop pages when the maximum is
+passed)</td>
+</tr>
+<tr class="even">
+<td><code>pmax</code></td>
+<td>Special</td>
+<td>Maximum number of pages to request (stop pages when the maximum is
+passed)</td>
+</tr>
+</tbody>
+</table>
+<p>A positional parameter in last position, of type <code>Proc</code>,
+can be used to filter the list of packages. This advantage of this
+method is that the expression can be any test, even complex, as it is
+Ruby code. But the disadvantage is that the filtering is done in
+<code>ascli</code> and not in Faspex 5, so it is less efficient.</p>
+<p>Examples:</p>
+<ul>
+<li><p>List only released packages: (filtering is done in Faspex)</p>
+<div class="sourceCode" id="cb416"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb416-1"><a href="#cb416-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;released&quot;}&#39;</span></span></code></pre></div></li>
+<li><p>Same, using filtering in <code>ascli</code>:</p>
+<div class="sourceCode" id="cb417"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb417-1"><a href="#cb417-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list @ruby:<span class="st">&#39;-&gt;(p){p[&quot;state&quot;].eql?(&quot;released&quot;)}&#39;</span></span></code></pre></div></li>
+</ul>
+<h2 data-number="9.9" id="faspex-5-receive-a-package"><span
+class="header-section-number">9.9</span> Faspex 5: Receive a
 package</h2>
-<p>The (numeric) identifier of the package to receive is given as
-argument to command <code>faspex5 packages receive</code>.</p>
-<blockquote>
-<p><strong>Note:</strong> option <code>box</code> applies.</p>
-</blockquote>
-<p>It can also be a <code>Array</code> for multiple packages,
-e.g. <code>@list:,1,2,3</code>.</p>
-<p>Special id <code>ALL</code> retrieves all packages. Special id
-<code>INIT</code> initializes the persistency of already received
-packages.</p>
+<p>To receive one, or several packages at once, use command
+<code>faspex5 packages receive</code>. Provide either a single package
+id, or an extended value <code>Array</code> of package ids,
+e.g. <code>@list:,1,2,3</code> as argument.</p>
+<p>The same options as for <code>faspex5 packages list</code> can be
+used to select the box and filter the packages to download. I.e. options
+<code>box</code> and <code>query</code>, as well as last positional
+parameter <code>Proc</code> (filter).</p>
+<p>Option <code>--once-only=yes</code> can be used, for “cargo-like”
+behavior.</p>
+<p>Special package id <code>ALL</code> selects all packages (of the
+selected box). In this case, typically, only <code>released</code>
+packages should be downloaded, so use option
+<code>--query=@json:'{"status":"released"}'</code>.</p>
+<p>Special package id <code>INIT</code> initializes the persistency of
+already received packages when option <code>--once-only=yes</code> is
+used.</p>
 <p>If a package is password protected, then the content protection
 password is asked interactively. To skip this, use option:
-<code>--ts=@json:'{"content_protection":null}'</code>.</p>
-<h2 data-number="9.9" id="faspex-5-list-packages"><span
-class="header-section-number">9.9</span> Faspex 5: List packages</h2>
-<p>The following parameters in option <code>query</code> are
-supported:</p>
-<ul>
-<li><code>q</code> : a filter on name (case insensitive, matches if
-value is contained in name)</li>
-<li><code>max</code> : maximum number of items to retrieve (stop pages
-when the maximum is passed)</li>
-<li><code>pmax</code> : maximum number of pages to request (stop pages
-when the maximum is passed)</li>
-<li><code>offset</code> : native api parameter, in general do not use
-(added by <code>ascli</code>)</li>
-<li><code>limit</code> : native api parameter, number of items par api
-call, in general do not use (added by <code>ascli</code>)</li>
-</ul>
-<p>Admin only: If the value <code>ALL</code> is provided to option
-<code>box</code>, then all packages are selected.</p>
+<code>--ts=@json:'{"content_protection":null}'</code>, or provide the
+password instead of <code>null</code>.</p>
 <h2 data-number="9.10"
 id="faspex-5-list-all-shared-inboxes-and-work-groups"><span
 class="header-section-number">9.10</span> Faspex 5: List all shared
 inboxes and work groups</h2>
 <p>If you are a regular user, to list work groups you belong to:</p>
-<div class="sourceCode" id="cb416"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb416-1"><a href="#cb416-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res workgroup list</span></code></pre></div>
+<div class="sourceCode" id="cb418"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb418-1"><a href="#cb418-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res workgroup list</span></code></pre></div>
 <p>If you are admin or manager, add option:
 <code>--query=@json:'{"all":true}'</code>, this will list items you
 manage, even if you do not belong to them.</p>
-<div class="sourceCode" id="cb417"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb417-1"><a href="#cb417-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;all&quot;:true}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,name</span></code></pre></div>
+<div class="sourceCode" id="cb419"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb419-1"><a href="#cb419-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;all&quot;:true}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,name</span></code></pre></div>
 <p>Shared inbox members can also be listed, added, removed, and external
 users can be invited to a shared inbox.</p>
-<div class="sourceCode" id="cb418"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb418-1"><a href="#cb418-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> john@example.com</span></code></pre></div>
+<div class="sourceCode" id="cb420"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb420-1"><a href="#cb420-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> john@example.com</span></code></pre></div>
 <p>It is equivalent to:</p>
-<div class="sourceCode" id="cb419"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb419-1"><a href="#cb419-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> @json:<span class="st">&#39;{&quot;email_address&quot;:&quot;john@example.com&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb421"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb421-1"><a href="#cb421-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> @json:<span class="st">&#39;{&quot;email_address&quot;:&quot;john@example.com&quot;}&#39;</span></span></code></pre></div>
 <p>Other payload parameters are possible the <code>Hash</code>
 value:</p>
-<div class="sourceCode" id="cb420"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb420-1"><a href="#cb420-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span></span></code></pre></div>
+<div class="sourceCode" id="cb422"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb422-1"><a href="#cb422-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span></span></code></pre></div>
 <h2 data-number="9.11" id="faspex-5-create-metadata-profile"><span
 class="header-section-number">9.11</span> Faspex 5: Create Metadata
 profile</h2>
-<div class="sourceCode" id="cb421"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb421-1"><a href="#cb421-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res metadata_profiles create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the profile&quot;,&quot;default&quot;:false,&quot;title&quot;:{&quot;max_length&quot;:200,&quot;illegal_chars&quot;:[]},&quot;note&quot;:{&quot;max_length&quot;:400,&quot;illegal_chars&quot;:[],&quot;enabled&quot;:false},&quot;fields&quot;:[{&quot;ordering&quot;:0,&quot;name&quot;:&quot;field1&quot;,&quot;type&quot;:&quot;text_area&quot;,&quot;require&quot;:true,&quot;illegal_chars&quot;:[],&quot;max_length&quot;:100},{&quot;ordering&quot;:1,&quot;name&quot;:&quot;fff2&quot;,&quot;type&quot;:&quot;option_list&quot;,&quot;require&quot;:false,&quot;choices&quot;:[&quot;opt1&quot;,&quot;opt2&quot;]}]}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb423"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href="#cb423-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res metadata_profiles create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the profile&quot;,&quot;default&quot;:false,&quot;title&quot;:{&quot;max_length&quot;:200,&quot;illegal_chars&quot;:[]},&quot;note&quot;:{&quot;max_length&quot;:400,&quot;illegal_chars&quot;:[],&quot;enabled&quot;:false},&quot;fields&quot;:[{&quot;ordering&quot;:0,&quot;name&quot;:&quot;field1&quot;,&quot;type&quot;:&quot;text_area&quot;,&quot;require&quot;:true,&quot;illegal_chars&quot;:[],&quot;max_length&quot;:100},{&quot;ordering&quot;:1,&quot;name&quot;:&quot;fff2&quot;,&quot;type&quot;:&quot;option_list&quot;,&quot;require&quot;:false,&quot;choices&quot;:[&quot;opt1&quot;,&quot;opt2&quot;]}]}&#39;</span></span></code></pre></div>
 <h2 data-number="9.12"
 id="faspex-5-create-a-shared-inbox-with-specific-metadata-profile"><span
 class="header-section-number">9.12</span> Faspex 5: Create a Shared
 inbox with specific metadata profile</h2>
-<div class="sourceCode" id="cb422"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb422-1"><a href="#cb422-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the shared inbox&quot;,&quot;metadata_profile_id&quot;:1}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb424"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb424-1"><a href="#cb424-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the shared inbox&quot;,&quot;metadata_profile_id&quot;:1}&#39;</span></span></code></pre></div>
 <h2 data-number="9.13"
 id="faspex-5-list-content-in-shared-folder-and-send-package-from-remote-source"><span
 class="header-section-number">9.13</span> Faspex 5: List content in
 Shared folder and send package from remote source</h2>
-<div class="sourceCode" id="cb423"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href="#cb423-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders list</span></code></pre></div>
-<div class="sourceCode" id="cb424"><pre
-class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb424-1"><a href="#cb424-1" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span>
-<span id="cb424-2"><a href="#cb424-2" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> id <span class="pp">|</span> name     <span class="pp">|</span> node_id <span class="pp">|</span> ... <span class="pp">|</span></span>
-<span id="cb424-3"><a href="#cb424-3" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span>
-<span id="cb424-4"><a href="#cb424-4" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 3  <span class="pp">|</span> partages <span class="pp">|</span> 2       <span class="pp">|</span> ... <span class="pp">|</span></span>
-<span id="cb424-5"><a href="#cb424-5" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span></code></pre></div>
 <div class="sourceCode" id="cb425"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href="#cb425-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders br %name:partages /folder</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href="#cb425-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders list</span></code></pre></div>
 <div class="sourceCode" id="cb426"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb426-1"><a href="#cb426-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;hello&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;_recipient_here_&quot;}]}&#39;</span> <span class="at">--shared-folder</span><span class="op">=</span>%name:partages /folder/file</span></code></pre></div>
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb426-1"><a href="#cb426-1" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span>
+<span id="cb426-2"><a href="#cb426-2" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> id <span class="pp">|</span> name     <span class="pp">|</span> node_id <span class="pp">|</span> ... <span class="pp">|</span></span>
+<span id="cb426-3"><a href="#cb426-3" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span>
+<span id="cb426-4"><a href="#cb426-4" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 3  <span class="pp">|</span> partages <span class="pp">|</span> 2       <span class="pp">|</span> ... <span class="pp">|</span></span>
+<span id="cb426-5"><a href="#cb426-5" aria-hidden="true" tabindex="-1"></a>+----+----------+---------+-----+</span></code></pre></div>
+<div class="sourceCode" id="cb427"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb427-1"><a href="#cb427-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders br %name:partages /folder</span></code></pre></div>
+<div class="sourceCode" id="cb428"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb428-1"><a href="#cb428-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;hello&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;_recipient_here_&quot;}]}&#39;</span> <span class="at">--shared-folder</span><span class="op">=</span>%name:partages /folder/file</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> The shared folder can be identified by its
 numerical <code>id</code> or by name using percent selector:
@@ -7371,12 +7448,12 @@ class="header-section-number">9.14</span> Faspex 5: Receive all packages
 (cargo)</h2>
 <p>To receive all packages, only once, through persistency of already
 received packages:</p>
-<div class="sourceCode" id="cb427"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb427-1"><a href="#cb427-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes</span></code></pre></div>
+<div class="sourceCode" id="cb429"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;released&quot;}&#39;</span></span></code></pre></div>
 <p>To initialize, and skip all current package so that next time
 <code>ALL</code> is used, only newer packages are downloaded:</p>
-<div class="sourceCode" id="cb428"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb428-1"><a href="#cb428-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span></code></pre></div>
+<div class="sourceCode" id="cb430"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb430-1"><a href="#cb430-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span></code></pre></div>
 <h2 data-number="9.15" id="faspex-5-faspex-4-style-postprocessing"><span
 class="header-section-number">9.15</span> Faspex 5: Faspex 4-style
 postprocessing</h2>
@@ -7385,8 +7462,8 @@ plugin <code>faspex5</code> to emulate Faspex 4 postprocessing. It
 implements Faspex 5 web hooks, and calls a local script with the same
 environment as Faspex 4.</p>
 <p>It is invoked like this:</p>
-<div class="sourceCode" id="cb429"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;http://localhost:8080/processing&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb431"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb431-1"><a href="#cb431-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;http://localhost:8080/processing&quot;}&#39;</span></span></code></pre></div>
 <p>The following parameters are supported:</p>
 <table>
 <colgroup>
@@ -7538,8 +7615,8 @@ be increased to issue less HTTP calls.</p>
 <h3 data-number="10.1.4" id="example-list-packages-in-dropbox"><span
 class="header-section-number">10.1.4</span> Example: List packages in
 dropbox</h3>
-<div class="sourceCode" id="cb430"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb430-1"><a href="#cb430-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package list <span class="at">--box</span><span class="op">=</span>inbox <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*my_dropbox&#39;</span> <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:20,&quot;pmax&quot;:2,&quot;count&quot;:20}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb432"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb432-1"><a href="#cb432-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package list <span class="at">--box</span><span class="op">=</span>inbox <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*my_dropbox&#39;</span> <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:20,&quot;pmax&quot;:2,&quot;count&quot;:20}&#39;</span></span></code></pre></div>
 <p>List a maximum of 20 items grouped by pages of 20, with maximum 2
 pages in received box (inbox) when received in dropbox
 <code>*my_dropbox</code>.</p>
@@ -7551,16 +7628,16 @@ class="header-section-number">10.2</span> Receiving a Package</h2>
 <li>provide a public link with option <code>link</code></li>
 <li>provide a <code>faspe:</code> URI with option <code>link</code></li>
 </ul>
-<div class="sourceCode" id="cb431"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb431-1"><a href="#cb431-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 12345</span>
-<span id="cb431-2"><a href="#cb431-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv <span class="at">--link</span><span class="op">=</span>faspe://...</span></code></pre></div>
+<div class="sourceCode" id="cb433"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb433-1"><a href="#cb433-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 12345</span>
+<span id="cb433-2"><a href="#cb433-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv <span class="at">--link</span><span class="op">=</span>faspe://...</span></code></pre></div>
 <p>If the package is in a specific
 <strong>dropbox</strong>/<strong>workgroup</strong>, add option
 <code>recipient</code> for both the <code>list</code> and
 <code>recv</code> commands.</p>
-<div class="sourceCode" id="cb432"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb432-1"><a href="#cb432-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*dropbox_name&#39;</span></span>
-<span id="cb432-2"><a href="#cb432-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 125 <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*dropbox_name&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb434"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb434-1"><a href="#cb434-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*dropbox_name&#39;</span></span>
+<span id="cb434-2"><a href="#cb434-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package recv 125 <span class="at">--recipient</span><span class="op">=</span><span class="st">&#39;*dropbox_name&#39;</span></span></code></pre></div>
 <p>if <code>id</code> is set to <code>ALL</code>, then all packages are
 downloaded, and if option <code>once_only</code>is used, then a
 persistency file is created to keep track of already downloaded
@@ -7574,8 +7651,8 @@ is directly the contents of the <code>send</code> v3 <a
 href="https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/API%20v.3:%20Send%20Packages">API
 of Faspex 4</a>.</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb433"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb433-1"><a href="#cb433-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;my title&quot;,&quot;recipients&quot;:[&quot;someuser@example.com&quot;]}&#39;</span> <span class="at">--url</span><span class="op">=</span>https://faspex.corp.com/aspera/faspex <span class="at">--username</span><span class="op">=</span>foo <span class="at">--password</span><span class="op">=</span>bar /tmp/file1 /home/bar/file2</span></code></pre></div>
+<div class="sourceCode" id="cb435"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb435-1"><a href="#cb435-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;my title&quot;,&quot;recipients&quot;:[&quot;someuser@example.com&quot;]}&#39;</span> <span class="at">--url</span><span class="op">=</span>https://faspex.corp.com/aspera/faspex <span class="at">--username</span><span class="op">=</span>foo <span class="at">--password</span><span class="op">=</span>bar /tmp/file1 /home/bar/file2</span></code></pre></div>
 <p>If the recipient is a dropbox or workgroup: provide the name of the
 dropbox or workgroup preceded with <code>*</code> in the
 <code>recipients</code> field of the <code>delivery_info</code> option:
@@ -7607,8 +7684,8 @@ transfer</h2>
 parameters: <code>notify_to</code> and <code>notify_template</code>
 .</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb434"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb434-1"><a href="#cb434-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test pkg 1&quot;,&quot;recipients&quot;:[&quot;aspera.user1@gmail.com&quot;]}&#39;</span> ~/Documents/Samples/200KB.1 <span class="at">--notify-to</span><span class="op">=</span>aspera.user1@gmail.com <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: Package sent: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;metadata&quot;][&quot;_pkg_name&quot;]%&gt; files received\n\nTo user: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;recipients&quot;].first[&quot;email&quot;]%&gt;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb436"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb436-1"><a href="#cb436-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test pkg 1&quot;,&quot;recipients&quot;:[&quot;aspera.user1@gmail.com&quot;]}&#39;</span> ~/Documents/Samples/200KB.1 <span class="at">--notify-to</span><span class="op">=</span>aspera.user1@gmail.com <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: Package sent: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;metadata&quot;][&quot;_pkg_name&quot;]%&gt; files received\n\nTo user: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;recipients&quot;].first[&quot;email&quot;]%&gt;}&#39;</span></span></code></pre></div>
 <p>In this example the notification template is directly provided on
 command line. Package information placed in the message are directly
 taken from the tags in transfer spec. The template can be placed in a
@@ -7616,10 +7693,10 @@ file using modifier: <code>@file:</code></p>
 <h2 data-number="10.5" id="operation-on-dropboxes"><span
 class="header-section-number">10.5</span> Operation on dropboxes</h2>
 <p>Example:</p>
-<div class="sourceCode" id="cb435"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb435-1"><a href="#cb435-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox create @json:<span class="st">&#39;{&quot;dropbox&quot;:{&quot;e_wg_name&quot;:&quot;test1&quot;,&quot;e_wg_desc&quot;:&quot;test1&quot;}}&#39;</span></span>
-<span id="cb435-2"><a href="#cb435-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox list</span>
-<span id="cb435-3"><a href="#cb435-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox delete 36</span></code></pre></div>
+<div class="sourceCode" id="cb437"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb437-1"><a href="#cb437-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox create @json:<span class="st">&#39;{&quot;dropbox&quot;:{&quot;e_wg_name&quot;:&quot;test1&quot;,&quot;e_wg_desc&quot;:&quot;test1&quot;}}&#39;</span></span>
+<span id="cb437-2"><a href="#cb437-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox list</span>
+<span id="cb437-3"><a href="#cb437-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex v4 dropbox delete 36</span></code></pre></div>
 <h2 data-number="10.6" id="remote-sources"><span
 class="header-section-number">10.6</span> Remote sources</h2>
 <p>Faspex lacks an API to list the contents of a remote source
@@ -7627,19 +7704,19 @@ class="header-section-number">10.6</span> Remote sources</h2>
 this it is required to set option: <code>storage</code> that links a
 storage name to a node configuration and sub path.</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb436"><pre
-class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb436-1"><a href="#cb436-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_faspex_conf</span><span class="kw">:</span></span>
-<span id="cb436-2"><a href="#cb436-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">url</span><span class="kw">:</span><span class="at"> https://10.25.0.3/aspera/faspex</span></span>
-<span id="cb436-3"><a href="#cb436-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">username</span><span class="kw">:</span><span class="at"> admin</span></span>
-<span id="cb436-4"><a href="#cb436-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">password</span><span class="kw">:</span><span class="at"> MyUserPassword</span></span>
-<span id="cb436-5"><a href="#cb436-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">storage</span><span class="kw">:</span></span>
-<span id="cb436-6"><a href="#cb436-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">my_storage</span><span class="kw">:</span></span>
-<span id="cb436-7"><a href="#cb436-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">node</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@preset:my_faspex_node&quot;</span></span>
-<span id="cb436-8"><a href="#cb436-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /mydir</span></span>
-<span id="cb436-9"><a href="#cb436-9" aria-hidden="true" tabindex="-1"></a><span class="fu">my_faspex_node</span><span class="kw">:</span></span>
-<span id="cb436-10"><a href="#cb436-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">url</span><span class="kw">:</span><span class="at"> https://10.25.0.3:9092</span></span>
-<span id="cb436-11"><a href="#cb436-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">username</span><span class="kw">:</span><span class="at"> node_faspex</span></span>
-<span id="cb436-12"><a href="#cb436-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">password</span><span class="kw">:</span><span class="at"> MyNodePassword</span></span></code></pre></div>
+<div class="sourceCode" id="cb438"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb438-1"><a href="#cb438-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_faspex_conf</span><span class="kw">:</span></span>
+<span id="cb438-2"><a href="#cb438-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">url</span><span class="kw">:</span><span class="at"> https://10.25.0.3/aspera/faspex</span></span>
+<span id="cb438-3"><a href="#cb438-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">username</span><span class="kw">:</span><span class="at"> admin</span></span>
+<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">password</span><span class="kw">:</span><span class="at"> MyUserPassword</span></span>
+<span id="cb438-5"><a href="#cb438-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">storage</span><span class="kw">:</span></span>
+<span id="cb438-6"><a href="#cb438-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">my_storage</span><span class="kw">:</span></span>
+<span id="cb438-7"><a href="#cb438-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">node</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@preset:my_faspex_node&quot;</span></span>
+<span id="cb438-8"><a href="#cb438-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /mydir</span></span>
+<span id="cb438-9"><a href="#cb438-9" aria-hidden="true" tabindex="-1"></a><span class="fu">my_faspex_node</span><span class="kw">:</span></span>
+<span id="cb438-10"><a href="#cb438-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">url</span><span class="kw">:</span><span class="at"> https://10.25.0.3:9092</span></span>
+<span id="cb438-11"><a href="#cb438-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">username</span><span class="kw">:</span><span class="at"> node_faspex</span></span>
+<span id="cb438-12"><a href="#cb438-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">password</span><span class="kw">:</span><span class="at"> MyNodePassword</span></span></code></pre></div>
 <p>In this example, a faspex storage named <code>my_storage</code>
 exists in Faspex, and is located under the docroot in
 <code>/mydir</code> (this must be the same as configured in Faspex). The
@@ -7654,42 +7731,42 @@ class="header-section-number">10.7</span> Automated package download
 <p>It is possible to tell <code>ascli</code> to download newly received
 packages, much like the official cargo client, or drive. Refer to the <a
 href="#aoccargo">same section</a> in the Aspera on Cloud plugin:</p>
-<div class="sourceCode" id="cb437"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb437-1"><a href="#cb437-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex packages recv ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345</span></code></pre></div>
+<div class="sourceCode" id="cb439"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb439-1"><a href="#cb439-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex packages recv ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345</span></code></pre></div>
 <h2 data-number="10.8" id="faspex-4-sample-commands"><span
 class="header-section-number">10.8</span> Faspex 4 sample commands</h2>
-<div class="sourceCode" id="cb438"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb438-1"><a href="#cb438-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> address_book</span>
-<span id="cb438-2"><a href="#cb438-2" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> dropbox list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span></span>
-<span id="cb438-3"><a href="#cb438-3" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> health</span>
-<span id="cb438-4"><a href="#cb438-4" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> login_methods</span>
-<span id="cb438-5"><a href="#cb438-5" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> me</span>
-<span id="cb438-6"><a href="#cb438-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--box</span><span class="op">=</span>sent <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs2</span>
-<span id="cb438-7"><a href="#cb438-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs1</span>
-<span id="cb438-8"><a href="#cb438-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:5}&#39;</span></span>
-<span id="cb438-9"><a href="#cb438-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id1</span>
-<span id="cb438-10"><a href="#cb438-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id2</span>
-<span id="cb438-11"><a href="#cb438-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--link</span><span class="op">=</span>https://app.example.com/recv_from_user_path</span>
-<span id="cb438-12"><a href="#cb438-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:10}&#39;</span></span>
-<span id="cb438-13"><a href="#cb438-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_db_id1 <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb438-14"><a href="#cb438-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_db_id2 <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb438-15"><a href="#cb438-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_pri1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb438-16"><a href="#cb438-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_prs2 <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--box</span><span class="op">=</span>sent</span>
-<span id="cb438-17"><a href="#cb438-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_dbx&quot;]}&#39;</span> test_file.bin</span>
-<span id="cb438-18"><a href="#cb438-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_wkg&quot;]}&#39;</span> test_file.bin</span>
-<span id="cb438-19"><a href="#cb438-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;,&quot;my_username&quot;]}&#39;</span> test_file.bin</span>
-<span id="cb438-20"><a href="#cb438-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;TIMESTAMP package remote&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> <span class="at">--remote_source</span><span class="op">=</span>%name:my_src sample_source.txt</span>
-<span id="cb438-21"><a href="#cb438-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_dropbox_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> test_file.bin</span>
-<span id="cb438-22"><a href="#cb438-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_user_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> test_file.bin</span>
-<span id="cb438-23"><a href="#cb438-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source info %name:my_src <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
-<span id="cb438-24"><a href="#cb438-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source list</span>
-<span id="cb438-25"><a href="#cb438-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source node %name:my_src br / <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
-<span id="cb438-26"><a href="#cb438-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dmembership list</span>
-<span id="cb438-27"><a href="#cb438-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dropbox list</span>
-<span id="cb438-28"><a href="#cb438-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 metadata_profile list</span>
-<span id="cb438-29"><a href="#cb438-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 user list</span>
-<span id="cb438-30"><a href="#cb438-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 wmembership list</span>
-<span id="cb438-31"><a href="#cb438-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 workgroup list</span></code></pre></div>
+<div class="sourceCode" id="cb440"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb440-1"><a href="#cb440-1" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> address_book</span>
+<span id="cb440-2"><a href="#cb440-2" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> dropbox list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span></span>
+<span id="cb440-3"><a href="#cb440-3" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> health</span>
+<span id="cb440-4"><a href="#cb440-4" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> login_methods</span>
+<span id="cb440-5"><a href="#cb440-5" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> me</span>
+<span id="cb440-6"><a href="#cb440-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--box</span><span class="op">=</span>sent <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs2</span>
+<span id="cb440-7"><a href="#cb440-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--display</span><span class="op">=</span>data <span class="at">--format</span><span class="op">=</span>csv <span class="at">--output</span><span class="op">=</span>f4_prs1</span>
+<span id="cb440-8"><a href="#cb440-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:5}&#39;</span></span>
+<span id="cb440-9"><a href="#cb440-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id1</span>
+<span id="cb440-10"><a href="#cb440-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package list <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--format</span><span class="op">=</span>csv <span class="at">--fields</span><span class="op">=</span>package_id <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:1}&#39;</span> <span class="at">--output</span><span class="op">=</span>f4_db_id2</span>
+<span id="cb440-11"><a href="#cb440-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--link</span><span class="op">=</span>https://app.example.com/recv_from_user_path</span>
+<span id="cb440-12"><a href="#cb440-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv ALL <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;max&quot;:10}&#39;</span></span>
+<span id="cb440-13"><a href="#cb440-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_db_id1 <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_dbx&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb440-14"><a href="#cb440-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_db_id2 <span class="at">--recipient</span><span class="op">=</span><span class="st">&quot;*my_wkg&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb440-15"><a href="#cb440-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_pri1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb440-16"><a href="#cb440-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package recv f4_prs2 <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--box</span><span class="op">=</span>sent</span>
+<span id="cb440-17"><a href="#cb440-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_dbx&quot;]}&#39;</span> test_file.bin</span>
+<span id="cb440-18"><a href="#cb440-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;*my_wkg&quot;]}&#39;</span> test_file.bin</span>
+<span id="cb440-19"><a href="#cb440-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;,&quot;my_username&quot;]}&#39;</span> test_file.bin</span>
+<span id="cb440-20"><a href="#cb440-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;TIMESTAMP package remote&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> <span class="at">--remote_source</span><span class="op">=</span>%name:my_src sample_source.txt</span>
+<span id="cb440-21"><a href="#cb440-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_dropbox_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> test_file.bin</span>
+<span id="cb440-22"><a href="#cb440-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> package send <span class="at">--link</span><span class="op">=</span>https://app.example.com/send_to_user_path <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;Important files delivery&quot;}&#39;</span> test_file.bin</span>
+<span id="cb440-23"><a href="#cb440-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source info %name:my_src <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
+<span id="cb440-24"><a href="#cb440-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source list</span>
+<span id="cb440-25"><a href="#cb440-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> source node %name:my_src br / <span class="at">--storage</span><span class="op">=</span>@preset:faspex4_storage</span>
+<span id="cb440-26"><a href="#cb440-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dmembership list</span>
+<span id="cb440-27"><a href="#cb440-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 dropbox list</span>
+<span id="cb440-28"><a href="#cb440-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 metadata_profile list</span>
+<span id="cb440-29"><a href="#cb440-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 user list</span>
+<span id="cb440-30"><a href="#cb440-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 wmembership list</span>
+<span id="cb440-31"><a href="#cb440-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex</span> v4 workgroup list</span></code></pre></div>
 <h1 data-number="11" id="plugin-shares-ibm-aspera-shares-v1"><span
 class="header-section-number">11</span> <a id="shares"></a>Plugin:
 <code>shares</code>: IBM Aspera Shares v1</h1>
@@ -7700,47 +7777,47 @@ transfer part.</p>
 href="https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction"
 class="uri">https://developer.ibm.com/apis/catalog/aspera--aspera-shares-api/Introduction</a></p>
 <p>Example:</p>
-<div class="sourceCode" id="cb439"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb439-1"><a href="#cb439-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share create @json:<span class="st">&#39;{&quot;node_id&quot;:1,&quot;name&quot;:&quot;test1&quot;,&quot;directory&quot;:&quot;test1&quot;,&quot;create_directory&quot;:true}&#39;</span></span>
-<span id="cb439-2"><a href="#cb439-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb439-3"><a href="#cb439-3" aria-hidden="true" tabindex="-1"></a><span class="va">share_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin share list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;test1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
-<span id="cb439-4"><a href="#cb439-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb439-5"><a href="#cb439-5" aria-hidden="true" tabindex="-1"></a><span class="va">user_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin user list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;username&quot;:&quot;entity1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
-<span id="cb439-6"><a href="#cb439-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb439-7"><a href="#cb439-7" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share user_permissions <span class="va">$share_id</span> create @json:<span class="st">&#39;{&quot;user_id&quot;:&#39;</span><span class="va">$user_id</span><span class="st">&#39;,&quot;browse_permission&quot;:true, &quot;download_permission&quot;:true, &quot;mkdir_permission&quot;:true,&quot;delete_permission&quot;:true,&quot;rename_permission&quot;:true,&quot;content_availability_permission&quot;:true,&quot;manage_permission&quot;:true}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb441"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb441-1"><a href="#cb441-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share create @json:<span class="st">&#39;{&quot;node_id&quot;:1,&quot;name&quot;:&quot;test1&quot;,&quot;directory&quot;:&quot;test1&quot;,&quot;create_directory&quot;:true}&#39;</span></span>
+<span id="cb441-2"><a href="#cb441-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb441-3"><a href="#cb441-3" aria-hidden="true" tabindex="-1"></a><span class="va">share_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin share list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;test1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
+<span id="cb441-4"><a href="#cb441-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb441-5"><a href="#cb441-5" aria-hidden="true" tabindex="-1"></a><span class="va">user_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">ascli</span> shares admin user list <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;username&quot;:&quot;entity1&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id<span class="va">)</span></span>
+<span id="cb441-6"><a href="#cb441-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb441-7"><a href="#cb441-7" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares admin share user_permissions <span class="va">$share_id</span> create @json:<span class="st">&#39;{&quot;user_id&quot;:&#39;</span><span class="va">$user_id</span><span class="st">&#39;,&quot;browse_permission&quot;:true, &quot;download_permission&quot;:true, &quot;mkdir_permission&quot;:true,&quot;delete_permission&quot;:true,&quot;rename_permission&quot;:true,&quot;content_availability_permission&quot;:true,&quot;manage_permission&quot;:true}&#39;</span></span></code></pre></div>
 <h2 data-number="11.1" id="shares-1-sample-commands"><span
 class="header-section-number">11.1</span> Shares 1 sample commands</h2>
-<div class="sourceCode" id="cb440"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb440-1"><a href="#cb440-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin group all list</span>
-<span id="cb440-2"><a href="#cb440-2" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin node list</span>
-<span id="cb440-3"><a href="#cb440-3" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
-<span id="cb440-4"><a href="#cb440-4" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share user_permissions 1 list</span>
-<span id="cb440-5"><a href="#cb440-5" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
-<span id="cb440-6"><a href="#cb440-6" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all app_authorizations 1 show</span>
-<span id="cb440-7"><a href="#cb440-7" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all list</span>
-<span id="cb440-8"><a href="#cb440-8" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all share_permissions 1 list</span>
-<span id="cb440-9"><a href="#cb440-9" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all share_permissions 1 show 1</span>
-<span id="cb440-10"><a href="#cb440-10" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user ldap add the_name</span>
-<span id="cb440-11"><a href="#cb440-11" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user local list</span>
-<span id="cb440-12"><a href="#cb440-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user saml import @json:<span class="st">&#39;{&quot;id&quot;:&quot;the_id&quot;,&quot;name_id&quot;:&quot;the_name&quot;}&#39;</span></span>
-<span id="cb440-13"><a href="#cb440-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files browse /</span>
-<span id="cb440-14"><a href="#cb440-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_share1/test_file.bin</span>
-<span id="cb440-15"><a href="#cb440-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin</span>
-<span id="cb440-16"><a href="#cb440-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
-<span id="cb440-17"><a href="#cb440-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb440-18"><a href="#cb440-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
-<span id="cb440-19"><a href="#cb440-19" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
-<span id="cb440-20"><a href="#cb440-20" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span></code></pre></div>
+<div class="sourceCode" id="cb442"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb442-1"><a href="#cb442-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin group all list</span>
+<span id="cb442-2"><a href="#cb442-2" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin node list</span>
+<span id="cb442-3"><a href="#cb442-3" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
+<span id="cb442-4"><a href="#cb442-4" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin share user_permissions 1 list</span>
+<span id="cb442-5"><a href="#cb442-5" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
+<span id="cb442-6"><a href="#cb442-6" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all app_authorizations 1 show</span>
+<span id="cb442-7"><a href="#cb442-7" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all list</span>
+<span id="cb442-8"><a href="#cb442-8" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all share_permissions 1 list</span>
+<span id="cb442-9"><a href="#cb442-9" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user all share_permissions 1 show 1</span>
+<span id="cb442-10"><a href="#cb442-10" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user ldap add the_name</span>
+<span id="cb442-11"><a href="#cb442-11" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user local list</span>
+<span id="cb442-12"><a href="#cb442-12" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> admin user saml import @json:<span class="st">&#39;{&quot;id&quot;:&quot;the_id&quot;,&quot;name_id&quot;:&quot;the_name&quot;}&#39;</span></span>
+<span id="cb442-13"><a href="#cb442-13" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files browse /</span>
+<span id="cb442-14"><a href="#cb442-14" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files delete my_share1/test_file.bin</span>
+<span id="cb442-15"><a href="#cb442-15" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin</span>
+<span id="cb442-16"><a href="#cb442-16" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb442-17"><a href="#cb442-17" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb442-18"><a href="#cb442-18" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
+<span id="cb442-19"><a href="#cb442-19" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> files upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
+<span id="cb442-20"><a href="#cb442-20" aria-hidden="true" tabindex="-1"></a><span class="ex">shares</span> health</span></code></pre></div>
 <h1 data-number="12" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">12</span> <a id="console"></a>Plugin:
 <code>console</code>: IBM Aspera Console</h1>
 <h2 data-number="12.1" id="console-sample-commands"><span
 class="header-section-number">12.1</span> Console sample commands</h2>
-<div class="sourceCode" id="cb441"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb441-1"><a href="#cb441-1" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> health</span>
-<span id="cb441-2"><a href="#cb441-2" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer current list</span>
-<span id="cb441-3"><a href="#cb441-3" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart list</span>
-<span id="cb441-4"><a href="#cb441-4" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart sub my_smart_id @json:<span class="st">&#39;{&quot;source&quot;:{&quot;paths&quot;:[&quot;my_smart_file&quot;]},&quot;source_type&quot;:&quot;user_selected&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb443"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb443-1"><a href="#cb443-1" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> health</span>
+<span id="cb443-2"><a href="#cb443-2" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer current list</span>
+<span id="cb443-3"><a href="#cb443-3" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart list</span>
+<span id="cb443-4"><a href="#cb443-4" aria-hidden="true" tabindex="-1"></a><span class="ex">console</span> transfer smart sub my_smart_id @json:<span class="st">&#39;{&quot;source&quot;:{&quot;paths&quot;:[&quot;my_smart_file&quot;]},&quot;source_type&quot;:&quot;user_selected&quot;}&#39;</span></span></code></pre></div>
 <h1 data-number="13"
 id="plugin-orchestratoribm-aspera-orchestrator"><span
 class="header-section-number">13</span> <a id="orchestrator"></a>Plugin:
@@ -7748,19 +7825,19 @@ class="header-section-number">13</span> <a id="orchestrator"></a>Plugin:
 <h2 data-number="13.1" id="orchestrator-sample-commands"><span
 class="header-section-number">13.1</span> Orchestrator sample
 commands</h2>
-<div class="sourceCode" id="cb442"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb442-1"><a href="#cb442-1" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> health</span>
-<span id="cb442-2"><a href="#cb442-2" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> info</span>
-<span id="cb442-3"><a href="#cb442-3" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> plugins</span>
-<span id="cb442-4"><a href="#cb442-4" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> processes</span>
-<span id="cb442-5"><a href="#cb442-5" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow details my_workflow_id</span>
-<span id="cb442-6"><a href="#cb442-6" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow export my_workflow_id</span>
-<span id="cb442-7"><a href="#cb442-7" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow inputs my_workflow_id</span>
-<span id="cb442-8"><a href="#cb442-8" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow list</span>
-<span id="cb442-9"><a href="#cb442-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
-<span id="cb442-10"><a href="#cb442-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
-<span id="cb442-11"><a href="#cb442-11" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status ALL</span>
-<span id="cb442-12"><a href="#cb442-12" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status my_workflow_id</span></code></pre></div>
+<div class="sourceCode" id="cb444"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb444-1"><a href="#cb444-1" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> health</span>
+<span id="cb444-2"><a href="#cb444-2" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> info</span>
+<span id="cb444-3"><a href="#cb444-3" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> plugins</span>
+<span id="cb444-4"><a href="#cb444-4" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> processes</span>
+<span id="cb444-5"><a href="#cb444-5" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow details my_workflow_id</span>
+<span id="cb444-6"><a href="#cb444-6" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow export my_workflow_id</span>
+<span id="cb444-7"><a href="#cb444-7" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow inputs my_workflow_id</span>
+<span id="cb444-8"><a href="#cb444-8" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow list</span>
+<span id="cb444-9"><a href="#cb444-9" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span></span>
+<span id="cb444-10"><a href="#cb444-10" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow start my_workflow_id @json:<span class="st">&#39;{&quot;Param&quot;:&quot;world !&quot;}&#39;</span> <span class="at">--result</span><span class="op">=</span>ResultStep:Complete_status_message</span>
+<span id="cb444-11"><a href="#cb444-11" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status ALL</span>
+<span id="cb444-12"><a href="#cb444-12" aria-hidden="true" tabindex="-1"></a><span class="ex">orchestrator</span> workflow status my_workflow_id</span></code></pre></div>
 <h1 data-number="14" id="plugin-cos-ibm-cloud-object-storage"><span
 class="header-section-number">14</span> <a id="cos"></a>Plugin:
 <code>cos</code>: IBM Cloud Object Storage</h1>
@@ -7786,9 +7863,9 @@ e.g. <code>https://s3.hkg02.cloud-object-storage.appdomain.cloud</code></li>
 <li><code>crn</code> resource instance id</li>
 </ul>
 <p>For example, let us create a default configuration:</p>
-<div class="sourceCode" id="cb443"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb443-1"><a href="#cb443-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mycos <span class="at">--bucket</span><span class="op">=</span>mybucket <span class="at">--endpoint</span><span class="op">=</span>https://s3.us-east.cloud-object-storage.appdomain.cloud <span class="at">--apikey</span><span class="op">=</span>abcdefgh <span class="at">--crn</span><span class="op">=</span>crn:v1:bluemix:public:iam-identity::a/xxxxxxx</span>
-<span id="cb443-2"><a href="#cb443-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default cos mycos</span></code></pre></div>
+<div class="sourceCode" id="cb445"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb445-1"><a href="#cb445-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mycos <span class="at">--bucket</span><span class="op">=</span>mybucket <span class="at">--endpoint</span><span class="op">=</span>https://s3.us-east.cloud-object-storage.appdomain.cloud <span class="at">--apikey</span><span class="op">=</span>abcdefgh <span class="at">--crn</span><span class="op">=</span>crn:v1:bluemix:public:iam-identity::a/xxxxxxx</span>
+<span id="cb445-2"><a href="#cb445-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default cos mycos</span></code></pre></div>
 <p>Then, jump to the transfer example.</p>
 <h2 data-number="14.2" id="using-service-credential-file"><span
 class="header-section-number">14.2</span> Using service credential
@@ -7809,26 +7886,26 @@ options)</li>
 <p>Then save the copied value to a file, e.g. :
 <code>$HOME/cos_service_creds.json</code></p>
 <p>or using the IBM Cloud CLI:</p>
-<div class="sourceCode" id="cb444"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb444-1"><a href="#cb444-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ibmcloud</span> resource service-keys</span>
-<span id="cb444-2"><a href="#cb444-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ibmcloud</span> resource service-key _service_key_name_here_ <span class="at">--output</span> JSON<span class="kw">|</span><span class="ex">jq</span> <span class="st">&#39;.[0].credentials&#39;</span><span class="op">&gt;</span><span class="va">$HOME</span>/service_creds.json</span></code></pre></div>
+<div class="sourceCode" id="cb446"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb446-1"><a href="#cb446-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ibmcloud</span> resource service-keys</span>
+<span id="cb446-2"><a href="#cb446-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ibmcloud</span> resource service-key _service_key_name_here_ <span class="at">--output</span> JSON<span class="kw">|</span><span class="ex">jq</span> <span class="st">&#39;.[0].credentials&#39;</span><span class="op">&gt;</span><span class="va">$HOME</span>/service_creds.json</span></code></pre></div>
 <p>(if you don’t have <code>jq</code> installed, extract the structure
 as follows)</p>
 <p>It consists in the following structure:</p>
-<div class="sourceCode" id="cb445"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb445-1"><a href="#cb445-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb445-2"><a href="#cb445-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;apikey&quot;</span><span class="fu">:</span> <span class="st">&quot;my_api_key_here&quot;</span><span class="fu">,</span></span>
-<span id="cb445-3"><a href="#cb445-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cos_hmac_keys&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb445-4"><a href="#cb445-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;access_key_id&quot;</span><span class="fu">:</span> <span class="st">&quot;my_access_key_here&quot;</span><span class="fu">,</span></span>
-<span id="cb445-5"><a href="#cb445-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;secret_access_key&quot;</span><span class="fu">:</span> <span class="st">&quot;my_secret_here&quot;</span></span>
-<span id="cb445-6"><a href="#cb445-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
-<span id="cb445-7"><a href="#cb445-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;endpoints&quot;</span><span class="fu">:</span> <span class="st">&quot;https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints&quot;</span><span class="fu">,</span></span>
-<span id="cb445-8"><a href="#cb445-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_apikey_description&quot;</span><span class="fu">:</span> <span class="st">&quot;my_description_here&quot;</span><span class="fu">,</span></span>
-<span id="cb445-9"><a href="#cb445-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_apikey_name&quot;</span><span class="fu">:</span> <span class="st">&quot;my_key_name_here&quot;</span><span class="fu">,</span></span>
-<span id="cb445-10"><a href="#cb445-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_role_crn&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:iam::::serviceRole:Writer&quot;</span><span class="fu">,</span></span>
-<span id="cb445-11"><a href="#cb445-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_serviceid_crn&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....&quot;</span><span class="fu">,</span></span>
-<span id="cb445-12"><a href="#cb445-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;resource_instance_id&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx.....&quot;</span></span>
-<span id="cb445-13"><a href="#cb445-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb447"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb447-1"><a href="#cb447-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb447-2"><a href="#cb447-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;apikey&quot;</span><span class="fu">:</span> <span class="st">&quot;my_api_key_here&quot;</span><span class="fu">,</span></span>
+<span id="cb447-3"><a href="#cb447-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cos_hmac_keys&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb447-4"><a href="#cb447-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;access_key_id&quot;</span><span class="fu">:</span> <span class="st">&quot;my_access_key_here&quot;</span><span class="fu">,</span></span>
+<span id="cb447-5"><a href="#cb447-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;secret_access_key&quot;</span><span class="fu">:</span> <span class="st">&quot;my_secret_here&quot;</span></span>
+<span id="cb447-6"><a href="#cb447-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb447-7"><a href="#cb447-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;endpoints&quot;</span><span class="fu">:</span> <span class="st">&quot;https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints&quot;</span><span class="fu">,</span></span>
+<span id="cb447-8"><a href="#cb447-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_apikey_description&quot;</span><span class="fu">:</span> <span class="st">&quot;my_description_here&quot;</span><span class="fu">,</span></span>
+<span id="cb447-9"><a href="#cb447-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_apikey_name&quot;</span><span class="fu">:</span> <span class="st">&quot;my_key_name_here&quot;</span><span class="fu">,</span></span>
+<span id="cb447-10"><a href="#cb447-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_role_crn&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:iam::::serviceRole:Writer&quot;</span><span class="fu">,</span></span>
+<span id="cb447-11"><a href="#cb447-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;iam_serviceid_crn&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:iam-identity::a/xxxxxxx.....&quot;</span><span class="fu">,</span></span>
+<span id="cb447-12"><a href="#cb447-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;resource_instance_id&quot;</span><span class="fu">:</span> <span class="st">&quot;crn:v1:bluemix:public:cloud-object-storage:global:a/xxxxxxx.....&quot;</span></span>
+<span id="cb447-13"><a href="#cb447-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>The field <code>resource_instance_id</code> is for option
 <code>crn</code></p>
 <p>The field <code>apikey</code> is for option <code>apikey</code></p>
@@ -7841,18 +7918,18 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb445-1"><a href
 <li><code>service_credentials</code> see below</li>
 </ul>
 <p>For example, let us create a default configuration:</p>
-<div class="sourceCode" id="cb446"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb446-1"><a href="#cb446-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mycos <span class="at">--bucket</span><span class="op">=</span>laurent <span class="at">--service-credentials</span><span class="op">=</span>@val:@json:@file:~/service_creds.json <span class="at">--region</span><span class="op">=</span>us-south</span>
-<span id="cb446-2"><a href="#cb446-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default cos mycos</span></code></pre></div>
+<div class="sourceCode" id="cb448"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb448-1"><a href="#cb448-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mycos <span class="at">--bucket</span><span class="op">=</span>laurent <span class="at">--service-credentials</span><span class="op">=</span>@val:@json:@file:~/service_creds.json <span class="at">--region</span><span class="op">=</span>us-south</span>
+<span id="cb448-2"><a href="#cb448-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default cos mycos</span></code></pre></div>
 <h2 data-number="14.3" id="operations-transfers"><span
 class="header-section-number">14.3</span> Operations, transfers</h2>
 <p>Let’s assume you created a default configuration from once of the two
 previous steps (else specify the access options on command lines).</p>
 <p>A subset of <code>node</code> plugin operations are supported,
 basically node API:</p>
-<div class="sourceCode" id="cb447"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb447-1"><a href="#cb447-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> cos node info</span>
-<span id="cb447-2"><a href="#cb447-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> cos node upload <span class="st">&#39;faux:///sample1G?1g&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb449"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb449-1"><a href="#cb449-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> cos node info</span>
+<span id="cb449-2"><a href="#cb449-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> cos node upload <span class="st">&#39;faux:///sample1G?1g&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> we generate a dummy file <code>sample1G</code>
 of size 2GB using the <code>faux</code> PVCL (man <code>ascp</code> and
@@ -7861,13 +7938,13 @@ real file instead.</p>
 </blockquote>
 <h2 data-number="14.4" id="cos-sample-commands"><span
 class="header-section-number">14.4</span> COS sample commands</h2>
-<div class="sourceCode" id="cb448"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb448-1"><a href="#cb448-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id node info</span>
-<span id="cb448-2"><a href="#cb448-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
-<span id="cb448-3"><a href="#cb448-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node access_key show self</span>
-<span id="cb448-4"><a href="#cb448-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb448-5"><a href="#cb448-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
-<span id="cb448-6"><a href="#cb448-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node upload test_file.bin</span></code></pre></div>
+<div class="sourceCode" id="cb450"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb450-1"><a href="#cb450-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id node info</span>
+<span id="cb450-2"><a href="#cb450-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:service_creds.json node info</span>
+<span id="cb450-3"><a href="#cb450-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node access_key show self</span>
+<span id="cb450-4"><a href="#cb450-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb450-5"><a href="#cb450-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
+<span id="cb450-6"><a href="#cb450-6" aria-hidden="true" tabindex="-1"></a><span class="ex">cos</span> node upload test_file.bin</span></code></pre></div>
 <h1 data-number="15" id="plugin-preview-preview-generator-for-aoc"><span
 class="header-section-number">15</span> <a id="preview"></a>Plugin:
 <code>preview</code>: Preview generator for AoC</h1>
@@ -7894,11 +7971,11 @@ class="uri">https://ibmaspera.com/help/admin/organization/installing_the_preview
 <p>By default, the <code>preview</code> plugin expects previews to be
 generated in a folder named <code>previews</code> located in the storage
 root. On the transfer server execute:</p>
-<div class="sourceCode" id="cb449"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb449-1"><a href="#cb449-1" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span>/opt/aspera/bin:<span class="va">$PATH</span></span>
-<span id="cb449-2"><a href="#cb449-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb449-3"><a href="#cb449-3" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&quot;server;preview_dir,previews&quot;</span></span>
-<span id="cb449-4"><a href="#cb449-4" aria-hidden="true" tabindex="-1"></a><span class="ex">asnodeadmin</span> <span class="at">--reload</span></span></code></pre></div>
+<div class="sourceCode" id="cb451"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb451-1"><a href="#cb451-1" aria-hidden="true" tabindex="-1"></a><span class="va">PATH</span><span class="op">=</span>/opt/aspera/bin:<span class="va">$PATH</span></span>
+<span id="cb451-2"><a href="#cb451-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb451-3"><a href="#cb451-3" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&quot;server;preview_dir,previews&quot;</span></span>
+<span id="cb451-4"><a href="#cb451-4" aria-hidden="true" tabindex="-1"></a><span class="ex">asnodeadmin</span> <span class="at">--reload</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> the configuration <code>preview_dir</code> is
 <strong>relative</strong> to the storage root, no need leading or
@@ -7914,12 +7991,12 @@ i.e. 16384 KBytes.</p>
 <p>To change this parameter in <code>aspera.conf</code>, use
 <code>asconfigurator</code>. To display the value, use
 <code>asuserdata</code>:</p>
-<div class="sourceCode" id="cb450"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb450-1"><a href="#cb450-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asuserdata</span> <span class="at">-a</span> <span class="kw">|</span> <span class="fu">grep</span> max_request_file_create_size_kb</span>
-<span id="cb450-2"><a href="#cb450-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb450-3"><a href="#cb450-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">max_request_file_create_size_kb:</span> <span class="st">&quot;1024&quot;</span></span>
-<span id="cb450-4"><a href="#cb450-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb450-5"><a href="#cb450-5" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&quot;server; max_request_file_create_size_kb,16384&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb452"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href="#cb452-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asuserdata</span> <span class="at">-a</span> <span class="kw">|</span> <span class="fu">grep</span> max_request_file_create_size_kb</span>
+<span id="cb452-2"><a href="#cb452-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb452-3"><a href="#cb452-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">max_request_file_create_size_kb:</span> <span class="st">&quot;1024&quot;</span></span>
+<span id="cb452-4"><a href="#cb452-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb452-5"><a href="#cb452-5" aria-hidden="true" tabindex="-1"></a><span class="ex">asconfigurator</span> <span class="at">-x</span> <span class="st">&quot;server; max_request_file_create_size_kb,16384&quot;</span></span></code></pre></div>
 <p>If you use a value different than 16777216, then specify it using
 option <code>max_size</code>.</p>
 <blockquote>
@@ -7944,13 +8021,13 @@ the <code>PATH</code>:</p>
 <p>Here shown on Redhat/CentOS.</p>
 <p>Other OSes should work as well, but are note tested.</p>
 <p>To check if all tools are found properly, execute:</p>
-<div class="sourceCode" id="cb451"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb451-1"><a href="#cb451-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview check</span></code></pre></div>
+<div class="sourceCode" id="cb453"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb453-1"><a href="#cb453-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview check</span></code></pre></div>
 <h3 data-number="15.2.1" id="image-imagemagick-and-optipng"><span
 class="header-section-number">15.2.1</span> Image: ImageMagick and
 <code>optipng</code></h3>
-<div class="sourceCode" id="cb452"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href="#cb452-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install <span class="at">-y</span> ImageMagick optipng</span></code></pre></div>
+<div class="sourceCode" id="cb454"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb454-1"><a href="#cb454-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install <span class="at">-y</span> ImageMagick optipng</span></code></pre></div>
 <p>You may also install <code>ghostscript</code> which adds fonts to
 ImageMagick. Available fonts, used to generate png for text, can be
 listed with <code>magick identify -list font</code>. Prefer ImageMagick
@@ -7962,8 +8039,8 @@ class="header-section-number">15.2.2</span> Video: FFmpeg</h3>
 <p>The easiest method is to download and install the latest released
 version of ffmpeg with static libraries from <a
 href="https://johnvansickle.com/ffmpeg/">https://johnvansickle.com/ffmpeg/</a></p>
-<div class="sourceCode" id="cb453"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb453-1"><a href="#cb453-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz<span class="kw">|(</span><span class="fu">mkdir</span> <span class="at">-p</span> /opt <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> /opt <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-f</span> ffmpeg /usr/bin/<span class="dt">{ffmpeg</span><span class="op">,</span><span class="dt">ffprobe}</span> <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-fr</span> ffmpeg-<span class="pp">*</span>-amd64-static <span class="kw">&amp;&amp;</span> <span class="fu">tar</span> xJvf <span class="at">-</span> <span class="kw">&amp;&amp;</span> <span class="fu">ln</span> <span class="at">-s</span> ffmpeg-<span class="pp">*</span> ffmpeg <span class="kw">&amp;&amp;</span> <span class="fu">ln</span> <span class="at">-s</span> /opt/ffmpeg/<span class="dt">{ffmpeg</span><span class="op">,</span><span class="dt">ffprobe}</span> /usr/bin<span class="kw">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb455"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb455-1"><a href="#cb455-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz<span class="kw">|(</span><span class="fu">mkdir</span> <span class="at">-p</span> /opt <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> /opt <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-f</span> ffmpeg /usr/bin/<span class="dt">{ffmpeg</span><span class="op">,</span><span class="dt">ffprobe}</span> <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-fr</span> ffmpeg-<span class="pp">*</span>-amd64-static <span class="kw">&amp;&amp;</span> <span class="fu">tar</span> xJvf <span class="at">-</span> <span class="kw">&amp;&amp;</span> <span class="fu">ln</span> <span class="at">-s</span> ffmpeg-<span class="pp">*</span> ffmpeg <span class="kw">&amp;&amp;</span> <span class="fu">ln</span> <span class="at">-s</span> /opt/ffmpeg/<span class="dt">{ffmpeg</span><span class="op">,</span><span class="dt">ffprobe}</span> /usr/bin<span class="kw">)</span></span></code></pre></div>
 <h3 data-number="15.2.3" id="office-unoconv-and-libreoffice"><span
 class="header-section-number">15.2.3</span> Office: <code>unoconv</code>
 and Libreoffice</h3>
@@ -7975,18 +8052,18 @@ and <code>libreoffice</code></p>
 <ul>
 <li>CentOS 8</li>
 </ul>
-<div class="sourceCode" id="cb454"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb454-1"><a href="#cb454-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install unoconv</span></code></pre></div>
+<div class="sourceCode" id="cb456"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb456-1"><a href="#cb456-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install unoconv</span></code></pre></div>
 <ul>
 <li>Amazon Linux</li>
 </ul>
-<div class="sourceCode" id="cb455"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb455-1"><a href="#cb455-1" aria-hidden="true" tabindex="-1"></a><span class="ex">amazon-linux-extras</span> enable libreoffice</span>
-<span id="cb455-2"><a href="#cb455-2" aria-hidden="true" tabindex="-1"></a><span class="ex">yum</span> clean metadata</span>
-<span id="cb455-3"><a href="#cb455-3" aria-hidden="true" tabindex="-1"></a><span class="ex">yum</span> install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress</span>
-<span id="cb455-4"><a href="#cb455-4" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv</span>
-<span id="cb455-5"><a href="#cb455-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> unoconv /usr/bin</span>
-<span id="cb455-6"><a href="#cb455-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> a+x /usr/bin/unoconv</span></code></pre></div>
+<div class="sourceCode" id="cb457"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb457-1"><a href="#cb457-1" aria-hidden="true" tabindex="-1"></a><span class="ex">amazon-linux-extras</span> enable libreoffice</span>
+<span id="cb457-2"><a href="#cb457-2" aria-hidden="true" tabindex="-1"></a><span class="ex">yum</span> clean metadata</span>
+<span id="cb457-3"><a href="#cb457-3" aria-hidden="true" tabindex="-1"></a><span class="ex">yum</span> install libreoffice-core libreoffice-calc libreoffice-opensymbol-fonts libreoffice-ure libreoffice-writer libreoffice-pyuno libreoffice-impress</span>
+<span id="cb457-4"><a href="#cb457-4" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://raw.githubusercontent.com/unoconv/unoconv/master/unoconv</span>
+<span id="cb457-5"><a href="#cb457-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> unoconv /usr/bin</span>
+<span id="cb457-6"><a href="#cb457-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> a+x /usr/bin/unoconv</span></code></pre></div>
 <h2 data-number="15.3" id="configuration"><span
 class="header-section-number">15.3</span> Configuration</h2>
 <p>The preview generator should be executed as a non-user. When using
@@ -8001,18 +8078,18 @@ that it is properly used on runtime.</p>
 <p>The <code>xfer</code> user has a special protected shell:
 <code>aspshell</code>, so in order to update the configuration, and when
 changing identity, specify an alternate shell. E.g.:</p>
-<div class="sourceCode" id="cb456"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb456-1"><a href="#cb456-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-s</span> /bin/bash <span class="at">-</span> xfer</span>
-<span id="cb456-2"><a href="#cb456-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb456-3"><a href="#cb456-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mypreviewconf <span class="at">--url</span><span class="op">=</span>https://localhost:9092 <span class="at">--username</span><span class="op">=</span>my_access_key <span class="at">--password</span><span class="op">=</span>my_secret <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--lock-port</span><span class="op">=</span>12346</span>
-<span id="cb456-4"><a href="#cb456-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb456-5"><a href="#cb456-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default preview mypreviewconf</span></code></pre></div>
+<div class="sourceCode" id="cb458"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb458-1"><a href="#cb458-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-s</span> /bin/bash <span class="at">-</span> xfer</span>
+<span id="cb458-2"><a href="#cb458-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb458-3"><a href="#cb458-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mypreviewconf <span class="at">--url</span><span class="op">=</span>https://localhost:9092 <span class="at">--username</span><span class="op">=</span>my_access_key <span class="at">--password</span><span class="op">=</span>my_secret <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--lock-port</span><span class="op">=</span>12346</span>
+<span id="cb458-4"><a href="#cb458-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb458-5"><a href="#cb458-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default preview mypreviewconf</span></code></pre></div>
 <p>Here we assume that Office file generation is disabled, else remove
 this option. <code>lock_port</code> prevents concurrent execution of
 generation when using a scheduler.</p>
 <p>One can check if the access key is well configured using:</p>
-<div class="sourceCode" id="cb457"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb457-1"><a href="#cb457-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-Ppreviewconf</span> node browse /</span></code></pre></div>
+<div class="sourceCode" id="cb459"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb459-1"><a href="#cb459-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-Ppreviewconf</span> node browse /</span></code></pre></div>
 <p>This shall list the contents of the storage root of the access
 key.</p>
 <h2 data-number="15.4" id="options-for-generated-files"><span
@@ -8038,10 +8115,10 @@ generate the appropriate access rights, the generation process should be
 run as user <code>xfer</code>.</p>
 <p>Lets do a one shot test, using the configuration previously
 created:</p>
-<div class="sourceCode" id="cb458"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb458-1"><a href="#cb458-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-s</span> /bin/bash <span class="at">-</span> xfer</span>
-<span id="cb458-2"><a href="#cb458-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb458-3"><a href="#cb458-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview scan <span class="at">--overwrite</span><span class="op">=</span>always</span></code></pre></div>
+<div class="sourceCode" id="cb460"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb460-1"><a href="#cb460-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-s</span> /bin/bash <span class="at">-</span> xfer</span>
+<span id="cb460-2"><a href="#cb460-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb460-3"><a href="#cb460-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview scan <span class="at">--overwrite</span><span class="op">=</span>always</span></code></pre></div>
 <p>When the preview generator is first executed it will create a file:
 <code>.aspera_access_key</code> in the previews folder which contains
 the access key used. On subsequent run it reads this file and check that
@@ -8057,8 +8134,8 @@ href="#scheduler">Scheduler</a>.</p>
 created as shown previously.</p>
 <p>For example the timeout value can be differentiated depending on the
 option: event versus scan:</p>
-<div class="sourceCode" id="cb459"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb459-1"><a href="#cb459-1" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="st">&quot;</span><span class="va">$*</span><span class="st">&quot;</span> <span class="kw">in</span> <span class="pp">*</span><span class="ss">trev</span><span class="pp">*</span><span class="kw">)</span> <span class="va">tmout</span><span class="op">=</span>10m <span class="cf">;;</span> <span class="pp">*</span><span class="kw">)</span> <span class="va">tmout</span><span class="op">=</span>30m <span class="cf">;;</span> <span class="cf">esac</span></span></code></pre></div>
+<div class="sourceCode" id="cb461"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb461-1"><a href="#cb461-1" aria-hidden="true" tabindex="-1"></a><span class="cf">case</span> <span class="st">&quot;</span><span class="va">$*</span><span class="st">&quot;</span> <span class="kw">in</span> <span class="pp">*</span><span class="ss">trev</span><span class="pp">*</span><span class="kw">)</span> <span class="va">tmout</span><span class="op">=</span>10m <span class="cf">;;</span> <span class="pp">*</span><span class="kw">)</span> <span class="va">tmout</span><span class="op">=</span>30m <span class="cf">;;</span> <span class="cf">esac</span></span></code></pre></div>
 <h2 data-number="15.7"
 id="candidate-detection-for-creation-or-update-or-deletion"><span
 class="header-section-number">15.7</span> Candidate detection for
@@ -8092,8 +8169,8 @@ used, then the option : <code>skip_folders</code> can be used to skip
 some folders. It expects a list of path relative to the storage root
 (docroot) starting with slash, use the <code>@json:</code> notation,
 example:</p>
-<div class="sourceCode" id="cb460"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb460-1"><a href="#cb460-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview scan <span class="at">--skip-folders</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;/not_here&quot;]&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb462"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb462-1"><a href="#cb462-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> preview scan <span class="at">--skip-folders</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;/not_here&quot;]&#39;</span></span></code></pre></div>
 <p>The option <code>folder_reset_cache</code> forces the node service to
 refresh folder contents using various methods.</p>
 <p>When scanning the option <code>query</code> has the same behavior as
@@ -8162,21 +8239,21 @@ href="https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/free
 (replace <code>VV</code> with version) to the exact path of this
 file:</li>
 </ul>
-<div class="sourceCode" id="cb461"><pre
-class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb461-1"><a href="#cb461-1" aria-hidden="true" tabindex="-1"></a>SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in</span></code></pre></div>
+<div class="sourceCode" id="cb463"><pre
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb463-1"><a href="#cb463-1" aria-hidden="true" tabindex="-1"></a>SETX FREEDESKTOP_MIME_TYPES_PATH C:\RubyVV-x64\freedesktop.org.xml.in</span></code></pre></div>
 <ul>
 <li>Close the <code>cmd</code> and restart a new one if needed to get
 refreshed env vars</li>
 </ul></li>
 <li><p>Linux RHEL 8+:</p></li>
 </ul>
-<div class="sourceCode" id="cb462"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb462-1"><a href="#cb462-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install shared-mime-info</span></code></pre></div>
+<div class="sourceCode" id="cb464"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb464-1"><a href="#cb464-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install shared-mime-info</span></code></pre></div>
 <ul>
 <li>macOS:</li>
 </ul>
-<div class="sourceCode" id="cb463"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb463-1"><a href="#cb463-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install shared-mime-info</span></code></pre></div>
+<div class="sourceCode" id="cb465"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb465-1"><a href="#cb465-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install shared-mime-info</span></code></pre></div>
 <h2 data-number="15.11"
 id="generation-read-source-files-and-write-preview"><span
 class="header-section-number">15.11</span> Generation: Read source files
@@ -8196,20 +8273,20 @@ original file is first downloaded, then the result is uploaded, use
 method <code>remote</code>.</p>
 <h2 data-number="15.12" id="preview-sample-commands"><span
 class="header-section-number">15.12</span> Preview sample commands</h2>
-<div class="sourceCode" id="cb464"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb464-1"><a href="#cb464-1" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> check <span class="at">--skip-types</span><span class="op">=</span>office</span>
-<span id="cb464-2"><a href="#cb464-2" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
-<span id="cb464-3"><a href="#cb464-3" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
-<span id="cb464-4"><a href="#cb464-4" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_docx</span>
-<span id="cb464-5"><a href="#cb464-5" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
-<span id="cb464-6"><a href="#cb464-6" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
-<span id="cb464-7"><a href="#cb464-7" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
-<span id="cb464-8"><a href="#cb464-8" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
-<span id="cb464-9"><a href="#cb464-9" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
-<span id="cb464-10"><a href="#cb464-10" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
-<span id="cb464-11"><a href="#cb464-11" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb464-12"><a href="#cb464-12" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
-<span id="cb464-13"><a href="#cb464-13" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> trevents <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
+<div class="sourceCode" id="cb466"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb466-1"><a href="#cb466-1" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> check <span class="at">--skip-types</span><span class="op">=</span>office</span>
+<span id="cb466-2"><a href="#cb466-2" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
+<span id="cb466-3"><a href="#cb466-3" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> scan <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
+<span id="cb466-4"><a href="#cb466-4" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_docx</span>
+<span id="cb466-5"><a href="#cb466-5" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
+<span id="cb466-6"><a href="#cb466-6" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
+<span id="cb466-7"><a href="#cb466-7" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
+<span id="cb466-8"><a href="#cb466-8" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
+<span id="cb466-9"><a href="#cb466-9" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> show <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
+<span id="cb466-10"><a href="#cb466-10" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb466-11"><a href="#cb466-11" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
+<span id="cb466-12"><a href="#cb466-12" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> test <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb466-13"><a href="#cb466-13" aria-hidden="true" tabindex="-1"></a><span class="ex">preview</span> trevents <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
 <h1 data-number="16" id="ibm-aspera-sync"><span
 class="header-section-number">16</span> <a id="async"></a>IBM Aspera
 Sync</h1>
@@ -8334,8 +8411,8 @@ section <a href="#scheduler">Scheduler</a>. (on use of option
 <h2 data-number="17.3" id="example-upload-hot-folder"><span
 class="header-section-number">17.3</span> Example: Upload hot
 folder</h2>
-<div class="sourceCode" id="cb465"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb465-1"><a href="#cb465-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_hot <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;remove_after_transfer&quot;:true,&quot;remove_empty_directories&quot;:true,&quot;exclude_newer_than:-8,&quot;src_base&quot;:&quot;source_hot&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb467"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb467-1"><a href="#cb467-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_hot <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;remove_after_transfer&quot;:true,&quot;remove_empty_directories&quot;:true,&quot;exclude_newer_than:-8,&quot;src_base&quot;:&quot;source_hot&quot;}&#39;</span></span></code></pre></div>
 <p>The local folder (here, relative path: <code>source_hot</code>) is
 sent (upload) to an aspera server. Source files are deleted after
 transfer. Growing files will be sent only once they don’t grow anymore
@@ -8346,16 +8423,16 @@ the execution period, then the subsequent execution is skipped
 id="example-unidirectional-synchronization-upload-to-server"><span
 class="header-section-number">17.4</span> Example: Unidirectional
 synchronization (upload) to server</h2>
-<div class="sourceCode" id="cb466"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb466-1"><a href="#cb466-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_sync <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_sync <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;exclude_newer_than&quot;:-8,&quot;src_base&quot;:&quot;source_sync&quot;}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb468"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb468-1"><a href="#cb468-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload source_sync <span class="at">--to-folder</span><span class="op">=</span>/Upload/target_sync <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;exclude_newer_than&quot;:-8,&quot;src_base&quot;:&quot;source_sync&quot;}&#39;</span></span></code></pre></div>
 <p>This can also be used with other folder-based applications: Aspera on
 Cloud, Shares, Node.</p>
 <h2 data-number="17.5"
 id="example-unidirectional-synchronization-download-from-aspera-on-cloud-files"><span
 class="header-section-number">17.5</span> Example: Unidirectional
 synchronization (download) from Aspera on Cloud Files</h2>
-<div class="sourceCode" id="cb467"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb467-1"><a href="#cb467-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progress-bar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb469"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb469-1"><a href="#cb469-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download . <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--progress-bar</span><span class="op">=</span>no <span class="at">--display</span><span class="op">=</span>data <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000,&quot;exclude_newer_than&quot;:-8,&quot;delete_before_transfer&quot;:true}&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> option <code>delete_before_transfer</code>
 will delete files locally, if they are not present on remote side.</p>
@@ -8367,8 +8444,8 @@ job)</p>
 class="header-section-number">18</span> Health check and Nagios</h1>
 <p>Most plugin provide a <code>health</code> command that will check the
 health status of the application. Example:</p>
-<div class="sourceCode" id="cb468"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb468-1"><a href="#cb468-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> console health</span></code></pre></div>
+<div class="sourceCode" id="cb470"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb470-1"><a href="#cb470-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> console health</span></code></pre></div>
 <pre class="output"><code>+--------+-------------+------------+
 | status | component   | message    |
 +--------+-------------+------------+
@@ -8385,8 +8462,8 @@ health by:</p>
 <p><code>ascli</code> can be called by Nagios to check the health status
 of an Aspera server. The output can be made compatible to Nagios with
 option <code>--format=nagios</code> :</p>
-<div class="sourceCode" id="cb470"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb470-1"><a href="#cb470-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progress-bar</span><span class="op">=</span>no</span></code></pre></div>
+<div class="sourceCode" id="cb472"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb472-1"><a href="#cb472-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server health transfer <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--format</span><span class="op">=</span>nagios <span class="at">--progress-bar</span><span class="op">=</span>no</span></code></pre></div>
 <pre class="output"><code>OK - [transfer:ok]</code></pre>
 <h1 data-number="19" id="smtp-for-email-notifications"><span
 class="header-section-number">19</span> SMTP for email
@@ -8471,20 +8548,20 @@ with the following fields:</p>
 <!-- markdownlint-enable MD034 -->
 <h2 data-number="19.1" id="example-of-configuration"><span
 class="header-section-number">19.1</span> Example of configuration</h2>
-<div class="sourceCode" id="cb472"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb472-1"><a href="#cb472-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google server smtp.google.com</span>
-<span id="cb472-2"><a href="#cb472-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google username john@gmail.com</span>
-<span id="cb472-3"><a href="#cb472-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google password my_password_here</span></code></pre></div>
-<p>or</p>
-<div class="sourceCode" id="cb473"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb473-1"><a href="#cb473-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset init smtp_google @json:<span class="st">&#39;{&quot;server&quot;:&quot;smtp.google.com&quot;,&quot;username&quot;:&quot;john@gmail.com&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
-<p>or</p>
 <div class="sourceCode" id="cb474"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href="#cb474-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update smtp_google <span class="at">--server</span><span class="op">=</span>smtp.google.com <span class="at">--username</span><span class="op">=</span>john@gmail.com <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
-<p>Set this configuration as global default, for instance:</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href="#cb474-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google server smtp.google.com</span>
+<span id="cb474-2"><a href="#cb474-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google username john@gmail.com</span>
+<span id="cb474-3"><a href="#cb474-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set smtp_google password my_password_here</span></code></pre></div>
+<p>or</p>
 <div class="sourceCode" id="cb475"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set cli_default smtp @val:@preset:smtp_google</span>
-<span id="cb475-2"><a href="#cb475-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config cli_default</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset init smtp_google @json:<span class="st">&#39;{&quot;server&quot;:&quot;smtp.google.com&quot;,&quot;username&quot;:&quot;john@gmail.com&quot;,&quot;password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb476"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb476-1"><a href="#cb476-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update smtp_google <span class="at">--server</span><span class="op">=</span>smtp.google.com <span class="at">--username</span><span class="op">=</span>john@gmail.com <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
+<p>Set this configuration as global default, for instance:</p>
+<div class="sourceCode" id="cb477"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb477-1"><a href="#cb477-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set cli_default smtp @val:@preset:smtp_google</span>
+<span id="cb477-2"><a href="#cb477-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config cli_default</span></code></pre></div>
 <h2 data-number="19.2" id="email-templates"><span
 class="header-section-number">19.2</span> Email templates</h2>
 <p>Sent emails are built using a template that uses the <a
@@ -8501,9 +8578,9 @@ href="https://www.tutorialspoint.com/ruby/eruby.htm">ERB</a> syntax.</p>
 class="header-section-number">19.3</span> Test</h2>
 <p>Check settings with <code>smtp_settings</code> command. Send test
 email with <code>email_test</code>.</p>
-<div class="sourceCode" id="cb476"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb476-1"><a href="#cb476-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google smtp</span>
-<span id="cb476-2"><a href="#cb476-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google email <span class="at">--notify-to</span><span class="op">=</span>sample.dest@example.com</span></code></pre></div>
+<div class="sourceCode" id="cb478"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb478-1"><a href="#cb478-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google smtp</span>
+<span id="cb478-2"><a href="#cb478-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config <span class="at">--smtp</span><span class="op">=</span>@preset:smtp_google email <span class="at">--notify-to</span><span class="op">=</span>sample.dest@example.com</span></code></pre></div>
 <h2 data-number="19.4" id="notifications-for-transfer-status"><span
 class="header-section-number">19.4</span> Notifications for transfer
 status</h2>
@@ -8639,11 +8716,11 @@ syntax</td>
 <h2 data-number="20.2" id="simple-session"><span
 class="header-section-number">20.2</span> Simple session</h2>
 <p>Create a file <code>session.json</code> with:</p>
-<div class="sourceCode" id="cb478"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb478-1"><a href="#cb478-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;demo.asperasoft.com&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;asperaweb&quot;</span><span class="fu">,</span><span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span><span class="dv">33001</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">,</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;receive&quot;</span><span class="fu">,</span><span class="dt">&quot;destination_root&quot;</span><span class="fu">:</span><span class="st">&quot;./test.dir&quot;</span><span class="fu">,</span><span class="dt">&quot;paths&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.1&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;resume_level&quot;</span><span class="fu">:</span><span class="st">&quot;none&quot;</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb480"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb480-1"><a href="#cb480-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;demo.asperasoft.com&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;asperaweb&quot;</span><span class="fu">,</span><span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span><span class="dv">33001</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">,</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;receive&quot;</span><span class="fu">,</span><span class="dt">&quot;destination_root&quot;</span><span class="fu">:</span><span class="st">&quot;./test.dir&quot;</span><span class="fu">,</span><span class="dt">&quot;paths&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.1&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;resume_level&quot;</span><span class="fu">:</span><span class="st">&quot;none&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p>Then start the session:</p>
-<div class="sourceCode" id="cb479"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb479-1"><a href="#cb479-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asession</span> <span class="op">&lt;</span> session.json</span></code></pre></div>
+<div class="sourceCode" id="cb481"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb481-1"><a href="#cb481-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asession</span> <span class="op">&lt;</span> session.json</span></code></pre></div>
 <h2 data-number="20.3"
 id="asynchronous-commands-and-persistent-session"><span
 class="header-section-number">20.3</span> Asynchronous commands and
@@ -8657,11 +8734,11 @@ per command, formatted in JSON, where parameters shall be
 <p>This is particularly useful for a persistent session ( with the <a
 href="#transferspec"><em>transfer-spec</em></a> parameter:
 <code>"keepalive":true</code> )</p>
-<div class="sourceCode" id="cb480"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb480-1"><a href="#cb480-1" aria-hidden="true" tabindex="-1"></a><span class="er">asession</span></span>
-<span id="cb480-2"><a href="#cb480-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;demo.asperasoft.com&quot;</span><span class="fu">,</span><span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span><span class="dv">33001</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;asperaweb&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">,</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;receive&quot;</span><span class="fu">,</span><span class="dt">&quot;destination_root&quot;</span><span class="fu">:</span><span class="st">&quot;.&quot;</span><span class="fu">,</span><span class="dt">&quot;keepalive&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;resume_level&quot;</span><span class="fu">:</span><span class="st">&quot;none&quot;</span><span class="fu">}</span></span>
-<span id="cb480-3"><a href="#cb480-3" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;START&quot;</span><span class="fu">,</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="fu">}</span></span>
-<span id="cb480-4"><a href="#cb480-4" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;DONE&quot;</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb482"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb482-1"><a href="#cb482-1" aria-hidden="true" tabindex="-1"></a><span class="er">asession</span></span>
+<span id="cb482-2"><a href="#cb482-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;demo.asperasoft.com&quot;</span><span class="fu">,</span><span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span><span class="dv">33001</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;asperaweb&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">,</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;receive&quot;</span><span class="fu">,</span><span class="dt">&quot;destination_root&quot;</span><span class="fu">:</span><span class="st">&quot;.&quot;</span><span class="fu">,</span><span class="dt">&quot;keepalive&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;resume_level&quot;</span><span class="fu">:</span><span class="st">&quot;none&quot;</span><span class="fu">}</span></span>
+<span id="cb482-3"><a href="#cb482-3" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;START&quot;</span><span class="fu">,</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="fu">}</span></span>
+<span id="cb482-4"><a href="#cb482-4" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;DONE&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p>(events from FASP are not shown in above example. They would appear
 after each command)</p>
 <h2 data-number="20.4" id="example-of-language-wrapper"><span
@@ -8671,28 +8748,28 @@ wrapper</h2>
 href="https://www.npmjs.com/package/aspera">https://www.npmjs.com/package/aspera</a></p>
 <h2 data-number="20.5" id="help"><span
 class="header-section-number">20.5</span> Help</h2>
-<div class="sourceCode" id="cb481"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb481-1"><a href="#cb481-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asession</span> <span class="at">-h</span></span>
-<span id="cb481-2"><a href="#cb481-2" aria-hidden="true" tabindex="-1"></a><span class="ex">USAGE</span></span>
-<span id="cb481-3"><a href="#cb481-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span></span>
-<span id="cb481-4"><a href="#cb481-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="at">-h</span><span class="kw">|</span><span class="ex">--help</span></span>
-<span id="cb481-5"><a href="#cb481-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="op">&lt;</span>transfer spec extended value<span class="op">&gt;</span></span>
-<span id="cb481-6"><a href="#cb481-6" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb481-7"><a href="#cb481-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">If</span> no argument is provided, default will be used: @json:@stdin</span>
-<span id="cb481-8"><a href="#cb481-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">-h,</span> <span class="at">--help</span> display this message</span>
-<span id="cb481-9"><a href="#cb481-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>transfer <span class="ex">spec</span> extended value<span class="op">&gt;</span> a JSON value for transfer_spec, using the prefix: @json:</span>
-<span id="cb481-10"><a href="#cb481-10" aria-hidden="true" tabindex="-1"></a>    <span class="ex">The</span> value can be either:</span>
-<span id="cb481-11"><a href="#cb481-11" aria-hidden="true" tabindex="-1"></a>       <span class="ex">the</span> JSON description itself, e.g. @json:<span class="st">&#39;{&quot;xx&quot;:&quot;yy&quot;,...}&#39;</span></span>
-<span id="cb481-12"><a href="#cb481-12" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@stdin,</span> if the JSON is provided from stdin</span>
-<span id="cb481-13"><a href="#cb481-13" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@file:</span><span class="op">&lt;</span>path<span class="op">&gt;</span>, if the JSON is provided from a file</span>
-<span id="cb481-14"><a href="#cb481-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Asynchronous</span> commands can be provided on STDIN, examples:</span>
-<span id="cb481-15"><a href="#cb481-15" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="dt">}</span></span>
-<span id="cb481-16"><a href="#cb481-16" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;xx&quot;</span><span class="op">,</span><span class="st">&quot;destination&quot;</span><span class="dt">:</span><span class="st">&quot;yy&quot;</span><span class="dt">}</span></span>
-<span id="cb481-17"><a href="#cb481-17" aria-hidden="true" tabindex="-1"></a>       <span class="ex">{</span><span class="st">&quot;type&quot;</span><span class="ex">:</span><span class="st">&quot;DONE&quot;</span><span class="ex">}</span></span>
-<span id="cb481-18"><a href="#cb481-18" aria-hidden="true" tabindex="-1"></a><span class="ex">Note:</span> debug information can be placed on STDERR, using the <span class="st">&quot;EX_loglevel&quot;</span> parameter in transfer spec <span class="er">(</span><span class="va">debug</span><span class="op">=</span>0<span class="kw">)</span></span>
-<span id="cb481-19"><a href="#cb481-19" aria-hidden="true" tabindex="-1"></a><span class="ex">EXAMPLES</span></span>
-<span id="cb481-20"><a href="#cb481-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> @json:<span class="st">&#39;{&quot;remote_host&quot;:&quot;demo.asperasoft.com&quot;,&quot;remote_user&quot;:&quot;asperaweb&quot;,&quot;ssh_port&quot;:33001,&quot;remote_password&quot;:&quot;demoaspera&quot;,&quot;direction&quot;:&quot;receive&quot;,&quot;destination_root&quot;:&quot;./test.dir&quot;,&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-tiny/200KB.1&quot;}]}&#39;</span></span>
-<span id="cb481-21"><a href="#cb481-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&#39;{&quot;remote_host&quot;:...}&#39;</span><span class="kw">|</span><span class="ex">asession</span> @json:@stdin</span></code></pre></div>
+<div class="sourceCode" id="cb483"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb483-1"><a href="#cb483-1" aria-hidden="true" tabindex="-1"></a><span class="ex">asession</span> <span class="at">-h</span></span>
+<span id="cb483-2"><a href="#cb483-2" aria-hidden="true" tabindex="-1"></a><span class="ex">USAGE</span></span>
+<span id="cb483-3"><a href="#cb483-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span></span>
+<span id="cb483-4"><a href="#cb483-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="at">-h</span><span class="kw">|</span><span class="ex">--help</span></span>
+<span id="cb483-5"><a href="#cb483-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="op">&lt;</span>transfer spec extended value<span class="op">&gt;</span></span>
+<span id="cb483-6"><a href="#cb483-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb483-7"><a href="#cb483-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">If</span> no argument is provided, default will be used: @json:@stdin</span>
+<span id="cb483-8"><a href="#cb483-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">-h,</span> <span class="at">--help</span> display this message</span>
+<span id="cb483-9"><a href="#cb483-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>transfer <span class="ex">spec</span> extended value<span class="op">&gt;</span> a JSON value for transfer_spec, using the prefix: @json:</span>
+<span id="cb483-10"><a href="#cb483-10" aria-hidden="true" tabindex="-1"></a>    <span class="ex">The</span> value can be either:</span>
+<span id="cb483-11"><a href="#cb483-11" aria-hidden="true" tabindex="-1"></a>       <span class="ex">the</span> JSON description itself, e.g. @json:<span class="st">&#39;{&quot;xx&quot;:&quot;yy&quot;,...}&#39;</span></span>
+<span id="cb483-12"><a href="#cb483-12" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@stdin,</span> if the JSON is provided from stdin</span>
+<span id="cb483-13"><a href="#cb483-13" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@file:</span><span class="op">&lt;</span>path<span class="op">&gt;</span>, if the JSON is provided from a file</span>
+<span id="cb483-14"><a href="#cb483-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Asynchronous</span> commands can be provided on STDIN, examples:</span>
+<span id="cb483-15"><a href="#cb483-15" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="dt">}</span></span>
+<span id="cb483-16"><a href="#cb483-16" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;xx&quot;</span><span class="op">,</span><span class="st">&quot;destination&quot;</span><span class="dt">:</span><span class="st">&quot;yy&quot;</span><span class="dt">}</span></span>
+<span id="cb483-17"><a href="#cb483-17" aria-hidden="true" tabindex="-1"></a>       <span class="ex">{</span><span class="st">&quot;type&quot;</span><span class="ex">:</span><span class="st">&quot;DONE&quot;</span><span class="ex">}</span></span>
+<span id="cb483-18"><a href="#cb483-18" aria-hidden="true" tabindex="-1"></a><span class="ex">Note:</span> debug information can be placed on STDERR, using the <span class="st">&quot;EX_loglevel&quot;</span> parameter in transfer spec <span class="er">(</span><span class="va">debug</span><span class="op">=</span>0<span class="kw">)</span></span>
+<span id="cb483-19"><a href="#cb483-19" aria-hidden="true" tabindex="-1"></a><span class="ex">EXAMPLES</span></span>
+<span id="cb483-20"><a href="#cb483-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> @json:<span class="st">&#39;{&quot;remote_host&quot;:&quot;demo.asperasoft.com&quot;,&quot;remote_user&quot;:&quot;asperaweb&quot;,&quot;ssh_port&quot;:33001,&quot;remote_password&quot;:&quot;demoaspera&quot;,&quot;direction&quot;:&quot;receive&quot;,&quot;destination_root&quot;:&quot;./test.dir&quot;,&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-tiny/200KB.1&quot;}]}&#39;</span></span>
+<span id="cb483-21"><a href="#cb483-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&#39;{&quot;remote_host&quot;:...}&#39;</span><span class="kw">|</span><span class="ex">asession</span> @json:@stdin</span></code></pre></div>
 <h1 data-number="21" id="ruby-module-aspera"><span
 class="header-section-number">21</span> Ruby Module:
 <code>Aspera</code></h1>
@@ -8745,10 +8822,10 @@ being relatively easy to installed, as a single executable (well, still
 using <code>ascp</code>), but it was too limited IMHO, and lacked a lot
 of the features of this CLI.</p>
 <p>Enjoy a coffee on me:</p>
-<div class="sourceCode" id="cb482"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb482-1"><a href="#cb482-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee <span class="at">--ui</span><span class="op">=</span>text</span>
-<span id="cb482-2"><a href="#cb482-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee <span class="at">--ui</span><span class="op">=</span>text <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:&quot;true&quot;}&#39;</span></span>
-<span id="cb482-3"><a href="#cb482-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee</span></code></pre></div>
+<div class="sourceCode" id="cb484"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb484-1"><a href="#cb484-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee <span class="at">--ui</span><span class="op">=</span>text</span>
+<span id="cb484-2"><a href="#cb484-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee <span class="at">--ui</span><span class="op">=</span>text <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:&quot;true&quot;}&#39;</span></span>
+<span id="cb484-3"><a href="#cb484-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config coffee</span></code></pre></div>
 <h1 data-number="23" id="common-problems"><span
 class="header-section-number">23</span> Common problems</h1>
 <p><code>ascli</code> detects common problems and provides hints to
@@ -8764,8 +8841,8 @@ server). <code>aspera.conf</code> supports a single fingerprint.</p>
 <p>Workaround on client side: To ignore the certificate (SSH
 fingerprint) add option on client side (this option can also be added
 permanently to the configuration file):</p>
-<div class="sourceCode" id="cb483"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb483-1"><a href="#cb483-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;sshfp&quot;:null}&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb485"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb485-1"><a href="#cb485-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;sshfp&quot;:null}&#39;</span></span></code></pre></div>
 <p>Workaround on server side: Either remove the fingerprint from
 <code>aspera.conf</code>, or keep only RSA host keys in
 <code>sshd_config</code>.</p>
