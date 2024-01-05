@@ -5780,13 +5780,13 @@ But the disadvantage is that the filtering is done in `ascli` and not in Faspex 
 
 Examples:
 
-- List only released packages: (filtering is done in Faspex)
+- List only available packages: (filtering is done in Faspex)
 
   ```bash
-  ascli faspex5 packages list --query=@json:'{"status":"released"}'
+  ascli faspex5 packages list --query=@json:'{"status":"completed"}'
   ```
 
-- Same, using filtering in `ascli`:
+- Similar, using filtering in `ascli`:
 
   ```bash
   ascli faspex5 packages list @ruby:'->(p){p["state"].eql?("released")}'
@@ -5801,14 +5801,15 @@ The same options as for `faspex5 packages list` can be used to select the box an
 I.e. options `box` and `query`, as well as last positional parameter `Proc` (filter).
 
 Option `--once-only=yes` can be used, for "cargo-like" behavior.
-
-Special package id `ALL` selects all packages (of the selected box).
-In this case, typically, only `released` packages should be downloaded, so use option `--query=@json:'{"status":"released"}'`.
-
 Special package id `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
 
+Special package id `ALL` selects all packages (of the selected box).
+In this case, typically, only `completed` packages should be downloaded, so use option `--query=@json:'{"status":"completed"}'`.
+
 If a package is password protected, then the content protection password is asked interactively.
-To skip this, use option: `--ts=@json:'{"content_protection":null}'`, or provide the password instead of `null`.
+To keep the content encrypted, use option: `--ts=@json:'{"content_protection":null}'`, or provide the password instead of `null`.
+
+> **Tip:** If you use option `query` and/or positional `filter`, you can use the `list` command for a dry run.
 
 ### Faspex 5: List all shared inboxes and work groups
 
@@ -5883,7 +5884,7 @@ ascli faspex5 packages send @json:'{"title":"hello","recipients":[{"name":"_reci
 To receive all packages, only once, through persistency of already received packages:
 
 ```bash
-ascli faspex5 packages receive ALL --once-only=yes --query=@json:'{"status":"released"}'
+ascli faspex5 packages receive ALL --once-only=yes --query=@json:'{"status":"completed"}'
 ```
 
 To initialize, and skip all current package so that next time `ALL` is used, only newer packages are downloaded:

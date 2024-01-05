@@ -7356,10 +7356,10 @@ Ruby code. But the disadvantage is that the filtering is done in
 <code>ascli</code> and not in Faspex 5, so it is less efficient.</p>
 <p>Examples:</p>
 <ul>
-<li><p>List only released packages: (filtering is done in Faspex)</p>
+<li><p>List only available packages: (filtering is done in Faspex)</p>
 <div class="sourceCode" id="cb416"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb416-1"><a href="#cb416-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;released&quot;}&#39;</span></span></code></pre></div></li>
-<li><p>Same, using filtering in <code>ascli</code>:</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb416-1"><a href="#cb416-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;}&#39;</span></span></code></pre></div></li>
+<li><p>Similar, using filtering in <code>ascli</code>:</p>
 <div class="sourceCode" id="cb417"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb417-1"><a href="#cb417-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list @ruby:<span class="st">&#39;-&gt;(p){p[&quot;state&quot;].eql?(&quot;released&quot;)}&#39;</span></span></code></pre></div></li>
 </ul>
@@ -7375,18 +7375,22 @@ used to select the box and filter the packages to download. I.e. options
 <code>box</code> and <code>query</code>, as well as last positional
 parameter <code>Proc</code> (filter).</p>
 <p>Option <code>--once-only=yes</code> can be used, for “cargo-like”
-behavior.</p>
+behavior. Special package id <code>INIT</code> initializes the
+persistency of already received packages when option
+<code>--once-only=yes</code> is used.</p>
 <p>Special package id <code>ALL</code> selects all packages (of the
-selected box). In this case, typically, only <code>released</code>
+selected box). In this case, typically, only <code>completed</code>
 packages should be downloaded, so use option
-<code>--query=@json:'{"status":"released"}'</code>.</p>
-<p>Special package id <code>INIT</code> initializes the persistency of
-already received packages when option <code>--once-only=yes</code> is
-used.</p>
+<code>--query=@json:'{"status":"completed"}'</code>.</p>
 <p>If a package is password protected, then the content protection
-password is asked interactively. To skip this, use option:
-<code>--ts=@json:'{"content_protection":null}'</code>, or provide the
-password instead of <code>null</code>.</p>
+password is asked interactively. To keep the content encrypted, use
+option: <code>--ts=@json:'{"content_protection":null}'</code>, or
+provide the password instead of <code>null</code>.</p>
+<blockquote>
+<p><strong>Tip:</strong> If you use option <code>query</code> and/or
+positional <code>filter</code>, you can use the <code>list</code>
+command for a dry run.</p>
+</blockquote>
 <h2 data-number="9.10"
 id="faspex-5-list-all-shared-inboxes-and-work-groups"><span
 class="header-section-number">9.10</span> Faspex 5: List all shared
@@ -7449,7 +7453,7 @@ class="header-section-number">9.14</span> Faspex 5: Receive all packages
 <p>To receive all packages, only once, through persistency of already
 received packages:</p>
 <div class="sourceCode" id="cb429"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;released&quot;}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;}&#39;</span></span></code></pre></div>
 <p>To initialize, and skip all current package so that next time
 <code>ALL</code> is used, only newer packages are downloaded:</p>
 <div class="sourceCode" id="cb430"><pre
