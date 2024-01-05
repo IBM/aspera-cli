@@ -29,7 +29,8 @@ module Aspera
         ].freeze
         JOB_RUNNING = %w[queued working].freeze
         STANDARD_PATH = '/aspera/faspex'
-        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE])
+        PER_PAGE_DEFAULT = 100
+        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT])
         class << self
           def application_name
             'Faspex'
@@ -239,7 +240,7 @@ module Aspera
           raise 'internal error'
         end
 
-        # get a (full or partial) list of all entities of a given type
+        # Get a (full or partial) list of all entities of a given type
         # @param type [String] the type of entity to list (just a name)
         # @param query [Hash,nil] additional query parameters
         # @param real_path [String] real path if it's n ot just the type
@@ -255,7 +256,7 @@ module Aspera
           max_items = query.delete(MAX_ITEMS)
           remain_pages = query.delete(MAX_PAGES)
           # merge default parameters, by default 100 per page
-          query = {'limit'=> 100}.merge(query)
+          query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
           loop do
             query['offset'] = offset
             page_result = @api_v5.read(full_path, query)[:data]
@@ -317,7 +318,9 @@ module Aspera
               id:      IdGenerator.from_list([
                 'faspex_recv',
                 options.get_option(:url, mandatory: true),
-                options.get_option(:username, mandatory: true)]))
+                options.get_option(:username, mandatory: true),
+                options.get_option(:box, mandatory: true)
+              ]))
           end
           packages = []
           case package_ids
