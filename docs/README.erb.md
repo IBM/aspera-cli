@@ -1994,13 +1994,13 @@ Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL
 > **Note:** <%=tool%> overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
 
 ```bash
-strings $(<%=cmd%> config ascp info --fields=ascp)|grep -w OPENSSLDIR
+<%=cmd%> config ascp info --fields=openssldir
 ```
 
 or
 
 ```bash
-<%=cmd%> config ascp info --fields=openssldir
+strings $(<%=cmd%> config ascp info --fields=ascp)|grep -w OPENSSLDIR
 ```
 
 To update trusted root certificates for <%=tool%>:
@@ -2019,9 +2019,9 @@ To download that certificate store:
 <%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
 ```
 
-Then, use this store by setting the  option `` or env var export SSL_CERT_FILE
+Then, use this store by setting the  option `cert_stores` or env var `SSL_CERT_FILE`.
 
-To trust a certificate (e.g. self-signed), provided that the `CN` is correct, save the certificate to a file:
+To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate to a file:
 
 ```bash
 <%=cmd%> config remote_certificate https://localhost:9092 > myserver.pem

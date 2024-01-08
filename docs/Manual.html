@@ -2198,10 +2198,10 @@ specified in <code>cert_stores</code> (using <code>-i</code> switch of
 <code>ascp</code>). Hardcoded locations can be found using:</p>
 </blockquote>
 <div class="sourceCode" id="cb169"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="fu">strings</span> <span class="va">$(</span><span class="ex">ascli</span> config ascp info <span class="at">--fields</span><span class="op">=</span>ascp<span class="va">)</span><span class="kw">|</span><span class="fu">grep</span> <span class="at">-w</span> OPENSSLDIR</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info <span class="at">--fields</span><span class="op">=</span>openssldir</span></code></pre></div>
 <p>or</p>
 <div class="sourceCode" id="cb170"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info <span class="at">--fields</span><span class="op">=</span>openssldir</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="fu">strings</span> <span class="va">$(</span><span class="ex">ascli</span> config ascp info <span class="at">--fields</span><span class="op">=</span>ascp<span class="va">)</span><span class="kw">|</span><span class="fu">grep</span> <span class="at">-w</span> OPENSSLDIR</span></code></pre></div>
 <p>To update trusted root certificates for <code>ascli</code>: Display
 the trusted certificate store locations used by <code>ascli</code>.
 Typically done by updating the system’s root certificate store.</p>
@@ -2212,10 +2212,11 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href
 <p>To download that certificate store:</p>
 <div class="sourceCode" id="cb172"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @uri:https://curl.haxx.se/ca/cacert.pem <span class="at">--format</span><span class="op">=</span>text <span class="op">&gt;</span> /tmp/cacert.pem</span></code></pre></div>
-<p>Then, use this store by setting the option `` or env var export
-SSL_CERT_FILE</p>
-<p>To trust a certificate (e.g. self-signed), provided that the
-<code>CN</code> is correct, save the certificate to a file:</p>
+<p>Then, use this store by setting the option <code>cert_stores</code>
+or env var <code>SSL_CERT_FILE</code>.</p>
+<p>To trust a specific certificate (e.g. self-signed), <strong>provided
+that the <code>CN</code> is correct</strong>, save the certificate to a
+file:</p>
 <div class="sourceCode" id="cb173"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config remote_certificate https://localhost:9092 <span class="op">&gt;</span> myserver.pem</span></code></pre></div>
 <blockquote>
