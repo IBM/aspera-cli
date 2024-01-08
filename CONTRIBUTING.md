@@ -42,32 +42,34 @@ Architecture:
 
 ![Architecture](docs/architecture.png)
 
-The entry point is lib/aspera/cli/main.rb
+The entry point is: `lib/aspera/cli/main.rb`.
 
-Plugins are located in lib/aspera/cli/plugins
+Plugins are located in: `lib/aspera/cli/plugins`.
 
-Transfer agents: lib/aspera/fasp
+Transfer agents, in: `lib/aspera/fasp`.
 
 ## Ruby version
 
-install ruby with RVM.
+Install ruby with [RVM](https://rvm.io).
 
-Cleanup installed gems in rvm to start fresh:
+Cleanup installed gems in `rvm` to start fresh:
 
 ```bash
 make cleanup_gems
 ```
 
-## Documentation
+## Tool chain
+
+TODO: document installation of tool chain.
+
+### Documentation
 
 Documentation is generated with `pandoc` and `LaTeX`.
-Plus IBM font `Plex` is used.
-
-TODO: document installation of doc tool chain.
+IBM font `Plex` is used, see [IBM Plex](https://www.ibm.com/plex/).
 
 ## Running Tests
 
-First, a testing environment must be created:
+First, a testing environment must be created, from project top folder:
 
 ```bash
 mkdir local
