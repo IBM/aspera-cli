@@ -318,7 +318,9 @@ $(T)serv_nagios_transfer: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_key: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) server --preset=server_ssh_key browse /
+	set -x&&\
+	aspera_key_path=$$($(EXE_NO_MAN) conf ascp info --fields=ssh_private_rsa) &&\
+	$(EXE_MAN) server browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=$$aspera_key_path
 	@$(STOP_TEST) $@
 $(T)asession: $(T).exists
 	@$(START_TEST) $@
