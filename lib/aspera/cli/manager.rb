@@ -5,6 +5,7 @@ require 'aspera/cli/error'
 require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'aspera/log'
+require 'aspera/assert'
 require 'io/console'
 require 'optparse'
 
@@ -20,7 +21,7 @@ module Aspera
         @option_name = option_name
         @has_writer = @object.respond_to?(writer_method)
         Log.log.debug{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
-        raise "internal error: #{object} does not respond to #{method_name}" unless @object.respond_to?(@method)
+        assert(@object.respond_to?(@method)) {"#{object} does not respond to #{method_name}"}
       end
 
       def value
@@ -54,8 +55,9 @@ module Aspera
       # option name separator in code (symbol)
       OPTION_SEP_SYMBOL = '_'
       SOURCE_USER = 'cmdline' # cspell:disable-line
+      TYPE_INTEGER = [Integer].freeze
 
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER, :TYPE_INTEGER
 
       class << self
         def enum_to_bool(enum)
@@ -92,9 +94,13 @@ module Aspera
           return "--#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
 
+        # @param what [Symbol] :option or :argument
+        # @param descr [String] description for help
+        # @param value [Object] value to check
+        # @param type_list [NilClass, Class, Array[Class]] accepted value type(s)
         def validate_type(what, descr, value, type_list)
           return nil if type_list.nil?
-          raise 'internal error: types must be a Class Array' unless type_list.is_a?(Array) && type_list.all?(Class)
+          assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
           raise Cli::BadArgument,
             "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
             type_list.any?{|t|value.is_a?(t)}
@@ -172,10 +178,14 @@ module Aspera
       # @param default [Object] default value
       # @return value, list or nil
       def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
-        unless type.nil?
-          type = [type] unless type.is_a?(Array)
-          raise "INTERNAL ERROR: type must be Array of Class: #{type}" unless type.all?(Class)
-          descr = "#{descr} (#{type})"
+        assert(%i[single multiple].include?(expected) || (expected.is_a?(Array) && expected.all?(Symbol))){'expected must be single, multiple, or array of symbol'}
+        assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
+        assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash'}
+        allowed_types = type
+        unless allowed_types.nil?
+          allowed_types = [allowed_types] unless allowed_types.is_a?(Array)
+          descr = "#{descr} (#{allowed_types.join(', ')})"
+          Log.log.debug{">>>> #{descr}=#{allowed_types}"}
         end
         result =
           if !@unprocessed_cmd_line_arguments.empty?
@@ -193,7 +203,6 @@ module Aspera
             when Array
               allowed_values = [].concat(expected)
               allowed_values.concat(aliases.keys) unless aliases.nil?
-              raise "internal error: only symbols allowed: #{allowed_values}" unless allowed_values.all?(Symbol)
               self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
             else
               raise 'Internal error: expected: must be single, multiple, or value array'
@@ -202,14 +211,14 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(:argument, descr, expected: expected)
           end
-        if result.is_a?(String) && type.eql?([Integer])
-          str_result = result
-          result = Integer(str_result, exception: false)
-          raise Cli::BadArgument, "Invalid integer: #{str_result}" if result.nil?
+        if result.is_a?(String) && allowed_types.eql?(TYPE_INTEGER)
+          int_result = Integer(result, exception: false)
+          raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
+          result = int_result
         end
         Log.log.debug{"#{descr}=#{result}"}
-        result = aliases[result] if !aliases.nil? && aliases.key?(result)
-        self.class.validate_type(:argument, descr, result, type) unless result.nil? && !mandatory
+        result = aliases[result] if aliases&.key?(result)
+        self.class.validate_type(:argument, descr, result, allowed_types) unless result.nil? && !mandatory
         return result
       end
 
@@ -284,12 +293,12 @@ module Aspera
       # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
-        raise "INTERNAL ERROR: #{option_symbol} already declared" if @declared_options.key?(option_symbol)
+        assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         # raise "INTERNAL ERROR: #{option_symbol} clash with another option" if
         # @declared_options.keys.map(&:to_s).any?{|k|k.start_with?(option_symbol.to_s) || option_symbol.to_s.start_with?(k)}
-        raise "INTERNAL ERROR: #{option_symbol} ends with dot" unless description[-1] != '.'
-        raise "INTERNAL ERROR: #{option_symbol} description does not start with capital" unless description[0] == description[0].upcase
-        raise "INTERNAL ERROR: #{option_symbol} shall use :types" if ['hash', 'extended value'].any?{|s|description.downcase.include?(s) }
+        assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
+        assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
+        assert(!['hash', 'extended value'].any?{|s|description.downcase.include?(s) }){"#{option_symbol} shall use :types"}
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
@@ -297,7 +306,7 @@ module Aspera
         }
         if !types.nil?
           types = [types] unless types.is_a?(Array)
-          raise "INTERNAL ERROR: types must be Array of Class: #{types}" unless types.all?(Class)
+          assert(types.all?(Class)){"types must be Array of Class: #{types}"}
           opt[:types] = types
           description = "#{description} (#{types.map(&:name).join(', ')})"
         end
@@ -307,8 +316,8 @@ module Aspera
         end
         Log.log.debug{"declare: #{option_symbol}: #{opt[:read_write]}".green}
         if opt[:read_write].eql?(:accessor)
-          raise 'internal error' unless handler.is_a?(Hash)
-          raise 'internal error' unless handler.keys.sort.eql?(%i[m o])
+          assert_type(handler, Hash)
+          assert(handler.keys.sort.eql?(%i[m o]))
           Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
           opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m], option_symbol)
         end
@@ -347,7 +356,7 @@ module Aspera
             set_option(option_symbol, time_string, SOURCE_USER)
           end
         when :none
-          raise "internal error: missing block for #{option_symbol}" if block.nil?
+          assert(!block.nil?){"missing block for #{option_symbol}"}
           on_args.push(symbol_to_option(option_symbol, nil))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
@@ -359,8 +368,8 @@ module Aspera
       # Adds each of the keys of specified hash as an option
       # @param preset_hash [Hash] hash of options to add
       def add_option_preset(preset_hash, op: :push)
+        assert_type(preset_hash, Hash)
         Log.log.debug{"add_option_preset=#{preset_hash}"}
-        raise "internal error: default expects Hash: #{preset_hash.class}" unless preset_hash.is_a?(Hash)
         # incremental override
         preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}
       end
