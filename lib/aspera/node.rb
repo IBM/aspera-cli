@@ -66,8 +66,8 @@ module Aspera
 
       def decode_scope(scope)
         items = scope.split(SCOPE_SEPARATOR, 2)
-        raise "invalid scope: #{scope}" unless items.length.eql?(2)
-        raise "invalid scope: #{scope}" unless items[0].start_with?(SCOPE_PREFIX)
+        assert(items.length.eql?(2)){"invalid scope: #{scope}"}
+        assert(items[0].start_with?(SCOPE_PREFIX)){"invalid scope: #{scope}"}
         return {access_key: items[0][SCOPE_PREFIX.length..-1], scope: items[1]}
       end
 
@@ -75,11 +75,11 @@ module Aspera
       # @param payload [String] JSON payload to be included in the token
       # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
       def bearer_token(access_key:, payload:, private_key:)
-        raise 'payload shall be Hash' unless payload.is_a?(Hash)
-        raise 'missing user_id' unless payload.key?('user_id')
-        raise 'user_id must be a String' unless payload['user_id'].is_a?(String)
-        raise 'user_id must not be empty' if payload['user_id'].empty?
-        raise 'private_key shall be OpenSSL::PKey::RSA' unless private_key.is_a?(OpenSSL::PKey::RSA)
+        assert_type(payload, Hash)
+        assert(payload.key?('user_id'))
+        assert_type(payload['user_id'], String)
+        assert(!payload['user_id'].empty?)
+        assert_type(private_key, OpenSSL::PKey::RSA)
         # manage convenience parameters
         expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
         payload.delete('_validity')
@@ -208,7 +208,7 @@ module Aspera
     # @param path [String]  file path
     # @return [Hash] {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
-      raise 'file id shall be String' unless top_file_id.is_a?(String)
+      assert_type(top_file_id, String)
       process_last_link = path.end_with?(PATH_SEPARATOR)
       path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
@@ -277,14 +277,14 @@ module Aspera
       case params[:auth][:type]
       when :basic
         ak_name = params[:auth][:username]
-        raise 'ERROR: no secret in node object' unless params[:auth][:password]
+        assert(params[:auth][:password]){'no secret in node object'}
         ak_token = Rest.basic_token(params[:auth][:username], params[:auth][:password])
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
         # get bearer token, possibly use cache
         ak_token = oauth_token(force_refresh: false)
-      else raise "Unsupported auth method for node gen4: #{params[:auth][:type]}"
+      else error_unexpected_value(params[:auth][:type])
       end
       transfer_spec = {
         'direction' => direction,
