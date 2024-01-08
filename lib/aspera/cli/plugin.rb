@@ -224,22 +224,25 @@ module Aspera
 
       # Retrieves an extended value from command line, used for creation or modification of entities
       # @param command [Symbol] command name for error message
-      # @param type [Class] expected type of value, either a Class, an Array of Class, or :bulk_hash
+      # @param type [Class] expected type of value, either a Class, an Array of Class
+      # @param bulk [Boolean] if true, value must be an Array of <type>
       # @param default [Object] default value if not provided
       # TODO: when deprecation of `value` is completed: remove line with :value
-      def value_create_modify(command:, type: Hash, bulk: false, default: nil)
+      def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
         value = options.get_option(:value)
         Log.log.warn("option `value` is deprecated. Use positional parameter for #{command}") unless value.nil?
-        value = options.get_next_argument("parameters for #{command}", mandatory: default.nil?) if value.nil?
+        value = options.get_next_argument(
+          "parameters for #{command}#{description.nil? ? '' : " (#{description})"}", mandatory: default.nil?,
+          type: bulk ? Array : type) if value.nil?
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)
           raise "Internal error, check types must be a Class, not #{type.map(&:class).join(',')}" unless type.all?(Class)
           if bulk
             raise Cli::BadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
-            raise Cli::BadArgument, "Value must be a #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
+            raise Cli::BadArgument, "Value must be: #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
           else
-            raise Cli::BadArgument, "Value must be a #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
+            raise Cli::BadArgument, "Value must be: #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
           end
         end
         return value

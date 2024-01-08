@@ -638,7 +638,7 @@ module Aspera
             end
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify(command: command, type: String)
+            url = value_create_modify(command: command, description: 'listening url (e.g. https://localhost:12345)', type: String)
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
