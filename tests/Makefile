@@ -224,8 +224,8 @@ $(T)serv_mkdir: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_error: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) server --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
-	$(EXE_BEG_ERR) server --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
+	$(EXE_BEG_ERR) server -Pserver2_user --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BEG_ERR) server -Pserver2_user --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
 	$(EXE_BEG_ERR) server -N --url=foo:// ls .$(EXE_END_ERR)
 	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
