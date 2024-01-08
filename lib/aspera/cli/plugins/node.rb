@@ -12,6 +12,7 @@ require 'aspera/aoc'
 require 'aspera/sync'
 require 'aspera/oauth'
 require 'aspera/node_simulator'
+require 'aspera/assert'
 require 'base64'
 require 'zlib'
 
@@ -304,7 +305,7 @@ module Aspera
               save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
           end
-          raise 'INTERNAL ERROR'
+          error_unreachable_line
         end
 
         # common API to node and Shares
@@ -413,7 +414,7 @@ module Aspera
               url:     apifid[:api].params[:base_url],
               root_id: apifid[:file_id]
             }
-            raise 'No auth for node' if apifid[:api].params[:auth].nil?
+            assert_values(apifid[:api].params[:auth][:type], %i[basic oauth2])
             case apifid[:api].params[:auth][:type]
             when :basic
               result[:username] = apifid[:api].params[:auth][:username]
@@ -421,7 +422,7 @@ module Aspera
             when :oauth2
               result[:username] = apifid[:api].params[:headers][Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY]
               result[:password] = apifid[:api].oauth_token
-            else raise 'internal error: unknown auth type'
+            else error_unreachable_line
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)
             # check format of bearer token
@@ -464,10 +465,11 @@ module Aspera
             return execute_sync_action do |sync_direction, _local_path, remote_path|
               # Gen4 API
               # direction is push pull, bidi
+              assert_values(sync_direction, %i[push pull bidi])
               ts_direction = case sync_direction
               when :push, :bidi then Fasp::TransferSpec::DIRECTION_SEND
               when :pull then Fasp::TransferSpec::DIRECTION_RECEIVE
-              else raise "internal error: bad direction: #{sync_direction} (#{sync_direction.class})"
+              else error_unreachable_line
               end
               # remote is specified by option to_folder
               apifid = @api_node.resolve_api_fid(top_file_id, remote_path)
@@ -570,11 +572,11 @@ module Aspera
               # notify application of creation
               the_app[:api].permissions_send_event(created_data: created_data, app_info: the_app) unless the_app.nil?
               return { type: :single_object, data: created_data}
-            else raise "internal error:shall not reach here (#{command_perm})"
+            else error_unreachable_line
             end
-          else raise "INTERNAL ERROR: no case for #{command_repo}"
+          else error_unreachable_line
           end # command_repo
-          # raise 'INTERNAL ERROR: missing return'
+          error_unreachable_line
         end # execute_command_gen4
 
         # This is older API

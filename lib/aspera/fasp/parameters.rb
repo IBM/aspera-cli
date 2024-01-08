@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/fasp/error'
@@ -197,7 +198,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # notify multi-session was already used, anyway it was deleted by agent direct
-        raise 'internal error' if @builder.read_param('multi_session')
+        assert(!@builder.read_param('multi_session'))
 
         # use web socket secure for session ?
         if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/sync'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -19,8 +20,7 @@ module Aspera
       end
 
       def execute_sync_action(&block)
-        # options = Aspera::Cli::Manager.new
-        raise 'Internal Error: No block given' unless block
+        assert(block){'No block given'}
         command = options.get_next_command(%i[start admin])
         # try to get 3 arguments as simple arguments
         case command

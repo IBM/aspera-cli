@@ -13,6 +13,7 @@ require 'aspera/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
 require 'aspera/id_generator'
+require 'aspera/assert'
 require 'securerandom'
 
 module Aspera
@@ -211,7 +212,7 @@ module Aspera
         end
 
         def do_transfer(direction, folder_id, source_filename, destination='/')
-          raise 'Internal ERROR' if destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)
+          assert(!(destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)))
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
             'tags'  => {Fasp::TransferSpec::TAG_RESERVED => {PREV_GEN_TAG => true}}

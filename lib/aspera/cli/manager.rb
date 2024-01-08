@@ -204,8 +204,7 @@ module Aspera
               allowed_values = [].concat(expected)
               allowed_values.concat(aliases.keys) unless aliases.nil?
               self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
-            else
-              raise 'Internal error: expected: must be single, multiple, or value array'
+            else error_unexpected_value(expected)
             end
           elsif !default.nil? then default
             # no value provided, either get value interactively, or exception
@@ -230,7 +229,7 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false, default: nil)
         attributes = @declared_options[option_symbol]
-        raise "INTERNAL ERROR: option not declared: #{option_symbol}" unless attributes
+        assert(attributes){"option not declared: #{option_symbol}"}
         result = nil
         case attributes[:read_write]
         when :accessor
@@ -294,8 +293,6 @@ module Aspera
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
         assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
-        # raise "INTERNAL ERROR: #{option_symbol} clash with another option" if
-        # @declared_options.keys.map(&:to_s).any?{|k|k.start_with?(option_symbol.to_s) || option_symbol.to_s.start_with?(k)}
         assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
         assert(!['hash', 'extended value'].any?{|s|description.downcase.include?(s) }){"#{option_symbol} shall use :types"}
@@ -360,7 +357,7 @@ module Aspera
           on_args.push(symbol_to_option(option_symbol, nil))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
-        else raise "internal error: Unknown type for values: #{values} / #{values.class}"
+        else error_unexpected_value(values)
         end
         Log.log.debug{"on_args=#{on_args}"}
       end

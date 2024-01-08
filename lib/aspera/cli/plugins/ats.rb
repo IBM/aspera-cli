@@ -4,6 +4,7 @@
 
 require 'aspera/cli/plugins/node'
 require 'aspera/ats_api'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -128,7 +129,7 @@ module Aspera
               }}
             api_ak_auth = Rest.new(rest_params)
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
-          else raise 'INTERNAL ERROR'
+          else error_unreachable_line
           end
         end
 
@@ -200,7 +201,7 @@ module Aspera
           when :delete
             ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
-          else raise 'INTERNAL ERROR'
+          else error_unreachable_line
           end
         end
 

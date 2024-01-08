@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'ruby-progressbar'
 
 module Aspera
@@ -25,9 +26,7 @@ module Aspera
 
       def event(session_id:, type:, info: nil)
         Log.log.debug{"progress: #{type} #{session_id} #{info}"}
-        if session_id.nil? && !type.eql?(:pre_start)
-          raise 'Internal error: session_id is nil'
-        end
+        assert(!session_id.nil? || type.eql?(:pre_start)){'session_id is nil'}
         return if @completed
         if @progress_bar.nil?
           @progress_bar = ProgressBar.create(

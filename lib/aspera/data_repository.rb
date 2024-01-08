@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'singleton'
 require 'openssl'
 
@@ -29,8 +30,7 @@ module Aspera
         return format('%08x-%04x-%04x-%04x-%04x%08x', *raw_data.unpack('NnnnnN'))
       when :'aspera.global-cli-client', :'aspera.drive'
         return Base64.urlsafe_encode64(raw_data)
-      else
-        raise "Internal error: unknown data item [#{name}]"
+      else error_unexpected_value(name)
       end
     end
 

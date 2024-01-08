@@ -7,6 +7,7 @@ require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/nagios'
 require 'aspera/environment'
+require 'aspera/assert'
 require 'securerandom'
 require 'tty-spinner'
 
@@ -237,7 +238,7 @@ module Aspera
             spinner.spin
             sleep(0.5)
           end
-          raise 'internal error'
+          error_unreachable_line
         end
 
         # Get a (full or partial) list of all entities of a given type
@@ -245,11 +246,10 @@ module Aspera
         # @param query [Hash,nil] additional query parameters
         # @param real_path [String] real path if it's n ot just the type
         # @param item_list_key [String] key in the result to get the list of items
-        def list_entities(type:, real_path: nil, query: nil, item_list_key: nil)
-          query = {} if query.nil?
+        def list_entities(type:, real_path: nil, query: {}, item_list_key: nil)
           type = type.to_s if type.is_a?(Symbol)
+          assert_type(type, String)
           item_list_key = type if item_list_key.nil?
-          raise "internal error: Invalid type #{type.class}" unless type.is_a?(String)
           full_path = real_path.nil? ? type : real_path
           result = []
           offset = 0

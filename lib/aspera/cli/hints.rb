@@ -2,6 +2,8 @@
 
 require 'aspera/fasp/error'
 require 'aspera/rest'
+require 'aspera/log'
+require 'aspera/assert'
 require 'net/ssh'
 require 'openssl'
 
@@ -58,14 +60,13 @@ module Aspera
             matches = hint[:match]
             matches = [matches] unless matches.is_a?(Array)
             matches.each do |m|
+              assert_values(m.class, [String, Regexp])
               case m
               when String
                 next unless message.eql?(m)
               when Regexp
                 next unless message.match?(m)
-              else
-                Log.log.warn("Internal error: hint is a #{m.class}")
-                next
+              else error_unexpected_value(m)
               end
               remediation = hint[:remediation]
               remediation = [remediation] unless remediation.is_a?(Array)

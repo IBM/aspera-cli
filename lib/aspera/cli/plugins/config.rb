@@ -23,6 +23,7 @@ require 'aspera/data_repository'
 require 'aspera/line_logger'
 require 'aspera/rest'
 require 'aspera/log'
+require 'aspera/assert'
 require 'open3'
 require 'date'
 require 'erb'
@@ -154,8 +155,9 @@ module Aspera
         end # self
 
         def initialize(env, params)
-          raise 'Internal Error: env and params must be Hash' unless env.is_a?(Hash) && params.is_a?(Hash)
-          raise 'Internal Error: missing param' unless %i[gem help name version].eql?(params.keys.sort)
+          assert_type(env, Hash)
+          assert_type(params, Hash)
+          assert(%i[gem help name version].eql?(params.keys.sort)){'missing param'}
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super(env)
           @info = params
@@ -647,13 +649,14 @@ module Aspera
               next
             end
             next if detection_info.nil?
-            raise 'internal error' if detection_info.key?(:url) && !detection_info[:url].is_a?(String)
+            assert_type(detection_info, Hash)
+            assert_type(detection_info[:url], String) if detection_info.key?(:url)
             app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
             # if there is a redirect, then the detector can override the url.
             found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
           end # loop
           raise "No known application found at #{app_url}" if found_apps.empty?
-          raise 'Internal error' unless found_apps.all?{|a|a.keys.all?(Symbol)}
+          assert(found_apps.all?{|a|a.keys.all?(Symbol)})
           return found_apps
         end
 
@@ -1015,7 +1018,7 @@ module Aspera
             exception_class = Object.const_get(exception_class_name)
             raise "#{exception_class} is not an exception: #{exception_class.class}" unless exception_class <= Exception
             raise exception_class, exception_text
-          else raise 'INTERNAL ERROR: wrong case'
+          else error_unreachable_line
           end
         end
 
@@ -1074,7 +1077,7 @@ module Aspera
           # finally, call the wizard
           wizard_result = wiz_plugin_class.wizard(**wiz_params)
           Log.log.debug{"wizard result: #{wizard_result}"}
-          raise "Internal error: missing or extra keys in wizard result: #{wizard_result.keys}" unless WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)
+          assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
           # get preset name from user or default
           wiz_preset_name = options.get_option(:id)
           if wiz_preset_name.nil?
@@ -1183,7 +1186,7 @@ module Aspera
         # returns [String] name if config_presets has default
         # returns nil if there is no config or bypass default params
         def get_plugin_default_config_name(plugin_name_sym)
-          raise 'internal error: config_presets shall be defined' if @config_presets.nil?
+          assert(!@config_presets.nil?){'config_presets shall be defined'}
           if !@use_plugin_defaults
             Log.log.debug('skip default config')
             return nil

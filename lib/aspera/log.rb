@@ -3,6 +3,7 @@
 require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'aspera/environment'
+require 'aspera/assert'
 require 'logger'
 require 'pp'
 require 'json'
@@ -99,7 +100,8 @@ module Aspera
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
       end
       # should not happen
-      raise "INTERNAL ERROR: unexpected level #{@logger.level}"
+      assert(false, "unexpected level #{@logger.level}")
+      raise
     end
 
     # change underlying logger, but keep log level

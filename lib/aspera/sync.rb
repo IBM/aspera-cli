@@ -5,6 +5,7 @@
 require 'aspera/command_line_builder'
 require 'aspera/fasp/installation'
 require 'aspera/log'
+require 'aspera/assert'
 require 'json'
 require 'base64'
 require 'open3'
@@ -105,7 +106,7 @@ module Aspera
       # @param sync_params [Hash] sync parameters, old or new format
       # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
       def start(sync_params, &block)
-        raise 'Internal Error: sync_params parameter must be Hash' unless sync_params.is_a?(Hash)
+        assert_type(sync_params, Hash)
         env_args = {
           args: [],
           env:  {}
@@ -176,7 +177,7 @@ module Aspera
         when true then return nil
         when false then raise "failed: #{$CHILD_STATUS}"
         when nil then raise "not started: #{$CHILD_STATUS}"
-        else raise 'internal error: unspecified case'
+        else error_unexpected_value(res)
         end
       end
 

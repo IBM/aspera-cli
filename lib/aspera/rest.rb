@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/oauth'
 require 'aspera/rest_error_analyzer'
 require 'aspera/hash_ext'
@@ -61,7 +62,7 @@ module Aspera
         raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
         return uri if params.nil?
         Log.log.debug{Log.dump('params', params)}
-        raise 'Internal Error: param must be Hash' unless params.is_a?(Hash)
+        assert_type(params, Hash)
         query = []
         params.each do |k, v|
           case v
@@ -390,7 +391,7 @@ module Aspera
       # API style: {totalcount:, ...} cspell: disable-line
       # TODO: not generic enough ? move somewhere ? inheritance ?
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
-      raise "Internal error: expecting array, have #{matching_items.class}" unless matching_items.is_a?(Array)
+      assert_type(matching_items, Array)
       case matching_items.length
       when 1 then return matching_items.first
       when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{subpath}: "#{search_name}"}

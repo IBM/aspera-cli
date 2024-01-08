@@ -5,6 +5,7 @@ require 'aspera/environment'
 require 'aspera/data_repository'
 require 'aspera/fasp/products'
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/web_server_simple'
 require 'English'
 require 'singleton'
@@ -136,10 +137,9 @@ module Aspera
             check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) {cert.to_pem}
           end
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
-        else
-          raise "INTERNAL ERROR: #{k}"
+        else error_unexpected_value(k)
         end
-        raise "no such file: #{file}" unless File.exist?(file)
+        assert(File.exist?(file)){"no such file: #{file}"}
         return file
       end
 

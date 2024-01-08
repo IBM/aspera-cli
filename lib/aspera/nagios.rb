@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/log'
+require 'aspera/assert'
 require 'date'
 
 module Aspera
@@ -21,8 +23,11 @@ module Aspera
     class << self
       # process results of a analysis and display status and exit with code
       def process(data)
-        raise 'INTERNAL ERROR, result must be list and not empty' unless data.is_a?(Array) && !data.empty?
-        %w[status component message].each{|c|raise "INTERNAL ERROR, result must have #{c}" unless data.first.key?(c)}
+        assert_type(data, Array)
+        assert(!data.empty?){'data is empty'}
+        %w[status component message].each do |c|
+          assert(data.first.key?(c)){"result must have #{c}"}
+        end
         res_errors = data.reject{|s|s['status'].eql?('ok')}
         # keep only errors in case of problem, other ok are assumed so
         data = res_errors unless res_errors.empty?

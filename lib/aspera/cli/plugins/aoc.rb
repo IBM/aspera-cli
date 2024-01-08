@@ -10,6 +10,7 @@ require 'aspera/aoc'
 require 'aspera/node'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
+require 'aspera/assert'
 require 'securerandom'
 require 'date'
 
@@ -282,7 +283,7 @@ module Aspera
               client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_direction)
               server_folder = source_folder
-            else raise 'internal error'
+            else error_unreachable_line
             end
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
@@ -303,9 +304,9 @@ module Aspera
               server_apfid[:file_id],
               client_direction,
               add_ts)))
-          else raise "INTERNAL ERROR: Missing case: #{command_repo}"
+          else error_unreachable_line
           end # command_repo
-          # raise 'internal error:shall not reach here'
+          error_unreachable_line
         end # execute_nodegen4_command
 
         def execute_admin_action
@@ -402,7 +403,7 @@ module Aspera
                 when :organizations then aoc_api.current_user_info['organization_id']
                 when :users then aoc_api.current_user_info['id']
                 when :nodes then aoc_api.current_user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
-                else raise 'Internal error'
+                else error_unreachable_line
                 end
               filter = options.get_option(:query) || {}
               filter['limit'] ||= 100
@@ -720,7 +721,7 @@ module Aspera
               purpose = case link_type
               when :public  then 'token_auth_redirection'
               when :private then 'shared_folder_auth_link'
-              else raise 'internal error'
+              else error_unreachable_line
               end
               case short_link_command
               when :delete
@@ -853,10 +854,9 @@ module Aspera
             # this is blocking until server exits
             server.start
             return Main.result_status('Gateway terminated')
-          else
-            raise "internal error: #{command}"
+          else error_unreachable_line
           end # action
-          raise 'internal error: command shall return'
+          error_unreachable_line
         end
 
         private :execute_admin_action

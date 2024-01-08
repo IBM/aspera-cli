@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-
+require 'aspera/log'
+require 'aspera/assert'
 module Aspera
   module Fasp
     # Base class for transfer agents
@@ -31,16 +32,16 @@ module Aspera
         # list of: :success or "error message string"
         statuses = wait_for_transfers_completion
         @progress&.reset
-        raise "internal error: bad statuses type: #{statuses.class}" unless statuses.is_a?(Array)
-        raise "internal error: bad statuses content: #{statuses}" unless statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?
+        assert_type(statuses, Array)
+        assert(statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?){"bad statuses content: #{statuses}"}
         return statuses
       end
 
       private
 
       def initialize(options)
-        raise 'internal error' unless respond_to?(:start_transfer)
-        raise 'internal error' unless respond_to?(:wait_for_transfers_completion)
+        assert(respond_to?(:start_transfer))
+        assert(respond_to?(:wait_for_transfers_completion))
         # method `shutdown` is optional
         Log.log.debug{Log.dump(:agent_options, options)}
         raise "transfer agent options expecting Hash, but have #{options.class}" unless options.is_a?(Hash)

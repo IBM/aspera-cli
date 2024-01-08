@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/extended_value'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -75,6 +76,7 @@ module Aspera
       # @param id_result [String] key in result hash to use as identifier
       # @param fields [Array] fields to display
       def do_bulk_operation(command:, descr:, values: Hash, id_result: 'id', fields: :default)
+        assert(block_given?){'missing block'}
         is_bulk = options.get_option(:bulk)
         case values
         when :identifier
@@ -82,7 +84,6 @@ module Aspera
         when Class
           values = value_create_modify(command: command, type: values, bulk: is_bulk)
         end
-        raise 'Internal error: missing block' unless block_given?
         # if not bulk, there is a single value
         params = is_bulk ? values : [values]
         Log.log.warn('Empty list given for bulk operation') if params.empty?
@@ -237,7 +238,7 @@ module Aspera
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)
-          raise "Internal error, check types must be a Class, not #{type.map(&:class).join(',')}" unless type.all?(Class)
+          assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
           if bulk
             raise Cli::BadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
             raise Cli::BadArgument, "Value must be: #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}

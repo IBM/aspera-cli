@@ -11,6 +11,7 @@ require 'aspera/cli/hints'
 require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -106,7 +107,7 @@ module Aspera
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
         # data persistency
-        raise 'internal error: missing persistency object' unless @agents[:persistency]
+        assert(@agents[:persistency]){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
         @agents[:transfer] = TransferAgent.new(options, config)
         Log.log.debug('plugin env created'.red)

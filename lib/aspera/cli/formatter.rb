@@ -3,6 +3,8 @@
 # cspell:ignore jsonpp
 require 'aspera/secret_hider'
 require 'aspera/environment'
+require 'aspera/log'
+require 'aspera/assert'
 require 'terminal-table'
 require 'yaml'
 require 'pp'
@@ -155,6 +157,7 @@ module Aspera
       end
 
       def option_handler(option_symbol, operation, value=nil)
+        assert_values(operation, %i[set get])
         case operation
         when :set
           @options[option_symbol] = value
@@ -166,7 +169,7 @@ module Aspera
             end
           end
         when :get then return @options[option_symbol]
-        else raise "internal error: no such operation: #{operation}"
+        else error_unreachable_line
         end
         nil
       end
@@ -228,7 +231,7 @@ module Aspera
           when Array then @options[:fields]
           when Regexp then return all_fields(data).select{|i|i.match(@options[:fields])}
           when Proc then return all_fields(data).select{|i|@options[:fields].call(i)}
-          else raise "internal error: option: fields: #{@options[:fields]}"
+          else error_unexpected_value(@options[:fields])
           end
         result = []
         until request.empty?
@@ -261,7 +264,7 @@ module Aspera
       # object_array: array of hash
       # fields: list of column names
       def display_table(object_array, fields)
-        raise 'internal error: no field specified' if fields.nil?
+        assert(!fields.nil?){'missing fields parameter'}
         case @options[:select]
         when Proc
           object_array.select!{|i|@options[:select].call(i)}
@@ -305,11 +308,11 @@ module Aspera
 
       # this method displays the results, especially the table format
       def display_results(results)
-        raise "INTERNAL ERROR, result unsupported key: #{results.keys - %i[type data fields name]}" unless (results.keys - %i[type data fields name]).empty?
+        assert((results.keys - %i[type data fields name]).empty?){"result unsupported key: #{results.keys - %i[type data fields name]}"}
         # :type :data :fields :name
-        raise "INTERNAL ERROR, result must be Hash (got: #{results.class}: #{results})" unless results.is_a?(Hash)
-        raise "INTERNAL ERROR, result must have type (#{results})" unless results.key?(:type)
-        raise 'INTERNAL ERROR, result must have data' unless results.key?(:data) || %i[empty nothing].include?(results[:type])
+        assert_type(results, Hash)
+        assert(results.key?(:type)){"result must have type (#{results})"}
+        assert(results.key?(:data) || %i[empty nothing].include?(results[:type])){'result must have data'}
         Log.log.debug{"display_results: #{results[:data].class} #{results[:type]}"}
         SecretHider.deep_remove_secret(results[:data]) unless @options[:show_secrets] || @options[:display].eql?(:data)
         case @options[:format]
@@ -332,8 +335,8 @@ module Aspera
           when :object_list, :single_object
             obj_list = results[:data]
             obj_list = [obj_list] if results[:type].eql?(:single_object)
-            raise "internal error: expecting Array: got #{obj_list.class}" unless obj_list.is_a?(Array)
-            raise 'internal error: expecting Array of Hash' unless obj_list.all?(Hash)
+            assert_type(obj_list, Array)
+            assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
             obj_list = obj_list.map{|obj|Flattener.new.flatten(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, results[:fields]))

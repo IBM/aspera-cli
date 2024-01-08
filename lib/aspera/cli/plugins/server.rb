@@ -7,6 +7,8 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/ascmd'
 require 'aspera/ssh'
 require 'aspera/nagios'
+require 'aspera/log'
+require 'aspera/assert'
 require 'tempfile'
 require 'open3'
 
@@ -248,7 +250,7 @@ module Aspera
             rescue Aspera::AsCmd::Error => e
               raise Cli::BadArgument, e.extended_message
             end
-          else raise 'internal error: unexpected action'
+          else error_unreachable_line
           end
         end # execute_action
       end # Server

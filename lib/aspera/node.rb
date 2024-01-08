@@ -5,6 +5,7 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/environment'
 require 'zlib'
 require 'base64'
@@ -104,7 +105,7 @@ module Aspera
         # if username is not provided, use the access key from the token
         if access_key.nil?
           access_key = Aspera::Node.decode_scope(Aspera::Node.decode_bearer_token(Oauth.bearer_extract(bearer_auth))['scope'])[:access_key]
-          raise "internal error #{access_key}" if access_key.nil?
+          assert(!access_key.nil?)
         end
         return {
           Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => access_key,
@@ -131,10 +132,10 @@ module Aspera
       @add_tspec = add_tspec
       if !@app_info.nil?
         REQUIRED_APP_INFO_FIELDS.each do |field|
-          raise "INTERNAL ERROR: app_info lacks field #{field}" unless @app_info.key?(field)
+          assert(@app_info.key?(field)){"app_info lacks field #{field}"}
         end
         REQUIRED_APP_API_METHODS.each do |method|
-          raise "INTERNAL ERROR: #{@app_info[:api].class} lacks method #{method}" unless @app_info[:api].respond_to?(method)
+          assert(@app_info[:api].respond_to?(method)){"#{@app_info[:api].class} lacks method #{method}"}
         end
       end
     end
@@ -165,8 +166,8 @@ module Aspera
     # @param top_file_path [String] path of top folder (default = /)
     # @param block [Proc] processing method, arguments: entry, path, state
     def process_folder_tree(state:, top_file_id:, top_file_path: '/', &block)
-      raise 'INTERNAL ERROR: top_file_path not set' if top_file_path.nil?
-      raise 'INTERNAL ERROR: Missing block' unless block
+      assert(!top_file_path.nil?){'top_file_path not set'}
+      assert(block){'Missing block'}
       # start at top folder
       folders_to_explore = [{id: top_file_id, path: top_file_path}]
       Log.log.debug{Log.dump(:folders_to_explore, folders_to_explore)}
