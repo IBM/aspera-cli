@@ -143,13 +143,14 @@ module Aspera
           # return product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
-            raise Cli::Error, "Home folder does not exist: #{user_home_folder}. Check your user environment." unless Dir.exist?(user_home_folder)
+            assert(Dir.exist?(user_home_folder), exception_class: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
             return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
           end
 
           # return product config folder (~/.aspera/<name>)
           def default_app_main_folder(app_name:)
-            raise 'app_name must be a non-empty String' unless app_name.is_a?(String) && !app_name.empty?
+            assert_type(app_name, String)
+            assert(!app_name.empty?)
             return File.join(module_family_folder, app_name)
           end
         end # self
@@ -267,7 +268,7 @@ module Aspera
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
           proxy_user_pass = options.get_option(:proxy_credentials)
           if !proxy_user_pass.nil?
-            raise Cli::BadArgument, "proxy_credentials shall have two elements (#{proxy_user_pass.length})" unless proxy_user_pass.length.eql?(2)
+            assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
             @proxy_credentials = {user: proxy_user_pass[0], pass: proxy_user_pass[1]}
             @pac_exec.proxy_user = @proxy_credentials[:user]
             @pac_exec.proxy_pass = @proxy_credentials[:pass]
@@ -296,7 +297,7 @@ module Aspera
           end
 
           path_list.each do |path|
-            raise 'Expecting a String for cert location' unless path.is_a?(String)
+            assert_type(path, String){'Expecting a String for cert location'}
             Log.log.debug("Adding cert location: #{path}")
             if path.eql?(ExtendedValue::DEF)
               path = OpenSSL::X509::DEFAULT_CERT_DIR
@@ -457,14 +458,14 @@ module Aspera
         end
 
         def set_preset_key(preset, param_name, param_value)
-          raise "Parameter name must be a String or Symbol, not #{param_name.class}" unless [String, Symbol].include?(param_name.class)
+          assert_values(param_name.class, [String, Symbol]){'parameter'}
           param_name = param_name.to_s
           selected_preset = @config_presets[preset]
           if selected_preset.nil?
             Log.log.debug{"No such preset name: #{preset}, initializing"}
             selected_preset = @config_presets[preset] = {}
           end
-          raise "expecting Hash for #{preset}.#{param_name}" unless selected_preset.is_a?(Hash)
+          assert_type(selected_preset, Hash){"#{preset}.#{param_name}"}
           if selected_preset.key?(param_name)
             if selected_preset[param_name].eql?(param_value)
               Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
@@ -496,7 +497,7 @@ module Aspera
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets
           config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            raise Cli::Error, "Expecting Hash for sub key: #{include_path} (#{current.class})" unless current.is_a?(Hash)
+            assert_type(current, Hash, exception_class: Cli::Error){"sub key: #{include_path}"}
             include_path.push(name)
             current = current[name]
             raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
@@ -561,9 +562,9 @@ module Aspera
           end
           files_to_copy = []
           Log.log.debug{Log.dump('Available_presets', @config_presets)}
-          raise 'Expecting YAML Hash' unless @config_presets.is_a?(Hash)
+          assert_type(@config_presets, Hash){'config file YAML'}
           # check there is at least the config section
-          raise "Cannot find key: #{CONF_PRESET_CONFIG}" unless @config_presets.key?(CONF_PRESET_CONFIG)
+          assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
           version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
           raise 'No version found in config section.' if version.nil?
           Log.log.debug{"conf version: #{version}"}
@@ -1016,7 +1017,7 @@ module Aspera
             exception_class_name = options.get_next_argument('exception class name', mandatory: true)
             exception_text = options.get_next_argument('exception text', mandatory: true)
             exception_class = Object.const_get(exception_class_name)
-            raise "#{exception_class} is not an exception: #{exception_class.class}" unless exception_class <= Exception
+            assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
             raise exception_class, exception_text
           else error_unreachable_line
           end
@@ -1039,7 +1040,7 @@ module Aspera
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called
           wiz_plugin_class = self.class.plugin_class(identification[:product])
-          raise Cli::BadArgument, "Detected: #{identification[:product]}, but this application has no wizard" unless wiz_plugin_class.respond_to?(:wizard)
+          assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument){"Detected: #{identification[:product]}, but this application has no wizard"}
           # instantiate plugin: command line options will be known, e.g. private_key
           plugin_instance = wiz_plugin_class.new(@agents)
           wiz_params = {
@@ -1130,7 +1131,7 @@ module Aspera
           smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/, '') if smtp.key?(:from_email)
           # check minimum required
           %i[server port domain].each do |n|
-            raise "Missing mandatory smtp parameter: #{n}" unless smtp.key?(n)
+            assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
           end
           Log.log.debug{"smtp=#{smtp}"}
           return smtp
@@ -1144,7 +1145,7 @@ module Aspera
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
           %i[from_name from_email].each do |n|
-            raise "Missing email parameter: #{n}" unless values.key?(n)
+            assert(values.key?(n)){"Missing email parameter: #{n}"}
           end
           start_options = [mail_conf[:domain]]
           start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
@@ -1152,7 +1153,7 @@ module Aspera
           template_binding = Environment.empty_binding
           # add variables to binding
           values.each do |k, v|
-            raise "key (#{k.class}) must be Symbol" unless k.is_a?(Symbol)
+            assert_type(k, Symbol)
             template_binding.local_variable_set(k, v)
           end
           # execute template
@@ -1217,9 +1218,8 @@ module Aspera
           when :show
             return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
           when :create
-            label = options.get_next_argument('label')
-            info = options.get_next_argument('info Hash')
-            raise 'info must be Hash' unless info.is_a?(Hash)
+            label = options.get_next_argument('label', type: String)
+            info = options.get_next_argument('info', type: Hash)
             info = info.symbolize_keys
             info[:label] = label
             vault.set(info)
@@ -1228,7 +1228,7 @@ module Aspera
             vault.delete(label: options.get_next_argument('label'))
             return Main.result_status('Password deleted')
           when :password
-            raise 'Vault does not support password change' unless vault.respond_to?(:password=)
+            assert(vault.respond_to?(:password=)){'Vault does not support password change'}
             new_password = options.get_next_argument('new_password')
             vault.password = new_password
             vault.save

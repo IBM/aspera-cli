@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/fasp/parameters'
+require 'aspera/assert'
 
 module Aspera
   module Fasp
@@ -27,7 +28,7 @@ module Aspera
       end
       class << self
         def action_to_direction(tspec, command)
-          raise 'transfer spec must be a Hash' unless tspec.is_a?(Hash)
+          assert_type(tspec, Hash){'transfer spec'}
           tspec['direction'] = case command.to_sym
           when :upload then DIRECTION_SEND
           when :download then DIRECTION_RECEIVE
@@ -37,12 +38,13 @@ module Aspera
         end
 
         def action(tspec)
-          raise 'transfer spec must be a Hash' unless tspec.is_a?(Hash)
-          return case tspec['direction']
-                 when DIRECTION_SEND then :upload
-                 when DIRECTION_RECEIVE then :download
-                 else raise "Error: upload or download only, not #{tspec['direction']} (#{tspec['direction'].class})"
-                 end
+          assert_type(tspec, Hash){'transfer spec'}
+          assert_values(tspec['direction'], [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
+          case tspec['direction']
+          when DIRECTION_SEND then :upload
+          when DIRECTION_RECEIVE then :download
+          else error_unexpected_value(tspec['direction'])
+          end
         end
       end
     end

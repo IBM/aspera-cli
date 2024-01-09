@@ -2,6 +2,7 @@
 
 # cspell:ignore USERPROFILE HOMEDRIVE HOMEPATH LC_CTYPE msys aarch
 require 'aspera/log'
+require 'aspera/assert'
 require 'rbconfig'
 
 # cspell:words MEBI mswin bccwin
@@ -88,7 +89,7 @@ module Aspera
 
       # value is provided in block
       def write_file_restricted(path, force: false, mode: nil)
-        raise 'coding error, missing content block' unless block_given?
+        assert(block_given?, exception_class: Aspera::InternalError)
         if force || !File.exist?(path)
           # Windows may give error
           File.unlink(path) rescue nil

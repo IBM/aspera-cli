@@ -3,6 +3,7 @@
 require 'webrick'
 require 'webrick/https'
 require 'aspera/log'
+require 'aspera/assert'
 require 'openssl'
 
 module Aspera
@@ -52,7 +53,7 @@ module Aspera
         if certificate.nil?
           webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
         else
-          raise 'certificate must be Hash' unless certificate.is_a?(Hash)
+          assert_type(certificate, Hash)
           certificate = certificate.symbolize_keys
           raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|k|!CERT_PARAMETERS.include?(k)}
           webrick_options[:SSLPrivateKey] = if certificate.key?(:key)

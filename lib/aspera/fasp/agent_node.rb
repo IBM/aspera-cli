@@ -5,6 +5,7 @@ require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/node'
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/oauth'
 
 module Aspera
@@ -22,7 +23,7 @@ module Aspera
       # attr_writer :options
 
       def initialize(opts)
-        raise 'node specification must be Hash' unless opts.is_a?(Hash)
+        assert_type(opts, Hash){'node agent options'}
         super(opts)
         options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
         # root id is required for access key

@@ -12,6 +12,8 @@ require 'aspera/persistency_action_once'
 require 'aspera/open_application'
 require 'aspera/nagios'
 require 'aspera/id_generator'
+require 'aspera/log'
+require 'aspera/assert'
 require 'xmlsimple'
 require 'json'
 require 'cgi'
@@ -78,7 +80,7 @@ module Aspera
           # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
-            raise Cli::BadArgument, 'Public link does not match Faspex format' unless (m = public_uri.path.match(%r{^(.*)/(external.*)$}))
+            assert((m = public_uri.path.match(%r{^(.*)/(external.*)$})), exception_class: Cli::BadArgument){'Public link does not match Faspex format'}
             base = m[1]
             subpath = m[2]
             port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
@@ -159,9 +161,9 @@ module Aspera
           max_pages = nil
           result = []
           if !mailbox_query.nil?
-            raise 'query: must be Hash or nil' unless mailbox_query.is_a?(Hash)
-            raise "query: supported params: #{ATOM_EXT_PARAMS}" unless (mailbox_query.keys - ATOM_EXT_PARAMS).empty?
-            raise 'query: startIndex and page are exclusive' if mailbox_query.key?('startIndex') && mailbox_query.key?('page')
+            assert_type(mailbox_query, Hash){'query'}
+            assert((mailbox_query.keys - ATOM_EXT_PARAMS).empty?){"query: supported params: #{ATOM_EXT_PARAMS}"}
+            assert(!(mailbox_query.key?('startIndex') && mailbox_query.key?('page'))){'query: startIndex and page are exclusive'}
             max_items = mailbox_query[MAX_ITEMS]
             mailbox_query.delete(MAX_ITEMS)
             max_pages = mailbox_query[MAX_PAGES]
@@ -281,7 +283,7 @@ module Aspera
               }
             when :send
               delivery_info = options.get_option(:delivery_info, mandatory: true)
-              raise Cli::BadArgument, 'delivery_info must be hash, refer to doc' unless delivery_info.is_a?(Hash)
+              assert_type(delivery_info, Hash, exception_class: Cli::BadArgument){'delivery_info'}
               # actual parameter to faspex API
               package_create_params = {'delivery' => delivery_info}
               public_link_url = options.get_option(:link)
@@ -291,7 +293,7 @@ module Aspera
                 first_source = delivery_info['sources'].first
                 first_source['paths'].push(*transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
-                  raise Cli::BadArgument, 'only name as selector, or give id' unless field.eql?('name')
+                  assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
                   source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
                   self.class.get_source_id_by_name(value, source_list)
                 end
@@ -420,17 +422,17 @@ module Aspera
               return {type: :object_list, data: source_list}
             else # :info :node
               source_id = instance_identifier do |field, value|
-                raise Cli::BadArgument, 'only name as selector, or give id' unless field.eql?('name')
+                assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
               source_name = source_list.find{|i|i['id'].eql?(source_id)}['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
-              raise Cli::Error, 'storage option must be a Hash' unless source_hash.is_a?(Hash)
+              assert_type(source_hash, Hash, exception_class: Cli::Error){'storage option'}
               source_hash.each do |name, storage|
-                raise Cli::Error, "storage '#{name}' must be a Hash" unless storage.is_a?(Hash)
+                assert_type(storage, Hash, exception_class: Cli::Error){"storage '#{name}'"}
                 [KEY_NODE, KEY_PATH].each do |key|
-                  raise Cli::Error, "storage '#{name}' must have a '#{key}'" unless storage.key?(key)
+                  assert(storage.key?(key), exception_class: Cli::Error){"storage '#{name}' must have a '#{key}'"}
                 end
               end
               if !source_hash.key?(source_name)
@@ -443,8 +445,8 @@ module Aspera
                 return {data: source_info, type: :single_object}
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
-                raise Cli::Error, "bad type for: \"#{source_info[KEY_NODE]}\"" unless node_config.is_a?(Hash)
                 Log.log.debug{"node=#{node_config}"}
+                assert_type(node_config, Hash, exception_class: Cli::Error){source_info[KEY_NODE]}
                 api_node = Rest.new({
                   base_url: node_config['url'],
                   auth:     {

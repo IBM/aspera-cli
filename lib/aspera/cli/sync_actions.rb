@@ -45,9 +45,9 @@ module Aspera
               :sync_info,
               mandatory: false,
               default: {'sessions' => [{'name' => File.basename(simple_session_args['local_dir'])}]})
-            raise "sync_info shall be a Hash with key 'sessions' with Array of Hash: #{async_params}" unless async_params.is_a?(Hash) &&
-              async_params['sessions']&.is_a?(Array) &&
-              async_params['sessions'].first.is_a?(Hash)
+            assert_type(async_params, Hash){'sync_info'}
+            assert_type(async_params['sessions'], Array){'sync_info[sessions]'}
+            assert_type(async_params['sessions'].first, Hash){'sync_info[sessions][0]'}
             async_params['sessions'].first.merge!(simple_session_args)
           end
           Log.log.debug{Log.dump('async_params', async_params)}

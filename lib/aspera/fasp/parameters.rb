@@ -129,11 +129,11 @@ module Aspera
         @job_spec = job_spec
         # check necessary options
         missing_options = SUPPORTED_OPTIONS - options.keys
-        raise "Internal: missing options: #{missing_options.join(', ')}" unless missing_options.empty?
+        assert(missing_options.empty?){"missing options: #{missing_options.join(', ')}"}
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
         Log.log.debug{Log.dump(:parameters_options, @options)}
-        raise 'ascp arguments must be an Array' unless @options[:ascp_args].is_a?(Array)
-        raise 'ascp arguments must be an Array of String' if @options[:ascp_args].any?{|i|!i.is_a?(String)}
+        assert_type(@options[:ascp_args], Array){'ascp_args'}
+        assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
@@ -161,7 +161,7 @@ module Aspera
               Log.log.debug('placing source file list on command line (no file list file)')
               @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
             else
-              raise "All elements of paths must have a 'source' key" unless ts_paths_array.all?{|i|i.key?('source')}
+              assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
               is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
               raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
               # safer option: generate a file list file if there is storage defined for it

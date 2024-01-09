@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/environment'
 
 # search: persistency_folder PersistencyFolder
@@ -34,7 +35,7 @@ module Aspera
     end
 
     def put(object_id, value)
-      raise 'value: only String supported' unless value.is_a?(String)
+      assert_type(value, String)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug{"persistency saving: #{persist_filepath}"}
       FileUtils.rm_f(persist_filepath)
@@ -67,7 +68,7 @@ module Aspera
 
     # @param object_id String or Array
     def id_to_filepath(object_id)
-      raise 'object_id: only String supported' unless object_id.is_a?(String)
+      assert_type(object_id, String)
       FileUtils.mkdir_p(@folder)
       Environment.restrict_file_access(@folder)
       return File.join(@folder, "#{object_id}#{FILE_SUFFIX}")

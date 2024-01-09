@@ -2,6 +2,7 @@
 
 require 'singleton'
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   module Fasp
@@ -19,10 +20,10 @@ module Aspera
       def initialize(params=nil)
         @parameters = DEFAULTS.dup
         if !params.nil?
-          raise "expecting Hash (or nil), but have #{params.class}" unless params.is_a?(Hash)
+          assert_type(params, Hash)
           params.each do |k, v|
-            raise "unknown resume parameter: #{k}, expect one of #{DEFAULTS.keys.map(&:to_s).join(',')}" unless DEFAULTS.key?(k)
-            raise "#{k} must be Integer" unless v.is_a?(Integer)
+            assert_values(k, DEFAULTS.keys){'resume parameter'}
+            assert_type(v, Integer){k}
             @parameters[k] = v
           end
         end
@@ -32,7 +33,7 @@ module Aspera
       # calls block a number of times (resumes) until success or limit reached
       # this is re-entrant, one resumer can handle multiple transfers in //
       def execute_with_resume
-        raise 'block mandatory' unless block_given?
+        assert(block_given?)
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
         sleep_seconds = @parameters[:sleep_initial]

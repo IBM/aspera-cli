@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'xmlsimple'
@@ -10,9 +11,9 @@ module Aspera
     class << self
       def parameters_from_svc_credentials(service_credentials, bucket_region)
         # check necessary contents
-        raise 'service_credentials must be a Hash' unless service_credentials.is_a?(Hash)
+        assert_type(service_credentials, Hash){'service_credentials'}
         %w[apikey resource_instance_id endpoints].each do |field|
-          raise "service_credentials must have a field: #{field}" unless service_credentials.key?(field)
+          assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
         end
         Aspera::Log.dump('service_credentials', service_credentials)
         # read endpoints from service provided in service credentials

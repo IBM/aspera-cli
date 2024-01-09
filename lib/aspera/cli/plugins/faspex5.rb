@@ -177,7 +177,7 @@ module Aspera
         # if recipient is just an email, then convert to expected API hash : name and type
         def normalize_recipients(parameters)
           return unless parameters.key?('recipients')
-          raise 'Field recipients must be an Array' unless parameters['recipients'].is_a?(Array)
+          assert_type(parameters['recipients'], Array){'recipients'}
           recipient_types = RECIPIENT_TYPES
           if parameters.key?('recipient_types')
             recipient_types = parameters['recipient_types']
@@ -277,7 +277,7 @@ module Aspera
         # lookup an entity id from its name
         def lookup_entity_by_field(type:, value:, field: 'name', query: :default, real_path: nil, item_list_key: nil)
           if query.eql?(:default)
-            raise 'Default query is on name only' unless field.eql?('name')
+            assert(field.eql?('name')){'Default query is on name only'}
             query = {'q'=> value}
           end
           found = list_entities(type: type, real_path: real_path, query: query, item_list_key: item_list_key).select{|i|i[field].eql?(value)}
@@ -325,7 +325,7 @@ module Aspera
           packages = []
           case package_ids
           when PACKAGE_ALL_INIT
-            raise 'Only with option once_only' unless skip_ids_persistency
+            assert(skip_ids_persistency){'Only with option once_only'}
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
             skip_ids_persistency.save
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -339,8 +339,8 @@ module Aspera
           else
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)
-            raise 'Expecting a single package id or a list of ids' unless package_ids.is_a?(Array)
-            raise 'Package id shall be String' unless package_ids.all?(String)
+            assert_type(package_ids, Array){'Expecting a single package id or a list of ids'}
+            assert(package_ids.all?(String)){'Package id shall be String'}
             # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")[:data]}
             packages = package_ids.map{|pkg_id|{'id'=>pkg_id}}
           end
@@ -417,7 +417,8 @@ module Aspera
           when :delete
             ids = package_id
             ids = [ids] unless ids.is_a?(Array)
-            raise 'Package identifier must be a single id or an Array' unless ids.is_a?(Array) && ids.all?(String)
+            assert_type(ids, Array){'Package identifier'}
+            assert(ids.all?(String)){'Package id shall be String'}
             # API returns 204, empty on success
             @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
             return Main.result_status('Package(s) deleted')
@@ -653,7 +654,7 @@ module Aspera
             require 'aspera/faspex_postproc' # cspell:disable-line
             parameters = value_create_modify(command: command)
             parameters = parameters.symbolize_keys
-            raise 'Missing key: url' unless parameters.key?(:url)
+            assert(parameters.key?(:url)){'Missing key: url'}
             uri = URI.parse(parameters[:url])
             parameters[:processing] ||= {}
             parameters[:processing][:root] = uri.path

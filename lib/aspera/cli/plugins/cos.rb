@@ -3,6 +3,7 @@
 require 'aspera/cli/plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cos_node'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -30,8 +31,7 @@ module Aspera
             # get service credentials, Hash, e.g. @json:@file:...
             service_credentials = options.get_option(:service_credentials)
             storage_endpoint = options.get_option(:endpoint)
-            raise Cli::BadArgument, 'one of: endpoint or service_credentials is required' if service_credentials.nil? && storage_endpoint.nil?
-            raise Cli::BadArgument, 'endpoint and service_credentials are mutually exclusive' unless service_credentials.nil? || storage_endpoint.nil?
+            assert(service_credentials.nil? ^ storage_endpoint.nil?, exception_class: Cli::BadArgument){'endpoint and service_credentials are mutually exclusive'}
             if service_credentials.nil?
               service_api_key = options.get_option(:apikey, mandatory: true)
               instance_id = options.get_option(:crn, mandatory: true)

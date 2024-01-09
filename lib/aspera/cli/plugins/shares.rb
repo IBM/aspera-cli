@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/plugins/node'
-
+require 'aspera/assert'
 module Aspera
   module Cli
     module Plugins
@@ -131,7 +131,7 @@ module Aspera
               when :import # saml
                 return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
                   entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
-                  raise 'expecting Hash' unless entity_parameters.is_a?(Hash)
+                  assert_type(entity_parameters, Hash)
                   SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
                   entity_parameters.each_key do |p|
                     raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)

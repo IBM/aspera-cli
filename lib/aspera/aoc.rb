@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/rest'
 require 'aspera/hash_ext'
 require 'aspera/data_repository'
@@ -90,7 +91,7 @@ module Aspera
       def url_parts(uri)
         raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if uri.host.nil?
         parts = uri.host.split('.', 2)
-        raise "expecting a public FQDN for #{PRODUCT_NAME}" unless parts.length == 2
+        assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
         return parts
       end
 
@@ -223,19 +224,13 @@ module Aspera
     end
 
     def assert_public_link_types(expected)
-      raise "public link type is #{public_link['purpose']} but action requires one of #{expected.join(',')}" unless expected.include?(public_link['purpose'])
+      assert_values(public_link['purpose'], expected){"public link type"}
     end
 
     def additional_persistence_ids
       return [current_user_info['id']] if public_link.nil?
       return [] # TODO : public_link['id'] ?
     end
-
-    # def secret_finder=(secret_finder)
-    #  raise 'secret finder already set' unless @secret_finder.nil?
-    #  raise 'secret finder must have lookup_secret' unless secret_finder.respond_to?(:lookup_secret)
-    #  @secret_finder = secret_finder
-    # end
 
     # cached user information
     def current_user_info(exception: false)
@@ -320,7 +315,7 @@ module Aspera
     # @param package_info [Hash] created package information
     # @returns [Aspera::Node] a node API for access key
     def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Aspera::Node::SCOPE_USER, package_info: nil)
-      raise 'invalid type for node_id' unless node_id.is_a?(String)
+      assert_type(node_id, String)
       node_info = read("nodes/#{node_id}")[:data]
       if workspace_name.nil? && !workspace_id.nil?
         workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
@@ -367,16 +362,16 @@ module Aspera
         Log.log.debug('no metadata in shared inbox')
         return
       end
+      assert(pkg_data.key?('metadata')){"package requires metadata: #{meta_schema}"}
       pkg_meta = pkg_data['metadata']
-      raise "package requires metadata: #{meta_schema}" unless pkg_data.key?('metadata')
-      raise 'metadata must be an Array' unless pkg_meta.is_a?(Array)
+      assert_type(pkg_meta, Array){'metadata'}
       Log.log.debug{Log.dump(:metadata, pkg_meta)}
       pkg_meta.each do |field|
-        raise 'metadata field must be Hash' unless field.is_a?(Hash)
-        raise 'metadata field must have name' unless field.key?('name')
-        raise 'metadata field must have values' unless field.key?('values')
-        raise 'metadata values must be an Array' unless field['values'].is_a?(Array)
-        raise "unknown metadata field: #{field['name']}" if meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?
+        assert_type(field, Hash){'metadata field'}
+        assert(field.key?('name')){'metadata field must have name'}
+        assert(field.key?('values')){'metadata field must have values'}
+        assert_type(field['values'], Array){'metadata field values'}
+        assert(!meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?){"unknown metadata field: #{field['name']}"}
       end
       meta_schema.each do |field|
         provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}
@@ -393,15 +388,15 @@ module Aspera
     # @return nil package_data is modified
     def resolve_package_recipients(package_data, ws_id, recipient_list_field, new_user_option)
       return unless package_data.key?(recipient_list_field)
-      raise "#{recipient_list_field} must be an Array" unless package_data[recipient_list_field].is_a?(Array)
+      assert_type(package_data[recipient_list_field], Array){recipient_list_field}
       new_user_option = {'package_contact' => true} if new_user_option.nil?
-      raise 'new_user_option must be a Hash' unless new_user_option.is_a?(Hash)
+      assert_type(new_user_option, Hash){'new_user_option'}
       # list with resolved elements
       resolved_list = []
       package_data[recipient_list_field].each do |short_recipient_info|
         case short_recipient_info
         when Hash # native API information, check keys
-          raise "#{recipient_list_field} element shall have fields: id and type" unless short_recipient_info.keys.sort.eql?(%w[id type])
+          assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{recipient_list_field} element shall have fields: id and type"}
         when String # CLI helper: need to resolve provided name to type/id
           # email: user, else dropbox
           entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
@@ -587,7 +582,8 @@ module Aspera
     # @param app_info [Hash] hash with app info
     # @param types [Array] event types
     def permissions_send_event(created_data:, app_info:, types: PERMISSIONS_CREATED)
-      raise "INTERNAL: (assert) Invalid event types: #{types}" unless types.is_a?(Array) && !types.empty?
+      assert_type(types, Array)
+      assert(!types.empty?)
       event_creation = {
         'types'        => types,
         'node_id'      => app_info[:node_info]['id'],

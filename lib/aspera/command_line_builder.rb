@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/log'
+require 'aspera/assert'
 module Aspera
   # helper class to build command line from a parameter list (key-value hash)
   # constructor takes hash: { 'param1':'value1', ...}
@@ -27,20 +29,20 @@ module Aspera
       # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
       def normalize_description(full_description)
         full_description.each do |name, options|
-          raise "Expecting Hash, but have #{options.class} in #{name}" unless options.is_a?(Hash)
+          assert_type(options, Hash){name}
           unsupported_keys = options.keys - OPTIONS_KEYS
-          raise "Unsupported definition keys: #{unsupported_keys}" unless unsupported_keys.empty?
-          raise "Missing key: cli for #{name}" unless options.key?(:cli)
-          raise 'Key: cli must be Hash' unless options[:cli].is_a?(Hash)
-          raise 'Missing key: cli.type' unless options[:cli].key?(:type)
-          raise "Unsupported processing type for #{name}: #{options[:cli][:type]}" unless CLI_OPTION_TYPES.include?(options[:cli][:type])
+          assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
+          assert(options.key?(:cli)){"Missing key: cli for #{name}"}
+          assert_type(options[:cli], Hash){'Key: cli'}
+          assert(options[:cli].key?(:type)){'Missing key: cli.type'}
+          assert_values(options[:cli][:type], CLI_OPTION_TYPES){"Unsupported processing type for #{name}"}
           # by default : optional
           options[:mandatory] ||= false
           options[:desc] ||= ''
           options[:desc] = "DEPRECATED: #{options[:deprecation]}\n#{options[:desc]}" if options.key?(:deprecation)
           cli = options[:cli]
           unsupported_cli_keys = cli.keys - CLI_KEYS
-          raise "Unsupported cli keys: #{unsupported_cli_keys}" unless unsupported_cli_keys.empty?
+          assert(unsupported_cli_keys.empty?){"Unsupported cli keys: #{unsupported_cli_keys}"}
           # by default : string, unless it's without arg
           options[:accepted_types] ||= options[:cli][:type].eql?(:opt_without_arg) ? :bool : :string
           # single type is placed in array
@@ -159,7 +161,7 @@ module Aspera
       when :ignore, :special # ignore this parameter or process later
         return
       when :envvar # set in env var
-        raise 'error' unless options[:cli].key?(:variable)
+        assert(options[:cli].key?(:variable)){'missing key: cli.variable'}
         @result[:env][options[:cli][:variable]] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
         add_param = false

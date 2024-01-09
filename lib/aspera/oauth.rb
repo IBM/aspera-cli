@@ -3,6 +3,8 @@
 require 'aspera/open_application'
 require 'aspera/web_auth'
 require 'aspera/id_generator'
+require 'aspera/log'
+require 'aspera/assert'
 require 'base64'
 require 'date'
 require 'socket'
@@ -55,7 +57,7 @@ module Aspera
       end
 
       def bearer_extract(token)
-        raise 'not a bearer token, wrong prefix' unless bearer?(token)
+        assert(bearer?(token)){'not a bearer token, wrong prefix'}
         return token[BEARER_PREFIX.length..-1]
       end
 
@@ -106,26 +108,28 @@ module Aspera
       # @param id_create called to generate unique id for token, for cache
       def register_token_creator(id, lambda_create, id_create)
         Log.log.debug{"registering token creator #{id}"}
-        raise 'ERROR: requites Symbol and 2 lambdas' unless id.is_a?(Symbol) && lambda_create.is_a?(Proc) && id_create.is_a?(Proc)
+        assert_type(id, Symbol)
+        assert_type(lambda_create, Proc)
+        assert_type(id_create, Proc)
         @create_handlers[id] = lambda_create
         @id_handlers[id] = id_create
       end
 
       # @return one of the registered creators for the given create type
       def token_creator(id)
-        raise "token grant method unknown: '#{id}' (#{id.class})" unless @create_handlers.key?(id)
+        assert(@create_handlers.key?(id)){"token grant method unknown: '#{id}' (#{id.class})"}
         @create_handlers[id]
       end
 
       # list of identifiers found in creation parameters that can be used to uniquely identify the token
       def id_creator(id)
-        raise "id creator type unknown: #{id}/#{id.class}" unless @id_handlers.key?(id)
+        assert(@id_handlers.key?(id)){"id creator type unknown: #{id}/#{id.class}"}
         @id_handlers[id]
       end
     end # self
 
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    register_decoder lambda { |token| parts = token.split('.'); raise 'not aoc token' unless parts.length.eql?(3); JSON.parse(Base64.decode64(parts[1]))} # rubocop:disable Style/Semicolon, Layout/LineLength
+    register_decoder lambda { |token| parts = token.split('.'); assert(parts.length.eql?(3)){'not aoc token'}; JSON.parse(Base64.decode64(parts[1]))} # rubocop:disable Style/Semicolon, Layout/LineLength
 
     # generic token creation, parameters are provided in :generic
     register_token_creator :generic, lambda { |oauth|
@@ -152,7 +156,7 @@ module Aspera
       OpenApplication.instance.uri(login_page_url)
       # wait for code in request
       received_params = web_server.received_request
-      raise 'wrong received state' unless random_state.eql?(received_params['state'])
+      assert(random_state.eql?(received_params['state'])){'wrong received state'}
       # exchange code for token
       return oauth.create_token(oauth.optional_scope_client_id(add_secret: true).merge(
         grant_type:   'authorization_code',
@@ -169,7 +173,7 @@ module Aspera
       require 'jwt'
       seconds_since_epoch = Time.new.to_i
       Log.log.info{"seconds=#{seconds_since_epoch}"}
-      raise 'missing JWT payload' unless oauth.specific_parameters[:payload].is_a?(Hash)
+      assert(oauth.specific_parameters[:payload].is_a?(Hash)){'missing JWT payload'}
       jwt_payload = {
         exp: seconds_since_epoch + @@globals[:jwt_expiry_offset_sec], # expiration time
         nbf: seconds_since_epoch - @@globals[:jwt_accepted_offset_sec], # not before
@@ -215,8 +219,8 @@ module Aspera
       @specific_parameters = @generic_parameters[@generic_parameters[:grant_method]]
       if @generic_parameters[:grant_method].eql?(:web) && @specific_parameters.key?(:redirect_uri)
         uri = URI.parse(@specific_parameters[:redirect_uri])
-        raise 'redirect_uri scheme must be http or https' unless %w[http https].include?(uri.scheme)
-        raise 'redirect_uri must have a port' if uri.port.nil?
+        assert(%w[http https].include?(uri.scheme)){'redirect_uri scheme must be http or https'}
+        assert(!uri.port.nil?){'redirect_uri must have a port'}
         # TODO: we could check that host is localhost or local address
       end
       rest_params = {
@@ -321,7 +325,7 @@ module Aspera
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id, json_data)
       end # if ! in_cache
-      raise "API error: No such field in answer: #{@generic_parameters[:token_field]}" unless token_data.key?(@generic_parameters[:token_field])
+      assert(token_data.key?(@generic_parameters[:token_field])){"API error: No such field in answer: #{@generic_parameters[:token_field]}"}
       # ok we shall have a token here
       return self.class.bearer_build(token_data[@generic_parameters[:token_field]])
     end

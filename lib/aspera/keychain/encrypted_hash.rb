@@ -2,6 +2,8 @@
 
 require 'aspera/hash_ext'
 require 'aspera/environment'
+require 'aspera/log'
+require 'aspera/assert'
 require 'symmetric_encryption/core'
 require 'yaml'
 
@@ -14,7 +16,7 @@ module Aspera
       def initialize(path, current_password)
         @path = path
         self.password = current_password
-        raise 'path to vault file shall be String' unless @path.is_a?(String)
+        assert_type(@path, String){'path to vault file'}
         @all_secrets = File.exist?(@path) ? YAML.load_stream(@cipher.decrypt(File.read(@path))).first : {}
       end
 
@@ -32,10 +34,12 @@ module Aspera
       end
 
       def set(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
+        assert_type(options, Hash){'options'}
         unsupported = options.keys - CONTENT_KEYS
-        options.each_value {|v| raise 'value must be String' unless v.is_a?(String)}
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
+        options.each_value do |v|
+          assert_type(v, String){'value'}
+        end
+        assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         label = options.delete(:label)
         raise "secret #{label} already exist, delete first" if @all_secrets.key?(label)
         @all_secrets[label] = options.symbolize_keys
@@ -59,7 +63,7 @@ module Aspera
       end
 
       def get(label:, exception: true)
-        raise "Label not found: #{label}" unless @all_secrets.key?(label) || !exception
+        assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
         result = @all_secrets[label].clone
         result[:label] = label if result.is_a?(Hash)
         return result

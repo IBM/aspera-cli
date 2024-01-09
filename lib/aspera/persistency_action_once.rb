@@ -2,6 +2,7 @@
 
 require 'json'
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   # Persist data on file system
@@ -15,11 +16,11 @@ module Aspera
     # @param :merge    Optional  merge data from file to current data
     def initialize(options)
       Log.log.debug{"persistency: #{options}"}
-      raise 'options shall be Hash' unless options.is_a?(Hash)
-      raise 'mandatory :manager' if options[:manager].nil?
-      raise 'mandatory :data' if options[:data].nil?
-      raise 'mandatory :id (String)' unless options[:id].is_a?(String)
-      raise 'mandatory 1 element in :id' unless options[:id].length >= 1
+      assert_type(options, Hash)
+      assert(!options[:manager].nil?){'mandatory :manager'}
+      assert(!options[:data].nil?){'mandatory :data'}
+      assert_type(options[:id], String)
+      assert(options[:id].length >= 1){'mandatory 1 element in :id'}
       @manager = options[:manager]
       @persisted_object = options[:data]
       @object_id = options[:id]

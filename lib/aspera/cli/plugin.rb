@@ -34,11 +34,11 @@ module Aspera
       end
 
       def initialize(env)
-        raise 'env must be Hash' unless env.is_a?(Hash)
+        assert_type(env, Hash)
         @agents = env
         # check presence in descendant of mandatory method and constant
-        raise StandardError, "Missing method 'execute_action' in #{self.class}" unless respond_to?(:execute_action)
-        raise StandardError, 'ACTIONS shall be redefined by subclass' unless self.class.constants.include?(:ACTIONS)
+        assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
+        assert(self.class.constants.include?(:ACTIONS)){'ACTIONS shall be redefined by subclass'}
         # manual header for all plugins
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
@@ -240,10 +240,12 @@ module Aspera
           type = [type] unless type.is_a?(Array)
           assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
           if bulk
-            raise Cli::BadArgument, "Value must be an Array of #{type.join(',')}" unless value.is_a?(Array)
-            raise Cli::BadArgument, "Value must be: #{type.join(',')}, not #{value.map{|i| i.class.name}.uniq.join(',')}" unless value.all?{|v|type.include?(v.class)}
+            assert_type(value, Array, exception_class: Cli::BadArgument)
+            value.each do |v|
+              assert_values(v.class, type, exception_class: Cli::BadArgument)
+            end
           else
-            raise Cli::BadArgument, "Value must be: #{type.join(',')}, not #{value.class.name}" unless type.include?(value.class)
+            assert_values(value.class, type, exception_class: Cli::BadArgument)
           end
         end
         return value

@@ -5,13 +5,14 @@ require 'timeout'
 require 'English'
 require 'webrick'
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   # this class answers the Faspex /send API and creates a package on Aspera on Cloud
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
     ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds].freeze
     def initialize(server, parameters)
-      raise 'parameters must be Hash' unless parameters.is_a?(Hash)
+      assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
       Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
       raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{|k|!ALLOWED_PARAMETERS.include?(k)}

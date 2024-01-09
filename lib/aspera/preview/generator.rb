@@ -8,6 +8,8 @@ require 'open3'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
+require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   module Preview
@@ -52,7 +54,7 @@ module Aspera
         end
         @processing_method = @processing_method.to_sym
         Log.log.debug{"method: #{@processing_method}"}
-        raise "no processing know for #{conversion_type} -> #{@preview_format_sym}" unless respond_to?(@processing_method, true)
+        assert(respond_to?(@processing_method, true)){"no processing know for #{conversion_type} -> #{@preview_format_sym}"}
       end
 
       # create preview as specified in constructor
@@ -86,7 +88,7 @@ module Aspera
       # @param total_count of parts
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
-        raise 'duration must be Float' unless duration.is_a?(Float)
+        assert_type(duration, Float){'duration'}
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
       end
 
@@ -149,10 +151,10 @@ module Aspera
       # do a simple re-encoding
       def convert_video_to_mp4_using_reencode
         options = @options.reencode_ffmpeg
-        raise 'reencode_ffmpeg must be a Hash' unless options.is_a?(Hash)
+        assert_type(options, Hash){'reencode_ffmpeg'}
         options.each do |k, v|
-          raise "Key not supported: #{k}. Use keys: #{FFMPEG_OPTIONS_LIST.join(',')}" unless FFMPEG_OPTIONS_LIST.include?(k)
-          raise "Value for #{k} must be Array" unless v.is_a?(Array)
+          assert_values(k, FFMPEG_OPTIONS_LIST){'key'}
+          assert_type(v, Array){k}
         end
         Utils.ffmpeg(
           in_f: @source_file_path,

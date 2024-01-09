@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'aspera/log'
 require 'aspera/assert'
 module Aspera
@@ -11,7 +12,7 @@ module Aspera
           result = options.symbolize_keys
           available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
           result.each do |k, _v|
-            raise "Unknown transfer agent parameter: #{k}, expect one of #{available}" unless default.key?(k)
+            assert_values(k, default.keys){"transfer agent parameter: #{k}"}
             # check it is the expected type: too limiting, as we can have an Integer or Float, or symbol and string
             # raise "Invalid value for transfer agent parameter: #{k}, expect #{default[k].class.name}" unless default[k].nil? || v.is_a?(default[k].class)
           end
@@ -40,11 +41,11 @@ module Aspera
       private
 
       def initialize(options)
+        # method `shutdown` is optional
         assert(respond_to?(:start_transfer))
         assert(respond_to?(:wait_for_transfers_completion))
-        # method `shutdown` is optional
+        assert_type(options, Hash){'transfer agent options'}
         Log.log.debug{Log.dump(:agent_options, options)}
-        raise "transfer agent options expecting Hash, but have #{options.class}" unless options.is_a?(Hash)
         @progress = options[:progress]
         options.delete(:progress)
       end

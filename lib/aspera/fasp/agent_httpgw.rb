@@ -4,6 +4,7 @@ require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/fasp/faux_file'
 require 'aspera/log'
+require 'aspera/assert'
 require 'aspera/rest'
 require 'securerandom'
 require 'websocket'
@@ -185,7 +186,7 @@ module Aspera
         @ws_io.write(@ws_handshake.to_s)
         sleep(0.1)
         @ws_handshake << @ws_io.readuntil("\r\n\r\n")
-        raise 'Error in websocket handshake' unless @ws_handshake.finished?
+        assert(@ws_handshake.finished?){'Error in websocket handshake'}
         Log.log.debug{"#{LOG_WS_SEND}handshake success"}
         # start read thread after handshake
         @ws_read_thread = Thread.new {process_read_thread}
@@ -311,8 +312,8 @@ module Aspera
       # HTTP download only supports file list
       def start_transfer(transfer_spec, token_regenerator: nil)
         raise 'GW URL must be set' if @gw_api.nil?
-        raise 'paths: must be Array' unless transfer_spec['paths'].is_a?(Array)
-        raise 'only token based transfer is supported in GW' unless transfer_spec['token'].is_a?(String)
+        assert_type(transfer_spec['paths'], Array){'paths'}
+        assert_type(transfer_spec['token'], String){'only token based transfer is supported in GW'}
         Log.log.debug{Log.dump(:user_spec, transfer_spec)}
         transfer_spec['authentication'] ||= 'token'
         case transfer_spec['direction']

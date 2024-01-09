@@ -4,6 +4,7 @@
 require 'aspera/uri_reader'
 require 'aspera/environment'
 require 'aspera/log'
+require 'aspera/assert'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -76,7 +77,7 @@ module Aspera
       # add a new handler
       def set_handler(name, method)
         Log.log.debug{"setting handler for #{name}"}
-        raise 'name must be Symbol' unless name.is_a?(Symbol)
+        assert_type(name, Symbol){'name'}
         @handlers[name] = method
       end
 

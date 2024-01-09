@@ -150,8 +150,9 @@ module Aspera
           end
           ssh_key_list = options.get_option(:ssh_keys)
           if !ssh_key_list.nil?
-            raise 'Expecting single value or array for ssh_keys' unless ssh_key_list.is_a?(Array) || ssh_key_list.is_a?(String)
             ssh_key_list = [ssh_key_list] if ssh_key_list.is_a?(String)
+            assert_type(ssh_key_list, Array){'ssh_keys'}
+            assert(ssh_key_list.all?(String))
             ssh_key_list.map!{|p|File.expand_path(p)}
             Log.log.debug{"SSH keys=#{ssh_key_list}"}
             if !ssh_key_list.empty?

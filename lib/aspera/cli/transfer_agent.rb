@@ -3,6 +3,8 @@
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/cli/info'
+require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   module Cli
@@ -66,7 +68,7 @@ module Aspera
 
       # multiple option are merged
       def option_transfer_spec=(value)
-        raise 'option ts shall be a Hash' unless value.is_a?(Hash)
+        assert_type(value, Hash){'ts'}
         @transfer_spec_command_line.deep_merge!(value)
       end
 
@@ -188,7 +190,7 @@ module Aspera
           # when providing a list, just specify source
           @transfer_paths = file_list.map{|i|{'source' => i}}
         when :pair
-          raise Cli::BadArgument, "When using pair, provide an even number of paths: #{file_list.length}" unless file_list.length.even?
+          assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
           @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
         else raise 'Unsupported src_type'
         end
@@ -201,7 +203,7 @@ module Aspera
       # @param rest_token [Rest] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
-        raise 'transfer_spec must be Hash' unless transfer_spec.is_a?(Hash)
+        assert_type(transfer_spec, Hash){'transfer_spec'}
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE

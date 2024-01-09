@@ -20,7 +20,7 @@ module Aspera
 
       # General method
       def flatten(something)
-        raise 'only Hash' unless something.is_a?(Hash)
+        assert_type(something, Hash)
         @result = {}
         flatten_any(something, '')
         return @result

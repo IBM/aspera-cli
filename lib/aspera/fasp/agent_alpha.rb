@@ -2,6 +2,7 @@
 
 require 'aspera/fasp/agent_base'
 require 'aspera/rest'
+require 'aspera/log'
 require 'aspera/json_rpc'
 require 'aspera/open_application'
 require 'securerandom'

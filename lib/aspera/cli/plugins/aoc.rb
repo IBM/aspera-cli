@@ -119,7 +119,7 @@ module Aspera
             end
             myself = object.aoc_api.read('self')[:data]
             if auto_set_pub_key
-              raise Cli::Error, 'Public key is already set in profile (use --override=yes)' unless myself['public_key'].empty? || option_override
+              assert(myself['public_key'].empty?, exception_class: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
               formatter.display_status('Updating profile with the public key.')
               aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
             end
@@ -210,7 +210,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
-            raise Cli::BadArgument, 'only selection by name is supported' unless field.eql?('name')
+            assert(field.eql?('name'), exception_class: Cli::BadArgument){'only selection by name is supported'}
             aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
         end
@@ -223,7 +223,7 @@ module Aspera
         # Use paging if necessary to get all results
         # @return [Hash] {list: , total: }
         def read_with_paging(resource_class_path, base_query)
-          raise 'Query must be Hash' unless base_query.is_a?(Hash)
+          assert_type(base_query, Hash){'query'}
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           base_query['per_page'] = 1000 unless base_query.key?('per_page')
           max_items = base_query.delete(MAX_ITEMS)
@@ -627,7 +627,7 @@ module Aspera
               end
               if ExtendedValue::ALL.eql?(ids_to_download)
                 query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
-                raise 'option query must be Hash' unless query.is_a?(Hash)
+                assert_type(query, Hash){'query'}
                 if query.key?('dropbox_name')
                   # convenience: specify name instead of id
                   raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
@@ -675,7 +675,7 @@ module Aspera
             when :list
               display_fields = %w[id name bytes_transferred]
               query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
-              raise 'option query must be Hash' unless query.is_a?(Hash)
+              assert_type(query, Hash){'query'}
               if query.key?('dropbox_name')
                 # convenience: specify name instead of id
                 raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
@@ -691,7 +691,7 @@ module Aspera
               return {type: :object_list, data: packages, fields: display_fields}
             when :delete
               return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
-                raise 'expecting String identifier' unless id.is_a?(String) || id.is_a?(Integer)
+                assert_values(id.class, [String, Integer]){'identifier'}
                 aoc_api.delete("packages/#{id}")[:data]
               end
             when *Node::NODE4_READ_ACTIONS

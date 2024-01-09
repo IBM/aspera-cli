@@ -59,7 +59,7 @@ module Aspera
       # build URI from URL and parameters and check it is http or https
       def build_uri(url, params=nil)
         uri = URI.parse(url)
-        raise "REST endpoint shall be http/s not #{uri.scheme}" unless %w[http https].include?(uri.scheme)
+        assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
         return uri if params.nil?
         Log.log.debug{Log.dump('params', params)}
         assert_type(params, Hash)
@@ -104,17 +104,17 @@ module Aspera
       # little hack, handy because HTTP debug, proxy, etc... will be available
       # used implement web sockets after `start_http_session`
       def io_http_session(http_session)
-        raise "wring type #{http_session.class}" unless http_session.is_a?(Net::HTTP)
+        assert_type(http_session, Net::HTTP)
         # Net::BufferedIO in net/protocol.rb
         result = http_session.instance_variable_get(:@socket)
-        raise "no socket for #{http_session}" if result.nil?
+        assert(!result.nil?){"no socket for #{http_session}"}
         return result
       end
 
       # set global parameters
       def set_parameters(**options)
         options.each do |key, value|
-          raise "ERROR: unknown Rest option #{key}" unless @@global.key?(key)
+          assert(@@global.key?(key)){"unknown Rest option #{key}"}
           @@global[key] = value
         end
       end
@@ -141,7 +141,7 @@ module Aspera
 
     def oauth
       if @oauth.nil?
-        raise 'ERROR: no OAuth defined' unless @params[:auth][:type].eql?(:oauth2)
+        assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
         @oauth = Oauth.new(@params[:auth])
       end
       return @oauth
@@ -149,8 +149,8 @@ module Aspera
 
     # @param a_rest_params [Hash] default call parameters (merged at call)
     def initialize(a_rest_params)
-      raise 'ERROR: expecting Hash' unless a_rest_params.is_a?(Hash)
-      raise 'ERROR: expecting base_url' unless a_rest_params[:base_url].is_a?(String)
+      assert_type(a_rest_params, Hash)
+      assert_type(a_rest_params[:base_url], String)
       @params = a_rest_params.clone
       Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
@@ -164,7 +164,7 @@ module Aspera
     end
 
     def oauth_token(force_refresh: false)
-      raise "ERROR: expecting boolean, have #{force_refresh}" unless [true, false].include?(force_refresh)
+      assert_values(force_refresh, [true, false])
       return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
@@ -228,7 +228,7 @@ module Aspera
     # :url_query  [:url] a hash
     # :*          [:oauth2] see Oauth class
     def call(call_data)
-      raise "Hash call parameter is required (#{call_data.class})" unless call_data.is_a?(Hash)
+      assert_type(call_data, Hash)
       call_data[:subpath] = '' if call_data[:subpath].nil?
       Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
@@ -333,7 +333,7 @@ module Aspera
           # special case: relative redirect
           if URI.parse(new_url).host.nil?
             # we don't manage relative redirects with non-absolute path
-            raise "Error: redirect location is relative: #{new_url}, but does not start with /." unless new_url.start_with?('/')
+            assert(new_url.start_with?('/')){"redirect location is relative: #{new_url}, but does not start with /."}
             new_url = current_uri.scheme + '://' + current_uri.host + new_url
           end
           Log.log.info{"URL is moved: #{new_url}"}

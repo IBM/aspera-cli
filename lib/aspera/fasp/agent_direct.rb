@@ -8,6 +8,7 @@ require 'aspera/fasp/resume_policy'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/fasp/management'
 require 'aspera/log'
+require 'aspera/assert'
 require 'socket'
 require 'securerandom'
 require 'shellwords'
@@ -193,8 +194,8 @@ module Aspera
       # @param session this session information
       # could be private method
       def start_transfer_with_args_env(env_args, session)
-        raise 'env_args must be Hash' unless env_args.is_a?(Hash)
-        raise 'session must be Hash' unless session.is_a?(Hash)
+        assert_type(env_args, Hash)
+        assert_type(session, Hash)
         begin
           Log.log.debug{"env_args=#{env_args.inspect}"}
           notify_progress(session_id: nil, type: :pre_start, info: 'starting')
@@ -226,7 +227,7 @@ module Aspera
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           readable, _, _ = IO.select([mgt_server], nil, nil, @options[:spawn_timeout_sec])
           Log.log.debug('after select, before accept')
-          raise Fasp::Error, 'timeout waiting mgt port connect (select not readable)' unless readable
+          assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
           # There is a connection to accept
           client_socket, _client_addrinfo = mgt_server.accept
           Log.log.debug('after accept')

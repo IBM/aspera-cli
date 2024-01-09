@@ -113,11 +113,11 @@ module Aspera
         }
         if sync_params.key?('local')
           # async native JSON format (v2)
-          raise StandardError, 'remote must be Hash' unless sync_params['remote'].is_a?(Hash)
+          assert_type(sync_params['remote'], Hash)
           if block
             transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], sync_params['remote']['path'])
             # async native JSON format
-            raise StandardError, 'sync parameter "local" must be Hash' unless sync_params['local'].is_a?(Hash)
+            assert_type(sync_params['local'], Hash)
             TS_TO_PARAMS_V2.each do |ts_param, sy_path|
               next unless transfer_spec.key?(ts_param)
               sy_dig = sy_path.split('.')
@@ -148,19 +148,18 @@ module Aspera
           end
           raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
             sync_params.keys.push('instance').uniq.sort.eql?(PARAMS_VX_KEYS)
-          raise StandardError, 'sessions key must be Array' unless sync_params['sessions'].is_a?(Array)
-          raise StandardError, 'sessions key requires at least one Hash' unless sync_params['sessions'].first.is_a?(Hash)
-
+          assert_type(sync_params['sessions'], Array)
+          assert_type(sync_params['sessions'].first, Hash)
           if sync_params.key?('instance')
-            raise StandardError, 'instance key must be Hash' unless sync_params['instance'].is_a?(Hash)
+            assert_type(sync_params['instance'], Hash)
             instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
             instance_builder.process_params
             instance_builder.add_env_args(env_args)
           end
 
           sync_params['sessions'].each do |session_params|
-            raise StandardError, 'sessions must contain hashes' unless session_params.is_a?(Hash)
-            raise StandardError, 'session must contain at least name' unless session_params.key?('name')
+            assert_type(session_params, Hash)
+            assert(session_params.key?('name')){'session must contain at least name'}
             session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
             session_builder.process_params
             session_builder.add_env_args(env_args)
@@ -184,8 +183,8 @@ module Aspera
       def admin_status(sync_params, session_name)
         command_line = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
         if sync_params.key?('local')
-          raise 'Missing session name' if sync_params['name'].nil?
-          raise 'Session not found' unless session_name.nil? || session_name.eql?(sync_params['name'])
+          assert(!sync_params['name'].nil?){'Missing session name'}
+          assert(session_name.nil? || session_name.eql?(sync_params['name'])){'Session not found'}
           command_line.push("--name=#{sync_params['name']}")
           if sync_params.key?('local_db_dir')
             command_line.push("--local-db-dir=#{sync_params['local_db_dir']}")

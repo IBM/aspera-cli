@@ -2,6 +2,8 @@
 
 # https://github.com/fastlane-community/security
 require 'aspera/cli/info'
+require 'aspera/log'
+require 'aspera/assert'
 
 # enhance the gem to support other key chains
 module Aspera
@@ -36,7 +38,7 @@ module Aspera
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
-              raise 'only https' unless uri.scheme.eql?('https')
+              assert(uri.scheme.eql?('https')){'only https'}
               options[:protocol] = 'htps' # cspell: disable-line
               raise 'host required in URL' if uri.host.nil?
               options[:server] = uri.host
@@ -45,7 +47,7 @@ module Aspera
             end
             cmd = ['security', command]
             options&.each do |k, v|
-              raise "unknown option: #{k}" unless supported.key?(k)
+              assert(supported.key?(k)){"unknown option: #{k}"}
               next if v.nil?
               cmd.push("-#{supported[k]}")
               cmd.push(v.shellescape) unless v.empty?
@@ -70,7 +72,7 @@ module Aspera
           end
 
           def list(options={})
-            raise ArgumentError, "Invalid domain #{options[:domain]}, expected one of: #{DOMAINS}" unless options[:domain].nil? || DOMAINS.include?(options[:domain])
+            assert_values(options[:domain], DOMAINS, exception_class: ArgumentError){'domain'} unless options[:domain].nil?
             key_chains(execute('list-key_chains', options, LIST_OPTIONS))
           end
 
@@ -89,11 +91,11 @@ module Aspera
         end
 
         def password(operation, pass_type, options)
-          raise "wrong operation: #{operation}" unless %i[add find delete].include?(operation)
-          raise "wrong pass_type: #{pass_type}" unless %i[generic internet].include?(pass_type)
-          raise 'options shall be Hash' unless options.is_a?(Hash)
+          assert_values(operation, %i[add find delete]){'operation'}
+          assert_values(pass_type, %i[generic internet]){'pass_type'}
+          assert_type(options, Hash)
           missing = (operation.eql?(:add) ? %i[account service password] : %i[label]) - options.keys
-          raise "missing options: #{missing}" unless missing.empty?
+          assert(missing.empty?){"missing options: #{missing}"}
           options[:getpass] = '' if operation.eql?(:find)
           output = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path)
           raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
@@ -127,18 +129,18 @@ module Aspera
       end
 
       def set(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
+        assert_type(options, Hash){'options'}
         unsupported = options.keys - %i[label username password url description]
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
+        assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         @keychain.password(
           :add, :generic, service: options[:label],
           account: options[:username] || 'none', password: options[:password], comment: options[:description])
       end
 
       def get(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
+        assert_type(options, Hash){'options'}
         unsupported = options.keys - %i[label]
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
+        assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         info = @keychain.password(:find, :generic, label: options[:label])
         raise 'not found' if info.nil?
         result = options.clone
@@ -153,9 +155,9 @@ module Aspera
       end
 
       def delete(options)
-        raise 'options shall be Hash' unless options.is_a?(Hash)
+        assert_type(options, Hash){'options'}
         unsupported = options.keys - %i[label]
-        raise "unsupported options: #{unsupported}" unless unsupported.empty?
+        assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         raise 'delete not implemented, use macos keychain app'
       end
     end

@@ -4932,6 +4932,7 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 
 ```bash
 server browse /
+server browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=$aspera_key_path
 server browse my_inside_folder/test_file.bin
 server browse my_upload_folder/target_hot
 server cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
