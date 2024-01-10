@@ -68,7 +68,7 @@ module Aspera
           case transfer_spec['direction']
           when Fasp::TransferSpec::DIRECTION_SEND then transfer_spec['source_root_id'] = @root_id
           when Fasp::TransferSpec::DIRECTION_RECEIVE then transfer_spec['destination_root_id'] = @root_id
-          else raise "unexpected direction in ts: #{transfer_spec['direction']}"
+          else error_unexpected_value(transfer_spec['direction'])
           end
         end
         # manage special additional parameter

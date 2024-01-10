@@ -2,6 +2,7 @@
 # Integration tests
 # cspell:ignoreRegExp /[^a-z]t[a-z]+/     # test case name
 # cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/ # test case name
+# cspell:ignoreRegExp /\$\(DIR_TMP\)[a-z_0-9]+/ # temp file
 # cspell:ignoreRegExp / -r[a-z]+ /        # ruby require
 # cspell:ignore ifeq killall
 # cspell:ignore workgroups pubkey
@@ -15,17 +16,17 @@ include $(DIR_TOP)common.mak
 T=$(DIR_TMP)t/
 
 # test group: principal
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tshares tfaspex tconsole tnode taoc tserver torc tnsync tnsyncs tconfig tats tcos tf5 tprev
+all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tconfig tfaspex tconsole tf5 tshares tnode taoc tserver torc tnsync tnsyncs tats tcos tprev
 
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
 use_rmagick: $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
 use_grpc: $(T)serv_upload4
-use_mimemmagic: $(T)prev_dcm_mm
+use_mimemagic: $(T)prev_dcm_mm
 
 # test group: require optional gems
-optional: use_rmagick use_grpc use_mimemmagic
+optional: use_rmagick use_grpc use_mimemagic
 
 # all tests, including interactive ones
 full: all interactive optional
@@ -559,12 +560,14 @@ $(T)nd_ak_bearer: $(T).exists
 	@$(STOP_TEST) $@
 tndak: $(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4 $(T)nd_ak_bearer
 tnode: $(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd8 tndak
-
-$(T)aocfxgw: $(T).exists
+$(DIR_TMP)pid_aocfxgw: $(T).exists
+	$(EXE_MAN) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw https://localhost:12345/aspera/faspex &
+	while ! test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
+$(T)aocfxgw: $(DIR_TMP)pid_aocfxgw
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
 	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	kill -INT $$(cat $(DIR_TMP)server_pid)
+	kill -INT $$(cat $(DIR_TMP)pid_aocfxgw)
+	while test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
 	@$(STOP_TEST) $@
 $(T)aocg1: $(T).exists
 	@$(START_TEST) $@
@@ -847,6 +850,11 @@ $(T)aoc15: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=@preset:misc.email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@$(STOP_TEST) $@
+$(T)aoc16: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers users --once_only=yes
+#	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers nodes
+	@$(STOP_TEST) $@
 $(T)aocarself: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin res self show
@@ -875,7 +883,7 @@ $(T)aoccltreg: $(T).exists
 	$(EXE_NO_MAN) --preset=aoc_admin aoc admin res client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)client_reg_id
 	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token delete $$(cat $(DIR_TMP)client_reg_id)
 	@$(STOP_TEST) $@
-taocadm: $(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aocarself $(T)aoccltreg
+taocadm: $(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aocarself $(T)aoccltreg
 $(T)aocat4: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc admin ats cluster list
@@ -1306,6 +1314,7 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @base64:SGVsbG8gV29ybGQK
 	$(EXE_MAN) config echo @list:,1,2,3
 	$(EXE_MAN) config echo @env:USER
+	$(EXE_MAN) config echo -- --special-string
 	$(EXE_BEG_ERR) config echo @val:@file:no_such_file$(EXE_END_ERR)
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
@@ -1532,17 +1541,25 @@ $(T)f5_wizard: $(T).exists
 	$(EXE_MAN) -N config detect @preset:faspex5_user.url
 	$(EXE_NO_MAN) config detect @preset:faspex5_user.url
 	@$(STOP_TEST) $@
-$(T)f5_fxgw: $(T).exists
+$(DIR_TMP)pid_f5_fxgw: $(T).exists
+	$(EXE_MAN) faspex5 gateway --pid-file=$(DIR_TMP)pid_f5_fxgw https://localhost:12346/aspera/faspex &
+	while ! test -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;done
+$(T)f5_fxgw: $(DIR_TMP)pid_f5_fxgw
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 gateway --pid-file=$(DIR_TMP)server_pid https://localhost:12345/aspera/faspex & sleep 4
-	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway faspex 5"}' 'faux:///test1?1m'
-	sleep 3
-	kill -USR1 $$(cat $(DIR_TMP)server_pid)
+	$(EXE_NO_MAN) -N faspex --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
+	kill -INT $$(cat $(DIR_TMP)pid_f5_fxgw)
+	while test -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;done
 	@$(STOP_TEST) $@
-$(T)f5_postproc: $(T).exists
+$(DIR_TMP)pid_f5_postproc: $(T).exists
+	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"$(DIR_TST)"}}' &
+	while ! test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
+$(T)f5_postproc: $(DIR_TMP)pid_f5_postproc
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)server_pid @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"}}' & sleep 10
-	kill -INT $$(cat $(DIR_TMP)server_pid)
+	$(EXE_NO_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_inbox_name@"]}' 'faux:///test1?1m'
+	curl -k https://localhost:8443/domain/post_proc_test.sh -d '{}'
+	curl -k https://localhost:8443/wrong -d '{}'
+	kill -INT $$(cat $(DIR_TMP)pid_f5_postproc)
+	while test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
 	@$(STOP_TEST) $@
 
 tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc

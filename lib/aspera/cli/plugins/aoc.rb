@@ -412,9 +412,13 @@ module Aspera
                 start_date_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: saved_date,
-                  ids: IdGenerator.from_list(['aoc_ana_date', options.get_option(:url, mandatory: true), aoc_api.context[:workspace_name]].push(
+                  id: IdGenerator.from_list([
+                    'aoc_ana_date',
+                    options.get_option(:url, mandatory: true),
+                    aoc_api.context(:files)[:workspace_name],
                     filter_resource.to_s,
-                    filter_id)))
+                    filter_id
+                  ]))
                 start_date_time = saved_date.first
                 stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
                 # Log.log().error("start: #{start_date_time}")
@@ -512,12 +516,13 @@ module Aspera
               return Main.result_success
             when :do
               command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
-              aoc_api.context(:none)
+              # init context
+              aoc_api.context(:files)
               return execute_nodegen4_command(command_repo, res_id)
-            else raise 'unknown command'
+            else error_unexpected_value(command)
             end
           when :usage_reports
-            return {type: :object_list, data: aoc_api.read('usage_reports', {workspace_id: aoc_api.context(:none)[:workspace_id]})[:data]}
+            return {type: :object_list, data: aoc_api.read('usage_reports', {workspace_id: aoc_api.context(:files)[:workspace_id]})[:data]}
           end
         end
 
@@ -558,7 +563,7 @@ module Aspera
               when :list
                 return {type: :object_list, data: aoc_api.read('workspaces')[:data], fields: %w[id name]}
               when :current
-                return { type: :single_object, data: aoc_api.read("workspaces/#{aoc_api.context(:none)[:workspace_id]}")[:data] }
+                return { type: :single_object, data: aoc_api.read("workspaces/#{aoc_api.context(:files)[:workspace_id]}")[:data] }
               end
             when :profile
               case options.get_next_command(%i[show modify])
@@ -847,7 +852,7 @@ module Aspera
             url = value_create_modify(command: command, type: String)
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
-            server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.context(:none)[:workspace_id])
+            server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.context(:files)[:workspace_id])
             trap('INT') { server.shutdown }
             formatter.display_status("Faspex 4 gateway listening on #{url}")
             Log.log.info("Listening on #{url}")

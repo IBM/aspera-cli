@@ -137,7 +137,7 @@ module Aspera
         case direction.to_s
         when Fasp::TransferSpec::DIRECTION_SEND then dest_folder = '/'
         when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder = '.'
-        else raise "wrong direction: #{direction}"
+        else error_unexpected_value(direction)
         end
         return dest_folder
       end
@@ -185,14 +185,15 @@ module Aspera
         if !@transfer_paths.nil?
           Log.log.warn('--sources overrides paths from --ts')
         end
-        case @opt_mgr.get_option(:src_type, mandatory: true)
+        source_type=@opt_mgr.get_option(:src_type, mandatory: true)
+        case source_type
         when :list
           # when providing a list, just specify source
           @transfer_paths = file_list.map{|i|{'source' => i}}
         when :pair
           assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
           @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
-        else raise 'Unsupported src_type'
+        else error_unexpected_value(source_type)
         end
         Log.log.debug{"paths=#{@transfer_paths}"}
         return @transfer_paths

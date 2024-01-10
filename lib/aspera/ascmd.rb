@@ -2,6 +2,7 @@
 
 # cspell:ignore ascmd smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist codeset lc_ctype ascmdtypes
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   # Run +ascmd+ commands using specified executor (usually, remotely on transfer node)
@@ -52,7 +53,7 @@ module Aspera
         end
       end
       # for info, second overrides first, so restore it
-      case result.keys.length; when 0 then result = system_info; when 1 then result = result[result.keys.first]; else raise 'error'; end
+      case result.keys.length; when 0 then result = system_info; when 1 then result = result[result.keys.first]; else error_unexpected_value(result.keys.length); end
       # raise error as exception
       raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
         result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
@@ -173,7 +174,7 @@ module Aspera
               end
             end
           end
-        else raise "error: unknown decode:#{type_descr[:decode]}"
+        else error_unexpected_value(type_descr[:decode])
         end # is_a
         return result
       end

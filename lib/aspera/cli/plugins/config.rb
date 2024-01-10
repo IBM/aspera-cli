@@ -515,11 +515,10 @@ module Aspera
         end
 
         def option_plugin_folder=(value)
-          case value
-          when String then add_plugin_lookup_folder(value)
-          when Array then value.each{|f|add_plugin_lookup_folder(f)}
-          else raise "folder shall be Array or String, not #{value.class}"
-          end
+          assert_values(value.class, [String, Array]){'plugin folder'}
+          value = [value] if value.is_a?(String)
+          assert(value.all?(String)){'plugin folder'}
+          value.each{|f|add_plugin_lookup_folder(f)}
         end
 
         def option_plugin_folder

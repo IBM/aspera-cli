@@ -248,7 +248,7 @@ module Aspera
         call_data[:auth][:url_query].each do |key, value|
           call_data[:url_params][key] = value
         end
-      else raise "unsupported auth type: [#{call_data[:auth][:type]}]"
+      else error_unexpected_value(call_data[:auth][:type])
       end
       req = build_request(call_data)
       Log.log.debug{"call_data = #{call_data}"}

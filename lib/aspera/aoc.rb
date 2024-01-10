@@ -34,7 +34,7 @@ module Aspera
     MAX_AOC_URL_REDIRECT = 10
     CLIENT_ID_PREFIX = 'aspera.'
     # Well-known AoC globals client apps
-    GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.start_with?(CLIENT_ID_PREFIX)}.freeze
+    GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
     # cookie prefix so that console can decode identity
     COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
     # path in URL of public links
@@ -159,6 +159,7 @@ module Aspera
       @workspace_name = workspace
       @cache_user_info = nil
       @cache_url_token_info = nil
+      @context_cache = nil
       # init rest params
       aoc_rest_p = {auth: {type: :oauth2}}
       # shortcut to auth section
@@ -210,7 +211,7 @@ module Aspera
         aoc_auth_p[:aoc_pub_link][:json][:password] = password unless password.nil?
         # basic auth required for /token
         aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
-      else raise "ERROR: unsupported auth method: #{aoc_auth_p[:grant_method]}"
+      else error_unexpected_value(aoc_auth_p[:grant_method])
       end
       super(aoc_rest_p)
     end
@@ -224,7 +225,7 @@ module Aspera
     end
 
     def assert_public_link_types(expected)
-      assert_values(public_link['purpose'], expected){"public link type"}
+      assert_values(public_link['purpose'], expected){'public link type'}
     end
 
     def additional_persistence_ids
@@ -252,7 +253,8 @@ module Aspera
     # @return [Hash] current context information: workspace, and home node/file if app is "Files"
     def context(application = nil)
       return @context_cache unless @context_cache.nil?
-      raise 'context must be initialized with application' if application.nil?
+      assert(!application.nil?){'application must be set once'}
+      assert_values(application, %i[files packages])
       ws_id =
         if !public_link.nil?
           Log.log.debug('Using workspace of public link')
@@ -442,7 +444,7 @@ module Aspera
           })
         end
         pkg_data['metadata'] = api_meta
-      else raise "metadata field if not of expected type: #{pkg_meta.class}"
+      else error_unexpected_value(pkg_meta.class)
       end
       return nil
     end

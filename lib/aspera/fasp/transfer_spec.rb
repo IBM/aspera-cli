@@ -32,7 +32,7 @@ module Aspera
           tspec['direction'] = case command.to_sym
           when :upload then DIRECTION_SEND
           when :download then DIRECTION_RECEIVE
-          else raise 'Error: upload or download only'
+          else error_unexpected_value(command.to_sym)
           end
           return tspec
         end

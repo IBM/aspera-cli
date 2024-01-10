@@ -123,7 +123,7 @@ module Aspera
         when :hash then Hash
         when :int then Integer
         when :bool then [TrueClass, FalseClass]
-        else raise "INTERNAL: unexpected value: #{type_symbol}"
+        else error_unexpected_value(type_symbol)
         end
       end.flatten
       # check that value is of expected type
@@ -152,7 +152,7 @@ module Aspera
         raise Fasp::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
         parameter_value = converted_value
       when NilClass
-      else raise "not expected type for convert #{options[:cli][:convert].class} for #{name}"
+      else error_unexpected_value(options[:cli][:convert].class)
       end
 
       case processing_type
@@ -168,7 +168,7 @@ module Aspera
         case parameter_value
         when false then nil # nothing to put on command line, no creation by default
         when true then add_param = true
-        else raise Fasp::Error, "unsupported #{name}: #{parameter_value}"
+        else error_unexpected_value(parameter_value){name}
         end
         add_param = !add_param if options[:add_on_false]
         add_command_line_options([options[:cli][:switch]]) if add_param

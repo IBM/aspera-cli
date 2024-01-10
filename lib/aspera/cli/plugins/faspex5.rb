@@ -170,7 +170,7 @@ module Aspera
                   headers:         {typ: 'JWT'}
                 }
               }})
-          else raise 'Unexpected case for option: auth'
+          else error_unexpected_value(auth_type)
           end
         end
 

@@ -51,7 +51,7 @@ module Aspera
           end
           return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
         when NilClass then return ->(_){true}
-        else raise Cli::BadArgument, "Invalid match expression type: #{match_expression.class}"
+        else error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
         end
       end
 

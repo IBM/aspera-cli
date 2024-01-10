@@ -228,7 +228,7 @@ module Aspera
               else
                 nagios.add_critical('transfer', statuses.reject{|i|i.eql?(:success)}.first.to_s)
               end
-            else raise 'ERROR'
+            else error_unexpected_value(command_nagios)
             end
             return nagios.result
           when *TRANSFER_COMMANDS

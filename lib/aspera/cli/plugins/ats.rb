@@ -225,7 +225,7 @@ module Aspera
           when :aws_trust_policy
             res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})[:data]
             return {type: :single_object, data: res}
-          else raise 'ERROR'
+          else error_unexpected_value(command)
           end
         end
 

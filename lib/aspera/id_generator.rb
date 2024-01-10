@@ -12,6 +12,7 @@ module Aspera
     class << self
       def from_list(object_id)
         if object_id.is_a?(Array)
+          # compact: remove nils
           object_id = object_id.compact.map do |i|
             i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
           end.join(ID_SEPARATOR)

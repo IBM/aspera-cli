@@ -39,7 +39,7 @@ class Object
   end
 
   # the value is not one of the expected values
-  def error_unexpected_value(value)
-    raise Aspera::InternalError, "unexpected value: #{value.inspect}"
+  def error_unexpected_value(value, exception_class: Aspera::InternalError)
+    raise exception_class, "#{block_given? ? "#{yield}: " : nil}unexpected value: #{value.inspect}"
   end
 end

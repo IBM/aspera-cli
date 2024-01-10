@@ -14,21 +14,19 @@ module Aspera
     # @param :parse    Optional  parse method (default to JSON)
     # @param :format   Optional  dump method (default to JSON)
     # @param :merge    Optional  merge data from file to current data
-    def initialize(options)
-      Log.log.debug{"persistency: #{options}"}
-      assert_type(options, Hash)
-      assert(!options[:manager].nil?){'mandatory :manager'}
-      assert(!options[:data].nil?){'mandatory :data'}
-      assert_type(options[:id], String)
-      assert(options[:id].length >= 1){'mandatory 1 element in :id'}
-      @manager = options[:manager]
-      @persisted_object = options[:data]
-      @object_id = options[:id]
+    def initialize(manager:, data:, id:, delete: nil, parse: nil, format: nil, merge: nil)
+      assert(!manager.nil?)
+      assert(!data.nil?)
+      assert_type(id, String)
+      assert(!id.empty?)
+      @manager = manager
+      @persisted_object = data
+      @object_id = id
       # by default , at save time, file is deleted if data is nil
-      @delete_condition = options[:delete] || lambda{|d|d.empty?}
-      @persist_format = options[:format] || lambda {|h| JSON.generate(h)}
-      persist_parse = options[:parse] || lambda {|t| JSON.parse(t)}
-      persist_merge = options[:merge] || lambda {|current, file| current.concat(file).uniq rescue current}
+      @delete_condition = delete || lambda{|d|d.empty?}
+      @persist_format = format || lambda {|h| JSON.generate(h)}
+      persist_parse = parse || lambda {|t| JSON.parse(t)}
+      persist_merge = merge || lambda {|current, file| current.concat(file).uniq rescue current}
       value = @manager.get(@object_id)
       persist_merge.call(@persisted_object, persist_parse.call(value)) unless value.nil?
     end
