@@ -32,19 +32,21 @@ $(MANUAL_PDF): $(DIR_TMP).exists $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_def
 	set -x &&\
 		if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 		date=$$(date $$ref '+%Y/%m/%d') &&\
+		RESOURCE_DIR=$(DIR_DOC). \
 		pandoc \
-			--defaults=manual_pandoc_defaults.yaml \
+			--defaults=$(DIR_DOC)manual_pandoc_defaults.yaml \
 			--variable=date:$$date \
 			--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)"\
-			-o $@ $(DIR_TOP)README.md
+			--output=$@\
+			$(DIR_TOP)README.md
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \
 		--toc \
 		--number-sections \
 		--shift-heading-level-by=-1 \
-		--resource-path=. \
-		-o $@ \
+		--resource-path=$(DIR_DOC). \
+		--output=$@ \
 		$(DIR_TOP)README.md
 
 # regenerate always, as it depends on sources (when a new option is added for example). instead do: make clean_doc doc
