@@ -7,16 +7,16 @@ toc: true
 number-sections: true
 shift-heading-level-by: -1
 variables:
-  author: "Laurent MARTIN"
+  documentclass: report
   mainfont: "IBM Plex Sans"
   monofont: "IBM Plex Mono"
+  author: "Laurent MARTIN"
   urlcolor: blue
   geometry: margin=15mm
-  documentclass: report
   include-before:
     - '\newpage'
 resource-path:
-  - ${RESOURCE_DIR}.
+  - ${.}
 include-in-header:
   - manual_include_in_header.tex
 include-after-body:

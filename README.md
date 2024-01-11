@@ -1669,6 +1669,7 @@ config detect https://shares.example.com/path shares
 config detect my_org aoc
 config doc
 config doc transfer-parameters
+config echo -- --special-string
 config echo @base64:SGVsbG8gV29ybGQK
 config echo @csvt:@stdin:
 config echo @env:USER
@@ -4672,7 +4673,9 @@ For instructions, refer to section `find` for plugin `node`.
 ### AoC sample commands
 
 ```bash
+aoc admin analytics transfers nodes
 aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+aoc admin analytics transfers users --once_only=yes
 aoc admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
 aoc admin ats access_key delete ak1ibmcloud
@@ -4751,7 +4754,7 @@ aoc files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 aoc files upload --to-folder=/testsrc test_file.bin
 aoc files upload --workspace=my_other_workspace --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
 aoc files v3 info
-aoc gateway --pid-file=server_pid https://localhost:12345/aspera/faspex
+aoc gateway --pid-file=pid_aocfxgw https://localhost:12345/aspera/faspex &
 aoc org --url=my_public_link_recv_from_aoc_user
 aoc organization
 aoc packages browse package_id3 /contents
@@ -5662,7 +5665,7 @@ faspex5 admin res workgroups list
 faspex5 admin smtp show
 faspex5 admin smtp test my_email_external
 faspex5 bearer_token
-faspex5 gateway --pid-file=server_pid https://localhost:12345/aspera/faspex
+faspex5 gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
 faspex5 health
 faspex5 packages list --box=my_shared_inbox_name
 faspex5 packages list --box=my_workgroup --group-type=workgroups
@@ -5680,7 +5683,7 @@ faspex5 packages show --box=my_shared_inbox_name package_box_id1
 faspex5 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 faspex5 packages show f5_p31
 faspex5 packages status f5_p31
-faspex5 postprocessing --pid-file=server_pid @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"tests"}}'
+faspex5 postprocessing --pid-file=pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":""}}' &
 faspex5 shared browse %name:my_src
 faspex5 shared list
 faspex5 shared_folders browse %name:my_shared_folder_name
