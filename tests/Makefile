@@ -1547,6 +1547,8 @@ $(DIR_TMP)pid_f5_fxgw: $(T).exists
 $(T)f5_fxgw: $(DIR_TMP)pid_f5_fxgw
 	@$(START_TEST) $@
 	$(EXE_NO_MAN) -N faspex --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
+	curl -k https://localhost:12346/aspera/faspex/send -d 'bad'
+	curl -k https://localhost:12346/aspera/faspex/bad -d 'bad'
 	kill -INT $$(cat $(DIR_TMP)pid_f5_fxgw)
 	while test -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;done
 	@$(STOP_TEST) $@

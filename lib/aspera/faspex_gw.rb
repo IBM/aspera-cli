@@ -1,15 +1,17 @@
 # frozen_string_literal: true
 
-require 'webrick'
 require 'aspera/log'
+require 'aspera/assert'
+require 'webrick'
 require 'json'
 
 module Aspera
-  # this class answers the Faspex /send API and creates a package on Aspera on Cloud
+  # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     # @param app_api [Aspera::AoC]
     # @param app_context [String]
     def initialize(server, app_api, app_context)
+      assert_values(app_api.class.name, ['Aspera::AoC', 'Aspera::Rest'])
       super(server)
       # typed: Aspera::AoC
       @app_api = app_api
@@ -67,13 +69,14 @@ module Aspera
           raise 'no payload' if request.body.nil?
           faspex_pkg_parameters = JSON.parse(request.body)
           Log.log.debug{"faspex pkg create parameters=#{faspex_pkg_parameters}"}
+          # compare string, as class is not yet known here
           faspex_package_create_result =
-            if @app_api.class.name.eql?('Aspera::AoC')
+            case @app_api.class.name
+            when 'Aspera::AoC'
               faspex4_send_to_aoc(faspex_pkg_parameters)
-            elsif @app_api.class.name.eql?('Aspera::Rest')
+            when 'Aspera::Rest'
               faspex4_send_to_faspex5(faspex_pkg_parameters)
-            else
-              raise "No such adapter: #{@app_api.class}"
+            else error_unexpected_value(@app_api.class.name)
             end
           Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
           response.status = 200
@@ -89,7 +92,7 @@ module Aspera
       else
         response.status = 400
         response['Content-Type'] = 'application/json'
-        response.body = {error: 'Bad request'}.to_json
+        response.body = {error: 'Unsupported endpoint'}.to_json
       end
     end
   end # Faspex4GWServlet
