@@ -12,7 +12,11 @@ doc:
 	cd $(DIR_DOC) && make
 test: unsigned_gem
 	cd $(DIR_TST) && make
-test_full: doc test
+test_full:
+	make clean_gems
+	make test
+	make install_optional_gems
+	cd $(DIR_TST) && make full
 clean::
 	rm -fr $(DIR_TMP)
 	cd $(DIR_DOC) && make clean
