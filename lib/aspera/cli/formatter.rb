@@ -308,9 +308,8 @@ module Aspera
 
       # this method displays the results, especially the table format
       def display_results(results)
-        assert((results.keys - %i[type data fields name]).empty?){"result unsupported key: #{results.keys - %i[type data fields name]}"}
-        # :type :data :fields :name
         assert_type(results, Hash)
+        assert((results.keys - %i[type data fields name]).empty?){"result unsupported key: #{results.keys - %i[type data fields name]}"}
         assert(results.key?(:type)){"result must have type (#{results})"}
         assert(results.key?(:data) || %i[empty nothing].include?(results[:type])){'result must have data'}
         Log.log.debug{"display_results: #{results[:data].class} #{results[:type]}"}
