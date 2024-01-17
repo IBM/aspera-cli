@@ -142,6 +142,9 @@ module Aspera
                 return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
                 end
+              when :users # group
+                raise "TODO, not implemented"
+              else error_unexpected_value(entity_verb)
               end
             end
           end
