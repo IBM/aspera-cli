@@ -1882,25 +1882,46 @@ ascli shares repo browse /
 
 ### <a id="vault"></a>Secret Vault
 
-Password and secrets are command options.
+Secrets (e.g. passwords) are usually command options.
 They can be provided on command line, env vars, files etc.
-A more secure option is to retrieve values from a secret vault.
+
+For security reasons, those secrets shall not be exposed in clear, either:
+
+- on terminal during input
+- in logs
+- in command output
+
+Instead, they shall be hidden or encrypted.
+
+Terminal output secret removal is controlled by option `show_secrets` (default: `no`).
+Log secret removal is controlled by option `log_secrets` (default: `no`).
+Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
+Or it is possible to use extended value `@secret:[name]` to ask for a secret interactively.
+It is also possible to enter an option as an environment variable, e.g. `ASCLI_PASSWORD` for option `password` and read the env var  like this:
+
+```bash
+read -s ASCLI_PASSWORD
+export ASCLI_PASSWORD
+```
+
+Another possibility is to retrieve values from a secret vault.
 
 The vault is used with options `vault` and `vault_password`.
 
-`vault` defines the vault to be used and shall be a `Hash`, example:
+`vault` shall be a `Hash` describing the vault:
 
 ```json
 {"type":"system","name":"ascli"}
 ```
 
 `vault_password` specifies the password for the vault.
-Although it can be specified on command line, for security reason you can hide the value.
+
+Although it can be specified on command line, for security reason you should avoid exposing the secret.
 For example it can be securely specified on command line like this:
 
 ```bash
-export ASCLI_VAULT_PASSWORD
 read -s ASCLI_VAULT_PASSWORD
+export ASCLI_VAULT_PASSWORD
 ```
 
 #### Vault: System key chain
@@ -1915,10 +1936,10 @@ It is possible to manage secrets in macOS key chain (only read supported current
 
 #### Vault: Encrypted file
 
-It is possible to store and use secrets encrypted in a file.
+It is possible to store and use secrets encrypted in a file using option `vault` set to:
 
-```bash
---vault=@json:'{"type":"file","name":"vault.bin"}'
+```json
+{"type":"file","name":"vault.bin"}
 ```
 
 `name` is the file path, absolute or relative to the configuration folder `ASCLI_HOME`.

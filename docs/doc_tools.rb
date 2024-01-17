@@ -18,8 +18,8 @@ def cmd; Aspera::Cli::PROGRAM_NAME; end
 # used in text with formatting of command
 def tool; '`' + cmd + '`'; end
 
-# prefix for env vars
-def evp; cmd.upcase + '_'; end
+# env var for option
+def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 
 # just the name for "option preset"
 def opprst; 'option preset'; end

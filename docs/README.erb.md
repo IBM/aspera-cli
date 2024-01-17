@@ -263,7 +263,7 @@ To enable write access, a possibility is to run as `root` in the container (and 
 Add options:
 
 ```bash
---user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
+--user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
 > **Note:** if you are using a `podman machine`, e.g. on macOS , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
@@ -287,7 +287,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=evp%>HOME=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
+alias <%=cmd%>sh="podman run --rm --tty --interactive --user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles --entrypoint bash <%=container_image%>:latest"
 ```
 
 ```bash
@@ -308,12 +308,12 @@ Some environment variables can be set for this script to adapt its behavior:
 
 | env var        | Description                        | Default                  | Example                  |
 |----------------|------------------------------------|--------------------------|--------------------------|
-| `<%=evp%>HOME` | Configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
+| `<%=opt_env(%Q`home`)%>` | Configuration folder (persistency) | `$HOME/.aspera/<%=cmd%>` | `$HOME/.<%=cmd%>_config` |
 | `docker_args`  | Additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
 | `image`        | Container image name               | `<%=container_image%>`    |                          |
 | `version`      | Container image version            | Latest                   | `4.8.0.pre`              |
 
-The wrapping script maps the folder `$<%=evp%>HOME` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
+The wrapping script maps the folder `$<%=opt_env(%Q`home`)%>` on host to `/home/cliuser/.aspera/<%=cmd%>` in the container.
 (value expected in the container).
 This allows having persistent configuration on the host.
 
@@ -1185,7 +1185,7 @@ The value for **any** options can come from the following locations (in this ord
 - Environment variable
 - Command line
 
-Environment variable starting with prefix: <%=evp%> are taken as option values, e.g. `<%=evp%>OPTION_NAME` is for `--option-name`.
+Environment variable starting with prefix: <%=opt_env('')%> are taken as option values, e.g. `<%=opt_env('option_name')%>` is for `--option-name`.
 
 Option `show_config` dry runs the configuration, and then returns currently set values for options.
 `<%=cmd%> --show-config` outputs global options only, and `<%=cmd%> [plugin] --show-config` outputs global and plugin default options.
@@ -1481,7 +1481,7 @@ It can be overridden using option `home`.
 Example (Windows):
 
 ```output
-set <%=evp%>HOME=C:\Users\Kenji\.aspera\<%=cmd%>
+set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
 
 <%=cmd%> config folder
 
@@ -1803,25 +1803,46 @@ or
 
 ### <a id="vault"></a>Secret Vault
 
-Password and secrets are command options.
+Secrets (e.g. passwords) are usually command options.
 They can be provided on command line, env vars, files etc.
-A more secure option is to retrieve values from a secret vault.
+
+For security reasons, those secrets shall not be exposed in clear, either:
+
+- on terminal during input
+- in logs
+- in command output
+
+Instead, they shall be hidden or encrypted.
+
+Terminal output secret removal is controlled by option `show_secrets` (default: `no`).
+Log secret removal is controlled by option `log_secrets` (default: `no`).
+Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
+Or it is possible to use extended value `@secret:[name]` to ask for a secret interactively.
+It is also possible to enter an option as an environment variable, e.g. `<%=opt_env(%Q`password`)%>` for option `password` and read the env var  like this:
+
+```bash
+read -s <%=opt_env(%Q`password`)%>
+export <%=opt_env(%Q`password`)%>
+```
+
+Another possibility is to retrieve values from a secret vault.
 
 The vault is used with options `vault` and `vault_password`.
 
-`vault` defines the vault to be used and shall be a `Hash`, example:
+`vault` shall be a `Hash` describing the vault:
 
 ```json
 {"type":"system","name":"<%=cmd%>"}
 ```
 
 `vault_password` specifies the password for the vault.
-Although it can be specified on command line, for security reason you can hide the value.
+
+Although it can be specified on command line, for security reason you should avoid exposing the secret.
 For example it can be securely specified on command line like this:
 
 ```bash
-export <%=evp%>VAULT_PASSWORD
-read -s <%=evp%>VAULT_PASSWORD
+read -s <%=opt_env(%Q`vault_password`)%>
+export <%=opt_env(%Q`vault_password`)%>
 ```
 
 #### Vault: System key chain
@@ -1836,13 +1857,13 @@ It is possible to manage secrets in macOS key chain (only read supported current
 
 #### Vault: Encrypted file
 
-It is possible to store and use secrets encrypted in a file.
+It is possible to store and use secrets encrypted in a file using option `vault` set to:
 
-```bash
---vault=@json:'{"type":"file","name":"vault.bin"}'
+```json
+{"type":"file","name":"vault.bin"}
 ```
 
-`name` is the file path, absolute or relative to the configuration folder `<%=evp%>HOME`.
+`name` is the file path, absolute or relative to the configuration folder `<%=opt_env(%Q`home`)%>`.
 
 #### Vault: Operations
 
@@ -2066,9 +2087,9 @@ It is also possible to force the graphical mode with option --ui :
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
 By default logging level is `warn` and the output channel is `stderr`.
-To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=evp%>LOG_LEVEL`, or a parameter in the configuration file).
+To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or a parameter in the configuration file).
 
-It is also possible to activate traces before log facility initialization using env var `<%=evp%>LOG_LEVEL`.
+It is also possible to activate traces before log facility initialization using env var `<%=opt_env(%Q`log_level`)%>`.
 
 By default passwords and secrets are removed from logs.
 Use option `log_secrets` set to `yes` to reveal secrets in logs.
@@ -6243,4 +6264,4 @@ OpenSSH keys only supported if ED25519 is available
 Which meant that you do not have Ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
-To re-activate, set env var `ASCLI_ENABLE_ED25519` to `true`.
+To re-activate, set env var `<%=opt_env(%Q`enable_ed`)%>25519` to `true`.
