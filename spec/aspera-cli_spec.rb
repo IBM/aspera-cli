@@ -32,8 +32,8 @@ ssh_url = URI.parse(params[:url])
 PATH_FOLDER_MAIN = '/'
 demo_executor = Aspera::Ssh.new(ssh_url.host, params[:user], {password: params[:pass], port: ssh_url.port})
 
-# to use a local executor, set PATH_FOLDER_MAIN to the main folder
-# PATH_FOLDER_MAIN='/local/data'
+# to use a local executor, set PATH_FOLDER_MAIN to the pseudo docroot (local) folder
+# PATH_FOLDER_MAIN='/pseudo/docroot'
 # demo_executor=LocalExecutor.new
 TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
