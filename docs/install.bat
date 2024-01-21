@@ -1,4 +1,4 @@
-REM Automated installation of ascli on windows
+REM Automated installation of ascli on Windows
 REM Refer to the manual
 @ECHO off
 ECHO Aspera CLI Installer script for Windows
