@@ -14,9 +14,9 @@ module Aspera
       CIPHER_NAME = 'aes-256-cbc'
       CONTENT_KEYS = %i[label username password url description].freeze
       def initialize(path, current_password)
+        assert_type(path, String){'path to vault file'}
         @path = path
         self.password = current_password
-        assert_type(@path, String){'path to vault file'}
         @all_secrets = File.exist?(@path) ? YAML.load_stream(@cipher.decrypt(File.read(@path))).first : {}
       end
 
@@ -25,7 +25,7 @@ module Aspera
         key_bytes = CIPHER_NAME.split('-')[1].to_i / Environment::BITS_PER_BYTE
         # derive key from passphrase, add trailing zeros
         key = "#{new_password}#{"\x0" * key_bytes}"[0..(key_bytes - 1)]
-        Log.log.debug{"key=[#{key}],#{key.length}"}
+        Log.log.trace1{"secret=[#{key}],#{key.length}"}
         SymmetricEncryption.cipher = @cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME, key: key, encoding: :none)
       end
 
