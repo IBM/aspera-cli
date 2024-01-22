@@ -3,13 +3,15 @@
 * 4.16.0
 
   * New Features:
-    * global: option `output` to redirect to a file instead of stdout
+    * global: option `output` to redirect to a file instead of `stdout`
+    * global: new option `silent_insecure`
     * config: keys added to `config ascp info`
     * config: added command `pubkey` to extract public key from private key
+    * config: new command `vault info`
     * faspex5: added `shared_folders` management
     * faspex5: if package has content protection, ask passphrase interactively, unless `content_protection=null` in `ts`
   * Issues Fixed:
-    * wizard: was failing due to "require" of optional gem.
+    * wizard: was failing due to `require` of optional gem.
   * Breaking Changes:
     * shares: option `type` for users and groups is replaced with mandatory positional argument with same value.
 

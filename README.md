@@ -1716,8 +1716,8 @@ config wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
 config wizard https://node.example.com/path node --username=test --password=test
 config wizard https://orch.example.com/path orchestrator --username=test --password=test
 config wizard https://shares.example.com/path shares --username=test --password=test
-config wizard my_org aoc --key-path= --username=my_user_email
-config wizard my_org aoc --key-path= --username=my_user_email --use-generic-client=yes
+config wizard my_org aoc --key-path=my_private_key --username=my_user_email
+config wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 ```
 
 #### Format of file
@@ -2206,10 +2206,14 @@ It will display the exact content of HTTP requests and responses.
 
 ### <a id="http_options"></a>HTTP socket parameters
 
-To ignore SSL certificate for any address/port, use option: `insecure`, i.e. `--insecure=yes`.
-To ignore SSL certificate for specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
+To ignore SSL certificate for **any** address/port, use option: `insecure`, i.e. `--insecure=yes`.
+To ignore SSL certificate for a list of specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
 > **Note:** Ignoring certificate also applies to `ascp`'s wss.
+
+Ignoring a certificate is not recommended, it is better to add the certificate to the trusted store.
+So, a warning is displayed when a certificate is ignored.
+To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 
@@ -3388,7 +3392,8 @@ OPTIONS:
         --notify-to=VALUE            Email recipient for notification of transfers
         --notify-template=VALUE      Email ERB template for notification of transfers
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
-        --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --ignore-certificate=VALUE   Do not validate HTTPS certificate for these URLs (Array)
+        --silent-insecure=ENUM       Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]

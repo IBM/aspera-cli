@@ -2127,10 +2127,14 @@ It will display the exact content of HTTP requests and responses.
 
 ### <a id="http_options"></a>HTTP socket parameters
 
-To ignore SSL certificate for any address/port, use option: `insecure`, i.e. `--insecure=yes`.
-To ignore SSL certificate for specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
+To ignore SSL certificate for **any** address/port, use option: `insecure`, i.e. `--insecure=yes`.
+To ignore SSL certificate for a list of specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
 > **Note:** Ignoring certificate also applies to `ascp`'s wss.
+
+Ignoring a certificate is not recommended, it is better to add the certificate to the trusted store.
+So, a warning is displayed when a certificate is ignored.
+To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 

@@ -172,6 +172,7 @@ module Aspera
           @pac_exec = nil
           @sdk_default_location = false
           @option_insecure = false
+          @option_warn_insecure_cert = true
           @option_ignore_cert_host_port = []
           @option_http_options = {}
           @ssl_warned_urls = []
@@ -237,7 +238,8 @@ module Aspera
           options.declare(:notify_template, 'Email ERB template for notification of transfers')
           # HTTP options
           options.declare(:insecure, 'Do not validate any HTTPS certificate', values: :bool, handler: {o: self, m: :option_insecure}, default: :no)
-          options.declare(:ignore_certificate, 'List of HTTPS url where to no validate certificate', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
+          options.declare(:ignore_certificate, 'Do not validate HTTPS certificate for these URLs', types: Array, handler: {o: self, m: :option_ignore_cert_host_port})
+          options.declare(:silent_insecure, 'Issue a warning if certificate is ignored', values: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
           options.declare(:cert_stores, 'List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
           options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
@@ -284,7 +286,7 @@ module Aspera
           Aspera::RestErrorsAspera.register_handlers
         end
 
-        attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_http_options
+        attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
         attr_reader :option_ignore_cert_host_port, :progress_bar
 
         def trusted_cert_locations=(path_list)
@@ -329,6 +331,7 @@ module Aspera
         def option_ignore_cert_host_port=(url_list)
           url_list.each do |url|
             uri = URI.parse(url)
+            raise "Expecting https scheme: #{url}" unless uri.scheme.eql?('https')
             @option_ignore_cert_host_port.push([uri.host, uri.port].freeze)
           end
         end
@@ -337,12 +340,14 @@ module Aspera
           endpoint = [address, port].freeze
           Log.log.debug{"ignore cert? #{endpoint}"}
           return false unless @option_insecure || @option_ignore_cert_host_port.any?(endpoint)
-          base_url = "https://#{address}:#{port}"
-          if !@ssl_warned_urls.include?(base_url)
-            formatter.display_message(
-              :error,
-              "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
-            @ssl_warned_urls.push(base_url)
+          if @option_warn_insecure_cert
+            base_url = "https://#{address}:#{port}"
+            if !@ssl_warned_urls.include?(base_url)
+              formatter.display_message(
+                :error,
+                "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
+              @ssl_warned_urls.push(base_url)
+            end
           end
           return true
         end
@@ -1210,8 +1215,10 @@ module Aspera
         # TODO: delete: ALLOWED_KEYS = %i[password username description].freeze
         # @return [Hash] result of execution of vault command
         def execute_vault
-          command = options.get_next_command(%i[list show create delete password])
+          command = options.get_next_command(%i[info list show create delete password])
           case command
+          when :info
+            return {type: :single_object, data: vault_info}
           when :list
             return {type: :object_list, data: vault.list}
           when :show
@@ -1246,27 +1253,35 @@ module Aspera
           return value
         end
 
+        def vault_info
+          info = options.get_option(:vault) || {}
+          info = info.symbolize_keys
+          info[:type] ||= 'file'
+          info[:name] ||= (info[:type].eql?('file') ? 'vault.bin' : PROGRAM_NAME)
+          assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
+          info[:password] = options.get_option(:vault_password, mandatory: true)
+          return info
+        end
+
         # @return [Object] vault, from options or cache
         def vault
           if @vault.nil?
-            vault_info = options.get_option(:vault) || {'type' => 'file', 'name' => 'vault.bin'}
-            vault_password = options.get_option(:vault_password, mandatory: true)
-            vault_type = vault_info['type'] || 'file'
-            vault_name = vault_info['name'] || (vault_type.eql?('file') ? 'vault.bin' : PROGRAM_NAME)
-            case vault_type
+            info = vault_info
+            case info[:type]
             when 'file'
               # absolute_path? introduced in ruby 2.7
-              vault_path = vault_name.eql?(File.absolute_path(vault_name)) ? vault_name : File.join(@main_folder, vault_name)
-              @vault = Keychain::EncryptedHash.new(vault_path, vault_password)
+              @vault = Keychain::EncryptedHash.new(
+                info[:name].eql?(File.absolute_path(info[:name])) ? info[:name] : File.join(@main_folder, info[:name]),
+                info[:password])
             when 'system'
               case Environment.os
               when Environment::OS_X
-                @vault = Keychain::MacosSystem.new(vault_name, vault_password)
+                @vault = Keychain::MacosSystem.new(info[:name], info[:password])
               else
                 raise 'not implemented for this OS'
               end
             else
-              raise Cli::BadArgument, "Unknown vault type: #{vault_type}"
+              raise Cli::BadArgument, "Unknown vault type: #{info[:type]}"
             end
           end
           raise 'No vault defined' if @vault.nil?

@@ -1872,8 +1872,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb134-1"><a href
 <span id="cb134-70"><a href="#cb134-70" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://node.example.com/path node <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb134-71"><a href="#cb134-71" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://orch.example.com/path orchestrator <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb134-72"><a href="#cb134-72" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
-<span id="cb134-73"><a href="#cb134-73" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb134-74"><a href="#cb134-74" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span> <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
+<span id="cb134-73"><a href="#cb134-73" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb134-74"><a href="#cb134-74" aria-hidden="true" tabindex="-1"></a><span class="ex">config</span> wizard my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
 <h3 data-number="4.9.6" id="format-of-file"><span
 class="header-section-number">4.9.6</span> Format of file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
@@ -2349,9 +2349,9 @@ the exact content of HTTP requests and responses.</p>
 <h2 data-number="4.17" id="http-socket-parameters"><span
 class="header-section-number">4.17</span> <a id="http_options"></a>HTTP
 socket parameters</h2>
-<p>To ignore SSL certificate for any address/port, use option:
-<code>insecure</code>, i.e. <code>--insecure=yes</code>. To ignore SSL
-certificate for specific address/port, use option
+<p>To ignore SSL certificate for <strong>any</strong> address/port, use
+option: <code>insecure</code>, i.e. <code>--insecure=yes</code>. To
+ignore SSL certificate for a list of specific address/port, use option
 <code>ignore_certificate</code>, set to an <code>Array</code> of URL for
 which certificate will be ignored (only the address and port are
 matched),
@@ -2360,6 +2360,10 @@ e.g. <code>--ignore-certificate=@list:,https://127.0.0.1:9092</code></p>
 <p><strong>Note:</strong> Ignoring certificate also applies to
 <code>ascp</code>’s wss.</p>
 </blockquote>
+<p>Ignoring a certificate is not recommended, it is better to add the
+certificate to the trusted store. So, a warning is displayed when a
+certificate is ignored. To disable the warning, use option
+<code>silent_insecure</code> set to <code>no</code>.</p>
 <p>HTTP connection parameters (not <code>ascp</code> wss) can be
 adjusted using option <code>http_options</code>:</p>
 <table>
@@ -4877,7 +4881,8 @@ OPTIONS:
         --notify-to=VALUE            Email recipient for notification of transfers
         --notify-template=VALUE      Email ERB template for notification of transfers
         --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
-        --ignore-certificate=VALUE   List of HTTPS url where to no validate certificate (Array)
+        --ignore-certificate=VALUE   Do not validate HTTPS certificate for these URLs (Array)
+        --silent-insecure=ENUM       Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
         --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]

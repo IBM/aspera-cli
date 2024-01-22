@@ -46,7 +46,7 @@ TIMESTAMP=$(shell LANG=C date)
 TEST_CONFIG=$(DIR_TMP)sample.conf
 TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
-CLI_HOME=$(DIR_PRIV)ascli_home/
+CLI_HOME=$(DIR_TMP)ascli_home/
 # use configuration file in test folder
 EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
 # "EXE_MAN" and "EXE_NO_MAN" are used to call the tool in the testing environment
@@ -565,7 +565,7 @@ $(DIR_TMP)pid_aocfxgw: $(T).exists
 	while ! test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
 $(T)aocfxgw: $(DIR_TMP)pid_aocfxgw
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
+	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --insecure=yes --silent-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	kill -INT $$(cat $(DIR_TMP)pid_aocfxgw)
 	while test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
 	@$(STOP_TEST) $@
@@ -1263,12 +1263,12 @@ $(T)conf_plugins: $(T).exists
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path= --username=@preset:aoc.user_email --use-generic-client=yes
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
 $(T)conf_wizard_gen: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config flush_tokens
-	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path= --username=@preset:aoc.user_email
+	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(T)conf_detect: $(T).exists
 	@$(START_TEST) $@
