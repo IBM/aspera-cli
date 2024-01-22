@@ -40,7 +40,8 @@ only_progress: $(T)serv_upload1 $(T)serv_upload3
 
 # default download folder for Connect Client (used to cleanup and avoid confirmation from connect when overwrite)
 DIR_CONNECT_DOWNLOAD=$(HOME)/Downloads/
-TIMESTAMP=$(shell LANG=C date)
+# package title for faspex and aoc
+PACKAGE_TITLE_BASE=ascli test $(shell LANG=C date)
 
 # temp configuration file that is modified, to avoid the test configuration file
 TEST_CONFIG=$(DIR_TMP)sample.conf
@@ -363,43 +364,43 @@ $(T)f4_pack_list: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f4_pack_send: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@","@preset:faspex4_user.username@"]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 	@sleep 8
 $(T)f4_prs: $(T)f4_pack_send
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(DIR_TMP)f4_prs1
-	$(EXE_NO_MAN) faspex package recv $$(cat $(DIR_TMP)f4_prs1) --to-folder=$(DIR_TMP).
+	$(EXE_NO_MAN) faspex package receive $$(cat $(DIR_TMP)f4_prs1) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex package list --box=sent --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(DIR_TMP)f4_prs2
-	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_prs2) --to-folder=$(DIR_TMP). --box=sent
+	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_prs2) --to-folder=$(DIR_TMP). --box=sent
 	@$(STOP_TEST) $@
 $(T)f4_pri: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_NO_MAN) faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=$(DIR_TMP)f4_pri1
-	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_pri1) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_pri1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f4_prl: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) faspex package recv --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user$(EXE_END_FAI)
+	$(EXE_BEG_FAI) faspex package receive --to-folder=$(DIR_TMP). --link=@preset:faspex4.link_recv_from_user$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)f4_prall: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex package recv ALL --to-folder=$(DIR_TMP). --once-only=yes --query=@json:'{"max":10}'
+	$(EXE_MAN) faspex package receive ALL --once-only=yes --to-folder=$(DIR_TMP). --query=@json:'{"max":10}'
 	@$(STOP_TEST) $@
 $(T)f4_pslu: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex package send --link=@preset:faspex4.link_send_to_user --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex package send --link=@preset:faspex4.link_send_to_user --delivery-info=@json:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)"}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)f4_psld: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex package send --link=@preset:faspex4.link_send_to_dropbox --delivery-info=@json:'{"title":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex package send --link=@preset:faspex4.link_send_to_dropbox --delivery-info=@json:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)"}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)f4_remote_src: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex source list
 	$(EXE_MAN) faspex source info %name:@preset:faspex4.src --storage=@preset:faspex4_storage
 	$(EXE_MAN) faspex source node %name:@preset:faspex4.src br / --storage=@preset:faspex4_storage
-	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(TIMESTAMP) package remote","recipients":["@preset:misc.email_internal@"]}' --remote_source=@extend:%name:@preset:faspex4.src sample_source.txt
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}' --remote_source=@extend:%name:@preset:faspex4.src sample_source.txt
 	@$(STOP_TEST) $@
 $(T)f4_misc: $(T).exists
 	@$(START_TEST) $@
@@ -419,13 +420,13 @@ $(T)f4_v4: $(T).exists
 $(T)f4_db1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex dropbox list --recipient=@extend:"*@preset:faspex4.dbx@"
-	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["*@preset:faspex4.dbx@"]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["*@preset:faspex4.dbx@"]}' $(TST_ASC_LCL_PATH)
 	$(EXE_MAN) faspex package list --recipient=@extend:"*@preset:faspex4.dbx@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(DIR_TMP)f4_db_id1
-	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_db_id1) --recipient=@extend:"*@preset:faspex4.dbx@" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_db_id1) --recipient=@extend:"*@preset:faspex4.dbx@" --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex dropbox list --recipient=@extend:"*@preset:faspex4.dbx@"
-	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"Test Package $(TIMESTAMP)","recipients":["*@preset:faspex4.wkg@"]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["*@preset:faspex4.wkg@"]}' $(TST_ASC_LCL_PATH)
 	$(EXE_MAN) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(DIR_TMP)f4_db_id2
-	$(EXE_MAN) faspex package recv $$(cat $(DIR_TMP)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 tfaspex: $(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1 $(T)f4_prl
 #######################################################################################################################
@@ -756,11 +757,11 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 taocf: $(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"],"note":"my note"}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aoc_pack_send2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:misc.email_external@"]}' --new-user-option=@json:'{"package_contact":true}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_external@"]}' --new-user-option=@json:'{"package_contact":true}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aocp2: $(T).exists
 	@$(START_TEST) $@
@@ -768,13 +769,13 @@ $(T)aocp2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"per_page":1}' --output=$(DIR_TMP)package_id3
-	$(EXE_MAN) aoc packages recv $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
+	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)package_id3
+	$(EXE_MAN) aoc packages receive $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /contents
 	@$(STOP_TEST) $@
 $(T)aocp4: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345
+	$(EXE_MAN) aoc packages receive ALL --once-only=yes --to-folder=$(DIR_TMP). --lock-port=12345
 	@$(STOP_TEST) $@
 $(T)aocp5: $(T).exists
 	@$(START_TEST) $@
@@ -782,29 +783,33 @@ $(T)aocp5: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_sh: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_shared_inbox
+	$(EXE_MAN) aoc packages send @json:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_shared_inbox
 	@$(STOP_TEST) $@
 $(T)aocp_send_pub_usr: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send @json:'{"name":"Test Package $(TIMESTAMP)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_aoc_user --password=@preset:aoc.public_link_send_use_pass
+	$(EXE_MAN) aoc packages send @json:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)"}' $(TST_ASC_LCL_PATH) -N --url=@preset:aoc.public_link_send_aoc_user --password=@preset:aoc.public_link_send_use_pass
 	@$(STOP_TEST) $@
-$(T)aocp_send_shbx: $(T).exists
+$(T)aocp_recv_init: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages receive INIT --once-only=yes --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@"}'
 	@$(STOP_TEST) $@
-$(T)aocp_send_sh_meta_long: $(T).exists
+$(T)aocp_send_shbx: $(T)aocp_recv_init
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
-$(T)aocp_send_sh_meta_short: $(T).exists
+$(T)aocp_send_sh_meta_long: $(T)aocp_recv_init
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"Test Package $(TIMESTAMP)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
-$(T)aocp_recv_shbx: $(T).exists
+$(T)aocp_send_sh_meta_short: $(T)aocp_recv_init
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages recv ALL --to-folder=$(DIR_TMP). --once-only=yes --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
-$(T)aocp_list_shbx: $(T).exists
+$(T)aocp_recv_shbx: $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc packages receive ALL --once-only=yes --to-folder=$(DIR_TMP). --lock-port=12345 --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+	@$(STOP_TEST) $@
+$(T)aocp_list_shbx: $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages list --query=@json:@extend:'{"dropbox_name":"@preset:aoc.shared_inbox_name@","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 	@$(STOP_TEST) $@
@@ -1440,11 +1445,17 @@ tcos: $(T)tcos_info1 $(T)tcos_info2 $(T)tcos_info3 $(T)tcos_show $(T)tcos_upload
 $(T)f5_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 health
+	@$(STOP_TEST) $@
+$(T)f5_nag_err: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_BEG_ERR) faspex5 health --url=https://wrong.example --format=nagios$(EXE_END_ERR)
+	@$(STOP_TEST) $@
+$(T)f5_p0: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 packages receive INIT --once-only=yes
 	@$(STOP_TEST) $@
 $(T)f5_p1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages receive INIT --once-only=yes
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}' $(TST_ASC_LCL_PATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
 	@$(STOP_TEST) $@
 $(T)f5_p2: $(T).exists
@@ -1564,4 +1575,4 @@ $(T)f5_postproc: $(DIR_TMP)pid_f5_postproc
 	while test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
 	@$(STOP_TEST) $@
 
-tf5: $(T)f5_nagios $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc
+tf5: $(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc

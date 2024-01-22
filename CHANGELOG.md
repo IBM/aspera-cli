@@ -3,298 +3,345 @@
 * 4.16.0
 
   * New Features:
-    * global: option `output` to redirect to a file instead of `stdout`
-    * global: new option `silent_insecure`
-    * config: keys added to `config ascp info`
-    * config: added command `pubkey` to extract public key from private key
-    * config: new command `vault info`
-    * faspex5: added `shared_folders` management
-    * faspex5: if package has content protection, ask passphrase interactively, unless `content_protection=null` in `ts`
+    * **global**: option `output` to redirect to a file instead of `stdout`
+    * **global**: new option `silent_insecure`
+    * `config`: keys added to `config ascp info`
+    * `config`: added command `pubkey` to extract public key from private key
+    * `config`: new command `vault info`
+    * `faspex5`: added `shared_folders` management
+    * `faspex5`: if package has content protection, ask passphrase interactively, unless `content_protection=null` in `ts`
+    * `faspex`: added `INIT` for `once_only`
+    * `aoc`: added `INIT` for `once_only`
+    * `aoc`: more list commands honor option `query`
   * Issues Fixed:
     * wizard: was failing due to `require` of optional gem.
+    * `aoc`: listing entities list all, instead of just one page in some cases (e.g. retrieve all packages)
   * Breaking Changes:
-    * shares: option `type` for users and groups is replaced with mandatory positional argument with same value.
+    * `shares`: option `type` for users and groups is replaced with mandatory positional argument with same value.
+    * `aoc`, `faspex`: package `recv` command changed to `receive`, for consistency with faspex5 (alias is kept)
 
 * 4.15.0
 
   * General: removed many redundant options, more consistency between plugins, see below in "break".
   * New Features:
-    * global: added resolution hints for well known issues.
-    * global: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
-    * global: option `fields` now supports `RegExp`
-    * global: option `home` to set the main folder for configuration and cache
-    * global: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
-    * global: option `cert_stores` to specify alternate certificate stores
-    * global: uniform progress bar for any type of transfer.
-    * global: add extended value types: `re` and `yaml`
-    * global: option `pid_file` to write tool's PID during execution, deleted on exit
-    * config: command `remote_certificate` to retrieve a remote certificate
-    * config: added logger level `trace1` and `trace2`
+    * **global**: added resolution hints for well known issues.
+    * **global**: extended value expression `@extend:` finds and replace extended values in a string (e.g. for JSON)
+    * **global**: option `fields` now supports `RegExp`
+    * **global**: option `home` to set the main folder for configuration and cache
+    * **global**: option `ignore_certificate` to specify specific URLs instead of global option `insecure`
+    * **global**: option `cert_stores` to specify alternate certificate stores
+    * **global**: uniform progress bar for any type of transfer.
+    * **global**: add extended value types: `re` and `yaml`
+    * **global**: option `pid_file` to write tool's PID during execution, deleted on exit
+    * `config`: command `remote_certificate` to retrieve a remote certificate
+    * `config`: added logger level `trace1` and `trace2`
     * wizard: can detect multiple applications at the same address or url.
-    * aoc: wizard accepts public links
-    * aoc: support private links, and possibility to list shared folder with workspace `@json:null`
-    * orchestrator: error analysis for workflow start
-    * httpgw: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
-    * node: added command `transfer sessions` to list all sessions of all transfers
-    * node: generate bearer token from private key and user information
-    * node: access node API with bearer token as credentials
+    * `aoc`: wizard accepts public links
+    * `aoc`: support private links, and possibility to list shared folder with workspace `@json:null`
+    * `orchestrator`: error analysis for workflow start
+    * `httpgw`: now supports pseudo file for testing: e.g. `faux:///testfile?1k`
+    * `node`: added command `transfer sessions` to list all sessions of all transfers
+    * `node`: generate bearer token from private key and user information
+    * `node`: access node API with bearer token as credentials
     * agent: `direct` allows ignoring certificate for wss using http options
-    * preview: command `show` generates a preview and displays it in terminal
+    * `preview`: command `show` generates a preview and displays it in terminal
   * Issues Fixed:
     * Ruby warning: `net/protocol.rb:68: warning: already initialized constant Net::ProtocRetryError` solved by removing dependency on `net-smtp` from gem spec (already in base ruby).
   * Breaking Changes:
-    * global: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
-    * global: renamed option `pkeypath` to `key_path`
-    * global: renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`
-    * global: removed extended value handler `incps`, as it is never used (use `extend` instead).
-    * global: option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
-    * global: replaced option `progress` with option `progressbar` (bool)
-    * global: removed option `rest_debug` and `-r`, replaced with `--log-level=trace2`
-    * global: the default file name for private key when using wizard is change from `aspera_aoc_key` to `my_private_key.pem`
-    * faspex5: removed option and `auth` type `link`: simply provide the public link as `url`
-    * faspex: remote source selection now uses percent selector instead of parameter `id` or `name`
-    * faspex: option `source_name` is now `remote_source`
-    * aoc: selection by name uses percent selector instead of option or parameter `name`
-    * aoc: removed option `link`: use `url` instead
-    * aoc: in command `short_link`, place type before command, e.g. `short_link private create /blah`
-    * aoc: replaced option `operation` with mandatory positional parameter for command `files transfer`
-    * aoc: replaced option `from_folder` with mandatory positional parameter for command `files transfer`
-    * orchestrator: workflow start takes arguments as optional positional extended value instead of option `param`
-    * node: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
+    * **global**: commands `detect` and `wizard` takes now a mandatory argument: address or url instead of option `url`.
+    * **global**: renamed option `pkeypath` to `key_path`
+    * **global**: renamed option `notif_to` to `notify_to` and `notif_template` to `notify_template`
+    * **global**: removed extended value handler `incps`, as it is never used (use `extend` instead).
+    * **global**: option `fields`: `+prop` is replaced with: `DEF,prop` and `-field` is replaced with: `DEF,-field`, and whole list is evaluated.
+    * **global**: replaced option `progress` with option `progressbar` (bool)
+    * **global**: removed option `rest_debug` and `-r`, replaced with `--log-level=trace2`
+    * **global**: the default file name for private key when using wizard is change from `aspera_aoc_key` to `my_private_key.pem`
+    * `faspex5`: removed option and `auth` type `link`: simply provide the public link as `url`
+    * `faspex`: remote source selection now uses percent selector instead of parameter `id` or `name`
+    * `faspex`: option `source_name` is now `remote_source`
+    * `aoc`: selection by name uses percent selector instead of option or parameter `name`
+    * `aoc`: removed option `link`: use `url` instead
+    * `aoc`: in command `short_link`, place type before command, e.g. `short_link private create /blah`
+    * `aoc`: replaced option `operation` with mandatory positional parameter for command `files transfer`
+    * `aoc`: replaced option `from_folder` with mandatory positional parameter for command `files transfer`
+    * `orchestrator`: workflow start takes arguments as optional positional extended value instead of option `param`
+    * `node`: `find` command now takes an optional `@ruby:` extended value instead of option `query` with prefix: `exec:`
     * sync: plugin `sync` is removed: actions are available through `server` and `node` plugins.
     * sync: replaced option `sync_session` with optional positional parameter.
-    * preview: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
+    * `preview`: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
     * trsdk: parameters `host` and `port` in option `transfer_info` are replaced with parameter `url`, like `grpc://host:port`
 
 * 4.14.0
 
-  * new: server: option `passphrase` for simpler command line (#114)
-  * new: percent selector for entities identifier
-  * new: faspex5: shared inbox and workgroup membership management
-  * new: faspex5: invite external user to shared inbox
-  * new: faspex5: package list and receive from workgroup and shared inbox
-  * new: config: Command `ascp info` shows default transfer spec.
-  * new: httpgw: synchronous and asynchronous upload modes
-  * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
-  * fix: option `ts`: deep add and remove of keys. (#117)
-  * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
-  * fix: direct: if transfer spec contains "paths" and elements with "destination", but first element has only "source", then destinations were ignored. Now "destination" all or none is enforced.
-  * change: using `aoc files` or node gen4 operations (`browse`, `delete`) on a link will follow the link only if path ends with /
-  * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
-  * change: aoc: better handling of shared links
-  * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
-  * change: config: remove deprecated command: `export_to_cli`
-  * change: config: removed all legacy preset command, newer command `preset` shall be used now.
-  * change: config: SDK is now installed in $HOME/.aspera/sdk instead of $HOME/.aspera/ascli/sdk
-  * change(break): aoc/node: Simplification: gen4 operations: show modify permission thumbnail are now directly under node gen 4 command. Command `file` is suppressed. Option `path` is suppressed. The default expected argument is a path. To provide a file id, use selector syntax: %id:_file_id_
-  * change(break): node: option `token_type` is removed, as starting with HSTS 4.3 basic token is only allowed with access keys, so use gen4 operations: `acc do self`
+  * New Features:
+    * new: server: option `passphrase` for simpler command line (#114)
+    * new: percent selector for entities identifier
+    * new: faspex5: shared inbox and workgroup membership management
+    * new: faspex5: invite external user to shared inbox
+    * new: faspex5: package list and receive from workgroup and shared inbox
+    * new: config: Command `ascp info` shows default transfer spec.
+    * new: httpgw: synchronous and asynchronous upload modes
+    * new: node: command `bandwidth_average` to get average bandwidth of node, per periods
+  * Issues Fixed:
+    * fix: option `ts`: deep add and remove of keys. (#117)
+    * fix: faspex5: user lookup for `packages send` shall be exact match (#120)
+    * fix: direct: if transfer spec contains "paths" and elements with "destination", but first element has only "source", then destinations were ignored. Now "destination" all or none is enforced.
+  * Breaking Changes:
+    * change: using `aoc files` or node gen4 operations (`browse`, `delete`) on a link will follow the link only if path ends with /
+    * change: shares: command `repository` is changed to `files` for consistency with aoc and upcoming faspex5, but is still available as alias
+    * change: aoc: better handling of shared links
+    * change: global: option `value` is deprecated. Use positional parameter for creation data and option `query` for list/delete operations.
+    * change: config: remove deprecated command: `export_to_cli`
+    * change: config: removed all legacy preset command, newer command `preset` shall be used now.
+    * change: config: SDK is now installed in $HOME/.aspera/sdk instead of $HOME/.aspera/ascli/sdk
+    * change(break): aoc/node: Simplification: gen4 operations: show modify permission thumbnail are now directly under node gen 4 command. Command `file` is suppressed. Option `path` is suppressed. The default expected argument is a path. To provide a file id, use selector syntax: %id:_file_id_
+    * change(break): node: option `token_type` is removed, as starting with HSTS 4.3 basic token is only allowed with access keys, so use gen4 operations: `acc do self`
 
 * 4.13.0
 
-  * new: preview: option `reencode_ffmpeg` allows overriding all re-encoding options
-  * new: faspex5: package delete (#107)
-  * new: faspex5: package recv for inboxes and regular users (#108)
-  * new: faspex5: smtp management
-  * new: faspex5: use public link for authorization of package download, using option `link`
-  * new: faspex5: list content of package, and allow partial download of package
-  * new: faspex5: list packages support multiple pages and items limitations (`max` and `pmax`)
-  * new: aoc: files operations with workspace-less user (#109)
-  * new: node: async with gen3 token (#110)
-  * new: node: display of preview of file in terminal for access keys
-  * change: option `transfer_info` is now cumulative, setting several times merge values
-  * change(deprecation): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
-  * fix: cos: do not use refresh token when not supported
-  * fix: container: SDK installed in other folder than `ascli` (#106)
+  * New Features:
+    * new: preview: option `reencode_ffmpeg` allows overriding all re-encoding options
+    * new: faspex5: package delete (#107)
+    * new: faspex5: package recv for inboxes and regular users (#108)
+    * new: faspex5: smtp management
+    * new: faspex5: use public link for authorization of package download, using option `link`
+    * new: faspex5: list content of package, and allow partial download of package
+    * new: faspex5: list packages support multiple pages and items limitations (`max` and `pmax`)
+    * new: aoc: files operations with workspace-less user (#109)
+    * new: node: async with gen3 token (#110)
+    * new: node: display of preview of file in terminal for access keys
+  * Issues Fixed:
+    * fix: cos: do not use refresh token when not supported
+    * fix: container: SDK installed in other folder than `ascli` (#106)
+  * Breaking Changes:
+    * change: option `transfer_info` is now cumulative, setting several times merge values
+    * change(deprecation): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
 
 * 4.12.0
 
-  * new: docker: build image from official gem version, possibility to deploy beta as well
-  * new: generic: `delete` operation supports option `value` for deletion parameters
-  * new: aoc: command `aoc packages recv` accepts option `query` to specify a shared inbox
-  * new: faspex: (v4) user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
-  * new: faspex: (v4) gateway to faspex 5 for package send
-  * new: faspex5: possibility to change email templates
-  * new: faspex5: shared folder list and browse
-  * new: faspex5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
-  * new: faspex5: send package from remote source
-  * new: shares: option `type` for command `shares admin user`
-  * new: shares: full support for shares admin operations
-  * change(break): shares: command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
-  * change(break): shares: command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
-  * change(break): shares: command `app_authorizations` now has sub commands `show` and `modify`
-  * change(break): shares: similar changes for `shares admin share user show`
-  * change(break): option `ascp_opts` is removed, and replaced with `transfer_info` parameter `ascp_args`
+  * New Features:
+    * new: docker: build image from official gem version, possibility to deploy beta as well
+    * new: generic: `delete` operation supports option `value` for deletion parameters
+    * new: aoc: command `aoc packages recv` accepts option `query` to specify a shared inbox
+    * new: faspex: (v4) user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
+    * new: faspex: (v4) gateway to faspex 5 for package send
+    * new: faspex5: possibility to change email templates
+    * new: faspex5: shared folder list and browse
+    * new: faspex5: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
+    * new: faspex5: send package from remote source
+    * new: shares: option `type` for command `shares admin user`
+    * new: shares: full support for shares admin operations
+  * Breaking Changes:
+    * change(break): shares: command `shares admin user saml_import` replaced with `shares admin user import --type=saml`
+    * change(break): shares: command `shares admin user ldap_import` replaced with `shares admin user add --type=ldap`
+    * change(break): shares: command `app_authorizations` now has sub commands `show` and `modify`
+    * change(break): shares: similar changes for `shares admin share user show`
+    * change(break): option `ascp_opts` is removed, and replaced with `transfer_info` parameter `ascp_args`
 
 * 4.11.0
 
-  * new: vault: secret finder, migration from config file
-  * new: allow removal of transfer spec parameter by setting value to `null`
-  * new: option `ascp_opts` allows to provide native `ascp` options on command line
-  * new: command `sync` added to `node` (gen4) and `server` plugins, also available in `aoc`
-  * fix: security: no shell interpolation
-  * fix: when WSS and node agent: no localhost (certificate)
-  * fix: #99 `aoc file download` for single shared folder
-  * fix: due to change of API in faspex 5 for send package (paths is mandatory for any type of transfer now)
-  * fix: Oauth web authentication was broken, fixed now
-  * change(break): container image has entry point
-  * change(break): `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
-  * change(break): renamed options for `sync`
-  * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used
-  * change: if wss is enabled on server, use wss
-  * lots of cleanup and refactoring
+  * New Features:
+    * new: vault: secret finder, migration from config file
+    * new: allow removal of transfer spec parameter by setting value to `null`
+    * new: option `ascp_opts` allows to provide native `ascp` options on command line
+    * new: command `sync` added to `node` (gen4) and `server` plugins, also available in `aoc`
+  * Issues Fixed:
+    * fix: security: no shell interpolation
+    * fix: when WSS and node agent: no localhost (certificate)
+    * fix: #99 `aoc file download` for single shared folder
+    * fix: due to change of API in faspex 5 for send package (paths is mandatory for any type of transfer now)
+    * fix: Oauth web authentication was broken, fixed now
+  * Breaking Changes:
+    * change(break): container image has entry point
+    * change(break): `aoc admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
+    * change(break): renamed options for `sync`
+    * change: node gen4 operations are moved from aoc plugin to node plugin but made available where gen4 is used
+    * change: if wss is enabled on server, use wss
+    * lots of cleanup and refactoring
 
 * 4.10.0
 
-  * new: httpgw transfer agent: support api v2, support transfer through http proxy, including proxy password
-  * new: faspex5: get bearer token
-  * updates: for docker container version
-  * break: option `secrets` is renamed to `vault`
+  * New Features:
+    * new: httpgw transfer agent: support api v2, support transfer through http proxy, including proxy password
+    * new: faspex5: get bearer token
+  * Issues Fixed:
+    * updates: for docker container version
+  * Breaking Changes:
+    * break: option `secrets` is renamed to `vault`
 
 * 4.9.0
 
-  * new: shares: import of SAML users and LDAP users
-  * new: M1 apple silicon support SDK install (uses x86 ascp)
-  * new: support bulk operation more globally (create/delete), not all ops , though
-  * new: added missing transfer spec parameters, e.g. `src_base`, `password`
-  * new: improved documentation on faspex and aoc package send
-  * fix: `node do` command fixed
-  * fix: improved secret hiding from logs
-  * change(break): removed rarely commands `nodeadmin`, `configuration`, `userdata`, `ctl` from plugin `server`
-    as well as option `cmd_prefix`
-  * change: `ascli` runs as user `cliuser` instead of `root` in container
-  * change: default access right for config folder is now user only, including private keys
+  * New Features:
+    * new: shares: import of SAML users and LDAP users
+    * new: M1 apple silicon support SDK install (uses x86 ascp)
+    * new: support bulk operation more globally (create/delete), not all ops , though
+    * new: added missing transfer spec parameters, e.g. `src_base`, `password`
+    * new: improved documentation on faspex and aoc package send
+  * Issues Fixed:
+    * fix: `node do` command fixed
+    * fix: improved secret hiding from logs
+  * Breaking Changes:
+    * change(break): removed rarely commands `nodeadmin`, `configuration`, `userdata`, `ctl` from plugin `server`
+      as well as option `cmd_prefix`
+    * change: `ascli` runs as user `cliuser` instead of `root` in container
+    * change: default access right for config folder is now user only, including private keys
 
 * 4.8.0
 
-  * new: #76 add resource `group_membership` in `aoc`
-  * new: add resource `metadata_profile` in `faspex5`
-  * new: add command `user profile` in `faspex5`
-  * new: add config wizard for `faspex5`
-  * new: #75 gem is signed
-  * change(break): removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
-  * change(break): hash vault keys are string instead of symbol
-  * change: cleanup with rubocop, all strings are immutable now by default, list constants are frozen
-  * change: removed Hash.dig implementation because it is by default in Ruby >= 2.3
-  * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
-  * change: option `insecure` displays a warning
+  * New Features:
+    * new: #76 add resource `group_membership` in `aoc`
+    * new: add resource `metadata_profile` in `faspex5`
+    * new: add command `user profile` in `faspex5`
+    * new: add config wizard for `faspex5`
+    * new: #75 gem is signed
+  * Breaking Changes:
+    * change(break): removed dependency on gem `grpc` which is used only for the `trsdk` transfer agent. Users can install the gem manually if needed.
+    * change(break): hash vault keys are string instead of symbol
+    * change: cleanup with rubocop, all strings are immutable now by default, list constants are frozen
+    * change: removed Hash.dig implementation because it is by default in Ruby >= 2.3
+    * change: default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
+    * change: option `insecure` displays a warning
 
 * 4.7.0
 
-  * new: option to specify font used to generate image of text file in `preview`
-  * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
-  * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
-  * new: option `show_secrets` to reveal secrets in command output
-  * new: added and updated commands for Faspex 5
-  * new: option `cache_tokens`
-  * new: Faspex4 dropbox packages can now be received by id
-  * change(break): command `conf gem path` replaces `conf gem_path`
-  * change(break): option `fpac` expects a value instead of URL
-  * change(break): option `cipher` in transfer spec must have hyphen
-  * change(break): renamed option `log_passwords` to `log_secrets`
-  * change(break): removed plugin `shares2` as products is now EOL
-  * fix: After AoC version update, wizard did not detect AoC properly
+  * New Features:
+    * new: option to specify font used to generate image of text file in `preview`
+    * new: #66 improvement for content protection (support standard transfer spec options for direct agent)
+    * new: option `fpac` is now applicable to all ruby based HTTP connections, i.e. API calls
+    * new: option `show_secrets` to reveal secrets in command output
+    * new: added and updated commands for Faspex 5
+    * new: option `cache_tokens`
+    * new: Faspex4 dropbox packages can now be received by id
+  * Issues Fixed:
+    * fix: After AoC version update, wizard did not detect AoC properly
+  * Breaking Changes:
+    * change(break): command `conf gem path` replaces `conf gem_path`
+    * change(break): option `fpac` expects a value instead of URL
+    * change(break): option `cipher` in transfer spec must have hyphen
+    * change(break): renamed option `log_passwords` to `log_secrets`
+    * change(break): removed plugin `shares2` as products is now EOL
 
 * 4.6.0
 
-  * new: command `conf plugin create`
-  * new: global option `plugin_folder`
-  * new: global option `transpose_single`
-  * new: simplified metadata passing for shared inbox package creation in AoC
-  * change(break): command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
-  * change(break): command `aoc user profile` replaces `aoc user info`
-  * change(break): command `aoc user workspaces list` replaces `aoc user workspaces`
-  * change(break): command `aoc user workspaces current` replaces `aoc workspace`
-  * change(break): command `conf plugin list` replaces `conf plugins`
-  * change(break): command `conf connect` simplified
-  * fix: #60 ascli executable was not installed by default in 4.5.0
-  * fix: add password hiding case in logs
+  * New Features:
+    * new: command `conf plugin create`
+    * new: global option `plugin_folder`
+    * new: global option `transpose_single`
+    * new: simplified metadata passing for shared inbox package creation in AoC
+  * Issues Fixed:
+    * fix: #60 ascli executable was not installed by default in 4.5.0
+    * fix: add password hiding case in logs
+  * Breaking Changes:
+    * change(break): command `aoc packages shared_inboxes list` replaces `aoc user shared_inboxes`
+    * change(break): command `aoc user profile` replaces `aoc user info`
+    * change(break): command `aoc user workspaces list` replaces `aoc user workspaces`
+    * change(break): command `aoc user workspaces current` replaces `aoc workspace`
+    * change(break): command `conf plugin list` replaces `conf plugins`
+    * change(break): command `conf connect` simplified
 
 * 4.5.0
 
-  * new: support transfer agent: [Transfer SDK](README.md#agt_trsdk)
-  * new: support [http socket options](README.md#http_options)
-  * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
-  * new: `config vault` supports encrypted passwords, also macos keychain
-  * new: `config preset` command for consistency with id
-  * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
-  * change: when using wss, use [ruby's CA certs](README.md#certificates)
-  * change: unexpected parameter makes exit code not zero
-  * change(break): options `id` and `name` cannot be specified at the same time anymore, use [positional identifier or name selection](README.md#res_select)
-  * change(break): `aoc admin res node` does not take workspace main node as default node if no `id` specified.
-  * change(break): : `orchestrator workflow status` requires id, and supports special id `ALL`
-  * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
+  * New Features:
+    * new: support transfer agent: [Transfer SDK](README.md#agt_trsdk)
+    * new: support [http socket options](README.md#http_options)
+    * new: logs hide passwords and secrets, option `log_passwords` to enable logging secrets
+    * new: `config vault` supports encrypted passwords, also macos keychain
+    * new: `config preset` command for consistency with id
+    * new: identifier can be provided using either option `id` or directly after the command, e.g. `delete 123` is the same as `delete --id=123`
+  * Issues Fixed:
+    * fix: various smaller fixes and renaming of some internal classes (transfer agents and few other)
+  * Breaking Changes:
+    * change: when using wss, use [ruby's CA certs](README.md#certificates)
+    * change: unexpected parameter makes exit code not zero
+    * change(break): options `id` and `name` cannot be specified at the same time anymore, use [positional identifier or name selection](README.md#res_select)
+    * change(break): `aoc admin res node` does not take workspace main node as default node if no `id` specified.
+    * change(break): : `orchestrator workflow status` requires id, and supports special id `ALL`
 
 * 4.4.0
 
-  * new: `aoc packages list` add possibility to add filter with option `query`
-  * new: `aoc admin res xxx list` now get all items by default #50
-  * new: `preset` option can specify name or hash value
-  * new: `node` plugin accepts bearer token and access key as credential
-  * new: `node` option `token_type` allows using basic token in addition to aspera type.
-  * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
-  * change(break): resource `apps_new` of `aoc` replaced with `application` (more clear)
+  * New Features:
+    * new: `aoc packages list` add possibility to add filter with option `query`
+    * new: `aoc admin res xxx list` now get all items by default #50
+    * new: `preset` option can specify name or hash value
+    * new: `node` plugin accepts bearer token and access key as credential
+    * new: `node` option `token_type` allows using basic token in addition to aspera type.
+  * Breaking Changes:
+    * change: `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
+    * change(break): resource `apps_new` of `aoc` replaced with `application` (more clear)
 
 * 4.3.0
 
-  * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](README.md#agt_direct) transfer agent.
-  * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
+  * New Features:
+    * new: parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](README.md#agt_direct) transfer agent.
+    * new: command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
 * 4.2.2
 
-  * new: `faspex package list` retrieves the whole list, not just first page
-  * new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
-  * new: the error "Remote host is not who we expected" displays a special remediation message
-  * new: `conf ascp spec` displays supported transfer spec
-  * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
-  * fix: space character in `faspe:` url are percent encoded if needed
-  * fix: `preview scan`: if file_id is unknown, ignore and continue scan
-  * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
-  * change(break): option `notify` or `aoc` replaced with `notif_to` and `notif_template`
+  * New Features:
+    * new: `faspex package list` retrieves the whole list, not just first page
+    * new: support web based auth to aoc and faspex 5 using HTTPS, new dependency on gem `webrick`
+    * new: the error "Remote host is not who we expected" displays a special remediation message
+    * new: `conf ascp spec` displays supported transfer spec
+    * new: options `notif_to` and `notif_template` to send email notifications on transfer (and other events)
+  * Issues Fixed:
+    * fix: space character in `faspe:` url are percent encoded if needed
+    * fix: `preview scan`: if file_id is unknown, ignore and continue scan
+  * Breaking Changes:
+    * change: for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
+    * change(break): option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
 * 4.2.1
 
-  * new: command `faspex package recv` supports link of type: `faspe:`
-  * new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
+  * New Features:
+    * new: command `faspex package recv` supports link of type: `faspe:`
+    * new: command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
 
 * 4.2.0
 
-  * new: command `aoc remind` to receive organization membership by email
-  * new: in `preview` option `value` to filter out on file name
-  * new: `initdemo` to initialize for demo server
-  * new: [`direct`](README.md#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
-  * fix: on Windows `conf ascp use` expects ascp.exe
-  * fix: (break) multi_session_threshold is Integer, not String
-  * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
-  * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
-  * change(break): `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
-  * change(break): parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
+  * New Features:
+    * new: command `aoc remind` to receive organization membership by email
+    * new: in `preview` option `value` to filter out on file name
+    * new: `initdemo` to initialize for demo server
+    * new: [`direct`](README.md#agt_direct) transfer agent options: `spawn_timeout_sec` and `spawn_delay_sec`
+  * Issues Fixed:
+    * fix: on Windows `conf ascp use` expects ascp.exe
+    * fix: (break) multi_session_threshold is Integer, not String
+    * fix: `conf ascp install` renames sdk folder if it already exists (leftover shared lib may make fail)
+    * fix: removed replace_illegal_chars from default aspera.conf causing "Error creating illegal char conversion table"
+  * Breaking Changes:
+    * change(break): `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
+    * change(break): parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
 
 * 4.1.0
 
-  * fix: remove keys from transfer spec and command line when not needed
-  * fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
-  * new: update documentation with regard to offline and docker installation
-  * new: renamed command `nagios_check` to `health`
-  * new: agent `http_gw` now supports upload
-  * new: added option `sdk_url` to install SDK from local file for offline install
-  * new: check new gem version periodically
-  * new: the --fields= option, support -_field_name_ to remove a field from default fields
-  * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
-  * new: `mimemagic` is now optional, needs manual install for `preview`, compatible with version 0.4.x
-  * new: AoC a password can be provided for a public link
-  * new: `conf doc` take an optional parameter to go to a section
-  * new: initial support for Faspex 5 Beta 1
+  * New Features:
+    * new: update documentation with regard to offline and docker installation
+    * new: renamed command `nagios_check` to `health`
+    * new: agent `http_gw` now supports upload
+    * new: added option `sdk_url` to install SDK from local file for offline install
+    * new: check new gem version periodically
+    * new: the --fields= option, support -_field_name_ to remove a field from default fields
+    * new: Oauth tokens are discarded automatically after 30 minutes (useful for COS delegated refresh tokens)
+    * new: `mimemagic` is now optional, needs manual install for `preview`, compatible with version 0.4.x
+    * new: AoC a password can be provided for a public link
+    * new: `conf doc` take an optional parameter to go to a section
+    * new: initial support for Faspex 5 Beta 1
+  * Issues Fixed:
+    * fix: remove keys from transfer spec and command line when not needed
+    * fix: default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
 
 * 4.0.0
 
-  * now available as open source (github) with general cleanup
-  * changed default tool name from `mlia` to `ascli`
-  * changed `aspera` command to `aoc`
-  * changed gem name from `asperalm` to `aspera-cli`
-  * changed module name from `Asperalm` to `Aspera`
-  * removed command `folder` in `preview`, merged to `scan`
-  * persistency files go to sub folder instead of main folder
-  * added possibility to install SDK: `config ascp install`
+  * New Features:
+    * now available as open source (github) with general cleanup
+    * added possibility to install SDK: `config ascp install`
+  * Breaking Changes:
+    * changed default tool name from `mlia` to `ascli`
+    * changed `aspera` command to `aoc`
+    * changed gem name from `asperalm` to `aspera-cli`
+    * changed module name from `Asperalm` to `Aspera`
+    * removed command `folder` in `preview`, merged to `scan`
+    * persistency files go to sub folder instead of main folder
 
 * 0.11.8
 
@@ -311,12 +358,12 @@
 
 * 0.11.6
 
-  * orchestrator : added more choice in auth type
-  * preview: cleanup in generator (removed and renamed parameters)
-  * preview: better documentation
-  * preview: animated thumbnails for video (option: `video_png_conv=animated`)
-  * preview: new event trigger: `trevents` (`events` seems broken)
-  * preview: unique tmp folder to avoid clash of multiple instances
+  * `orchestrator`: added more choice in auth type
+  * `preview`: cleanup in generator (removed and renamed parameters)
+  * `preview`: better documentation
+  * `preview`: animated thumbnails for video (option: `video_png_conv=animated`)
+  * `preview`: new event trigger: `trevents` (`events` seems broken)
+  * `preview`: unique tmp folder to avoid clash of multiple instances
   * repo: added template for secrets used for testing
 
 * 0.11.5

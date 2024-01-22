@@ -96,6 +96,7 @@ module Aspera
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
+      RESULT_PARAMS = %i[type data total fields name].freeze
 
       private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR
       # prefix to display error messages in user messages (terminal)
@@ -309,10 +310,11 @@ module Aspera
       # this method displays the results, especially the table format
       def display_results(results)
         assert_type(results, Hash)
-        assert((results.keys - %i[type data fields name]).empty?){"result unsupported key: #{results.keys - %i[type data fields name]}"}
+        assert((results.keys - RESULT_PARAMS).empty?){"result unsupported key: #{results.keys - RESULT_PARAMS}"}
         assert(results.key?(:type)){"result must have type (#{results})"}
         assert(results.key?(:data) || %i[empty nothing].include?(results[:type])){'result must have data'}
         Log.log.debug{"display_results: #{results[:data].class} #{results[:type]}"}
+        display_item_count(results[:data].length, results[:total]) if results.key?(:total)
         SecretHider.deep_remove_secret(results[:data]) unless @options[:show_secrets] || @options[:display].eql?(:data)
         case @options[:format]
         when :text

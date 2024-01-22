@@ -11,7 +11,7 @@ CLI_NAME=ascli
 DIR_BIN=$(DIR_TOP)bin/
 DIR_LIB=$(DIR_TOP)lib/
 DIR_TMP=$(DIR_TOP)tmp/
-DIR_PRIV=$(DIR_TOP)local/
+DIR_PRIV=$(DIR_TOP)private/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
@@ -43,9 +43,9 @@ $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@
 $(TEST_CONF_FILE_PATH):
-	mkdir -p $(DIR_PRIV)
-	cp $(TMPL_CONF_FILE_PATH) $(TEST_CONF_FILE_PATH)
-	@echo "\033[0;32mAn empty configuration file is created:\n$$(realpath $(TEST_CONF_FILE_PATH))\nIt needs to be filled to run tests.\033[0;39m"
+	@mkdir -p $(DIR_PRIV)
+	@echo "\033[5mExecute the following command from the top folder:\n\033[0;32mcp docs/$(TEST_CONF_FILE_BASE) private\n\033[0;5mThen, edit this file and fill with your values.\033[0m"
+	@exit 1
 # Ensure required ruby gems are installed
 # remove ascli and asession from rvm bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile

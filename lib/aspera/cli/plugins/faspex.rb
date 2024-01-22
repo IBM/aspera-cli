@@ -270,7 +270,7 @@ module Aspera
             end
             return nagios.result
           when :package
-            command_pkg = options.get_next_command(%i[send recv list show])
+            command_pkg = options.get_next_command(%i[send receive list show], aliases: {recv: :receive})
             case command_pkg
             when :show
               delivery_id = instance_identifier
@@ -317,7 +317,7 @@ module Aspera
               end
               # Log.log.debug{Log.dump('transfer_spec',transfer_spec)}
               return Main.result_transfer(transfer.start(transfer_spec))
-            when :recv
+            when :receive
               link_url = options.get_option(:link)
               # list of faspex ID/URI to download
               pkg_id_uri = nil
@@ -340,8 +340,13 @@ module Aspera
                 delivery_id = instance_identifier
                 raise 'empty id' if delivery_id.empty?
                 recipient = options.get_option(:recipient)
-                if ExtendedValue::ALL.eql?(delivery_id)
+                if delivery_id.eql?(ExtendedValue::ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
+                elsif delivery_id.eql?(ExtendedValue::INIT)
+                  assert(skip_ids_persistency){'Only with option once_only'}
+                  skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD]}})
+                  skip_ids_persistency.save
+                  return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
                   raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Fasp::Uri::SCHEME}" if found_package_link.nil?

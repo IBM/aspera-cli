@@ -37,11 +37,13 @@ module Aspera
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # default config file
         DEFAULT_CONFIG_FILENAME = 'config.yaml'
+        DEFAULT_VAULT_FILENAME = 'vault.bin'
         # reserved preset names
         CONF_PRESET_CONFIG = 'config'
         CONF_PRESET_VERSION = 'version'
-        CONF_PRESET_DEFAULT = 'default'
+        CONF_PRESET_DEFAULTS = 'default'
         CONF_PRESET_GLOBAL = 'global_common_defaults'
+        # special name to identify value of default
         GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
         CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
@@ -79,7 +81,7 @@ module Aspera
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
-          :CONF_PRESET_DEFAULT,
+          :CONF_PRESET_DEFAULTS,
           :CONF_PRESET_GLOBAL,
           :ASPERA_PLUGINS_FOLDERNAME,
           :RUBY_FILE_EXT,
@@ -452,14 +454,14 @@ module Aspera
           return nil
         end
 
-        # get the default global preset, or init a new one
+        # get the default global preset, or set default one
         def global_default_preset
-          global_default_preset_name = get_plugin_default_config_name(CONF_GLOBAL_SYM)
-          if global_default_preset_name.nil?
-            global_default_preset_name = CONF_PRESET_GLOBAL.to_s
-            set_preset_key(CONF_PRESET_DEFAULT, CONF_GLOBAL_SYM, global_default_preset_name)
+          result = get_plugin_default_config_name(CONF_GLOBAL_SYM)
+          if result.nil?
+            result = CONF_PRESET_GLOBAL
+            set_preset_key(CONF_PRESET_DEFAULTS, CONF_GLOBAL_SYM, result)
           end
-          return global_default_preset_name
+          return result
         end
 
         def set_preset_key(preset, param_name, param_value)
@@ -574,7 +576,7 @@ module Aspera
           Log.log.debug{"conf version: #{version}"}
           # VVV if there are any conversion needed, those happen here.
           # fix bug in 4.4 (creating key "true" in "default" preset)
-          @config_presets[CONF_PRESET_DEFAULT].delete(true) if @config_presets[CONF_PRESET_DEFAULT].is_a?(Hash)
+          @config_presets[CONF_PRESET_DEFAULTS].delete(true) if @config_presets[CONF_PRESET_DEFAULTS].is_a?(Hash)
           # ^^^ Place new compatibility code before this line
           # set version to current
           @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
@@ -1004,13 +1006,13 @@ module Aspera
                 'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA # cspell:disable-line
               }
             end
-            @config_presets[CONF_PRESET_DEFAULT] ||= {}
-            if @config_presets[CONF_PRESET_DEFAULT].key?(SERVER_COMMAND)
-              Log.log.warn{"Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND]}"}
+            @config_presets[CONF_PRESET_DEFAULTS] ||= {}
+            if @config_presets[CONF_PRESET_DEFAULTS].key?(SERVER_COMMAND)
+              Log.log.warn{"Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND]}"}
               Log.log.warn{"Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}"} unless
-                DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND])
+                DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND])
             else
-              @config_presets[CONF_PRESET_DEFAULT][SERVER_COMMAND] = DEMO_SERVER_PRESET
+              @config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_SERVER_PRESET
               Log.log.info{"Setting server default preset to : #{DEMO_SERVER_PRESET}"}
             end
             return Main.result_status('Done')
@@ -1098,17 +1100,17 @@ module Aspera
           # Write configuration file
           formatter.display_status("Preparing preset: #{wiz_preset_name}")
           # init defaults if necessary
-          @config_presets[CONF_PRESET_DEFAULT] ||= {}
+          @config_presets[CONF_PRESET_DEFAULTS] ||= {}
           option_override = options.get_option(:override, mandatory: true)
           raise Cli::Error, "A default configuration already exists for plugin '#{identification[:product]}' (use --override=yes or --default=no)" \
-            if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULT].key?(identification[:product])
+            if !option_override && options.get_option(:default, mandatory: true) && @config_presets[CONF_PRESET_DEFAULTS].key?(identification[:product])
           raise Cli::Error, "Preset already exists: #{wiz_preset_name}  (use --override=yes or --id=<name>)" \
             if !option_override && @config_presets.key?(wiz_preset_name)
           @config_presets[wiz_preset_name] = wizard_result[:preset_value].stringify_keys
           test_args = wizard_result[:test_args]
           if options.get_option(:default, mandatory: true)
             formatter.display_status("Setting config preset as default for #{identification[:product]}")
-            @config_presets[CONF_PRESET_DEFAULT][identification[:product].to_s] = wiz_preset_name
+            @config_presets[CONF_PRESET_DEFAULTS][identification[:product].to_s] = wiz_preset_name
           else
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
@@ -1196,9 +1198,9 @@ module Aspera
             Log.log.debug('skip default config')
             return nil
           end
-          if @config_presets.key?(CONF_PRESET_DEFAULT) &&
-              @config_presets[CONF_PRESET_DEFAULT].key?(plugin_name_sym.to_s)
-            default_config_name = @config_presets[CONF_PRESET_DEFAULT][plugin_name_sym.to_s]
+          if @config_presets.key?(CONF_PRESET_DEFAULTS) &&
+              @config_presets[CONF_PRESET_DEFAULTS].key?(plugin_name_sym.to_s)
+            default_config_name = @config_presets[CONF_PRESET_DEFAULTS][plugin_name_sym.to_s]
             if !@config_presets.key?(default_config_name)
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
@@ -1257,8 +1259,9 @@ module Aspera
           info = options.get_option(:vault) || {}
           info = info.symbolize_keys
           info[:type] ||= 'file'
-          info[:name] ||= (info[:type].eql?('file') ? 'vault.bin' : PROGRAM_NAME)
+          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : PROGRAM_NAME)
           assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
+          assert(info.values.all?(String)){'vault info shall have only string values'}
           info[:password] = options.get_option(:vault_password, mandatory: true)
           return info
         end

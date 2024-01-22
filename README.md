@@ -4786,16 +4786,17 @@ aoc organization
 aoc packages browse package_id3 /contents
 aoc packages list
 aoc packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345
-aoc packages recv ALL --to-folder=. --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-aoc packages recv package_id3 --to-folder=.
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"Important files delivery","recipients":["my_shared_inbox_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"Important files delivery","recipients":["my_shared_inbox_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"Important files delivery","recipients":["my_shared_inbox_name"]}' test_file.bin
-aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-aoc packages send @json:'{"name":"Important files delivery","recipients":["my_email_internal"],"note":"my note"}' test_file.bin
-aoc packages send @json:'{"name":"Important files delivery"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
-aoc packages send @json:'{"name":"Important files delivery"}' test_file.bin --url=my_public_link_send_shared_inbox
+aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
+aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+aoc packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
+aoc packages receive package_id3 --to-folder=.
+aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"]}' test_file.bin
+aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
+aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"],"note":"my note"}' test_file.bin
+aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_shared_inbox
 aoc packages shared_inboxes list
 aoc remind --username=my_user_email
 aoc servers
@@ -6141,18 +6142,18 @@ faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data
 faspex package list --query=@json:'{"max":5}'
 faspex package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id1
 faspex package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id2
-faspex package recv --to-folder=. --link=https://app.example.com/recv_from_user_path
-faspex package recv ALL --to-folder=. --once-only=yes --query=@json:'{"max":10}'
-faspex package recv f4_db_id1 --recipient="*my_dbx" --to-folder=.
-faspex package recv f4_db_id2 --recipient="*my_wkg" --to-folder=.
-faspex package recv f4_pri1 --to-folder=.
-faspex package recv f4_prs2 --to-folder=. --box=sent
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_dbx"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["*my_wkg"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"Important files delivery","recipients":["my_email_internal","my_username"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"TIMESTAMP package remote","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
-faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"Important files delivery"}' test_file.bin
-faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"Important files delivery"}' test_file.bin
+faspex package receive --to-folder=. --link=https://app.example.com/recv_from_user_path
+faspex package receive ALL --once-only=yes --to-folder=. --query=@json:'{"max":10}'
+faspex package receive f4_db_id1 --recipient="*my_dbx" --to-folder=.
+faspex package receive f4_db_id2 --recipient="*my_wkg" --to-folder=.
+faspex package receive f4_pri1 --to-folder=.
+faspex package receive f4_prs2 --to-folder=. --box=sent
+faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_dbx"]}' test_file.bin
+faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_wkg"]}' test_file.bin
+faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal","my_username"]}' test_file.bin
+faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
+faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
+faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
 faspex source info %name:my_src --storage=@preset:faspex4_storage
 faspex source list
 faspex source node %name:my_src br / --storage=@preset:faspex4_storage

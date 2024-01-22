@@ -3,6 +3,7 @@
 # spellchecker: ignore workgroups mypackages passcode
 
 require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/extended_value'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/nagios'
@@ -20,7 +21,6 @@ module Aspera
         API_DETECT = 'api/v5/configuration/ping'
         # list of supported mailbox types (to list packages)
         API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
-        PACKAGE_ALL_INIT = 'INIT'
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
         # Faspex API v5: get transfer spec for connect
         TRANSFER_CONNECT = 'connect'
@@ -324,7 +324,7 @@ module Aspera
           end
           packages = []
           case package_ids
-          when PACKAGE_ALL_INIT
+          when ExtendedValue::INIT
             assert(skip_ids_persistency){'Only with option once_only'}
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
             skip_ids_persistency.save

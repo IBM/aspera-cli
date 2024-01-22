@@ -18,6 +18,7 @@ module Aspera
       include Singleton
 
       # special values
+      INIT = 'INIT'
       ALL = 'ALL'
       DEF = 'DEF'
 

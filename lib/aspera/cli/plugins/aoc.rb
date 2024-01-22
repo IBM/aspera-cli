@@ -166,7 +166,11 @@ module Aspera
           client_registration_token
           client_access_key
           kms_profile].freeze
-        PACKAGE_QUERY_DEFAULT = {'archived' => false, 'exclude_dropbox_packages' => true, 'has_content' => true, 'received' => true}.freeze
+        PACKAGE_RECEIVED_BASE_QUERY = {
+          'archived'    => false,
+          'has_content' => true,
+          'received'    => true,
+          'completed'   => true}.freeze
 
         def initialize(env)
           super(env)
@@ -219,11 +223,11 @@ module Aspera
           return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
         end
 
-        # Call aoc_api.read with same parameters.
-        # Use paging if necessary to get all results
-        # @return [Hash] {list: , total: }
-        def read_with_paging(resource_class_path, base_query)
+        # Call block with same query using paging and response information
+        # @return [Hash] {data: , total: }
+        def api_call_paging(base_query={})
           assert_type(base_query, Hash){'query'}
+          assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           base_query['per_page'] = 1000 unless base_query.key?('per_page')
           max_items = base_query.delete(MAX_ITEMS)
@@ -236,7 +240,7 @@ module Aspera
           loop do
             query = base_query.clone
             query['page'] = current_page
-            result = aoc_api.read(resource_class_path, query)
+            result = yield(query)
             total_count = result[:http]['X-Total-Count']
             page_count += 1
             current_page += 1
@@ -248,7 +252,36 @@ module Aspera
             break if !max_pages.nil? && page_count >= max_pages
           end
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
-          return {list: item_list, total: total_count}
+          return {data: item_list, total: total_count}
+        end
+
+        # read using the query and paging
+        # @return [Hash] {data: , total: }
+        def api_read_all(resource_class_path, base_query={})
+          return api_call_paging(base_query) do |query|
+            aoc_api.read(resource_class_path, query)
+          end
+        end
+
+        # list all entities, given additional, default and user's queries
+        def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
+          assert_type(base_query, Hash)
+          assert_type(default_query, Hash)
+          user_query = query_read_delete(default: default_query)
+          # caller may add specific modifications or checks
+          yield(user_query) if block_given?
+          return {type: :object_list, fields: fields}.merge(api_read_all(resource_class_path, base_query.merge(user_query)))
+        end
+
+        def resolve_dropbox_name_default_ws_id(query)
+          if query.key?('dropbox_name')
+            # convenience: specify name instead of id
+            raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
+            query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
+            query.delete('dropbox_name')
+          end
+          query['workspace_id'] ||= aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
+          query['exclude_dropbox_packages'] = true unless query.key?('dropbox_id')
         end
 
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
@@ -318,8 +351,7 @@ module Aspera
             command_auth_prov = options.get_next_command(%i[list update])
             case command_auth_prov
             when :list
-              providers = aoc_api.read('admin/auth_providers')[:data]
-              return {type: :object_list, data: providers}
+              return result_list('admin/auth_providers')
             when :update
               raise 'not implemented'
             end
@@ -489,9 +521,7 @@ module Aspera
               when :group_membership then default_fields.push(*%w[group_id member_type member_id])
               when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
               end
-              items = read_with_paging(resource_class_path, query_read_delete(default: default_query))
-              formatter.display_item_count(items[:list].length, items[:total])
-              return {type: :object_list, data: items[:list], fields: default_fields}
+              return result_list(resource_class_path, fields: default_fields, default_query: default_query)
             when :show
               object = aoc_api.read(resource_instance_path)[:data]
               # default: show all, but certificate
@@ -522,7 +552,7 @@ module Aspera
             else error_unexpected_value(command)
             end
           when :usage_reports
-            return {type: :object_list, data: aoc_api.read('usage_reports', {workspace_id: aoc_api.context(:files)[:workspace_id]})[:data]}
+            return result_list('usage_reports', base_query: {workspace_id: aoc_api.context(:files)[:workspace_id]})
           end
         end
 
@@ -561,7 +591,7 @@ module Aspera
             when :workspaces
               case options.get_next_command(%i[list current])
               when :list
-                return {type: :object_list, data: aoc_api.read('workspaces')[:data], fields: %w[id name]}
+                return result_list('workspaces', fields: %w[id name])
               when :current
                 return { type: :single_object, data: aoc_api.read("workspaces/#{aoc_api.context(:files)[:workspace_id]}")[:data] }
               end
@@ -575,17 +605,14 @@ module Aspera
               end
             end
           when :packages
-            package_command = options.get_next_command(%i[shared_inboxes send recv list show delete].concat(Node::NODE4_READ_ACTIONS))
+            package_command = options.get_next_command(%i[shared_inboxes send receive list show delete].concat(Node::NODE4_READ_ACTIONS), aliases: {recv: :receive})
             case package_command
             when :shared_inboxes
               case options.get_next_command(%i[list show])
               when :list
-                query = query_read_delete
-                if query.nil?
-                  query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
-                  query['workspace_id'] = aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
-                end
-                return {type: :object_list, data: aoc_api.read('dropbox_memberships', query)[:data], fields: ['dropbox_id', 'dropbox.name']}
+                default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
+                default_query['workspace_id'] = aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
+                return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
               when :show
                 return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)[:data]}
               end
@@ -609,7 +636,7 @@ module Aspera
               Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
               # return all info on package (especially package id)
               return { type: :single_object, data: created_package[:info]}
-            when :recv
+            when :receive
               ids_to_download = nil
               if !aoc_api.public_link.nil?
                 aoc_api.assert_public_link_types(['view_received_package'])
@@ -621,6 +648,7 @@ module Aspera
               skip_ids_data = []
               skip_ids_persistency = nil
               if options.get_option(:once_only, mandatory: true)
+                # TODO: add query info to id
                 skip_ids_persistency = PersistencyActionOnce.new(
                   manager: @agents[:persistency],
                   data: skip_ids_data,
@@ -630,25 +658,25 @@ module Aspera
                      aoc_api.context[:workspace_id]
                     ].concat(aoc_api.additional_persistence_ids)))
               end
-              if ExtendedValue::ALL.eql?(ids_to_download)
-                query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
+              case ids_to_download
+              when ExtendedValue::ALL, ExtendedValue::INIT
+                query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 assert_type(query, Hash){'query'}
-                if query.key?('dropbox_name')
-                  # convenience: specify name instead of id
-                  raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
-                  query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
-                  query.delete('dropbox_name')
-                end
-                query['workspace_id'] ||= aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
-                # get list of packages in inbox
-                package_info = aoc_api.read('packages', query)[:data]
+                resolve_dropbox_name_default_ws_id(query)
                 # remove from list the ones already downloaded
-                ids_to_download = package_info.map{|e|e['id']}
+                all_ids = api_read_all('packages', query)[:data].map{|e|e['id']}
+                if ids_to_download.eql?(ExtendedValue::INIT)
+                  assert(skip_ids_persistency){'Only with option once_only'}
+                  skip_ids_persistency.data.clear.concat(all_ids)
+                  skip_ids_persistency.save
+                  return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
+                end
                 # array here
-                ids_to_download.reject!{|id|skip_ids_data.include?(id)}
+                ids_to_download = all_ids.reject{|id|skip_ids_data.include?(id)}
+              else
+                ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end # ExtendedValue::ALL
               # list here
-              ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               result_transfer = []
               formatter.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
@@ -679,21 +707,10 @@ module Aspera
               return { type: :single_object, data: package_info }
             when :list
               display_fields = %w[id name bytes_transferred]
-              query = query_read_delete(default: PACKAGE_QUERY_DEFAULT)
-              assert_type(query, Hash){'query'}
-              if query.key?('dropbox_name')
-                # convenience: specify name instead of id
-                raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
-                query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
-                query.delete('dropbox_name')
-              end
-              if aoc_api.context[:workspace_id].eql?(:undefined)
-                display_fields.push('workspace_id')
-              else
-                query['workspace_id'] ||= aoc_api.context[:workspace_id]
-              end
-              packages = aoc_api.read('packages', query)[:data]
-              return {type: :object_list, data: packages, fields: display_fields}
+              display_fields.push('workspace_id') if aoc_api.context[:workspace_id].eql?(:undefined)
+              return result_list('packages', fields: display_fields, base_query: PACKAGE_RECEIVED_BASE_QUERY) do |query|
+                       resolve_dropbox_name_default_ws_id(query)
+                     end
             when :delete
               return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
                 assert_values(id.class, [String, Integer]){'identifier'}
@@ -760,8 +777,7 @@ module Aspera
                   # embed: 'updated_by_user',
                   sort:        '-created_at'
                 }
-                result = aoc_api.read('short_links', list_params)[:data]
-                return {type: :object_list, data: result, fields: Formatter.all_but('data')}
+                return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
               when :create
                 creation_params = {
                   purpose:            purpose,
