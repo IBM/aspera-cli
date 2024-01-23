@@ -1,6 +1,13 @@
 # must be first target
 all::
 
+# configuration file used for tests, template is generated in "docs"
+# this is the actual conf file, create your own from template located in "docs"
+ifndef ASPERA_CLI_TEST_CONF_FILE
+$(error ASPERA_CLI_TEST_CONF_FILE is not set. Refer to CONTRIBUTING.md.)
+endif
+DIR_PRIV=$(ASPERA_CLI_PRIVATE)/
+
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
 # must be same value as Aspera::Cli::PROGRAM_NAME
@@ -11,16 +18,9 @@ CLI_NAME=ascli
 DIR_BIN=$(DIR_TOP)bin/
 DIR_LIB=$(DIR_TOP)lib/
 DIR_TMP=$(DIR_TOP)tmp/
-DIR_PRIV=$(DIR_TOP)private/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
-# configuration file used for tests, template is generated in "docs"
-TEST_CONF_FILE_BASE=test_env.conf
-
-# this is the actual conf file, create your own from template located in "docs"
-TEST_CONF_FILE_PATH=$(DIR_PRIV)$(TEST_CONF_FILE_BASE)
-TMPL_CONF_FILE_PATH=$(DIR_DOC)$(TEST_CONF_FILE_BASE)
 # path to CLI for execution (not using PATH)
 CLI_PATH=$(DIR_BIN)$(CLI_NAME)
 # create Makefile file with macros GEM_NAME and GEM_VERSION
@@ -42,10 +42,6 @@ clean::
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@
-$(TEST_CONF_FILE_PATH):
-	@mkdir -p $(DIR_PRIV)
-	@echo "\033[5mExecute the following command from the top folder:\n\033[0;32mcp docs/$(TEST_CONF_FILE_BASE) private\n\033[0;5mThen, edit this file and fill with your values.\033[0m"
-	@exit 1
 # Ensure required ruby gems are installed
 # remove ascli and asession from rvm bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile

@@ -16,7 +16,7 @@ include $(DIR_TOP)common.mak
 T=$(DIR_TMP)t/
 
 # test group: principal
-all:: $(DIR_TOP).gems_checked $(TEST_CONF_FILE_PATH) tunit tconfig tfaspex tconsole tf5 tshares tnode taoc tserver torc tnsync tnsyncs tats tcos tprev
+all:: $(DIR_TOP).gems_checked tunit tconfig tfaspex tconsole tf5 tshares tnode taoc tserver torc tnsync tnsyncs tats tcos tprev
 
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
@@ -49,7 +49,7 @@ TMP_CONF=--config-file=$(TEST_CONFIG)
 WIZ_TEST=--test-mode=yes
 CLI_HOME=$(DIR_TMP)ascli_home/
 # use configuration file in test folder
-EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(TEST_CONF_FILE_PATH)
+EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
 # "EXE_MAN" and "EXE_NO_MAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
 EXE_MAN=$(EXE_COMMON) --warnings
@@ -1418,7 +1418,7 @@ thot:
 
 $(T)tcos_info1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@json:@file:$(DIR_PRIV)service_creds.json node info
+	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@preset:file.cos_svc_cred node info
 	@$(STOP_TEST) $@
 $(T)tcos_info2: $(T).exists
 	@$(START_TEST) $@

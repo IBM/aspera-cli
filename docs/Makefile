@@ -11,6 +11,7 @@ MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
+TMPL_CONF_FILE_PATH=$(DIR_DOC)test_env.conf
 
 # main target to build doc
 all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF)
@@ -18,8 +19,8 @@ all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_CONF_FILE_PATH): $(TEST_CONF_FILE_PATH) $(DIR_DOC)doc_tools.rb
-	$(DOC_TOOL) generate_generic_conf $(TEST_CONF_FILE_PATH) > $@
+$(TMPL_CONF_FILE_PATH): $(ASPERA_CLI_TEST_CONF_FILE) $(DIR_DOC)doc_tools.rb
+	$(DOC_TOOL) generate_generic_conf $(ASPERA_CLI_TEST_CONF_FILE) > $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
 

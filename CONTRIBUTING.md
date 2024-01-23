@@ -69,20 +69,25 @@ IBM font `Plex` is used, see [IBM Plex](https://www.ibm.com/plex/).
 
 ## Running Tests
 
-First, a testing environment must be created, from project top folder:
+First, a testing configuration file must be created, from project top folder:
 
 ```bash
-mkdir local
-cp docs/test_env.conf local/.
+mkdir ~/some_secure_folder
+cp docs/test_env.conf ~/some_secure_folder/.
 ```
 
-Fill `local/test_env.conf` with system URLs and credentials for tests.
+Fill `~/some_secure_folder/test_env.conf` with system URLs and credentials for tests.
 
-This project uses a Makefile for tests:
+Then tell where this file is located:
 
 ```bash
-cd tests
-make
+export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
+```
+
+This project uses a `Makefile` for tests:
+
+```bash
+make test
 ```
 
 When new commands are added to the CLI, new tests shall be added to the test suite.
