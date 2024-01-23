@@ -1418,7 +1418,7 @@ thot:
 
 $(T)tcos_info1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@preset:file.cos_svc_cred node info
+	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@json:@file:@preset:file.cos_svc_cred node info
 	@$(STOP_TEST) $@
 $(T)tcos_info2: $(T).exists
 	@$(START_TEST) $@
