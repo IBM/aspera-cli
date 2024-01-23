@@ -6347,7 +6347,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 ```bash
 cos --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_apikey --crn=my_resource_instance_id node info
-cos --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:service_creds.json node info
+cos --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:my_cos_svc_cred node info
 cos node access_key show self
 cos node download test_file.bin --to-folder=.
 cos node info --log-level=trace2

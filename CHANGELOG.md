@@ -15,10 +15,10 @@
     * `aoc`: more list commands honor option `query`
   * Issues Fixed:
     * `config`: wizard was failing due to `require` of optional gem.
-    * `aoc`: listing entities list all, instead of just one page in some cases (e.g. retrieve all packages)
+    * `aoc`: use paging to list entities, instead of just one page(e.g. retrieve all packages)
   * Breaking Changes:
     * `shares`: option `type` for users and groups is replaced with mandatory positional argument with same value.
-    * `aoc`, `faspex`: package `recv` command changed to `receive`, for consistency with faspex5 (alias is kept)
+    * `aoc`, `faspex`: package `recv` command changed to `receive`, for consistency with faspex5 (`recv` is now an alias command)
 
 * 4.15.0
 
