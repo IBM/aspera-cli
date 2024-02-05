@@ -180,6 +180,13 @@ module Aspera
         end
       end
 
+      def parse_status(stdout)
+        return stdout
+            .split("\n")
+            .map{|i|i.split(':', 2).map(&:lstrip)}
+            .to_h
+      end
+
       def admin_status(sync_params, session_name)
         command_line = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
         if sync_params.key?('local')
@@ -211,8 +218,9 @@ module Aspera
         Log.log.debug{"execute: #{command_line.join(' ')}"}
         stdout, stderr, status = Open3.capture3(*command_line)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
+        Log.log.trace1{"stdout=#{stdout}"}
         raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
-        return stdout.split("\n").each_with_object({}){|l, m|i = l.split(':', 2); m[i.first.lstrip] = i.last.lstrip} # rubocop:disable Style/Semicolon
+        return parse_status(stdout)
       end
     end
   end # end Sync
