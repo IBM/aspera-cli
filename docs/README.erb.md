@@ -1950,7 +1950,7 @@ To display the public key of a private key:
 To display the version of **openssl** used in <%=tool%>:
 
 ```bash
-<%=cmd%> config echo @ruby:OpenSSL::OPENSSL_VERSION
+<%=cmd%> config echo @ruby:OpenSSL::OPENSSL_VERSION --format=text
 ```
 
 #### `ssh-keygen`
@@ -4601,7 +4601,7 @@ Filtering can be applied:
 
 By providing the `validator` option, offline transfer validation can be done.
 
-> **Note:** This API will probably be deprecated in the future.
+> **Note:** See later in this doc, refer to HSTS doc.
 
 ### Sync
 
@@ -4640,6 +4640,8 @@ Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/en
 
 Follow the Aspera Transfer Server configuration to activate this feature.
 
+The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
+
 ```bash
 <%=cmd%> node central file list --validator=<%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 ```
@@ -4651,6 +4653,8 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 | 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
 +--------------+--------------+------------+--------------------------------------+
 ```
+
+To update the status of the file, use the following command:
 
 ```bash
 <%=cmd%> node central file update --validator=<%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'

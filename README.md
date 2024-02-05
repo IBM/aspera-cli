@@ -2029,7 +2029,7 @@ ascli config pubkey @file:${PRIVKEYFILE}
 To display the version of **openssl** used in `ascli`:
 
 ```bash
-ascli config echo @ruby:OpenSSL::OPENSSL_VERSION
+ascli config echo @ruby:OpenSSL::OPENSSL_VERSION --format=text
 ```
 
 #### `ssh-keygen`
@@ -4800,6 +4800,8 @@ aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file
 aoc packages shared_inboxes list
 aoc remind --username=my_user_email
 aoc servers
+aoc user pref modify @json:'{"default_language":"en-us"}'
+aoc user pref show
 aoc user profile modify @json:'{"name":"dummy change"}'
 aoc user profile show
 aoc user workspaces current
@@ -5205,7 +5207,7 @@ ascli node central file list
 
 By providing the `validator` option, offline transfer validation can be done.
 
-> **Note:** This API will probably be deprecated in the future.
+> **Note:** See later in this doc, refer to HSTS doc.
 
 ### Sync
 
@@ -5244,6 +5246,8 @@ ascli node watch_folder create @json:'{"id":"mywfolder","source_dir":"/watch1","
 
 Follow the Aspera Transfer Server configuration to activate this feature.
 
+The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
+
 ```bash
 ascli node central file list --validator=ascli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
 ```
@@ -5255,6 +5259,8 @@ ascli node central file list --validator=ascli --data=@json:'{"file_transfer_fil
 | 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
 +--------------+--------------+------------+--------------------------------------+
 ```
+
+To update the status of the file, use the following command:
 
 ```bash
 ascli node central file update --validator=ascli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'

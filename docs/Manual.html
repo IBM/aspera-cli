@@ -2155,7 +2155,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb162-1"><a href
 <p>To display the version of <strong>openssl</strong> used in
 <code>ascli</code>:</p>
 <div class="sourceCode" id="cb163"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb163-1"><a href="#cb163-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @ruby:OpenSSL::OPENSSL_VERSION</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb163-1"><a href="#cb163-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @ruby:OpenSSL::OPENSSL_VERSION <span class="at">--format</span><span class="op">=</span>text</span></code></pre></div>
 <h3 data-number="4.11.2" id="ssh-keygen"><span
 class="header-section-number">4.11.2</span> <code>ssh-keygen</code></h3>
 <p>Both private and public keys are generated, option <code>-N</code> is
@@ -6256,10 +6256,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb350-1"><a href
 <span id="cb350-99"><a href="#cb350-99" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages shared_inboxes list</span>
 <span id="cb350-100"><a href="#cb350-100" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> remind <span class="at">--username</span><span class="op">=</span>my_user_email</span>
 <span id="cb350-101"><a href="#cb350-101" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> servers</span>
-<span id="cb350-102"><a href="#cb350-102" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb350-103"><a href="#cb350-103" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
-<span id="cb350-104"><a href="#cb350-104" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
-<span id="cb350-105"><a href="#cb350-105" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
+<span id="cb350-102"><a href="#cb350-102" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
+<span id="cb350-103"><a href="#cb350-103" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref show</span>
+<span id="cb350-104"><a href="#cb350-104" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb350-105"><a href="#cb350-105" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
+<span id="cb350-106"><a href="#cb350-106" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
+<span id="cb350-107"><a href="#cb350-107" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> <a id="ats"></a>Plugin:
 <code>ats</code>: IBM Aspera Transfer Service</h1>
@@ -6643,8 +6645,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb383-1"><a href
 <p>By providing the <code>validator</code> option, offline transfer
 validation can be done.</p>
 <blockquote>
-<p><strong>Note:</strong> This API will probably be deprecated in the
-future.</p>
+<p><strong>Note:</strong> See later in this doc, refer to HSTS doc.</p>
 </blockquote>
 <h2 data-number="8.4" id="sync"><span
 class="header-section-number">8.4</span> Sync</h2>
@@ -6687,6 +6688,8 @@ class="header-section-number">8.7</span> Out of Transfer File
 Validation</h2>
 <p>Follow the Aspera Transfer Server configuration to activate this
 feature.</p>
+<p>The following command lists one file that requires validation, and
+assign it to the unique validator identifier provided:</p>
 <div class="sourceCode" id="cb386"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb386-1"><a href="#cb386-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file list <span class="at">--validator</span><span class="op">=</span>ascli <span class="at">--data</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;file_transfer_filter&quot;:{&quot;max_result&quot;:1}}&#39;</span></span></code></pre></div>
 <pre class="output"><code>+--------------+--------------+------------+--------------------------------------+
@@ -6694,6 +6697,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb386-1"><a href
 +--------------+--------------+------------+--------------------------------------+
 | 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - my title/200KB.1 |
 +--------------+--------------+------------+--------------------------------------+</code></pre>
+<p>To update the status of the file, use the following command:</p>
 <div class="sourceCode" id="cb388"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb388-1"><a href="#cb388-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file update <span class="at">--validator</span><span class="op">=</span>ascli <span class="at">--data</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;files&quot;:[{&quot;session_uuid&quot;: &quot;1a74444c-...&quot;,&quot;file_id&quot;: &quot;084fb181-...&quot;,&quot;status&quot;: &quot;completed&quot;}]}&#39;</span></span></code></pre></div>
 <pre class="output"><code>updated</code></pre>
