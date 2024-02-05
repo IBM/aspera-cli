@@ -585,7 +585,7 @@ module Aspera
           when :tier_restrictions
             return { type: :single_object, data: aoc_api.read('tier_restrictions')[:data] }
           when :user
-            case options.get_next_command(%i[workspaces profile])
+            case options.get_next_command(%i[workspaces profile preferences])
             # when :settings
             # return {type: :object_list,data: aoc_api.read('client_settings/')[:data]}
             when :workspaces
@@ -601,6 +601,15 @@ module Aspera
                 return { type: :single_object, data: aoc_api.current_user_info(exception: true) }
               when :modify
                 aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', type: Hash))
+                return Main.result_status('modified')
+              end
+            when :preferences
+              user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/user_interaction_preferences"
+              case options.get_next_command(%i[show modify])
+              when :show
+                return { type: :single_object, data: aoc_api.read(user_preferences_res)[:data] }
+              when :modify
+                aoc_api.update(user_preferences_res, options.get_next_argument('properties', type: Hash))
                 return Main.result_status('modified')
               end
             end

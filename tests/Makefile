@@ -595,6 +595,14 @@ $(T)aocg6: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc user profile modify @json:'{"name":"dummy change"}'
 	@$(STOP_TEST) $@
+$(T)aocuprefshow: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc user pref show
+	@$(STOP_TEST) $@
+$(T)aocuprefmod: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc user pref modify @json:'{"default_language":"en-us"}'
+	@$(STOP_TEST) $@
 $(T)aocg7: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages shared_inboxes list
@@ -607,7 +615,7 @@ $(T)aoc_webauth: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_NO_MAN) aoc --preset=aoc_web user profile show
 	@$(STOP_TEST) $@
-taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocg7 $(T)aocg8
+taocgen: $(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocuprefshow $(T)aocuprefmod $(T)aocg7 $(T)aocg8
 $(T)aocfbr: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files browse /
@@ -1476,7 +1484,8 @@ $(T)f5_sh_folder_send: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_p3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)f5_p31
+	@sleep 15
+	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"max":1}' --fields=id --output=$(DIR_TMP)f5_p31
 	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
