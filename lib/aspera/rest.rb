@@ -63,6 +63,7 @@ module Aspera
         return uri if params.nil?
         Log.log.debug{Log.dump('params', params)}
         assert_type(params, Hash)
+        return uri if params.empty?
         query = []
         params.each do |k, v|
           case v
