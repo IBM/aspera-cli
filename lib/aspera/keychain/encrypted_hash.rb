@@ -11,35 +11,66 @@ module Aspera
   module Keychain
     # Manage secrets in a simple Hash
     class EncryptedHash
-      CIPHER_NAME = 'aes-256-cbc'
+      LEGACY_CIPHER_NAME = 'aes-256-cbc'
+      DEFAULT_CIPHER_NAME = 'aes-256-cbc'
+      FILE_TYPE = 'encrypted_hash_vault'
       CONTENT_KEYS = %i[label username password url description].freeze
+      FILE_KEYS = %w[version type cipher data].sort.freeze
       def initialize(path, current_password)
         assert_type(path, String){'path to vault file'}
         @path = path
+        @all_secrets = {}
+        vault_encrypted_data = nil
+        if File.exist?(@path)
+          vault_file = File.read(@path)
+          if vault_file.start_with?('---')
+            vault_info = YAML.parse(vault_file).to_ruby
+            assert(vault_info.keys.sort == FILE_KEYS){'Invalid vault file'}
+            @cipher_name = vault_info['cipher']
+            vault_encrypted_data = vault_info['data']
+          else
+            # legacy vault file
+            @cipher_name = LEGACY_CIPHER_NAME
+            vault_encrypted_data = File.read(@path, mode: 'rb')
+          end
+        end
+        # setting password also creates the cipher
         self.password = current_password
-        @all_secrets = File.exist?(@path) ? YAML.load_stream(@cipher.decrypt(File.read(@path))).first : {}
+        if !vault_encrypted_data.nil?
+          @all_secrets = YAML.load_stream(@cipher.decrypt(vault_encrypted_data)).first
+        end
       end
 
+      # set the password and cipher
       def password=(new_password)
         # number of bits in second position
-        key_bytes = CIPHER_NAME.split('-')[1].to_i / Environment::BITS_PER_BYTE
+        key_bytes = DEFAULT_CIPHER_NAME.split('-')[1].to_i / Environment::BITS_PER_BYTE
         # derive key from passphrase, add trailing zeros
         key = "#{new_password}#{"\x0" * key_bytes}"[0..(key_bytes - 1)]
         Log.log.trace1{"secret=[#{key}],#{key.length}"}
-        SymmetricEncryption.cipher = @cipher = SymmetricEncryption::Cipher.new(cipher_name: CIPHER_NAME, key: key, encoding: :none)
+        @cipher = SymmetricEncryption.cipher = SymmetricEncryption::Cipher.new(cipher_name: DEFAULT_CIPHER_NAME, key: key, encoding: :none)
       end
 
+      # save current data to file with format
       def save
-        File.write(@path, @cipher.encrypt(YAML.dump(@all_secrets)), encoding: 'BINARY')
+        vault_info = {
+          'version' => '1.0.0',
+          'type'    => FILE_TYPE,
+          'cipher'  => @cipher_name,
+          'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
+        }
+        File.write(@path, YAML.dump(vault_info))
       end
 
+      # set a secret
+      # @param options [Hash] with keys :label, :username, :password, :url, :description
       def set(options)
         assert_type(options, Hash){'options'}
         unsupported = options.keys - CONTENT_KEYS
-        options.each_value do |v|
-          assert_type(v, String){'value'}
-        end
         assert(unsupported.empty?){"unsupported options: #{unsupported}"}
+        options.each_pair do |k, v|
+          assert_type(v, String){k.to_s}
+        end
         label = options.delete(:label)
         raise "secret #{label} already exist, delete first" if @all_secrets.key?(label)
         @all_secrets[label] = options.symbolize_keys
