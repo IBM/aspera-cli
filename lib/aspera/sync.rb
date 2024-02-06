@@ -181,10 +181,20 @@ module Aspera
       end
 
       def parse_status(stdout)
-        return stdout
-            .split("\n")
-            .map{|i|i.split(':', 2).map(&:lstrip)}
-            .to_h
+        Log.log.trace1{"stdout=#{stdout}"}
+        result = {}
+        ids = nil
+        stdout.split("\n").each do |line|
+          info = line.split(':', 2).map(&:lstrip)
+          if info[1].eql?('')
+            info[1] = ids = []
+          elsif info[1].nil?
+            ids.push(info[0])
+            next
+          end
+          result[info[0]] = info[1]
+        end
+        return result
       end
 
       def admin_status(sync_params, session_name)
