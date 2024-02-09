@@ -11,12 +11,17 @@
   "dictionaryDefinitions": [
     {
       "name": "aspera",
-      "path": "aspera.dict",
+      "path": ".aspera.dict",
       "addWords": true
     },
     {
       "name": "ruby",
-      "path": "ruby.dict",
+      "path": ".ruby.dict",
+      "addWords": true
+    },
+    {
+      "name": "tools",
+      "path": ".tools.dict",
       "addWords": true
     }
   ],
@@ -24,6 +29,7 @@
   "dictionaries": [
     "aspera",
     "ruby",
+    "tools",
     "technical",
     "shell"
   ],
