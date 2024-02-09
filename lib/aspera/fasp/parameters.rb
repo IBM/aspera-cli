@@ -24,6 +24,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
+      # options that can be provided to the constructor, and then in @options
       SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet check_ignore].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
@@ -126,12 +127,15 @@ module Aspera
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(job_spec, options)
+        assert_type(job_spec, Hash)
+        assert_type(options, Hash)
         @job_spec = job_spec
         # check necessary options
         missing_options = SUPPORTED_OPTIONS - options.keys
         assert(missing_options.empty?){"missing options: #{missing_options.join(', ')}"}
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
         Log.log.debug{Log.dump(:parameters_options, @options)}
+        Log.log.debug{Log.dump(:dismiss_options, options.keys - SUPPORTED_OPTIONS)}
         assert_type(@options[:ascp_args], Array){'ascp_args'}
         assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
