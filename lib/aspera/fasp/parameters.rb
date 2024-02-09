@@ -24,7 +24,7 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet check_ignore].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -221,7 +221,7 @@ module Aspera
             Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
           else
             # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-            @options[:trusted_certs].each do |file|
+            @options[:trusted_certs]&.each do |file|
               env_args[:args].unshift('-i', file)
               Log.log.debug{"trusted certs for wss: #{file}"}
             end
