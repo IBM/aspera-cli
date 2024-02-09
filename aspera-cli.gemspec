@@ -25,8 +25,8 @@ Gem::Specification.new do |spec|
   raise 'RubyGems 2.0 or newer is required' unless spec.respond_to?(:metadata)
   spec.metadata['allowed_push_host'] = 'https://rubygems.org' # push only to rubygems.org
   spec.metadata['homepage_uri']      = spec.homepage
-  spec.metadata['source_code_uri']   = spec.homepage
-  spec.metadata['changelog_uri']     = spec.homepage
+  spec.metadata['source_code_uri']   = File.join(spec.homepage,'tree/main/lib/aspera')
+  spec.metadata['changelog_uri']     = File.join(spec.homepage,'CHANGELOG.md')
   spec.metadata['rubygems_uri']      = Aspera::Cli::GEM_URL
   spec.metadata['documentation_uri'] = Aspera::Cli::DOC_URL
   spec.require_paths = ['lib']
