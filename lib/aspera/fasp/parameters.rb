@@ -25,9 +25,9 @@ module Aspera
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       # options that can be provided to the constructor, and then in @options
-      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet check_ignore].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet trusted_certs].freeze
 
-      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
+      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS, :SUPPORTED_OPTIONS
 
       class << self
         # Temp folder for file lists, must contain only file lists
