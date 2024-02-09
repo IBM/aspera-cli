@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cspell:ignore Serban Antipolis optipng -->
+<!-- cspell:ignore Serban Antipolis -->
 
 [comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
 
@@ -42,16 +42,16 @@ Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 - Execute commands remotely on Aspera products
 - Transfer to/from Aspera products
 
-So it is designed for:
+It is designed for:
 
 - Interactive operations on a text terminal (typically, VT100 compatible), e.g. for maintenance
 - Scripting, e.g. batch operations in (shell) scripts (e.g. cron job)
 
 <%=tool%> can be seen as a command line tool integrating:
 
-- A configuration file (config.yaml)
-- Advanced command line options
-- cURL (for REST calls)
+- A configuration file (`config.yaml`)
+- Advanced command line options ([Extended Value](#extended))
+- `curl` (for REST calls)
 - Aspera transfer (`ascp`)
 
 If the need is to perform operations programmatically in languages such as: C, Go, Python, nodejs, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
@@ -60,22 +60,23 @@ If the need is to perform operations programmatically in languages such as: C, G
 - Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Ruby, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
+Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
 ### Notations, Shell, Examples
 
-Command line operations examples are shown using a shell such: `bash` or `zsh`.
+Command line operations examples are shown using a shell such as: `bash` or `zsh`.
 
-Command line parameters in examples beginning with `my_`, like `my_param_value` are user-provided value and not fixed value commands.
+Command line parameters in examples beginning with `my_`, e.g. `my_param_value`, are user-provided value and not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
 
 Some commands will start an Aspera-based transfer (e.g. `upload`).
-The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses an external Aspera Client called **[Transfer Agents](#agents)**.
+The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#agents)**.
 
-> **Note:** The transfer agent is a client for the remote Transfer Server (HSTS).
-The transfer agent may be local or remote...
+> **Note:** A **[Transfer Agents](#agents)** is a client for the remote Transfer Server (HSTS).
+The **[Transfer Agents](#agents)** may be local or remote...
 For example a remote Aspera Server may be used as a transfer agent (using node API).
 i.e. using option `--transfer=node`
 
@@ -83,15 +84,12 @@ i.e. using option `--transfer=node`
 
 This section guides you from installation, first use and advanced use.
 
-First, follow the section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
+First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
 Once the gem is installed, <%=tool%> shall be accessible:
 
-```bash
-<%=cmd%> --version
-```
-
-```bash
+```console
+$ <%=cmd%> --version
 <%=gemspec.version.to_s%>
 ```
 
@@ -99,7 +97,7 @@ Once the gem is installed, <%=tool%> shall be accessible:
 
 Once installation is completed, you can proceed to the first use with a demo server:
 
-If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard)
+If you want to test with Aspera on Cloud, jump to section: [Wizard](#aocwizard).
 
 To test with Aspera demo transfer server, setup the environment and then test:
 
@@ -125,10 +123,10 @@ To test with Aspera demo transfer server, setup the environment and then test:
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a <%=prst%> for the server's authentication options.
 The following example will:
 
-- create a <%=prst%>
-- define it as default for `server` plugin
-- list files in a folder
-- download a file
+- Create a <%=prst%>
+- Define it as default for the `server` plugin
+- List files in a folder
+- Download a file
 
 ```bash
 <%=cmd%> config preset update myserver --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here
@@ -183,7 +181,7 @@ Then, follow the section relative to the product you want to interact with ( Asp
 
 ## <a id="installation"></a>Installation
 
-It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a container (`docker`).
+It is possible to install **either** directly on the host operating system (Linux, macOS, Windows) or as a [container](#container) (`docker`, `podman`, `singularity`).
 
 The direct installation is recommended and consists in installing:
 
@@ -195,7 +193,382 @@ Ruby <%=ruby_version%>.
 
 The following sections provide information on the various installation methods.
 
-An internet connection is required for the installation. If you don't have internet for the installation, refer to section [Installation without internet access](#offline_install).
+An internet connection is required for the installation.
+If you don't have internet for the installation, refer to section [Installation without internet access](#offline_install).
+
+A package with pre-installed Ruby, gem and ascp may also be provided.
+
+### <a id="ruby"></a>Ruby
+
+Use this method to install on the native host (e.g. your Windows, macOS or Linux system).
+
+A Ruby interpreter is required to run <%=tool%>.
+
+Required Ruby <%=ruby_version%>.
+
+**Ruby can be installed using any method** : rpm, yum, dnf, rvm, brew, Windows installer, ... .
+
+**In priority**, refer to the official Ruby documentation:
+
+- [Download Ruby](https://www.ruby-lang.org/en/downloads/)
+- [Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
+
+For convenience, you may refer to the following sections for a proposed method for specific operating systems.
+
+#### Unix-like: RVM: Single user installation (not root)
+
+Install `rvm`.
+Follow [https://rvm.io/](https://rvm.io/).
+
+Execute the shell/curl command.
+As regular user, it installs in the user's home: `~/.rvm` .
+
+```bash
+\curl -sSL https://get.rvm.io | bash -s stable
+```
+
+Follow on-screen instructions to install keys, and then re-execute the command.
+
+Upon RVM installation, open a new terminal or initialize with:
+
+```bash
+source ~/.rvm/scripts/rvm
+```
+
+It is advised to get one of the pre-compiled Ruby version, you can list with:
+
+```bash
+rvm list --remote
+```
+
+Install the chosen pre-compiled Ruby version:
+
+```bash
+rvm install 3.2.2
+```
+
+Ruby is now installed for the user, go to [Gem installation](#the_gem).
+
+Alternatively RVM can be installed system-wide, for this execute as `root`.
+It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
+One can install in another location with:
+
+```bash
+curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+If so, one can rename the environment script so that it is not loaded by default:
+
+```bash
+mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
+```
+
+To activate Ruby (and <%=cmd%>) later, source it:
+
+```bash
+source /etc/profile.d/rvm.sh.ok
+```
+
+```bash
+rvm version
+```
+
+#### Windows: Installer
+
+Manual installation:
+
+- Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
+- Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
+- Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
+- At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and mingw)
+- Then install the aspera-cli gem and Aspera SDK (see next sections)
+
+Automated installation, with internet access:
+
+The Ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
+
+Download the Ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+Installation without network:
+
+It is essentially the same procedure, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
+
+- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
+
+  ```bash
+  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  curl -o ${v##*/} $v
+  ```
+
+- Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
+
+  ```bat
+  gem install aspera-cli -N -i my_gems
+  ```
+
+  Zip the files `*.gem` from folder `repo/my_gems`
+
+- Download the SDK from: <https://ibm.biz/aspera_sdk>
+
+Create a Zip with all those files, and transfer to the target system.
+
+Then, on the target system:
+
+- Unzip the archive
+- Execute the installer:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+- Install the gems:
+
+```bat
+gem install --force --local *.gem
+```
+
+- Install the SDK
+
+```bash
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+```
+
+> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
+
+#### macOS: `brew`
+
+**macOS** come with Ruby.
+Nevertheless, [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future, so better not to rely on it.
+
+The recommended way is to either user `RVM` or use [Homebrew](https://brew.sh/).
+
+```bash
+brew install ruby
+```
+
+#### Linux: Package
+
+If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
+
+**Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
+
+- Check available Ruby versions:
+
+  ```bash
+  dnf module list ruby
+  ```
+
+- If Ruby was already installed with an older version, remove it:
+
+  ```bash
+  dnf module -y reset ruby
+  ```
+
+- Install packages needed to build native gems:
+  
+  ```bash
+  dnf install -y make automake gcc gcc-c++ kernel-devel
+  ```
+
+- Enable the Ruby version you want:
+
+  ```bash
+  dnf module -y enable ruby:3.1
+  dnf install -y ruby-devel
+  ```
+
+**Other examples:**
+
+```bash
+yum install -y ruby ruby-devel rubygems ruby-json
+```
+
+```bash
+apt install -y ruby ruby-dev rubygems ruby-json
+```
+
+One can remove all installed gems, for example to start fresh:
+
+```bash
+gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+```
+
+#### Other Unixes (AIX)
+
+Ruby is sometimes made available as an installable package through third party providers.
+For example for AIX, one can look at:
+
+<https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#R>
+
+If your Unix does not provide a pre-built Ruby, you can get it using one of those
+[methods](https://www.ruby-lang.org/en/documentation/installation/).
+
+For instance to build from source and install in `/opt/ruby` :
+
+```bash
+wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
+
+gzip -d ruby-2.7.2.tar.gz
+
+tar xvf ruby-2.7.2.tar
+
+cd ruby-2.7.2
+
+./configure --prefix=/opt/ruby
+
+make ruby.imp
+
+make
+
+make install
+```
+
+If you already have a Java JVM on your system (`java`), it is possible to use `jruby`:
+
+<https://www.jruby.org/download>
+
+> **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
+
+#### Optional gems
+
+Some additional gems can be installed to provide additional features:
+
+- `rmagick` : to generate thumbnails of images
+- `grpc` : to use the transfer SDK (gRPC)
+- `mimemagic` : to detect MIME type of files for `preview` command
+
+Install like this:
+
+```bash
+gem install rmagick grpc mimemagic
+```
+
+> **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
+
+### <a id="the_gem"></a>`<%=gemspec.name%>` gem
+
+Once you have Ruby and rights to install gems, install the `<%=gemspec.name%>` gem and its dependencies:
+
+```bash
+gem install <%=gemspec.name%><%=geminstadd%>
+```
+
+To upgrade to the latest version:
+
+```bash
+gem update <%=gemspec.name%>
+```
+
+During its execution, <%=tool%> checks every week if a new version is available and notifies the user in a WARN log.
+To de-activate this feature, globally set the option `version_check_days` to `0`, or specify a different period in days.
+
+To check if a new version is available (independently of `version_check_days`):
+
+```bash
+<%=cmd%> config check_update
+```
+
+### <a id="fasp_prot"></a>FASP Protocol
+
+Most file transfers will be executed using the **FASP** protocol, using `ascp`.
+Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
+
+- `ascp`
+- `aspera-license` (in same folder, or ../etc)
+
+This can be installed either be installing an Aspera transfer software, or using an embedded command:
+
+```bash
+<%=cmd%> config ascp install
+```
+
+If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
+
+```bash
+curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+```
+
+```bash
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+```
+
+The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+If the embedded method is not used, the following packages are also suitable:
+
+- IBM Aspera Connect Client (Free)
+- IBM Aspera Desktop Client (Free)
+- IBM Aspera High Speed Transfer Server (Licensed)
+- IBM Aspera High Speed Transfer EndPoint (Licensed)
+
+For instance, Aspera Connect Client can be installed by visiting the page:
+[https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
+
+<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found by default.
+Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
+
+Several methods are provided to start a transfer.
+Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, but other methods are available.
+Refer to section: [Transfer Agents](#agents)
+
+### <a id="offline_install"></a>Installation in air gapped environment
+
+> **Note:** No pre-packaged version is provided yet.
+
+A method to build one is provided here:
+
+The procedure:
+
+- Follow the non-root installation procedure with RVM, including gem
+
+- Archive (zip, tar) the main RVM folder (includes <%=cmd%>):
+
+```bash
+cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
+```
+
+- Show the Aspera SDK URL
+
+```bash
+<%=cmd%> --show-config --fields=sdk_url
+```
+
+- Download the SDK archive from that URL
+
+```bash
+curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+```
+
+- Transfer those 2 files to the target system
+
+- On target system
+
+```bash
+cd $HOME
+
+tar zxvf rvm-<%=cmd%>.tgz
+
+source ~/.rvm/scripts/rvm
+
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+```
+
+- Add those lines to shell init (`.profile`)
+
+```bash
+source ~/.rvm/scripts/rvm
+```
+
+> **Note:** Alternatively, to download all necessary gems in folder `my_gems`, execute:
+
+```bash
+gem install aspera-cli -N -i my_gems
+```
 
 ### Container
 
@@ -209,11 +582,14 @@ podman --version
 
 #### Container: Quick start
 
-**Wanna start quickly ?** With an interactive shell ? Execute this:
+**Wanna start quickly ?** With an interactive shell ?
+Execute this:
 
 ```bash
-podman run --tty --interactive --entrypoint bash <%=container_image%>:latest
+podman run --rm --tty --interactive --entrypoint bash <%=container_image%>:latest
 ```
+
+> **Note:** This command changes the entrypoint to an interactive shell instead of direct execution of <%=tool%>.
 
 Then, execute individual <%=tool%> commands such as:
 
@@ -232,11 +608,10 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](Dockerfile.tmpl.erb): the entry point is <%=tool%> and the default command is `help`.
+The container image is built from this [Dockerfile](Dockerfile.tmpl.erb).
+The entry point is <%=tool%> and the default command is `help`.
 
-If you want to run the image with a shell, execute with option: `--entrypoint bash`, and give argument `-l` (`bash` login option to override the `help` default argument)
-
-The container can also be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
+The container can be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
 podman run --rm --tty --interactive <%=container_image%>:latest
@@ -266,7 +641,7 @@ Add options:
 --user root --env <%=opt_env(%Q`home`)%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%>
 ```
 
-> **Note:** if you are using a `podman machine`, e.g. on macOS , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
+> **Note:** If you are using a `podman machine`, e.g. on macOS , make sure that the folder is also shared between the VM and the host, so that sharing is: container &rarr; VM &rarr; Host: `podman machine init ... --volume="/Users:/Users"`
 
 As shown in the quick start, if you prefer to keep a running container with a shell and <%=tool%> available,
 you can change the entry point, add option:
@@ -398,392 +773,9 @@ Or get a shell with access to <%=tool%> like this:
 singularity shell <%=cmd%>.sif
 ```
 
-### <a id="ruby"></a>Ruby
-
-Use this method to install on the native host.
-
-A Ruby interpreter is required to run <%=tool%> or to use the gem and tool.
-
-Required Ruby <%=ruby_version%>.
-
-**Ruby can be installed using any method** : rpm, yum, dnf, rvm, brew, Windows installer, ... .
-
-In priority, refer to the official Ruby documentation:
-
-- [Download Ruby](https://www.ruby-lang.org/en/downloads/)
-- [Installation Guide](https://www.ruby-lang.org/en/documentation/installation/)
-
-Else, refer to the following sections for a proposed method for specific operating systems.
-
-The recommended installation method is `rvm` for Unix-like systems (Linux, AIX, macOS, Windows with cygwin, etc...).
-If the generic install is not suitable (e.g. Windows, no cygwin), you can use one of OS-specific install method.
-If you have a simpler better way to install Ruby : use it !
-
-#### Generic: RVM: Single user installation (not root)
-
-Use this method which provides more flexibility.
-
-Install `rvm`: follow [https://rvm.io/](https://rvm.io/) :
-
-Execute the shell/curl command.
-As regular user, it install in the user's home: `~/.rvm` .
-
-```bash
-\curl -sSL https://get.rvm.io | bash -s stable
-```
-
-Follow on-screen instructions to install keys, and then re-execute the command.
-
-If you keep the same terminal (not needed if re-login):
-
-```bash
-source ~/.rvm/scripts/rvm
-```
-
-It is advised to get one of the pre-compiled Ruby version, you can list with:
-
-```bash
-rvm list --remote
-```
-
-Install the chosen pre-compiled Ruby version:
-
-```bash
-rvm install 3.2.2
-```
-
-Ruby is now installed for the user, go to [Gem installation](#the_gem).
-
-#### Generic: RVM: Global installation (as root)
-
-Follow the same method as single user install, but execute as `root`.
-
-As root, it installs by default in /usr/local/rvm for all users and creates `/etc/profile.d/rvm.sh`.
-One can install in another location with :
-
-```bash
-curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
-If so, one can rename the login script:
-
-```bash
-mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
-```
-
-To activate Ruby (and <%=cmd%>) later, source it:
-
-```bash
-source /etc/profile.d/rvm.sh.ok
-```
-
-```bash
-rvm version
-```
-
-#### Windows: Installer
-
-Manual installation:
-
-- Navigate to [https://rubyinstaller.org/](https://rubyinstaller.org/) &rarr; **Downloads**.
-- Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
-- Execute the installer which installs by default in: `C:\RubyVV-x64` (VV is the version number)
-- At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and mingw)
-- then install the aspera-cli gem and Aspera SDK (see next sections)
-
-Automated installation, with internet access:
-
-The Ruby installer supports silent installation, to see the options, execute it with `/help`, or refer to the [Ruby Installer FAQ](https://github.com/oneclick/rubyinstaller2/wiki/FAQ)
-
-Download the Ruby installer executable from <https://rubyinstaller.org/downloads/> and then install:
-
-```bat
-rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
-```
-
-Installation without network:
-
-It is essentially the same procedure, but instead of retrieving files from internet, one copies the files from a machine with internet access, and then install from those archives:
-
-- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
-
-  ```bash
-  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
-  curl -o ${v##*/} $v
-  ```
-
-- Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
-
-  ```bat
-  gem install aspera-cli -N -i my_gems
-  ```
-
-  Zip the files `*.gem` from folder `repo/my_gems`
-
-- Download the SDK from: <https://ibm.biz/aspera_sdk>
-
-Create a Zip with all those files, and transfer to the target system.
-
-Then, on the target system:
-
-- Unzip the archive
-- Execute the installer:
-
-```bat
-rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
-```
-
-- Install the gems:
-
-```bat
-gem install --force --local *.gem
-```
-
-- install the SDK
-
-```bash
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
-```
-
-> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
-
-#### macOS: Pre-installed or `brew`
-
-macOS 10.13+ (High Sierra) comes with a recent Ruby.
-So you can use it directly.
-You will need to install <%=gemspec.name%> using `sudo` :
-
-```bash
-sudo gem install <%=gemspec.name%><%=geminstadd%>
-```
-
-Alternatively, if you use [Homebrew](https://brew.sh/) already you can install Ruby with it:
-
-```bash
-brew install ruby
-```
-
-#### Linux: Package
-
-If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
-
-**Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
-
-- Check available Ruby versions:
-
-  ```bash
-  dnf module list ruby
-  ```
-
-- If Ruby was already installed with an older version, remove it:
-
-  ```bash
-  dnf module -y reset ruby
-  ```
-
-- Install packages needed to build native gems:
-  
-  ```bash
-  dnf install -y make automake gcc gcc-c++ kernel-devel
-  ```
-
-- Enable the Ruby version you want:
-
-  ```bash
-  dnf module -y enable ruby:3.1
-  dnf install -y ruby-devel
-  ```
-
-**Other examples:**
-
-```bash
-yum install -y ruby ruby-devel rubygems ruby-json
-```
-
-```bash
-apt install -y ruby ruby-dev rubygems ruby-json
-```
-
-One can cleanup the whole yum-installed Ruby environment like this to uninstall:
-
-```bash
-gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
-```
-
-#### Other Unixes (AIX)
-
-Ruby is sometimes made available as installable package through third party providers.
-For example for AIX, one can look at:
-
-<https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#R>
-
-If your Unix does not provide a pre-built Ruby, you can get it using one of those
-[methods](https://www.ruby-lang.org/en/documentation/installation/).
-
-For instance to build from source, and install in `/opt/ruby` :
-
-```bash
-wget https://cache.ruby-lang.org/pub/ruby/2.7/ruby-2.7.2.tar.gz
-
-gzip -d ruby-2.7.2.tar.gz
-
-tar xvf ruby-2.7.2.tar
-
-cd ruby-2.7.2
-
-./configure --prefix=/opt/ruby
-
-make ruby.imp
-
-make
-
-make install
-```
-
-If you already have a Java JVM on your system (`java`), it is possible to use `jruby`:
-
-<https://www.jruby.org/download>
-
-> **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
-
-#### Optional gems
-
-Some additional gems can be installed to provide additional features:
-
-- `rmagick` : to generate thumbnails of images
-- `grpc` : to use the transfer SDK (gRPC)
-- `mimemagic` : to detect MIME type of files for `preview` command
-
-Install like this:
-
-```bash
-gem install rmagick grpc mimemagic
-```
-
-> **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
-
-### <a id="the_gem"></a>`<%=gemspec.name%>` gem
-
-Once you have Ruby and rights to install gems: Install the gem and its dependencies:
-
-```bash
-gem install <%=gemspec.name%><%=geminstadd%>
-```
-
-To upgrade to the latest version:
-
-```bash
-gem update <%=gemspec.name%>
-```
-
-<%=tool%> checks every week if a new version is available and notify the user in a WARN log.
-To de-activate this feature, globally set the option `version_check_days` to `0`, or specify a different period in days.
-
-To check if a new version is available (independently of `version_check_days`):
-
-```bash
-<%=cmd%> config check_update
-```
-
-### <a id="fasp_prot"></a>FASP Protocol
-
-Most file transfers will be done using the FASP protocol, using `ascp`.
-Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
-
-- `ascp`
-- aspera-license (in same folder, or ../etc)
-
-This can be installed either be installing an Aspera transfer software, or using an embedded command:
-
-```bash
-<%=cmd%> config ascp install
-```
-
-If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
-
-```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
-```
-
-```bash
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
-```
-
-The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
-
-If the embedded method is not used, the following packages are also suitable:
-
-- IBM Aspera Connect Client (Free)
-- IBM Aspera Desktop Client (Free)
-- IBM Aspera High Speed Transfer Server (Licensed)
-- IBM Aspera High Speed Transfer EndPoint (Licensed)
-
-For instance, Aspera Connect Client can be installed
-by visiting the page: [https://www.ibm.com/aspera/connect/](https://www.ibm.com/aspera/connect/).
-
-<%=tool%> will detect most of Aspera transfer products in standard locations and use the first one found.
-Refer to section [FASP](#client) for details on how to select a client or set path to the FASP protocol.
-
-Several methods are provided to start a transfer.
-Use of a local client ([`direct`](#agt_direct) transfer agent) is one of them, but other methods are available. Refer to section: [Transfer Agents](#agents)
-
-### <a id="offline_install"></a>Installation in air gapped environment
-
-> **Note:** no pre-packaged version is provided.
-
-A method to build one is provided here:
-
-The procedure:
-
-- Follow the non-root installation procedure with RVM, including gem
-- Archive (zip, tar) the main RVM folder (includes <%=cmd%>):
-
-```bash
-cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
-```
-
-- Show the Aspera SDK URL
-
-```bash
-<%=cmd%> --show-config --fields=sdk_url
-```
-
-- Download the SDK archive from that URL
-
-```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
-```
-
-- Transfer those 2 files to the target system
-
-- On target system
-
-```bash
-cd $HOME
-
-tar zxvf rvm-<%=cmd%>.tgz
-
-source ~/.rvm/scripts/rvm
-
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
-```
-
-- Add those lines to shell init (`.profile`)
-
-```bash
-source ~/.rvm/scripts/rvm
-```
-
-> **Note:** Alternatively, to retrieve all necessary gems, execute:
-
-```bash
-gem install aspera-cli -N -i my_gems
-```
-
 ## <a id="cli"></a>Command Line Interface: <%=tool%>
 
-The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
+The `<%=gemspec.name%>` gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
 - IBM Aspera High Speed Transfer Server (FASP and Node)
 - IBM Aspera on Cloud (including ATS)
@@ -791,12 +783,12 @@ The `<%=gemspec.name%>` Gem provides a command line interface (CLI) which intera
 - IBM Aspera Shares
 - IBM Aspera Console
 - IBM Aspera Orchestrator
-- and more...
+- And more...
 
 <%=tool%> provides the following features:
 
-- Supports most Aspera server products (on-premise and SaaS)
-- Any command line options (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files
+- Supports commands to Aspera server products (on-premise and SaaS)
+- Any command line **options** (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files, ...
 - Supports Commands, Option values and Parameters shortcuts
 - FASP [Transfer Agents](#agents) can be: local `ascp`, or Connect Client, or any transfer node
 - Transfer parameters can be altered by modification of <%=trspec%>, this includes requiring multi-session
@@ -815,7 +807,7 @@ Basic usage is displayed by executing:
 
 Refer to sections: [Usage](#usage).
 
-Not all <%=tool%> features are fully documented here, the user may explore commands on the command line.
+> **Note:** <%=tool%> features are not fully documented here, the user may explore commands on the command line.
 
 ### `ascp` command line
 
@@ -823,17 +815,17 @@ If you want to use `ascp` directly as a command line, refer to IBM Aspera docume
 
 Using <%=tool%> with plugin `server` for command line gives advantages over `ascp`:
 
-- automatic resume on error
-- configuration file
-- choice of transfer agents
-- integrated support of multi-session
+- Automatic resume on error
+- Configuration file
+- Choice of transfer agents
+- Integrated support of multi-session
 
-Moreover all `ascp` options are supported either through transfer spec parameters and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`ascp_args`).
+Moreover all `ascp` options are supported either through transfer spec parameters (listed with `conf ascp spec`) and with the possibility to provide `ascp` arguments directly when the `direct` agent is used (`ascp_args` in `transfer_info`).
 
 ### <a id="parsing"></a>Command line parsing, Special Characters
 
 <%=tool%> is typically executed in a shell, either interactively or in a script.
-<%=tool%> receives its arguments from this shell (through Operating System).
+<%=tool%> receives its arguments from this shell (through the Operating System).
 
 #### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
@@ -844,7 +836,7 @@ In this environment the shell parses the command line, possibly replacing variab
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
 Ruby receives a list parameters from shell and gives it to <%=tool%>.
-So special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
+Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
 
 #### Shell parsing for Windows
 
@@ -859,19 +851,19 @@ One can also run <%=tool%> with option `--log-level=debug` to display the comman
 
 The following examples give the same result on Windows:
 
-- single quote protects the double quote
+- Single quote protects the double quote
 
   ```cmd
   <%=cmd%> config echo @json:'{"url":"https://..."}'
   ```
 
-- triple double quotes are replaced with a single double quote
+- Triple double quotes are replaced with a single double quote
 
   ```cmd
   <%=cmd%> config echo @json:{"""url""":"""https://..."""}
   ```
 
-- double quote is escaped with backslash within double quotes
+- Double quote is escaped with backslash within double quotes
 
   ```cmd
   <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
@@ -883,7 +875,8 @@ Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple co
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
-Then, Windows `CreateProcess` is called with just the whole command line as a single string, unlike Unix-like systems where the command line is split into arguments by the shell.
+Then, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+Unlike Unix-like systems where the command line is split into arguments by the shell.
 
 It's up to the program to split arguments:
 
@@ -894,23 +887,26 @@ It's up to the program to split arguments:
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
 (See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
 
-- space characters: split arguments (space, tab, newline)
-- backslash: `\` escape single special character
-- globing characters: `*?[]{}` for file globing
-- double quotes: `"`
-- single quotes: `'`
+- Space characters: split arguments (space, tab, newline)
+- Backslash: `\` escape single special character
+- Globing characters: `*?[]{}` for file globing
+- Double quotes: `"`
+- Single quotes: `'`
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the <%=tool%> parameters are expected to be [Extended Values](#extended), i.e. not a simple `String`, but a complex structure (`Hash`, `Array`).
+Some of the <%=tool%> parameters are expected to be [Extended Values](#extended), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
 Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
 JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
 #### Testing Extended Values
 
-In case of doubt of argument values after parsing, one can test using command `config echo`. `config echo` takes exactly **one** argument which can use the [Extended Value](#extended) syntax. Unprocessed command line arguments are shown in the error message.
+In case of doubt of argument values after parsing, one can test using command `config echo`.
+`config echo` takes exactly **one** argument which can use the [Extended Value](#extended) syntax.
+Unprocessed command line arguments are shown in the error message.
 
-Example: The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
+Example:
+The shell parses three arguments (as `String`: `1`, `2` and `3`), so the additional two arguments are not processed by the `echo` command.
 
 ```bash
 <%=cmd%> config echo 1 2 3
@@ -925,9 +921,10 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 > **Note:** It gets its value after shell command line parsing and <%=tool%> extended value parsing.
 
-In the following examples (using a POSIX shell, such as `bash`), several sample commands are provided when equivalent.
-For all example, most of special character handling is not specific to <%=tool%>: It depends on the underlying syntax: shell , JSON, etc...
-Depending on the case, a different `format` is used to display the actual value.
+In the following examples (using a POSIX shell, such as `bash`), several equivalent sample commands are provided.
+For all example, most of special character handling is not specific to <%=tool%>:
+It depends on the underlying syntax: shell , JSON, etc...
+Depending on the case, a different `format` option is used to display the actual value.
 
 For example, in the simple string `Hello World`, the space character is special for the shell, so it must be escaped so that a single value is represented.
 
@@ -947,9 +944,9 @@ Hello World
 #### Using a shell variable, parsed by shell, in an extended value
 
 To be evaluated by shell, the shell variable must not be in single quotes.
-Even if the variable contains spaces it makes only one argument to <%=tool%> because word parsing is made before variable expansion by shell.
+Even if the variable contains spaces it results only in one argument for <%=tool%> because word parsing is made before variable expansion by shell.
 
-> **Note:** we use a shell variable here: the variable is not necessarily an environment variable (`export`).
+> **Note:** We use a shell variable here: the variable is not necessarily an environment variable (`export`).
 
 ```bash
 MYVAR="Hello World"
@@ -1098,9 +1095,9 @@ For example:
 <%=cmd%> command subcommand --option-name=VAL1 VAL2
 ```
 
-- executes **command**: `command subcommand`
-- with one **option**: `option_name` and its **value**: `VAL1`
-- the command has one additional **positional argument**: `VAL2`
+- Executes **command**: `command subcommand`
+- With one **option**: `option_name` and its **value**: `VAL1`
+- The command has one additional **positional argument**: `VAL2`
 
 If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
 For example `<%=cmd%> config pre ov` is the same as `<%=cmd%> config preset overview`.
@@ -1149,16 +1146,16 @@ A few positional arguments are optional, they are located at the end of the comm
 
 All options, e.g. `--log-level=debug`, are command line arguments that:
 
-- start with `--`
-- have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
-- have a value, separated from name with a `=`
-- can be used by prefix (avoid), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
+- Start with `--`
+- Have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
+- Have a value, separated from name with a `=`
+- Can be used by prefix (avoid), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
 
 Exceptions:
 
-- some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
-- some options (flags) don't take a value, e.g. `-N`
-- the special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`.
+- Some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
+- Some options (flags) don't take a value, e.g. `-N`
+- The special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`.
 
 Example:
 
@@ -1193,8 +1190,8 @@ In addition, option `--show-config` can be added at the end of any full command 
 
 A parameter is typically designed as option if:
 
-- it is optional, or
-- it is a mandatory parameter that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
+- It is optional, or
+- It is a mandatory parameter that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
 
 ### Interactive Input
 
@@ -1279,9 +1276,9 @@ Elements of the list can be:
 
 - `DEF` : default display of columns (that's the default, when not set)
 - `ALL` : all columns available
-- -property : remove property from the current list
-- property : add property to the current list
-- a Ruby `RegEx` : using `@ruby:'/.../'`
+- `-`**property** : remove property from the current list
+- **property** : add property to the current list
+- A Ruby `RegEx` : using `@ruby:'/.../'`
 
 Examples:
 
@@ -1353,25 +1350,25 @@ The following decoders are supported:
 
 | Decoder  | Parameter| Returns | Description |
 |----------|----------|---------|-------------|
-| `base64` | String   | String  | Decode a base64 encoded string
-| `csvt`   | String   | Array   | Decode a titled CSV value
-| `env`    | String   | String  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR`
-| `file`   | String   | String  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey`
-| `json`   | String   | Any     | Decode JSON values (convenient to provide complex structures)
-| `lines`  | String   | Array   | Split a string in multiple lines and return an array
-| `list`   | String   | Array   | Split a string in multiple items taking first character as separator and return an array
-| `none`   | None     | Nil     | A null value
-| `path`   | String   | String  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml`
-| `preset` | String   | Hash    | Get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]`
-| `extend` | String   | String  | Evaluates embedded extended value syntax in string
-| `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`)
-| `ruby`   | String   | Any     | Execute specified Ruby code
-| `secret` | None     | String  | Ask password interactively (hides input)
-| `stdin`  | None     | String  | Read from stdin (no value on right)
-| `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac`
-| `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`.
-| `yaml`   | String   | Any     | Decode YAML
-| `zlib`   | String   | String  | Un-compress zlib data
+| `base64` | String   | String  | Decode a base64 encoded string |
+| `csvt`   | String   | Array   | Decode a titled CSV value |
+| `env`    | String   | String  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
+| `file`   | String   | String  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| `json`   | String   | Any     | Decode JSON values (convenient to provide complex structures) |
+| `lines`  | String   | Array   | Split a string in multiple lines and return an array |
+| `list`   | String   | Array   | Split a string in multiple items taking first character as separator and return an array |
+| `none`   | None     | Nil     | A null value |
+| `path`   | String   | String  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| `preset` | String   | Hash    | Get whole <%=opprst%> value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
+| `extend` | String   | String  | Evaluates embedded extended value syntax in string |
+| `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
+| `ruby`   | String   | Any     | Execute specified Ruby code |
+| `secret` | None     | String  | Ask password interactively (hides input) |
+| `stdin`  | None     | String  | Read from stdin (no value on right) |
+| `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| `yaml`   | String   | Any     | Decode YAML |
+| `zlib`   | String   | String  | Un-compress zlib data |
 
 > **Note:** A few commands support a value of type `Proc` (lambda expression).
 For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value of attribute `attr` of the `Hash` `i`.
@@ -1564,7 +1561,7 @@ If necessary, the configuration file can opened in a text editor with:
 <%=cmd%> config open
 ```
 
-> **Note:** this starts the editor specified by env var `EDITOR` if defined.
+> **Note:** This starts the editor specified by env var `EDITOR` if defined.
 
 Older format for commands are still supported:
 
@@ -1605,8 +1602,8 @@ Operations on this preset are done using regular `config` operations:
 Plugin `config` provides general commands for <%=tool%>:
 
 - <%=prstt%>, configuration file operations
-- wizard
-- vault
+- `wizard`
+- `vault`
 - `ascp`
 
 The default preset for `config` is read for any plugin invocation, this allows setting global options, such as `--log-level` or `--interactive`.
@@ -1662,9 +1659,9 @@ demo_server:
 We can see here:
 
 - The configuration was created with <%=tool%> version 0.3.7
-- the default <%=prst%> to load for `server` plugin is : `demo_server`
-- the <%=prst%> `demo_server` defines some parameters: the URL and credentials
-- the default <%=prst%> to load in any case is : `cli_default`
+- The default <%=prst%> to load for `server` plugin is : `demo_server`
+- The <%=prst%> `demo_server` defines some parameters: the URL and credentials
+- The default <%=prst%> to load in any case is : `cli_default`
 
 Two <%=prsts%> are reserved:
 
@@ -1676,7 +1673,7 @@ The user may create as many <%=prsts%> as needed. For instance, a particular <%=
 
 Values in the configuration also follow the [Extended Value Syntax](#extended).
 
-> **Note:** if the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
+> **Note:** If the user wants to use the [Extended Value Syntax](#extended) inside the configuration file, using the `config preset update` command, the user shall use the `@val:` prefix. Example:
 
 ```bash
 <%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
@@ -1698,7 +1695,7 @@ Some options are global, some options are available only for some plugins. (the 
 Options are loaded using this algorithm:
 
 - If option `--no-default` (or `-N`) is specified, then no default value is loaded for the plugin
-- else it looks for the name of the plugin as key in section `default`, the value is the name of the default <%=prst%> for it, and loads it.
+- Else it looks for the name of the plugin as key in section `default`, the value is the name of the default <%=prst%> for it, and loads it.
 - If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the <%=prst%> specified from the configuration file, or if the value is a `Hash`, it uses it as options values.
 - Environment variables are evaluated
 - Command line options are evaluated
@@ -1808,9 +1805,9 @@ They can be provided on command line, env vars, files etc.
 
 For security reasons, those secrets shall not be exposed in clear, either:
 
-- on terminal during input
-- in logs
-- in command output
+- On terminal during input
+- In logs
+- In command output
 
 Instead, they shall be hidden or encrypted.
 
@@ -1905,7 +1902,7 @@ For a more secure storage one can do:
 <%=cmd%> config vault create myconf @json:'{"password":"my_password_here"}'
 ```
 
-> **Note:** use `@val:` in front of `@vault:` so that the extended value is not evaluated.
+> **Note:** Use `@val:` in front of `@vault:` so that the extended value is not evaluated.
 
 ### <a id="private_key"></a>Private Key
 
@@ -2048,7 +2045,7 @@ To trust a specific certificate (e.g. self-signed), **provided that the `CN` is 
 <%=cmd%> config remote_certificate https://localhost:9092 > myserver.pem
 ```
 
-> **Note:** the saved certificate shows the CN as first line.
+> **Note:** The saved certificate shows the CN as first line.
 
 Then, use this file as certificate store (e.g. here, Node API):
 
@@ -2074,8 +2071,8 @@ The following options can be specified in the option `query`:
 
 Some actions may require the use of a graphical tool:
 
-- a browser for Aspera on Cloud authentication (web auth method)
-- a text editor for configuration file edition
+- A browser for Aspera on Cloud authentication (web auth method)
+- A text editor for configuration file edition
 
 By default <%=tool%> assumes that a graphical environment is available on Windows, and on other systems, rely on the presence of the `DISPLAY` environment variable.
 It is also possible to force the graphical mode with option --ui :
@@ -2102,13 +2099,13 @@ Available levels: `debug`, `info`, `warn`, `error`.
 
 Examples:
 
-- display debugging log on `stdout`:
+- Display debugging log on `stdout`:
 
 ```bash
 <%=cmd%> config pre over --log-level=debug --logger=stdout
 ```
 
-- log errors to `syslog`:
+- Log errors to `syslog`:
 
 ```bash
 <%=cmd%> config pre over --log-level=error --logger=syslog
@@ -2633,11 +2630,11 @@ On Windows the compilation may fail for various reasons (3.1.1):
 Some commands lead to file transfer (upload/download).
 All parameters necessary for this transfer are described in a <%=trspec%> (Transfer Specification), such as:
 
-- server address
-- transfer user name
-- credentials
-- file list
-- etc...
+- Server address
+- Transfer user name
+- Credentials
+- File list
+- Etc...
 
 <%=tool%> builds the <%=trspec%> internally as a `Hash`.
 It is not necessary to provide additional parameters on the command line for this transfer.
@@ -2655,8 +2652,8 @@ This is especially useful for `ascp` command line parameters not supported in th
 
 The use of a <%=trspec%> instead of `ascp` parameters has the advantage of:
 
-- common to all [Transfer Agent](#agents)
-- not dependent on command line limitations (special characters...)
+- Common to all [Transfer Agent](#agents)
+- Not dependent on command line limitations (special characters...)
 
 ### <a id="transferparams"></a>Transfer Parameters
 
@@ -2730,7 +2727,7 @@ So, by default, the list of files to transfer will be simply specified on the co
   <%=cmd%> server upload --sources=@args --src-type=list ~/mysample.file secondfile
   ```
 
-- an [Extended Value](#extended) with type **Array of String**
+- An [Extended Value](#extended) with type **Array of String**
 
   > **Note:** extended values can be tested with the command `config echo`
 
@@ -2803,10 +2800,10 @@ The transfer destination is normally expected to designate a destination folder.
 
 But there is one exception: The destination specifies the new item name when the following are met:
 
-- there is a single source item (file or folder)
-- transfer spec `create_dir` is not set to `true` (`ascp` option `-d` not provided)
-- destination is not an existing folder
-- the `dirname` of destination is an existing folder
+- There is a single source item (file or folder)
+- Transfer spec `create_dir` is not set to `true` (`ascp` option `-d` not provided)
+- Destination is not an existing folder
+- The `dirname` of destination is an existing folder
 
 For this reason it is recommended to set `create_dir` to `true` for consistent behavior between single and multiple items transfer, this is the default in <%=tool%>.
 
@@ -3066,7 +3063,7 @@ where:
 - `filename` is the name that will be assigned to the file on the destination
 - `filesize` is the number of bytes that will be sent (in decimal).
 
-> **Note:** characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
+> **Note:** Characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
 
 For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<sup>60</sup>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
@@ -3079,11 +3076,11 @@ faux:///dirname?<arg1>=<val1>&...
 where:
 
 - `dirname` is the folder name and can contain `/` to specify a subfolder.
-- supported arguments are:
+- Supported arguments are:
 
 | Name   | Type | Description |
 |--------|------|-------------|
-|count   |int   |mandatory|Number of files<br/>Mandatory|
+|count   |int   |Number of files<br/>Mandatory|
 |file    |string|Basename for files<br>Default: `file`|
 |size    |int   |Size of first file.<br>Default: 0|
 |inc     |int   |Increment applied to determine next file size<br>Default: 0|
@@ -3136,7 +3133,7 @@ Examples:
 
 ```
 
-> **Note:** commands and parameter values can be written in short form.
+> **Note:** Commands and parameter values can be written in short form.
 
 ### Bulk creation and deletion of resources
 
@@ -3396,7 +3393,7 @@ Open the previously generated public key located here: `$HOME/.aspera/<%=cmd%>/m
 modified
 ```
 
-> **Note:** the `aspera user info show` command can be used to verify modifications.
+> **Note:** The `aspera user info show` command can be used to verify modifications.
 
 #### <%=prst%> modification for JWT
 
@@ -3412,7 +3409,7 @@ Execute:
 <%=cmd%> config preset update my_aoc_org --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/my_private_key --username=someuser@example.com
 ```
 
-> **Note:** the private key argument represents the actual PEM string.
+> **Note:** The private key argument represents the actual PEM string.
 In order to read the content from a file, use the `@file:` prefix.
 But if the @file: argument is used as is, it will read the file and set in the configuration file.
 So, to keep the `@file:` tag in the configuration file, the `@val:` prefix is added.
@@ -3531,9 +3528,9 @@ Resources are identified by a unique `id`, as well as a unique `name` (case inse
 To execute an action on a specific resource, select it using one of those methods:
 
 - **recommended**: give id directly on command line **after the action**: `aoc admin res node show 123`
-- give name on command line **after the action**: `aoc admin res node show name abc`
-- provide option `id` : `aoc admin res node show 123`
-- provide option `name` : `aoc admin res node show --name=abc`
+- Give name on command line **after the action**: `aoc admin res node show name abc`
+- Provide option `id` : `aoc admin res node show 123`
+- Provide option `name` : `aoc admin res node show --name=abc`
 
 #### <a id="res_create"></a>Creating a resource
 
@@ -3618,7 +3615,7 @@ Thank you.
 
 The environment provided contains the following additional variable:
 
-- ev : all details on the transfer event
+- `ev` : all details on the transfer event
 
 Example:
 
@@ -4014,8 +4011,8 @@ Refer to section [File list](#file_list)
 
 Source files are located on **Aspera on cloud**, when :
 
-- the server is Aspera on Cloud, and executing a download or recv
-- the agent is Aspera on Cloud, and executing an upload or send
+- The server is Aspera on Cloud, and executing a download or recv
+- The agent is Aspera on Cloud, and executing an upload or send
 
 In this case:
 
@@ -4212,7 +4209,7 @@ Procedure to send a file from org1 to org2:
 - Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
 - Get access to Organization 2 and create a <%=prst%>: e.g. `org2`
 - Check that access works and locate the destination folder `mydestfolder`
-- execute the following:
+- Execute the following:
 
 ```bash
 <%=cmd%> -Porg1 aoc files node_info /mydestfolder --format=json --display=data | <%=cmd%> -Porg2 aoc files upload mysourcefile --transfer=node --transfer-info=@json:@stdin:
@@ -4252,9 +4249,9 @@ For instructions, refer to section `find` for plugin `node`.
 
 ATS is usable either :
 
-- from an AoC subscription : <%=cmd%> aoc admin ats : use AoC authentication
+- From an AoC subscription : <%=cmd%> aoc admin ats : use AoC authentication
 
-- or from an IBM Cloud subscription : <%=cmd%> ats : use IBM Cloud API key authentication
+- Or from an IBM Cloud subscription : <%=cmd%> ats : use IBM Cloud API key authentication
 
 ### IBM Cloud ATS : Creation of api key
 
@@ -4501,9 +4498,9 @@ The authentication is `username` and `password` or `access_key` and `secret` thr
 
 It is possible to do **gen3/node user** operations:
 
-- browse
-- transfer (upload / download / sync)
-- delete
+- `browse`
+- Transfer (`upload` / `download` / `sync`)
+- `delete`
 - ...
 
 When using an access key, so called **gen4/access key** API is also supported through sub commands using `access_keys do self`.
@@ -4525,7 +4522,7 @@ It recursively scans storage to find files/folders matching a criteria and then 
 `[filter_expr]` is either:
 
 - Optional (default) : all files and folder are selected
-- type `String` : the expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
+- Type `String` : the expression is similar to shell globing, refer to **Ruby** function: [`File.fnmatch`](https://ruby-doc.org/3.2.2/File.html#method-c-fnmatch)
 - Type `Proc` : the expression is a Ruby lambda that takes one argument: a `Hash` that contains the current folder entry to test. Refer to the following examples.
 
 Examples of expressions:
@@ -4586,7 +4583,7 @@ The following are examples of `ruby_lambda` to be provided in the following temp
 <%=cmd%> node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (DateTime.now-DateTime.parse(f["modified_time"]))>365}' --fields=path --format=csv | <%=cmd%> node --bulk=yes delete @lines:@stdin:
 ```
 
-> **Note:** the pipe `|` character on the last line.
+> **Note:** The pipe `|` character on the last line.
 
 ### Central
 
@@ -4740,8 +4737,8 @@ A bearer token is authorized on the node by creating `permissions` on a **folder
 
 Bearer tokens can be generated using command `bearer_token`: it takes two arguments:
 
-- the private key used to sign the token
-- the token information, which is a `Hash` containing the following elements:
+- The private key used to sign the token
+- The token information, which is a `Hash` containing the following elements:
 
 | parameter                 | Default                     | type      | description                                              |
 | ------------------------  |-----------------------------|-----------|----------------------------------------------------------|
@@ -4836,9 +4833,9 @@ Let's assume that the access key was created, and a default configuration is set
 
 Now, let's assume we are the user, the only information received are:
 
-- the url of the node API
-- a Bearer token
-- a file `id` for which we have access
+- The url of the node API
+- A Bearer token
+- A file `id` for which we have access
 
 Let's use it:
 
@@ -5091,12 +5088,12 @@ Option `query` can be used to filter the list of packages, based on native API p
 
 | parameter | Type    | description |
 |-----------|---------|-------------|
-| `offset`  | Native  | Managed by <%=tool%>: Offset of first package. Default: 0
-| `limit`   | Native  | Managed by <%=tool%>: # of packages per API call. Default: 100
-| `q`       | Native  | General search string (case insensitive, matches if value is contained in several fields)
-| ...       | Native  | Other native parameters are supported (Refer to API documentation)
-| `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed)
-| `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed)
+| `offset`  | Native  | Managed by <%=tool%>: Offset of first package. Default: 0 |
+| `limit`   | Native  | Managed by <%=tool%>: # of packages per API call. Default: 100 |
+| `q`       | Native  | General search string (case insensitive, matches if value is contained in several fields) |
+| ...       | Native  | Other native parameters are supported (Refer to API documentation) |
+| `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
+| `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
 
 A positional parameter in last position, of type `Proc`, can be used to filter the list of packages.
 This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
@@ -5232,7 +5229,8 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | string  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
+<!-- markdownlint-disable-next-line -->
+| url                        | string  | http://localhost:8080  | Base url on which requests are listened             |
 | certificate                | hash    | nil                    | Certificate information (if HTTPS)                  |
 | certificate.key            | string  | nil                    | Path to private key file                            |
 | certificate.cert           | string  | nil                    | Path to certificate                                 |
@@ -5244,17 +5242,17 @@ The following parameters are supported:
 
 Parameter `url` defines:
 
-- if `http` or `https` is used
-- the local port number
-- the **base path**, i.e. the path under which requests are received.
+- If `http` or `https` is used
+- The local port number
+- The **base path**, i.e. the path under which requests are received.
 
 When a request is received the following happens:
 
-- the processor get the path of the url called
-- it removes the **base path**
-- it prepends it with the value of `script_folder`
-- it executes the script
-- upon success, a success code is returned
+- The processor get the path of the url called
+- It removes the **base path**
+- It prepends it with the value of `script_folder`
+- It executes the script
+- Upon success, a success code is returned
 
 In Faspex 5, configure like this:
 
@@ -5283,8 +5281,8 @@ By default it looks in box `inbox`, but the following boxes are also supported: 
 
 A user can receive a package because the recipient is:
 
-- the user himself (default)
-- the user is member of a dropbox/workgroup: filter using option `recipient` set with value `*<name of dropbox/workgroup>`
+- The user himself (default)
+- The user is member of a dropbox/workgroup: filter using option `recipient` set with value `*<name of dropbox/workgroup>`
 
 #### Option `query`
 
@@ -5315,9 +5313,9 @@ List a maximum of 20 items grouped by pages of 20, with maximum 2 pages in recei
 
 The command is `package recv`, possible methods are:
 
-- provide a package id with option `id`
-- provide a public link with option `link`
-- provide a `faspe:` URI with option `link`
+- Provide a package id with option `id`
+- Provide a public link with option `link`
+- Provide a `faspe:` URI with option `link`
 
 ```bash
 <%=cmd%> faspex package recv 12345
@@ -5411,7 +5409,7 @@ In this example, a faspex storage named `my_storage` exists in Faspex, and is lo
 under the docroot in `/mydir` (this must be the same as configured in Faspex).
 The node configuration name is `my_faspex_node` here.
 
-> **Note:** the v4 API provides an API for nodes and shares.
+> **Note:** The v4 API provides an API for nodes and shares.
 
 ### Automated package download (cargo)
 
@@ -5571,7 +5569,7 @@ A subset of `node` plugin operations are supported, basically node API:
 <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** we generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
+> **Note:** We generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
 
 ### COS sample commands
 
@@ -5606,7 +5604,7 @@ asconfigurator -x "server;preview_dir,previews"
 asnodeadmin --reload
 ```
 
-> **Note:** the configuration `preview_dir` is **relative** to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
+> **Note:** The configuration `preview_dir` is **relative** to the storage root, no need leading or trailing `/`. In general just set the value to `previews`
 
 If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
 
@@ -5625,7 +5623,7 @@ asconfigurator -x "server; max_request_file_create_size_kb,16384"
 
 If you use a value different than 16777216, then specify it using option `max_size`.
 
-> **Note:** the HSTS parameter (`max_request_file_create_size_kb`) is in **kiloBytes** while the generator parameter is in **Bytes** (factor of 1024).
+> **Note:** The HSTS parameter (`max_request_file_create_size_kb`) is in **kiloBytes** while the generator parameter is in **Bytes** (factor of 1024).
 
 ### <a id="prev_ext"></a>External tools: Linux
 
@@ -5802,11 +5800,11 @@ Use option `skip_format` to skip generation of a format.
 
 The preview generator supports rendering of those file categories:
 
-- image
-- pdf
-- plaintext
-- office
-- video
+- `image`
+- `pdf`
+- `plaintext`
+- `office`
+- `video`
 
 To avoid generation for some categories, specify a list using option `skip_types`.
 
@@ -5829,7 +5827,7 @@ In this case the `preview` command will first analyze the file content using `mi
 
 If the `mimemagic` gem complains about missing mime info file:
 
-- any OS:
+- Any OS:
 
   - Examine the error message
   - Download the file: [`freedesktop.org.xml.in`](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/raw/master/data/freedesktop.org.xml.in)
@@ -5853,7 +5851,7 @@ If the `mimemagic` gem complains about missing mime info file:
 dnf install shared-mime-info
 ```
 
-- macOS:
+- **macOS**:
 
 ```bash
 brew install shared-mime-info
@@ -5880,10 +5878,10 @@ If the preview generator does not have access to files on the file system (it is
 
 An interface for the `async` utility is provided in the following plugins:
 
-- server sync
-- node sync
-- aoc files sync (uses node)
-- shares files sync (uses node)
+- `server sync`
+- `node sync`
+- `aoc files sync` (uses node)
+- `shares files sync` (uses node)
 
 The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of <%=tool%>.
 
@@ -5914,11 +5912,11 @@ It allows definition of multiple sync sessions in a single command, although usu
 <%=tool%> maybe used as a simple hot folder engine.
 A hot folder being defined as a tool that:
 
-- locally (or remotely) detects new files in a top folder
-- send detected files to a remote (respectively, local) repository
-- only sends new files, do not re-send already sent files
-- optionally: sends only files that are not still **growing**
-- optionally: after transfer of files, deletes or moves to an archive
+- Locally (or remotely) detects new files in a top folder
+- Send detected files to a remote (respectively, local) repository
+- Only sends new files, do not re-send already sent files
+- Optionally: sends only files that are not still **growing**
+- Optionally: after transfer of files, deletes or moves to an archive
 
 In addition: the detection should be made **continuously** or on specific time/date.
 
@@ -5926,9 +5924,9 @@ In addition: the detection should be made **continuously** or on specific time/d
 
 The general idea is to rely on :
 
-- existing `ascp` features for detection and transfer
-- take advantage of <%=tool%> configuration capabilities and server side knowledge
-- the OS scheduler for reliability and continuous operation
+- Existing `ascp` features for detection and transfer
+- Take advantage of <%=tool%> configuration capabilities and server side knowledge
+- The OS scheduler for reliability and continuous operation
 
 #### `ascp` features
 
@@ -5949,9 +5947,9 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 Virtually any transfer on a **repository** on a regular basis might emulate a hot folder.
 
-> **Note:** file detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
+> **Note:** File detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
 >
-> **Note:** parameters may be saved in a <%=prst%> and used with `-P`.
+> **Note:** Parameters may be saved in a <%=prst%> and used with `-P`.
 
 #### Scheduling
 
@@ -5983,9 +5981,9 @@ This can also be used with other folder-based applications: Aspera on Cloud, Sha
 <%=cmd%> aoc files download . --to-folder=. --lock-port=12345 --progress-bar=no --display=data --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000,"exclude_newer_than":-8,"delete_before_transfer":true}'
 ```
 
-> **Note:** option `delete_before_transfer` will delete files locally, if they are not present on remote side.
+> **Note:** Option `delete_before_transfer` will delete files locally, if they are not present on remote side.
 >
-> **Note:** options `progress` and `display` limit output for headless operation (e.g. cron job)
+> **Note:** Options `progress` and `display` limit output for headless operation (e.g. cron job)
 
 ## Health check and Nagios
 
@@ -6005,9 +6003,9 @@ Most plugin provide a `health` command that will check the health status of the 
 
 Typically, the health check uses the REST API of the application with the following exception: the `server` plugin allows checking health by:
 
-- issuing a transfer to the server
-- checking web app status with `asctl all:status`
-- checking daemons process status
+- Issuing a transfer to the server
+- Checking web app status with `asctl all:status`
+- Checking daemons process status
 
 <%=tool%> can be called by Nagios to check the health status of an Aspera server. The output can be made compatible to Nagios with option `--format=nagios` :
 
@@ -6099,10 +6097,10 @@ A default e-mail template is used, but it can be overridden with option `notify_
 
 The environment provided contains the following additional variables:
 
-- subject
-- body
-- global_transfer_status
-- ts
+- `subject`
+- `body`
+- `global_transfer_status`
+- `ts`
 
 Example of template:
 
@@ -6120,9 +6118,9 @@ This gem comes with a second executable tool providing a simplified standardized
 
 It aims at simplifying the startup of a FASP session from a programmatic stand point as formatting a <%=trspec%> is:
 
-- common to Aspera Node API (HTTP POST /ops/transfer)
-- common to Aspera Connect API (browser javascript startTransfer)
-- easy to generate by using any third party language specific JSON library
+- Common to Aspera Node API (HTTP POST /ops/transfer)
+- Common to Aspera Connect API (browser javascript startTransfer)
+- Easy to generate by using any third party language specific JSON library
 
 Hopefully, IBM integrates this directly in `ascp`, and this tool is made redundant.
 
@@ -6217,9 +6215,9 @@ There were a few pitfalls:
 
 So, it evolved into <%=tool%>:
 
-- portable: works on platforms supporting `ruby` (and `ascp`)
-- easy to install with the `gem` utility
-- supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from `ascp` command line to <%=trspec%> (more reliable , more standard)
+- Portable: works on platforms supporting `ruby` (and `ascp`)
+- Easy to install with the `gem` utility
+- Supports transfers with multiple [Transfer Agents](#agents), that&apos;s why transfer parameters moved from `ascp` command line to <%=trspec%> (more reliable , more standard)
 - `ruby` is consistent with other Aspera products
 
 Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
