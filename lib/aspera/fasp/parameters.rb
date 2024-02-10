@@ -214,12 +214,13 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
+          # ignore cert for wss ?
           if @options[:check_ignore]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
-            http_session = Rest.start_http_session("https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}")
-            # wss_api = Rest.new(base_url: "/v1/transfer")
-            # wss_api.read('start') rescue nil
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
+            # initiate a session to retrieve remote certificate
+            http_session = Rest.start_http_session("https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}")
             begin
+              # retrieve underlying openssl socket
               File.write(wss_cert_file, Rest.io_http_session(http_session).io.peer_cert_chain.reverse.map(&:to_pem).join("\n"))
             rescue
               File.write(wss_cert_file, http_session.peer_cert.to_pem)
@@ -227,12 +228,11 @@ module Aspera
             http_session.finish
             env_args[:args].unshift('-i', wss_cert_file)
             Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
-          else
-            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-            @options[:trusted_certs]&.each do |file|
-              env_args[:args].unshift('-i', file)
-              Log.log.debug{"trusted certs for wss: #{file}"}
-            end
+          end
+          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+          @options[:trusted_certs]&.each do |file|
+            env_args[:args].unshift('-i', file)
+            Log.log.debug{"trusted certs for wss: #{file}"}
           end
         else
           # remove unused parameter (avoid warning)
