@@ -219,7 +219,11 @@ module Aspera
             # wss_api = Rest.new(base_url: "/v1/transfer")
             # wss_api.read('start') rescue nil
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
-            File.write(wss_cert_file, http_session.peer_cert.to_pem)
+            begin
+              File.write(wss_cert_file, Rest.io_http_session(http_session).io.peer_cert_chain.reverse.map(&:to_pem).join("\n"))
+            rescue
+              File.write(wss_cert_file, http_session.peer_cert.to_pem)
+            end
             http_session.finish
             env_args[:args].unshift('-i', wss_cert_file)
             Log.log.debug{"CA certs for wss: remote cert: #{wss_cert_file}"}
