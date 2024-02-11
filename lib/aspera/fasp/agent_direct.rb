@@ -222,9 +222,9 @@ module Aspera
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments, close_others: true)
           Log.log.debug{"spawned pid #{ascp_pid}"}
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
-          Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
           mgt_server.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
+          Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
           readable, _, _ = IO.select([mgt_server], nil, nil, @options[:spawn_timeout_sec])
           Log.log.debug('after select, before accept')
           assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
@@ -248,6 +248,7 @@ module Aspera
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
+          Log.log.debug('management io closed')
           last_event = processor.last_event
           # check that last status was received before process exit
           if last_event.is_a?(Hash)
@@ -257,7 +258,7 @@ module Aspera
                   session[:token_regenerator].respond_to?(:refreshed_transfer_token)
                 # regenerate token here, expired, or error on it
                 # Note: in multi-session, each session will have a different one.
-                Log.log.warn('Regenerating bearer token')
+                Log.log.warn('Regenerating token for transfer')
                 env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
               end
               raise Fasp::Error.new(last_event['Description'], last_event['Code'].to_i)

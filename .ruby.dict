@@ -56,3 +56,6 @@ optparse
 readuntil
 ENOENT
 blankslate
+addrinfo
+inet
+sockaddr

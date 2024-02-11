@@ -151,7 +151,7 @@ Then procedure is as follows:
   gem cert --build maintainer@example.com
   ```
 
-  > **Note:** the email must match the field `spec.email` in `aspera-cli.gemspec`
+  > **Note:** The email must match the field `spec.email` in `aspera-cli.gemspec`
 
   This creates two files in folder `/path/to/vault` (e.g. $HOME/.ssh):
   
@@ -160,7 +160,7 @@ Then procedure is as follows:
 
   > **Note:** Alternatively, use an existing key or generate one, and then `make new-cert`
 
-- The maintainer build the signed gem.
+- The maintainer builds the signed gem.
 
   The gem is signed with the public certificate found in `certs` and the private key (kept secret by maintainer).
 

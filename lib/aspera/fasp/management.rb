@@ -185,6 +185,8 @@ module Aspera
         ExtraCreatePolicy]
       # Management port start message
       MGT_HEADER = 'FASPMGR 2'
+      # empty line is separator to end event information
+      MGT_FRAME_SEPARATOR = ''
       # fields description for JSON generation
       # spellchecker: disable
       INTEGER_FIELDS = %w[Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy
@@ -193,10 +195,11 @@ module Aspera
                           ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay].freeze
       BOOLEAN_FIELDS = %w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled
                           MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect].freeze
+      BOOLEAN_TRUE = 'Yes'
       # cspell: enable
 
       class << self
-        # translates legacy event into enhanced (JSON) event
+        # translates mgt port event into (enhanced) typed event
         def enhanced_event_format(event)
           return event.keys.each_with_object({}) do |e, h|
             # capital_to_snake_case
@@ -207,14 +210,16 @@ module Aspera
                 .downcase
             value = event[e]
             value = value.to_i if INTEGER_FIELDS.include?(e)
-            value = value.eql?('Yes') if BOOLEAN_FIELDS.include?(e)
+            value = value.eql?(BOOLEAN_TRUE) if BOOLEAN_FIELDS.include?(e)
             h[new_name] = value
           end
         end
       end # class << self
 
       def initialize
+        # current event being parsed line by line
         @event_build = nil
+        # last fully built event
         @last_event = nil
       end
       attr_reader :last_event
@@ -226,16 +231,16 @@ module Aspera
           # begin event
           @event_build = {}
         when /^([^:]+): (.*)$/
+          raise 'mgt port: unexpected line: data without header' if @event_build.nil?
           # event field
           @event_build[Regexp.last_match(1)] = Regexp.last_match(2)
-        when ''
-          # empty line is separator to end event information
-          raise 'unexpected empty line' if @event_build.nil?
+        when MGT_FRAME_SEPARATOR
+          raise 'mgt port: unexpected line: end frame without header' if @event_build.nil?
           @last_event = @event_build
           @event_build = nil
           return @last_event
         else
-          raise "unexpected line:[#{line}]"
+          raise "mgt port: unexpected line: [#{line}]"
         end # case
         return nil
       end

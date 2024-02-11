@@ -141,6 +141,7 @@ module Aspera
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
+      # either place source files on command line, or add file list file
       def process_file_list
         # is the file list provided through EX_ parameters?
         ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @options[:ascp_args])
@@ -208,7 +209,7 @@ module Aspera
         if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
-          # TODO: option to give order ssh,ws (legacy http is implied bu ssh)
+          # TODO: option to give order ssh,ws (legacy http is implied by ssh)
           # This will need to be cleaned up in aspera core
           @job_spec['ssh_port'] = @builder.read_param('wss_port')
           @job_spec.delete('fasp_port')
@@ -247,38 +248,35 @@ module Aspera
         # process parameters as specified in table
         @builder.process_params
 
+        base64_destination = false
         # symbol must be index of Installation.paths
         if @builder.read_param('use_ascp4')
           env_args[:ascp_version] = :ascp4
         else
           env_args[:ascp_version] = :ascp
-          # destination will be base64 encoded, put before path arguments
-          @builder.add_command_line_options(['--dest64'])
+          base64_destination = true
         end
-        # get list of files to transfer and build arg for ascp
-        process_file_list
+        # destination will be base64 encoded, put this before source path arguments
+        @builder.add_command_line_options(['--dest64']) if base64_destination
         # optional arguments, at the end to override previous ones (to allow override)
         @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
         @builder.add_command_line_options(@options[:ascp_args])
+        # get list of source files to transfer and build arg for ascp
+        process_file_list
         # process destination folder
         destination_folder = @builder.read_param('destination_root') || '/'
         # ascp4 does not support base64 encoding of destination
-        destination_folder = Base64.strict_encode64(destination_folder) unless env_args[:ascp_version].eql?(:ascp4)
+        destination_folder = Base64.strict_encode64(destination_folder) if base64_destination
         # destination MUST be last command line argument to ascp
         @builder.add_command_line_options([destination_folder])
-
-        Log.log.debug{"ascp args: #{env_args}"}
-
         @builder.add_env_args(env_args)
-
         env_args[:args].unshift('-q') if @options[:quiet]
-
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
           env_args[:args].unshift('-Y', Installation.instance.path(:fallback_private_key))
           env_args[:args].unshift('-I', Installation.instance.path(:fallback_certificate))
         end
-
+        Log.log.debug{"ascp args: #{env_args}"}
         return env_args
       end
     end # Parameters
