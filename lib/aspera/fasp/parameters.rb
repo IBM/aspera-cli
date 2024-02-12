@@ -121,45 +121,6 @@ module Aspera
           TempFileManager.instance.cleanup_expired(@file_list_folder)
         end
 
-        def remote_certificates(builder, transfer_spec, options)
-          certificates_to_use = []
-          # use web socket secure for session ?
-          if builder.read_param('wss_enabled') && (options[:wss] || !transfer_spec.key?('fasp_port'))
-            # by default use web socket session if available, unless removed by user
-            builder.add_command_line_options(['--ws-connect'])
-            # TODO: option to give order ssh,ws (legacy http is implied by ssh)
-            # This will need to be cleaned up in aspera core
-            transfer_spec['ssh_port'] = builder.read_param('wss_port')
-            transfer_spec.delete('fasp_port')
-            transfer_spec.delete('EX_ssh_key_paths')
-            transfer_spec.delete('sshfp')
-            # ignore cert for wss ?
-            if options[:check_ignore]&.call(transfer_spec['remote_host'], transfer_spec['wss_port'])
-              wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
-              # initiate a session to retrieve remote certificate
-              http_session = Rest.start_http_session("https://#{transfer_spec['remote_host']}:#{transfer_spec['wss_port']}")
-              begin
-                # retrieve underlying openssl socket
-                File.write(wss_cert_file, Rest.io_http_session(http_session).io.peer_cert_chain.reverse.map(&:to_pem).join("\n"))
-              rescue
-                File.write(wss_cert_file, http_session.peer_cert.to_pem)
-              end
-              http_session.finish
-              certificates_to_use.push(wss_cert_file)
-            end
-            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-            options[:trusted_certs]&.each {|file|certificates_to_use.push(file)}
-          else
-            # remove unused parameter (avoid warning)
-            transfer_spec.delete('wss_port')
-            # add SSH bypass keys when authentication is token and no auth is provided
-            if transfer_spec.key?('token') && !transfer_spec.key?('remote_password')
-              # transfer_spec['remote_password'] = Installation.instance.ssh_cert_uuid # not used: no passphrase
-              Installation.instance.aspera_token_ssh_key_paths.each { |path| certificates_to_use.push(path) }
-            end
-          end
-          return certificates_to_use
-        end
         # static methods
         attr_reader :file_list_folder
       end # self
@@ -229,6 +190,39 @@ module Aspera
         @builder.add_command_line_options(["#{option}=#{file_list_file}"]) unless option.nil?
       end
 
+      def remote_certificates
+        certificates_to_use = []
+        # use web socket secure for session ?
+        if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
+          # by default use web socket session if available, unless removed by user
+          @builder.add_command_line_options(['--ws-connect'])
+          # TODO: option to give order ssh,ws (legacy http is implied by ssh)
+          # This will need to be cleaned up in aspera core
+          @job_spec['ssh_port'] = @builder.read_param('wss_port')
+          @job_spec.delete('fasp_port')
+          @job_spec.delete('EX_ssh_key_paths')
+          @job_spec.delete('sshfp')
+          # ignore cert for wss ?
+          if @options[:check_ignore]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
+            wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
+            wss_url = "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}"
+            File.write(wss_cert_file, Rest.remote_certificates(wss_url))
+            certificates_to_use.push(wss_cert_file)
+          end
+          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+          certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs]
+        else
+          # remove unused parameter (avoid warning)
+          @job_spec.delete('wss_port')
+          # add SSH bypass keys when authentication is token and no auth is provided
+          if @job_spec.key?('token') && !@job_spec.key?('remote_password')
+            # @job_spec['remote_password'] = Installation.instance.ssh_cert_uuid # not used: no passphrase
+            certificates_to_use.concat(Installation.instance.aspera_token_ssh_key_paths)
+          end
+        end
+        return certificates_to_use
+      end
+
       # translate transfer spec to env vars and command line arguments for ascp
       # NOTE: parameters starting with "EX_" (extended) are not standard
       def ascp_args
@@ -245,7 +239,7 @@ module Aspera
         assert(!@builder.read_param('multi_session'))
 
         # add ssh or wss certificates
-        self.class.remote_certificates(@builder, @job_spec, @options).each do |cert|
+        remote_certificates.each do |cert|
           Log.log.trace1{"adding certificate: #{cert}"}
           env_args[:args].unshift('-i', cert)
         end

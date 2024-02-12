@@ -17,6 +17,7 @@ module Aspera
     module Sync
       # sync direction, default is push
       DIRECTIONS = %i[push pull bidi].freeze
+      # custom JSON for async instance command line options
       PARAMS_VX_INSTANCE =
         {
           'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
@@ -104,6 +105,32 @@ module Aspera
           nil
         end
 
+        def remote_certificates(remote)
+          certificates_to_use = []
+          # use web socket secure for session ?
+          if remote['connect_mode']&.eql?('ws')
+            remote.delete('port')
+            remote.delete('fingerprint')
+            # ignore cert for wss ?
+            if false # @options[:check_ignore]&.call(remote['host'], remote['ws_port'])
+              wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
+              wss_url = "https://#{remote['host']}:#{remote['ws_port']}"
+              File.write(wss_cert_file, Rest.remote_certificates(wss_url))
+              certificates_to_use.push(wss_cert_file)
+            end
+            # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+            # certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs]
+          else
+            # remove unused parameter (avoid warning)
+            remote.delete('ws_port')
+            # add SSH bypass keys when authentication is token and no auth is provided
+            if remote.key?('token') && !remote.key?('pass')
+              certificates_to_use.concat(Installation.instance.aspera_token_ssh_key_paths)
+            end
+          end
+          return certificates_to_use
+        end
+
         # @param sync_params [Hash] sync parameters, old or new format
         # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params, &block)
@@ -113,12 +140,15 @@ module Aspera
             env:  {}
           }
           if sync_params.key?('local')
+            remote = sync_params['remote']
             # async native JSON format (v2)
-            assert_type(sync_params['remote'], Hash)
+            assert_type(remote, Hash)
+            # get transfer spec if possible, and feed back to new structure
             if block
-              transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], sync_params['remote']['path'])
+              transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], remote['path'])
               # async native JSON format
               assert_type(sync_params['local'], Hash)
+              # translate transfer spec to async parameters
               TS_TO_PARAMS_V2.each do |ts_param, sy_path|
                 next unless transfer_spec.key?(ts_param)
                 sy_dig = sy_path.split('.')
@@ -127,10 +157,15 @@ module Aspera
                 hash = sync_params[sy_dig.first] = {} if hash.nil?
                 hash[param] = transfer_spec[ts_param]
               end
-              sync_params['remote']['connect_mode'] ||= sync_params['remote'].key?('ws_port') ? 'ws' : 'ssh'
-              sync_params['remote']['private_key_paths'] ||= Fasp::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
-              update_remote_dir(sync_params['remote'], 'path', transfer_spec)
+              update_remote_dir(remote, 'path', transfer_spec)
             end
+            remote['connect_mode'] ||= remote.key?('ws_port') ? 'ws' : 'ssh'
+            add_certificates = remote_certificates(remote)
+            if !add_certificates.empty?
+              remote['private_key_paths'] ||= []
+              remote['private_key_paths'].concat(add_certificates)
+            end
+            assert_type(sync_params, Hash)
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
           elsif sync_params.key?('sessions')
             # ascli JSON format (v1)
@@ -169,7 +204,6 @@ module Aspera
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
           Log.log.debug{Log.dump(:sync_params, sync_params)}
-
           Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{ASYNC_EXECUTABLE}\" \"#{env_args[:args].join('" "')}\""}
           res = system(env_args[:env], [ASYNC_EXECUTABLE, ASYNC_EXECUTABLE], *env_args[:args])
           Log.log.debug{"result=#{res}"}
@@ -233,7 +267,7 @@ module Aspera
           raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
           return parse_status(stdout)
         end
-      end
+      end # end self
     end # end Sync
   end # end Fasp
 end # end Aspera

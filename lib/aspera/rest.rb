@@ -112,6 +112,20 @@ module Aspera
         return result
       end
 
+      # @return [String] PEM certificates of remote server
+      def remote_certificates(url)
+        # initiate a session to retrieve remote certificate
+        http_session = Rest.start_http_session(url)
+        begin
+          # retrieve underlying openssl socket
+          return Rest.io_http_session(http_session).io.peer_cert_chain.reverse.map(&:to_pem).join("\n")
+        rescue
+          return http_session.peer_cert.to_pem
+        ensure
+          http_session.finish
+        end
+      end
+
       # set global parameters
       def set_parameters(**options)
         options.each do |key, value|
