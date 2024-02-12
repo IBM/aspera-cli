@@ -340,18 +340,21 @@ module Aspera
 
         def ignore_cert?(address, port)
           endpoint = [address, port].freeze
-          Log.log.debug{"ignore cert? #{endpoint}"}
-          return false unless @option_insecure || @option_ignore_cert_host_port.any?(endpoint)
-          if @option_warn_insecure_cert
-            base_url = "https://#{address}:#{port}"
-            if !@ssl_warned_urls.include?(base_url)
-              formatter.display_message(
-                :error,
-                "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
-              @ssl_warned_urls.push(base_url)
+          ignore_cert = false
+          if @option_insecure || @option_ignore_cert_host_port.any?(endpoint)
+            ignore_cert = true
+            if @option_warn_insecure_cert
+              base_url = "https://#{address}:#{port}"
+              if !@ssl_warned_urls.include?(base_url)
+                formatter.display_message(
+                  :error,
+                  "#{Formatter::WARNING_FLASH} Ignoring certificate for: #{base_url}. Do not deactivate certificate verification in production.")
+                @ssl_warned_urls.push(base_url)
+              end
             end
           end
-          return true
+          Log.log.debug{"ignore cert? #{endpoint} -> #{ignore_cert}"}
+          return ignore_cert
         end
 
         # called every time a new REST HTTP session is opened to set user-provided options
