@@ -196,17 +196,17 @@ module Aspera
       def start_transfer_with_args_env(env_args, session)
         assert_type(env_args, Hash)
         assert_type(session, Hash)
+        Log.log.debug{"env_args=#{env_args.inspect}"}
+        notify_progress(session_id: nil, type: :pre_start, info: 'starting')
         begin
-          Log.log.debug{"env_args=#{env_args.inspect}"}
-          notify_progress(session_id: nil, type: :pre_start, info: 'starting')
           # we use Socket directly, instead of TCPServer, s it gives access to lower level options
-          mgt_server = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+          mgt_server_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
           # open an available (0) local TCP port as ascp management
           # Socket.pack_sockaddr_in(LISTEN_AVAILABLE_PORT, LISTEN_ADDRESS)
-          mgt_server.bind(Addrinfo.tcp(LISTEN_ADDRESS, LISTEN_AVAILABLE_PORT))
+          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_ADDRESS, LISTEN_AVAILABLE_PORT))
           # clone arguments and add mgt port
-          ascp_arguments = ['-M', mgt_server.local_address.ip_port.to_s].concat(env_args[:args])
-          # mgt_server.addr[1]
+          ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
+          # mgt_server_socket.addr[1]
           # get location of ascp executable
           ascp_path = Fasp::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
@@ -222,14 +222,14 @@ module Aspera
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments, close_others: true)
           Log.log.debug{"spawned pid #{ascp_pid}"}
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
-          mgt_server.listen(1)
+          mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
-          readable, _, _ = IO.select([mgt_server], nil, nil, @options[:spawn_timeout_sec])
+          readable, _, _ = IO.select([mgt_server_socket], nil, nil, @options[:spawn_timeout_sec])
           Log.log.debug('after select, before accept')
           assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
           # There is a connection to accept
-          client_socket, _client_addrinfo = mgt_server.accept
+          client_socket, _client_addrinfo = mgt_server_socket.accept
           Log.log.debug('after accept')
           ascp_mgt_io = client_socket.to_io
           # management messages include file names which may be utf8
@@ -274,6 +274,7 @@ module Aspera
         rescue Interrupt
           raise Fasp::Error, 'transfer interrupted by user'
         ensure
+          mgt_server_socket.close
           # if ascp was successfully started
           unless ascp_pid.nil?
             # "wait" for process to avoid zombie
@@ -282,14 +283,13 @@ module Aspera
             ascp_pid = nil
             session.delete(:io)
             if !status.success?
-              message = "ascp failed with code #{status.exitstatus}"
-              # raise error only if there was not already an exception
+              message = "ascp failed: #{status}"
+              # raise error only if there was not already an exception (ERROR_INFO)
               raise Fasp::Error, message unless $ERROR_INFO
-              # else just debug, as main exception is already here
-              Log.log.debug(message)
+              # else display this message also, as main exception is already here
+              Log.log.error(message)
             end
           end
-          mgt_server.close
         end # begin-ensure
       end # start_transfer_with_args_env
 
