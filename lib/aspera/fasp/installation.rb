@@ -108,6 +108,7 @@ module Aspera
       # get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independent)
       def path(k)
+        file_is_optional = false
         case k
         when :ascp, :ascp4
           use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
@@ -116,6 +117,7 @@ module Aspera
           file = file.gsub('ascp', 'ascp4') if k.eql?(:ascp4)
         when :transferd
           file = transferd_filepath
+          file_is_optional = true
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
@@ -139,6 +141,7 @@ module Aspera
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else error_unexpected_value(k)
         end
+        return nil if file_is_optional && !File.exist?(file)
         assert(File.exist?(file)){"no such file: #{file}"}
         return file
       end
