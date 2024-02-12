@@ -16,10 +16,11 @@ module Aspera
     OS_AIX = :aix
     OS_LIST = [OS_WINDOWS, OS_X, OS_LINUX, OS_AIX].freeze
     CPU_X86_64 = :x86_64
+    CPU_ARM64 = :arm64
     CPU_PPC64 = :ppc64
     CPU_PPC64LE = :ppc64le
     CPU_S390 = :s390
-    CPU_LIST = [CPU_X86_64, CPU_PPC64, CPU_PPC64LE, CPU_S390].freeze
+    CPU_LIST = [CPU_X86_64, CPU_ARM64, CPU_PPC64, CPU_PPC64LE, CPU_S390].freeze
 
     BITS_PER_BYTE = 8
     MEBI = 1024 * 1024
