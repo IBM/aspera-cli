@@ -25,8 +25,8 @@ Gem::Specification.new do |spec|
   raise 'RubyGems 2.0 or newer is required' unless spec.respond_to?(:metadata)
   spec.metadata['allowed_push_host'] = 'https://rubygems.org' # push only to rubygems.org
   spec.metadata['homepage_uri']      = spec.homepage
-  spec.metadata['source_code_uri']   = File.join(spec.homepage,'tree/main/lib/aspera')
-  spec.metadata['changelog_uri']     = File.join(spec.homepage,'CHANGELOG.md')
+  spec.metadata['source_code_uri']   = File.join(spec.homepage, 'tree/main/lib/aspera')
+  spec.metadata['changelog_uri']     = File.join(spec.homepage, 'CHANGELOG.md')
   spec.metadata['rubygems_uri']      = Aspera::Cli::GEM_URL
   spec.metadata['documentation_uri'] = Aspera::Cli::DOC_URL
   spec.require_paths = ['lib']
@@ -40,6 +40,8 @@ Gem::Specification.new do |spec|
   # see also Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION
   spec.required_ruby_version = '>= 2.6'
   # dependency gems for runtime
+  spec.add_runtime_dependency('base64', '~> 0.2.0')
+  spec.add_runtime_dependency('bigdecimal', '~> 3.1', '>= 3.1.6')
   spec.add_runtime_dependency('blankslate', '~> 3.1')
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
@@ -60,7 +62,7 @@ Gem::Specification.new do |spec|
   # spec.add_development_dependency('mimemagic', '~> 0.3') # for preview
   # spec.add_development_dependency('rmagick', '~> 5.3') # for terminal view
   # development gems
-  #spec.add_development_dependency('bundler', '~> 2.4')
+  # spec.add_development_dependency('bundler', '~> 2.4')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('reek', '~> 6.1.0')
   spec.add_development_dependency('rspec', '~> 3.0')
