@@ -289,7 +289,7 @@ module Aspera
         end
 
         # list all packages with optional filter
-        def list_packages_with_filter
+        def list_packages_with_filter(query: {})
           filter = options.get_next_argument('filter', mandatory: false, type: Proc, default: ->(_x){true})
           # translate box name to API prefix (with ending slash)
           box = options.get_option(:box)
@@ -303,7 +303,7 @@ module Aspera
             end
           return list_entities(
             type: 'packages',
-            query:  query_read_delete(default: {}),
+            query:  query_read_delete(default: query),
             real_path: real_path).select(&filter)
         end
 
@@ -331,7 +331,7 @@ module Aspera
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when ExtendedValue::ALL
             # TODO: if packages have same name, they will overwrite ?
-            packages = list_packages_with_filter
+            packages = list_packages_with_filter(query: {'status' => 'completed'})
             Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
             Log.log.trace1{Log.dump(:skip_ids, skip_ids_persistency.data)}
             packages.reject!{|p|skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency

@@ -16,6 +16,7 @@
   * Issues Fixed:
     * `config`: wizard was failing due to `require` of optional gem.
     * `aoc`: use paging to list entities, instead of just one page(e.g. retrieve all packages)
+    * `faspex5`: When receiving ALL packages, only get those with status `completed`.
   * Breaking Changes:
     * `shares`: option `type` for users and groups is replaced with mandatory positional argument with same value.
     * `aoc`, `faspex`: package `recv` command changed to `receive`, for consistency with faspex5 (`recv` is now an alias command)
