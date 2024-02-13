@@ -2,7 +2,11 @@
 
 require 'spec_helper'
 
-$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../lib')
+main_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
+gem_lib_folder = File.join(main_folder, 'lib')
+$LOAD_PATH.unshift(gem_lib_folder)
+require 'aspera/coverage'
+require 'aspera/fasp/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/ssh'
@@ -44,9 +48,20 @@ NAME_FILE1 = '200KB.1'
 PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".renamed-#{TEST_RUN_ID}")
-PAC_FILE = 'file:///./examples/proxy.pac'
+PAC_FILE = "file:///#{main_folder}/examples/proxy.pac"
 
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
+
+RSpec.describe(Aspera::Fasp::Uri) do
+  it 'parses a URL' do
+    uri = Aspera::Fasp::Uri.new('faspe://user:pass@host:33001/path?token=xx&sshfp=xx&protect=xx&bad=xx')
+    ts = uri.transfer_spec
+    expect(ts).to(be_a(Hash))
+    expect(ts['token']).to(eq('xx'))
+    expect(ts['sshfp']).to(eq('xx'))
+    expect(ts['protect']).to(eq(nil))
+  end
+end
 
 RSpec.describe(Aspera::Cli::Main) do
   it 'has a version number' do
