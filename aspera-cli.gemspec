@@ -43,6 +43,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('base64', '~> 0.2.0')
   spec.add_runtime_dependency('bigdecimal', '~> 3.1', '>= 3.1.6')
   spec.add_runtime_dependency('blankslate', '~> 3.1')
+  spec.add_runtime_dependency('csv', '~> 3.0')
   spec.add_runtime_dependency('execjs', '~> 2.0')
   spec.add_runtime_dependency('jwt', '~> 2.0')
   # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
