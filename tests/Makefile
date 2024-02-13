@@ -21,13 +21,15 @@ all:: $(DIR_TOP).gems_checked tunit tconfig tfaspex tconsole tf5 tshares tnode t
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
-use_rmagick: $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
-use_grpc: $(T)serv_upload4
-use_mimemagic: $(T)prev_dcm_mm
+use_rmagick: optional_gems $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
+use_grpc: optional_gems $(T)serv_upload4
+use_mimemagic: optional_gems $(T)prev_dcm_mm
 
 # test group: require optional gems
 optional: use_rmagick use_grpc use_mimemagic
 
+optional_gems:
+	cd $(DIR_TOP) && make install_optional_gems
 # all tests, including interactive ones
 full: all interactive optional
 
@@ -806,11 +808,12 @@ $(T)aocp_send_shbx: $(T)aocp_recv_init
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_long: $(T)aocp_recv_init
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
 $(T)aocp_send_sh_meta_short: $(T)aocp_recv_init
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_name@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_BEG_FAI) aoc packages send --workspace=@preset:aoc.workspace_shared_inbox --validate-metadata=yes @json:@extend:'{"name":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:aoc.shared_inbox_meta@"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' $(TST_ASC_LCL_PATH) $(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aocp_recv_shbx: $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short
 	@$(START_TEST) $@
@@ -1492,11 +1495,11 @@ $(T)f5_p3: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_inbox_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
-	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shared_inbox_name
-	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.shared_inbox_name --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)package_box_id1
-	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shared_inbox_name $$(cat $(DIR_TMP)package_box_id1)
-	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shared_inbox_name $$(cat $(DIR_TMP)package_box_id1) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
+	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shared_box_name
+	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.shared_box_name --query=@json:'{"state":["released"],"limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)package_box_id1
+	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shared_box_name $$(cat $(DIR_TMP)package_box_id1)
+	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shared_box_name $$(cat $(DIR_TMP)package_box_id1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
@@ -1517,7 +1520,7 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res shared_inboxes list 
-	$(EXE_MAN) faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ list
+	$(EXE_MAN) faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res saml_configs list
 	$(EXE_MAN) faspex5 admin res metadata_profiles list
@@ -1530,10 +1533,10 @@ $(T)f5_adm: $(T).exists
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res registrations list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ create %name:john@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:john@example.com
-	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_inbox_name@ johnny@example.com
-	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_inbox_name@ delete %name:johnny@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:john@example.com
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_box_name@ johnny@example.com
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:johnny@example.com
 	@$(STOP_TEST) $@
 $(T)f5_smtp: $(T).exists
 	@$(START_TEST) $@
@@ -1574,7 +1577,7 @@ $(T)f5_postproc: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"$(DIR_TST)"}}' &
 	while ! test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
-	$(EXE_NO_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_inbox_name@"]}' 'faux:///test1?1m'
+	$(EXE_NO_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"]}' 'faux:///test1?1m'
 	curl -k https://localhost:8443/domain/post_proc_test.sh -d '{}'
 	curl -k https://localhost:8443/wrong -d '{}'
 	kill -INT $$(cat $(DIR_TMP)pid_f5_postproc)
