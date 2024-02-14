@@ -2408,14 +2408,16 @@ class="header-section-number">4.18</span> Proxy</h2>
 <p>There are several types of network connections, each of them use a
 different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <ul>
-<li>Ruby HTTP: REST and HTTP Gateway client</li>
-<li>Legacy Aspera HTTP/S Fallback and <code>ascp</code> wss</li>
-<li>Aspera FASP</li>
+<li>REST calls (APIs) and HTTP Gateway</li>
+<li><code>ascp</code> WSS and Legacy Aspera HTTP/S Fallback</li>
+<li><code>ascp</code> SSH and UDP (Aspera FASP)</li>
 </ul>
 <p>Refer to the following sections.</p>
-<h2 data-number="4.19" id="proxy-for-rest-and-http-gateway"><span
-class="header-section-number">4.19</span> Proxy for REST and HTTP
-Gateway</h2>
+<h3 data-number="4.18.1" id="proxy-for-rest-and-http-gateway"><span
+class="header-section-number">4.18.1</span> Proxy for REST and HTTP
+Gateway</h3>
+<p>REST API calls and transfers based on HTTP Gateway both use Ruby
+<code>Net::HTTP</code> gem.</p>
 <p>There are two possibilities to define an HTTP proxy to be used when
 Ruby HTTP is used.</p>
 <p>The <code>http_proxy</code> environment variable (<strong>lower
@@ -2430,12 +2432,13 @@ accepted.</p>
 </blockquote>
 <div class="sourceCode" id="cb177"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb177-1"><a href="#cb177-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://proxy.example.com:3128</span></code></pre></div>
-<p>The <code>fpac</code> option (function for proxy auto config) can be
-set to a <a href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy
-Auto Configuration (PAC)</a> javascript value. To read the script from a
-URL (<code>http:</code>, <code>https:</code> and <code>file:</code>),
-use prefix: <code>@uri:</code>. A minimal script can be specified to
-define the use of a local proxy:</p>
+<p>Alternatively, the <code>fpac</code> option (function for proxy auto
+config) can be set to a <a
+href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto
+Configuration (PAC)</a> javascript value. To read the script from a URL
+(<code>http:</code>, <code>https:</code> and <code>file:</code>), use
+prefix: <code>@uri:</code>. A minimal script can be specified to define
+the use of a local proxy:</p>
 <div class="sourceCode" id="cb178"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb178-1"><a href="#cb178-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host){return &quot;PROXY localhost:3128&quot;}&#39;</span> ...</span></code></pre></div>
 <p>The result of a PAC file can be tested with command:
@@ -2456,9 +2459,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb183-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb185-1"><a href="#cb185-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;__username_here__&quot;,&quot;__password_here__&quot;]&#39;</span> ...</span></code></pre></div>
 <div class="sourceCode" id="cb186"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@list::__username_here__:__password_here__ ...</span></code></pre></div>
-<h2 data-number="4.20" id="proxy-for-legacy-aspera-https-fallback"><span
-class="header-section-number">4.20</span> Proxy for Legacy Aspera HTTP/S
-Fallback</h2>
+<h3 data-number="4.18.2"
+id="proxy-for-legacy-aspera-https-fallback"><span
+class="header-section-number">4.18.2</span> Proxy for Legacy Aspera
+HTTP/S Fallback</h3>
 <p>Only supported with the <code>direct</code> agent: To specify a proxy
 for legacy HTTP fallback, use <code>ascp</code> native option
 <code>-x</code> and <code>ascp_args</code>:
@@ -2466,30 +2470,29 @@ for legacy HTTP fallback, use <code>ascp</code> native option
 Alternatively, set the <a
 href="#transferspec"><em>transfer-spec</em></a> parameter:
 <code>EX_http_proxy_url</code>.</p>
-<h2 data-number="4.21" id="fasp-proxy-forward-for-transfers"><span
-class="header-section-number">4.21</span> FASP proxy (forward) for
-transfers</h2>
+<h3 data-number="4.18.3" id="fasp-proxy-forward-for-transfers"><span
+class="header-section-number">4.18.3</span> FASP proxy (forward) for
+transfers</h3>
 <p>To specify a FASP proxy (forward), set the <a
 href="#transferspec"><em>transfer-spec</em></a> parameter:
 <code>proxy</code> (only supported with the <code>direct</code>
 agent).</p>
-<h2 data-number="4.22" id="fasp-configuration"><span
-class="header-section-number">4.22</span> <a id="client"></a>FASP
+<h2 data-number="4.19" id="fasp-configuration"><span
+class="header-section-number">4.19</span> <a id="client"></a>FASP
 configuration</h2>
 <p>The <code>config</code> plugin also allows specification for the use
 of a local FASP <strong>client</strong>. It provides the following
 commands for <code>ascp</code> subcommand:</p>
 <ul>
 <li><code>show</code> : shows the path of <code>ascp</code> used</li>
-<li><code>use</code> : list,download connect client versions available
-on internet</li>
+<li><code>use</code> : specify the ascp path to use</li>
 <li><code>products</code> : list Aspera transfer products available
 locally</li>
-<li><code>connect</code> : list,download connect client versions
+<li><code>connect</code> : list and download connect client versions
 available on internet</li>
 </ul>
-<h3 data-number="4.22.1" id="show-path-of-currently-used-ascp"><span
-class="header-section-number">4.22.1</span> Show path of currently used
+<h3 data-number="4.19.1" id="show-path-of-currently-used-ascp"><span
+class="header-section-number">4.19.1</span> Show path of currently used
 <code>ascp</code></h3>
 <div class="sourceCode" id="cb187"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp show</span></code></pre></div>
@@ -2501,13 +2504,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb189-1"><a href
 +--------------------+-----------------------------------------------------------+
 | ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
 ...</code></pre>
-<h3 data-number="4.22.2"
+<h3 data-number="4.19.2"
 id="selection-of-ascp-location-for-direct-agent"><span
-class="header-section-number">4.22.2</span> Selection of
+class="header-section-number">4.19.2</span> Selection of
 <code>ascp</code> location for <a
 href="#agt_direct"><code>direct</code></a> agent</h3>
 <p>By default, <code>ascli</code> uses any found local product with
-<code>ascp</code>, including SDK.</p>
+<code>ascp</code>, including Transfer SDK.</p>
 <p>To temporarily use an alternate <code>ascp</code> path use option
 <code>ascp_path</code> (<code>--ascp-path=</code>)</p>
 <p>For a permanent change, the command <code>config ascp use</code> sets
@@ -2525,9 +2528,9 @@ Updated: global_common_defaults: ascp_path &lt;- C:\Users\admin\.aspera\ascli\sd
 Saved to default global preset global_common_defaults</code></pre>
 <p>If the path has spaces, read section: <a href="#parsing">Shell and
 Command line parsing</a>.</p>
-<h3 data-number="4.22.3"
+<h3 data-number="4.19.3"
 id="list-locally-installed-aspera-transfer-products"><span
-class="header-section-number">4.22.3</span> List locally installed
+class="header-section-number">4.19.3</span> List locally installed
 Aspera Transfer products</h3>
 <p>Locally installed Aspera products can be listed with:</p>
 <div class="sourceCode" id="cb195"><pre
@@ -2540,22 +2543,22 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb195-1"><a href
 | IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
 | IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
 +---------------------------------------+----------------------------------------+</code></pre>
-<h3 data-number="4.22.4"
+<h3 data-number="4.19.4"
 id="selection-of-local-client-for-ascp-for-direct-agent"><span
-class="header-section-number">4.22.4</span> Selection of local client
+class="header-section-number">4.19.4</span> Selection of local client
 for <code>ascp</code> for <a href="#agt_direct"><code>direct</code></a>
 agent</h3>
 <p>If no <code>ascp</code> is selected, this is equivalent to using
 option: <code>--use-product=FIRST</code>.</p>
-<p>Using the option use_product finds the <code>ascp</code> binary of
-the selected product.</p>
+<p>Using the option <code>use_product</code> finds the <code>ascp</code>
+binary of the selected product.</p>
 <p>To permanently use the <code>ascp</code> of a product:</p>
 <div class="sourceCode" id="cb197"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
 <span id="cb197-2"><a href="#cb197-2" aria-hidden="true" tabindex="-1"></a><span class="ex">saved</span> to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp</span></code></pre></div>
-<h3 data-number="4.22.5"
+<h3 data-number="4.19.5"
 id="installation-of-connect-client-on-command-line"><span
-class="header-section-number">4.22.5</span> Installation of Connect
+class="header-section-number">4.19.5</span> Installation of Connect
 Client on command line</h3>
 <div class="sourceCode" id="cb198"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb198-1"><a href="#cb198-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect list</span></code></pre></div>
@@ -2583,8 +2586,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb200-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> download enclosure <span class="at">--to-folder</span><span class="op">=</span>.</span></code></pre></div>
 <pre class="output"><code>Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg</code></pre>
-<h2 data-number="4.23" id="transfer-clients-agents"><span
-class="header-section-number">4.23</span> <a id="agents"></a>Transfer
+<h2 data-number="4.20" id="transfer-clients-agents"><span
+class="header-section-number">4.20</span> <a id="agents"></a>Transfer
 Clients: Agents</h2>
 <p>Some of the actions on Aspera Applications lead to file transfers
 (upload and download) using the FASP protocol (<code>ascp</code>).</p>
@@ -2620,8 +2623,8 @@ for a transfer session, as a common method for those three Transfer
 Agents.</p>
 <p>Specific options for agents are provided with option
 <code>transfer_info</code>, cumulatively.</p>
-<h3 data-number="4.23.1" id="direct"><span
-class="header-section-number">4.23.1</span>
+<h3 data-number="4.20.1" id="direct"><span
+class="header-section-number">4.20.1</span>
 <a id="agt_direct"></a>Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
 <code>ascp</code>. This is the default agent for <code>ascli</code>
@@ -2832,16 +2835,16 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb211-1"><a href="
 <p>It is also possible to set a schedule with different time and days,
 for example for the value of <code>schedule</code>:</p>
 <pre class="text"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
-<h3 data-number="4.23.2" id="ibm-aspera-connect-client-gui"><span
-class="header-section-number">4.23.2</span> <a id="agt_connect"></a>IBM
+<h3 data-number="4.20.2" id="ibm-aspera-connect-client-gui"><span
+class="header-section-number">4.20.2</span> <a id="agt_connect"></a>IBM
 Aspera Connect Client GUI</h3>
 <p>By specifying option: <code>--transfer=connect</code>,
 <code>ascli</code> will start transfers using the locally installed
 Aspera Connect Client. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.23.3"
+<h3 data-number="4.20.3"
 id="aspera-node-api-node-to-node-transfers"><span
-class="header-section-number">4.23.3</span> <a id="agt_node"></a>Aspera
+class="header-section-number">4.20.3</span> <a id="agt_node"></a>Aspera
 Node API : Node to node transfers</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
@@ -2893,8 +2896,8 @@ then the <code>username</code> is expected to be an access key and the
 parameter <code>root_id</code> is mandatory and specifies the root file
 id on the node. It can be either the access key’s root file id, or any
 authorized file id underneath it.</p>
-<h3 data-number="4.23.4" id="http-gateway"><span
-class="header-section-number">4.23.4</span> <a id="agt_httpgw"></a>HTTP
+<h3 data-number="4.20.4" id="http-gateway"><span
+class="header-section-number">4.20.4</span> <a id="agt_httpgw"></a>HTTP
 Gateway</h3>
 <p>If it possible to send using a HTTP gateway, in case use of FASP is
 not allowed.</p>
@@ -2945,8 +2948,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb215-1"><a href
 <p><strong>Note:</strong> The gateway only supports transfers authorized
 with a token.</p>
 </blockquote>
-<h3 data-number="4.23.5" id="transfer-sdk"><span
-class="header-section-number">4.23.5</span>
+<h3 data-number="4.20.5" id="transfer-sdk"><span
+class="header-section-number">4.20.5</span>
 <a id="agt_trsdk"></a>Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
 (<code>asperatransferd</code>). Set option <code>transfer</code> to
@@ -3012,8 +3015,8 @@ change the signature of <code>gettimeofday</code> to
 <code>struct timezone</code> to <code>void</code></p></li>
 </ul>
 <!-- spellchecker: enable -->
-<h2 data-number="4.24" id="transfer-specification"><span
-class="header-section-number">4.24</span>
+<h2 data-number="4.21" id="transfer-specification"><span
+class="header-section-number">4.21</span>
 <a id="transferspec"></a>Transfer Specification</h2>
 <p>Some commands lead to file transfer (upload/download). All parameters
 necessary for this transfer are described in a <a
@@ -3057,8 +3060,8 @@ instead of <code>ascp</code> parameters has the advantage of:</p>
 <li>Common to all <a href="#agents">Transfer Agent</a></li>
 <li>Not dependent on command line limitations (special characters…)</li>
 </ul>
-<h2 data-number="4.25" id="transfer-parameters"><span
-class="header-section-number">4.25</span>
+<h2 data-number="4.22" id="transfer-parameters"><span
+class="header-section-number">4.22</span>
 <a id="transferparams"></a>Transfer Parameters</h2>
 <p>All standard <a href="#transferspec"><em>transfer-spec</em></a>
 parameters can be specified. <a
@@ -4171,8 +4174,8 @@ paths<br/>(-i {array})</td>
 </tr>
 </tbody>
 </table>
-<h3 data-number="4.25.1" id="destination-folder-for-transfers"><span
-class="header-section-number">4.25.1</span> Destination folder for
+<h3 data-number="4.22.1" id="destination-folder-for-transfers"><span
+class="header-section-number">4.22.1</span> Destination folder for
 transfers</h3>
 <p>The destination folder is set by <code>ascli</code> by default
 to:</p>
@@ -4186,8 +4189,8 @@ href="#transferspec"><em>transfer-spec</em></a> parameter
 <code>--ts=@json:'{"destination_root":"&lt;path&gt;"}'</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code> .</p>
-<h3 data-number="4.25.2" id="list-of-files-for-transfers"><span
-class="header-section-number">4.25.2</span> <a id="file_list"></a>List
+<h3 data-number="4.22.2" id="list-of-files-for-transfers"><span
+class="header-section-number">4.22.2</span> <a id="file_list"></a>List
 of files for transfers</h3>
 <p>When uploading, downloading or sending files, the user must specify
 the list of files to transfer.</p>
@@ -4280,9 +4283,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb226-1"><a href
 file list when using <strong>Aspera on Cloud</strong>, refer to the AoC
 plugin section.</p>
 </blockquote>
-<h3 data-number="4.25.3"
+<h3 data-number="4.22.3"
 id="source-directory-structure-on-destination"><span
-class="header-section-number">4.25.3</span> Source directory structure
+class="header-section-number">4.22.3</span> Source directory structure
 on destination</h3>
 <p>This section is not specific to <code>ascli</code> it is
 <code>ascp</code> behavior.</p>
@@ -4455,8 +4458,8 @@ the list of files in the <code>paths</code> field of transfer spec with
 both <code>source</code> and <code>destination</code> for each
 file.</p></li>
 </ul>
-<h3 data-number="4.25.4" id="support-of-multi-session"><span
-class="header-section-number">4.25.4</span>
+<h3 data-number="4.22.4" id="support-of-multi-session"><span
+class="header-section-number">4.22.4</span>
 <a id="multisession"></a>Support of multi-session</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
@@ -4482,8 +4485,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb228-1"><a href
 Multi-session using <code>direct</code> agent.</p>
 <p>When multi-session is used, one separate UDP port is used per session
 (refer to <code>ascp</code> manual page).</p>
-<h3 data-number="4.25.5" id="content-protection"><span
-class="header-section-number">4.25.5</span> Content protection</h3>
+<h3 data-number="4.22.5" id="content-protection"><span
+class="header-section-number">4.22.5</span> Content protection</h3>
 <p>Also known as Client-side encryption at rest (CSEAR), content
 protection allows a client to send files to a server which will store
 them encrypted (upload), and decrypt files as they are being downloaded
@@ -4501,8 +4504,8 @@ used.</li>
 fly</p>
 <div class="sourceCode" id="cb229"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb229-1"><a href="#cb229-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="4.25.6" id="transfer-spec-examples"><span
-class="header-section-number">4.25.6</span> Transfer Spec Examples</h3>
+<h3 data-number="4.22.6" id="transfer-spec-examples"><span
+class="header-section-number">4.22.6</span> Transfer Spec Examples</h3>
 <ul>
 <li>Change target rate</li>
 </ul>
@@ -4523,8 +4526,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href
 </ul>
 <div class="sourceCode" id="cb233"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb233-1"><a href="#cb233-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
-<h2 data-number="4.26" id="transfer-progress-bar"><span
-class="header-section-number">4.26</span> Transfer progress bar</h2>
+<h2 data-number="4.23" id="transfer-progress-bar"><span
+class="header-section-number">4.23</span> Transfer progress bar</h2>
 <p>File transfer operations are monitored and a progress bar is
 displayed on the terminal if option <code>progress_bar</code>
 (<code>Bool</code>) is set to <code>yes</code> (default if the output is
@@ -4533,14 +4536,14 @@ a terminal).</p>
 <code>ascp</code>, server to server, using HTTPS, etc…</p>
 <p>To display the native progress bar of <code>ascp</code>, use
 <code>--progress-bar=no --transfer-info=@json:'{"quiet":false}'</code>.</p>
-<h2 data-number="4.27" id="scheduler"><span
-class="header-section-number">4.27</span>
+<h2 data-number="4.24" id="scheduler"><span
+class="header-section-number">4.24</span>
 <a id="scheduler"></a>Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
-<h3 data-number="4.27.1" id="windows-scheduler"><span
-class="header-section-number">4.27.1</span> Windows Scheduler</h3>
+<h3 data-number="4.24.1" id="windows-scheduler"><span
+class="header-section-number">4.24.1</span> Windows Scheduler</h3>
 <p>Windows provides the <a
 href="https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page">Task
 Scheduler</a>. It can be configured:</p>
@@ -4551,8 +4554,8 @@ href="https://learn.microsoft.com/fr-fr/windows-server/administration/windows-co
 href="https://learn.microsoft.com/en-us/powershell/module/scheduledtasks"><code>scheduletasks</code></a></p></li>
 <li><p>Using <code>taskschd.msc</code> (UI)</p></li>
 </ul>
-<h3 data-number="4.27.2" id="unix-like-scheduler"><span
-class="header-section-number">4.27.2</span> Unix-like Scheduler</h3>
+<h3 data-number="4.24.2" id="unix-like-scheduler"><span
+class="header-section-number">4.24.2</span> Unix-like Scheduler</h3>
 <p>Unix-like systems (Linux, …) provide cron, configured using a <a
 href="https://www.man7.org/linux/man-pages/man5/crontab.5.html">crontab</a></p>
 <p>Linux also provides <code>anacron</code>, if tasks are hourly or
@@ -4580,8 +4583,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb235-1"><a href
 instead of configuration file to allow execution on command line with
 output on command line.</p>
 </blockquote>
-<h2 data-number="4.28" id="locking-for-exclusive-execution"><span
-class="header-section-number">4.28</span> <a id="locking"></a>Locking
+<h2 data-number="4.25" id="locking-for-exclusive-execution"><span
+class="header-section-number">4.25</span> <a id="locking"></a>Locking
 for exclusive execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
@@ -4619,8 +4622,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb237-1"><a href
 immediately exit like this:</p>
 <div class="sourceCode" id="cb238"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb238-1"><a href="#cb238-1" aria-hidden="true" tabindex="-1"></a><span class="ex">WARN</span> <span class="at">--</span> : Another instance is already running <span class="er">(</span><span class="ex">Address</span> already in use <span class="at">-</span> bind<span class="er">(</span><span class="ex">2</span><span class="kw">)</span> <span class="cf">for</span> <span class="st">&quot;127.0.0.1&quot;</span> port 12345<span class="kw">)</span><span class="bu">.</span></span></code></pre></div>
-<h2 data-number="4.29" id="provençal"><span
-class="header-section-number">4.29</span> “Provençal”</h2>
+<h2 data-number="4.26" id="provençal"><span
+class="header-section-number">4.26</span> “Provençal”</h2>
 <p><code>ascp</code>, the underlying executable implementing Aspera file
 transfer using FASP, has a capability to not only access the local file
 system (using system’s
@@ -4654,8 +4657,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb241-1"><a href
 <p>One of the adapters, used in this manual, for testing, is
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
-<h2 data-number="4.30" id="faux-for-testing"><span
-class="header-section-number">4.30</span>
+<h2 data-number="4.27" id="faux-for-testing"><span
+class="header-section-number">4.27</span>
 <a id="faux_testing"></a><code>faux:</code> for testing</h2>
 <p>This is an extract of the man page of <code>ascp</code>. This feature
 is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
@@ -4793,8 +4796,8 @@ with the basename of each file being <code>testfile</code> to
 </ul>
 <div class="sourceCode" id="cb246"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb246-1"><a href="#cb246-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1m&amp;size=0&amp;inc=2&amp;seq=sequential&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
-<h2 data-number="4.31" id="usage"><span
-class="header-section-number">4.31</span> <a id="usage"></a>Usage</h2>
+<h2 data-number="4.28" id="usage"><span
+class="header-section-number">4.28</span> <a id="usage"></a>Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.16.0.pre)
@@ -5082,9 +5085,9 @@ OPTIONS:
 <p><strong>Note:</strong> Commands and parameter values can be written
 in short form.</p>
 </blockquote>
-<h2 data-number="4.32"
+<h2 data-number="4.29"
 id="bulk-creation-and-deletion-of-resources"><span
-class="header-section-number">4.32</span> Bulk creation and deletion of
+class="header-section-number">4.29</span> Bulk creation and deletion of
 resources</h2>
 <p>Bulk creation and deletion of resources are possible using option
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
@@ -5093,8 +5096,8 @@ instead of a simple <code>Hash</code> using the <a
 href="#extended">Extended Value Syntax</a>. This option is available
 only for some of the resources: if you need it: try and see if the
 entities you try to create or delete support this option.</p>
-<h2 data-number="4.33" id="plugins"><span
-class="header-section-number">4.33</span> Plugins</h2>
+<h2 data-number="4.30" id="plugins"><span
+class="header-section-number">4.30</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
 (just after <code>ascli</code> on the command line) is the name of the
 concerned plugin which will execute the command. Each plugin usually
@@ -6247,22 +6250,23 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb348-1"><a href
 <span id="cb348-89"><a href="#cb348-89" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
 <span id="cb348-90"><a href="#cb348-90" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;}&#39;</span></span>
 <span id="cb348-91"><a href="#cb348-91" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb348-92"><a href="#cb348-92" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> test_file.bin</span>
-<span id="cb348-93"><a href="#cb348-93" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
-<span id="cb348-94"><a href="#cb348-94" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;]}&#39;</span> test_file.bin</span>
-<span id="cb348-95"><a href="#cb348-95" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> test_file.bin</span>
-<span id="cb348-96"><a href="#cb348-96" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> test_file.bin</span>
-<span id="cb348-97"><a href="#cb348-97" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_public_link_send_use_pass</span>
-<span id="cb348-98"><a href="#cb348-98" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_shared_inbox</span>
-<span id="cb348-99"><a href="#cb348-99" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages shared_inboxes list</span>
-<span id="cb348-100"><a href="#cb348-100" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> remind <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb348-101"><a href="#cb348-101" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> servers</span>
-<span id="cb348-102"><a href="#cb348-102" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
-<span id="cb348-103"><a href="#cb348-103" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref show</span>
-<span id="cb348-104"><a href="#cb348-104" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb348-105"><a href="#cb348-105" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
-<span id="cb348-106"><a href="#cb348-106" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
-<span id="cb348-107"><a href="#cb348-107" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
+<span id="cb348-92"><a href="#cb348-92" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> test_file.bin</span>
+<span id="cb348-93"><a href="#cb348-93" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
+<span id="cb348-94"><a href="#cb348-94" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
+<span id="cb348-95"><a href="#cb348-95" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;]}&#39;</span> test_file.bin</span>
+<span id="cb348-96"><a href="#cb348-96" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> test_file.bin</span>
+<span id="cb348-97"><a href="#cb348-97" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> test_file.bin</span>
+<span id="cb348-98"><a href="#cb348-98" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_public_link_send_use_pass</span>
+<span id="cb348-99"><a href="#cb348-99" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_shared_inbox</span>
+<span id="cb348-100"><a href="#cb348-100" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> packages shared_inboxes list</span>
+<span id="cb348-101"><a href="#cb348-101" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> remind <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb348-102"><a href="#cb348-102" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> servers</span>
+<span id="cb348-103"><a href="#cb348-103" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
+<span id="cb348-104"><a href="#cb348-104" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user pref show</span>
+<span id="cb348-105"><a href="#cb348-105" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb348-106"><a href="#cb348-106" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user profile show</span>
+<span id="cb348-107"><a href="#cb348-107" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces current</span>
+<span id="cb348-108"><a href="#cb348-108" aria-hidden="true" tabindex="-1"></a><span class="ex">aoc</span> user workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> <a id="ats"></a>Plugin:
 <code>ats</code>: IBM Aspera Transfer Service</h1>
@@ -7215,32 +7219,32 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb410-1"><a href
 <span id="cb410-6"><a href="#cb410-6" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res oauth_clients list</span>
 <span id="cb410-7"><a href="#cb410-7" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res registrations list</span>
 <span id="cb410-8"><a href="#cb410-8" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res saml_configs list</span>
-<span id="cb410-9"><a href="#cb410-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes invite %name:my_shared_inbox_name johnny@example.com</span>
+<span id="cb410-9"><a href="#cb410-9" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes invite %name:my_shared_box_name johnny@example.com</span>
 <span id="cb410-10"><a href="#cb410-10" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes list</span>
 <span id="cb410-11"><a href="#cb410-11" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;all&quot;:true}&#39;</span></span>
-<span id="cb410-12"><a href="#cb410-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_inbox_name create %name:john@example.com</span>
-<span id="cb410-13"><a href="#cb410-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_inbox_name delete %name:john@example.com</span>
-<span id="cb410-14"><a href="#cb410-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_inbox_name delete %name:johnny@example.com</span>
-<span id="cb410-15"><a href="#cb410-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_inbox_name list</span>
+<span id="cb410-12"><a href="#cb410-12" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_box_name create %name:john@example.com</span>
+<span id="cb410-13"><a href="#cb410-13" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_box_name delete %name:john@example.com</span>
+<span id="cb410-14"><a href="#cb410-14" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com</span>
+<span id="cb410-15"><a href="#cb410-15" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res shared_inboxes members %name:my_shared_box_name list</span>
 <span id="cb410-16"><a href="#cb410-16" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin res workgroups list</span>
 <span id="cb410-17"><a href="#cb410-17" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp show</span>
 <span id="cb410-18"><a href="#cb410-18" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> admin smtp test my_email_external</span>
 <span id="cb410-19"><a href="#cb410-19" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> bearer_token</span>
 <span id="cb410-20"><a href="#cb410-20" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> gateway <span class="at">--pid-file</span><span class="op">=</span>pid_f5_fxgw https://localhost:12346/aspera/faspex <span class="kw">&amp;</span></span>
 <span id="cb410-21"><a href="#cb410-21" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> health</span>
-<span id="cb410-22"><a href="#cb410-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_shared_inbox_name</span>
+<span id="cb410-22"><a href="#cb410-22" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_shared_box_name</span>
 <span id="cb410-23"><a href="#cb410-23" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups</span>
 <span id="cb410-24"><a href="#cb410-24" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
-<span id="cb410-25"><a href="#cb410-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_shared_inbox_name package_box_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb410-25"><a href="#cb410-25" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_shared_box_name package_box_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb410-26"><a href="#cb410-26" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups workgroup_package_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb410-27"><a href="#cb410-27" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb410-28"><a href="#cb410-28" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span>
 <span id="cb410-29"><a href="#cb410-29" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages receive f5_p31 <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_secret_here&quot;}&#39;</span></span>
 <span id="cb410-30"><a href="#cb410-30" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send <span class="at">--shared-folder</span><span class="op">=</span>%name:my_shared_folder_name @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;]}&#39;</span> my_shared_folder_file</span>
-<span id="cb410-31"><a href="#cb410-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> test_file.bin</span>
+<span id="cb410-31"><a href="#cb410-31" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_shared_box_name&quot;],&quot;metadata&quot;:{&quot;Options&quot;:&quot;Opt1&quot;,&quot;TextInput&quot;:&quot;example text&quot;}}&#39;</span> test_file.bin</span>
 <span id="cb410-32"><a href="#cb410-32" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[&quot;my_workgroup&quot;]}&#39;</span> test_file.bin</span>
 <span id="cb410-33"><a href="#cb410-33" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages send @json:<span class="st">&#39;{&quot;title&quot;:&quot;test title&quot;,&quot;recipients&quot;:[{&quot;name&quot;:&quot;my_username&quot;}]my_meta}&#39;</span> test_file.bin <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;content_protection_password&quot;:&quot;my_passphrase_here&quot;}&#39;</span></span>
-<span id="cb410-34"><a href="#cb410-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_shared_inbox_name package_box_id1</span>
+<span id="cb410-34"><a href="#cb410-34" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_shared_box_name package_box_id1</span>
 <span id="cb410-35"><a href="#cb410-35" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups workgroup_package_id1</span>
 <span id="cb410-36"><a href="#cb410-36" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages show f5_p31</span>
 <span id="cb410-37"><a href="#cb410-37" aria-hidden="true" tabindex="-1"></a><span class="ex">faspex5</span> packages status f5_p31</span>

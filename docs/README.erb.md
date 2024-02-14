@@ -2158,13 +2158,15 @@ Example:
 
 There are several types of network connections, each of them use a different mechanism to define a (forward) **proxy**:
 
-- Ruby HTTP: REST and HTTP Gateway client
-- Legacy Aspera HTTP/S Fallback and `ascp` wss
-- Aspera FASP
+- REST calls (APIs) and HTTP Gateway
+- `ascp` WSS and Legacy Aspera HTTP/S Fallback
+- `ascp` SSH and UDP (Aspera FASP)
 
 Refer to the following sections.
 
-### Proxy for REST and HTTP Gateway
+#### Proxy for REST and HTTP Gateway
+
+REST API calls and transfers based on HTTP Gateway both use Ruby `Net::HTTP` gem.
 
 There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
 
@@ -2178,7 +2180,7 @@ Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_p
 export http_proxy=http://proxy.example.com:3128
 ```
 
-The `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
+Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
 To read the script from a URL (`http:`, `https:` and `file:`), use prefix: `@uri:`.
 A minimal script can be specified to define the use of a local proxy:
 
@@ -2223,11 +2225,11 @@ If the proxy requires credentials, then use option `proxy_credentials` with user
 <%=cmd%> --proxy-credentials=@list::__username_here__:__password_here__ ...
 ```
 
-### Proxy for Legacy Aspera HTTP/S Fallback
+#### Proxy for Legacy Aspera HTTP/S Fallback
 
 Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`. Alternatively, set the <%=trspec%> parameter: `EX_http_proxy_url`.
 
-### FASP proxy (forward) for transfers
+#### FASP proxy (forward) for transfers
 
 To specify a FASP proxy (forward), set the <%=trspec%> parameter: `proxy` (only supported with the `direct` agent).
 
@@ -2237,9 +2239,9 @@ The `config` plugin also allows specification for the use of a local FASP **clie
 It provides the following commands for `ascp` subcommand:
 
 - `show` : shows the path of `ascp` used
-- `use` : list,download connect client versions available on internet
+- `use` : specify the ascp path to use
 - `products` : list Aspera transfer products available locally
-- `connect` : list,download connect client versions available on internet
+- `connect` : list and download connect client versions available on internet
 
 #### Show path of currently used `ascp`
 
@@ -2265,7 +2267,7 @@ It provides the following commands for `ascp` subcommand:
 
 #### Selection of `ascp` location for [`direct`](#agt_direct) agent
 
-By default, <%=tool%> uses any found local product with `ascp`, including SDK.
+By default, <%=tool%> uses any found local product with `ascp`, including Transfer SDK.
 
 To temporarily use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
@@ -2320,7 +2322,7 @@ Locally installed Aspera products can be listed with:
 
 If no `ascp` is selected, this is equivalent to using option: `--use-product=FIRST`.
 
-Using the option use_product finds the `ascp` binary of the selected product.
+Using the option `use_product` finds the `ascp` binary of the selected product.
 
 To permanently use the `ascp` of a product:
 

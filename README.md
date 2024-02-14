@@ -2237,13 +2237,15 @@ ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
 
 There are several types of network connections, each of them use a different mechanism to define a (forward) **proxy**:
 
-- Ruby HTTP: REST and HTTP Gateway client
-- Legacy Aspera HTTP/S Fallback and `ascp` wss
-- Aspera FASP
+- REST calls (APIs) and HTTP Gateway
+- `ascp` WSS and Legacy Aspera HTTP/S Fallback
+- `ascp` SSH and UDP (Aspera FASP)
 
 Refer to the following sections.
 
-### Proxy for REST and HTTP Gateway
+#### Proxy for REST and HTTP Gateway
+
+REST API calls and transfers based on HTTP Gateway both use Ruby `Net::HTTP` gem.
 
 There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
 
@@ -2257,7 +2259,7 @@ Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_p
 export http_proxy=http://proxy.example.com:3128
 ```
 
-The `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
+Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
 To read the script from a URL (`http:`, `https:` and `file:`), use prefix: `@uri:`.
 A minimal script can be specified to define the use of a local proxy:
 
@@ -2302,11 +2304,11 @@ ascli --proxy-credentials=@json:'["__username_here__","__password_here__"]' ...
 ascli --proxy-credentials=@list::__username_here__:__password_here__ ...
 ```
 
-### Proxy for Legacy Aspera HTTP/S Fallback
+#### Proxy for Legacy Aspera HTTP/S Fallback
 
 Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`. Alternatively, set the [*transfer-spec*](#transferspec) parameter: `EX_http_proxy_url`.
 
-### FASP proxy (forward) for transfers
+#### FASP proxy (forward) for transfers
 
 To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) parameter: `proxy` (only supported with the `direct` agent).
 
@@ -2316,9 +2318,9 @@ The `config` plugin also allows specification for the use of a local FASP **clie
 It provides the following commands for `ascp` subcommand:
 
 - `show` : shows the path of `ascp` used
-- `use` : list,download connect client versions available on internet
+- `use` : specify the ascp path to use
 - `products` : list Aspera transfer products available locally
-- `connect` : list,download connect client versions available on internet
+- `connect` : list and download connect client versions available on internet
 
 #### Show path of currently used `ascp`
 
@@ -2344,7 +2346,7 @@ ascli config ascp info
 
 #### Selection of `ascp` location for [`direct`](#agt_direct) agent
 
-By default, `ascli` uses any found local product with `ascp`, including SDK.
+By default, `ascli` uses any found local product with `ascp`, including Transfer SDK.
 
 To temporarily use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
@@ -2399,7 +2401,7 @@ ascli config ascp products list
 
 If no `ascp` is selected, this is equivalent to using option: `--use-product=FIRST`.
 
-Using the option use_product finds the `ascp` binary of the selected product.
+Using the option `use_product` finds the `ascp` binary of the selected product.
 
 To permanently use the `ascp` of a product:
 
@@ -4787,8 +4789,9 @@ aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
 aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 aoc packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
 aoc packages receive package_id3 --to-folder=.
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"]}' test_file.bin
 aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
 aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"],"note":"my note"}' test_file.bin
@@ -5684,32 +5687,32 @@ faspex5 admin res node list
 faspex5 admin res oauth_clients list
 faspex5 admin res registrations list
 faspex5 admin res saml_configs list
-faspex5 admin res shared_inboxes invite %name:my_shared_inbox_name johnny@example.com
+faspex5 admin res shared_inboxes invite %name:my_shared_box_name johnny@example.com
 faspex5 admin res shared_inboxes list
 faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
-faspex5 admin res shared_inboxes members %name:my_shared_inbox_name create %name:john@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_inbox_name delete %name:john@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_inbox_name delete %name:johnny@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_inbox_name list
+faspex5 admin res shared_inboxes members %name:my_shared_box_name create %name:john@example.com
+faspex5 admin res shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
+faspex5 admin res shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
+faspex5 admin res shared_inboxes members %name:my_shared_box_name list
 faspex5 admin res workgroups list
 faspex5 admin smtp show
 faspex5 admin smtp test my_email_external
 faspex5 bearer_token
 faspex5 gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
 faspex5 health
-faspex5 packages list --box=my_shared_inbox_name
+faspex5 packages list --box=my_shared_box_name
 faspex5 packages list --box=my_workgroup --group-type=workgroups
 faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
-faspex5 packages receive --box=my_shared_inbox_name package_box_id1 --to-folder=.
+faspex5 packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
 faspex5 packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
 faspex5 packages receive ALL --once-only=yes --to-folder=.
 faspex5 packages receive INIT --once-only=yes
 faspex5 packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
 faspex5 packages send --shared-folder=%name:my_shared_folder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shared_folder_file
-faspex5 packages send @json:'{"title":"test title","recipients":["my_shared_inbox_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
+faspex5 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
 faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
-faspex5 packages show --box=my_shared_inbox_name package_box_id1
+faspex5 packages show --box=my_shared_box_name package_box_id1
 faspex5 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 faspex5 packages show f5_p31
 faspex5 packages status f5_p31
