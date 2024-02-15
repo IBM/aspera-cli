@@ -202,15 +202,18 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
+          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
+          certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs].is_a?(Array)
           # ignore cert for wss ?
           if @options[:check_ignore]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
             wss_url = "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}"
             File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))
-            certificates_to_use.push(wss_cert_file)
+            # place in front, as more priority
+            certificates_to_use.unshift(wss_cert_file)
           end
-          # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-          certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs]
+          # when wss is used, only first `-i` is used... Hum...
+          certificates_to_use = [certificates_to_use.first] unless certificates_to_use.empty?
         else
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
@@ -239,8 +242,8 @@ module Aspera
         assert(!@builder.read_param('multi_session'))
 
         # add ssh or wss certificates
-        remote_certificates.each do |cert|
-          Log.log.trace1{"adding certificate: #{cert}"}
+        # (reverse, to keep order, as we unshift)
+        remote_certificates.reverse_each do |cert|
           env_args[:args].unshift('-i', cert)
         end
 
