@@ -212,7 +212,7 @@ module Aspera
           # display ascp command line
           Log.log.debug do
             [
-              'execute:',
+              'execute:'.red,
               env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
               Shellwords.shellescape(ascp_path),
               ascp_arguments.map{|a|Shellwords.shellescape(a)}
