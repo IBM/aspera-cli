@@ -1,7 +1,11 @@
 # Changes (Release notes)
 
 * 4.17.0
-  * 
+
+  * New Features:
+  * Issues Fixed:
+  * Breaking Changes:
+    * `config`: command `remote_certificate` now takes a subcommand.
 
 * 4.16.0
 

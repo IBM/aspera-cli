@@ -248,7 +248,9 @@ GEM_VERSION=4.11.0 make -e docker
 GEM_VERSION=4.11.0 make -e docker_push
 ```
 
-> **Note:** This does not use the gem locally, only the docker file is used locally, the gem is installed from rubygems.org.
+> **Note:** This does not use the locally generated gem file.
+Only the local docker file is used.
+The gem is installed from rubygems.org. This also sets the `latest` tag.
 
 ### Development version image build
 

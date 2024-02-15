@@ -182,7 +182,9 @@ module Aspera
           @proxy_credentials = nil
           @main_folder = nil
           @option_config_file = nil
+          # store is used for ruby https
           @certificate_store = nil
+          # paths are used for ascp
           @certificate_paths = nil
           @progress_bar = nil
           # option to set main folder
@@ -291,24 +293,26 @@ module Aspera
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
         attr_reader :option_ignore_cert_host_port, :progress_bar
 
+        # add files, folders or default locations to the certificate store
         def trusted_cert_locations=(path_list)
           path_list = [path_list] unless path_list.is_a?(Array)
+          assert_type(path_list, Array){'cert locations'}
           if @certificate_store.nil?
             Log.log.debug('Creating SSL Cert store')
             @certificate_store = OpenSSL::X509::Store.new
-            @certificate_store.set_default_paths
             @certificate_paths = []
           end
 
           path_list.each do |path|
-            assert_type(path, String){'Expecting a String for cert location'}
-            Log.log.debug("Adding cert location: #{path}")
+            assert_type(path, String){'Expecting a String for certificate location'}
+            paths_to_add = [path]
+            Log.log.debug{"Adding cert location: #{path}"}
             if path.eql?(ExtendedValue::DEF)
-              path = OpenSSL::X509::DEFAULT_CERT_DIR
-              @certificate_store.add_path(path)
-              @certificate_paths.push(path)
-              path = OpenSSL::X509::DEFAULT_CERT_FILE
-              @certificate_store.add_file(path)
+              @certificate_store.set_default_paths
+              paths_to_add = [
+                OpenSSL::X509::DEFAULT_CERT_DIR,
+                OpenSSL::X509::DEFAULT_CERT_FILE
+              ].select{|f|File.exist?(f)}
             elsif File.file?(path)
               @certificate_store.add_file(path)
             elsif File.directory?(path)
@@ -316,17 +320,29 @@ module Aspera
             else
               raise "No such file or folder: #{path}"
             end
-            @certificate_paths.push(path)
+            paths_to_add.each do |p|
+              pp = [File.realpath(p)]
+              if File.directory?(p)
+                pp = Dir.entries(p)
+                  .map{|e|File.realpath(File.join(p, e))}
+                  .select{|entry|File.file?(entry)}
+              end
+              @certificate_paths.concat(pp)
+            end
           end
+          @certificate_paths.uniq!
         end
 
-        def trusted_cert_locations(files_only: false)
-          locations = if @certificate_paths.nil?
-            [OpenSSL::X509::DEFAULT_CERT_DIR, OpenSSL::X509::DEFAULT_CERT_FILE]
-          else
-            @certificate_paths
+        # returns only files
+        def trusted_cert_locations
+          locations = @certificate_paths
+          if locations.nil?
+            # compute default locations
+            self.trusted_cert_locations = ExtendedValue::DEF
+            locations = @certificate_paths
+            # restore defaults
+            @certificate_paths = @certificate_store = nil
           end
-          locations = locations.select{|f|File.file?(f)} if files_only
           return locations
         end
 
@@ -912,12 +928,18 @@ module Aspera
             private_key_pem = options.get_next_argument('private key PEM value')
             return Main.result_status(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s)
           when :remote_certificate
+            cert_action = options.get_next_command(%i[chain only name])
             remote_url = options.get_next_argument('remote URL')
-            @option_insecure = true
-            remote_certificate = Rest.start_http_session(remote_url).peer_cert
-            remote_certificate.subject.to_a.find { |name, _, _| name == 'CN' }[1]
-            formatter.display_status("CN=#{remote_certificate.subject.to_a.find { |name, _, _| name == 'CN' }[1] rescue ''}")
-            return Main.result_status(remote_certificate.to_pem)
+            remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+            raise "No certificate found for #{remote_url}" unless remote_chain&.first
+            case cert_action
+            when :chain
+              return Main.result_status(remote_chain.map(&:to_pem).join("\n"))
+            when :only
+              return Main.result_status(remote_chain.first.to_pem)
+            when :name
+              return Main.result_status(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
+            end
           when :echo # display the content of a value given on command line
             return Formatter.auto_type(options.get_next_argument('value'))
           when :flush_tokens

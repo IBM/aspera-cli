@@ -1992,40 +1992,44 @@ To display trusted certificate store locations:
 <%=cmd%> --show-config --fields=cert_stores
 ```
 
-To modify the locations of certificate store, use option `cert_stores`.
-If you use this option, then default locations are removed, but they can be added using special value `DEF`.
-The value can be either an `Array`, or successive options.
+By default, this displays the list of existing files from default locations.
+
+Use option `cert_stores` to modify the locations of certificate stores (files or folders).
+If you use this option, then default locations are not used.
+Default locations can be added using special value `DEF`.
+The value can be either an `Array` or `String` (path).
+Successive options add paths incrementally.
+All files of a folders are added.
 
 <%=tool%> uses the Ruby `openssl` gem, which uses the `openssl` library.
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
-> **Note:** One can display those values like this:
+One can display those default values:
 
 ```bash
 <%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
 <%=cmd%> config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
-`ascp` also needs to validate certificates when using **WSS**.
+`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of SSH).
 
-> **Note:** <%=tool%> overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
+By default,`ascp` uses an hardcoded root location `OPENSSLDIR`.
+Original `ascp`'s hardcoded locations can be found using:
 
 ```bash
 <%=cmd%> config ascp info --fields=openssldir
 ```
 
-or
-
-```bash
-strings $(<%=cmd%> config ascp info --fields=ascp)|grep -w OPENSSLDIR
-```
+E.g. on macOS: `/Library/Aspera/ssl`.
+Then trusted certificates are taken from `[OPENSSLDIR]/cert.pem` and files in `[OPENSSLDIR]/certs`.
+<%=tool%> overrides the default hardcoded location used by `ascp` for WSS and uses the same locations as specified in `cert_stores` (using the `-i` option of `ascp`).
 
 To update trusted root certificates for <%=tool%>:
 Display the trusted certificate store locations used by <%=tool%>.
 Typically done by updating the system's root certificate store.
 
-An up-to-date version of the certificate bundle can be retrieved with:
+An up-to-date version of the certificate bundle can also be retrieved with:
 
 ```bash
 <%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
@@ -2034,18 +2038,18 @@ An up-to-date version of the certificate bundle can be retrieved with:
 To download that certificate store:
 
 ```bash
-<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+<%=cmd%> config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
 ```
 
-Then, use this store by setting the  option `cert_stores` or env var `SSL_CERT_FILE`.
+Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
 
-To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate to a file:
+To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```bash
-<%=cmd%> config remote_certificate https://localhost:9092 > myserver.pem
+<%=cmd%> config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
 ```
 
-> **Note:** The saved certificate shows the CN as first line.
+> **Note:** Use command `name` to display the remote common name of the remote certificate.
 
 Then, use this file as certificate store (e.g. here, Node API):
 
@@ -3813,7 +3817,7 @@ WS2ID=$(<%=cmd%> aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' -
 c- Extract membership information
 
 ```bash
-<%=cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+<%=cmd%> aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
@@ -4828,7 +4832,7 @@ Let's assume that the access key was created, and a default configuration is set
 - Create a Bearer token for the user:
 
   ```bash
-  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' > bearer.txt
+  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
   ```
 
 #### Bearer token: User side

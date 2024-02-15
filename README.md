@@ -1703,6 +1703,9 @@ config preset unset conf_name param
 config preset update conf_name --p1=v1 --p2=v2
 config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 config pubkey @file:my_key
+config remote_certificate chain https://node.example.com/path
+config remote_certificate name https://node.example.com/path
+config remote_certificate only https://node.example.com/path
 config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
 config vault delete my_label
 config vault list
@@ -2071,40 +2074,44 @@ To display trusted certificate store locations:
 ascli --show-config --fields=cert_stores
 ```
 
-To modify the locations of certificate store, use option `cert_stores`.
-If you use this option, then default locations are removed, but they can be added using special value `DEF`.
-The value can be either an `Array`, or successive options.
+By default, this displays the list of existing files from default locations.
+
+Use option `cert_stores` to modify the locations of certificate stores (files or folders).
+If you use this option, then default locations are not used.
+Default locations can be added using special value `DEF`.
+The value can be either an `Array` or `String` (path).
+Successive options add paths incrementally.
+All files of a folders are added.
 
 `ascli` uses the Ruby `openssl` gem, which uses the `openssl` library.
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
-> **Note:** One can display those values like this:
+One can display those default values:
 
 ```bash
 ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
 ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
 ```
 
-`ascp` also needs to validate certificates when using **WSS**.
+`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of SSH).
 
-> **Note:** `ascli` overrides the default hardcoded location used by `ascp` for WSS (e.g. on macOS: `/Library/Aspera/ssl`) and uses the same locations as specified in `cert_stores` (using `-i` switch of `ascp`). Hardcoded locations can be found using:
+By default,`ascp` uses an hardcoded root location `OPENSSLDIR`.
+Original `ascp`'s hardcoded locations can be found using:
 
 ```bash
 ascli config ascp info --fields=openssldir
 ```
 
-or
-
-```bash
-strings $(ascli config ascp info --fields=ascp)|grep -w OPENSSLDIR
-```
+E.g. on macOS: `/Library/Aspera/ssl`.
+Then trusted certificates are taken from `[OPENSSLDIR]/cert.pem` and files in `[OPENSSLDIR]/certs`.
+`ascli` overrides the default hardcoded location used by `ascp` for WSS and uses the same locations as specified in `cert_stores` (using the `-i` option of `ascp`).
 
 To update trusted root certificates for `ascli`:
 Display the trusted certificate store locations used by `ascli`.
 Typically done by updating the system's root certificate store.
 
-An up-to-date version of the certificate bundle can be retrieved with:
+An up-to-date version of the certificate bundle can also be retrieved with:
 
 ```bash
 ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
@@ -2113,18 +2120,18 @@ ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
 To download that certificate store:
 
 ```bash
-ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text > /tmp/cacert.pem
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
 ```
 
-Then, use this store by setting the  option `cert_stores` or env var `SSL_CERT_FILE`.
+Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
 
-To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate to a file:
+To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
 
 ```bash
-ascli config remote_certificate https://localhost:9092 > myserver.pem
+ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
 ```
 
-> **Note:** The saved certificate shows the CN as first line.
+> **Note:** Use command `name` to display the remote common name of the remote certificate.
 
 Then, use this file as certificate store (e.g. here, Node API):
 
@@ -4267,7 +4274,7 @@ WS2ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --se
 c- Extract membership information
 
 ```bash
-ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp > ws1_members.json
+ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
@@ -5435,7 +5442,7 @@ Let's assume that the access key was created, and a default configuration is set
 - Create a Bearer token for the user:
 
   ```bash
-  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' > bearer.txt
+  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
   ```
 
 #### Bearer token: User side

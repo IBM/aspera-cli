@@ -114,7 +114,7 @@ module Aspera
           # by default do not display ascp native progress bar
           agent_options[:quiet] = true unless agent_options.key?(:quiet)
           agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
-          agent_options[:trusted_certs] = @config.trusted_cert_locations(files_only: true) unless agent_options.key?(:trusted_certs)
+          agent_options[:trusted_certs] = @config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
         end
         agent_options[:progress] = @config.progress_bar
         # get agent instance
@@ -185,7 +185,7 @@ module Aspera
         if !@transfer_paths.nil?
           Log.log.warn('--sources overrides paths from --ts')
         end
-        source_type=@opt_mgr.get_option(:src_type, mandatory: true)
+        source_type = @opt_mgr.get_option(:src_type, mandatory: true)
         case source_type
         when :list
           # when providing a list, just specify source

@@ -115,7 +115,7 @@ module Aspera
             if false # @options[:check_ignore]&.call(remote['host'], remote['ws_port'])
               wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
               wss_url = "https://#{remote['host']}:#{remote['ws_port']}"
-              File.write(wss_cert_file, Rest.remote_certificates(wss_url))
+              File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))
               certificates_to_use.push(wss_cert_file)
             end
             # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
