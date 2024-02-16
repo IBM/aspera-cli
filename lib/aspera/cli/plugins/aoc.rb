@@ -277,11 +277,13 @@ module Aspera
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
             raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
+            # TODO : craft a query that looks for dropbox only in current workspace
             query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
             query.delete('dropbox_name')
           end
           query['workspace_id'] ||= aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
-          query['exclude_dropbox_packages'] = true unless query.key?('dropbox_id')
+          # by default show dropbox packages only for dropboxes
+          query['exclude_dropbox_packages'] = !query.key?('dropbox_id') unless query.key?('exclude_dropbox_packages')
         end
 
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze

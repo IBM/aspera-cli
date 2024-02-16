@@ -4082,6 +4082,8 @@ To list packages in a shared inbox, the query has to be specified with the the s
 Additional parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode).
 The current workspace is added unless specified in the query.
 
+> **Note:** By default, `exclude_dropbox_packages` is set to true for user packages, and to false for shared inbox packages. This can be overridden in the query.
+
 Using shared inbox name:
 
 ```bash
