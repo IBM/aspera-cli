@@ -56,8 +56,7 @@ module Aspera
         when /s390/
           return CPU_S390
         when /arm/, /aarch64/
-          # arm on mac has rosetta 2
-          return CPU_X86_64 if os.eql?(OS_X)
+          return CPU_ARM64
         end
         raise "Unknown CPU: #{RbConfig::CONFIG['host_cpu']}"
       end
