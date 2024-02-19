@@ -4,8 +4,7 @@
 if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
   require 'securerandom'
-  # compute gem source root based on this script location, assuming it is in bin/
-  # use dirname instead of gsub, in case folder separator is not /
+  # compute development top folder based on this source location
   development_root = 3.times.inject(File.realpath(__FILE__)) { |p, _| File.dirname(p) }
   SimpleCov.root(development_root)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
