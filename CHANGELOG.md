@@ -4,6 +4,7 @@
 
   * New Features:
   * Issues Fixed:
+    * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
   * Breaking Changes:
     * `config`: command `remote_certificate` now takes a subcommand.
 
