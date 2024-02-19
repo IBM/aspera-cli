@@ -692,7 +692,7 @@ module Aspera
               formatter.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")[:data]
-                formatter.display_status("downloading package: #{package_info['name']}")
+                formatter.display_status("downloading package: [#{package_info['id']}] #{package_info['name']}")
                 package_node_api = aoc_api.node_api_from(
                   node_id: package_info['node_id'],
                   workspace_id: aoc_api.context[:workspace_id],
