@@ -3,6 +3,7 @@
 * 4.17.0
 
   * New Features:
+    * `faspex5`: Support public and private invitations.
   * Issues Fixed:
     * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
   * Breaking Changes:

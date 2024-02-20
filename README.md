@@ -3476,7 +3476,7 @@ OPTIONS:
 
 
 COMMAND: faspex5
-SUBCOMMANDS: admin bearer_token gateway health packages postprocessing shared_folders user version
+SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             Username to log in
@@ -4539,6 +4539,8 @@ To list packages in a shared inbox, the query has to be specified with the the s
 Additional parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode).
 The current workspace is added unless specified in the query.
 
+> **Note:** By default, `exclude_dropbox_packages` is set to true for user packages, and to false for shared inbox packages. This can be overridden in the query.
+
 Using shared inbox name:
 
 ```bash
@@ -4753,7 +4755,7 @@ aoc automation workflow create @json:'{"name":"test_workflow"}'
 aoc automation workflow delete wf_id
 aoc automation workflow list
 aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
-aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data
+aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data --output=test
 aoc bearer_token --display=data --scope=user:all
 aoc files bearer /
 aoc files bearer_token_node / --cache-tokens=no
@@ -5479,7 +5481,7 @@ node access_key do my_ak_name show %id:1
 node access_key do my_ak_name show /testfile1
 node access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
 node access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
-node access_key do self show / --fields=id
+node access_key do self show / --fields=id --output=root_id
 node access_key list
 node access_key set_bearer_key self @file:my_private_key
 node api_details
@@ -5490,7 +5492,7 @@ node async list
 node async show 1
 node async show ALL
 node basic_token
-node bearer_token @file:my_private_key @json:'{"user_id":"666"}'
+node bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
 node browse / --log-level=trace2
 node delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 node delete my_upload_folder/test_file.bin
@@ -5707,6 +5709,8 @@ faspex5 admin smtp test my_email_external
 faspex5 bearer_token
 faspex5 gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
 faspex5 health
+faspex5 invitation list
+faspex5 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
 faspex5 packages list --box=my_shared_box_name
 faspex5 packages list --box=my_workgroup --group-type=workgroups
 faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
@@ -5936,6 +5940,14 @@ To initialize, and skip all current package so that next time `ALL` is used, onl
 ```bash
 ascli faspex5 packages receive INIT --once-only=yes
 ```
+
+### Faspex 5: Invitations
+
+There are two types of invitations of package submission: public or private.
+
+Public invitations are for external users, provide just the email address.
+
+Private invitations are for internal users, provide the user or shared inbox identifier through field `recipient_name`.
 
 ### Faspex 5: Faspex 4-style postprocessing
 

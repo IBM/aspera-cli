@@ -465,7 +465,7 @@ module Aspera
           end # case package
         end
 
-        ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing].freeze
+        ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing invitations].freeze
 
         def execute_action
           command = options.get_next_command(ACTIONS)
@@ -636,6 +636,21 @@ module Aspera
                 result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
                 return { type: :single_object, data: result }
               end
+            end
+          when :invitations
+            invitation_endpoint = 'invitations'
+            invitation_command = options.get_next_command(%i[resend].concat(Plugin::ALL_OPS))
+            case invitation_command
+            when :create
+              return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
+                invitation_endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
+                @api_v5.create(invitation_endpoint, params)[:data]
+              end
+            when :resend
+              @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend")
+              return Main.result_status('Invitation resent')
+            else
+              return entity_command(invitation_command, @api_v5, invitation_endpoint, item_list_key: invitation_endpoint, display_fields: %w[id public recipient_type recipient_name email_address])
             end
           when :gateway
             require 'aspera/faspex_gw'

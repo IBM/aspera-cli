@@ -5222,6 +5222,14 @@ To initialize, and skip all current package so that next time `ALL` is used, onl
 <%=cmd%> faspex5 packages receive INIT --once-only=yes
 ```
 
+### Faspex 5: Invitations
+
+There are two types of invitations of package submission: public or private.
+
+Public invitations are for external users, provide just the email address.
+
+Private invitations are for internal users, provide the user or shared inbox identifier through field `recipient_name`.
+
 ### Faspex 5: Faspex 4-style postprocessing
 
 <%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
