@@ -102,17 +102,19 @@ module Aspera
             when :user, :group
               entity_type = admin_command
               entities_location = options.get_next_command(%i[all local ldap saml])
-              entities_path = "data/#{entities_location}_#{entity_type}s"
+              entities_prefix = entities_location.eql?(:all) ? '' : "#{entities_location}_"
+              entities_path = "data/#{entities_prefix}#{entity_type}s"
               entity_action = nil
               case entities_location
               when :all
-                entities_path = "data/#{entity_type}s"
                 entity_action = %i[list show delete]
                 entity_action.concat(USR_GRP_SETTINGS)
                 entity_action.push(:users) if entity_type.eql?(:group)
                 entity_action.freeze
               when :local
-                entity_action = %i[list show delete create modify].freeze
+                entity_action = %i[list show delete create modify]
+                entity_action.push(:users) if entity_type.eql?(:group)
+                entity_action.freeze
               when :ldap
                 entity_action = %i[add].freeze
               when :saml
@@ -143,7 +145,7 @@ module Aspera
                   api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
                 end
               when :users # group
-                raise "TODO, not implemented"
+                return entity_action(api_shares_admin, "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")
               else error_unexpected_value(entity_verb)
               end
             end
