@@ -159,7 +159,7 @@ def all_test_commands_by_plugin
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []
-        commands[plugin].push(line)
+        commands[plugin].push(line.gsub(/^#{plugin} /, ''))
       end
     end
     commands.each_key do |plugin|
@@ -174,7 +174,7 @@ def include_commands_for_plugin(plugin_name)
   commands = all_test_commands_by_plugin[plugin_name.to_s]
   raise "plugin #{plugin_name} not found in test makefile" if commands.nil?
   all_test_commands_by_plugin.delete(plugin_name.to_s)
-  return commands.join("\n")
+  return "### #{plugin_name.capitalize} sample commands\n\n> **Note:** Add `#{cmd} #{plugin_name}` in front of the commands:\n\n```bash\n#{commands.join("\n")}\n```"
 end
 
 def include_commands

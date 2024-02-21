@@ -835,9 +835,11 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 
 #### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
-Linux command line parsing is easy: It is fully documented in the shell's documentation.
+Linux command line parsing is easy:
+It is fully documented in the shell's documentation.
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
+A c-shell (`csh`, `tcsh`) or other shell can also be used.
 In this environment the shell parses the command line, possibly replacing variables, etc...
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
@@ -846,7 +848,10 @@ Special character handling (quotes, spaces, env vars, ...) is handled by the she
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
+Command line parsing first depends on the shell used.
+MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
+
+So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
 Typically, Windows executables use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
 As far as `ascli` is concerned: the executable is Ruby.
@@ -855,7 +860,36 @@ It has its own parsing algorithm, close to a Linux shell parsing.
 Thankfully, `ascli` provides a command to check the value of an argument after parsing: `config echo`.
 One can also run `ascli` with option `--log-level=debug` to display the command line after parsing.
 
-The following examples give the same result on Windows:
+It is also possible to display arguments received by Ruby using this command:
+
+```console
+C:> ruby -e 'puts ARGV' "Hello World" 1 2
+Hello World
+1
+2
+```
+
+Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+(Unlike Unix-like systems where the command line is split into arguments by the shell.)
+
+It's up to the program to split arguments:
+
+- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+ is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
+Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+
+- Space characters: split arguments (space, tab, newline)
+- Backslash: `\` escape single special character
+- Globing characters: `*?[]{}` for file globing
+- Double quotes: `"`
+- Single quotes: `'`
+
+#### Shell parsing for Windows: `cmd.exe`
+
+The following examples give the same result on Windows using `cmd.exe`:
 
 - Single quote protects the double quote
 
@@ -875,29 +909,38 @@ The following examples give the same result on Windows:
   ascli config echo @json:"{\"url\":\"https://...\"}"
   ```
 
-More details: on Windows, `cmd.exe` is typically used to start .
 `cmd.exe` handles some special characters: `^"<>|%&`.
 Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
-Then, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
-Unlike Unix-like systems where the command line is split into arguments by the shell.
+#### Shell parsing for Windows: Powershell
 
-It's up to the program to split arguments:
+For Powershell, it actually depends on the version of it.
 
-- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+A difficulty is that Powershell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
 
- is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
-Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+Details can be found here:
 
-- Space characters: split arguments (space, tab, newline)
-- Backslash: `\` escape single special character
-- Globing characters: `*?[]{}` for file globing
-- Double quotes: `"`
-- Single quotes: `'`
+- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing?view=powershell-7.4#passing-arguments-that-contain-quote-characters)
+
+- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules?view=powershell-7.4)
+
+The following examples give the same result on Windows using Powershell:
+
+```console
+PS C:\> echo $psversiontable.psversion
+
+Major  Minor  Build  Revision
+-----  -----  -----  --------
+5      1      19041  4046
+
+PS C:\> ascli conf echo  --% @json:'{"k":"v","x":"y"}'
+
+PS C:\> ascli conf echo @json:'{"""k""":"""v""","""x""":"""y"""}'
+```
+
+> **Note:** The special powershell argument `--%` places powershell in legacy parsing mode.
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -927,7 +970,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 > **Note:** It gets its value after shell command line parsing and `ascli` extended value parsing.
 
-In the following examples (using a POSIX shell, such as `bash`), several equivalent sample commands are provided.
+In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all example, most of special character handling is not specific to `ascli`:
 It depends on the underlying syntax: shell , JSON, etc...
 Depending on the case, a different `format` option is used to display the actual value.
@@ -1638,86 +1681,88 @@ ascli config preset set GLOBAL version_check_days 0
 ascli config preset set default config my_common_defaults
 ```
 
-#### Config sample commands
+### Config sample commands
+
+> **Note:** Add `ascli config` in front of the commands:
 
 ```bash
-config ascp connect info 'Aspera Connect for Windows'
-config ascp connect list
-config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
-config ascp connect version 'Aspera Connect for Windows' list
-config ascp connect version 'Aspera Connect for Windows' open documentation
-config ascp errors
-config ascp info --sdk-folder=sdk_test_dir
-config ascp install
-config ascp install --sdk-folder=sdk_test_dir
-config ascp products list
-config ascp products use 'IBM Aspera Connect'
-config ascp show
-config ascp spec
-config ascp use /usr/bin/ascp
-config check_update
-config coffee
-config coffee --ui=text
-config coffee --ui=text --query=@json:'{"text":"true"}'
-config detect https://faspex4.example.com/path
-config detect https://faspex5.example.com/path
-config detect https://node.example.com/path
-config detect https://shares.example.com/path shares
-config detect my_org aoc
-config doc
-config doc transfer-parameters
-config echo -- --special-string
-config echo @base64:SGVsbG8gV29ybGQK
-config echo @csvt:@stdin:
-config echo @env:USER
-config echo @lines:@stdin:
-config echo @list:,1,2,3
-config echo @secret:
-config echo @uri:/etc/hosts
-config echo @uri:file:/etc/hosts
-config echo @uri:http://ifconfig.me
-config echo @uri:https://ifconfig.me
-config echo @vault:my_preset.password
-config echo @zlib:@stdin:
-config echo hello
-config email_test --notify-to=my_email_external
-config flush_tokens
-config folder
-config gem name
-config gem path
-config gem version
-config genkey my_key
-config genkey my_key 4096
-config initdemo
-config open
-config plugin create my_command
-config plugin list
-config preset delete conf_name
-config preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
-config preset list
-config preset overview
-config preset set conf_name param value
-config preset set default shares conf_name
-config preset show conf_name
-config preset unset conf_name param
-config preset update conf_name --p1=v1 --p2=v2
-config proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
-config pubkey @file:my_key
-config remote_certificate chain https://node.example.com/path
-config remote_certificate name https://node.example.com/path
-config remote_certificate only https://node.example.com/path
-config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
-config vault delete my_label
-config vault list
-config vault show my_label
-config wizard https://console.example.com/path console
-config wizard https://faspex4.example.com/path faspex --username=test --password=test
-config wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
-config wizard https://node.example.com/path node --username=test --password=test
-config wizard https://orch.example.com/path orchestrator --username=test --password=test
-config wizard https://shares.example.com/path shares --username=test --password=test
-config wizard my_org aoc --key-path=my_private_key --username=my_user_email
-config wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
+ascp connect info 'Aspera Connect for Windows'
+ascp connect list
+ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=.
+ascp connect version 'Aspera Connect for Windows' list
+ascp connect version 'Aspera Connect for Windows' open documentation
+ascp errors
+ascp info --sdk-folder=sdk_test_dir
+ascp install
+ascp install --sdk-folder=sdk_test_dir
+ascp products list
+ascp products use 'IBM Aspera Connect'
+ascp show
+ascp spec
+ascp use /usr/bin/ascp
+check_update
+coffee
+coffee --ui=text
+coffee --ui=text --query=@json:'{"text":"true"}'
+detect https://faspex4.example.com/path
+detect https://faspex5.example.com/path
+detect https://node.example.com/path
+detect https://shares.example.com/path shares
+detect my_org aoc
+doc
+doc transfer-parameters
+echo -- --special-string
+echo @base64:SGVsbG8gV29ybGQK
+echo @csvt:@stdin:
+echo @env:USER
+echo @lines:@stdin:
+echo @list:,1,2,3
+echo @secret:
+echo @uri:/etc/hosts
+echo @uri:file:/etc/hosts
+echo @uri:http://ifconfig.me
+echo @uri:https://ifconfig.me
+echo @vault:my_preset.password
+echo @zlib:@stdin:
+echo hello
+email_test --notify-to=my_email_external
+flush_tokens
+folder
+gem name
+gem path
+gem version
+genkey my_key
+genkey my_key 4096
+initdemo
+open
+plugin create my_command
+plugin list
+preset delete conf_name
+preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
+preset list
+preset overview
+preset set conf_name param value
+preset set default shares conf_name
+preset show conf_name
+preset unset conf_name param
+preset update conf_name --p1=v1 --p2=v2
+proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
+pubkey @file:my_key
+remote_certificate chain https://node.example.com/path
+remote_certificate name https://node.example.com/path
+remote_certificate only https://node.example.com/path
+vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
+vault delete my_label
+vault list
+vault show my_label
+wizard https://console.example.com/path console
+wizard https://faspex4.example.com/path faspex --username=test --password=test
+wizard https://faspex5.example.com/path faspex5 --key-path=my_private_key
+wizard https://node.example.com/path node --username=test --password=test
+wizard https://orch.example.com/path orchestrator --username=test --password=test
+wizard https://shares.example.com/path shares --username=test --password=test
+wizard my_org aoc --key-path=my_private_key --username=my_user_email
+wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 ```
 
 #### Format of file
@@ -4704,117 +4749,119 @@ ascli aoc admin res node --name='my node name' --secret='my_secret_here' v4 find
 
 For instructions, refer to section `find` for plugin `node`.
 
-### AoC sample commands
+### Aoc sample commands
+
+> **Note:** Add `ascli aoc` in front of the commands:
 
 ```bash
-aoc admin analytics transfers nodes
-aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
-aoc admin analytics transfers users --once_only=yes
-aoc admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-aoc admin ats access_key delete ak1ibmcloud
-aoc admin ats access_key list --fields=name,id
-aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
-aoc admin ats cluster clouds
-aoc admin ats cluster list
-aoc admin ats cluster show --cloud=aws --region=eu-west-1
-aoc admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
-aoc admin auth_providers list
-aoc admin res application list
-aoc admin res client list
-aoc admin res client_access_key list
-aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-aoc admin res client_registration_token delete client_reg_id
-aoc admin res client_registration_token list
-aoc admin res contact list
-aoc admin res dropbox list
-aoc admin res dropbox_membership list
-aoc admin res group list
-aoc admin res kms_profile list
-aoc admin res node list
-aoc admin res operation list
-aoc admin res organization show
-aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
-aoc admin res saml_configuration list
-aoc admin res self show
-aoc admin res short_link list
-aoc admin res user list
-aoc admin res user modify %name:my_user_email @json:'{"deactivated":false}'
-aoc admin res workspace_membership list
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret browse /
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret delete /folder1
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret mkdir /folder1
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key delete testsub1
-aoc admin resource node do %name:my_ak_name --secret=my_ak_secret v3 events
-aoc admin resource workspace list
-aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-aoc admin subscription
-aoc automation workflow action wf_id create @json:'{"name":"toto"}' \
-aoc automation workflow create @json:'{"name":"test_workflow"}'
-aoc automation workflow delete wf_id
-aoc automation workflow list
-aoc automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
-aoc automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data --output=test
-aoc bearer_token --display=data --scope=user:all
-aoc files bearer /
-aoc files bearer_token_node / --cache-tokens=no
-aoc files browse /
-aoc files browse / --url=my_private_link
-aoc files browse / --url=my_public_link_folder_no_pass
-aoc files browse / --url=my_public_link_folder_pass --password=my_public_link_password
-aoc files delete /testsrc
-aoc files download --transfer=connect testdst/test_file.bin
-aoc files find / '\.partial$'
-aoc files http_node_download --to-folder=. testdst/test_file.bin
-aoc files mkdir /testsrc
-aoc files modify my_test_folder
-aoc files permission my_test_folder list
-aoc files rename /some_folder testdst
-aoc files short_link private create /testdst
-aoc files short_link private list /testdst
-aoc files short_link public create testdst
-aoc files show %id:aoc_file_id
-aoc files show /
-aoc files show testdst/test_file.bin
-aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
-aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
-aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-aoc files thumbnail my_test_folder/video_file.mpg
-aoc files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
-aoc files transfer push /testsrc --to-folder=/testdst test_file.bin
-aoc files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
-aoc files upload --to-folder=/testsrc test_file.bin
-aoc files upload --workspace=my_other_workspace --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
-aoc files v3 info
-aoc gateway --pid-file=pid_aocfxgw https://localhost:12345/aspera/faspex &
-aoc org --url=my_public_link_recv_from_aoc_user
-aoc organization
-aoc packages browse package_id3 /contents
-aoc packages list
-aoc packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
-aoc packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-aoc packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
-aoc packages receive package_id3 --to-folder=.
-aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
-aoc packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"]}' test_file.bin
-aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
-aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"],"note":"my note"}' test_file.bin
-aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
-aoc packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_shared_inbox
-aoc packages shared_inboxes list
-aoc remind --username=my_user_email
-aoc servers
-aoc user pref modify @json:'{"default_language":"en-us"}'
-aoc user pref show
-aoc user profile modify @json:'{"name":"dummy change"}'
-aoc user profile show
-aoc user workspaces current
-aoc user workspaces list
+admin analytics transfers nodes
+admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+admin analytics transfers users --once_only=yes
+admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+admin ats access_key delete ak1ibmcloud
+admin ats access_key list --fields=name,id
+admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
+admin ats cluster clouds
+admin ats cluster list
+admin ats cluster show --cloud=aws --region=eu-west-1
+admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
+admin auth_providers list
+admin res application list
+admin res client list
+admin res client_access_key list
+admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+admin res client_registration_token delete client_reg_id
+admin res client_registration_token list
+admin res contact list
+admin res dropbox list
+admin res dropbox_membership list
+admin res group list
+admin res kms_profile list
+admin res node list
+admin res operation list
+admin res organization show
+admin res package list --http-options=@json:'{"read_timeout":120.0}'
+admin res saml_configuration list
+admin res self show
+admin res short_link list
+admin res user list
+admin res user modify %name:my_user_email @json:'{"deactivated":false}'
+admin res workspace_membership list
+admin resource node do %name:my_ak_name --secret=my_ak_secret browse /
+admin resource node do %name:my_ak_name --secret=my_ak_secret delete /folder1
+admin resource node do %name:my_ak_name --secret=my_ak_secret mkdir /folder1
+admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key delete testsub1
+admin resource node do %name:my_ak_name --secret=my_ak_secret v3 events
+admin resource workspace list
+admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+admin subscription
+automation workflow action wf_id create @json:'{"name":"toto"}' \
+automation workflow create @json:'{"name":"test_workflow"}'
+automation workflow delete wf_id
+automation workflow list
+automation workflow list --query=@json:'{"show_org_workflows":"true"}' --scope=admin:all
+automation workflow list --select=@json:'{"name":"test_workflow"}' --fields=id --format=csv --display=data --output=test
+bearer_token --display=data --scope=user:all
+files bearer /
+files bearer_token_node / --cache-tokens=no
+files browse /
+files browse / --url=my_private_link
+files browse / --url=my_public_link_folder_no_pass
+files browse / --url=my_public_link_folder_pass --password=my_public_link_password
+files delete /testsrc
+files download --transfer=connect testdst/test_file.bin
+files find / '\.partial$'
+files http_node_download --to-folder=. testdst/test_file.bin
+files mkdir /testsrc
+files modify my_test_folder
+files permission my_test_folder list
+files rename /some_folder testdst
+files short_link private create /testdst
+files short_link private list /testdst
+files short_link public create testdst
+files show %id:aoc_file_id
+files show /
+files show testdst/test_file.bin
+files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
+files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
+files thumbnail my_test_folder/video_file.mpg
+files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
+files transfer push /testsrc --to-folder=/testdst test_file.bin
+files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
+files upload --to-folder=/testsrc test_file.bin
+files upload --workspace=my_other_workspace --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
+files v3 info
+gateway --pid-file=pid_aocfxgw https://localhost:12345/aspera/faspex &
+org --url=my_public_link_recv_from_aoc_user
+organization
+packages browse package_id3 /contents
+packages list
+packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
+packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
+packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
+packages receive package_id3 --to-folder=.
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
+packages send --workspace=my_workspace_shared_inbox @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_name"]}' test_file.bin
+packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_external"]}' --new-user-option=@json:'{"package_contact":true}' test_file.bin
+packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"],"note":"my note"}' test_file.bin
+packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_shared_inbox
+packages shared_inboxes list
+remind --username=my_user_email
+servers
+user pref modify @json:'{"default_language":"en-us"}'
+user pref show
+user profile modify @json:'{"name":"dummy change"}'
+user profile show
+user workspaces current
+user workspaces list
 ```
 
 ## <a id="ats"></a>Plugin: `ats`: IBM Aspera Transfer Service
@@ -4939,25 +4986,27 @@ ascli ats access_key list --field=id --format=csv | ascli ats access_key delete 
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
 
-### ATS sample commands
+### Ats sample commands
+
+> **Note:** Add `ascli ats` in front of the commands:
 
 ```bash
-ats access_key cluster ak2ibmcloud --secret=my_secret_here
-ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-ats access_key delete ak2ibmcloud
-ats access_key delete ak_aws
-ats access_key entitlement ak2ibmcloud
-ats access_key list --fields=name,id
-ats access_key node ak2ibmcloud browse / --secret=my_secret_here
-ats access_key show ak2ibmcloud
-ats api_key create
-ats api_key instances
-ats api_key list
-ats cluster clouds
-ats cluster list
-ats cluster show --cloud=aws --region=eu-west-1
-ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
+access_key cluster ak2ibmcloud --secret=my_secret_here
+access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+access_key delete ak2ibmcloud
+access_key delete ak_aws
+access_key entitlement ak2ibmcloud
+access_key list --fields=name,id
+access_key node ak2ibmcloud browse / --secret=my_secret_here
+access_key show ak2ibmcloud
+api_key create
+api_key instances
+api_key list
+cluster clouds
+cluster list
+cluster show --cloud=aws --region=eu-west-1
+cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 ```
 
 ## <a id="server"></a>Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
@@ -4971,39 +5020,41 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 
 ### Server sample commands
 
+> **Note:** Add `ascli server` in front of the commands:
+
 ```bash
-server browse /
-server browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=$aspera_key_path
-server browse my_inside_folder/test_file.bin
-server browse my_upload_folder/target_hot
-server cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
-server delete my_inside_folder
-server delete my_upload_folder/to.delete
-server df
-server download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
-server download my_inside_folder/test_file.bin --to-folder=my_upload_folder --transfer=node
-server du /
-server health transfer --to-folder=my_upload_folder --format=nagios
-server info
-server md5sum my_inside_folder/test_file.bin
-server mkdir my_inside_folder --logger=stdout
-server mkdir my_upload_folder/target_hot
-server mv my_upload_folder/200KB.2 my_upload_folder/to.delete
-server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"}}'
-server sync admin status --sync-info=@json:'{"name":"sync2"}'
-server sync admin status my_sync --sync-info=@json:'{"sessions":[{"name":"my_sync","local_dir":"/data/local_sync"}]}'
-server sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"my_sync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
-server sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
-server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
-server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
-server upload 'test_file.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
-server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
-server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
-server upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=trsdk
-server upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
-server upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
-server upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
-server upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
+browse /
+browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=$aspera_key_path
+browse my_inside_folder/test_file.bin
+browse my_upload_folder/target_hot
+cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
+delete my_inside_folder
+delete my_upload_folder/to.delete
+df
+download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
+download my_inside_folder/test_file.bin --to-folder=my_upload_folder --transfer=node
+du /
+health transfer --to-folder=my_upload_folder --format=nagios
+info
+md5sum my_inside_folder/test_file.bin
+mkdir my_inside_folder --logger=stdout
+mkdir my_upload_folder/target_hot
+mv my_upload_folder/200KB.2 my_upload_folder/to.delete
+sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"}}'
+sync admin status --sync-info=@json:'{"name":"sync2"}'
+sync admin status my_sync --sync-info=@json:'{"sessions":[{"name":"my_sync","local_dir":"/data/local_sync"}]}'
+sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"my_sync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
+sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
+upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
+upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
+upload 'test_file.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
+upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","filelist.txt"]}' --to-folder=my_inside_folder
+upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","file_pair_list.txt"]}'
+upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=trsdk
+upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
+upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
+upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ```
 
 ### Authentication on Server with SSH session
@@ -5463,72 +5514,74 @@ ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_fold
 
 ### Node sample commands
 
+> **Note:** Add `ascli node` in front of the commands:
+
 ```bash
-node --url=https://tst.example.com/path --password="Bearer bearer_666" --root-id=root_id access_key do self br /
-node access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
-node access_key delete my_username
-node access_key do my_ak_name browse /
-node access_key do my_ak_name delete /folder2
-node access_key do my_ak_name delete testfile1
-node access_key do my_ak_name download testfile1 --to-folder=.
-node access_key do my_ak_name find my_test_folder
-node access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
-node access_key do my_ak_name find my_test_folder exec:'f["name"].end_with?(".jpg")'
-node access_key do my_ak_name mkdir /folder1
-node access_key do my_ak_name node_info /
-node access_key do my_ak_name rename /folder1 folder2
-node access_key do my_ak_name show %id:1
-node access_key do my_ak_name show /testfile1
-node access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
-node access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
-node access_key do self show / --fields=id --output=root_id
-node access_key list
-node access_key set_bearer_key self @file:my_private_key
-node api_details
-node async bandwidth 1
-node async counters 1
-node async files 1
-node async list
-node async show 1
-node async show ALL
-node basic_token
-node bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
-node browse / --log-level=trace2
-node delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
-node delete my_upload_folder/test_file.bin
-node download my_upload_folder/test_file.bin --to-folder=.
-node health
-node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
-node license
-node mkdir my_upload_folder/a_folder
-node mkfile my_upload_folder/a_file1 "hello world"
-node mklink my_upload_folder/a_folder my_upload_folder/tdlink
-node rename my_upload_folder a_file1 a_file
-node search / --query=@json:'{"sort":"mtime"}'
-node service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
-node service delete service1
-node service list
-node space /
-node ssync bandwidth %name:my_node_sync
-node ssync counters %name:my_node_sync
-node ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
-node ssync delete %name:my_node_sync
-node ssync files %name:my_node_sync
-node ssync list
-node ssync show %name:my_node_sync
-node ssync start %name:my_node_sync
-node ssync state %name:my_node_sync
-node ssync stop %name:my_node_sync
-node ssync summary %name:my_node_sync
-node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-node transfer list --query=@json:'{"active_only":true}'
-node transfer sessions
-node upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
-node upload --username=my_ak_name --password=my_ak_secret test_file.bin
-node upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
+--url=https://tst.example.com/path --password="Bearer bearer_666" --root-id=root_id access_key do self br /
+access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
+access_key delete my_username
+access_key do my_ak_name browse /
+access_key do my_ak_name delete /folder2
+access_key do my_ak_name delete testfile1
+access_key do my_ak_name download testfile1 --to-folder=.
+access_key do my_ak_name find my_test_folder
+access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
+access_key do my_ak_name find my_test_folder exec:'f["name"].end_with?(".jpg")'
+access_key do my_ak_name mkdir /folder1
+access_key do my_ak_name node_info /
+access_key do my_ak_name rename /folder1 folder2
+access_key do my_ak_name show %id:1
+access_key do my_ak_name show /testfile1
+access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
+access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
+access_key do self show / --fields=id --output=root_id
+access_key list
+access_key set_bearer_key self @file:my_private_key
+api_details
+async bandwidth 1
+async counters 1
+async files 1
+async list
+async show 1
+async show ALL
+basic_token
+bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
+browse / --log-level=trace2
+delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
+delete my_upload_folder/test_file.bin
+download my_upload_folder/test_file.bin --to-folder=.
+health
+info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
+license
+mkdir my_upload_folder/a_folder
+mkfile my_upload_folder/a_file1 "hello world"
+mklink my_upload_folder/a_folder my_upload_folder/tdlink
+rename my_upload_folder a_file1 a_file
+search / --query=@json:'{"sort":"mtime"}'
+service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+service delete service1
+service list
+space /
+ssync bandwidth %name:my_node_sync
+ssync counters %name:my_node_sync
+ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
+ssync delete %name:my_node_sync
+ssync files %name:my_node_sync
+ssync list
+ssync show %name:my_node_sync
+ssync start %name:my_node_sync
+ssync state %name:my_node_sync
+ssync stop %name:my_node_sync
+ssync summary %name:my_node_sync
+sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+transfer list --query=@json:'{"active_only":true}'
+transfer sessions
+upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
+upload --username=my_ak_name --password=my_ak_secret test_file.bin
+upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 ```
 
 ## <a id="faspex5"></a>Plugin: `faspex5`: IBM Aspera Faspex v5
@@ -5679,62 +5732,64 @@ Use this token as password and use `--auth=boot`.
 ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
-### Faspex 5 sample commands
+### Faspex5 sample commands
+
+> **Note:** Add `ascli faspex5` in front of the commands:
+
+```bash
+admin res accounts list
+admin res contacts list
+admin res jobs list
+admin res metadata_profiles list
+admin res node list
+admin res oauth_clients list
+admin res registrations list
+admin res saml_configs list
+admin res shared_inboxes invite %name:my_shared_box_name johnny@example.com
+admin res shared_inboxes list
+admin res shared_inboxes list --query=@json:'{"all":true}'
+admin res shared_inboxes members %name:my_shared_box_name create %name:john@example.com
+admin res shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
+admin res shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
+admin res shared_inboxes members %name:my_shared_box_name list
+admin res workgroups list
+admin smtp show
+admin smtp test my_email_external
+bearer_token
+gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
+health
+invitation list
+invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
+packages list --box=my_shared_box_name
+packages list --box=my_workgroup --group-type=workgroups
+packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
+packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
+packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
+packages receive ALL --once-only=yes --to-folder=.
+packages receive INIT --once-only=yes
+packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
+packages send --shared-folder=%name:my_shared_folder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shared_folder_file
+packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
+packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
+packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+packages show --box=my_shared_box_name package_box_id1
+packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
+packages show f5_p31
+packages status f5_p31
+postprocessing --pid-file=pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":""}}' &
+shared browse %name:my_src
+shared list
+shared_folders browse %name:my_shared_folder_name
+shared_folders list
+user profile modify @json:'{"preference":{"connect_disabled":false}}'
+user profile show
+```
 
 Most commands are directly REST API calls.
 Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional argument for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
-
-```bash
-faspex5 admin res accounts list
-faspex5 admin res contacts list
-faspex5 admin res jobs list
-faspex5 admin res metadata_profiles list
-faspex5 admin res node list
-faspex5 admin res oauth_clients list
-faspex5 admin res registrations list
-faspex5 admin res saml_configs list
-faspex5 admin res shared_inboxes invite %name:my_shared_box_name johnny@example.com
-faspex5 admin res shared_inboxes list
-faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
-faspex5 admin res shared_inboxes members %name:my_shared_box_name create %name:john@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
-faspex5 admin res shared_inboxes members %name:my_shared_box_name list
-faspex5 admin res workgroups list
-faspex5 admin smtp show
-faspex5 admin smtp test my_email_external
-faspex5 bearer_token
-faspex5 gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
-faspex5 health
-faspex5 invitation list
-faspex5 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
-faspex5 packages list --box=my_shared_box_name
-faspex5 packages list --box=my_workgroup --group-type=workgroups
-faspex5 packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
-faspex5 packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
-faspex5 packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
-faspex5 packages receive ALL --once-only=yes --to-folder=.
-faspex5 packages receive INIT --once-only=yes
-faspex5 packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
-faspex5 packages send --shared-folder=%name:my_shared_folder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shared_folder_file
-faspex5 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
-faspex5 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
-faspex5 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
-faspex5 packages show --box=my_shared_box_name package_box_id1
-faspex5 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
-faspex5 packages show f5_p31
-faspex5 packages status f5_p31
-faspex5 postprocessing --pid-file=pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":""}}' &
-faspex5 shared browse %name:my_src
-faspex5 shared list
-faspex5 shared_folders browse %name:my_shared_folder_name
-faspex5 shared_folders list
-faspex5 user profile modify @json:'{"preference":{"connect_disabled":false}}'
-faspex5 user profile show
-```
 
 ### Faspex 5: Inbox selection
 
@@ -6155,40 +6210,42 @@ cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on 
 ascli faspex packages recv ALL --once-only=yes --lock-port=12345
 ```
 
-### Faspex 4 sample commands
+### Faspex sample commands
+
+> **Note:** Add `ascli faspex` in front of the commands:
 
 ```bash
-faspex address_book
-faspex dropbox list --recipient="*my_dbx"
-faspex health
-faspex login_methods
-faspex me
-faspex package list --box=sent --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs2
-faspex package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs1
-faspex package list --query=@json:'{"max":5}'
-faspex package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id1
-faspex package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id2
-faspex package receive --to-folder=. --link=https://app.example.com/recv_from_user_path
-faspex package receive ALL --once-only=yes --to-folder=. --query=@json:'{"max":10}'
-faspex package receive f4_db_id1 --recipient="*my_dbx" --to-folder=.
-faspex package receive f4_db_id2 --recipient="*my_wkg" --to-folder=.
-faspex package receive f4_pri1 --to-folder=.
-faspex package receive f4_prs2 --to-folder=. --box=sent
-faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_dbx"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_wkg"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal","my_username"]}' test_file.bin
-faspex package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
-faspex package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
-faspex package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
-faspex source info %name:my_src --storage=@preset:faspex4_storage
-faspex source list
-faspex source node %name:my_src br / --storage=@preset:faspex4_storage
-faspex v4 dmembership list
-faspex v4 dropbox list
-faspex v4 metadata_profile list
-faspex v4 user list
-faspex v4 wmembership list
-faspex v4 workgroup list
+address_book
+dropbox list --recipient="*my_dbx"
+health
+login_methods
+me
+package list --box=sent --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs2
+package list --query=@json:'{"max":1}' --fields=package_id --display=data --format=csv --output=f4_prs1
+package list --query=@json:'{"max":5}'
+package list --recipient="*my_dbx" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id1
+package list --recipient="*my_wkg" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=f4_db_id2
+package receive --to-folder=. --link=https://app.example.com/recv_from_user_path
+package receive ALL --once-only=yes --to-folder=. --query=@json:'{"max":10}'
+package receive f4_db_id1 --recipient="*my_dbx" --to-folder=.
+package receive f4_db_id2 --recipient="*my_wkg" --to-folder=.
+package receive f4_pri1 --to-folder=.
+package receive f4_prs2 --to-folder=. --box=sent
+package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_dbx"]}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_wkg"]}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal","my_username"]}' test_file.bin
+package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
+package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
+package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
+source info %name:my_src --storage=@preset:faspex4_storage
+source list
+source node %name:my_src br / --storage=@preset:faspex4_storage
+v4 dmembership list
+v4 dropbox list
+v4 metadata_profile list
+v4 user list
+v4 wmembership list
+v4 workgroup list
 ```
 
 ## <a id="shares"></a>Plugin: `shares`: IBM Aspera Shares v1
@@ -6211,59 +6268,67 @@ user_id=$(ascli shares admin user list --select=@json:'{"username":"entity1"}' -
 ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
 ```
 
-### Shares 1 sample commands
+To figure out the entities payload, for example for creation, refer to the API documentation above.
+
+### Shares sample commands
+
+> **Note:** Add `ascli shares` in front of the commands:
 
 ```bash
-shares admin group all list
-shares admin node list
-shares admin share list --fields=DEF,-status,status_message
-shares admin share user_permissions 1 list
-shares admin user all app_authorizations 1 modify @json:'{"app_login":true}'
-shares admin user all app_authorizations 1 show
-shares admin user all list
-shares admin user all share_permissions 1 list
-shares admin user all share_permissions 1 show 1
-shares admin user ldap add the_name
-shares admin user local list
-shares admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
-shares files browse /
-shares files delete my_share1/test_file.bin
-shares files download --to-folder=. my_share1/test_file.bin
-shares files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
-shares files upload --to-folder=my_share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
-shares files upload --to-folder=my_share1 test_file.bin
-shares files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
-shares health
+admin group all list
+admin node list
+admin share list --fields=DEF,-status,status_message
+admin share user_permissions 1 list
+admin user all app_authorizations 1 modify @json:'{"app_login":true}'
+admin user all app_authorizations 1 show
+admin user all list
+admin user all share_permissions 1 list
+admin user all share_permissions 1 show 1
+admin user ldap add the_name
+admin user local list
+admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
+files browse /
+files delete my_share1/test_file.bin
+files download --to-folder=. my_share1/test_file.bin
+files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+files upload --to-folder=my_share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload --to-folder=my_share1 test_file.bin
+files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+health
 ```
 
 ## <a id="console"></a>Plugin: `console`: IBM Aspera Console
 
 ### Console sample commands
 
+> **Note:** Add `ascli console` in front of the commands:
+
 ```bash
-console health
-console transfer current list
-console transfer smart list
-console transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
+health
+transfer current list
+transfer smart list
+transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
 ```
 
 ## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator
 
 ### Orchestrator sample commands
 
+> **Note:** Add `ascli orchestrator` in front of the commands:
+
 ```bash
-orchestrator health
-orchestrator info
-orchestrator plugins
-orchestrator processes
-orchestrator workflow details my_workflow_id
-orchestrator workflow export my_workflow_id
-orchestrator workflow inputs my_workflow_id
-orchestrator workflow list
-orchestrator workflow start my_workflow_id @json:'{"Param":"world !"}'
-orchestrator workflow start my_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
-orchestrator workflow status ALL
-orchestrator workflow status my_workflow_id
+health
+info
+plugins
+processes
+workflow details my_workflow_id
+workflow export my_workflow_id
+workflow inputs my_workflow_id
+workflow list
+workflow start my_workflow_id @json:'{"Param":"world !"}'
+workflow start my_workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
+workflow status ALL
+workflow status my_workflow_id
 ```
 
 ## <a id="cos"></a>Plugin: `cos`: IBM Cloud Object Storage
@@ -6369,15 +6434,17 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 > **Note:** We generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
 
-### COS sample commands
+### Cos sample commands
+
+> **Note:** Add `ascli cos` in front of the commands:
 
 ```bash
-cos --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_apikey --crn=my_resource_instance_id node info
-cos --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:my_cos_svc_cred node info
-cos node access_key show self
-cos node download test_file.bin --to-folder=.
-cos node info --log-level=trace2
-cos node upload test_file.bin
+node access_key show self
+node download test_file.bin --to-folder=.
+node info --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_apikey --crn=my_resource_instance_id
+node info --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:my_cos_svc_cred
+node info --log-level=trace2
+node upload test_file.bin
 ```
 
 ## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
@@ -6673,20 +6740,22 @@ If the preview generator does not have access to files on the file system (it is
 
 ### Preview sample commands
 
+> **Note:** Add `ascli preview` in front of the commands:
+
 ```bash
-preview check --skip-types=office
-preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
-preview scan --skip-types=office --log-level=info
-preview show --base=test my_docx
-preview show --base=test my_mpg --video-png-conv=animated
-preview show --base=test my_mpg --video-png-conv=fixed
-preview show --base=test my_mpg mp4 --video-conversion=clips
-preview show --base=test my_mpg mp4 --video-conversion=reencode
-preview show --base=test my_pdf
-preview test --base=test my_dcm
-preview test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
-preview test --mimemagic=yes --base=test my_dcm
-preview trevents --once-only=yes --skip-types=office --log-level=info
+check --skip-types=office
+scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
+scan --skip-types=office --log-level=info
+show --base=test my_docx
+show --base=test my_mpg --video-png-conv=animated
+show --base=test my_mpg --video-png-conv=fixed
+show --base=test my_mpg mp4 --video-conversion=clips
+show --base=test my_mpg mp4 --video-conversion=reencode
+show --base=test my_pdf
+test --base=test my_dcm
+test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
+test --mimemagic=yes --base=test my_dcm
+trevents --once-only=yes --skip-types=office --log-level=info
 ```
 
 ## <a id="async"></a>IBM Aspera Sync

@@ -44,7 +44,7 @@ module Aspera
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
         # if there are aspera tags
-        if transfer_spec['tags'].is_a?(Hash) && transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED].is_a?(Hash)
+        if transfer_spec.dig('tags', Fasp::TransferSpec::TAG_RESERVED).is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized

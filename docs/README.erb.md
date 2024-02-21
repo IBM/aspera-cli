@@ -829,9 +829,11 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 
 #### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
-Linux command line parsing is easy: It is fully documented in the shell's documentation.
+Linux command line parsing is easy:
+It is fully documented in the shell's documentation.
 
 On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
+A c-shell (`csh`, `tcsh`) or other shell can also be used.
 In this environment the shell parses the command line, possibly replacing variables, etc...
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
@@ -840,7 +842,10 @@ Special character handling (quotes, spaces, env vars, ...) is handled by the she
 
 #### Shell parsing for Windows
 
-MS Windows command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
+Command line parsing first depends on the shell used.
+MS Windows command line parsing is not like Unix-like systems simply because Windows does not provide a list of arguments to the executable (Ruby): it provides the whole command line as a single string, but the shell may interpret some special characters.
+
+So command line parsing is not handled by the shell (`cmd.exe`), not handled by the operating system, but it is handled by the executable.
 Typically, Windows executables use the [microsoft library for this parsing](https://learn.microsoft.com/en-us/cpp/cpp/main-function-command-line-args).
 
 As far as <%=tool%> is concerned: the executable is Ruby.
@@ -849,7 +854,36 @@ It has its own parsing algorithm, close to a Linux shell parsing.
 Thankfully, <%=tool%> provides a command to check the value of an argument after parsing: `config echo`.
 One can also run <%=tool%> with option `--log-level=debug` to display the command line after parsing.
 
-The following examples give the same result on Windows:
+It is also possible to display arguments received by Ruby using this command:
+
+```console
+C:> ruby -e 'puts ARGV' "Hello World" 1 2
+Hello World
+1
+2
+```
+
+Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
+(Unlike Unix-like systems where the command line is split into arguments by the shell.)
+
+It's up to the program to split arguments:
+
+- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
+- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+
+<%tool%> is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
+Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+
+- Space characters: split arguments (space, tab, newline)
+- Backslash: `\` escape single special character
+- Globing characters: `*?[]{}` for file globing
+- Double quotes: `"`
+- Single quotes: `'`
+
+#### Shell parsing for Windows: `cmd.exe`
+
+The following examples give the same result on Windows using `cmd.exe`:
 
 - Single quote protects the double quote
 
@@ -869,29 +903,38 @@ The following examples give the same result on Windows:
   <%=cmd%> config echo @json:"{\"url\":\"https://...\"}"
   ```
 
-More details: on Windows, `cmd.exe` is typically used to start <%tool%>.
 `cmd.exe` handles some special characters: `^"<>|%&`.
 Basically it handles I/O redirection (`<>|`), shell variables (`%`), multiple commands (`&`) and handles those special characters from the command line.
 Eventually, all those special characters are removed from the command line unless escaped with `^` or `"`.
 `"` are kept and given to the program.
 
-Then, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
-Unlike Unix-like systems where the command line is split into arguments by the shell.
+#### Shell parsing for Windows: Powershell
 
-It's up to the program to split arguments:
+For Powershell, it actually depends on the version of it.
 
-- [Windows: How Command Line Parameters Are Parsed](https://daviddeley.com/autohotkey/parameters/parameters.htm#RUBY)
-- [Understand Quoting and Escaping of Windows Command Line Arguments](https://web.archive.org/web/20190316094059/http://www.windowsinspired.com/understanding-the-command-line-string-and-arguments-received-by-a-windows-program/)
+A difficulty is that Powershell parses the command line for its own use and manages special characters, but then it passes the command line to the program (Ruby) as a single string, possibly without the special characters.
 
-<%tool%> is a Ruby program, so Ruby parses the command line into arguments and provides them to the program.
-Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)) : <!--cspell:disable-line-->
+Details can be found here:
 
-- Space characters: split arguments (space, tab, newline)
-- Backslash: `\` escape single special character
-- Globing characters: `*?[]{}` for file globing
-- Double quotes: `"`
-- Single quotes: `'`
+- [Passing arguments with quotes](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing?view=powershell-7.4#passing-arguments-that-contain-quote-characters)
+
+- [quoting rules](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules?view=powershell-7.4)
+
+The following examples give the same result on Windows using Powershell:
+
+```console
+PS C:\> echo $psversiontable.psversion
+
+Major  Minor  Build  Revision
+-----  -----  -----  --------
+5      1      19041  4046
+
+PS C:\> <%=cmd%> conf echo  --% @json:'{"k":"v","x":"y"}'
+
+PS C:\> <%=cmd%> conf echo @json:'{"""k""":"""v""","""x""":"""y"""}'
+```
+
+> **Note:** The special powershell argument `--%` places powershell in legacy parsing mode.
 
 #### Extended Values (JSON, Ruby, ...)
 
@@ -921,7 +964,7 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 
 > **Note:** It gets its value after shell command line parsing and <%=tool%> extended value parsing.
 
-In the following examples (using a POSIX shell, such as `bash`), several equivalent sample commands are provided.
+In the following examples (using a POSIX shell, such as `bash`), several equivalent commands are provided.
 For all example, most of special character handling is not specific to <%=tool%>:
 It depends on the underlying syntax: shell , JSON, etc...
 Depending on the case, a different `format` option is used to display the actual value.
@@ -1632,11 +1675,7 @@ If the default global <%=prstt%> is not set, and you want to use a different nam
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
-#### Config sample commands
-
-```bash
 <%=include_commands_for_plugin('config')%>
-```
 
 #### Format of file
 
@@ -4247,11 +4286,7 @@ It works also on `node` resource using the `v4` command:
 
 For instructions, refer to section `find` for plugin `node`.
 
-### AoC sample commands
-
-```bash
 <%=include_commands_for_plugin('aoc')%>
-```
 
 ## <a id="ats"></a>Plugin: `ats`: IBM Aspera Transfer Service
 
@@ -4375,11 +4410,7 @@ delete all my access keys:
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
 
-### ATS sample commands
-
-```bash
 <%=include_commands_for_plugin('ats')%>
-```
 
 ## <a id="server"></a>Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
@@ -4390,11 +4421,7 @@ then commands `ascp` (for transfers) and `ascmd` (for file operations) are execu
 
 > **Note:** The URL to be provided is usually: `ssh://_server_address_:33001`
 
-### Server sample commands
-
-```bash
 <%=include_commands_for_plugin('server')%>
-```
 
 ### Authentication on Server with SSH session
 
@@ -4851,11 +4878,7 @@ Let's use it:
 <%=cmd%> node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
 ```
 
-### Node sample commands
-
-```bash
 <%=include_commands_for_plugin('node')%>
-```
 
 ## <a id="faspex5"></a>Plugin: `faspex5`: IBM Aspera Faspex v5
 
@@ -5005,17 +5028,13 @@ Use this token as password and use `--auth=boot`.
 <%=cmd%> config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=_token_here_
 ```
 
-### Faspex 5 sample commands
+<%=include_commands_for_plugin('faspex5')%>
 
 Most commands are directly REST API calls.
 Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional argument for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
-
-```bash
-<%=include_commands_for_plugin('faspex5')%>
-```
 
 ### Faspex 5: Inbox selection
 
@@ -5436,11 +5455,7 @@ cargo client, or drive. Refer to the [same section](#aoccargo) in the Aspera on 
 <%=cmd%> faspex packages recv ALL --once-only=yes --lock-port=12345
 ```
 
-### Faspex 4 sample commands
-
-```bash
 <%=include_commands_for_plugin('faspex')%>
-```
 
 ## <a id="shares"></a>Plugin: `shares`: IBM Aspera Shares v1
 
@@ -5462,27 +5477,17 @@ user_id=$(ascli shares admin user list --select=@json:'{"username":"entity1"}' -
 ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
 ```
 
-### Shares 1 sample commands
+To figure out the entities payload, for example for creation, refer to the API documentation above.
 
-```bash
 <%=include_commands_for_plugin('shares')%>
-```
 
 ## <a id="console"></a>Plugin: `console`: IBM Aspera Console
 
-### Console sample commands
-
-```bash
 <%=include_commands_for_plugin('console')%>
-```
 
 ## <a id="orchestrator"></a>Plugin: `orchestrator`:IBM Aspera Orchestrator
 
-### Orchestrator sample commands
-
-```bash
 <%=include_commands_for_plugin('orchestrator')%>
-```
 
 ## <a id="cos"></a>Plugin: `cos`: IBM Cloud Object Storage
 
@@ -5587,11 +5592,7 @@ A subset of `node` plugin operations are supported, basically node API:
 
 > **Note:** We generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
 
-### COS sample commands
-
-```bash
 <%=include_commands_for_plugin('cos')%>
-```
 
 ## <a id="preview"></a>Plugin: `preview`: Preview generator for AoC
 
@@ -5884,11 +5885,7 @@ are directly written to the storage.
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
-### Preview sample commands
-
-```bash
 <%=include_commands_for_plugin('preview')%>
-```
 
 ## <a id="async"></a>IBM Aspera Sync
 

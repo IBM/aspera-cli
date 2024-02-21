@@ -1456,11 +1456,11 @@ thot:
 #######################################################################################################################
 $(T)tcos_info1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@json:@file:@preset:file.cos_svc_cred node info
+	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@json:@file:@preset:file.cos_svc_cred
 	@$(STOP_TEST) $@
 $(T)tcos_info2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos -N --bucket=@preset:icos.bucket_name --endpoint=@preset:icos.bucket_endpoint --apikey=@preset:icos.bucket_apikey --crn=@preset:icos.resource_instance_id node info
+	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket_name --endpoint=@preset:icos.bucket_endpoint --apikey=@preset:icos.bucket_apikey --crn=@preset:icos.resource_instance_id
 	@$(STOP_TEST) $@
 $(T)tcos_info3: $(T).exists
 	@$(START_TEST) $@
