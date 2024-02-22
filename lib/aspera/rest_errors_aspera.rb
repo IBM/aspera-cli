@@ -15,10 +15,10 @@ module Aspera
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 1: error:user_message', path: %w[error user_message], always: true)
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 2: error:description', path: %w[error description])
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 3: error:internal_message', path: %w[error internal_message])
-        # AoC Automation
-        RestErrorAnalyzer.instance.add_simple_handler(name: 'AoC Automation', path: ['error'])
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 5', path: ['error_description'])
         RestErrorAnalyzer.instance.add_simple_handler(name: 'Type 6', path: ['message'])
+        # AoC Automation
+        RestErrorAnalyzer.instance.add_simple_handler(name: 'AoC Automation', path: ['error'])
         RestErrorAnalyzer.instance.add_handler('Type 7: errors[]') do |type, call_context|
           next unless call_context[:data].is_a?(Hash) && call_context[:data]['errors'].is_a?(Hash)
           # special for Shares: false positive ? (update global transfer_settings)
@@ -33,7 +33,7 @@ module Aspera
           d_t_s = call_context[:data]['transfer_specs']
           next unless d_t_s.is_a?(Array)
           d_t_s.each do |res|
-            r_err = res.dig(*%w[transfer_spec error])
+            r_err = res.dig(*%w[transfer_spec error]) || res['error']
             next unless r_err.is_a?(Hash)
             RestErrorAnalyzer.add_error(call_context, type, "#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
           end
