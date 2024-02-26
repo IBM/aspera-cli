@@ -282,7 +282,8 @@ module Aspera
             status = $CHILD_STATUS
             ascp_pid = nil
             session.delete(:io)
-            if !status.success?
+            # status is nil if an exception occurred before starting ascp
+            if !status&.success?
               message = "ascp failed: #{status}"
               # raise error only if there was not already an exception (ERROR_INFO)
               raise Fasp::Error, message unless $ERROR_INFO
