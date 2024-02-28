@@ -2276,6 +2276,12 @@ Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallb
 
 To specify a FASP proxy (forward), set the <%=trspec%> parameter: `proxy` (only supported with the `direct` agent).
 
+For example, for an Aspera forward proxy without authentication running on port 9091, the option would be:
+
+```bash
+--transfer-info=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
+```
+
 ### <a id="client"></a>FASP configuration
 
 The `config` plugin also allows specification for the use of a local FASP **client**.
