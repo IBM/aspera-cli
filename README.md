@@ -2364,7 +2364,13 @@ Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallb
 
 To specify a FASP proxy (forward), set the [*transfer-spec*](#transferspec) parameter: `proxy` (only supported with the `direct` agent).
 
-For example, for an Aspera forward proxy without authentication running on port 9091, the option would be:
+For example, for an Aspera forward proxy not encrypted (HTTP) without authentication running on port 9091, the option would be:
+
+```bash
+--ts=@json:'{"proxy":"dnat://proxy.example.org:9091"}'
+```
+
+Or, alternatively, (prefer transfer spec like above, generally):
 
 ```bash
 --transfer-info=@json:'{"ascp_args":["--proxy","dnat://proxy.example.org:9091"]}'
