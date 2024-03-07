@@ -295,7 +295,7 @@ module Aspera
         end
         creation = @gw_api.create('v1/download', {'transfer_spec' => transfer_spec})[:data]
         transfer_uuid = creation['url'].split('/').last
-        file_dest =
+        file_name =
           if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
             # it is a zip file if zip is required or there is more than 1 file
             transfer_spec['download_name'] + '.zip'
@@ -303,8 +303,8 @@ module Aspera
             # it is a plain file if we don't require zip and there is only one file
             File.basename(transfer_spec['paths'].first['source'])
           end
-        file_dest = File.join(transfer_spec['destination_root'], file_dest)
-        @gw_api.call({operation: 'GET', subpath: "v1/download/#{transfer_uuid}", save_to_file: file_dest})
+        file_path = File.join(transfer_spec['destination_root'], file_name)
+        @gw_api.call({operation: 'GET', subpath: "v1/download/#{transfer_uuid}", save_to_file: file_path})
       end
 
       # start FASP transfer based on transfer spec (hash table)

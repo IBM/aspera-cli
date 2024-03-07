@@ -55,6 +55,8 @@ module Aspera
         @agent = nil
         # source/destination pair, like "paths" of transfer spec
         @transfer_paths = nil
+        # HTTPGW URL provided by webapp
+        @httpgw_url_lambda = nil
         @opt_mgr.declare(:ts, 'Override transfer spec values', types: Hash, handler: {o: self, m: :option_transfer_spec})
         @opt_mgr.declare(:to_folder, 'Destination folder for transferred files')
         @opt_mgr.declare(:sources, "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})")
@@ -115,6 +117,11 @@ module Aspera
           agent_options[:quiet] = true unless agent_options.key?(:quiet)
           agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
           agent_options[:trusted_certs] = @config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
+        when :httpgw
+          unless agent_options.key?(:url) || @httpgw_url_lambda.nil?
+            Log.log.debug('retrieving HTTPGW URL from webapp')
+            agent_options[:url] = @httpgw_url_lambda.call
+          end
         end
         agent_options[:progress] = @config.progress_bar
         # get agent instance
@@ -147,6 +154,11 @@ module Aspera
         return ts_source_paths.map do |i|
           i['source']
         end
+      end
+
+      def httpgw_url_cb=(httpgw_url_proc)
+        assert_type(httpgw_url_proc, Proc){'httpgw_url_cb'}
+        @httpgw_url_lambda = httpgw_url_proc
       end
 
       # This is how the list of files to be transferred is specified

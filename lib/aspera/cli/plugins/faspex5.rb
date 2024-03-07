@@ -172,6 +172,8 @@ module Aspera
               }})
           else error_unexpected_value(auth_type)
           end
+          # in case user wants to use HTTPGW tell transfer agent how to get address
+          transfer.httpgw_url_cb = lambda { @api_v5.read('account')[:data]['gateway_url'] }
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
@@ -485,7 +487,9 @@ module Aspera
             end
             return nagios.result
           when :user
-            case options.get_next_command(%i[profile])
+            case options.get_next_command(%i[account profile])
+            when :account
+              return { type: :single_object, data: @api_v5.read('account')[:data] }
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
@@ -650,7 +654,9 @@ module Aspera
               @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend")
               return Main.result_status('Invitation resent')
             else
-              return entity_command(invitation_command, @api_v5, invitation_endpoint, item_list_key: invitation_endpoint, display_fields: %w[id public recipient_type recipient_name email_address])
+              return entity_command(
+                invitation_command, @api_v5, invitation_endpoint, item_list_key: invitation_endpoint,
+                display_fields: %w[id public recipient_type recipient_name email_address])
             end
           when :gateway
             require 'aspera/faspex_gw'

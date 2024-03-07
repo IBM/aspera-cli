@@ -13,16 +13,17 @@ module Aspera
       SCHEME = 'faspe'
       def initialize(fasp_link)
         @fasp_uri = URI.parse(fasp_link.gsub(' ', '%20'))
-        # TODO: check scheme is 'faspe'
+        assert(@fasp_uri.scheme == SCHEME, "Invalid scheme: #{@fasp_uri.scheme}")
       end
 
+      # Generate transfer spec from provided faspe: URL
       def transfer_spec
         result_ts = {}
         result_ts['remote_host'] = @fasp_uri.host
         result_ts['remote_user'] = @fasp_uri.user
         result_ts['ssh_port'] = @fasp_uri.port
         result_ts['paths'] = [{'source' => URI.decode_www_form_component(@fasp_uri.path)}]
-        # faspex does not encode trailing base64 padding, fix that to be able to decode properly
+        # faspex 4 does not encode trailing base64 padding, fix that to be able to decode properly
         fixed_query = @fasp_uri.query.gsub(/(=+)$/){|x|'%3D' * x.length}
 
         Rest.decode_query(fixed_query).each do |name, value|
@@ -43,7 +44,7 @@ module Aspera
           when 'lockpolicy'  then result_ts['lock_rate_policy'] = CommandLineBuilder.yes_to_true(value)
           when 'lockminrate' then result_ts['lock_min_rate'] = CommandLineBuilder.yes_to_true(value)
           when 'auth'        then Log.log.debug{"ignoring #{name}=#{value}"} # Not used (yes/no)
-          when 'v'           then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch Not used (2)
+          when 'v'           then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch Not used (shall be 2)
           when 'protect'     then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch TODO: what is this ?
           else                    Log.log.warn{"URI parameter ignored: #{name} = #{value}"}
           end

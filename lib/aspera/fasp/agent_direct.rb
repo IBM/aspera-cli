@@ -199,6 +199,7 @@ module Aspera
         Log.log.debug{"env_args=#{env_args.inspect}"}
         notify_progress(session_id: nil, type: :pre_start, info: 'starting')
         begin
+          ascp_pid = nil
           # we use Socket directly, instead of TCPServer, s it gives access to lower level options
           mgt_server_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
           # open an available (0) local TCP port as ascp management
@@ -275,7 +276,7 @@ module Aspera
           raise Fasp::Error, 'transfer interrupted by user'
         ensure
           mgt_server_socket.close
-          # if ascp was successfully started
+          # if ascp was successfully started, check its status
           unless ascp_pid.nil?
             # "wait" for process to avoid zombie
             Process.wait(ascp_pid)
@@ -284,7 +285,7 @@ module Aspera
             session.delete(:io)
             # status is nil if an exception occurred before starting ascp
             if !status&.success?
-              message = "ascp failed: #{status}"
+              message = status.nil? ? 'ascp not started' : "ascp failed (#{status})"
               # raise error only if there was not already an exception (ERROR_INFO)
               raise Fasp::Error, message unless $ERROR_INFO
               # else display this message also, as main exception is already here
