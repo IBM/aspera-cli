@@ -1515,7 +1515,7 @@ $(T)f5_sh_folder_send: $(T).exists
 $(T)f5_p3: $(T).exists
 	@$(START_TEST) $@
 	@sleep 15
-	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"max":1}' --fields=id --output=$(DIR_TMP)f5_p31
+	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"status":"completed","max":1}' --fields=id --output=$(DIR_TMP)f5_p31
 	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
 	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
