@@ -434,11 +434,19 @@ make
 make install
 ```
 
-If you already have a Java JVM on your system (`java`), it is possible to use `jruby`:
+#### jRuby
+
+If you already have a Java JVM on your system (`java`), it is possible to use [JRuby](https://www.jruby.org/). Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> **Note:** Using `jruby`, the startup time is longer than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** The startup time is longer Using `jruby` than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
+>
+> **Note:** JRuby can be [installed](https://www.jruby.org/getting-started) using `rvm`.
+
+Use a version of jRuby compatible with Ruby version supported by `ascli`.
+Refer to [the wikipedia page](https://en.wikipedia.org/wiki/JRuby).
+The [JRuby wiki](https://github.com/jruby/jruby/wiki) also has interesting information.
 
 #### Optional gems
 
@@ -3553,12 +3561,12 @@ COMMAND: cos
 SUBCOMMANDS: node
 OPTIONS:
         --bucket=VALUE               Bucket name
-        --endpoint=VALUE             Storage endpoint url
+        --endpoint=VALUE             Storage endpoint (URL)
         --apikey=VALUE               Storage API key
-        --crn=VALUE                  Resource instance id
+        --crn=VALUE                  Resource instance id (CRN)
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
-        --identity=VALUE             Authentication url (https://iam.cloud.ibm.com/identity)
+        --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
 
 
 COMMAND: faspex
@@ -4769,8 +4777,8 @@ For instructions, refer to section `find` for plugin `node`.
 admin analytics transfers nodes
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once_only=yes
-admin ats access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-admin ats access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+admin ats access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+admin ats access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key delete ak1ibmcloud
 admin ats access_key list --fields=name,id
 admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
@@ -5004,8 +5012,8 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ```bash
 access_key cluster ak2ibmcloud --secret=my_secret_here
-access_key create --cloud=aws --region=my_bucket_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
-access_key create --cloud=softlayer --region=my_bucket_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket_name","credentials":{"access_key_id":"my_bucket_key","secret_access_key":"my_bucket_secret"},"path":"/"}}'
+access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 access_key delete ak2ibmcloud
 access_key delete ak_aws
 access_key entitlement ak2ibmcloud
@@ -5774,7 +5782,7 @@ invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
-packages list --query=@json:'{"mailbox":"inbox","state":["released"]}'
+packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
 packages receive ALL --once-only=yes --to-folder=.
@@ -6453,8 +6461,8 @@ ascli cos node upload 'faux:///sample1G?1g'
 ```bash
 node access_key show self
 node download test_file.bin --to-folder=.
-node info --bucket=my_bucket_name --endpoint=my_bucket_endpoint --apikey=my_bucket_apikey --crn=my_resource_instance_id
-node info --bucket=my_bucket_name --region=my_bucket_region --service-credentials=@json:@file:my_cos_svc_cred
+node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
+node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
 node info --log-level=trace2
 node upload test_file.bin
 ```

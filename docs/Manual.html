@@ -402,17 +402,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href=
 <span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span>
 <span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
+<h3 data-number="3.1.6" id="jruby"><span
+class="header-section-number">3.1.6</span> jRuby</h3>
 <p>If you already have a Java JVM on your system (<code>java</code>), it
-is possible to use <code>jruby</code>:</p>
+is possible to use <a href="https://www.jruby.org/">JRuby</a>. Choose
+the latest version from:</p>
 <p><a href="https://www.jruby.org/download"
 class="uri">https://www.jruby.org/download</a></p>
 <blockquote>
-<p><strong>Note:</strong> Using <code>jruby</code>, the startup time is
-longer than the native Ruby, but transfer speed is not impacted
-(executed by <code>ascp</code> binary).</p>
+<p><strong>Note:</strong> The startup time is longer Using
+<code>jruby</code> than the native Ruby, but transfer speed is not
+impacted (executed by <code>ascp</code> binary).</p>
+<p><strong>Note:</strong> JRuby can be <a
+href="https://www.jruby.org/getting-started">installed</a> using
+<code>rvm</code>.</p>
 </blockquote>
-<h3 data-number="3.1.6" id="optional-gems"><span
-class="header-section-number">3.1.6</span> Optional gems</h3>
+<p>Use a version of jRuby compatible with Ruby version supported by
+<code>ascli</code>. Refer to <a
+href="https://en.wikipedia.org/wiki/JRuby">the wikipedia page</a>. The
+<a href="https://github.com/jruby/jruby/wiki">JRuby wiki</a> also has
+interesting information.</p>
+<h3 data-number="3.1.7" id="optional-gems"><span
+class="header-section-number">3.1.7</span> Optional gems</h3>
 <p>Some additional gems can be installed to provide additional
 features:</p>
 <ul>
@@ -5046,12 +5057,12 @@ COMMAND: cos
 SUBCOMMANDS: node
 OPTIONS:
         --bucket=VALUE               Bucket name
-        --endpoint=VALUE             Storage endpoint url
+        --endpoint=VALUE             Storage endpoint (URL)
         --apikey=VALUE               Storage API key
-        --crn=VALUE                  Resource instance id
+        --crn=VALUE                  Resource instance id (CRN)
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
-        --identity=VALUE             Authentication url (https://iam.cloud.ibm.com/identity)
+        --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
 
 
 COMMAND: faspex
@@ -6235,8 +6246,8 @@ commands:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb351-1"><a href="#cb351-1" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers nodes</span>
 <span id="cb351-2"><a href="#cb351-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers organization <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: &lt;%=ev[&quot;files_completed&quot;]%&gt; files received\n\n&lt;%=ev.to_yaml%&gt;}&#39;</span></span>
 <span id="cb351-3"><a href="#cb351-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers users <span class="at">--once_only</span><span class="op">=</span>yes</span>
-<span id="cb351-4"><a href="#cb351-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb351-5"><a href="#cb351-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb351-4"><a href="#cb351-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb351-5"><a href="#cb351-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb351-6"><a href="#cb351-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key delete ak1ibmcloud</span>
 <span id="cb351-7"><a href="#cb351-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key list <span class="at">--fields</span><span class="op">=</span>name,id</span>
 <span id="cb351-8"><a href="#cb351-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key node ak1ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here browse /</span>
@@ -6442,8 +6453,8 @@ commands:</p>
 </blockquote>
 <div class="sourceCode" id="cb366"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb366-1"><a href="#cb366-1" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> cluster ak2ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here</span>
-<span id="cb366-2"><a href="#cb366-2" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb366-3"><a href="#cb366-3" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak2ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket_name&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_bucket_key&quot;,&quot;secret_access_key&quot;:&quot;my_bucket_secret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb366-2"><a href="#cb366-2" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb366-3"><a href="#cb366-3" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak2ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
 <span id="cb366-4"><a href="#cb366-4" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> delete ak2ibmcloud</span>
 <span id="cb366-5"><a href="#cb366-5" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> delete ak_aws</span>
 <span id="cb366-6"><a href="#cb366-6" aria-hidden="true" tabindex="-1"></a><span class="ex">access_key</span> entitlement ak2ibmcloud</span>
@@ -7316,7 +7327,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb413-1"><a href
 <span id="cb413-23"><a href="#cb413-23" aria-hidden="true" tabindex="-1"></a><span class="ex">invitations</span> create @json:<span class="st">&#39;{&quot;email_address&quot;:&quot;aspera.user1+u@gmail.com&quot;}&#39;</span></span>
 <span id="cb413-24"><a href="#cb413-24" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--box</span><span class="op">=</span>my_shared_box_name</span>
 <span id="cb413-25"><a href="#cb413-25" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups</span>
-<span id="cb413-26"><a href="#cb413-26" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;state&quot;:[&quot;released&quot;]}&#39;</span></span>
+<span id="cb413-26"><a href="#cb413-26" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;mailbox&quot;:&quot;inbox&quot;,&quot;status&quot;:&quot;completed&quot;}&#39;</span></span>
 <span id="cb413-27"><a href="#cb413-27" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive <span class="at">--box</span><span class="op">=</span>my_shared_box_name package_box_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb413-28"><a href="#cb413-28" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups workgroup_package_id1 <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb413-29"><a href="#cb413-29" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>.</span>
@@ -8069,8 +8080,8 @@ commands:</p>
 <div class="sourceCode" id="cb452"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href="#cb452-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key show self</span>
 <span id="cb452-2"><a href="#cb452-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb452-3"><a href="#cb452-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--endpoint</span><span class="op">=</span>my_bucket_endpoint <span class="at">--apikey</span><span class="op">=</span>my_bucket_apikey <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id</span>
-<span id="cb452-4"><a href="#cb452-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket_name <span class="at">--region</span><span class="op">=</span>my_bucket_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:my_cos_svc_cred</span>
+<span id="cb452-3"><a href="#cb452-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--endpoint</span><span class="op">=</span>my_endpoint <span class="at">--apikey</span><span class="op">=</span>my_api_key <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id</span>
+<span id="cb452-4"><a href="#cb452-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:my_cos_svc_cred</span>
 <span id="cb452-5"><a href="#cb452-5" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
 <span id="cb452-6"><a href="#cb452-6" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload test_file.bin</span></code></pre></div>
 <h1 data-number="15" id="plugin-preview-preview-generator-for-aoc"><span

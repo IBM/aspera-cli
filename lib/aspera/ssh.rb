@@ -14,6 +14,11 @@ if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
   $VERBOSE = old_verbose
 end
 
+if RUBY_ENGINE == 'jruby'
+  Net::SSH::Transport::Algorithms::ALGORITHMS.values.each { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
+  Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
+end
+
 module Aspera
   # A simple wrapper around Net::SSH
   # executes one command and get its result from stdout

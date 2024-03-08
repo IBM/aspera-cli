@@ -199,6 +199,7 @@ def generate_generic_conf
   o.each do |k, h|
     h.each do |p, v|
       next unless v.is_a?(String)
+      next if v.start_with?('@preset:')
       if k.eql?('config') && p.eql?('version')
         h[p] = '4.0'
         next

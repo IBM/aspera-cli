@@ -7,6 +7,8 @@
     * `shares`: Added group membership management.
   * Issues Fixed:
     * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
+    * **global**: removed gem dependency on `bigdecimal`
+    * **global**: tested with JRuby 9.4.6.0
   * Breaking Changes:
     * `config`: command `remote_certificate` now takes a subcommand.
 
