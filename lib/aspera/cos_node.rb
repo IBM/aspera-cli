@@ -8,34 +8,37 @@ require 'xmlsimple'
 
 module Aspera
   class CosNode < Aspera::Node
+    IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
+    TOKEN_FIELD = 'delegated_refresh_token'
     class << self
       def parameters_from_svc_credentials(service_credentials, bucket_region)
         # check necessary contents
         assert_type(service_credentials, Hash){'service_credentials'}
+        Aspera::Log.dump('service_credentials', service_credentials)
         %w[apikey resource_instance_id endpoints].each do |field|
           assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
         end
-        Aspera::Log.dump('service_credentials', service_credentials)
         # read endpoints from service provided in service credentials
         endpoints = Aspera::Rest.new({base_url: service_credentials['endpoints']}).read('')[:data]
         Aspera::Log.dump('endpoints', endpoints)
-        storage_endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
-        raise "no such region: #{bucket_region}" if storage_endpoint.nil?
+        endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
+        raise "no such region: #{bucket_region}" if endpoint.nil?
         return {
-          instance_id:      service_credentials['resource_instance_id'],
-          service_api_key:  service_credentials['apikey'],
-          storage_endpoint: "https://#{storage_endpoint}"
+          instance_id: service_credentials['resource_instance_id'],
+          api_key:     service_credentials['apikey'],
+          endpoint:    endpoint
         }
       end
     end
-    IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
-    TOKEN_FIELD = 'delegated_refresh_token'
 
-    def initialize(bucket_name, storage_endpoint, instance_id, api_key, auth_url= IBM_CLOUD_TOKEN_URL)
+    def initialize(instance_id:, api_key:, endpoint:, bucket:, auth_url: IBM_CLOUD_TOKEN_URL)
+      assert_type(instance_id, String){'resource instance id (crn)'}
+      assert_type(endpoint, String){'endpoint'}
+      endpoint = "https://#{endpoint}" unless endpoint.start_with?('http')
       @auth_url = auth_url
       @api_key = api_key
       s3_api = Aspera::Rest.new({
-        base_url:       storage_endpoint,
+        base_url:       endpoint,
         not_auth_codes: %w[401 403], # error codes when not authorized
         headers:        {'ibm-service-instance-id' => instance_id},
         auth:           {
@@ -50,7 +53,7 @@ module Aspera
       # read FASP connection information for bucket
       xml_result_text = s3_api.call(
         operation: 'GET',
-        subpath: bucket_name,
+        subpath: bucket,
         headers: {'Accept' => 'application/xml'},
         url_params: {'faspConnectionInfo' => nil}
       )[:http].body

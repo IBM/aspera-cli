@@ -939,11 +939,11 @@ $(T)aocat7: $(T).exists
 $(T)aocat8: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_BEG_IGN) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
-	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.bucket_region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket_name@","credentials":{"access_key_id":"@preset:icos.bucket_key@","secret_access_key":"@preset:icos.bucket_secret@"},"path":"/"}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	@$(STOP_TEST) $@
 $(T)aocat9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket_name@","credentials":{"access_key_id":"@preset:aws.bucket_key@","secret_access_key":"@preset:aws.bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) --preset=aoc_admin aoc admin ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)aocat10: $(T).exists
 	@$(START_TEST) $@
@@ -1067,13 +1067,13 @@ $(T)at3: $(T).exists
 $(T)at8: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_BEG_IGN) ats access_key delete ak2ibmcloud$(EXE_END_IGN)
-	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:icos.bucket_region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket_name@","credentials":{"access_key_id":"@preset:icos.bucket_key@","secret_access_key":"@preset:icos.bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@$(STOP_TEST) $@
 $(T)at9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_FAI) ats access_key create --cloud=aws --region=@preset:aws.bucket_region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket_name@","credentials":{"access_key_id":"@preset:aws.bucket_key@","secret_access_key":"@preset:aws.bucket_secret@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) ats access_key create --cloud=aws --region=@preset:aws.region --params=@json:@extend:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"@preset:aws.bucket@","credentials":{"access_key_id":"@preset:aws.access_key@","secret_access_key":"@preset:aws.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
 	@$(STOP_TEST) $@
 $(T)at10: $(T).exists
 	@$(START_TEST) $@
@@ -1456,11 +1456,11 @@ thot:
 #######################################################################################################################
 $(T)tcos_info1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket_name --region=@preset:icos.bucket_region --service-credentials=@json:@file:@preset:file.cos_svc_cred
+	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket --region=@preset:icos.region --service-credentials=@json:@file:@preset:file.cos_svc_cred
 	@$(STOP_TEST) $@
 $(T)tcos_info2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket_name --endpoint=@preset:icos.bucket_endpoint --apikey=@preset:icos.bucket_apikey --crn=@preset:icos.resource_instance_id
+	$(EXE_MAN) cos node info -N --bucket=@preset:icos.bucket --endpoint=@preset:icos.endpoint --apikey=@preset:icos.api_key --crn=@preset:icos.resource_instance_id
 	@$(STOP_TEST) $@
 $(T)tcos_info3: $(T).exists
 	@$(START_TEST) $@
