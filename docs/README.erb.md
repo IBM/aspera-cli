@@ -428,19 +428,20 @@ make
 make install
 ```
 
-#### jRuby
+#### JRuby
 
-If you already have a Java JVM on your system (`java`), it is possible to use [JRuby](https://www.jruby.org/). Choose the latest version from:
+<%=tool%> can also run with the [JRuby](https://www.jruby.org/) interpreter.
+All what is needed is a JVM (Java Virtual Machine) on your system (`java`).
+The JRuby package comes pre-complied and does not require compilation of native extensions.
+Use a version of JRuby compatible with Ruby version supported by <%=tool%>.
+Refer to [the wikipedia page](https://en.wikipedia.org/wiki/JRuby) to match JRuby and Ruby versions.
+Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> **Note:** The startup time is longer Using `jruby` than the native Ruby, but transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** The startup time is slightly longer using `jruby` than the native Ruby, refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details. The transfer speed is not impacted (executed by `ascp` binary).
 >
 > **Note:** JRuby can be [installed](https://www.jruby.org/getting-started) using `rvm`.
-
-Use a version of jRuby compatible with Ruby version supported by <%=tool%>.
-Refer to [the wikipedia page](https://en.wikipedia.org/wiki/JRuby).
-The [JRuby wiki](https://github.com/jruby/jruby/wiki) also has interesting information.
 
 #### Optional gems
 

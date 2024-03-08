@@ -581,11 +581,13 @@ $(eval $(call test_suite_all,tndak,$(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(
 #######################################################################################################################
 $(T)aocfxgw: $(T).exists
 	@$(START_TEST) $@
+	rm -f $(DIR_TMP)pid_aocfxgw
 	$(EXE_MAN) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw https://localhost:12345/aspera/faspex &
-	while ! test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
+	kill -0 $$(cat $(DIR_TMP)pid_aocfxgw)
 	$(EXE_NO_MAN) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --silent-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	kill -INT $$(cat $(DIR_TMP)pid_aocfxgw)
-	while test -f $(DIR_TMP)pid_aocfxgw;do sleep 1;done
+	kill -HUP $$(cat $(DIR_TMP)pid_aocfxgw)
+	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(T)aocg1: $(T).exists
 	@$(START_TEST) $@
@@ -1599,23 +1601,27 @@ $(T)f5_wizard: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_fxgw: $(T).exists
 	@$(START_TEST) $@
+	rm -f $(DIR_TMP)pid_f5_fxgw
 	$(EXE_MAN) faspex5 gateway --pid-file=$(DIR_TMP)pid_f5_fxgw https://localhost:12346/aspera/faspex &
-	while ! test -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;done
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;let --i;done
+	kill -0 $$(cat $(DIR_TMP)pid_f5_fxgw)
 	$(EXE_NO_MAN) -N faspex --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	curl -k https://localhost:12346/aspera/faspex/send -d 'bad'
-	curl -k https://localhost:12346/aspera/faspex/bad -d 'bad'
-	kill -INT $$(cat $(DIR_TMP)pid_f5_fxgw)
-	while test -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;done
+	-curl -k https://localhost:12346/aspera/faspex/send -d 'bad'
+	-curl -k https://localhost:12346/aspera/faspex/bad -d 'bad'
+	kill -HUP $$(cat $(DIR_TMP)pid_f5_fxgw)
+	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(T)f5_postproc: $(T).exists
 	@$(START_TEST) $@
+	rm -f $(DIR_TMP)pid_f5_postproc
 	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":"$(DIR_TST)"}}' &
-	while ! test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
+	kill -0 $$(cat $(DIR_TMP)pid_f5_postproc)
 	$(EXE_NO_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"]}' 'faux:///test1?1m'
-	curl -k https://localhost:8443/domain/post_proc_test.sh -d '{}'
-	curl -k https://localhost:8443/wrong -d '{}'
-	kill -INT $$(cat $(DIR_TMP)pid_f5_postproc)
-	while test -f $(DIR_TMP)pid_f5_postproc;do sleep 1;done
+	-curl -k https://localhost:8443/domain/post_proc_test.sh -d '{}'
+	-curl -k https://localhost:8443/wrong -d '{}'
+	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
+	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################

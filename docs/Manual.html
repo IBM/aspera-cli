@@ -403,25 +403,27 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href=
 <span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> install</span></code></pre></div>
 <h3 data-number="3.1.6" id="jruby"><span
-class="header-section-number">3.1.6</span> jRuby</h3>
-<p>If you already have a Java JVM on your system (<code>java</code>), it
-is possible to use <a href="https://www.jruby.org/">JRuby</a>. Choose
-the latest version from:</p>
+class="header-section-number">3.1.6</span> JRuby</h3>
+<p><code>ascli</code> can also run with the <a
+href="https://www.jruby.org/">JRuby</a> interpreter. All what is needed
+is a JVM (Java Virtual Machine) on your system (<code>java</code>). The
+JRuby package comes pre-complied and does not require compilation of
+native extensions. Use a version of JRuby compatible with Ruby version
+supported by <code>ascli</code>. Refer to <a
+href="https://en.wikipedia.org/wiki/JRuby">the wikipedia page</a> to
+match JRuby and Ruby versions. Choose the latest version from:</p>
 <p><a href="https://www.jruby.org/download"
 class="uri">https://www.jruby.org/download</a></p>
 <blockquote>
-<p><strong>Note:</strong> The startup time is longer Using
-<code>jruby</code> than the native Ruby, but transfer speed is not
-impacted (executed by <code>ascp</code> binary).</p>
+<p><strong>Note:</strong> The startup time is slightly longer using
+<code>jruby</code> than the native Ruby, refer to the <a
+href="https://github.com/jruby/jruby/wiki">JRuby wiki</a> for details.
+The transfer speed is not impacted (executed by <code>ascp</code>
+binary).</p>
 <p><strong>Note:</strong> JRuby can be <a
 href="https://www.jruby.org/getting-started">installed</a> using
 <code>rvm</code>.</p>
 </blockquote>
-<p>Use a version of jRuby compatible with Ruby version supported by
-<code>ascli</code>. Refer to <a
-href="https://en.wikipedia.org/wiki/JRuby">the wikipedia page</a>. The
-<a href="https://github.com/jruby/jruby/wiki">JRuby wiki</a> also has
-interesting information.</p>
 <h3 data-number="3.1.7" id="optional-gems"><span
 class="header-section-number">3.1.7</span> Optional gems</h3>
 <p>Some additional gems can be installed to provide additional

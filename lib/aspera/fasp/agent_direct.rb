@@ -30,10 +30,10 @@ module Aspera
         quiet:             true, # by default no native ascp progress bar
         trusted_certs:     [] # list of files with trusted certificates (stores)
       }.freeze
-      LISTEN_ADDRESS = '127.0.0.1'
-      LISTEN_AVAILABLE_PORT = 0 # 0 means any available port
+      LISTEN_LOCAL_ADDRESS = '127.0.0.1'
+      ANY_AVAILABLE_PORT = 0 # 0 means any available port
       # spellchecker: enable
-      private_constant :DEFAULT_OPTIONS, :LISTEN_ADDRESS
+      private_constant :DEFAULT_OPTIONS, :LISTEN_LOCAL_ADDRESS, :ANY_AVAILABLE_PORT
 
       # method of Aspera::Fasp::AgentBase
       # start ascp transfer(s) (non blocking), single or multi-session
@@ -141,12 +141,6 @@ module Aspera
         Log.log.debug('fasp local shutdown')
       end
 
-      # cspell:disable
-      # begin 'Type' => 'NOTIFICATION', 'PreTransferBytes' => size
-      # progress 'Type' => 'STATS', 'Bytescont' => size
-      # end 'Type' => 'DONE'
-      # cspell:enable
-
       # @param event management port event
       def process_progress(event)
         session_id = event['SessionId']
@@ -200,14 +194,13 @@ module Aspera
         notify_progress(session_id: nil, type: :pre_start, info: 'starting')
         begin
           ascp_pid = nil
-          # we use Socket directly, instead of TCPServer, s it gives access to lower level options
-          mgt_server_socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-          # open an available (0) local TCP port as ascp management
-          # Socket.pack_sockaddr_in(LISTEN_AVAILABLE_PORT, LISTEN_ADDRESS)
-          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_ADDRESS, LISTEN_AVAILABLE_PORT))
-          # clone arguments and add mgt port
+          # we use Socket directly, instead of TCPServer, as it gives access to lower level options
+          socket_class = RUBY_ENGINE.eql?('jruby') ? ServerSocket : Socket
+          mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+          # open any available (0) local TCP port for use as ascp management port
+          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, ANY_AVAILABLE_PORT))
+          # build arguments and add mgt port
           ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
-          # mgt_server_socket.addr[1]
           # get location of ascp executable
           ascp_path = Fasp::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
@@ -221,7 +214,7 @@ module Aspera
           end
           # start ascp in separate process
           ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments, close_others: true)
-          Log.log.debug{"spawned pid #{ascp_pid}"}
+          Log.log.debug{"spawned ascp pid #{ascp_pid}"}
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
           mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
@@ -270,7 +263,7 @@ module Aspera
             end # case
           end
         rescue SystemCallError => e
-          # Process.spawn
+          # Process.spawn failed, or socket error
           raise Fasp::Error, e.message
         rescue Interrupt
           raise Fasp::Error, 'transfer interrupted by user'

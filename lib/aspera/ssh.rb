@@ -3,7 +3,7 @@
 require 'net/ssh'
 
 if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
-  # HACK: deactivate ed25519 and ecdsa private keys from ssh identities, as it usually cause problems
+  # HACK: deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
   old_verbose = $VERBOSE
   $VERBOSE = nil
   begin
@@ -14,8 +14,8 @@ if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
   $VERBOSE = old_verbose
 end
 
-if RUBY_ENGINE == 'jruby'
-  Net::SSH::Transport::Algorithms::ALGORITHMS.values.each { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
+if RUBY_ENGINE == 'jruby' && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')
+  Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
   Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
 end
 

@@ -295,6 +295,9 @@ module Aspera
             File.write(pid_file, Process.pid)
             Log.log.debug{"Wrote pid #{Process.pid} to #{pid_file}"}
             at_exit{File.delete(pid_file)}
+            Signal.trap('HUP') do
+              Process.exit(1)
+            end
           end
           # execute and display (if not exclusive execution)
           formatter.display_results(command_plugin.execute_action) if execute_command
