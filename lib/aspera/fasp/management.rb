@@ -2,7 +2,7 @@
 
 module Aspera
   module Fasp
-    # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
+    # processing of ascp management port events
     class Management
       # cspell: disable
       OPERATIONS = %w[
