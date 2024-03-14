@@ -211,6 +211,7 @@ module Aspera
             organization = @cache_api_aoc.read('organization')[:data]
             if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
               transfer.httpgw_url_cb = lambda { organization['http_gateway_server_url'] }
+              # @cache_api_aoc.current_user_info['connect_disabled']
             end
           end
           return @cache_api_aoc
