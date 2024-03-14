@@ -206,7 +206,13 @@ module Aspera
         end
 
         def aoc_api
-          @cache_api_aoc = api_from_options(AoC::API_V1) if @cache_api_aoc.nil?
+          if @cache_api_aoc.nil?
+            @cache_api_aoc = api_from_options(AoC::API_V1)
+            organization = @cache_api_aoc.read('organization')[:data]
+            if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
+              transfer.httpgw_url_cb = lambda { organization['http_gateway_server_url'] }
+            end
+          end
           return @cache_api_aoc
         end
 
