@@ -6040,8 +6040,7 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-<!-- markdownlint-disable-next-line -->
-| url                        | string  | http://localhost:8080  | Base url on which requests are listened             |
+| url                        | string  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
 | certificate                | hash    | nil                    | Certificate information (if HTTPS)                  |
 | certificate.key            | string  | nil                    | Path to private key file                            |
 | certificate.cert           | string  | nil                    | Path to certificate                                 |
@@ -6359,7 +6358,7 @@ It uses the same transfer service as Aspera on Cloud, called Aspera Transfer Ser
 Available ATS regions: [https://status.aspera.io](https://status.aspera.io)
 
 There are two possibilities to provide credentials.
-If you already have the endpoint, API key and CRN, use the first method.
+If you already have the endpoint, API key and Resource Instance ID (CRN), use the first method.
 If you don't have credentials but have access to the IBM Cloud console, then use the second method.
 
 ### Using endpoint, API key and Resource Instance ID (CRN)
@@ -6427,12 +6426,12 @@ The field `resource_instance_id` is for option `crn`
 
 The field `apikey` is for option `apikey`
 
-(If needed: endpoints for regions can be found by querying the `endpoints` URL.)
+> **Note:** endpoints for regions can be found by querying the `endpoints` URL from file or from the IBM Cloud Console.
 
 The required options for this method are:
 
 - `bucket` bucket name
-- `region` bucket region, e.g. eu-de
+- `region` bucket region, e.g. `eu-de`
 - `service_credentials` see below
 
 For example, let us create a default configuration:
@@ -6444,7 +6443,7 @@ ascli config preset set default cos mycos
 
 ### Operations, transfers
 
-Let's assume you created a default configuration from once of the two previous steps (else specify the access options on command lines).
+Let's assume you created a default configuration from one of the two previous steps (else specify the access options on command lines).
 
 A subset of `node` plugin operations are supported, basically node API:
 
@@ -6453,7 +6452,7 @@ ascli cos node info
 ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** We generate a dummy file `sample1G` of size 2GB using the `faux` PVCL (man `ascp` and section above), but you can of course send a real file by specifying a real file instead.
+> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file instead.
 
 ### Cos sample commands
 
