@@ -53,7 +53,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
   spec.add_runtime_dependency('rubyzip', '~> 2.0')
   spec.add_runtime_dependency('symmetric-encryption', '~> 4.6')
-  spec.add_runtime_dependency('terminal-table', '~> 1.8')
+  spec.add_runtime_dependency('terminal-table', '~> 3.0.2')
   spec.add_runtime_dependency('tty-spinner', '~> 0.9')
   spec.add_runtime_dependency('webrick', '~> 1.7')
   spec.add_runtime_dependency('websocket', '~> 1.2')
