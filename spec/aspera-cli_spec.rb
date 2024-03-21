@@ -30,8 +30,6 @@ params = {}
   params[p] = ENV.fetch(env, nil)
   raise "missing env var: #{env}" unless params[p].is_a?(String)
 end
-# temporary override
-params[:url]='ssh://eudemo.asperademo.com:33001'
 ssh_url = URI.parse(params[:url])
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN = '/'
