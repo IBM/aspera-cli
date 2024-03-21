@@ -640,7 +640,7 @@ module Aspera
         def add_plugin_info(path)
           raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
           plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
-          req = path.gsub(/#{RUBY_FILE_EXT}$/o, '')
+          req = path.sub(/#{RUBY_FILE_EXT}$/o, '')
           if @plugins.key?(plugin_symbol)
             Log.log.warn{"skipping plugin already registered: #{plugin_symbol}"}
             return
@@ -1158,8 +1158,8 @@ module Aspera
             25
           end
           smtp[:from_email] ||= smtp[:username] if smtp.key?(:username)
-          smtp[:from_name] ||= smtp[:from_email].gsub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
-          smtp[:domain] ||= smtp[:from_email].gsub(/^.*@/, '') if smtp.key?(:from_email)
+          smtp[:from_name] ||= smtp[:from_email].sub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
+          smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
           # check minimum required
           %i[server port domain].each do |n|
             assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
@@ -1271,12 +1271,12 @@ module Aspera
 
         # @return [String] value from vault matching <name>.<param>
         def vault_value(name)
-          m = name.match(/^(.+)\.(.+)$/)
-          raise 'vault name shall match <name>.<param>' if m.nil?
+          m = name.split('.')
+          raise 'vault name shall match <name>.<param>' unless m.length.eql?(2)
           # this raise exception if label not found:
-          info = vault.get(label: m[1])
-          value = info[m[2].to_sym]
-          raise "no such entry value: #{m[2]}" if value.nil?
+          info = vault.get(label: m[0])
+          value = info[m[1].to_sym]
+          raise "no such entry value: #{m[1]}" if value.nil?
           return value
         end
 
@@ -1318,7 +1318,7 @@ module Aspera
 
         # version of URL without trailing "/" and removing default port
         def canonical_url(url)
-          url.gsub(%r{/+$}, '').gsub(%r{^(https://[^/]+):443$}, '\1')
+          url.sub(%r{/+$}, '').sub(%r{^(https://[^/]+):443$}, '\1')
         end
 
         def lookup_preset(url:, username:)
