@@ -1030,7 +1030,8 @@ ascli config echo '"'
 "
 ```
 
-Double quote in JSON is a little tricky because `"` is special both for the shell and JSON. Both shell and JSON syntax allow to protect `"`, but only the shell allows protection using single quote.
+Double quote in JSON is a little tricky because `"` is special both for the shell and JSON.
+Both shell and JSON syntax allow to protect `"`, but only the shell allows protection using single quote.
 
 ```bash
 ascli config echo @json:'"\""' --format=text
@@ -1042,7 +1043,8 @@ ascli config echo @ruby:\'\"\' --format=text
 "
 ```
 
-Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON. But as `\` is also shell special, then it is protected by another `\`.
+Here a single quote or a backslash protects the double quote to avoid shell processing, and then an additional `\` is added to protect the `"` for JSON.
+But as `\` is also shell special, then it is protected by another `\`.
   
 #### Shell and JSON or Ruby special characters in extended value
 

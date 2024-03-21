@@ -3,14 +3,15 @@
 * 4.17.0
 
   * New Features:
-    * `faspex5`: Support public and private invitations.
-    * `faspex5`: Automatic detection of HTTPGW.
     * `aoc`: Automatic detection of HTTPGW.
     * `shares`: Added group membership management.
+    * `faspex5`: Support public and private invitations.
+    * `faspex5`: Automatic detection of HTTPGW.
   * Issues Fixed:
     * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
     * **global**: removed gem dependency on `bigdecimal`
     * **global**: tested with JRuby 9.4.6.0 (use ServerSocket instead of Socket)
+    * **global**: Update version for gem `terminal-table` to 3.0.2
   * Breaking Changes:
     * `config`: command `remote_certificate` now takes a subcommand.
 
