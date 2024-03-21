@@ -12,8 +12,10 @@ module Aspera
     class AgentAlpha < Aspera::Fasp::AgentBase
       # try twice the main init url in sequence
       START_URIS = ['aspera://']
-      # delay between each try to start connect
+      # delay between each try to start the app
       SLEEP_SEC_BETWEEN_RETRY = 3
+      APP_IDENTIFIER = 'com.ibm.software.aspera.desktop'
+      APP_NAME = 'Aspera Desktop Alpha Client'
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(options)
         @application_id = SecureRandom.uuid
@@ -21,27 +23,21 @@ module Aspera
         raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
+          # https://playground.open-rpc.org/?schemaUrl=http://127.0.0.1:33024
           @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
           Log.log.debug{Log.dump(:client_version, client_info)}
-          # my_transfer_id = '0513fe85-65cf-465b-ad5f-18fd40d8c69f'
-          # @client_app_api.get_all_transfers({app_id: @application_id})
-          # @client_app_api.get_transfer(app_id: @application_id, transfer_id: my_transfer_id)
-          # @client_app_api.start_transfer(app_id: @application_id,transfer_spec: {})
-          # @client_app_api.remove_transfer
-          # @client_app_api.stop_transfer
-          # @client_app_api.modify_transfer
-          # @client_app_api.show_directory({app_id: @application_id, transfer_id: my_transfer_id})
-          # @client_app_api.get_files_list({app_id: @application_id, transfer_id: my_transfer_id})
           Log.log.info('Client was reached') if method_index > 0
-        rescue StandardError => e # Errno::ECONNREFUSED
+        rescue Aspera::RestCallError => e
+          raise e
+        rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]
           method_index += 1
-          raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?
-          Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
+          raise StandardError, "Unable to start #{APP_NAME} #{method_index} times" if start_url.nil?
+          Log.log.warn{"#{APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..."}
           if !OpenApplication.uri_graphical(start_url)
-            OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
-            raise StandardError, 'Connect is not installed'
+            OpenApplication.uri_graphical('https://www.ibm.com/aspera/connect/')
+            raise StandardError, "#{APP_NAME} is not installed"
           end
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
@@ -49,7 +45,7 @@ module Aspera
       end
 
       def aspera_client_api_url
-        log_file = File.join(Dir.home, 'Library', 'Logs', 'IBM Aspera', 'ibm-aspera-desktop.log')
+        log_file = File.join(Dir.home, 'Library', 'Logs', APP_IDENTIFIER, 'ibm-aspera-desktop.log')
         url = nil
         File.open(log_file, 'r') do |file|
           file.each_line do |line|
@@ -59,12 +55,14 @@ module Aspera
             end
           end
         end
+        url = 'http://127.0.0.1:33024' if url.nil?
+        raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
         return url
       end
 
       def start_transfer(transfer_spec, token_regenerator: nil)
         @request_id = SecureRandom.uuid
-        # if there is a token, we ask connect client to use well known ssh private keys
+        # if there is a token, we ask the client app to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
         result = @client_app_api.start_transfer(app_id: @application_id, desktop_spec: {}, transfer_spec: transfer_spec)
