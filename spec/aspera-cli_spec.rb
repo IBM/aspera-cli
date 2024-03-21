@@ -52,7 +52,7 @@ PAC_FILE = "file:///#{main_folder}/examples/proxy.pac"
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
 RSpec.describe(Aspera::Fasp::Uri) do
-  it 'parses a URL' do
+  it 'parses a FASP URL' do
     uri = Aspera::Fasp::Uri.new('faspe://user:pass@host:33001/path?token=xx&sshfp=xx&protect=xx&bad=xx')
     ts = uri.transfer_spec
     expect(ts).to(be_a(Hash))
