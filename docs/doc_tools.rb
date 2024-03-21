@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# cspell:ignore opprst prst lprt prsts trspec prstt geminstadd transferspec passcode emea
+# cspell:ignore geminstadd transferspec passcode emea
 
 # Tools used in README.erb.md
 
@@ -20,21 +20,6 @@ def tool; '`' + cmd + '`'; end
 
 # env var for option
 def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
-
-# just the name for "option preset"
-def opprst; 'option preset'; end
-
-# name with link
-def prst; '[' + opprst + '](#lprt)'; end
-
-# name with link (plural)
-def prsts; '[' + opprst + 's](#lprt)'; end
-
-# Transfer spec name with link
-def trspec; '[*transfer-spec*](#transferspec)'; end
-
-# in title
-def prstt; opprst.capitalize; end
 
 # container image in docker hub
 def container_image; File.read('docker_repository.txt').strip; end
@@ -179,7 +164,7 @@ end
 
 def include_commands
   all = []
-  all_test_commands_by_plugin.each do |_k, v|
+  all_test_commands_by_plugin.each_value do |v|
     all.concat(v)
   end
   return all.join("\n")

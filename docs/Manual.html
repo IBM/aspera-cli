@@ -38,8 +38,8 @@ CONTRIBUTION</h2>
 <p>Refer to <a href="BUGS.md">BUGS.md</a> and <a
 href="CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
 <h2 data-number="1.2" id="when-to-use-and-when-not-to-use"><span
-class="header-section-number">1.2</span> <a id="when_to_use"></a>When to
-use and when not to use</h2>
+class="header-section-number">1.2</span> When to use and when not to
+use</h2>
 <p><code>ascli</code> is designed to be used as a command line tool
 to:</p>
 <ul>
@@ -57,8 +57,8 @@ job)</li>
 integrating:</p>
 <ul>
 <li>A configuration file (<code>config.yaml</code>)</li>
-<li>Advanced command line options (<a href="#extended">Extended
-Value</a>)</li>
+<li>Advanced command line options (<a
+href="#extended-value-syntax">Extended Value</a>)</li>
 <li><code>curl</code> (for REST calls)</li>
 <li>Aspera transfer (<code>ascp</code>)</li>
 </ul>
@@ -89,14 +89,15 @@ etc…)</p>
 <p>Some commands will start an Aspera-based transfer
 (e.g. <code>upload</code>). The transfer is not directly implemented in
 <code>ascli</code>, rather <code>ascli</code> uses one of the external
-Aspera Transfer Clients called <strong><a href="#agents">Transfer
-Agents</a></strong>.</p>
+Aspera Transfer Clients called <strong><a
+href="#transfer-clients-agents">Transfer Agents</a></strong>.</p>
 <blockquote>
-<p><strong>Note:</strong> A <strong><a href="#agents">Transfer
-Agents</a></strong> is a client for the remote Transfer Server (HSTS).
-The <strong><a href="#agents">Transfer Agents</a></strong> may be local
-or remote… For example a remote Aspera Server may be used as a transfer
-agent (using node API). i.e. using option
+<p><strong>Note:</strong> A <strong><a
+href="#transfer-clients-agents">Transfer Agents</a></strong> is a client
+for the remote Transfer Server (HSTS). The <strong><a
+href="#transfer-clients-agents">Transfer Agents</a></strong> may be
+local or remote… For example a remote Aspera Server may be used as a
+transfer agent (using node API). i.e. using option
 <code>--transfer=node</code></p>
 </blockquote>
 <h1 data-number="2" id="quick-start"><span
@@ -114,7 +115,7 @@ class="header-section-number">2.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
 a demo server:</p>
 <p>If you want to test with Aspera on Cloud, jump to section: <a
-href="#aocwizard">Wizard</a>.</p>
+href="#configuration-using-wizard">Wizard</a>.</p>
 <p>To test with Aspera demo transfer server, setup the environment and
 then test:</p>
 <div class="sourceCode" id="cb2"><pre
@@ -131,10 +132,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 +------------+--------+-----------+-------+---------------------------+-----------------------+</code></pre>
 <p>If you want to use <code>ascli</code> with another server, and in
 order to make further calls more convenient, it is advised to define a
-<a href="#lprt">option preset</a> for the server’s authentication
-options. The following example will:</p>
+<a href="#option-preset">Option Preset</a>’ for the server’s
+authentication options. The following example will:</p>
 <ul>
-<li>Create a <a href="#lprt">option preset</a></li>
+<li>Create a <a href="#option-preset">Option Preset</a>’</li>
 <li>Define it as default for the <code>server</code> plugin</li>
 <li>List files in a folder</li>
 <li>Download a file</li>
@@ -167,13 +168,12 @@ complete</code></pre>
 <h2 data-number="2.2" id="going-further"><span
 class="header-section-number">2.2</span> Going further</h2>
 <p>Get familiar with configuration, options, commands : <a
-href="#cli">Command Line Interface</a>.</p>
+href="#command-line-interface">Command Line Interface</a>.</p>
 <p>Then, follow the section relative to the product you want to interact
 with ( Aspera on Cloud, Faspex, …) : <a href="plugins">Application
 Plugins</a></p>
 <h1 data-number="3" id="installation"><span
-class="header-section-number">3</span>
-<a id="installation"></a>Installation</h1>
+class="header-section-number">3</span> Installation</h1>
 <p>It is possible to install <strong>either</strong> directly on the
 host operating system (Linux, macOS, Windows) or as a <a
 href="#container">container</a> (<code>docker</code>,
@@ -182,8 +182,8 @@ href="#container">container</a> (<code>docker</code>,
 installing:</p>
 <ul>
 <li><a href="#ruby">Ruby</a></li>
-<li><a href="#the_gem">aspera-cli</a></li>
-<li><a href="#fasp_prot">Aspera SDK (<code>ascp</code>)</a></li>
+<li><a href="#ruby-gem">aspera-cli</a></li>
+<li><a href="#fasp-protocol">Aspera SDK (<code>ascp</code>)</a></li>
 </ul>
 <p>Ruby version: &gt;= 2.6.</p>
 <blockquote>
@@ -194,11 +194,12 @@ installing:</p>
 installation methods.</p>
 <p>An internet connection is required for the installation. If you don’t
 have internet for the installation, refer to section <a
-href="#offline_install">Installation without internet access</a>.</p>
+href="#installation-in-air-gapped-environment">Installation without
+internet access</a>.</p>
 <p>A package with pre-installed Ruby, gem and ascp may also be
 provided.</p>
 <h2 data-number="3.1" id="ruby"><span
-class="header-section-number">3.1</span> <a id="ruby"></a>Ruby</h2>
+class="header-section-number">3.1</span> Ruby</h2>
 <p>Use this method to install on the native host (e.g. your Windows,
 macOS or Linux system).</p>
 <p>A Ruby interpreter is required to run <code>ascli</code>.</p>
@@ -242,7 +243,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href=
 <p>Install the chosen pre-compiled Ruby version:</p>
 <div class="sourceCode" id="cb16"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rvm</span> install 3.2.2</span></code></pre></div>
-<p>Ruby is now installed for the user, go to <a href="#the_gem">Gem
+<p>Ruby is now installed for the user, go to <a href="#ruby-gem">Gem
 installation</a>.</p>
 <p>Alternatively RVM can be installed system-wide, for this execute as
 <code>root</code>. It then installs by default in
@@ -441,9 +442,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href=
 <p><strong>Note:</strong> Those are not installed as part of
 dependencies because they involve compilation of native code.</p>
 </blockquote>
-<h2 data-number="3.2" id="aspera-cli-gem"><span
-class="header-section-number">3.2</span>
-<a id="the_gem"></a><code>aspera-cli</code> gem</h2>
+<h2 data-number="3.2" id="ruby-gem"><span
+class="header-section-number">3.2</span> Ruby Gem</h2>
 <p>Once you have Ruby and rights to install gems, install the
 <code>aspera-cli</code> gem and its dependencies:</p>
 <div class="sourceCode" id="cb37"><pre
@@ -460,8 +460,7 @@ this feature, globally set the option <code>version_check_days</code> to
 <div class="sourceCode" id="cb39"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config check_update</span></code></pre></div>
 <h2 data-number="3.3" id="fasp-protocol"><span
-class="header-section-number">3.3</span> <a id="fasp_prot"></a>FASP
-Protocol</h2>
+class="header-section-number">3.3</span> FASP Protocol</h2>
 <p>Most file transfers will be executed using the <strong>FASP</strong>
 protocol, using <code>ascp</code>. Only two additional files are
 required to perform an Aspera Transfer, which are part of Aspera
@@ -496,15 +495,15 @@ page: <a
 href="https://www.ibm.com/aspera/connect/">https://www.ibm.com/aspera/connect/</a>.</p>
 <p><code>ascli</code> will detect most of Aspera transfer products in
 standard locations and use the first one found by default. Refer to
-section <a href="#client">FASP</a> for details on how to select a client
-or set path to the FASP protocol.</p>
+section <a href="#fasp-configuration">FASP</a> for details on how to
+select a client or set path to the FASP protocol.</p>
 <p>Several methods are provided to start a transfer. Use of a local
-client (<a href="#agt_direct"><code>direct</code></a> transfer agent) is
-one of them, but other methods are available. Refer to section: <a
-href="#agents">Transfer Agents</a></p>
+client (<a href="#agent-direct"><code>direct</code></a> transfer agent)
+is one of them, but other methods are available. Refer to section: <a
+href="#transfer-clients-agents">Transfer Agents</a></p>
 <h2 data-number="3.4" id="installation-in-air-gapped-environment"><span
-class="header-section-number">3.4</span>
-<a id="offline_install"></a>Installation in air gapped environment</h2>
+class="header-section-number">3.4</span> Installation in air gapped
+environment</h2>
 <blockquote>
 <p><strong>Note:</strong> No pre-packaged version is provided yet.</p>
 </blockquote>
@@ -767,9 +766,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a href=
 <p>Or get a shell with access to <code>ascli</code> like this:</p>
 <div class="sourceCode" id="cb69"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="ex">singularity</span> shell ascli.sif</span></code></pre></div>
-<h1 data-number="4" id="command-line-interface-ascli"><span
-class="header-section-number">4</span> <a id="cli"></a>Command Line
-Interface: <code>ascli</code></h1>
+<h1 data-number="4" id="command-line-interface"><span
+class="header-section-number">4</span> Command Line Interface</h1>
+<p>The command line tool is: <code>ascli</code></p>
 <p>The <code>aspera-cli</code> gem provides a command line interface
 (CLI) which interacts with Aspera Products (mostly using REST APIs):</p>
 <ul>
@@ -789,11 +788,11 @@ SaaS)</li>
 or any option) can be provided on command line, in configuration file,
 in env var, in files, …</li>
 <li>Supports Commands, Option values and Parameters shortcuts</li>
-<li>FASP <a href="#agents">Transfer Agents</a> can be: local
-<code>ascp</code>, or Connect Client, or any transfer node</li>
+<li>FASP <a href="#transfer-clients-agents">Transfer Agents</a> can be:
+local <code>ascp</code>, or Connect Client, or any transfer node</li>
 <li>Transfer parameters can be altered by modification of <a
-href="#transferspec"><em>transfer-spec</em></a>, this includes requiring
-multi-session</li>
+href="#transfer-specification"><em>transfer-spec</em></a>, this includes
+requiring multi-session</li>
 <li>Allows transfers from products to products, essentially at node
 level (using the node transfer agent)</li>
 <li>Supports FaspStream creation (using Node API)</li>
@@ -836,8 +835,8 @@ with the possibility to provide <code>ascp</code> arguments directly
 when the <code>direct</code> agent is used (<code>ascp_args</code> in
 <code>transfer_info</code>).</p>
 <h2 data-number="4.2" id="command-line-parsing-special-characters"><span
-class="header-section-number">4.2</span> <a id="parsing"></a>Command
-line parsing, Special Characters</h2>
+class="header-section-number">4.2</span> Command line parsing, Special
+Characters</h2>
 <p><code>ascli</code> is typically executed in a shell, either
 interactively or in a script. <code>ascli</code> receives its arguments
 from this shell (through the Operating System).</p>
@@ -967,7 +966,7 @@ PS C:\&gt; ascli conf echo @json:&#39;{&quot;&quot;&quot;k&quot;&quot;&quot;:&qu
 class="header-section-number">4.2.5</span> Extended Values (JSON, Ruby,
 …)</h3>
 <p>Some of the <code>ascli</code> parameters are expected to be <a
-href="#extended">Extended Values</a>, i.e. not a simple
+href="#extended-value-syntax">Extended Values</a>, i.e. not a simple
 <code>String</code>, but a composite structure (<code>Hash</code>,
 <code>Array</code>). Typically, the <code>@json:</code> modifier is
 used, it expects a <a href="https://www.json.org/">JSON</a> string. JSON
@@ -978,8 +977,8 @@ class="header-section-number">4.2.6</span> Testing Extended Values</h3>
 <p>In case of doubt of argument values after parsing, one can test using
 command <code>config echo</code>. <code>config echo</code> takes exactly
 <strong>one</strong> argument which can use the <a
-href="#extended">Extended Value</a> syntax. Unprocessed command line
-arguments are shown in the error message.</p>
+href="#extended-value-syntax">Extended Value</a> syntax. Unprocessed
+command line arguments are shown in the error message.</p>
 <p>Example: The shell parses three arguments (as <code>String</code>:
 <code>1</code>, <code>2</code> and <code>3</code>), so the additional
 two arguments are not processed by the <code>echo</code> command.</p>
@@ -1146,7 +1145,8 @@ Arguments</h2>
 <p>Command line arguments are the units of command line typically
 separated by spaces (the <code>argv</code> of C). The tokenization of
 the command line is typically done by the shell, refer to the previous
-section <a href="#parsing">Command Line Parsing</a>.</p>
+section <a href="#command-line-parsing-special-characters">Command Line
+Parsing</a>.</p>
 <p><code>ascli</code> handles three types of command line arguments:</p>
 <ul>
 <li>Commands</li>
@@ -1170,7 +1170,7 @@ letters of the value, provided that it uniquely identifies the value.
 For example <code>ascli config pre ov</code> is the same as
 <code>ascli config preset overview</code>.</p>
 <p>The value of options and arguments is evaluated with the <a
-href="#extended">Extended Value Syntax</a>.</p>
+href="#extended-value-syntax">Extended Value Syntax</a>.</p>
 <h3 data-number="4.3.1" id="commands"><span
 class="header-section-number">4.3.1</span> Commands</h3>
 <p>Commands are typically entity types or verbs to act on those
@@ -1209,12 +1209,14 @@ for the same are that the command line is shorter(no option name, just
 the position) and the value is clearly mandatory.</p>
 <p>The disadvantage is that it is not possible to define a default value
 in a configuration file or environment variable like for options.
-Nevertheless, <a href="#extended">Extended Values</a> syntax is
-supported, so it is possible to retrieve a value from the configuration
-file or environment variable (using <code>@preset:</code>).</p>
+Nevertheless, <a href="#extended-value-syntax">Extended Values</a>
+syntax is supported, so it is possible to retrieve a value from the
+configuration file or environment variable (using
+<code>@preset:</code>).</p>
 <p>If a Positional Arguments begins with <code>-</code>, then either use
-the <code>@val:</code> syntax (see <a href="#extended">Extended
-Values</a>), or use the <code>--</code> separator (see below).</p>
+the <code>@val:</code> syntax (see <a
+href="#extended-value-syntax">Extended Values</a>), or use the
+<code>--</code> separator (see below).</p>
 <p>A few positional arguments are optional, they are located at the end
 of the command line.</p>
 <h3 data-number="4.3.3" id="options"><span
@@ -1259,7 +1261,7 @@ example: connection information.</p>
 following locations (in this order, last value evaluated overrides
 previous value):</p>
 <ul>
-<li><a href="#configfile">Configuration file</a></li>
+<li><a href="#configuration-file">Configuration file</a></li>
 <li>Environment variable</li>
 <li>Command line</li>
 </ul>
@@ -1406,16 +1408,14 @@ and add <code>b</code></li>
 <li><code>@ruby:'/^server/'</code> : Display all properties whose name
 begin with <code>server</code></li>
 </ul>
-<h3 data-number="4.5.5"
-id="option-select-filter-on-columns-values-for-object_list"><span
-class="header-section-number">4.5.5</span>
-<a id="option_select"></a>Option: <code>select</code>: Filter on columns
-values for <code>object_list</code></h3>
-<p>Table output can be filtered using option <code>select</code>. This
-parameter is either a <code>Hash</code> or <code>Proc</code>. The
-<code>Proc</code> takes as argument a line (<code>Hash</code>) in the
-table and is a Ruby lambda expression that returns <code>true</code> or
-<code>false</code>.</p>
+<h3 data-number="4.5.5" id="option-select"><span
+class="header-section-number">4.5.5</span> Option:
+<code>select</code></h3>
+<p>Table output (<code>object_list</code>) can be filtered using option
+<code>select</code>. This parameter is either a <code>Hash</code> or
+<code>Proc</code>. The <code>Proc</code> takes as argument a line
+(<code>Hash</code>) in the table and is a Ruby lambda expression that
+returns <code>true</code> or <code>false</code>.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb102"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res user list <span class="at">--fields</span><span class="op">=</span>name,email,ats_admin <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;name&quot;}&#39;</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ats_admin&quot;:true}&#39;</span></span></code></pre></div>
@@ -1453,8 +1453,7 @@ deprecated: <code>--id=1234</code> (options have a single value and thus
 do not provide the possibility to identify sub-entities)</p>
 </blockquote>
 <h2 data-number="4.6" id="extended-value-syntax"><span
-class="header-section-number">4.6</span> <a id="extended"></a>Extended
-Value Syntax</h2>
+class="header-section-number">4.6</span> Extended Value Syntax</h2>
 <p>Most options and arguments are specified by a simple string
 (e.g. username or url). Sometime it is convenient to read a value from a
 file: for example read the PEM value of a private key, or a list of
@@ -1678,8 +1677,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb115-1"><a href
 <div class="sourceCode" id="cb116"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;key1&quot;</span><span class="fu">:</span><span class="st">&quot;value1&quot;</span><span class="fu">,</span><span class="dt">&quot;key2&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;item1&quot;</span><span class="ot">,</span><span class="st">&quot;item2&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;key3&quot;</span><span class="fu">:{</span><span class="dt">&quot;key4&quot;</span><span class="fu">:</span><span class="st">&quot;value4&quot;</span><span class="fu">,</span><span class="dt">&quot;key5&quot;</span><span class="fu">:</span><span class="st">&quot;value5&quot;</span><span class="fu">}}</span></span></code></pre></div>
 <h2 data-number="4.7" id="configuration-and-persistency-folder"><span
-class="header-section-number">4.7</span>
-<a id="conffolder"></a>Configuration and Persistency Folder</h2>
+class="header-section-number">4.7</span> Configuration and Persistency
+Folder</h2>
 <p><code>ascli</code> configuration and other runtime files (token
 cache, file lists, persistency files, SDK) are stored by default in
 <code>[User's home folder]/.aspera/ascli</code>.</p>
@@ -1722,8 +1721,7 @@ folder may be specified with option: <code>temp_folder</code>. Temporary
 files are deleted at the end of execution unless option:
 <code>clean_temp</code> is set to <code>no</code>.</p>
 <h2 data-number="4.9" id="configuration-file"><span
-class="header-section-number">4.9</span>
-<a id="configfile"></a>Configuration file</h2>
+class="header-section-number">4.9</span> Configuration file</h2>
 <p>On the first execution of <code>ascli</code>, an empty configuration
 file is created in the configuration folder. Nevertheless, there is no
 mandatory information required in this file, the use of it is optional
@@ -1732,7 +1730,7 @@ as any option can be provided on the command line.</p>
 provides commands to read and modify it using the <code>config</code>
 command.</p>
 <p>All options for <code>ascli</code> can be set on command line, or by
-env vars, or using <a href="#lprt">option presets</a> in the
+env vars, or using <a href="#option-preset">Option Preset</a>’ in the
 configuration file.</p>
 <p>A configuration file provides a way to define default values,
 especially for authentication parameters, thus avoiding to always having
@@ -1741,46 +1739,47 @@ to specify those parameters on the command line.</p>
 <code>$HOME/.aspera/ascli/config.yaml</code> (this can be overridden
 with option <code>--config-file=path</code> or equivalent env var).</p>
 <p>The configuration file is simply a catalog of pre-defined lists of
-options, called: <a href="#lprt">option presets</a>. Then, instead of
-specifying some common options on the command line (e.g. address,
-credentials), it is possible to invoke the ones of a <a
-href="#lprt">option preset</a> (e.g. <code>mypreset</code>) using the
-option: <code>-Pmypreset</code> or <code>--preset=mypreset</code>.</p>
+options, called: <a href="#option-preset">Option Preset</a>‘. Then,
+instead of specifying some common options on the command line
+(e.g. address, credentials), it is possible to invoke the ones of a <a
+href="#option-preset">Option Preset</a>’ (e.g. <code>mypreset</code>)
+using the option: <code>-Pmypreset</code> or
+<code>--preset=mypreset</code>.</p>
 <h3 data-number="4.9.1" id="option-preset"><span
-class="header-section-number">4.9.1</span> <a id="lprt"></a>Option
-preset</h3>
-<p>A <a href="#lprt">option preset</a> is simply a collection of
-parameters and their associated values in a named section in the
+class="header-section-number">4.9.1</span> Option Preset</h3>
+<p>A <a href="#option-preset">Option Preset</a>’ is simply a collection
+of parameters and their associated values in a named section in the
 configuration file.</p>
-<p>A named <a href="#lprt">option preset</a> can be modified directly
-using <code>ascli</code>, which will update the configuration file :</p>
+<p>A named <a href="#option-preset">Option Preset</a>’ can be modified
+directly using <code>ascli</code>, which will update the configuration
+file :</p>
 <div class="sourceCode" id="cb120"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set<span class="kw">|</span><span class="ex">delete</span><span class="kw">|</span><span class="ex">show</span><span class="kw">|</span><span class="ex">initialize</span><span class="kw">|</span><span class="ex">update</span> <span class="op">&lt;</span>option preset<span class="op">&gt;</span></span></code></pre></div>
 <p>The command <code>update</code> allows the easy creation of <a
-href="#lprt">option preset</a> by simply providing the options in their
-command line format, e.g. :</p>
+href="#option-preset">Option Preset</a>’ by simply providing the options
+in their command line format, e.g. :</p>
 <div class="sourceCode" id="cb121"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update demo_server <span class="at">--url</span><span class="op">=</span>ssh://demo.asperasoft.com:33001 <span class="at">--username</span><span class="op">=</span>asperaweb <span class="at">--password</span><span class="op">=</span>my_password_here <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
 <ul>
-<li>This creates a <a href="#lprt">option preset</a>
+<li>This creates a <a href="#option-preset">Option Preset</a>’
 <code>demo_server</code> with all provided options.</li>
 </ul>
 <p>The command <code>set</code> allows setting individual options in a
-<a href="#lprt">option preset</a>.</p>
+<a href="#option-preset">Option Preset</a>’.</p>
 <div class="sourceCode" id="cb122"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set demo_server password my_password_here</span></code></pre></div>
 <p>The command <code>initialize</code>, like <code>update</code> allows
 to set several parameters at once, but it deletes an existing
 configuration instead of updating it, and expects a <a
-href="#extended"><code>Hash</code> Extended Value</a>.</p>
+href="#extended-value-syntax"><code>Hash</code> Extended Value</a>.</p>
 <div class="sourceCode" id="cb123"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset initialize demo_server @json:<span class="st">&#39;{&quot;url&quot;:&quot;ssh://demo.asperasoft.com:33001&quot;,&quot;username&quot;:&quot;asperaweb&quot;,&quot;password&quot;:&quot;my_pass_here&quot;,&quot;ts&quot;:{&quot;precalculate_job_size&quot;:true}}&#39;</span></span></code></pre></div>
 <p>A full terminal based overview of the configuration can be displayed
 using:</p>
 <div class="sourceCode" id="cb124"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset over</span></code></pre></div>
-<p>A list of <a href="#lprt">option preset</a> can be displayed
-using:</p>
+<p>A list of <a href="#option-preset">Option Preset</a>’ can be
+displayed using:</p>
 <div class="sourceCode" id="cb125"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset list</span></code></pre></div>
 <p>A good practice is to not manually edit the configuration file and
@@ -1798,14 +1797,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb127-1"><a href
 <span id="cb127-2"><a href="#cb127-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset over</span>
 <span id="cb127-3"><a href="#cb127-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset list</span></code></pre></div>
 <h3 data-number="4.9.2" id="special-option-preset-config"><span
-class="header-section-number">4.9.2</span> <a id="lprtconf"></a>Special
-Option preset: <code>config</code></h3>
+class="header-section-number">4.9.2</span> Special Option Preset:
+<code>config</code></h3>
 <p>This preset name is reserved and contains a single key:
 <code>version</code>. This is the version of <code>ascli</code> which
 created the file.</p>
 <h3 data-number="4.9.3" id="special-option-preset-default"><span
-class="header-section-number">4.9.3</span> <a id="lprtdef"></a>Special
-Option preset: <code>default</code></h3>
+class="header-section-number">4.9.3</span> Special Option Preset:
+<code>default</code></h3>
 <p>This preset name is reserved and contains an array of key-value ,
 where the key is the name of a plugin, and the value is the name of
 another preset.</p>
@@ -1825,12 +1824,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb129-1"><a href
 <div class="sourceCode" id="cb130"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="er">&quot;_default_preset_for_plugin_&quot;</span></span></code></pre></div>
 <h3 data-number="4.9.4" id="plugin-config-configuration"><span
-class="header-section-number">4.9.4</span> <a id="config"></a>Plugin:
-<code>config</code>: Configuration</h3>
+class="header-section-number">4.9.4</span> Plugin: <code>config</code>:
+Configuration</h3>
 <p>Plugin <code>config</code> provides general commands for
 <code>ascli</code>:</p>
 <ul>
-<li>Option preset, configuration file operations</li>
+<li>Option Preset, configuration file operations</li>
 <li><code>wizard</code></li>
 <li><code>vault</code></li>
 <li><code>ascp</code></li>
@@ -1839,7 +1838,7 @@ class="header-section-number">4.9.4</span> <a id="config"></a>Plugin:
 invocation, this allows setting global options, such as
 <code>--log-level</code> or <code>--interactive</code>. When
 <code>ascli</code> starts, it looks for the <code>default</code> Option
-preset and checks the value for <code>config</code>. If set, it loads
+Preset and checks the value for <code>config</code>. If set, it loads
 the options independently of the plugin used.</p>
 <blockquote>
 <p><strong>Note:</strong> If no global default is set by the user,
@@ -1848,13 +1847,13 @@ setting global parameters (e.g. <code>config ascp use</code>)</p>
 <p><strong>Note:</strong> If you don’t know the name of the global
 preset, you can use <code>GLOBAL</code> to refer to it.</p>
 </blockquote>
-<p>Show current default (global) Option preset (<code>config</code>
+<p>Show current default (global) Option Preset (<code>config</code>
 plugin):</p>
 <pre class="console"><code>$ ascli config preset get default config
 global_common_defaults</code></pre>
 <div class="sourceCode" id="cb132"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set GLOBAL version_check_days 0</span></code></pre></div>
-<p>If the default global Option preset is not set, and you want to use a
+<p>If the default global Option Preset is not set, and you want to use a
 different name:</p>
 <div class="sourceCode" id="cb133"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set GLOBAL version_check_days 0</span>
@@ -1963,36 +1962,38 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb135-1"><a href
 <ul>
 <li>The configuration was created with <code>ascli</code> version
 0.3.7</li>
-<li>The default <a href="#lprt">option preset</a> to load for
+<li>The default <a href="#option-preset">Option Preset</a>’ to load for
 <code>server</code> plugin is : <code>demo_server</code></li>
-<li>The <a href="#lprt">option preset</a> <code>demo_server</code>
-defines some parameters: the URL and credentials</li>
-<li>The default <a href="#lprt">option preset</a> to load in any case is
-: <code>cli_default</code></li>
+<li>The <a href="#option-preset">Option Preset</a>’
+<code>demo_server</code> defines some parameters: the URL and
+credentials</li>
+<li>The default <a href="#option-preset">Option Preset</a>’ to load in
+any case is : <code>cli_default</code></li>
 </ul>
-<p>Two <a href="#lprt">option presets</a> are reserved:</p>
+<p>Two <a href="#option-preset">Option Preset</a>’ are reserved:</p>
 <ul>
 <li><code>config</code> contains a single value: <code>version</code>
 showing the version used to create the configuration file. It is used to
 check compatibility.</li>
 <li><code>default</code> is reserved to define the default <a
-href="#lprt">option preset</a> name used for known plugins.</li>
+href="#option-preset">Option Preset</a>’ name used for known
+plugins.</li>
 </ul>
-<p>The user may create as many <a href="#lprt">option presets</a> as
-needed. For instance, a particular <a href="#lprt">option preset</a> can
-be created for a particular application instance and contain URL and
-credentials.</p>
+<p>The user may create as many <a href="#option-preset">Option
+Preset</a>’ as needed. For instance, a particular <a
+href="#option-preset">Option Preset</a>’ can be created for a particular
+application instance and contain URL and credentials.</p>
 <p>Values in the configuration also follow the <a
-href="#extended">Extended Value Syntax</a>.</p>
+href="#extended-value-syntax">Extended Value Syntax</a>.</p>
 <blockquote>
 <p><strong>Note:</strong> If the user wants to use the <a
-href="#extended">Extended Value Syntax</a> inside the configuration
-file, using the <code>config preset update</code> command, the user
-shall use the <code>@val:</code> prefix. Example:</p>
+href="#extended-value-syntax">Extended Value Syntax</a> inside the
+configuration file, using the <code>config preset update</code> command,
+the user shall use the <code>@val:</code> prefix. Example:</p>
 </blockquote>
 <div class="sourceCode" id="cb136"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set my_aoc_org private_key @val:@file:<span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
-<p>This creates the <a href="#lprt">option preset</a>:</p>
+<p>This creates the <a href="#option-preset">Option Preset</a>’:</p>
 <div class="sourceCode" id="cb137"><pre
 class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_aoc_org</span><span class="kw">:</span></span>
 <span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">private_key</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@file:/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
@@ -2009,30 +2010,31 @@ plugins. (the plugin is the first level command).</p>
 specified, then no default value is loaded for the plugin</li>
 <li>Else it looks for the name of the plugin as key in section
 <code>default</code>, the value is the name of the default <a
-href="#lprt">option preset</a> for it, and loads it.</li>
+href="#option-preset">Option Preset</a>’ for it, and loads it.</li>
 <li>If option <code>--preset=&lt;name or extended value hash&gt;</code>
 is specified (or <code>-Pxxxx</code>), this reads the <a
-href="#lprt">option preset</a> specified from the configuration file, or
-if the value is a <code>Hash</code>, it uses it as options values.</li>
+href="#option-preset">Option Preset</a>’ specified from the
+configuration file, or if the value is a <code>Hash</code>, it uses it
+as options values.</li>
 <li>Environment variables are evaluated</li>
 <li>Command line options are evaluated</li>
 </ul>
 <p>Parameters are evaluated in the order of command line.</p>
-<p>To avoid loading the default <a href="#lprt">option preset</a> for a
-plugin, use: <code>-N</code></p>
+<p>To avoid loading the default <a href="#option-preset">Option
+Preset</a>’ for a plugin, use: <code>-N</code></p>
 <p>On command line, words in parameter names are separated by a dash
 (<code>-</code>). In configuration file, separator is an underscore.
 E.g. <code>--xxx-yyy</code> on command line gives <code>xxx_yyy</code>
 in configuration file.</p>
 <p>The main plugin name is <code>config</code>, so it is possible to
-define a default <a href="#lprt">option preset</a> for the main plugin
-with:</p>
+define a default <a href="#option-preset">Option Preset</a>’ for the
+main plugin with:</p>
 <div class="sourceCode" id="cb138"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set cli_default interactive no</span></code></pre></div>
 <div class="sourceCode" id="cb139"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config cli_default</span></code></pre></div>
-<p>A <a href="#lprt">option preset</a> value can be removed with
-<code>unset</code>:</p>
+<p>A <a href="#option-preset">Option Preset</a>’ value can be removed
+with <code>unset</code>:</p>
 <div class="sourceCode" id="cb140"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset unset cli_default interactive</span></code></pre></div>
 <p>Example: Define options using command line:</p>
@@ -2044,7 +2046,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb142-1"><a href
 <h3 data-number="4.10.3" id="wizard"><span
 class="header-section-number">4.10.3</span> Wizard</h3>
 <p>The wizard is a command that asks the user for information and
-creates a <a href="#lprt">option preset</a> with the provided
+creates a <a href="#option-preset">Option Preset</a>’ with the provided
 information.</p>
 <p>It takes an optional argument: the URL of the application, and an
 <strong>option</strong>: <code>query</code> which allows limiting the
@@ -2064,7 +2066,7 @@ command line:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares repo browse / <span class="at">--url</span><span class="op">=</span>https://10.25.0.6 <span class="at">--username</span><span class="op">=</span>john <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
 <p>This can also be provisioned in a configuration file:</p>
 <ul>
-<li>Build <a href="#lprt">option preset</a></li>
+<li>Build <a href="#option-preset">Option Preset</a>’</li>
 </ul>
 <div class="sourceCode" id="cb145"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set shares06 url https://10.25.0.6</span>
@@ -2077,9 +2079,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb146-1"><a href
 <div class="sourceCode" id="cb147"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb147-1"><a href="#cb147-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update shares06 <span class="at">--url</span><span class="op">=</span>https://10.25.0.6 <span class="at">--username</span><span class="op">=</span>john <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
 <ul>
-<li>Define this <a href="#lprt">option preset</a> as the default <a
-href="#lprt">option preset</a> for the specified plugin
-(<code>shares</code>)</li>
+<li>Define this <a href="#option-preset">Option Preset</a>’ as the
+default <a href="#option-preset">Option Preset</a>’ for the specified
+plugin (<code>shares</code>)</li>
 </ul>
 <div class="sourceCode" id="cb148"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb148-1"><a href="#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default shares shares06</span></code></pre></div>
@@ -2095,8 +2097,7 @@ parameters</li>
 <div class="sourceCode" id="cb150"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares repo browse /</span></code></pre></div>
 <h2 data-number="4.11" id="secret-vault"><span
-class="header-section-number">4.11</span> <a id="vault"></a>Secret
-Vault</h2>
+class="header-section-number">4.11</span> Secret Vault</h2>
 <p>Secrets (e.g. passwords) are usually command options. They can be
 provided on command line, env vars, files etc.</p>
 <p>For security reasons, those secrets shall not be exposed in clear,
@@ -2163,8 +2164,7 @@ class="header-section-number">4.11.3</span> Vault: Operations</h3>
 <div class="sourceCode" id="cb156"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb156-1"><a href="#cb156-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config vault create mylabel @json:<span class="st">&#39;{&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;for this account&quot;}&#39;</span></span></code></pre></div>
 <h3 data-number="4.11.4" id="configuration-finder"><span
-class="header-section-number">4.11.4</span>
-<a id="config_finder"></a>Configuration Finder</h3>
+class="header-section-number">4.11.4</span> Configuration Finder</h3>
 <p>When a secret is needed by a sub command, the command can search for
 existing configurations in the configuration file.</p>
 <p>The lookup is done by comparing the service URL and username (or
@@ -2172,9 +2172,9 @@ access key).</p>
 <h3 data-number="4.11.5" id="securing-passwords-and-secrets"><span
 class="header-section-number">4.11.5</span> Securing passwords and
 secrets</h3>
-<p>A passwords can be saved in clear in a <a href="#lprt">option
-preset</a> together with other account information (URL, username,
-etc…). Example:</p>
+<p>A passwords can be saved in clear in a <a
+href="#option-preset">Option Preset</a>’ together with other account
+information (URL, username, etc…). Example:</p>
 <div class="sourceCode" id="cb157"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb157-1"><a href="#cb157-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update myconf <span class="at">--url</span><span class="op">=</span>... <span class="at">--username</span><span class="op">=</span>... <span class="at">--password</span><span class="op">=</span>...</span></code></pre></div>
 <p>For a more secure storage one can do:</p>
@@ -2187,8 +2187,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb159-1"><a href
 <code>@vault:</code> so that the extended value is not evaluated.</p>
 </blockquote>
 <h2 data-number="4.12" id="private-key"><span
-class="header-section-number">4.12</span>
-<a id="private_key"></a>Private Key</h2>
+class="header-section-number">4.12</span> Private Key</h2>
 <p>Some applications allow the user to be authenticated using a private
 key (Server, AoC, Faspex5, …). It consists in using a pair of keys: the
 private key and its associated public key. The same key can be used for
@@ -2254,8 +2253,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb166-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-des3</span> <span class="at">-in</span> <span class="va">${PRIVKEYFILE}</span> <span class="at">-out</span> <span class="va">${PRIVKEYFILE}</span>.with_des</span>
 <span id="cb167-2"><a href="#cb167-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${PRIVKEYFILE}</span>.with_des <span class="va">${PRIVKEYFILE}</span></span></code></pre></div>
 <h2 data-number="4.13" id="ssl-ca-certificate-bundle"><span
-class="header-section-number">4.13</span> <a id="certificates"></a>SSL
-CA certificate bundle</h2>
+class="header-section-number">4.13</span> SSL CA certificate bundle</h2>
 <p>To display trusted certificate store locations:</p>
 <div class="sourceCode" id="cb168"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb168-1"><a href="#cb168-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--fields</span><span class="op">=</span>cert_stores</span></code></pre></div>
@@ -2352,9 +2350,8 @@ It’s also available when using the <code>show</code> command of
 </table>
 <h2 data-number="4.15"
 id="graphical-interactions-browser-and-text-editor"><span
-class="header-section-number">4.15</span>
-<a id="graphical"></a>Graphical Interactions: Browser and Text
-Editor</h2>
+class="header-section-number">4.15</span> Graphical Interactions:
+Browser and Text Editor</h2>
 <p>Some actions may require the use of a graphical tool:</p>
 <ul>
 <li>A browser for Aspera on Cloud authentication (web auth method)</li>
@@ -2391,7 +2388,7 @@ logs.</p>
 <p><strong>Note:</strong> When using the <code>direct</code> agent
 (<code>ascp</code>), additional transfer logs can be activated using
 <code>ascp</code> options and <code>ascp_args</code>, see <a
-href="#agt_direct"><code>direct</code></a>.</p>
+href="#agent-direct"><code>direct</code></a>.</p>
 </blockquote>
 <p>Examples:</p>
 <ul>
@@ -2417,8 +2414,7 @@ applications.</p>
 <code>trace2</code>: <code>--log-level=trace2</code>. It will display
 the exact content of HTTP requests and responses.</p>
 <h2 data-number="4.18" id="http-socket-parameters"><span
-class="header-section-number">4.18</span> <a id="http_options"></a>HTTP
-socket parameters</h2>
+class="header-section-number">4.18</span> HTTP socket parameters</h2>
 <p>To ignore SSL certificate for <strong>any</strong> address/port, use
 option: <code>insecure</code>, i.e. <code>--insecure=yes</code>. To
 ignore SSL certificate for a list of specific address/port, use option
@@ -2537,13 +2533,13 @@ for legacy HTTP fallback, use <code>ascp</code> native option
 <code>-x</code> and <code>ascp_args</code>:
 <code>--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'</code>.
 Alternatively, set the <a
-href="#transferspec"><em>transfer-spec</em></a> parameter:
+href="#transfer-specification"><em>transfer-spec</em></a> parameter:
 <code>EX_http_proxy_url</code>.</p>
 <h3 data-number="4.19.3" id="fasp-proxy-forward-for-transfers"><span
 class="header-section-number">4.19.3</span> FASP proxy (forward) for
 transfers</h3>
 <p>To specify a FASP proxy (forward), set the <a
-href="#transferspec"><em>transfer-spec</em></a> parameter:
+href="#transfer-specification"><em>transfer-spec</em></a> parameter:
 <code>proxy</code> (only supported with the <code>direct</code>
 agent).</p>
 <p>For example, for an Aspera forward proxy not encrypted (HTTP) without
@@ -2554,8 +2550,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb188-1"><a href
 <div class="sourceCode" id="cb189"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--proxy&quot;,&quot;dnat://proxy.example.org:9091&quot;]}&#39;</span></span></code></pre></div>
 <h2 data-number="4.20" id="fasp-configuration"><span
-class="header-section-number">4.20</span> <a id="client"></a>FASP
-configuration</h2>
+class="header-section-number">4.20</span> FASP configuration</h2>
 <p>The <code>config</code> plugin also allows specification for the use
 of a local FASP <strong>client</strong>. It provides the following
 commands for <code>ascp</code> subcommand:</p>
@@ -2584,7 +2579,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb192-1"><a href
 id="selection-of-ascp-location-for-direct-agent"><span
 class="header-section-number">4.20.2</span> Selection of
 <code>ascp</code> location for <a
-href="#agt_direct"><code>direct</code></a> agent</h3>
+href="#agent-direct"><code>direct</code></a> agent</h3>
 <p>By default, <code>ascli</code> uses any found local product with
 <code>ascp</code>, including Transfer SDK.</p>
 <p>To temporarily use an alternate <code>ascp</code> path use option
@@ -2602,8 +2597,9 @@ Saved to default global preset global_common_defaults</code></pre>
 <pre class="output"><code>ascp version: 4.0.0.182279
 Updated: global_common_defaults: ascp_path &lt;- C:\Users\admin\.aspera\ascli\sdk\ascp.exe
 Saved to default global preset global_common_defaults</code></pre>
-<p>If the path has spaces, read section: <a href="#parsing">Shell and
-Command line parsing</a>.</p>
+<p>If the path has spaces, read section: <a
+href="#command-line-parsing-special-characters">Shell and Command line
+parsing</a>.</p>
 <h3 data-number="4.20.3"
 id="list-locally-installed-aspera-transfer-products"><span
 class="header-section-number">4.20.3</span> List locally installed
@@ -2622,8 +2618,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb198-1"><a href
 <h3 data-number="4.20.4"
 id="selection-of-local-client-for-ascp-for-direct-agent"><span
 class="header-section-number">4.20.4</span> Selection of local client
-for <code>ascp</code> for <a href="#agt_direct"><code>direct</code></a>
-agent</h3>
+for <code>ascp</code> for <a
+href="#agent-direct"><code>direct</code></a> agent</h3>
 <p>If no <code>ascp</code> is selected, this is equivalent to using
 option: <code>--use-product=FIRST</code>.</p>
 <p>Using the option <code>use_product</code> finds the <code>ascp</code>
@@ -2663,28 +2659,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb205-1"><a href
 <pre class="output"><code>Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg</code></pre>
 <h2 data-number="4.21" id="transfer-clients-agents"><span
-class="header-section-number">4.21</span> <a id="agents"></a>Transfer
-Clients: Agents</h2>
+class="header-section-number">4.21</span> Transfer Clients: Agents</h2>
 <p>Some of the actions on Aspera Applications lead to file transfers
 (upload and download) using the FASP protocol (<code>ascp</code>).</p>
 <p>When a transfer needs to be started, a <a
-href="#transferspec"><em>transfer-spec</em></a> has been internally
-prepared. This <a href="#transferspec"><em>transfer-spec</em></a> will
-be executed by a transfer client, here called <strong>Transfer
+href="#transfer-specification"><em>transfer-spec</em></a> has been
+internally prepared. This <a
+href="#transfer-specification"><em>transfer-spec</em></a> will be
+executed by a transfer client, here called <strong>Transfer
 Agent</strong>.</p>
 <p>There are currently 3 agents, set with option
 <code>transfer</code>:</p>
 <ul>
-<li><a href="#agt_direct"><code>direct</code></a> : a local execution of
-<code>ascp</code></li>
-<li><a href="#agt_connect"><code>connect</code></a> : use of a local
-Connect Client</li>
-<li><a href="#agt_node"><code>node</code></a> : use of an Aspera
+<li><a href="#agent-direct"><code>direct</code></a> : a local execution
+of <code>ascp</code></li>
+<li><a href="#agent-connect-client"><code>connect</code></a> : use of a
+local Connect Client</li>
+<li><a href="#agent-node-api"><code>node</code></a> : use of an Aspera
 Transfer Node (potentially <strong>remote</strong>).</li>
-<li><a href="#agt_httpgw"><code>httpgw</code></a> : use of an Aspera
-HTTP Gateway</li>
-<li><a href="#agt_trsdk"><code>trsdk</code></a> : use of Aspera Transfer
-SDK</li>
+<li><a href="#agent-http-gateway"><code>httpgw</code></a> : use of an
+Aspera HTTP Gateway</li>
+<li><a href="#agent-transfer-sdk"><code>trsdk</code></a> : use of Aspera
+Transfer SDK</li>
 </ul>
 <blockquote>
 <p><strong>Note:</strong> All transfer operations are seen from the
@@ -2693,21 +2689,20 @@ point of view of the agent. For example, a node agent executing an
 effectively push files to the related server from the agent node.</p>
 </blockquote>
 <p><code>ascli</code> standardizes on the use of a <a
-href="#transferspec"><em>transfer-spec</em></a> instead of
+href="#transfer-specification"><em>transfer-spec</em></a> instead of
 <strong>native</strong> <code>ascp</code> options to provide parameters
 for a transfer session, as a common method for those three Transfer
 Agents.</p>
 <p>Specific options for agents are provided with option
 <code>transfer_info</code>, cumulatively.</p>
-<h3 data-number="4.21.1" id="direct"><span
-class="header-section-number">4.21.1</span>
-<a id="agt_direct"></a>Direct</h3>
+<h3 data-number="4.21.1" id="agent-direct"><span
+class="header-section-number">4.21.1</span> Agent: Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
 <code>ascp</code>. This is the default agent for <code>ascli</code>
 (option <code>--transfer=direct</code>). <code>ascli</code> will search
 locally installed Aspera products, including SDK, and use
 <code>ascp</code> from that component. Refer to section <a
-href="#client">FASP</a>.</p>
+href="#fasp-configuration">FASP</a>.</p>
 <p>The <code>transfer_info</code> option accepts the following optional
 parameters to control multi-session, Web Socket Session and Resume
 policy:</p>
@@ -2819,19 +2814,20 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb210-1"><a href
 <code>--transfer-info=@json:'{"ascp_args":["-L","/path/to/folder"]}'</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> When transfer agent <a
-href="#agt_direct"><code>direct</code></a> is used, the list of files to
-transfer is provided to <code>ascp</code> using either
+href="#agent-direct"><code>direct</code></a> is used, the list of files
+to transfer is provided to <code>ascp</code> using either
 <code>--file-list</code> or <code>--file-pair-list</code> and a file
 list (or pair) file generated in a temporary folder. (unless
 <code>--file-list</code> or <code>--file-pair-list</code> is provided
 using <code>transfer_info</code> parameter <code>ascp_args</code>).</p>
 </blockquote>
 <p>In addition to standard methods described in section <a
-href="#file_list">File List</a>, it is possible to specify the list of
-file using those additional methods:</p>
+href="#list-of-files-for-transfers">File List</a>, it is possible to
+specify the list of file using those additional methods:</p>
 <ul>
-<li>Using the pseudo <a href="#transferspec"><em>transfer-spec</em></a>
-parameter <code>EX_file_list</code></li>
+<li>Using the pseudo <a
+href="#transfer-specification"><em>transfer-spec</em></a> parameter
+<code>EX_file_list</code></li>
 </ul>
 <div class="sourceCode" id="cb211"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@ts</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;EX_file_list&quot;:&quot;file_list.txt&quot;}&#39;</span></span></code></pre></div>
@@ -2851,7 +2847,7 @@ the file is list read and parsed, and a new file list is created in a
 temporary folder.</p>
 <p><strong>Note:</strong> Those methods have limitations: they apply
 <strong>only</strong> to the <a
-href="#agt_direct"><code>direct</code></a> transfer agent (i.e. local
+href="#agent-direct"><code>direct</code></a> transfer agent (i.e. local
 <code>ascp</code>) and not for Aspera on Cloud.</p>
 </blockquote>
 <p>This agent supports a local configuration file:
@@ -2911,21 +2907,19 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb214-1"><a href="
 <p>It is also possible to set a schedule with different time and days,
 for example for the value of <code>schedule</code>:</p>
 <pre class="text"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
-<h3 data-number="4.21.2" id="ibm-aspera-connect-client-gui"><span
-class="header-section-number">4.21.2</span> <a id="agt_connect"></a>IBM
-Aspera Connect Client GUI</h3>
+<h3 data-number="4.21.2" id="agent-connect-client"><span
+class="header-section-number">4.21.2</span> Agent: Connect Client</h3>
 <p>By specifying option: <code>--transfer=connect</code>,
 <code>ascli</code> will start transfers using the locally installed
-Aspera Connect Client. There are no option for
+<strong>IBM Aspera Connect Client</strong>. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.21.3"
-id="aspera-node-api-node-to-node-transfers"><span
-class="header-section-number">4.21.3</span> <a id="agt_node"></a>Aspera
-Node API : Node to node transfers</h3>
+<h3 data-number="4.21.3" id="agent-node-api"><span
+class="header-section-number">4.21.3</span> Agent: Node API</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
-the Node API, either on a local or remote node. Parameters provided in
-option <code>transfer_info</code> are:</p>
+the Node API, either on a local or remote node. This is especially
+useful for direct node-to-node transfers. Parameters provided in option
+<code>transfer_info</code> are:</p>
 <table>
 <thead>
 <tr class="header">
@@ -2958,7 +2952,7 @@ option <code>transfer_info</code> are:</p>
 </tbody>
 </table>
 <p>Like any other option, <code>transfer_info</code> can get its value
-from a pre-configured <a href="#lprt">option preset</a> :</p>
+from a pre-configured <a href="#option-preset">Option Preset</a>’ :</p>
 <div class="sourceCode" id="cb216"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb216-1"><a href="#cb216-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@preset:_name_here_</span></span></code></pre></div>
 <p>or be specified using the extended value syntax :</p>
@@ -2972,9 +2966,8 @@ then the <code>username</code> is expected to be an access key and the
 parameter <code>root_id</code> is mandatory and specifies the root file
 id on the node. It can be either the access key’s root file id, or any
 authorized file id underneath it.</p>
-<h3 data-number="4.21.4" id="http-gateway"><span
-class="header-section-number">4.21.4</span> <a id="agt_httpgw"></a>HTTP
-Gateway</h3>
+<h3 data-number="4.21.4" id="agent-http-gateway"><span
+class="header-section-number">4.21.4</span> Agent: HTTP Gateway</h3>
 <p>If it possible to send using a HTTP gateway, in case use of FASP is
 not allowed.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
@@ -3024,9 +3017,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href
 <p><strong>Note:</strong> The gateway only supports transfers authorized
 with a token.</p>
 </blockquote>
-<h3 data-number="4.21.5" id="transfer-sdk"><span
-class="header-section-number">4.21.5</span>
-<a id="agt_trsdk"></a>Transfer SDK</h3>
+<h3 data-number="4.21.5" id="agent-transfer-sdk"><span
+class="header-section-number">4.21.5</span> Agent: Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
 (<code>asperatransferd</code>). Set option <code>transfer</code> to
 <code>trsdk</code>.</p>
@@ -3092,11 +3084,10 @@ change the signature of <code>gettimeofday</code> to
 </ul>
 <!-- spellchecker: enable -->
 <h2 data-number="4.22" id="transfer-specification"><span
-class="header-section-number">4.22</span>
-<a id="transferspec"></a>Transfer Specification</h2>
+class="header-section-number">4.22</span> Transfer Specification</h2>
 <p>Some commands lead to file transfer (upload/download). All parameters
 necessary for this transfer are described in a <a
-href="#transferspec"><em>transfer-spec</em></a> (Transfer
+href="#transfer-specification"><em>transfer-spec</em></a> (Transfer
 Specification), such as:</p>
 <ul>
 <li>Server address</li>
@@ -3106,14 +3097,15 @@ Specification), such as:</p>
 <li>Etc…</li>
 </ul>
 <p><code>ascli</code> builds the <a
-href="#transferspec"><em>transfer-spec</em></a> internally as a
-<code>Hash</code>. It is not necessary to provide additional parameters
-on the command line for this transfer.</p>
+href="#transfer-specification"><em>transfer-spec</em></a> internally as
+a <code>Hash</code>. It is not necessary to provide additional
+parameters on the command line for this transfer.</p>
 <p>It is possible to modify or add any of the supported <a
-href="#transferspec"><em>transfer-spec</em></a> parameter using the
-<code>ts</code> option. The <code>ts</code> option accepts a <a
-href="#extended"><code>Hash</code> Extended Value</a> containing one or
-several <a href="#transferspec"><em>transfer-spec</em></a> parameters.
+href="#transfer-specification"><em>transfer-spec</em></a> parameter
+using the <code>ts</code> option. The <code>ts</code> option accepts a
+<a href="#extended-value-syntax"><code>Hash</code> Extended Value</a>
+containing one or several <a
+href="#transfer-specification"><em>transfer-spec</em></a> parameters.
 Multiple <code>ts</code> options on command line are cumulative, and the
 <code>Hash</code> value is deeply merged. To remove a (deep) key from
 transfer spec, set the value to <code>null</code>.</p>
@@ -3124,24 +3116,26 @@ with command: <code>config ascp info --flat-hash=no</code> under field
 </blockquote>
 <p>It is possible to specify <code>ascp</code> options when the
 <code>transfer</code> option is set to <a
-href="#agt_direct"><code>direct</code></a> using
+href="#agent-direct"><code>direct</code></a> using
 <code>transfer_info</code> option parameter: <code>ascp_args</code>.
 Example:
 <code>--transfer-info=@json:'{"ascp_args":["-l","100m"]}'</code>. This
 is especially useful for <code>ascp</code> command line parameters not
 supported in the transfer spec.</p>
-<p>The use of a <a href="#transferspec"><em>transfer-spec</em></a>
-instead of <code>ascp</code> parameters has the advantage of:</p>
+<p>The use of a <a
+href="#transfer-specification"><em>transfer-spec</em></a> instead of
+<code>ascp</code> parameters has the advantage of:</p>
 <ul>
-<li>Common to all <a href="#agents">Transfer Agent</a></li>
+<li>Common to all <a href="#transfer-clients-agents">Transfer
+Agent</a></li>
 <li>Not dependent on command line limitations (special characters…)</li>
 </ul>
 <h2 data-number="4.23" id="transfer-parameters"><span
-class="header-section-number">4.23</span>
-<a id="transferparams"></a>Transfer Parameters</h2>
-<p>All standard <a href="#transferspec"><em>transfer-spec</em></a>
-parameters can be specified. <a
-href="#transferspec"><em>transfer-spec</em></a> can also be
+class="header-section-number">4.23</span> Transfer Parameters</h2>
+<p>All standard <a
+href="#transfer-specification"><em>transfer-spec</em></a> parameters can
+be specified. <a
+href="#transfer-specification"><em>transfer-spec</em></a> can also be
 saved/overridden in the configuration file.</p>
 <p>References:</p>
 <ul>
@@ -3172,7 +3166,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb220-1"><a href
 <p><code>ascp</code> argument or environment variable is provided in
 description.</p>
 <p>Fields with EX_ prefix are extensions to transfer agent <a
-href="#agt_direct"><code>direct</code></a>. (only in
+href="#agent-direct"><code>direct</code></a>. (only in
 <code>ascli</code>).</p>
 <table>
 <colgroup>
@@ -4260,14 +4254,14 @@ to:</p>
 <li><code>/</code> for uploads</li>
 </ul>
 <p>It is specified by the <a
-href="#transferspec"><em>transfer-spec</em></a> parameter
+href="#transfer-specification"><em>transfer-spec</em></a> parameter
 <code>destination_root</code>. As such, it can be modified with option:
 <code>--ts=@json:'{"destination_root":"&lt;path&gt;"}'</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code> .</p>
 <h3 data-number="4.23.2" id="list-of-files-for-transfers"><span
-class="header-section-number">4.23.2</span> <a id="file_list"></a>List
-of files for transfers</h3>
+class="header-section-number">4.23.2</span> List of files for
+transfers</h3>
 <p>When uploading, downloading or sending files, the user must specify
 the list of files to transfer.</p>
 <p>By default the list of files to transfer is simply provided on the
@@ -4279,11 +4273,11 @@ source/destination list (see below) depending on value of option
 <code>src_type</code> (default: <code>list</code>).</p>
 <p>In <code>ascli</code>, all transfer parameters, including file list,
 are provided to the transfer agent in a <a
-href="#transferspec"><em>transfer-spec</em></a> so that execution of a
-transfer is independent of the transfer agent (direct, connect, node,
-transfer sdk…). So, eventually, the list of files to transfer is
-provided to the transfer agent using the <a
-href="#transferspec"><em>transfer-spec</em></a> field:
+href="#transfer-specification"><em>transfer-spec</em></a> so that
+execution of a transfer is independent of the transfer agent (direct,
+connect, node, transfer sdk…). So, eventually, the list of files to
+transfer is provided to the transfer agent using the <a
+href="#transfer-specification"><em>transfer-spec</em></a> field:
 <code>"paths"</code> which is a list (array) of pairs of
 <code>"source"</code> (mandatory) and <code>"destination"</code>
 (optional). The <code>sources</code> and <code>src_type</code> options
@@ -4301,8 +4295,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb221-1"><a href
 <p>This is the same as (with default values):</p>
 <div class="sourceCode" id="cb222"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="at">--sources</span><span class="op">=</span>@args <span class="at">--src-type</span><span class="op">=</span>list ~/mysample.file secondfile</span></code></pre></div></li>
-<li><p>An <a href="#extended">Extended Value</a> with type <strong>Array
-of String</strong></p>
+<li><p>An <a href="#extended-value-syntax">Extended Value</a> with type
+<strong>Array of String</strong></p>
 <blockquote>
 <p><strong>Note:</strong> extended values can be tested with the command
 <code>config echo</code></p>
@@ -4534,9 +4528,8 @@ the list of files in the <code>paths</code> field of transfer spec with
 both <code>source</code> and <code>destination</code> for each
 file.</p></li>
 </ul>
-<h3 data-number="4.23.4" id="support-of-multi-session"><span
-class="header-section-number">4.23.4</span>
-<a id="multisession"></a>Support of multi-session</h3>
+<h3 data-number="4.23.4" id="multi-session-transfer"><span
+class="header-section-number">4.23.4</span> Multi-session transfer</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
 <code>direct</code> and <code>node</code> agents, not yet on
@@ -4613,8 +4606,7 @@ a terminal).</p>
 <p>To display the native progress bar of <code>ascp</code>, use
 <code>--progress-bar=no --transfer-info=@json:'{"quiet":false}'</code>.</p>
 <h2 data-number="4.25" id="scheduler"><span
-class="header-section-number">4.25</span>
-<a id="scheduler"></a>Scheduler</h2>
+class="header-section-number">4.25</span> Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
@@ -4660,8 +4652,8 @@ instead of configuration file to allow execution on command line with
 output on command line.</p>
 </blockquote>
 <h2 data-number="4.26" id="locking-for-exclusive-execution"><span
-class="header-section-number">4.26</span> <a id="locking"></a>Locking
-for exclusive execution</h2>
+class="header-section-number">4.26</span> Locking for exclusive
+execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
 <p>When <code>ascli</code> is executed automatically on a schedule
@@ -4734,8 +4726,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb244-1"><a href
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
 <h2 data-number="4.28" id="faux-for-testing"><span
-class="header-section-number">4.28</span>
-<a id="faux_testing"></a><code>faux:</code> for testing</h2>
+class="header-section-number">4.28</span> <code>faux:</code> for
+testing</h2>
 <p>This is an extract of the man page of <code>ascp</code>. This feature
 is a feature of <code>ascp</code>, not <code>ascli</code>.</p>
 <p>This adapter can be used to simulate a file or a directory.</p>
@@ -4873,7 +4865,7 @@ with the basename of each file being <code>testfile</code> to
 <div class="sourceCode" id="cb249"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb249-1"><a href="#cb249-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1m&amp;size=0&amp;inc=2&amp;seq=sequential&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
 <h2 data-number="4.29" id="usage"><span
-class="header-section-number">4.29</span> <a id="usage"></a>Usage</h2>
+class="header-section-number">4.29</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.17.0.pre)
@@ -5169,9 +5161,9 @@ resources</h2>
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
 case, the operation expects an <code>Array</code> of <code>Hash</code>
 instead of a simple <code>Hash</code> using the <a
-href="#extended">Extended Value Syntax</a>. This option is available
-only for some of the resources: if you need it: try and see if the
-entities you try to create or delete support this option.</p>
+href="#extended-value-syntax">Extended Value Syntax</a>. This option is
+available only for some of the resources: if you need it: try and see if
+the entities you try to create or delete support this option.</p>
 <h2 data-number="4.31" id="plugins"><span
 class="header-section-number">4.31</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
@@ -5208,15 +5200,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb254-1"><a href
 <div class="sourceCode" id="cb256"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb256-1"><a href="#cb256-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--plugin-folder</span><span class="op">=</span>. foo</span></code></pre></div>
 <h1 data-number="5" id="plugin-aoc-ibm-aspera-on-cloud"><span
-class="header-section-number">5</span> <a id="aoc"></a>Plugin:
-<code>aoc</code>: IBM Aspera on Cloud</h1>
+class="header-section-number">5</span> Plugin: <code>aoc</code>: IBM
+Aspera on Cloud</h1>
 <p>Aspera on Cloud API requires the use of Oauth v2 mechanism for
 authentication (HTTP Basic authentication is not supported).</p>
 <p>It is recommended to use the wizard to set it up, although manual
 configuration is also possible.</p>
 <h2 data-number="5.1" id="configuration-using-wizard"><span
-class="header-section-number">5.1</span>
-<a id="aocwizard"></a>Configuration: Using Wizard</h2>
+class="header-section-number">5.1</span> Configuration: Using
+Wizard</h2>
 <p><code>ascli</code> provides a configuration wizard.</p>
 <p>The wizard guides you through the steps to create a new configuration
 preset for Aspera on Cloud.</p>
@@ -5257,8 +5249,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb258-1"><a href
 <code>https://_your_instance_.ibmaspera.com</code>.</p>
 </blockquote>
 <h2 data-number="5.2" id="configuration-using-manual-setup"><span
-class="header-section-number">5.2</span>
-<a id="aocmanual"></a>Configuration: Using manual setup</h2>
+class="header-section-number">5.2</span> Configuration: Using manual
+setup</h2>
 <blockquote>
 <p><strong>Note:</strong> If you used the wizard (recommended): skip
 this section.</p>
@@ -5277,20 +5269,23 @@ links)</li>
 <p>The authentication method is controlled by option
 <code>auth</code>.</p>
 <p>For a <strong>quick start</strong>, follow the mandatory and
-sufficient section: <a href="#clientreg">API Client Registration</a>
-(auth=web) as well as <a href="#aocpreset">[option preset](#lprt) for
-Aspera on Cloud</a>.</p>
+sufficient section: <a href="#api-client-registration">API Client
+Registration</a> (auth=web) as well as <a
+href="#configuration-for-aspera-on-cloud">[Option
+Preset](#option-preset)’ for Aspera on Cloud</a>.</p>
 <p>For a more convenient, browser-less, experience follow the <a
-href="#jwt">JWT</a> section (auth=jwt) in addition to Client
-Registration.</p>
+href="#authentication-with-private-key">JWT</a> section (auth=jwt) in
+addition to Client Registration.</p>
 <p>In Oauth, a <strong>Bearer</strong> token is generated to
 authenticate REST calls. Bearer tokens are valid for a period of time
 defined (by the AoC app, configurable by admin) at its creation.
 <code>ascli</code> saves generated tokens in its configuration folder,
 tries to re-use them or regenerates them when they have expired.</p>
-<h3 data-number="5.2.2" id="optional-api-client-registration"><span
-class="header-section-number">5.2.2</span>
-<a id="clientreg"></a>Optional: API Client Registration</h3>
+<h3 data-number="5.2.2" id="api-client-registration"><span
+class="header-section-number">5.2.2</span> API Client Registration</h3>
+<blockquote>
+<p><strong>Optional</strong></p>
+</blockquote>
 <p>If you use the built-in client_id and client_secret, skip this and do
 not set them in next section.</p>
 <p>Else you can use a specific OAuth API client_id, the first step is to
@@ -5327,13 +5322,13 @@ is the default port.</p>
 <p>Once the client is registered, a <strong>Client ID</strong> and
 <strong>Secret</strong> are created, these values will be used in the
 next step.</p>
-<h3 data-number="5.2.3" id="option-preset-for-aspera-on-cloud"><span
-class="header-section-number">5.2.3</span> <a id="aocpreset"></a><a
-href="#lprt">option preset</a> for Aspera on Cloud</h3>
+<h3 data-number="5.2.3" id="configuration-for-aspera-on-cloud"><span
+class="header-section-number">5.2.3</span> Configuration for Aspera on
+Cloud</h3>
 <p>If you did not use the wizard, you can also manually create a <a
-href="#lprt">option preset</a> for <code>ascli</code> in its
+href="#option-preset">Option Preset</a>’ for <code>ascli</code> in its
 configuration file.</p>
-<p>Lets create a <a href="#lprt">option preset</a> called:
+<p>Lets create a <a href="#option-preset">Option Preset</a>’ called:
 <code>my_aoc_org</code> using <code>ask</code> for interactive input
 (client info from previous step):</p>
 <div class="sourceCode" id="cb259"><pre
@@ -5349,7 +5344,7 @@ URL.</p>
 </blockquote>
 <p>(This can also be done in one line using the command
 <code>config preset update my_aoc_org --url=...</code>)</p>
-<p>Define this <a href="#lprt">option preset</a> as default
+<p>Define this <a href="#option-preset">Option Preset</a>’ as default
 configuration for the <code>aspera</code> plugin:</p>
 <div class="sourceCode" id="cb260"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb260-1"><a href="#cb260-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default aoc my_aoc_org</span></code></pre></div>
@@ -5358,14 +5353,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb260-1"><a href
 <code>web</code> and default <code>redirect_uri</code> is
 <code>http://localhost:12345</code>. Leave those default values.</p>
 </blockquote>
-<h3 data-number="5.2.4"
-id="activation-of-json-web-token-jwt-for-direct-authentication"><span
-class="header-section-number">5.2.4</span> <a id="jwt"></a>Activation of
-JSON Web Token (JWT) for direct authentication</h3>
+<h3 data-number="5.2.4" id="authentication-with-private-key"><span
+class="header-section-number">5.2.4</span> Authentication with private
+key</h3>
 <p>For a Browser-less, Private Key-based authentication, use the
 following steps.</p>
-<p>In order to use JWT for Aspera on Cloud API client authentication, a
-<a href="#private_key">private/public key pair</a> must be used.</p>
+<p>In order to use JSON Web Token (JWT) for Aspera on Cloud API client
+authentication, a <a href="#private-key">private/public key pair</a>
+must be used.</p>
 <h4 data-number="5.2.4.1" id="api-client-jwt-activation"><span
 class="header-section-number">5.2.4.1</span> API Client JWT
 activation</h4>
@@ -5432,10 +5427,11 @@ class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb267-1"><a href
 can be used to verify modifications.</p>
 </blockquote>
 <h3 data-number="5.2.6" id="option-preset-modification-for-jwt"><span
-class="header-section-number">5.2.6</span> <a href="#lprt">option
-preset</a> modification for JWT</h3>
+class="header-section-number">5.2.6</span> <a
+href="#option-preset">Option Preset</a>’ modification for JWT</h3>
 <p>To activate default use of JWT authentication for <code>ascli</code>
-using the <a href="#lprt">option preset</a>, do the following:</p>
+using the <a href="#option-preset">Option Preset</a>’, do the
+following:</p>
 <ul>
 <li>Change auth method to JWT</li>
 <li>Provide location of private key</li>
@@ -5469,11 +5465,10 @@ shared folders (using private links). In that case, it is possible to
 list those shared folder by using a value for option
 <code>workspace</code> equal to <code>@none:</code> or
 <code>@json:null</code> or <code>@ruby:nil</code>.</p>
-<h3 data-number="5.2.8" id="first-use-1"><span
-class="header-section-number">5.2.8</span> <a id="aocfirst"></a>First
-Use</h3>
-<p>Once client has been registered and <a href="#lprt">option preset</a>
-created: <code>ascli</code> can be used:</p>
+<h3 data-number="5.2.8" id="aoc-first-use"><span
+class="header-section-number">5.2.8</span> AoC: First Use</h3>
+<p>Once client has been registered and <a href="#option-preset">Option
+Preset</a>’ created: <code>ascli</code> can be used:</p>
 <div class="sourceCode" id="cb270"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb270-1"><a href="#cb270-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files br /</span></code></pre></div>
 <pre class="output"><code>Current Workspace: Default Workspace (default)
@@ -5507,9 +5502,10 @@ class="header-section-number">5.4.1</span> Listing resources</h3>
 entities of given type. It uses paging and multiple requests if
 necessary.</p>
 <p>The option <code>query</code> can be optionally used. It expects a
-<code>Hash</code> using <a href="#extended">Extended Value Syntax</a>,
-generally provided using: <code>--query=@json:{...}</code>. Values are
-directly sent to the API call and used as a filter on server side.</p>
+<code>Hash</code> using <a href="#extended-value-syntax">Extended Value
+Syntax</a>, generally provided using: <code>--query=@json:{...}</code>.
+Values are directly sent to the API call and used as a filter on server
+side.</p>
 <p>The following parameters are supported:</p>
 <ul>
 <li><code>q</code> : a filter on name of resource (case insensitive,
@@ -5560,11 +5556,10 @@ browser in developer mode with the web UI.</p>
 <blockquote>
 <p><strong>Note:</strong> The option <code>select</code> can also be
 used to further refine selection, refer to <a
-href="#option_select">section earlier</a>.</p>
+href="#option-select">section earlier</a>.</p>
 </blockquote>
 <h3 data-number="5.4.2" id="selecting-a-resource"><span
-class="header-section-number">5.4.2</span>
-<a id="res_select"></a>Selecting a resource</h3>
+class="header-section-number">5.4.2</span> Selecting a resource</h3>
 <p>Resources are identified by a unique <code>id</code>, as well as a
 unique <code>name</code> (case insensitive).</p>
 <p>To execute an action on a specific resource, select it using one of
@@ -5581,8 +5576,7 @@ those methods:</p>
 <code>aoc admin res node show --name=abc</code></li>
 </ul>
 <h3 data-number="5.4.3" id="creating-a-resource"><span
-class="header-section-number">5.4.3</span>
-<a id="res_create"></a>Creating a resource</h3>
+class="header-section-number">5.4.3</span> Creating a resource</h3>
 <p>New resources (users, groups, workspaces, etc..) can be created using
 a command like:</p>
 <div class="sourceCode" id="cb278"><pre
@@ -5627,9 +5621,10 @@ required. The secret is provided using the <code>secret</code> option.
 For example in a command like:</p>
 <div class="sourceCode" id="cb283"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin res node 123 <span class="at">--secret</span><span class="op">=</span><span class="st">&quot;my_secret_here&quot;</span> v3 info</span></code></pre></div>
-<p>It is also possible to store secrets in the <a href="#vault">secret
-vault</a> and then automatically find the related secret using the <a
-href="#config_finder">config finder</a>.</p>
+<p>It is also possible to store secrets in the <a
+href="#secret-vault">secret vault</a> and then automatically find the
+related secret using the <a href="#configuration-finder">config
+finder</a>.</p>
 <h3 data-number="5.4.5" id="activity"><span
 class="header-section-number">5.4.5</span> Activity</h3>
 <p>The activity app can be queried with:</p>
@@ -5682,9 +5677,9 @@ The web UI enforces that. The option <code>default_ports</code>
 <code>aspera.conf</code> on the server.</p>
 <h3 data-number="5.4.7" id="using-ats"><span
 class="header-section-number">5.4.7</span> Using ATS</h3>
-<p>Refer to section <strong>Examples</strong> of <a href="#ats">ATS</a>
-and substitute command <code>ats</code> with
-<code>aoc admin ats</code>.</p>
+<p>Refer to section <strong>Examples</strong> of <a
+href="#plugin-ats-ibm-aspera-transfer-service">ATS</a> and substitute
+command <code>ats</code> with <code>aoc admin ats</code>.</p>
 <h3 data-number="5.4.8" id="files-with-type-link"><span
 class="header-section-number">5.4.8</span> Files with type
 <code>link</code></h3>
@@ -5742,9 +5737,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb293-1"><a href
 +-------+---------+</code></pre>
 <h3 data-number="5.4.11"
 id="example-find-deactivated-users-since-more-than-2-years"><span
-class="header-section-number">5.4.11</span> Example:
-<a id="deactuser"></a>Find deactivated users since more than 2
-years</h3>
+class="header-section-number">5.4.11</span> Example: Find deactivated
+users since more than 2 years</h3>
 <div class="sourceCode" id="cb295"><pre
 class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb295-1"><a href="#cb295-1" aria-hidden="true" tabindex="-1"></a>ascli aoc admin res user list <span class="kw">--</span>query<span class="kw">=</span><span class="ot">@ruby</span>:<span class="vs">&#39;{&quot;deactivated&quot;=&gt;true,&quot;q&quot;=&gt;&quot;last_login_at:&lt;#{(DateTime.now.to_time.utc-2*365*86400).iso8601}&quot;}&#39;</span></span></code></pre></div>
 <p>To delete them use the same method as before</p>
@@ -5809,9 +5803,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb303-1"><a href
 class="sourceCode json"><code class="sourceCode json"><span id="cb305-1"><a href="#cb305-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;workspace_membership_through&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;include_indirect&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">}</span></span></code></pre></div>
 <h3 data-number="5.4.17"
 id="example-add-all-members-of-a-workspace-to-another-workspace"><span
-class="header-section-number">5.4.17</span> Example:
-<a id="aoc_sample_member"></a>add all members of a workspace to another
-workspace</h3>
+class="header-section-number">5.4.17</span> Example: Add all members of
+a workspace to another workspace</h3>
 <p>a- Get id of first workspace</p>
 <div class="sourceCode" id="cb306"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb306-1"><a href="#cb306-1" aria-hidden="true" tabindex="-1"></a><span class="va">WS1</span><span class="op">=</span><span class="st">&#39;First Workspace&#39;</span></span>
@@ -5957,7 +5950,8 @@ like (see other example in this manual):</p>
 <ul>
 <li><p>Create the access key on ATS</p>
 <p>The creation options are the ones of ATS API, refer to the <a
-href="#ats_params">section on ATS</a> for more details and examples.</p>
+href="#ats-access-key-creation-parameters">section on ATS</a> for more
+details and examples.</p>
 <div class="sourceCode" id="cb327"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb327-1"><a href="#cb327-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>eu-de <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;mybucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;mykey&quot;,&quot;secret_access_key&quot;:&quot;mysecret&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span></code></pre></div>
 <p>Once executed, the access key <code>id</code> and
@@ -5983,7 +5977,8 @@ command <code>aoc admin ats access_key create</code> is replaced with
 <h2 data-number="5.5" id="list-of-files-to-transfer"><span
 class="header-section-number">5.5</span> List of files to transfer</h2>
 <p>Source files are provided as a list with the <code>sources</code>
-option. Refer to section <a href="#file_list">File list</a></p>
+option. Refer to section <a href="#list-of-files-for-transfers">File
+list</a></p>
 <blockquote>
 <p><strong>Note:</strong> A special case is when the source files are
 located on <strong>Aspera on Cloud</strong> (i.e. using access keys and
@@ -6111,8 +6106,8 @@ subfolder /src_folder in a package:</p>
 <div class="sourceCode" id="cb341"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb341-1"><a href="#cb341-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files node_info /src_folder <span class="at">--format</span><span class="op">=</span>json <span class="at">--display</span><span class="op">=</span>data <span class="kw">|</span> <span class="ex">ascli</span> aoc packages send @json:<span class="st">&#39;{&quot;name&quot;:&quot;test&quot;,&quot;recipients&quot;:[&quot;someuser@example.com&quot;]}&#39;</span> 10M.dat <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span></code></pre></div>
 <h3 data-number="5.6.7" id="receive-new-packages-only-cargo"><span
-class="header-section-number">5.6.7</span> <a id="aoccargo"></a>Receive
-new packages only (Cargo)</h3>
+class="header-section-number">5.6.7</span> Receive new packages only
+(Cargo)</h3>
 <p>It is possible to automatically download new packages, like using
 Aspera Cargo:</p>
 <div class="sourceCode" id="cb342"><pre
@@ -6186,18 +6181,19 @@ class="header-section-number">5.7.3</span> Cross Organization
 transfers</h3>
 <p>It is possible to transfer files directly between organizations
 without having to first download locally and then upload…</p>
-<p>Although optional, the creation of <a href="#lprt">option preset</a>
-is recommended to avoid placing all parameters in the command line.</p>
+<p>Although optional, the creation of <a href="#option-preset">Option
+Preset</a>’ is recommended to avoid placing all parameters in the
+command line.</p>
 <p>Procedure to send a file from org1 to org2:</p>
 <ul>
-<li>Get access to Organization 1 and create a <a href="#lprt">option
-preset</a>: e.g. <code>org1</code>, for instance, use the <a
-href="#aocwizard">Wizard</a></li>
+<li>Get access to Organization 1 and create a <a
+href="#option-preset">Option Preset</a>’: e.g. <code>org1</code>, for
+instance, use the <a href="#configuration-using-wizard">Wizard</a></li>
 <li>Check that access works and locate the source file
 e.g. <code>mysourcefile</code>, e.g. using command
 <code>files browse</code></li>
-<li>Get access to Organization 2 and create a <a href="#lprt">option
-preset</a>: e.g. <code>org2</code></li>
+<li>Get access to Organization 2 and create a <a
+href="#option-preset">Option Preset</a>’: e.g. <code>org2</code></li>
 <li>Check that access works and locate the destination folder
 <code>mydestfolder</code></li>
 <li>Execute the following:</li>
@@ -6223,7 +6219,7 @@ credentials for <code>org2</code></li>
 <code>mysourcefile</code> (located in <code>org1</code>)</li>
 <li><code>--transfer=node</code> use transfer agent type
 <code>node</code> instead of default <a
-href="#agt_direct"><code>direct</code></a></li>
+href="#agent-direct"><code>direct</code></a></li>
 <li><code>--transfer-info=@json:@stdin:</code> provide <code>node</code>
 transfer agent information, i.e. node API credentials, those are
 expected in JSON format and read from standard input</li>
@@ -6354,8 +6350,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb351-1"><a href
 <span id="cb351-107"><a href="#cb351-107" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
 <span id="cb351-108"><a href="#cb351-108" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
-class="header-section-number">6</span> <a id="ats"></a>Plugin:
-<code>ats</code>: IBM Aspera Transfer Service</h1>
+class="header-section-number">6</span> Plugin: <code>ats</code>: IBM
+Aspera Transfer Service</h1>
 <p>ATS is usable either :</p>
 <ul>
 <li><p>From an AoC subscription : ascli aoc admin ats : use AoC
@@ -6417,8 +6413,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb359-1"><a href
 +--------+----------------------------------------------+
 ascli config preset update my_ibm_ats --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX --ats-secret=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY</code></pre>
 <h2 data-number="6.2" id="ats-access-key-creation-parameters"><span
-class="header-section-number">6.2</span> <a id="ats_params"></a>ATS
-Access key creation parameters</h2>
+class="header-section-number">6.2</span> ATS Access key creation
+parameters</h2>
 <p>When creating an ATS access key, the option <code>params</code> must
 contain an extended value with the creation parameters. Those are
 directly the parameters expected by the <a
@@ -6472,8 +6468,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb366-1"><a href
 <span id="cb366-16"><a href="#cb366-16" aria-hidden="true" tabindex="-1"></a><span class="ex">cluster</span> show 1f412ae7-869a-445c-9c05-02ad16813be2</span></code></pre></div>
 <h1 data-number="7"
 id="plugin-server-ibm-aspera-high-speed-transfer-server-ssh"><span
-class="header-section-number">7</span> <a id="server"></a>Plugin:
-<code>server</code>: IBM Aspera High Speed Transfer Server (SSH)</h1>
+class="header-section-number">7</span> Plugin: <code>server</code>: IBM
+Aspera High Speed Transfer Server (SSH)</h1>
 <p>The <code>server</code> plugin is used for operations on Aspera HSTS
 using SSH authentication. It is the legacy way of accessing an Aspera
 Server, often used for server to server transfers. An SSH session is
@@ -6623,8 +6619,8 @@ demo server:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb373-1"><a href="#cb373-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config initdemo</span>
 <span id="cb373-2"><a href="#cb373-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server browse /aspera-test-dir-large</span>
 <span id="cb373-3"><a href="#cb373-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server download /aspera-test-dir-large/200MB</span></code></pre></div>
-<p><code>initdemo</code> creates a <a href="#lprt">option preset</a>
-<code>demoserver</code> and set it as default for plugin
+<p><code>initdemo</code> creates a <a href="#option-preset">Option
+Preset</a>’ <code>demoserver</code> and set it as default for plugin
 <code>server</code>.</p>
 <p>If an SSH private key is used for authentication with a passphrase,
 the passphrase needs to be provided to both options:
@@ -6634,8 +6630,8 @@ transfers:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb374-1"><a href="#cb374-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server <span class="at">--url</span><span class="op">=</span>ssh://_server_address_here_:33001 <span class="at">--username</span><span class="op">=</span>_user_here_ <span class="at">--ssh_keys</span><span class="op">=</span>_private_key_path_here_ <span class="at">--passphrase</span><span class="op">=</span>_passphrase_here_</span></code></pre></div>
 <h1 data-number="8"
 id="plugin-node-ibm-aspera-high-speed-transfer-server-node"><span
-class="header-section-number">8</span> <a id="node"></a>Plugin:
-<code>node</code>: IBM Aspera High Speed Transfer Server Node</h1>
+class="header-section-number">8</span> Plugin: <code>node</code>: IBM
+Aspera High Speed Transfer Server Node</h1>
 <p>This plugin gives access to capabilities provided by the HSTS node
 API.</p>
 <p>The authentication is <code>username</code> and <code>password</code>
@@ -6763,7 +6759,7 @@ class="header-section-number">8.5</span> FASP Stream</h2>
 <p>It is possible to start a FASPStream session using the node API:</p>
 <p>Use the command
 <code>ascli node stream create --ts=@json:&lt;value&gt;</code>, with <a
-href="#transferspec"><em>transfer-spec</em></a>:</p>
+href="#transfer-specification"><em>transfer-spec</em></a>:</p>
 <div class="sourceCode" id="cb385"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb385-1"><a href="#cb385-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;send&quot;</span><span class="fu">,</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;udp://233.3.3.4:3000?loopback=1&amp;ttl=2&quot;</span><span class="fu">,</span><span class="dt">&quot;destination&quot;</span><span class="fu">:</span><span class="st">&quot;udp://233.3.3.3:3001/&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;localhost&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;stream&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_pass_here&quot;</span><span class="fu">}</span></span></code></pre></div>
 <h2 data-number="8.6" id="watchfolder"><span
@@ -6993,7 +6989,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb398-1"><a href
 <blockquote>
 <p><strong>Note:</strong> This key is not used for authentication, it is
 used to sign bearer tokens. Refer to section <a
-href="#private_key">private key</a> for more details on generation.</p>
+href="#private-key">private key</a> for more details on generation.</p>
 </blockquote></li>
 <li><p>The corresponding public key shall be placed as an attribute of
 the <strong>access key</strong>:</p>
@@ -7122,8 +7118,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb406-1"><a href
 <span id="cb406-64"><a href="#cb406-64" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--username</span><span class="op">=</span>my_ak_name <span class="at">--password</span><span class="op">=</span>my_ak_secret test_file.bin</span>
 <span id="cb406-65"><a href="#cb406-65" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_cap_kbps&quot;:10000}&#39;</span></span></code></pre></div>
 <h1 data-number="9" id="plugin-faspex5-ibm-aspera-faspex-v5"><span
-class="header-section-number">9</span> <a id="faspex5"></a>Plugin:
-<code>faspex5</code>: IBM Aspera Faspex v5</h1>
+class="header-section-number">9</span> Plugin: <code>faspex5</code>: IBM
+Aspera Faspex v5</h1>
 <p>IBM Aspera’s newer self-managed application.</p>
 <p>3 authentication methods are supported (option
 <code>auth</code>):</p>
@@ -7163,7 +7159,7 @@ public link)</td>
 it, unchanged, through the option <code>url</code></p>
 </blockquote>
 <p>For a quick start, one can use the wizard, which will help creating a
-<a href="#lprt">option preset</a>:</p>
+<a href="#option-preset">Option Preset</a>’:</p>
 <div class="sourceCode" id="cb407"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href="#cb407-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard</span></code></pre></div>
 <pre class="text"><code>argument: url&gt; faspex5.example.com
@@ -7240,7 +7236,7 @@ right.</li>
 key corresponding to the private key used by the user.</li>
 </ul>
 <p><strong>Note:</strong> If you don’t have any refer to section <a
-href="#private_key">Private Key</a></p></li>
+href="#private-key">Private Key</a></p></li>
 </ul>
 <p>Then use these options:</p>
 <pre class="text"><code>--auth=jwt
@@ -7718,8 +7714,8 @@ are received.</li>
 <p>Environment variables at set to the values provided by the web hook
 which are the same as Faspex 4 postprocessing.</p>
 <h1 data-number="10" id="plugin-faspex-ibm-aspera-faspex-v4"><span
-class="header-section-number">10</span> <a id="faspex"></a>Plugin:
-<code>faspex</code>: IBM Aspera Faspex v4</h1>
+class="header-section-number">10</span> Plugin: <code>faspex</code>: IBM
+Aspera Faspex v4</h1>
 <p>Notes:</p>
 <ul>
 <li>The command <code>v4</code> requires the use of APIv4, refer to the
@@ -7888,7 +7884,8 @@ class="header-section-number">10.7</span> Automated package download
 (cargo)</h2>
 <p>It is possible to tell <code>ascli</code> to download newly received
 packages, much like the official cargo client, or drive. Refer to the <a
-href="#aoccargo">same section</a> in the Aspera on Cloud plugin:</p>
+href="#receive-new-packages-only-cargo">same section</a> in the Aspera
+on Cloud plugin:</p>
 <div class="sourceCode" id="cb441"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb441-1"><a href="#cb441-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex packages recv ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--lock-port</span><span class="op">=</span>12345</span></code></pre></div>
 <h2 data-number="10.8" id="faspex-sample-commands"><span
@@ -7930,8 +7927,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb442-1"><a href
 <span id="cb442-30"><a href="#cb442-30" aria-hidden="true" tabindex="-1"></a><span class="ex">v4</span> wmembership list</span>
 <span id="cb442-31"><a href="#cb442-31" aria-hidden="true" tabindex="-1"></a><span class="ex">v4</span> workgroup list</span></code></pre></div>
 <h1 data-number="11" id="plugin-shares-ibm-aspera-shares-v1"><span
-class="header-section-number">11</span> <a id="shares"></a>Plugin:
-<code>shares</code>: IBM Aspera Shares v1</h1>
+class="header-section-number">11</span> Plugin: <code>shares</code>: IBM
+Aspera Shares v1</h1>
 <p>Aspera Shares supports the <strong>node API</strong> for the file
 transfer part.</p>
 <p>Supported commands are listed in Share’s API documentation:</p>
@@ -7977,8 +7974,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb444-1"><a href
 <span id="cb444-19"><a href="#cb444-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://my_http_gw_fqdn_port/aspera/http-gwy&quot;}&#39;</span></span>
 <span id="cb444-20"><a href="#cb444-20" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span></code></pre></div>
 <h1 data-number="12" id="plugin-console-ibm-aspera-console"><span
-class="header-section-number">12</span> <a id="console"></a>Plugin:
-<code>console</code>: IBM Aspera Console</h1>
+class="header-section-number">12</span> Plugin: <code>console</code>:
+IBM Aspera Console</h1>
 <h2 data-number="12.1" id="console-sample-commands"><span
 class="header-section-number">12.1</span> Console sample commands</h2>
 <blockquote>
@@ -7992,7 +7989,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb445-1"><a href
 <span id="cb445-4"><a href="#cb445-4" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> smart sub my_smart_id @json:<span class="st">&#39;{&quot;source&quot;:{&quot;paths&quot;:[&quot;my_smart_file&quot;]},&quot;source_type&quot;:&quot;user_selected&quot;}&#39;</span></span></code></pre></div>
 <h1 data-number="13"
 id="plugin-orchestratoribm-aspera-orchestrator"><span
-class="header-section-number">13</span> <a id="orchestrator"></a>Plugin:
+class="header-section-number">13</span> Plugin:
 <code>orchestrator</code>:IBM Aspera Orchestrator</h1>
 <h2 data-number="13.1" id="orchestrator-sample-commands"><span
 class="header-section-number">13.1</span> Orchestrator sample
@@ -8015,8 +8012,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb446-1"><a href
 <span id="cb446-11"><a href="#cb446-11" aria-hidden="true" tabindex="-1"></a><span class="ex">workflow</span> status ALL</span>
 <span id="cb446-12"><a href="#cb446-12" aria-hidden="true" tabindex="-1"></a><span class="ex">workflow</span> status my_workflow_id</span></code></pre></div>
 <h1 data-number="14" id="plugin-cos-ibm-cloud-object-storage"><span
-class="header-section-number">14</span> <a id="cos"></a>Plugin:
-<code>cos</code>: IBM Cloud Object Storage</h1>
+class="header-section-number">14</span> Plugin: <code>cos</code>: IBM
+Cloud Object Storage</h1>
 <p>The IBM Cloud Object Storage provides the possibility to execute
 transfers using FASP. It uses the same transfer service as Aspera on
 Cloud, called Aspera Transfer Service (ATS). Available ATS regions: <a
@@ -8129,8 +8126,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href
 <span id="cb452-5"><a href="#cb452-5" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
 <span id="cb452-6"><a href="#cb452-6" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload test_file.bin</span></code></pre></div>
 <h1 data-number="15" id="plugin-preview-preview-generator-for-aoc"><span
-class="header-section-number">15</span> <a id="preview"></a>Plugin:
-<code>preview</code>: Preview generator for AoC</h1>
+class="header-section-number">15</span> Plugin: <code>preview</code>:
+Preview generator for AoC</h1>
 <p>The <code>preview</code> generates thumbnails (office, images, video)
 and video previews on storage for use primarily in the Aspera on Cloud
 application. It uses the <strong>node API</strong> of Aspera HSTS and
@@ -8189,8 +8186,7 @@ option <code>max_size</code>.</p>
 <strong>Bytes</strong> (factor of 1024).</p>
 </blockquote>
 <h2 data-number="15.2" id="external-tools-linux"><span
-class="header-section-number">15.2</span> <a id="prev_ext"></a>External
-tools: Linux</h2>
+class="header-section-number">15.2</span> External tools: Linux</h2>
 <p><code>ascli</code> requires the following external tools available in
 the <code>PATH</code>:</p>
 <ul>
@@ -8255,9 +8251,9 @@ usually better to use the user <code>xfer</code>, as uploaded files are
 under this identity: this ensures proper access rights. (we will assume
 this)</p>
 <p>Like any <code>ascli</code> commands, parameters can be passed on
-command line or using a configuration <a href="#lprt">option preset</a>.
-The configuration file must be created with the same user used to run so
-that it is properly used on runtime.</p>
+command line or using a configuration <a href="#option-preset">Option
+Preset</a>’. The configuration file must be created with the same user
+used to run so that it is properly used on runtime.</p>
 <p>The <code>xfer</code> user has a special protected shell:
 <code>aspshell</code>, so in order to update the configuration, and when
 changing identity, specify an alternate shell. E.g.:</p>
@@ -8475,8 +8471,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb468-1"><a href
 <span id="cb468-12"><a href="#cb468-12" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
 <span id="cb468-13"><a href="#cb468-13" aria-hidden="true" tabindex="-1"></a><span class="ex">trevents</span> <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
 <h1 data-number="16" id="ibm-aspera-sync"><span
-class="header-section-number">16</span> <a id="async"></a>IBM Aspera
-Sync</h1>
+class="header-section-number">16</span> IBM Aspera Sync</h1>
 <p>An interface for the <code>async</code> utility is provided in the
 following plugins:</p>
 <ul>
@@ -8566,13 +8561,15 @@ name shall not be created on destination</li>
 </ul>
 <blockquote>
 <p><strong>Note:</strong> <code>ascli</code> takes transfer parameters
-exclusively as a <a href="#transferspec"><em>transfer-spec</em></a>,
-with <code>ts</code> option.</p>
+exclusively as a <a
+href="#transfer-specification"><em>transfer-spec</em></a>, with
+<code>ts</code> option.</p>
 <p><strong>Note:</strong> Most, but not all, native <code>ascp</code>
 arguments are available as standard <a
-href="#transferspec"><em>transfer-spec</em></a> parameters.</p>
+href="#transfer-specification"><em>transfer-spec</em></a>
+parameters.</p>
 <p><strong>Note:</strong> Only for the <a
-href="#agt_direct"><code>direct</code></a> transfer agent (not others,
+href="#agent-direct"><code>direct</code></a> transfer agent (not others,
 like connect or node), native <code>ascp</code> arguments can be
 provided with parameter <code>ascp_args</code> of option
 <code>transfer_info</code> .</p>
@@ -8587,7 +8584,8 @@ basis might emulate a hot folder.</p>
 (<code>inotify</code>, etc…), but on a simple folder scan on source
 side.</p>
 <p><strong>Note:</strong> Parameters may be saved in a <a
-href="#lprt">option preset</a> and used with <code>-P</code>.</p>
+href="#option-preset">Option Preset</a>’ and used with
+<code>-P</code>.</p>
 </blockquote>
 <h3 data-number="17.2.3" id="scheduling"><span
 class="header-section-number">17.2.3</span> Scheduling</h3>
@@ -8798,7 +8796,7 @@ standardized interface to start a FASP session:
 <code>asession</code>.</p>
 <p>It aims at simplifying the startup of a FASP session from a
 programmatic stand point as formatting a <a
-href="#transferspec"><em>transfer-spec</em></a> is:</p>
+href="#transfer-specification"><em>transfer-spec</em></a> is:</p>
 <ul>
 <li>Common to Aspera Node API (HTTP POST /ops/transfer)</li>
 <li>Common to Aspera Connect API (browser javascript startTransfer)</li>
@@ -8811,10 +8809,10 @@ this tool is made redundant.</p>
 can spawn a sub process, write to its STDIN, read from STDOUT, generate
 and parse JSON.</p>
 <p><code>ascli</code> expect one single argument: a <a
-href="#transferspec"><em>transfer-spec</em></a>.</p>
+href="#transfer-specification"><em>transfer-spec</em></a>.</p>
 <p>If no argument is provided, it assumes a value of:
 <code>@json:@stdin:</code>, i.e. a JSON formatted <a
-href="#transferspec"><em>transfer-spec</em></a> on stdin.</p>
+href="#transfer-specification"><em>transfer-spec</em></a> on stdin.</p>
 <blockquote>
 <p><strong>Note:</strong> If JSON is the format, specify
 <code>@json:</code> to tell <code>ascli</code> to decode the
@@ -8823,8 +8821,8 @@ href="#transferspec"><em>transfer-spec</em></a> on stdin.</p>
 <p>During execution, it generates all low level events, one per line, in
 JSON format on stdout.</p>
 <p>There are special <strong>extended</strong> <a
-href="#transferspec"><em>transfer-spec</em></a> parameters supported by
-<code>asession</code>:</p>
+href="#transfer-specification"><em>transfer-spec</em></a> parameters
+supported by <code>asession</code>:</p>
 <ul>
 <li><code>EX_loglevel</code> to change log level of
 <code>ascli</code></li>
@@ -8835,11 +8833,11 @@ default it is
 </ul>
 <blockquote>
 <p><strong>Note:</strong> In addition, many (deprecated)
-<code>EX_</code> <a href="#transferspec"><em>transfer-spec</em></a>
-parameters are supported for the <a
-href="#agt_direct"><code>direct</code></a> transfer agent (used by
-<code>asession</code>), refer to section <a
-href="#transferspec"><em>transfer-spec</em></a>.</p>
+<code>EX_</code> <a
+href="#transfer-specification"><em>transfer-spec</em></a> parameters are
+supported for the <a href="#agent-direct"><code>direct</code></a>
+transfer agent (used by <code>asession</code>), refer to section <a
+href="#transfer-specification"><em>transfer-spec</em></a>.</p>
 </blockquote>
 <h2 data-number="20.1" id="comparison-of-interfaces"><span
 class="header-section-number">20.1</span> Comparison of interfaces</h2>
@@ -8919,7 +8917,7 @@ per command, formatted in JSON, where parameters shall be
 <strong>snake</strong> style, for example: <code>LongParameter</code>
 -&gt; <code>long_parameter</code></p>
 <p>This is particularly useful for a persistent session ( with the <a
-href="#transferspec"><em>transfer-spec</em></a> parameter:
+href="#transfer-specification"><em>transfer-spec</em></a> parameter:
 <code>"keepalive":true</code> )</p>
 <div class="sourceCode" id="cb484"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb484-1"><a href="#cb484-1" aria-hidden="true" tabindex="-1"></a><span class="er">asession</span></span>
@@ -8997,10 +8995,11 @@ other products APIs</li>
 <li>Portable: works on platforms supporting <code>ruby</code> (and
 <code>ascp</code>)</li>
 <li>Easy to install with the <code>gem</code> utility</li>
-<li>Supports transfers with multiple <a href="#agents">Transfer
-Agents</a>, that's why transfer parameters moved from <code>ascp</code>
-command line to <a href="#transferspec"><em>transfer-spec</em></a> (more
-reliable , more standard)</li>
+<li>Supports transfers with multiple <a
+href="#transfer-clients-agents">Transfer Agents</a>, that's why transfer
+parameters moved from <code>ascp</code> command line to <a
+href="#transfer-specification"><em>transfer-spec</em></a> (more reliable
+, more standard)</li>
 <li><code>ruby</code> is consistent with other Aspera products</li>
 </ul>
 <p>Over the time, a supported command line tool <code>aspera</code> was
