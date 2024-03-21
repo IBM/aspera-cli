@@ -10,8 +10,20 @@ module Aspera
   # execute: "ascmd -h" to get syntax
   # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
   class AsCmd
+    # number of arguments for each operation
+    OPS_ARGS = {
+      cp:     2,
+      df:     0,
+      du:     1,
+      info:   nil,
+      ls:     1,
+      md5sum: 1,
+      mkdir:  1,
+      mv:     2,
+      rm:     1
+    }.freeze
     # list of supported actions
-    OPERATIONS = %i[ls rm mv du info mkdir cp df md5sum].freeze
+    OPERATIONS = OPS_ARGS.keys.freeze
 
     #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
     def initialize(command_executor)
@@ -22,16 +34,34 @@ module Aspera
     # @param [Symbol] one of OPERATIONS
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
-    def execute_single(action_sym, arguments=nil)
+    def execute_single(action_sym, arguments)
+      Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
+      assert_type(arguments, Array)
+      assert(arguments.all?(String), 'arguments must be strings')
+      # lines of commands (String's)
+      command_lines = []
       # add "as_" command
-      main_command = ["as_#{action_sym}"]
-      arguments&.each do |v|
+      main_command = "as_#{action_sym}"
+      arg_batches =
+        if OPS_ARGS[action_sym].nil? || OPS_ARGS[action_sym].zero?
+          [arguments]
+        else
+          # split arguments into batches
+          arguments.each_slice(OPS_ARGS[action_sym]).to_a
+        end
+      arg_batches.each do |args|
+        command = [main_command]
         # enclose arguments in double quotes, protect backslash and double quotes
-        main_command.push(%Q{"#{v.gsub(/["\\]/n){|s|"\\#{s}"}}"})
+        args.each do |v|
+          command.push(%Q{"#{v.gsub(/["\\]/){|s|"\\#{s}"}}"})
+        end
+        command_lines.push(command.join(' '))
       end
+      command_lines.push('as_exit')
+      command_lines.push('')
       # execute the main command and then exit
-      stdin_input = [main_command.join(' '), 'as_exit', ''].join("\n")
-      Log.log.debug{"execute_single:#{stdin_input}"}
+      stdin_input = command_lines.join("\n")
+      Log.log.trace1{"execute_single:#{stdin_input}"}
       # execute, get binary output
       byte_buffer = @command_executor.execute('ascmd', stdin_input).unpack('C*')
       raise 'ERROR: empty answer from server' if byte_buffer.empty?
@@ -66,7 +96,7 @@ module Aspera
         super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end # rubocop:disable Style/Semicolon
 
       def message; "ascmd: #{@errstr} (#{@errno})"; end
-      def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments.join(',')}"; end
+      def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
     end # Error
 
     # description of result structures (see ascmdtypes.h). Base types are big endian
