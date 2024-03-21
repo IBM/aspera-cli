@@ -4,6 +4,7 @@
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
+require 'open3'
 
 # enhance the gem to support other key chains
 module Aspera
@@ -11,6 +12,8 @@ module Aspera
     module MacosSecurity
       # keychain based on macOS keychain, using `security` command line
       class Keychain
+        # https://www.unix.com/man-page/osx/1/security/
+        SECURITY_UTILITY = 'security'
         DOMAINS = %i[user system common dynamic].freeze
         LIST_OPTIONS = {
           domain: :c
@@ -45,18 +48,20 @@ module Aspera
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
-            cmd = ['security', command]
+            command_line = [SECURITY_UTILITY, command]
             options&.each do |k, v|
               assert(supported.key?(k)){"unknown option: #{k}"}
               next if v.nil?
-              cmd.push("-#{supported[k]}")
-              cmd.push(v.shellescape) unless v.empty?
+              command_line.push("-#{supported[k]}")
+              command_line.push(v.shellescape) unless v.empty?
             end
-            cmd.push(last_opt) unless last_opt.nil?
-            Log.log.debug{"executing>>#{cmd.join(' ')}"}
-            result = %x(#{cmd.join(' ')} 2>&1)
-            Log.log.debug{"result>>[#{result}]"}
-            return result
+            command_line.push(last_opt) unless last_opt.nil?
+            Log.log.debug{"executing>>#{command_line.join(' ')}"}
+            stdout, stderr, status = Open3.capture3(*command_line)
+            Log.log.debug{"status=#{status}, stderr=#{stderr}"}
+            Log.log.trace1{"stdout=#{stdout}"}
+            raise "#{SECURITY_UTILITY} failed: #{status.exitstatus} : #{stderr}" unless status.success?
+            return stdout
           end
 
           def key_chains(output)
@@ -99,7 +104,7 @@ module Aspera
           options[:getpass] = '' if operation.eql?(:find)
           output = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path)
           raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
-          return nil unless operation.eql?(:find)
+          return unless operation.eql?(:find)
           attributes = {}
           output.split("\n").each do |line|
             case line
