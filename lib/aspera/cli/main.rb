@@ -190,7 +190,7 @@ module Aspera
 
       def generate_bash_completion
         if options.get_next_argument('', expected: :multiple, mandatory: false).nil?
-          config.plugins.each_key{|p|puts p.to_s}
+          config.plugins.each_key{|p|puts p}
         else
           Log.log.warn('only first level completion so far')
         end

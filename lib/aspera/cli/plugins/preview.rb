@@ -191,7 +191,7 @@ module Aspera
             if event.dig('data', 'type').eql?('file')
               file_entry = @api_node.read("files/#{event['data']['id']}")[:data] rescue nil
               if !file_entry.nil? &&
-                  @option_skip_folders.select{|d|file_entry['path'].start_with?(d)}.empty?
+                  @option_skip_folders.none?{|d|file_entry['path'].start_with?(d)}
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
                 if event['types'].include?('file.deleted')
                   Log.log.error('TODO'.red)
@@ -479,7 +479,7 @@ module Aspera
                 ]))
             end
             # call processing method specified by command line command
-            send("process_#{command}", iteration_persistency)
+            send(:"process_#{command}", iteration_persistency)
             return Main.result_status("#{command} finished")
           when :check
             return Main.result_status('Tools validated')

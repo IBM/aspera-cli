@@ -11,7 +11,7 @@ module Aspera
         def options(default:, options:)
           result = options.symbolize_keys
           available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
-          result.each do |k, _v|
+          result.each_key do |k|
             assert_values(k, default.keys){"transfer agent parameter: #{k}"}
             # check it is the expected type: too limiting, as we can have an Integer or Float, or symbol and string
             # raise "Invalid value for transfer agent parameter: #{k}, expect #{default[k].class.name}" unless default[k].nil? || v.is_a?(default[k].class)
@@ -28,13 +28,13 @@ module Aspera
             file.start_with?('agent_') && !file.eql?('agent_base.rb')
           end.map{|file|file.sub(/^agent_/, '').sub(/\.rb$/, '').to_sym}
         end
-    end
+      end
       def wait_for_completion
         # list of: :success or "error message string"
         statuses = wait_for_transfers_completion
         @progress&.reset
         assert_type(statuses, Array)
-        assert(statuses.select{|i|!i.eql?(:success) && !i.is_a?(StandardError)}.empty?){"bad statuses content: #{statuses}"}
+        assert(statuses.none?{|i|!i.eql?(:success) && !i.is_a?(StandardError)}){"bad statuses content: #{statuses}"}
         return statuses
       end
 

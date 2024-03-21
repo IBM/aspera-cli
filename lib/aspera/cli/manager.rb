@@ -75,8 +75,8 @@ module Aspera
           matching_exact = allowed_values.select{|i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
           matching = allowed_values.select{|i| i.to_s.start_with?(short_value)}
-          multi_choice_assert(!matching.empty?,"unknown value for #{descr}: #{short_value}", allowed_values)
-          multi_choice_assert(matching.length.eql?(1),"ambiguous shortcut for #{descr}: #{short_value}", matching) 
+          multi_choice_assert(!matching.empty?, "unknown value for #{descr}: #{short_value}", allowed_values)
+          multi_choice_assert(matching.length.eql?(1), "ambiguous shortcut for #{descr}: #{short_value}", matching)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
           return matching.first
         end
@@ -84,8 +84,8 @@ module Aspera
         # Generates error message with list of allowed values
         # @param error_msg [String] error message
         # @param choices [Array] list of allowed values
-        def multi_choice_assert(assertion,error_msg, choices)
-          raise Cli::BadArgument,  [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n") unless assertion
+        def multi_choice_assert(assertion, error_msg, choices)
+          raise Cli::BadArgument, [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n") unless assertion
         end
 
         # change option name with dash to name with underscore
@@ -470,7 +470,7 @@ module Aspera
       def get_interactive(type, descr, expected: :single)
         if !@ask_missing_mandatory
           raise Cli::BadArgument, "missing argument (#{expected}): #{descr}" unless expected.is_a?(Array)
-          self.class.multi_choice_assert(false,"missing: #{descr}", expected)
+          self.class.multi_choice_assert(false, "missing: #{descr}", expected)
         end
         result = nil
         sensitive = type.eql?(:option) && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]

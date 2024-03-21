@@ -1325,7 +1325,7 @@ module Aspera
           # remove extra info to maximize match
           url = canonical_url(url)
           Log.log.debug{"Lookup preset for #{username}@#{url}"}
-          @config_presets.each do |_k, v|
+          @config_presets.each_value do |v|
             next unless v.is_a?(Hash)
             conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
             return self.class.protect_presets(v) if conf_url.eql?(url) && v['username'].eql?(username)

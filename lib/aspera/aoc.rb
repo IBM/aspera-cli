@@ -373,7 +373,7 @@ module Aspera
         assert(field.key?('name')){'metadata field must have name'}
         assert(field.key?('values')){'metadata field must have values'}
         assert_type(field['values'], Array){'metadata field values'}
-        assert(!meta_schema.select{|i|i['name'].eql?(field['name'])}.empty?){"unknown metadata field: #{field['name']}"}
+        assert(!meta_schema.none?{|i|i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
       end
       meta_schema.each do |field|
         provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}

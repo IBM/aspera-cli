@@ -14,7 +14,7 @@ class Logger
   TRACE_MAX = 2
   # add custom level to logger severity
   module Severity
-    1.upto(TRACE_MAX).each { |level| const_set("TRACE#{level}", - level)}
+    1.upto(TRACE_MAX).each { |level| const_set(:"TRACE#{level}", - level)}
   end
   # quick access to label
   SEVERITY_LABEL = Severity.constants.each_with_object({}) { |name, hash| hash[Severity.const_get(name)] = name}

@@ -47,6 +47,8 @@ Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: no_comma
 Style/DateTime:
   Enabled: false
+Style/ReturnNil:
+  Enabled: false
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: no_comma
 #  Enabled: false

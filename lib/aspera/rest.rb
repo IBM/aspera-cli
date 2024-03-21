@@ -114,14 +114,14 @@ module Aspera
 
       # @return [String] PEM certificates of remote server
       def remote_certificate_chain(url, as_string: true)
-        result=[]
+        result = []
         # initiate a session to retrieve remote certificate
         http_session = Rest.start_http_session(url)
         begin
           # retrieve underlying openssl socket
-          result= Rest.io_http_session(http_session).io.peer_cert_chain
+          result = Rest.io_http_session(http_session).io.peer_cert_chain
         rescue
-          result= http_session.peer_cert
+          result = http_session.peer_cert
         ensure
           http_session.finish
         end
@@ -341,7 +341,7 @@ module Aspera
             req['Authorization'] = oauth_token(force_refresh: true)
           end
           Log.log.debug{"using new token=#{call_data[:headers]['Authorization']}"}
-          retry unless (oauth_tries -= 1).zero?
+          retry if (oauth_tries -= 1).nonzero?
         end # if oauth
         # redirect ? (any code beginning with 3)
         if tries_remain_redirect.positive? && e.response.is_a?(Net::HTTPRedirection)

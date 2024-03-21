@@ -20,7 +20,7 @@ module Aspera
         assert_type(object_id, String)
         return object_id
             .gsub(WINDOWS_PROTECTED_CHAR, PROTECTED_CHAR_REPLACE) # remove windows forbidden chars
-            .gsub('.', PROTECTED_CHAR_REPLACE)  # keep dot for extension only (nicer)
+            .gsub('.', PROTECTED_CHAR_REPLACE) # keep dot for extension only (nicer)
             .downcase
       end
     end
