@@ -35,7 +35,9 @@ module Aspera
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
     def execute_single(action_sym, arguments)
+      arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
+      assert_type(action_sym, Symbol)
       assert_type(arguments, Array)
       assert(arguments.all?(String), 'arguments must be strings')
       # lines of commands (String's)

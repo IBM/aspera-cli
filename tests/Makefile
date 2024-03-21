@@ -679,12 +679,17 @@ $(T)aocfbearnode: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files bearer /
 	@$(STOP_TEST) $@
-$(T)aocfdown: $(T)aoc_tstdst
+$(T)aocfdownc: $(T)aoc_tstdst
 	@$(START_TEST) $@
 	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
 	@-killall asperaconnect
 	@sleep 1
 	$(EXE_MAN) aoc files download --transfer=connect testdst/$(TST_ASC_FILENAME)
+	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
+	@$(STOP_TEST) $@
+$(T)aocfdowna: $(T)aoc_tstdst
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc files download --transfer=alpha testdst/$(TST_ASC_FILENAME)
 	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)aocfhttpd: $(T)aocftr
@@ -782,7 +787,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdown $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
 #######################################################################################################################
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@
