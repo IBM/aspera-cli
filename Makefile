@@ -26,6 +26,7 @@ clean_doc::
 	cd $(DIR_DOC) && make clean_doc
 ##################################
 # Gem build
+.PHONY: gem_check_signing_key signed_gem unsigned_gem beta_gem build_beta_gem clean_gem install clean_gems clean_optional_gems install_gems install_optional_gems clean_gems_installed
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
 	gem build $(GEMSPEC)
 	gem specification $(PATH_GEMFILE) version
@@ -59,7 +60,7 @@ clean_optional_gems:
 install_gems: $(DIR_TOP).gems_checked
 # grpc is installed on the side , if needed
 install_optional_gems: install_gems
-	gem install $(OPTIONAL_GEMS)
+	bundle install --gemfile=$(DIR_TOP)Gemfile.optional
 clean:: clean_gem
 ##################################
 # Gem certificate
