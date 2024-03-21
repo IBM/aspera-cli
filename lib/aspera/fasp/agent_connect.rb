@@ -33,7 +33,7 @@ module Aspera
           raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?
           Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
           if !OpenApplication.uri_graphical(start_url)
-            OpenApplication.uri_graphical('https://downloads.asperasoft.com/connect2/')
+            OpenApplication.uri_graphical('https://www.ibm.com/aspera/connect/')
             raise StandardError, 'Connect is not installed'
           end
           sleep(SLEEP_SEC_BETWEEN_RETRY)
