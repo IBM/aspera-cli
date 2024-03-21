@@ -74,7 +74,7 @@ module Aspera
                 Log.log.debug{"detect error: #{e}"}
               end
             end
-            return nil
+            return
           end
 
           def wizard(object:, private_key_path: nil, pub_key_pem: nil)
@@ -237,7 +237,7 @@ module Aspera
             command_arguments = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
             ascmd = Aspera::AsCmd.new(ascmd_executor)
             begin
-              result = ascmd.send(:execute_single, command, command_arguments)
+              result = ascmd.execute_single(command, command_arguments)
               case command
               when :mkdir, :mv, :cp, :rm
                 return Main.result_success
