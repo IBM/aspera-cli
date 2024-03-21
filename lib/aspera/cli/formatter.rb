@@ -107,7 +107,7 @@ module Aspera
       class << self
         # Highlight special values
         def special(what, use_colors: $stdout.isatty)
-          result = "<#{what}>"
+          result = $stdout.isatty ? "<#{what}>" : "&lt;#{what}&gt;"
           if use_colors
             result = if %w[null empty].any?{|s|what.include?(s)}
               result.dim

@@ -3211,7 +3211,7 @@ href="#agent-direct"><code>direct</code></a>. (only in
 <td> </td>
 <td> </td>
 <td>value=token for SSH bypass keys, else password asked if not
-provided.<br/>(<ignored>)</td>
+provided.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>cipher</td>
@@ -3234,7 +3234,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>returned by node API. Valid literals include “aes-128” and
-“none”.<br/>(<ignored>)</td>
+“none”.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>compression</td>
@@ -3244,7 +3244,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>ascp4 only, 0 / 1?<br/>(<ignored>)</td>
+<td>ascp4 only, 0 / 1?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>content_protection</td>
@@ -3323,7 +3323,7 @@ success<br/>(–remove-after-transfer)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Destination root directory.<br/>(<special>)</td>
+<td>Destination root directory.<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="odd">
 <td>destination_root_id</td>
@@ -3334,7 +3334,8 @@ success<br/>(–remove-after-transfer)</td>
 <td> </td>
 <td> </td>
 <td>The file ID of the destination root directory.<br/>Required when
-using Bearer token auth for the destination node.<br/>(<ignored>)</td>
+using Bearer token auth for the destination
+node.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>dgram_size</td>
@@ -3397,7 +3398,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>Only used in Faspex.<br/>(<ignored>)</td>
+<td>Only used in Faspex.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>file_checksum</td>
@@ -3409,7 +3410,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td> </td>
 <td>Enable checksum reporting for transferred files by specifying the
 hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5,
-none<br/>(<ignored>)</td>
+none<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>http_fallback</td>
@@ -3461,7 +3462,7 @@ mode.<br/>(–keepalive)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>TODO: remove ?<br/>(<ignored>)</td>
+<td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>lock_min_rate_kbps</td>
@@ -3473,7 +3474,7 @@ mode.<br/>(–keepalive)</td>
 <td> </td>
 <td>If true, lock the minimum transfer rate to the value set for
 min_rate_kbps.<br/>If false, users can adjust the transfer rate up to
-the value set for target_rate_cap_kbps.<br/>(<ignored>)</td>
+the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>lock_rate_policy</td>
@@ -3484,7 +3485,7 @@ the value set for target_rate_cap_kbps.<br/>(<ignored>)</td>
 <td> </td>
 <td> </td>
 <td>If true, lock the rate policy to the default
-value.<br/>(<ignored>)</td>
+value.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>lock_target_rate</td>
@@ -3494,7 +3495,7 @@ value.<br/>(<ignored>)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>TODO: remove ?<br/>(<ignored>)</td>
+<td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>lock_target_rate_kbps</td>
@@ -3506,7 +3507,7 @@ value.<br/>(<ignored>)</td>
 <td>Y</td>
 <td>If true, lock the target transfer rate to the default value set for
 target_rate_kbps.<br/>If false, users can adjust the transfer rate up to
-the value set for target_rate_cap_kbps.<br/>(<ignored>)</td>
+the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>min_rate_cap_kbps</td>
@@ -3519,7 +3520,7 @@ the value set for target_rate_cap_kbps.<br/>(<ignored>)</td>
 <td>The highest minimum rate that an incoming transfer can request, in
 kilobits per second.<br/>Client minimum rate requests that exceed the
 minimum rate cap are ignored.<br/>The default value of unlimited applies
-no cap to the minimum rate. (Default: 0)<br/>(<ignored>)</td>
+no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>min_rate_kbps</td>
@@ -3555,7 +3556,7 @@ transfer at the source side. Available as of
 <td>Use multi-session transfer. max 128.<br/>Each participant on one
 host needs an independent UDP (-O) port.<br/>Large files are split
 between sessions only when transferring with
-resume_policy=none.<br/><br/>(<special>)</td>
+resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="even">
 <td>multi_session_threshold</td>
@@ -3578,7 +3579,7 @@ split)<br/>(–multi-session-threshold {int})</td>
 <td> </td>
 <td>Y</td>
 <td>HTTP Gateway obfuscates file names when set to
-true.<br/>(<ignored>)</td>
+true.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>overwrite</td>
@@ -3604,7 +3605,7 @@ diff+older<br/>(–overwrite {enum})</td>
 node api user is not the same as the one running asperanoded.<br/>Allows
 impersonating the transfer user and have access to resources
 (e.g. network shares).<br/>Windows only, node api
-only.<br/>(<ignored>)</td>
+only.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>paths</td>
@@ -3615,7 +3616,7 @@ only.<br/>(<ignored>)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Array of path to the source (required) and a path to the destination
-(optional).<br/>(<special>)</td>
+(optional).<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="odd">
 <td>precalculate_job_size</td>
@@ -3778,7 +3779,7 @@ values: low, fair, high, fixed<br/>(–policy {enum})</td>
 <td> </td>
 <td>Specifies most aggressive rate policy that is allowed.<br/>Returned
 by node API.<br/>Allowed values: low, fair, high,
-fixed<br/>(<ignored>)</td>
+fixed<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>read_threads</td>
@@ -3788,7 +3789,7 @@ fixed<br/>(<ignored>)</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>ascp4 only<br/>(<ignored>)</td>
+<td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>remote_access_key</td>
@@ -3800,7 +3801,7 @@ fixed<br/>(<ignored>)</td>
 <td> </td>
 <td>The access key ID of the access key that was used to construct the
 bearer token that is used to authenticate to the remote
-node.<br/>(<ignored>)</td>
+node.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>remote_host</td>
@@ -3900,7 +3901,7 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 <td> </td>
 <td> </td>
 <td>Specifies how long to wait before retrying transfer.
-(e.g. “5min”)<br/>(<ignored>)</td>
+(e.g. “5min”)<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>source_root</td>
@@ -3923,7 +3924,7 @@ defined.<br/>(–source-prefix64 (conversion){string})</td>
 <td> </td>
 <td> </td>
 <td>The file ID of the source root directory. Required when using Bearer
-token auth for the source node.<br/>(<ignored>)</td>
+token auth for the source node.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>src_base</td>
@@ -3947,7 +3948,7 @@ storage.<br/>(–src-base64 (conversion){string})</td>
 <td> </td>
 <td> </td>
 <td>Array of arguments to pass to SSH. Use with
-caution.<br/>(<ignored>)</td>
+caution.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>ssh_port</td>
@@ -4023,7 +4024,8 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>Returned by upload/download_setup node API.<br/>(<ignored>)</td>
+<td>Returned by upload/download_setup node
+API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>target_rate_kbps</td>
@@ -4043,7 +4045,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>TODO: remove ?<br/>(<ignored>)</td>
+<td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>title</td>
@@ -4053,7 +4055,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
-<td>Title of the transfer<br/>(<ignored>)</td>
+<td>Title of the transfer<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>token</td>
@@ -4074,7 +4076,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>specify version of protocol<br/>(<special>)</td>
+<td>specify version of protocol<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="even">
 <td>use_system_ssh</td>
@@ -4084,7 +4086,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>TODO, comment…<br/>(<ignored>)</td>
+<td>TODO, comment…<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="odd">
 <td>write_threads</td>
@@ -4094,7 +4096,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>ascp4 only<br/>(<ignored>)</td>
+<td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr class="even">
 <td>wss_enabled</td>
@@ -4104,7 +4106,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Server has Web Socket service enabled<br/>(<special>)</td>
+<td>Server has Web Socket service enabled<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="odd">
 <td>wss_port</td>
@@ -4114,7 +4116,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>TCP port used for websocket service feed<br/>(<special>)</td>
+<td>TCP port used for websocket service feed<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="even">
 <td>EX_ascp_args</td>
@@ -4125,7 +4127,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td> </td>
 <td> </td>
 <td>DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native
-command line arguments to ascp<br/>(<special>)</td>
+command line arguments to ascp<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="odd">
 <td>EX_at_rest_password</td>
@@ -4148,7 +4150,7 @@ password<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td> </td>
 <td> </td>
 <td>DEPRECATED: (4.14) Use command line file list, or option
-transfer_info.ascp_args<br/>source file list<br/>(<special>)</td>
+transfer_info.ascp_args<br/>source file list<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="odd">
 <td>EX_file_pair_list</td>
@@ -4159,7 +4161,8 @@ transfer_info.ascp_args<br/>source file list<br/>(<special>)</td>
 <td> </td>
 <td> </td>
 <td>DEPRECATED: (4.14) Use command line file pair list, or option
-transfer_info.ascp_args<br/>source file pair list<br/>(<special>)</td>
+transfer_info.ascp_args<br/>source file pair
+list<br/>(&lt;special&gt;)</td>
 </tr>
 <tr class="even">
 <td>EX_http_proxy_url</td>
