@@ -4,6 +4,7 @@
 
 require 'rainbow'
 require 'io/console'
+require 'aspera/log'
 module Aspera
   module Preview
     # Display a picture in the terminal, either using coloured characters or iTerm2
@@ -40,9 +41,9 @@ module Aspera
           (term_rows, term_columns) = IO.console.winsize
           term_rows -= reserve
           # compute scaling to fit terminal
-          fit_term_ratio = [term_rows / image.rows.to_f, term_columns / image.columns.to_f].min
+          fit_term_ratio = [term_rows.to_f * font_ratio / image.rows.to_f, term_columns.to_f / image.columns.to_f].min
           height_ratio = double ? 2.0 : 1.0
-          image = image.scale((image.columns * fit_term_ratio * font_ratio).to_i, (image.rows * fit_term_ratio * height_ratio).to_i)
+          image = image.scale((image.columns * fit_term_ratio).to_i, (image.rows * fit_term_ratio * height_ratio / font_ratio).to_i)
           # quantum depth is 8 or 16, see: `convert xc: -format "%q" info:`
           shift_for_8_bit = Magick::MAGICKCORE_QUANTUM_DEPTH - 8
           # get all pixel colors, adjusted for Rainbow
