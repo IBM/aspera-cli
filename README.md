@@ -4839,6 +4839,7 @@ files browse / --url=my_private_link
 files browse / --url=my_public_link_folder_no_pass
 files browse / --url=my_public_link_folder_pass --password=my_public_link_password
 files delete /testsrc
+files download --transfer=alpha testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin
 files find / '\.partial$'
 files http_node_download --to-folder=. testdst/test_file.bin
@@ -6782,6 +6783,7 @@ show --base=test my_pdf
 test --base=test my_dcm
 test --base=test my_mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 test --mimemagic=yes --base=test my_dcm
+test --mimemagic=yes --base=test my_jpg_unk
 trevents --once-only=yes --skip-types=office --log-level=info
 ```
 
