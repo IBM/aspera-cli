@@ -1400,6 +1400,10 @@ $(T)prev_dcm_mm: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview test --mimemagic=yes --base=$(DIR_TMP)$$(basename $@) @preset:file.dcm
 	@$(STOP_TEST) $@
+$(T)prev_jpg_unk_mm: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) preview test --mimemagic=yes --base=$(DIR_TMP)$$(basename $@) @preset:file.jpg_unk
+	@$(STOP_TEST) $@
 $(T)prev_pdf: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.pdf
@@ -1442,7 +1446,7 @@ $(T)prev_folder: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_events $(T)prev_scan $(T)prev_folder))
+$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_jpg_unk_mm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_events $(T)prev_scan $(T)prev_folder))
 #######################################################################################################################
 # TODO : finalize
 thot:

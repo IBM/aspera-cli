@@ -9,6 +9,7 @@ require 'aspera/coverage'
 require 'aspera/fasp/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
+require 'aspera/assert'
 require 'aspera/ssh'
 require 'aspera/log'
 require 'uri'
@@ -61,6 +62,26 @@ RSpec.describe(Aspera::Fasp::Uri) do
     expect(ts['protect']).to(eq(nil))
   end
 end
+
+RSpec.describe(Aspera::InternalError) do
+  it 'asserts unreachable line' do
+    begin # rubocop:disable Style/RedundantBegin
+      error_unreachable_line
+      raise 'Shall not reach here'
+    rescue Aspera::InternalError => e
+      expect(e.message).to(start_with('unreachable line reached'))
+    end
+  end
+  it 'asserts unreachable line' do
+    begin # rubocop:disable Style/RedundantBegin
+      error_unexpected_value(nil)
+      raise 'Shall not reach here'
+    rescue Aspera::InternalError => e
+      expect(e.message).to(start_with('unexpected value'))
+    end
+  end
+end
+
 
 RSpec.describe(Aspera::Cli::Main) do
   it 'has a version number' do
