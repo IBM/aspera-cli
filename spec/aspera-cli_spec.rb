@@ -101,20 +101,20 @@ RSpec.describe(Aspera::AsCmd) do
   #    ['df'],
   describe 'info' do
     it 'works' do
-      res = ascmd.execute_single('info', [])
+      res = ascmd.execute_single(:info, [])
       expect(res).to(be_a(Hash))
       expect(res[:lang]).to(eq('C'))
     end
   end
   describe 'ls' do
     it "works on folder #{PATH_FOLDER_TINY}" do
-      res = ascmd.execute_single('ls', [PATH_FOLDER_TINY])
+      res = ascmd.execute_single(:ls, [PATH_FOLDER_TINY])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.map{|i|i[:name]}).to(include(NAME_FILE1))
     end
     it "works on file #{PATH_FILE_EXIST}" do
-      res = ascmd.execute_single('ls', [PATH_FILE_EXIST])
+      res = ascmd.execute_single(:ls, [PATH_FILE_EXIST])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.map{|i|i[:name]}).to(match_array([NAME_FILE1]))
@@ -122,18 +122,18 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'mkdir' do
     it "works on folder #{PATH_FOLDER_NEW}" do
-      res = ascmd.execute_single('mkdir', [PATH_FOLDER_NEW])
+      res = ascmd.execute_single(:mkdir, [PATH_FOLDER_NEW])
       expect(res).to(be(true))
     end
   end
   describe 'cp' do
     it "works on files #{PATH_FILE_EXIST} #{PATH_FILE_COPY}" do
-      res = ascmd.execute_single('cp', [PATH_FILE_EXIST, PATH_FILE_COPY])
+      res = ascmd.execute_single(:cp, [PATH_FILE_EXIST, PATH_FILE_COPY])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
+        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
@@ -142,16 +142,16 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'rename' do
     it "works on folder #{PATH_FOLDER_NEW} #{PATH_FOLDER_RENAMED}" do
-      res = ascmd.execute_single('mv', [PATH_FOLDER_NEW, PATH_FOLDER_RENAMED])
+      res = ascmd.execute_single(:mv, [PATH_FOLDER_NEW, PATH_FOLDER_RENAMED])
       expect(res).to(be(true))
     end
     it 'works on file' do
-      res = ascmd.execute_single('mv', [PATH_FILE_COPY, PATH_FILE_RENAMED])
+      res = ascmd.execute_single(:mv, [PATH_FILE_COPY, PATH_FILE_RENAMED])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
+        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
@@ -160,13 +160,13 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'md5sum' do
     it 'works on file' do
-      res = ascmd.execute_single('md5sum', [PATH_FILE_EXIST])
+      res = ascmd.execute_single(:md5sum, [PATH_FILE_EXIST])
       expect(res).to(be_a(Hash))
       expect(res[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('md5sum', ['/does_not_exist'])
+        ascmd.execute_single(:md5sum, ['/does_not_exist'])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
@@ -175,16 +175,16 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'delete' do
     it 'works on file' do
-      res = ascmd.execute_single('rm', [PATH_FILE_RENAMED])
+      res = ascmd.execute_single(:rm, [PATH_FILE_RENAMED])
       expect(res).to(be(true))
     end
     it 'works on folder' do
-      res = ascmd.execute_single('rm', [PATH_FOLDER_RENAMED])
+      res = ascmd.execute_single(:rm, [PATH_FOLDER_RENAMED])
       expect(res).to(be(true))
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
+        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
@@ -193,7 +193,7 @@ RSpec.describe(Aspera::AsCmd) do
   end
   describe 'df' do
     it 'works alone' do
-      res = ascmd.execute_single('df', [])
+      res = ascmd.execute_single(:df, [])
       expect(res).to(be_a(Array))
       expect(res.first).to(be_a(Hash))
       expect(res.first[:fs]).to(be_a(String))
@@ -201,7 +201,7 @@ RSpec.describe(Aspera::AsCmd) do
     end
     it 'fails if no such file' do
       begin # rubocop:disable Style/RedundantBegin
-        ascmd.execute_single('mv', ['/does_not_exist', PATH_FOLDER_NEW])
+        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
         raise 'Shall not reach here'
       rescue Aspera::AsCmd::Error => e
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
