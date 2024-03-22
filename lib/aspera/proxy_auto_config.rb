@@ -11,7 +11,7 @@ module URI
     alias_method :find_proxy_orig, :find_proxy
     class << self
       def register_proxy_finder
-        assert(block_given?)
+        Aspera.assert(block_given?)
         # overload the method in URI : call user's provided block and fallback to original method
         define_method(:find_proxy) {|env_vars=ENV| yield(to_s) || find_proxy_orig(env_vars)}
       end
@@ -109,12 +109,12 @@ END_OF_JAVASCRIPT
         parts = item.strip.split
         case parts.shift
         when 'DIRECT'
-          assert(parts.empty?){'DIRECT has no param'}
+          Aspera.assert(parts.empty?){'DIRECT has no param'}
           Log.log.debug('ignoring proxy DIRECT')
         when 'PROXY'
           addr_port = parts.shift
-          assert_type(addr_port, String)
-          assert(parts.empty?){'PROXY shall have one param'}
+          Aspera.assert_type(addr_port, String)
+          Aspera.assert(parts.empty?){'PROXY shall have one param'}
           begin
             # PAC proxy addresses are <host>:<port>
             if /:[0-9]+$/.match?(addr_port)

@@ -145,22 +145,22 @@ module Aspera
           # return product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home
-            assert(Dir.exist?(user_home_folder), exception_class: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
+            Aspera.assert(Dir.exist?(user_home_folder), exception_class: Cli::Error){"Home folder does not exist: #{user_home_folder}. Check your user environment."}
             return File.join(user_home_folder, ASPERA_HOME_FOLDER_NAME)
           end
 
           # return product config folder (~/.aspera/<name>)
           def default_app_main_folder(app_name:)
-            assert_type(app_name, String)
-            assert(!app_name.empty?)
+            Aspera.assert_type(app_name, String)
+            Aspera.assert(!app_name.empty?)
             return File.join(module_family_folder, app_name)
           end
         end # self
 
         def initialize(env, params)
-          assert_type(env, Hash)
-          assert_type(params, Hash)
-          assert(%i[gem help name version].eql?(params.keys.sort)){'missing param'}
+          Aspera.assert_type(env, Hash)
+          Aspera.assert_type(params, Hash)
+          Aspera.assert(%i[gem help name version].eql?(params.keys.sort)){'missing param'}
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super(env)
           @info = params
@@ -274,7 +274,7 @@ module Aspera
           @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
           proxy_user_pass = options.get_option(:proxy_credentials)
           if !proxy_user_pass.nil?
-            assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
+            Aspera.assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
             @proxy_credentials = {user: proxy_user_pass[0], pass: proxy_user_pass[1]}
             @pac_exec.proxy_user = @proxy_credentials[:user]
             @pac_exec.proxy_pass = @proxy_credentials[:pass]
@@ -296,7 +296,7 @@ module Aspera
         # add files, folders or default locations to the certificate store
         def trusted_cert_locations=(path_list)
           path_list = [path_list] unless path_list.is_a?(Array)
-          assert_type(path_list, Array){'cert locations'}
+          Aspera.assert_type(path_list, Array){'cert locations'}
           if @certificate_store.nil?
             Log.log.debug('Creating SSL Cert store')
             @certificate_store = OpenSSL::X509::Store.new
@@ -304,7 +304,7 @@ module Aspera
           end
 
           path_list.each do |path|
-            assert_type(path, String){'Expecting a String for certificate location'}
+            Aspera.assert_type(path, String){'Expecting a String for certificate location'}
             paths_to_add = [path]
             Log.log.debug{"Adding cert location: #{path}"}
             if path.eql?(ExtendedValue::DEF)
@@ -484,14 +484,14 @@ module Aspera
         end
 
         def set_preset_key(preset, param_name, param_value)
-          assert_values(param_name.class, [String, Symbol]){'parameter'}
+          Aspera.assert_values(param_name.class, [String, Symbol]){'parameter'}
           param_name = param_name.to_s
           selected_preset = @config_presets[preset]
           if selected_preset.nil?
             Log.log.debug{"No such preset name: #{preset}, initializing"}
             selected_preset = @config_presets[preset] = {}
           end
-          assert_type(selected_preset, Hash){"#{preset}.#{param_name}"}
+          Aspera.assert_type(selected_preset, Hash){"#{preset}.#{param_name}"}
           if selected_preset.key?(param_name)
             if selected_preset[param_name].eql?(param_value)
               Log.log.warn{"keeping same value for #{preset}: #{param_name}: #{param_value}"}
@@ -523,7 +523,7 @@ module Aspera
           include_path = include_path.clone # avoid messing up if there are multiple branches
           current = @config_presets
           config_name.split(PRESET_DIG_SEPARATOR).each do |name|
-            assert_type(current, Hash, exception_class: Cli::Error){"sub key: #{include_path}"}
+            Aspera.assert_type(current, Hash, exception_class: Cli::Error){"sub key: #{include_path}"}
             include_path.push(name)
             current = current[name]
             raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
@@ -541,9 +541,9 @@ module Aspera
         end
 
         def option_plugin_folder=(value)
-          assert_values(value.class, [String, Array]){'plugin folder'}
+          Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
           value = [value] if value.is_a?(String)
-          assert(value.all?(String)){'plugin folder'}
+          Aspera.assert(value.all?(String)){'plugin folder'}
           value.each{|f|add_plugin_lookup_folder(f)}
         end
 
@@ -587,9 +587,9 @@ module Aspera
           end
           files_to_copy = []
           Log.log.debug{Log.dump('Available_presets', @config_presets)}
-          assert_type(@config_presets, Hash){'config file YAML'}
+          Aspera.assert_type(@config_presets, Hash){'config file YAML'}
           # check there is at least the config section
-          assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
+          Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}
           version = @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION]
           raise 'No version found in config section.' if version.nil?
           Log.log.debug{"conf version: #{version}"}
@@ -675,14 +675,14 @@ module Aspera
               next
             end
             next if detection_info.nil?
-            assert_type(detection_info, Hash)
-            assert_type(detection_info[:url], String) if detection_info.key?(:url)
+            Aspera.assert_type(detection_info, Hash)
+            Aspera.assert_type(detection_info[:url], String) if detection_info.key?(:url)
             app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
             # if there is a redirect, then the detector can override the url.
             found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
           end # loop
           raise "No known application found at #{app_url}" if found_apps.empty?
-          assert(found_apps.all?{|a|a.keys.all?(Symbol)})
+          Aspera.assert(found_apps.all?{|a|a.keys.all?(Symbol)})
           return found_apps
         end
 
@@ -1048,9 +1048,9 @@ module Aspera
             exception_class_name = options.get_next_argument('exception class name', mandatory: true)
             exception_text = options.get_next_argument('exception text', mandatory: true)
             exception_class = Object.const_get(exception_class_name)
-            assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
+            Aspera.assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
             raise exception_class, exception_text
-          else error_unreachable_line
+          else Aspera.error_unreachable_line
           end
         end
 
@@ -1071,7 +1071,9 @@ module Aspera
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called
           wiz_plugin_class = self.class.plugin_class(identification[:product])
-          assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument){"Detected: #{identification[:product]}, but this application has no wizard"}
+          Aspera.assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument) do
+            "Detected: #{identification[:product]}, but this application has no wizard"
+          end
           # instantiate plugin: command line options will be known, e.g. private_key
           plugin_instance = wiz_plugin_class.new(@agents)
           wiz_params = {
@@ -1109,7 +1111,7 @@ module Aspera
           # finally, call the wizard
           wizard_result = wiz_plugin_class.wizard(**wiz_params)
           Log.log.debug{"wizard result: #{wizard_result}"}
-          assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
+          Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
           # get preset name from user or default
           wiz_preset_name = options.get_option(:id)
           if wiz_preset_name.nil?
@@ -1162,7 +1164,7 @@ module Aspera
           smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
           # check minimum required
           %i[server port domain].each do |n|
-            assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
+            Aspera.assert(smtp.key?(n)){"Missing mandatory smtp parameter: #{n}"}
           end
           Log.log.debug{"smtp=#{smtp}"}
           return smtp
@@ -1176,7 +1178,7 @@ module Aspera
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
           %i[from_name from_email].each do |n|
-            assert(values.key?(n)){"Missing email parameter: #{n}"}
+            Aspera.assert(values.key?(n)){"Missing email parameter: #{n}"}
           end
           start_options = [mail_conf[:domain]]
           start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
@@ -1184,7 +1186,7 @@ module Aspera
           template_binding = Environment.empty_binding
           # add variables to binding
           values.each do |k, v|
-            assert_type(k, Symbol)
+            Aspera.assert_type(k, Symbol)
             template_binding.local_variable_set(k, v)
           end
           # execute template
@@ -1218,7 +1220,7 @@ module Aspera
         # returns [String] name if config_presets has default
         # returns nil if there is no config or bypass default params
         def get_plugin_default_config_name(plugin_name_sym)
-          assert(!@config_presets.nil?){'config_presets shall be defined'}
+          Aspera.assert(!@config_presets.nil?){'config_presets shall be defined'}
           if !@use_plugin_defaults
             Log.log.debug('skip default config')
             return nil
@@ -1261,7 +1263,7 @@ module Aspera
             vault.delete(label: options.get_next_argument('label'))
             return Main.result_status('Password deleted')
           when :password
-            assert(vault.respond_to?(:password=)){'Vault does not support password change'}
+            Aspera.assert(vault.respond_to?(:password=)){'Vault does not support password change'}
             new_password = options.get_next_argument('new_password')
             vault.password = new_password
             vault.save
@@ -1285,8 +1287,8 @@ module Aspera
           info = info.symbolize_keys
           info[:type] ||= 'file'
           info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : PROGRAM_NAME)
-          assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
-          assert(info.values.all?(String)){'vault info shall have only string values'}
+          Aspera.assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
+          Aspera.assert(info.values.all?(String)){'vault info shall have only string values'}
           info[:password] = options.get_option(:vault_password, mandatory: true)
           return info
         end

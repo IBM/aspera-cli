@@ -89,7 +89,7 @@ module Aspera
 
       # value is provided in block
       def write_file_restricted(path, force: false, mode: nil)
-        assert(block_given?, exception_class: Aspera::InternalError)
+        Aspera.assert(block_given?, exception_class: Aspera::InternalError)
         if force || !File.exist?(path)
           # Windows may give error
           File.unlink(path) rescue nil

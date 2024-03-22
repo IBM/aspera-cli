@@ -17,7 +17,7 @@ module Aspera
       CONTENT_KEYS = %i[label username password url description].freeze
       FILE_KEYS = %w[version type cipher data].sort.freeze
       def initialize(path, current_password)
-        assert_type(path, String){'path to vault file'}
+        Aspera.assert_type(path, String){'path to vault file'}
         @path = path
         @all_secrets = {}
         vault_encrypted_data = nil
@@ -25,7 +25,7 @@ module Aspera
           vault_file = File.read(@path)
           if vault_file.start_with?('---')
             vault_info = YAML.parse(vault_file).to_ruby
-            assert(vault_info.keys.sort == FILE_KEYS){'Invalid vault file'}
+            Aspera.assert(vault_info.keys.sort == FILE_KEYS){'Invalid vault file'}
             @cipher_name = vault_info['cipher']
             vault_encrypted_data = vault_info['data']
           else
@@ -65,11 +65,11 @@ module Aspera
       # set a secret
       # @param options [Hash] with keys :label, :username, :password, :url, :description
       def set(options)
-        assert_type(options, Hash){'options'}
+        Aspera.assert_type(options, Hash){'options'}
         unsupported = options.keys - CONTENT_KEYS
-        assert(unsupported.empty?){"unsupported options: #{unsupported}"}
+        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
         options.each_pair do |k, v|
-          assert_type(v, String){k.to_s}
+          Aspera.assert_type(v, String){k.to_s}
         end
         label = options.delete(:label)
         raise "secret #{label} already exist, delete first" if @all_secrets.key?(label)
@@ -94,7 +94,7 @@ module Aspera
       end
 
       def get(label:, exception: true)
-        assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
+        Aspera.assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
         result = @all_secrets[label].clone
         result[:label] = label if result.is_a?(Hash)
         return result

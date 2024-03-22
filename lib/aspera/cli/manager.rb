@@ -21,7 +21,7 @@ module Aspera
         @option_name = option_name
         @has_writer = @object.respond_to?(writer_method)
         Log.log.debug{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
-        assert(@object.respond_to?(@method)) {"#{object} does not respond to #{method_name}"}
+        Aspera.assert(@object.respond_to?(@method)) {"#{object} does not respond to #{method_name}"}
       end
 
       def value
@@ -61,7 +61,7 @@ module Aspera
 
       class << self
         def enum_to_bool(enum)
-          assert_values(enum, BOOLEAN_VALUES){'boolean'}
+          Aspera.assert_values(enum, BOOLEAN_VALUES){'boolean'}
           return TRUE_VALUES.include?(enum)
         end
 
@@ -103,7 +103,7 @@ module Aspera
         # @param type_list [NilClass, Class, Array[Class]] accepted value type(s)
         def validate_type(what, descr, value, type_list)
           return nil if type_list.nil?
-          assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
+          Aspera.assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
           raise Cli::BadArgument,
             "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
             type_list.any?{|t|value.is_a?(t)}
@@ -181,9 +181,11 @@ module Aspera
       # @param default [Object] default value
       # @return value, list or nil
       def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
-        assert(%i[single multiple].include?(expected) || (expected.is_a?(Array) && expected.all?(Symbol))){'expected must be single, multiple, or array of symbol'}
-        assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
-        assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash'}
+        Aspera.assert(%i[single multiple].include?(expected) || (expected.is_a?(Array) && expected.all?(Symbol))) do
+          'expected must be single, multiple, or array of symbol'
+        end
+        Aspera.assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
+        Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash'}
         allowed_types = type
         unless allowed_types.nil?
           allowed_types = [allowed_types] unless allowed_types.is_a?(Array)
@@ -207,7 +209,7 @@ module Aspera
               allowed_values = [].concat(expected)
               allowed_values.concat(aliases.keys) unless aliases.nil?
               self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
-            else error_unexpected_value(expected)
+            else Aspera.error_unexpected_value(expected)
             end
           elsif !default.nil? then default
             # no value provided, either get value interactively, or exception
@@ -232,7 +234,7 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false, default: nil)
         attributes = @declared_options[option_symbol]
-        assert(attributes){"option not declared: #{option_symbol}"}
+        Aspera.assert(attributes){"option not declared: #{option_symbol}"}
         result = nil
         case attributes[:read_write]
         when :accessor
@@ -295,10 +297,10 @@ module Aspera
       # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
-        assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
-        assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
-        assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
-        assert(!['hash', 'extended value'].any?{|s|description.downcase.include?(s) }){"#{option_symbol} shall use :types"}
+        Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
+        Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
+        Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
+        Aspera.assert(!['hash', 'extended value'].any?{|s|description.downcase.include?(s) }){"#{option_symbol} shall use :types"}
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
@@ -306,7 +308,7 @@ module Aspera
         }
         if !types.nil?
           types = [types] unless types.is_a?(Array)
-          assert(types.all?(Class)){"types must be Array of Class: #{types}"}
+          Aspera.assert(types.all?(Class)){"types must be Array of Class: #{types}"}
           opt[:types] = types
           description = "#{description} (#{types.map(&:name).join(', ')})"
         end
@@ -316,8 +318,8 @@ module Aspera
         end
         Log.log.debug{"declare: #{option_symbol}: #{opt[:read_write]}".green}
         if opt[:read_write].eql?(:accessor)
-          assert_type(handler, Hash)
-          assert(handler.keys.sort.eql?(%i[m o]))
+          Aspera.assert_type(handler, Hash)
+          Aspera.assert(handler.keys.sort.eql?(%i[m o]))
           Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
           opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m], option_symbol)
         end
@@ -356,11 +358,11 @@ module Aspera
             set_option(option_symbol, time_string, SOURCE_USER)
           end
         when :none
-          assert(!block.nil?){"missing block for #{option_symbol}"}
+          Aspera.assert(!block.nil?){"missing block for #{option_symbol}"}
           on_args.push(symbol_to_option(option_symbol, nil))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
-        else error_unexpected_value(values)
+        else Aspera.error_unexpected_value(values)
         end
         Log.log.debug{"on_args=#{on_args}"}
       end
@@ -368,7 +370,7 @@ module Aspera
       # Adds each of the keys of specified hash as an option
       # @param preset_hash [Hash] hash of options to add
       def add_option_preset(preset_hash, op: :push)
-        assert_type(preset_hash, Hash)
+        Aspera.assert_type(preset_hash, Hash)
         Log.log.debug{"add_option_preset=#{preset_hash}"}
         # incremental override
         preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}

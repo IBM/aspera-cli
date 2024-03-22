@@ -127,17 +127,17 @@ module Aspera
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(job_spec, options)
-        assert_type(job_spec, Hash)
-        assert_type(options, Hash)
+        Aspera.assert_type(job_spec, Hash)
+        Aspera.assert_type(options, Hash)
         @job_spec = job_spec
         # check necessary options
         missing_options = SUPPORTED_OPTIONS - options.keys
-        assert(missing_options.empty?){"missing options: #{missing_options.join(', ')}"}
+        Aspera.assert(missing_options.empty?){"missing options: #{missing_options.join(', ')}"}
         @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
         Log.log.debug{Log.dump(:parameters_options, @options)}
         Log.log.debug{Log.dump(:dismiss_options, options.keys - SUPPORTED_OPTIONS)}
-        assert_type(@options[:ascp_args], Array){'ascp_args'}
-        assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
+        Aspera.assert_type(@options[:ascp_args], Array){'ascp_args'}
+        Aspera.assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
         @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
@@ -166,7 +166,7 @@ module Aspera
               Log.log.debug('placing source file list on command line (no file list file)')
               @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
             else
-              assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
+              Aspera.assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
               is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
               raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
               # safer option: generate a file list file if there is storage defined for it
@@ -239,7 +239,7 @@ module Aspera
         @job_spec.delete('source_root') if @job_spec.key?('source_root') && @job_spec['source_root'].empty?
 
         # notify multi-session was already used, anyway it was deleted by agent direct
-        assert(!@builder.read_param('multi_session'))
+        Aspera.assert(!@builder.read_param('multi_session'))
 
         # add ssh or wss certificates
         # (reverse, to keep order, as we unshift)

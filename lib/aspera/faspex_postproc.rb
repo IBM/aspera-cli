@@ -12,7 +12,7 @@ module Aspera
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
     ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds].freeze
     def initialize(server, parameters)
-      assert_type(parameters, Hash)
+      Aspera.assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
       Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
       raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{|k|!ALLOWED_PARAMETERS.include?(k)}

@@ -139,10 +139,10 @@ module Aspera
             check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) {cert.to_pem}
           end
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
-        else error_unexpected_value(k)
+        else Aspera.error_unexpected_value(k)
         end
         return nil if file_is_optional && !File.exist?(file)
-        assert(File.exist?(file)){"no such file: #{file}"}
+        Aspera.assert(File.exist?(file)){"no such file: #{file}"}
         return file
       end
 

@@ -35,7 +35,7 @@ module Aspera
     end
 
     def put(object_id, value)
-      assert_type(value, String)
+      Aspera.assert_type(value, String)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug{"persistency saving: #{persist_filepath}"}
       FileUtils.rm_f(persist_filepath)
@@ -68,7 +68,7 @@ module Aspera
 
     # @param object_id String or Array
     def id_to_filepath(object_id)
-      assert_type(object_id, String)
+      Aspera.assert_type(object_id, String)
       FileUtils.mkdir_p(@folder)
       Environment.restrict_file_access(@folder)
       return File.join(@folder, "#{object_id}#{FILE_SUFFIX}")

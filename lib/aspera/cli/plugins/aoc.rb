@@ -119,7 +119,7 @@ module Aspera
             end
             myself = object.aoc_api.read('self')[:data]
             if auto_set_pub_key
-              assert(myself['public_key'].empty?, exception_class: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
+              Aspera.assert(myself['public_key'].empty?, exception_class: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
               formatter.display_status('Updating profile with the public key.')
               aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
             end
@@ -221,7 +221,7 @@ module Aspera
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
-            assert(field.eql?('name'), exception_class: Cli::BadArgument){'only selection by name is supported'}
+            Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only selection by name is supported'}
             aoc_api.lookup_by_name(resource_class_path, value)['id']
           end
         end
@@ -233,8 +233,8 @@ module Aspera
         # Call block with same query using paging and response information
         # @return [Hash] {data: , total: }
         def api_call_paging(base_query={})
-          assert_type(base_query, Hash){'query'}
-          assert(block_given?)
+          Aspera.assert_type(base_query, Hash){'query'}
+          Aspera.assert(block_given?)
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           base_query['per_page'] = 1000 unless base_query.key?('per_page')
           max_items = base_query.delete(MAX_ITEMS)
@@ -272,8 +272,8 @@ module Aspera
 
         # list all entities, given additional, default and user's queries
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
-          assert_type(base_query, Hash)
-          assert_type(default_query, Hash)
+          Aspera.assert_type(base_query, Hash)
+          Aspera.assert_type(default_query, Hash)
           user_query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks
           yield(user_query) if block_given?
@@ -325,7 +325,7 @@ module Aspera
               client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_direction)
               server_folder = source_folder
-            else error_unreachable_line
+            else Aspera.error_unreachable_line
             end
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
@@ -346,9 +346,9 @@ module Aspera
               server_apfid[:file_id],
               client_direction,
               add_ts)))
-          else error_unreachable_line
+          else Aspera.error_unreachable_line
           end # command_repo
-          error_unreachable_line
+          Aspera.error_unreachable_line
         end # execute_nodegen4_command
 
         def execute_admin_action
@@ -444,7 +444,7 @@ module Aspera
                 when :organizations then aoc_api.current_user_info['organization_id']
                 when :users then aoc_api.current_user_info['id']
                 when :nodes then aoc_api.current_user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
-                else error_unreachable_line
+                else Aspera.error_unreachable_line
                 end
               filter = options.get_option(:query) || {}
               filter['limit'] ||= 100
@@ -558,7 +558,7 @@ module Aspera
               # init context
               aoc_api.context(:files)
               return execute_nodegen4_command(command_repo, res_id)
-            else error_unexpected_value(command)
+            else Aspera.error_unexpected_value(command)
             end
           when :usage_reports
             return result_list('usage_reports', base_query: {workspace_id: aoc_api.context(:files)[:workspace_id]})
@@ -679,12 +679,12 @@ module Aspera
               case ids_to_download
               when ExtendedValue::ALL, ExtendedValue::INIT
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
-                assert_type(query, Hash){'query'}
+                Aspera.assert_type(query, Hash){'query'}
                 resolve_dropbox_name_default_ws_id(query)
                 # remove from list the ones already downloaded
                 all_ids = api_read_all('packages', query)[:data].map{|e|e['id']}
                 if ids_to_download.eql?(ExtendedValue::INIT)
-                  assert(skip_ids_persistency){'Only with option once_only'}
+                  Aspera.assert(skip_ids_persistency){'Only with option once_only'}
                   skip_ids_persistency.data.clear.concat(all_ids)
                   skip_ids_persistency.save
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -731,7 +731,7 @@ module Aspera
                      end
             when :delete
               return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
-                assert_values(id.class, [String, Integer]){'identifier'}
+                Aspera.assert_values(id.class, [String, Integer]){'identifier'}
                 aoc_api.delete("packages/#{id}")[:data]
               end
             when *Node::NODE4_READ_ACTIONS
@@ -761,7 +761,7 @@ module Aspera
               purpose = case link_type
               when :public  then 'token_auth_redirection'
               when :private then 'shared_folder_auth_link'
-              else error_unreachable_line
+              else Aspera.error_unreachable_line
               end
               case short_link_command
               when :delete
@@ -893,9 +893,9 @@ module Aspera
             # this is blocking until server exits
             server.start
             return Main.result_status('Gateway terminated')
-          else error_unreachable_line
+          else Aspera.error_unreachable_line
           end # action
-          error_unreachable_line
+          Aspera.error_unreachable_line
         end
 
         private :execute_admin_action

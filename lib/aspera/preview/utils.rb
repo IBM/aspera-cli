@@ -44,7 +44,7 @@ module Aspera
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
         def external_command(command_sym, command_args, check_code: true)
-          assert_values(command_sym, EXTERNAL_TOOLS){'command'}
+          Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
           # build command line, and quote special characters
           command_line = command_args.clone.unshift(command_sym).map{|i| shell_quote(i.to_s)}.join(' ')
           Log.log.debug{"cmd=#{command_line}".blue}
@@ -59,7 +59,7 @@ module Aspera
         end
 
         def ffmpeg(a)
-          assert_type(a, Hash)
+          Aspera.assert_type(a, Hash)
           # input_file,input_args,output_file,output_args
           a[:gl_p] ||= [
             '-y', # overwrite output without asking
@@ -67,7 +67,7 @@ module Aspera
           ]
           a[:in_p] ||= []
           a[:out_p] ||= []
-          assert(%i[gl_p in_f in_p out_f out_p].eql?(a.keys.sort)){"wrong params (#{a.keys.sort})"}
+          Aspera.assert(%i[gl_p in_f in_p out_f out_p].eql?(a.keys.sort)){"wrong params (#{a.keys.sort})"}
           external_command(:ffmpeg, [a[:gl_p], a[:in_p], '-i', a[:in_f], a[:out_p], a[:out_f]].flatten)
         end
 

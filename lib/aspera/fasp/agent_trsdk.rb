@@ -73,13 +73,13 @@ module Aspera
           # if transferd is external: do not start it, or other error
           raise if @options[:external] || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
-          assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
+          Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
           Log.log.warn('no daemon present, starting daemon...') if @options[:external]
           # location of daemon binary
           sdk_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
-          assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
+          Aspera.assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
           # create a config file for daemon
           config = {
             address:      daemon_uri.host,

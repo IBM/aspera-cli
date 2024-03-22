@@ -13,10 +13,10 @@ module Aspera
     class << self
       def parameters_from_svc_credentials(service_credentials, bucket_region)
         # check necessary contents
-        assert_type(service_credentials, Hash){'service_credentials'}
+        Aspera.assert_type(service_credentials, Hash){'service_credentials'}
         Aspera::Log.dump('service_credentials', service_credentials)
         %w[apikey resource_instance_id endpoints].each do |field|
-          assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
+          Aspera.assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
         end
         # read endpoints from service provided in service credentials
         endpoints = Aspera::Rest.new({base_url: service_credentials['endpoints']}).read('')[:data]
@@ -32,8 +32,8 @@ module Aspera
     end
 
     def initialize(instance_id:, api_key:, endpoint:, bucket:, auth_url: IBM_CLOUD_TOKEN_URL)
-      assert_type(instance_id, String){'resource instance id (crn)'}
-      assert_type(endpoint, String){'endpoint'}
+      Aspera.assert_type(instance_id, String){'resource instance id (crn)'}
+      Aspera.assert_type(endpoint, String){'endpoint'}
       endpoint = "https://#{endpoint}" unless endpoint.start_with?('http')
       @auth_url = auth_url
       @api_key = api_key

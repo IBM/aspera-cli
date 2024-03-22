@@ -99,7 +99,7 @@ module Aspera
       Logger::Severity.constants.each do |name|
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
       end
-      error_unexpected_value(@logger.level){'log level'}
+      Aspera.error_unexpected_value(@logger.level){'log level'}
     end
 
     # change underlying logger, but keep log level

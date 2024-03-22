@@ -51,7 +51,7 @@ module Aspera
           end
           return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
         when NilClass then return ->(_){true}
-        else error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
+        else Aspera.error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
         end
       end
 
@@ -66,8 +66,8 @@ module Aspera
 
       def decode_scope(scope)
         items = scope.split(SCOPE_SEPARATOR, 2)
-        assert(items.length.eql?(2)){"invalid scope: #{scope}"}
-        assert(items[0].start_with?(SCOPE_PREFIX)){"invalid scope: #{scope}"}
+        Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
+        Aspera.assert(items[0].start_with?(SCOPE_PREFIX)){"invalid scope: #{scope}"}
         return {access_key: items[0][SCOPE_PREFIX.length..-1], scope: items[1]}
       end
 
@@ -75,11 +75,11 @@ module Aspera
       # @param payload [String] JSON payload to be included in the token
       # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
       def bearer_token(access_key:, payload:, private_key:)
-        assert_type(payload, Hash)
-        assert(payload.key?('user_id'))
-        assert_type(payload['user_id'], String)
-        assert(!payload['user_id'].empty?)
-        assert_type(private_key, OpenSSL::PKey::RSA)
+        Aspera.assert_type(payload, Hash)
+        Aspera.assert(payload.key?('user_id'))
+        Aspera.assert_type(payload['user_id'], String)
+        Aspera.assert(!payload['user_id'].empty?)
+        Aspera.assert_type(private_key, OpenSSL::PKey::RSA)
         # manage convenience parameters
         expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
         payload.delete('_validity')
@@ -105,7 +105,7 @@ module Aspera
         # if username is not provided, use the access key from the token
         if access_key.nil?
           access_key = Aspera::Node.decode_scope(Aspera::Node.decode_bearer_token(Oauth.bearer_extract(bearer_auth))['scope'])[:access_key]
-          assert(!access_key.nil?)
+          Aspera.assert(!access_key.nil?)
         end
         return {
           Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => access_key,
@@ -132,10 +132,10 @@ module Aspera
       @add_tspec = add_tspec
       if !@app_info.nil?
         REQUIRED_APP_INFO_FIELDS.each do |field|
-          assert(@app_info.key?(field)){"app_info lacks field #{field}"}
+          Aspera.assert(@app_info.key?(field)){"app_info lacks field #{field}"}
         end
         REQUIRED_APP_API_METHODS.each do |method|
-          assert(@app_info[:api].respond_to?(method)){"#{@app_info[:api].class} lacks method #{method}"}
+          Aspera.assert(@app_info[:api].respond_to?(method)){"#{@app_info[:api].class} lacks method #{method}"}
         end
       end
     end
@@ -166,8 +166,8 @@ module Aspera
     # @param top_file_path [String] path of top folder (default = /)
     # @param block [Proc] processing method, arguments: entry, path, state
     def process_folder_tree(state:, top_file_id:, top_file_path: '/', &block)
-      assert(!top_file_path.nil?){'top_file_path not set'}
-      assert(block){'Missing block'}
+      Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
+      Aspera.assert(block){'Missing block'}
       # start at top folder
       folders_to_explore = [{id: top_file_id, path: top_file_path}]
       Log.log.debug{Log.dump(:folders_to_explore, folders_to_explore)}
@@ -208,7 +208,7 @@ module Aspera
     # @param path [String]  file path
     # @return [Hash] {.api,.file_id}
     def resolve_api_fid(top_file_id, path)
-      assert_type(top_file_id, String)
+      Aspera.assert_type(top_file_id, String)
       process_last_link = path.end_with?(PATH_SEPARATOR)
       path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
       return {api: self, file_id: top_file_id} if path_elements.empty?
@@ -277,14 +277,14 @@ module Aspera
       case params[:auth][:type]
       when :basic
         ak_name = params[:auth][:username]
-        assert(params[:auth][:password]){'no secret in node object'}
+        Aspera.assert(params[:auth][:password]){'no secret in node object'}
         ak_token = Rest.basic_token(params[:auth][:username], params[:auth][:password])
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
         # get bearer token, possibly use cache
         ak_token = oauth_token(force_refresh: false)
-      else error_unexpected_value(params[:auth][:type])
+      else Aspera.error_unexpected_value(params[:auth][:type])
       end
       transfer_spec = {
         'direction' => direction,

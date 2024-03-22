@@ -20,10 +20,10 @@ module Aspera
       def initialize(params=nil)
         @parameters = DEFAULTS.dup
         if !params.nil?
-          assert_type(params, Hash)
+          Aspera.assert_type(params, Hash)
           params.each do |k, v|
-            assert_values(k, DEFAULTS.keys){'resume parameter'}
-            assert_type(v, Integer){k}
+            Aspera.assert_values(k, DEFAULTS.keys){'resume parameter'}
+            Aspera.assert_type(v, Integer){k}
             @parameters[k] = v
           end
         end
@@ -33,7 +33,7 @@ module Aspera
       # calls block a number of times (resumes) until success or limit reached
       # this is re-entrant, one resumer can handle multiple transfers in //
       def execute_with_resume
-        assert(block_given?)
+        Aspera.assert(block_given?)
         # maximum of retry
         remaining_resumes = @parameters[:iter_max]
         sleep_seconds = @parameters[:sleep_initial]

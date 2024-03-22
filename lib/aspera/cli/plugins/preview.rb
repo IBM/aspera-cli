@@ -96,7 +96,7 @@ module Aspera
           end
 
           options.parse_options!
-          assert_type(@option_skip_folders, Array){'skip_folder'}
+          Aspera.assert_type(@option_skip_folders, Array){'skip_folder'}
           @tmp_folder = File.join(options.get_option(:temp_folder, mandatory: true), "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
           FileUtils.mkdir_p(@tmp_folder)
           Log.log.debug{"tmpdir: #{@tmp_folder}"}
@@ -106,7 +106,7 @@ module Aspera
           @skip_types = []
           value.split(',').each do |v|
             s = v.to_sym
-            assert_values(s, Aspera::Preview::FileTypes::CONVERSION_TYPES){'skip_types'}
+            Aspera.assert_values(s, Aspera::Preview::FileTypes::CONVERSION_TYPES){'skip_types'}
             @skip_types.push(s)
           end
         end
@@ -213,7 +213,7 @@ module Aspera
         end
 
         def do_transfer(direction, folder_id, source_filename, destination='/')
-          assert(!(destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)))
+          Aspera.assert(!(destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)))
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
             'tags'  => {Fasp::TransferSpec::TAG_RESERVED => {PREV_GEN_TAG => true}}
@@ -422,13 +422,13 @@ module Aspera
               raise Cli::Error, "Folder #{@option_previews_folder} does not exist on node. " \
                 'Please create it in the storage root, or specify an alternate name.' if @previews_folder_entry.nil?
             else
-              assert(@access_key_self['storage']['type'].eql?('local')){'only local storage allowed in this mode'}
+              Aspera.assert(@access_key_self['storage']['type'].eql?('local')){'only local storage allowed in this mode'}
               @local_storage_root = @access_key_self['storage']['path']
               # TODO: option to override @local_storage_root='xxx'
               @local_storage_root = @local_storage_root[PVCL_LOCAL_STORAGE.length..-1] if @local_storage_root.start_with?(PVCL_LOCAL_STORAGE)
               # TODO: windows could have "C:" ?
-              assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
-              assert(File.directory?(@local_storage_root), exception_class: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
+              Aspera.assert(@local_storage_root.start_with?('/')){"not local storage: #{@local_storage_root}"}
+              Aspera.assert(File.directory?(@local_storage_root), exception_class: Cli::Error){"Local storage root folder #{@local_storage_root} does not exist."}
               @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
               raise Cli::Error, "Folder #{@local_preview_folder} does not exist locally. " \
                 'Please create it, or specify an alternate name.' unless File.directory?(@local_preview_folder)
@@ -437,7 +437,7 @@ module Aspera
               Log.log.debug{"marker file: #{marker_file}"}
               if File.exist?(marker_file)
                 ak = File.read(marker_file).chomp
-                assert(@access_key_self['id'].eql?(ak)){"mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}"}
+                Aspera.assert(@access_key_self['id'].eql?(ak)){"mismatch access key in #{marker_file}: contains #{ak}, using #{@access_key_self['id']}"}
               else
                 File.write(marker_file, @access_key_self['id'])
               end

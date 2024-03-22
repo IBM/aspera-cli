@@ -28,22 +28,22 @@ module Aspera
       end
       class << self
         def action_to_direction(tspec, command)
-          assert_type(tspec, Hash){'transfer spec'}
+          Aspera.assert_type(tspec, Hash){'transfer spec'}
           tspec['direction'] = case command.to_sym
           when :upload then DIRECTION_SEND
           when :download then DIRECTION_RECEIVE
-          else error_unexpected_value(command.to_sym)
+          else Aspera.error_unexpected_value(command.to_sym)
           end
           return tspec
         end
 
         def action(tspec)
-          assert_type(tspec, Hash){'transfer spec'}
-          assert_values(tspec['direction'], [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
+          Aspera.assert_type(tspec, Hash){'transfer spec'}
+          Aspera.assert_values(tspec['direction'], [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
           case tspec['direction']
           when DIRECTION_SEND then :upload
           when DIRECTION_RECEIVE then :download
-          else error_unexpected_value(tspec['direction'])
+          else Aspera.error_unexpected_value(tspec['direction'])
           end
         end
       end

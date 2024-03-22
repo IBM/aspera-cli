@@ -29,20 +29,20 @@ module Aspera
       # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
       def normalize_description(full_description)
         full_description.each do |name, options|
-          assert_type(options, Hash){name}
+          Aspera.assert_type(options, Hash){name}
           unsupported_keys = options.keys - OPTIONS_KEYS
-          assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          assert(options.key?(:cli)){"Missing key: cli for #{name}"}
-          assert_type(options[:cli], Hash){'Key: cli'}
-          assert(options[:cli].key?(:type)){'Missing key: cli.type'}
-          assert_values(options[:cli][:type], CLI_OPTION_TYPES){"Unsupported processing type for #{name}"}
+          Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
+          Aspera.assert(options.key?(:cli)){"Missing key: cli for #{name}"}
+          Aspera.assert_type(options[:cli], Hash){'Key: cli'}
+          Aspera.assert(options[:cli].key?(:type)){'Missing key: cli.type'}
+          Aspera.assert_values(options[:cli][:type], CLI_OPTION_TYPES){"Unsupported processing type for #{name}"}
           # by default : optional
           options[:mandatory] ||= false
           options[:desc] ||= ''
           options[:desc] = "DEPRECATED: #{options[:deprecation]}\n#{options[:desc]}" if options.key?(:deprecation)
           cli = options[:cli]
           unsupported_cli_keys = cli.keys - CLI_KEYS
-          assert(unsupported_cli_keys.empty?){"Unsupported cli keys: #{unsupported_cli_keys}"}
+          Aspera.assert(unsupported_cli_keys.empty?){"Unsupported cli keys: #{unsupported_cli_keys}"}
           # by default : string, unless it's without arg
           options[:accepted_types] ||= options[:cli][:type].eql?(:opt_without_arg) ? :bool : :string
           # single type is placed in array
@@ -123,7 +123,7 @@ module Aspera
         when :hash then Hash
         when :int then Integer
         when :bool then [TrueClass, FalseClass]
-        else error_unexpected_value(type_symbol)
+        else Aspera.error_unexpected_value(type_symbol)
         end
       end.flatten
       # check that value is of expected type
@@ -152,7 +152,7 @@ module Aspera
         raise Fasp::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
         parameter_value = converted_value
       when NilClass
-      else error_unexpected_value(options[:cli][:convert].class)
+      else Aspera.error_unexpected_value(options[:cli][:convert].class)
       end
 
       case processing_type
@@ -161,14 +161,14 @@ module Aspera
       when :ignore, :special # ignore this parameter or process later
         return
       when :envvar # set in env var
-        assert(options[:cli].key?(:variable)){'missing key: cli.variable'}
+        Aspera.assert(options[:cli].key?(:variable)){'missing key: cli.variable'}
         @result[:env][options[:cli][:variable]] = parameter_value
       when :opt_without_arg # if present and true : just add option without value
         add_param = false
         case parameter_value
         when false then nil # nothing to put on command line, no creation by default
         when true then add_param = true
-        else error_unexpected_value(parameter_value){name}
+        else Aspera.error_unexpected_value(parameter_value){name}
         end
         add_param = !add_param if options[:add_on_false]
         add_command_line_options([options[:cli][:switch]]) if add_param

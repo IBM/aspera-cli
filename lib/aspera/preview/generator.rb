@@ -54,7 +54,7 @@ module Aspera
         end
         @processing_method = @processing_method.to_sym
         Log.log.debug{"method: #{@processing_method}"}
-        assert(respond_to?(@processing_method, true)){"no processing know for #{conversion_type} -> #{@preview_format_sym}"}
+        Aspera.assert(respond_to?(@processing_method, true)){"no processing know for #{conversion_type} -> #{@preview_format_sym}"}
       end
 
       # create preview as specified in constructor
@@ -88,7 +88,7 @@ module Aspera
       # @param total_count of parts
       # @param index of part (start at 1)
       def get_offset(duration, start_offset, total_count, index)
-        assert_type(duration, Float){'duration'}
+        Aspera.assert_type(duration, Float){'duration'}
         return start_offset + ((index - 1) * (duration - start_offset) / total_count)
       end
 
@@ -151,10 +151,10 @@ module Aspera
       # do a simple re-encoding
       def convert_video_to_mp4_using_reencode
         options = @options.reencode_ffmpeg
-        assert_type(options, Hash){'reencode_ffmpeg'}
+        Aspera.assert_type(options, Hash){'reencode_ffmpeg'}
         options.each do |k, v|
-          assert_values(k, FFMPEG_OPTIONS_LIST){'key'}
-          assert_type(v, Array){k}
+          Aspera.assert_values(k, FFMPEG_OPTIONS_LIST){'key'}
+          Aspera.assert_type(v, Array){k}
         end
         Utils.ffmpeg(
           in_f: @source_file_path,

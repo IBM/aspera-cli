@@ -11,7 +11,7 @@ module Aspera
     # @param app_api [Aspera::AoC]
     # @param app_context [String]
     def initialize(server, app_api, app_context)
-      assert_values(app_api.class.name, ['Aspera::AoC', 'Aspera::Rest'])
+      Aspera.assert_values(app_api.class.name, ['Aspera::AoC', 'Aspera::Rest'])
       super(server)
       # typed: Aspera::AoC
       @app_api = app_api
@@ -76,7 +76,7 @@ module Aspera
               faspex4_send_to_aoc(faspex_pkg_parameters)
             when 'Aspera::Rest'
               faspex4_send_to_faspex5(faspex_pkg_parameters)
-            else error_unexpected_value(@app_api.class.name)
+            else Aspera.error_unexpected_value(@app_api.class.name)
             end
           Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
           response.status = 200

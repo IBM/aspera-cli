@@ -23,10 +23,10 @@ module Aspera
     class << self
       # process results of a analysis and display status and exit with code
       def process(data)
-        assert_type(data, Array)
-        assert(!data.empty?){'data is empty'}
+        Aspera.assert_type(data, Array)
+        Aspera.assert(!data.empty?){'data is empty'}
         %w[status component message].each do |c|
-          assert(data.first.key?(c)){"result must have #{c}"}
+          Aspera.assert(data.first.key?(c)){"result must have #{c}"}
         end
         res_errors = data.reject{|s|s['status'].eql?('ok')}
         # keep only errors in case of problem, other ok are assumed so

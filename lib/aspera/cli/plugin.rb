@@ -34,11 +34,11 @@ module Aspera
       end
 
       def initialize(env)
-        assert_type(env, Hash)
+        Aspera.assert_type(env, Hash)
         @agents = env
         # check presence in descendant of mandatory method and constant
-        assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
-        assert(self.class.constants.include?(:ACTIONS)){'ACTIONS shall be redefined by subclass'}
+        Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
+        Aspera.assert(self.class.constants.include?(:ACTIONS)){'ACTIONS shall be redefined by subclass'}
         # manual header for all plugins
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
@@ -76,7 +76,7 @@ module Aspera
       # @param id_result [String] key in result hash to use as identifier
       # @param fields [Array] fields to display
       def do_bulk_operation(command:, descr:, values: Hash, id_result: 'id', fields: :default)
-        assert(block_given?){'missing block'}
+        Aspera.assert(block_given?){'missing block'}
         is_bulk = options.get_option(:bulk)
         case values
         when :identifier
@@ -238,14 +238,14 @@ module Aspera
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)
-          assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
+          Aspera.assert(type.all?(Class)){"check types must be a Class, not #{type.map(&:class).join(',')}"}
           if bulk
-            assert_type(value, Array, exception_class: Cli::BadArgument)
+            Aspera.assert_type(value, Array, exception_class: Cli::BadArgument)
             value.each do |v|
-              assert_values(v.class, type, exception_class: Cli::BadArgument)
+              Aspera.assert_values(v.class, type, exception_class: Cli::BadArgument)
             end
           else
-            assert_values(value.class, type, exception_class: Cli::BadArgument)
+            Aspera.assert_values(value.class, type, exception_class: Cli::BadArgument)
           end
         end
         return value

@@ -59,10 +59,10 @@ module Aspera
       # build URI from URL and parameters and check it is http or https
       def build_uri(url, params=nil)
         uri = URI.parse(url)
-        assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
+        Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
         return uri if params.nil?
         Log.log.debug{Log.dump('params', params)}
-        assert_type(params, Hash)
+        Aspera.assert_type(params, Hash)
         return uri if params.empty?
         query = []
         params.each do |k, v|
@@ -105,10 +105,10 @@ module Aspera
       # little hack, handy because HTTP debug, proxy, etc... will be available
       # used implement web sockets after `start_http_session`
       def io_http_session(http_session)
-        assert_type(http_session, Net::HTTP)
+        Aspera.assert_type(http_session, Net::HTTP)
         # Net::BufferedIO in net/protocol.rb
         result = http_session.instance_variable_get(:@socket)
-        assert(!result.nil?){"no socket for #{http_session}"}
+        Aspera.assert(!result.nil?){"no socket for #{http_session}"}
         return result
       end
 
@@ -132,7 +132,7 @@ module Aspera
       # set global parameters
       def set_parameters(**options)
         options.each do |key, value|
-          assert(@@global.key?(key)){"unknown Rest option #{key}"}
+          Aspera.assert(@@global.key?(key)){"unknown Rest option #{key}"}
           @@global[key] = value
         end
       end
@@ -159,7 +159,7 @@ module Aspera
 
     def oauth
       if @oauth.nil?
-        assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
+        Aspera.assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
         @oauth = Oauth.new(@params[:auth])
       end
       return @oauth
@@ -167,8 +167,8 @@ module Aspera
 
     # @param a_rest_params [Hash] default call parameters (merged at call)
     def initialize(a_rest_params)
-      assert_type(a_rest_params, Hash)
-      assert_type(a_rest_params[:base_url], String)
+      Aspera.assert_type(a_rest_params, Hash)
+      Aspera.assert_type(a_rest_params[:base_url], String)
       @params = a_rest_params.clone
       Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
@@ -182,7 +182,7 @@ module Aspera
     end
 
     def oauth_token(force_refresh: false)
-      assert_values(force_refresh, [true, false])
+      Aspera.assert_values(force_refresh, [true, false])
       return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
@@ -246,7 +246,7 @@ module Aspera
     # :url_query  [:url] a hash
     # :*          [:oauth2] see Oauth class
     def call(call_data)
-      assert_type(call_data, Hash)
+      Aspera.assert_type(call_data, Hash)
       call_data[:subpath] = '' if call_data[:subpath].nil?
       Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
@@ -266,7 +266,7 @@ module Aspera
         call_data[:auth][:url_query].each do |key, value|
           call_data[:url_params][key] = value
         end
-      else error_unexpected_value(call_data[:auth][:type])
+      else Aspera.error_unexpected_value(call_data[:auth][:type])
       end
       req = build_request(call_data)
       Log.log.debug{"call_data = #{call_data}"}
@@ -351,7 +351,7 @@ module Aspera
           # special case: relative redirect
           if URI.parse(new_url).host.nil?
             # we don't manage relative redirects with non-absolute path
-            assert(new_url.start_with?('/')){"redirect location is relative: #{new_url}, but does not start with /."}
+            Aspera.assert(new_url.start_with?('/')){"redirect location is relative: #{new_url}, but does not start with /."}
             new_url = current_uri.scheme + '://' + current_uri.host + new_url
           end
           Log.log.info{"URL is moved: #{new_url}"}
@@ -409,7 +409,7 @@ module Aspera
       # API style: {totalcount:, ...} cspell: disable-line
       # TODO: not generic enough ? move somewhere ? inheritance ?
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
-      assert_type(matching_items, Array)
+      Aspera.assert_type(matching_items, Array)
       case matching_items.length
       when 1 then return matching_items.first
       when 0 then raise %Q{#{ENTITY_NOT_FOUND} #{subpath}: "#{search_name}"}

@@ -17,7 +17,7 @@ module Aspera
             i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
           end.join(ID_SEPARATOR)
         end
-        assert_type(object_id, String)
+        Aspera.assert_type(object_id, String)
         return object_id
             .gsub(WINDOWS_PROTECTED_CHAR, PROTECTED_CHAR_REPLACE) # remove windows forbidden chars
             .gsub('.', PROTECTED_CHAR_REPLACE) # keep dot for extension only (nicer)

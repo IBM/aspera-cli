@@ -20,7 +20,7 @@ module Aspera
       end
 
       def execute_sync_action(&block)
-        assert(block){'No block given'}
+        Aspera.assert(block){'No block given'}
         command = options.get_next_command(%i[start admin])
         # try to get 3 arguments as simple arguments
         case command
@@ -45,9 +45,9 @@ module Aspera
               :sync_info,
               mandatory: false,
               default: {'sessions' => [{'name' => File.basename(simple_session_args['local_dir'])}]})
-            assert_type(async_params, Hash){'sync_info'}
-            assert_type(async_params['sessions'], Array){'sync_info[sessions]'}
-            assert_type(async_params['sessions'].first, Hash){'sync_info[sessions][0]'}
+            Aspera.assert_type(async_params, Hash){'sync_info'}
+            Aspera.assert_type(async_params['sessions'], Array){'sync_info[sessions]'}
+            Aspera.assert_type(async_params['sessions'].first, Hash){'sync_info[sessions][0]'}
             async_params['sessions'].first.merge!(simple_session_args)
           end
           Log.log.debug{Log.dump('async_params', async_params)}

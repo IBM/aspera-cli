@@ -107,7 +107,7 @@ module Aspera
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
         @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
         # data persistency
-        assert(@agents[:persistency]){'missing persistency object'}
+        Aspera.assert(@agents[:persistency]){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
         @agents[:transfer] = TransferAgent.new(options, config)
         Log.log.debug('plugin env created'.red)

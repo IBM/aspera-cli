@@ -15,10 +15,10 @@ module Aspera
     # @param :format   Optional  dump method (default to JSON)
     # @param :merge    Optional  merge data from file to current data
     def initialize(manager:, data:, id:, delete: nil, parse: nil, format: nil, merge: nil)
-      assert(!manager.nil?)
-      assert(!data.nil?)
-      assert_type(id, String)
-      assert(!id.empty?)
+      Aspera.assert(!manager.nil?)
+      Aspera.assert(!data.nil?)
+      Aspera.assert_type(id, String)
+      Aspera.assert(!id.empty?)
       @manager = manager
       @persisted_object = data
       @object_id = id

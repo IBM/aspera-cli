@@ -37,9 +37,9 @@ module Aspera
     def execute_single(action_sym, arguments)
       arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
-      assert_type(action_sym, Symbol)
-      assert_type(arguments, Array)
-      assert(arguments.all?(String), 'arguments must be strings')
+      Aspera.assert_type(action_sym, Symbol)
+      Aspera.assert_type(arguments, Array)
+      Aspera.assert(arguments.all?(String), 'arguments must be strings')
       # lines of commands (String's)
       command_lines = []
       # add "as_" command
@@ -85,7 +85,11 @@ module Aspera
         end
       end
       # for info, second overrides first, so restore it
-      case result.keys.length; when 0 then result = system_info; when 1 then result = result[result.keys.first]; else error_unexpected_value(result.keys.length); end
+      case result.keys.length
+      when 0 then result = system_info
+      when 1 then result = result[result.keys.first]
+      else Aspera.error_unexpected_value(result.keys.length)
+      end
       # raise error as exception
       raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
         result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
@@ -206,7 +210,7 @@ module Aspera
               end
             end
           end
-        else error_unexpected_value(type_descr[:decode])
+        else Aspera.error_unexpected_value(type_descr[:decode])
         end # is_a
         return result
       end

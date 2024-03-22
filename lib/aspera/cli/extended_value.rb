@@ -78,7 +78,7 @@ module Aspera
       # add a new handler
       def set_handler(name, method)
         Log.log.debug{"setting handler for #{name}"}
-        assert_type(name, Symbol){'name'}
+        Aspera.assert_type(name, Symbol){'name'}
         @handlers[name] = method
       end
 

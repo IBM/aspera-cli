@@ -188,8 +188,8 @@ module Aspera
       # @param session this session information
       # could be private method
       def start_transfer_with_args_env(env_args, session)
-        assert_type(env_args, Hash)
-        assert_type(session, Hash)
+        Aspera.assert_type(env_args, Hash)
+        Aspera.assert_type(session, Hash)
         Log.log.debug{"env_args=#{env_args.inspect}"}
         notify_progress(session_id: nil, type: :pre_start, info: 'starting')
         begin
@@ -221,7 +221,7 @@ module Aspera
           Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
           readable, _, _ = IO.select([mgt_server_socket], nil, nil, @options[:spawn_timeout_sec])
           Log.log.debug('after select, before accept')
-          assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
+          Aspera.assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
           # There is a connection to accept
           client_socket, _client_addrinfo = mgt_server_socket.accept
           Log.log.debug('after accept')

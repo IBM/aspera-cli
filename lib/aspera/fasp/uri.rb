@@ -13,7 +13,7 @@ module Aspera
       SCHEME = 'faspe'
       def initialize(fasp_link)
         @fasp_uri = URI.parse(fasp_link.gsub(' ', '%20'))
-        assert(@fasp_uri.scheme == SCHEME, "Invalid scheme: #{@fasp_uri.scheme}")
+        Aspera.assert(@fasp_uri.scheme == SCHEME, "Invalid scheme: #{@fasp_uri.scheme}")
       end
 
       # Generate transfer spec from provided faspe: URL

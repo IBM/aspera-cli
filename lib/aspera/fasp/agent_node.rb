@@ -23,7 +23,7 @@ module Aspera
       # attr_writer :options
 
       def initialize(opts)
-        assert_type(opts, Hash){'node agent options'}
+        Aspera.assert_type(opts, Hash){'node agent options'}
         super(opts)
         options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
         # root id is required for access key
@@ -68,7 +68,7 @@ module Aspera
           case transfer_spec['direction']
           when Fasp::TransferSpec::DIRECTION_SEND then transfer_spec['source_root_id'] = @root_id
           when Fasp::TransferSpec::DIRECTION_RECEIVE then transfer_spec['destination_root_id'] = @root_id
-          else error_unexpected_value(transfer_spec['direction'])
+          else Aspera.error_unexpected_value(transfer_spec['direction'])
           end
         end
         # manage special additional parameter

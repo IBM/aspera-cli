@@ -70,7 +70,7 @@ module Aspera
 
       # multiple option are merged
       def option_transfer_spec=(value)
-        assert_type(value, Hash){'ts'}
+        Aspera.assert_type(value, Hash){'ts'}
         @transfer_spec_command_line.deep_merge!(value)
       end
 
@@ -144,7 +144,7 @@ module Aspera
         case direction.to_s
         when Fasp::TransferSpec::DIRECTION_SEND then dest_folder = '/'
         when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder = '.'
-        else error_unexpected_value(direction)
+        else Aspera.error_unexpected_value(direction)
         end
         return dest_folder
       end
@@ -157,7 +157,7 @@ module Aspera
       end
 
       def httpgw_url_cb=(httpgw_url_proc)
-        assert_type(httpgw_url_proc, Proc){'httpgw_url_cb'}
+        Aspera.assert_type(httpgw_url_proc, Proc){'httpgw_url_cb'}
         @httpgw_url_lambda = httpgw_url_proc
       end
 
@@ -203,9 +203,9 @@ module Aspera
           # when providing a list, just specify source
           @transfer_paths = file_list.map{|i|{'source' => i}}
         when :pair
-          assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
+          Aspera.assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
           @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
-        else error_unexpected_value(source_type)
+        else Aspera.error_unexpected_value(source_type)
         end
         Log.log.debug{"paths=#{@transfer_paths}"}
         return @transfer_paths
@@ -216,7 +216,7 @@ module Aspera
       # @param rest_token [Rest] if oauth token regeneration supported
       def start(transfer_spec, rest_token: nil)
         # check parameters
-        assert_type(transfer_spec, Hash){'transfer_spec'}
+        Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}
         # process :src option
         case transfer_spec['direction']
         when Fasp::TransferSpec::DIRECTION_RECEIVE

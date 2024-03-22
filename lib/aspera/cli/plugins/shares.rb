@@ -133,7 +133,7 @@ module Aspera
               when :import # saml
                 return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
                   entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
-                  assert_type(entity_parameters, Hash)
+                  Aspera.assert_type(entity_parameters, Hash)
                   SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
                   entity_parameters.each_key do |p|
                     raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
@@ -146,7 +146,7 @@ module Aspera
                 end
               when :users # group
                 return entity_action(api_shares_admin, "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")
-              else error_unexpected_value(entity_verb)
+              else Aspera.error_unexpected_value(entity_verb)
               end
             end
           end

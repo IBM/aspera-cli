@@ -26,7 +26,7 @@ module Aspera
 
       def event(session_id:, type:, info: nil)
         Log.log.debug{"progress: #{type} #{session_id} #{info}"}
-        assert(!session_id.nil? || type.eql?(:pre_start)){'session_id is nil'}
+        Aspera.assert(!session_id.nil? || type.eql?(:pre_start)){'session_id is nil'}
         return if @completed
         if @progress_bar.nil?
           @progress_bar = ProgressBar.create(

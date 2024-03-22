@@ -129,7 +129,7 @@ module Aspera
               }}
             api_ak_auth = Rest.new(rest_params)
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
-          else error_unreachable_line
+          else Aspera.error_unexpected_value(command)
           end
         end
 
@@ -201,7 +201,7 @@ module Aspera
           when :delete
             ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
-          else error_unreachable_line
+          else Aspera.error_unexpected_value(command)
           end
         end
 
@@ -225,7 +225,7 @@ module Aspera
           when :aws_trust_policy
             res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})[:data]
             return {type: :single_object, data: res}
-          else error_unexpected_value(command)
+          else Aspera.error_unexpected_value(command)
           end
         end
 

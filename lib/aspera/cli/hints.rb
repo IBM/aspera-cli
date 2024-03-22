@@ -60,13 +60,13 @@ module Aspera
             matches = hint[:match]
             matches = [matches] unless matches.is_a?(Array)
             matches.each do |m|
-              assert_values(m.class, [String, Regexp])
+              Aspera.assert_values(m.class, [String, Regexp])
               case m
               when String
                 next unless message.eql?(m)
               when Regexp
                 next unless message.match?(m)
-              else error_unexpected_value(m)
+              else Aspera.error_unexpected_value(m)
               end
               remediation = hint[:remediation]
               remediation = [remediation] unless remediation.is_a?(Array)

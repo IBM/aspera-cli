@@ -97,7 +97,7 @@ module Aspera
               call_args[:url_params][:format] = format
             when :ext
               call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
-            else error_unexpected_value(call_type)
+            else Aspera.error_unexpected_value(call_type)
             end
           end
           result = @api_orch.call(call_args)
@@ -207,7 +207,7 @@ module Aspera
               result[:data] = call_ao('initiate', id: wf_id, args: call_params, accept: override_accept)[:data]
               return result
             end # wf command
-          else error_unexpected_value(command)
+          else Aspera.error_unexpected_value(command)
           end # case command
         end # execute_action
       end # Orchestrator

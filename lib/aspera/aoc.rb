@@ -91,7 +91,7 @@ module Aspera
       def url_parts(uri)
         raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if uri.host.nil?
         parts = uri.host.split('.', 2)
-        assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
+        Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
         return parts
       end
 
@@ -211,7 +211,7 @@ module Aspera
         aoc_auth_p[:aoc_pub_link][:json][:password] = password unless password.nil?
         # basic auth required for /token
         aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
-      else error_unexpected_value(aoc_auth_p[:grant_method])
+      else Aspera.error_unexpected_value(aoc_auth_p[:grant_method])
       end
       super(aoc_rest_p)
     end
@@ -225,7 +225,7 @@ module Aspera
     end
 
     def assert_public_link_types(expected)
-      assert_values(public_link['purpose'], expected){'public link type'}
+      Aspera.assert_values(public_link['purpose'], expected){'public link type'}
     end
 
     def additional_persistence_ids
@@ -253,8 +253,8 @@ module Aspera
     # @return [Hash] current context information: workspace, and home node/file if app is "Files"
     def context(application = nil)
       return @context_cache unless @context_cache.nil?
-      assert(!application.nil?){'application must be set once'}
-      assert_values(application, %i[files packages])
+      Aspera.assert(!application.nil?){'application must be set once'}
+      Aspera.assert_values(application, %i[files packages])
       ws_id =
         if !public_link.nil?
           Log.log.debug('Using workspace of public link')
@@ -317,7 +317,7 @@ module Aspera
     # @param package_info [Hash] created package information
     # @returns [Aspera::Node] a node API for access key
     def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Aspera::Node::SCOPE_USER, package_info: nil)
-      assert_type(node_id, String)
+      Aspera.assert_type(node_id, String)
       node_info = read("nodes/#{node_id}")[:data]
       if workspace_name.nil? && !workspace_id.nil?
         workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
@@ -364,16 +364,16 @@ module Aspera
         Log.log.debug('no metadata in shared inbox')
         return
       end
-      assert(pkg_data.key?('metadata')){"package requires metadata: #{meta_schema}"}
+      Aspera.assert(pkg_data.key?('metadata')){"package requires metadata: #{meta_schema}"}
       pkg_meta = pkg_data['metadata']
-      assert_type(pkg_meta, Array){'metadata'}
+      Aspera.assert_type(pkg_meta, Array){'metadata'}
       Log.log.debug{Log.dump(:metadata, pkg_meta)}
       pkg_meta.each do |field|
-        assert_type(field, Hash){'metadata field'}
-        assert(field.key?('name')){'metadata field must have name'}
-        assert(field.key?('values')){'metadata field must have values'}
-        assert_type(field['values'], Array){'metadata field values'}
-        assert(!meta_schema.none?{|i|i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
+        Aspera.assert_type(field, Hash){'metadata field'}
+        Aspera.assert(field.key?('name')){'metadata field must have name'}
+        Aspera.assert(field.key?('values')){'metadata field must have values'}
+        Aspera.assert_type(field['values'], Array){'metadata field values'}
+        Aspera.assert(!meta_schema.none?{|i|i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
       end
       meta_schema.each do |field|
         provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}
@@ -390,15 +390,15 @@ module Aspera
     # @return nil package_data is modified
     def resolve_package_recipients(package_data, ws_id, recipient_list_field, new_user_option)
       return unless package_data.key?(recipient_list_field)
-      assert_type(package_data[recipient_list_field], Array){recipient_list_field}
+      Aspera.assert_type(package_data[recipient_list_field], Array){recipient_list_field}
       new_user_option = {'package_contact' => true} if new_user_option.nil?
-      assert_type(new_user_option, Hash){'new_user_option'}
+      Aspera.assert_type(new_user_option, Hash){'new_user_option'}
       # list with resolved elements
       resolved_list = []
       package_data[recipient_list_field].each do |short_recipient_info|
         case short_recipient_info
         when Hash # native API information, check keys
-          assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{recipient_list_field} element shall have fields: id and type"}
+          Aspera.assert(short_recipient_info.keys.sort.eql?(%w[id type])){"#{recipient_list_field} element shall have fields: id and type"}
         when String # CLI helper: need to resolve provided name to type/id
           # email: user, else dropbox
           entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
@@ -444,7 +444,7 @@ module Aspera
           })
         end
         pkg_data['metadata'] = api_meta
-      else error_unexpected_value(pkg_meta.class)
+      else Aspera.error_unexpected_value(pkg_meta.class)
       end
       return nil
     end
@@ -584,8 +584,8 @@ module Aspera
     # @param app_info [Hash] hash with app info
     # @param types [Array] event types
     def permissions_send_event(created_data:, app_info:, types: PERMISSIONS_CREATED)
-      assert_type(types, Array)
-      assert(!types.empty?)
+      Aspera.assert_type(types, Array)
+      Aspera.assert(!types.empty?)
       event_creation = {
         'types'        => types,
         'node_id'      => app_info[:node_info]['id'],

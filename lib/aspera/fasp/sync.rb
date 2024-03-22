@@ -134,7 +134,7 @@ module Aspera
         # @param sync_params [Hash] sync parameters, old or new format
         # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params, &block)
-          assert_type(sync_params, Hash)
+          Aspera.assert_type(sync_params, Hash)
           env_args = {
             args: [],
             env:  {}
@@ -142,12 +142,12 @@ module Aspera
           if sync_params.key?('local')
             remote = sync_params['remote']
             # async native JSON format (v2)
-            assert_type(remote, Hash)
+            Aspera.assert_type(remote, Hash)
             # get transfer spec if possible, and feed back to new structure
             if block
               transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], remote['path'])
               # async native JSON format
-              assert_type(sync_params['local'], Hash)
+              Aspera.assert_type(sync_params['local'], Hash)
               # translate transfer spec to async parameters
               TS_TO_PARAMS_V2.each do |ts_param, sy_path|
                 next unless transfer_spec.key?(ts_param)
@@ -165,7 +165,7 @@ module Aspera
               remote['private_key_paths'] ||= []
               remote['private_key_paths'].concat(add_certificates)
             end
-            assert_type(sync_params, Hash)
+            Aspera.assert_type(sync_params, Hash)
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
           elsif sync_params.key?('sessions')
             # ascli JSON format (v1)
@@ -184,18 +184,18 @@ module Aspera
             end
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
               sync_params.keys.push('instance').uniq.sort.eql?(PARAMS_VX_KEYS)
-            assert_type(sync_params['sessions'], Array)
-            assert_type(sync_params['sessions'].first, Hash)
+            Aspera.assert_type(sync_params['sessions'], Array)
+            Aspera.assert_type(sync_params['sessions'].first, Hash)
             if sync_params.key?('instance')
-              assert_type(sync_params['instance'], Hash)
+              Aspera.assert_type(sync_params['instance'], Hash)
               instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
 
             sync_params['sessions'].each do |session_params|
-              assert_type(session_params, Hash)
-              assert(session_params.key?('name')){'session must contain at least name'}
+              Aspera.assert_type(session_params, Hash)
+              Aspera.assert(session_params.key?('name')){'session must contain at least name'}
               session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
               session_builder.process_params
               session_builder.add_env_args(env_args)
@@ -211,7 +211,7 @@ module Aspera
           when true then return nil
           when false then raise "failed: #{$CHILD_STATUS}"
           when nil then raise "not started: #{$CHILD_STATUS}"
-          else error_unexpected_value(res)
+          else Aspera.error_unexpected_value(res)
           end
         end
 
@@ -235,8 +235,8 @@ module Aspera
         def admin_status(sync_params, session_name)
           command_line = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
           if sync_params.key?('local')
-            assert(!sync_params['name'].nil?){'Missing session name'}
-            assert(session_name.nil? || session_name.eql?(sync_params['name'])){'Session not found'}
+            Aspera.assert(!sync_params['name'].nil?){'Missing session name'}
+            Aspera.assert(session_name.nil? || session_name.eql?(sync_params['name'])){'Session not found'}
             command_line.push("--name=#{sync_params['name']}")
             if sync_params.key?('local_db_dir')
               command_line.push("--local-db-dir=#{sync_params['local_db_dir']}")

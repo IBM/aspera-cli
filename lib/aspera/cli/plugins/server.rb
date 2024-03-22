@@ -151,8 +151,8 @@ module Aspera
           ssh_key_list = options.get_option(:ssh_keys)
           if !ssh_key_list.nil?
             ssh_key_list = [ssh_key_list] if ssh_key_list.is_a?(String)
-            assert_type(ssh_key_list, Array){'ssh_keys'}
-            assert(ssh_key_list.all?(String))
+            Aspera.assert_type(ssh_key_list, Array){'ssh_keys'}
+            Aspera.assert(ssh_key_list.all?(String))
             ssh_key_list.map!{|p|File.expand_path(p)}
             Log.log.debug{"SSH keys=#{ssh_key_list}"}
             if !ssh_key_list.empty?
@@ -228,7 +228,7 @@ module Aspera
               else
                 nagios.add_critical('transfer', statuses.reject{|i|i.eql?(:success)}.first.to_s)
               end
-            else error_unexpected_value(command_nagios)
+            else Aspera.error_unexpected_value(command_nagios)
             end
             return nagios.result
           when *TRANSFER_COMMANDS
@@ -251,7 +251,7 @@ module Aspera
             rescue Aspera::AsCmd::Error => e
               raise Cli::BadArgument, e.extended_message
             end
-          else error_unreachable_line
+          else Aspera.error_unreachable_line
           end
         end # execute_action
       end # Server
