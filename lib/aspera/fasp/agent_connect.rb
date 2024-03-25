@@ -11,7 +11,7 @@ module Aspera
       # try twice the main init url in sequence
       CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/']
       # delay between each try to start connect
-      SLEEP_SEC_BETWEEN_RETRY = 3
+      SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(options)
         super(options)
