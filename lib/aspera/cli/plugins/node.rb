@@ -912,8 +912,6 @@ module Aspera
             uri = URI.parse(parameters[:url])
             server = WebServerSimple.new(uri, certificate: parameters[:certificate])
             server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], transfer)
-            # on ctrl-c, tell server main loop to exit
-            trap('INT') { server.shutdown }
             formatter.display_status("Node Simulator listening on #{uri.port}")
             Log.log.info{"Listening on #{uri.port}"}
             # this is blocking until server exits

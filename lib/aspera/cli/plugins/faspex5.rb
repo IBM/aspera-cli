@@ -664,8 +664,6 @@ module Aspera
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
-            # on ctrl-c, tell server main loop to exit
-            trap('INT') { server.shutdown }
             formatter.display_status("Gateway for Faspex 4-style API listening on #{url}")
             Log.log.info("Listening on #{url}")
             # this is blocking until server exits
@@ -682,7 +680,7 @@ module Aspera
             server = WebServerSimple.new(uri, certificate: parameters[:certificate])
             server.mount(uri.path, Faspex4PostProcServlet, parameters[:processing])
             # on ctrl-c, tell server main loop to exit
-            trap('INT') { server.shutdown }
+            # trap('INT') { server.shutdown }
             formatter.display_status("Web-hook for Faspex 4-style post processing listening on #{uri.port}")
             Log.log.info("Listening on #{uri.port}")
             # this is blocking until server exits

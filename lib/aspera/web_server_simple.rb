@@ -72,6 +72,7 @@ module Aspera
           end
         end
       end
+      # call constructor of parent class, but capture STDERR
       # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { super(webrick_options) }
       # kill -USR1 for graceful shutdown
