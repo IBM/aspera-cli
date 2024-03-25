@@ -38,6 +38,7 @@ module Aspera
 
     # @param uri [URI]
     def initialize(uri, certificate: nil)
+      @url = uri
       # see https://www.rubydoc.info/stdlib/webrick/WEBrick/Config
       webrick_options = {
         BindAddress: uri.host,
@@ -75,8 +76,14 @@ module Aspera
       # call constructor of parent class, but capture STDERR
       # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { super(webrick_options) }
-      # kill -USR1 for graceful shutdown
-      Kernel.trap('USR1') { shutdown }
+    end
+
+    # blocking
+    def start
+      Log.log.info{"Listening on #{@url}"}
+      # kill -HUP for graceful shutdown
+      Kernel.trap('HUP') { shutdown }
+      super
     end
 
     # log web server access ( option AccessLog )

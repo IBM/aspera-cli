@@ -887,9 +887,6 @@ module Aspera
             uri = URI.parse(url)
             server = WebServerSimple.new(uri)
             server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.context(:files)[:workspace_id])
-            formatter.display_status("Faspex 4 gateway listening on #{url}")
-            Log.log.info("Listening on #{url}")
-            # this is blocking until server exits
             server.start
             return Main.result_status('Gateway terminated')
           else Aspera.error_unreachable_line
