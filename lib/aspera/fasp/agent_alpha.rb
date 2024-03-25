@@ -11,9 +11,9 @@ module Aspera
   module Fasp
     class AgentAlpha < Aspera::Fasp::AgentBase
       # try twice the main init url in sequence
-      START_URIS = ['aspera://']
+      START_URIS = ['aspera://', 'aspera://', 'aspera://']
       # delay between each try to start the app
-      SLEEP_SEC_BETWEEN_RETRY = 3
+      SLEEP_SEC_BETWEEN_RETRY = 5
       APP_IDENTIFIER = 'com.ibm.software.aspera.desktop'
       APP_NAME = 'Aspera Desktop Alpha Client'
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
@@ -23,13 +23,12 @@ module Aspera
         raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
+          # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'
           # https://playground.open-rpc.org/?schemaUrl=http://127.0.0.1:33024
           @client_app_api = Aspera::JsonRpcClient.new(Aspera::Rest.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
           Log.log.debug{Log.dump(:client_version, client_info)}
           Log.log.info('Client was reached') if method_index > 0
-        rescue Aspera::RestCallError => e
-          raise e
         rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]
           method_index += 1
@@ -44,8 +43,12 @@ module Aspera
         end
       end
 
+      def sdk_log_file
+        File.join(Dir.home, 'Library', 'Logs', APP_IDENTIFIER, 'ibm-aspera-desktop.log')
+      end
+
       def aspera_client_api_url
-        log_file = File.join(Dir.home, 'Library', 'Logs', APP_IDENTIFIER, 'ibm-aspera-desktop.log')
+        log_file = sdk_log_file
         url = nil
         File.open(log_file, 'r') do |file|
           file.each_line do |line|
