@@ -398,21 +398,33 @@ module Aspera
           when :show
             return {type: :single_object, data: @api_v5.read("packages/#{package_id}")[:data]}
           when :browse
-            path = options.get_next_argument('path', expected: :single, mandatory: false) || '/'
-            # TODO: support multi-page listing ?
-            params = {
-              # recipient_user_id: 25,
-              # offset:            0,
-              # limit:             25
+            path = options.get_next_argument('path', expected: :single, mandatory: false, default: '/')
+            folders_to_process = [path]
+            query = query_read_delete(default: {})
+            recursive = query.delete('recursive')
+            result = {
+              item_count:  0,
+              total_count: 0,
+              items:       []
             }
-            result = @api_v5.call({
-              operation:   'POST',
-              subpath:     "packages/#{package_id}/files/received",
-              headers:     {'Accept' => 'application/json'},
-              url_params:  params,
-              json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
-            formatter.display_item_count(result['item_count'], result['total_count'])
-            return {type: :object_list, data: result['items']}
+            until folders_to_process.empty?
+              path = folders_to_process.shift
+              # TODO: support multi-page listing ? offset, limit
+              folder = @api_v5.call({
+                operation:   'POST',
+                subpath:     "packages/#{package_id}/files/received",
+                headers:     {'Accept' => 'application/json'},
+                url_params:  query,
+                json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
+              result[:item_count] += folder['item_count']
+              result[:total_count] += folder['total_count']
+              result[:items].concat(folder['items'])
+              if recursive
+                folders_to_process.concat(folder['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
+              end
+            end
+            formatter.display_item_count(result[:item_count], result[:total_count])
+            return {type: :object_list, data: result[:items]}
           when :status
             status = wait_package_status(package_id, status_list: nil)
             return {type: :single_object, data: status}

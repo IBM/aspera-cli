@@ -5168,6 +5168,13 @@ Examples:
   <%=cmd%> faspex5 packages list @ruby:'->(p){p["state"].eql?("released")}'
   ```
 
+### Faspex 5: Content of a received Package
+
+To list the content of a package, use command `faspex5 packages browse /`.
+To list recursively add option `--query=@json:{"recursive":true}`.
+
+> **Note:** This option makes recursive API calls, so it can take a long time on large packages.
+
 ### Faspex 5: Receive a package
 
 To receive one, or several packages at once, use command `faspex5 packages receive`.

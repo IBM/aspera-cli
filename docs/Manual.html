@@ -7509,8 +7509,18 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb418-1"><a href
 <div class="sourceCode" id="cb419"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb419-1"><a href="#cb419-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages list @ruby:<span class="st">&#39;-&gt;(p){p[&quot;state&quot;].eql?(&quot;released&quot;)}&#39;</span></span></code></pre></div></li>
 </ul>
-<h2 data-number="9.9" id="faspex-5-receive-a-package"><span
-class="header-section-number">9.9</span> Faspex 5: Receive a
+<h2 data-number="9.9" id="faspex-5-content-of-a-received-package"><span
+class="header-section-number">9.9</span> Faspex 5: Content of a received
+Package</h2>
+<p>To list the content of a package, use command
+<code>faspex5 packages browse /</code>. To list recursively add option
+<code>--query=@json:{"recursive":true}</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> This option makes recursive API calls, so it
+can take a long time on large packages.</p>
+</blockquote>
+<h2 data-number="9.10" id="faspex-5-receive-a-package"><span
+class="header-section-number">9.10</span> Faspex 5: Receive a
 package</h2>
 <p>To receive one, or several packages at once, use command
 <code>faspex5 packages receive</code>. Provide either a single package
@@ -7537,9 +7547,9 @@ provide the password instead of <code>null</code>.</p>
 positional <code>filter</code>, you can use the <code>list</code>
 command for a dry run.</p>
 </blockquote>
-<h2 data-number="9.10"
+<h2 data-number="9.11"
 id="faspex-5-list-all-shared-inboxes-and-work-groups"><span
-class="header-section-number">9.10</span> Faspex 5: List all shared
+class="header-section-number">9.11</span> Faspex 5: List all shared
 inboxes and work groups</h2>
 <p>If you are a regular user, to list work groups you belong to:</p>
 <div class="sourceCode" id="cb420"><pre
@@ -7560,20 +7570,20 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href
 value:</p>
 <div class="sourceCode" id="cb424"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb424-1"><a href="#cb424-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span></span></code></pre></div>
-<h2 data-number="9.11" id="faspex-5-create-metadata-profile"><span
-class="header-section-number">9.11</span> Faspex 5: Create Metadata
+<h2 data-number="9.12" id="faspex-5-create-metadata-profile"><span
+class="header-section-number">9.12</span> Faspex 5: Create Metadata
 profile</h2>
 <div class="sourceCode" id="cb425"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href="#cb425-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res metadata_profiles create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the profile&quot;,&quot;default&quot;:false,&quot;title&quot;:{&quot;max_length&quot;:200,&quot;illegal_chars&quot;:[]},&quot;note&quot;:{&quot;max_length&quot;:400,&quot;illegal_chars&quot;:[],&quot;enabled&quot;:false},&quot;fields&quot;:[{&quot;ordering&quot;:0,&quot;name&quot;:&quot;field1&quot;,&quot;type&quot;:&quot;text_area&quot;,&quot;require&quot;:true,&quot;illegal_chars&quot;:[],&quot;max_length&quot;:100},{&quot;ordering&quot;:1,&quot;name&quot;:&quot;fff2&quot;,&quot;type&quot;:&quot;option_list&quot;,&quot;require&quot;:false,&quot;choices&quot;:[&quot;opt1&quot;,&quot;opt2&quot;]}]}&#39;</span></span></code></pre></div>
-<h2 data-number="9.12"
+<h2 data-number="9.13"
 id="faspex-5-create-a-shared-inbox-with-specific-metadata-profile"><span
-class="header-section-number">9.12</span> Faspex 5: Create a Shared
+class="header-section-number">9.13</span> Faspex 5: Create a Shared
 inbox with specific metadata profile</h2>
 <div class="sourceCode" id="cb426"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb426-1"><a href="#cb426-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared create @json:<span class="st">&#39;{&quot;name&quot;:&quot;the shared inbox&quot;,&quot;metadata_profile_id&quot;:1}&#39;</span></span></code></pre></div>
-<h2 data-number="9.13"
+<h2 data-number="9.14"
 id="faspex-5-list-content-in-shared-folder-and-send-package-from-remote-source"><span
-class="header-section-number">9.13</span> Faspex 5: List content in
+class="header-section-number">9.14</span> Faspex 5: List content in
 Shared folder and send package from remote source</h2>
 <div class="sourceCode" id="cb427"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb427-1"><a href="#cb427-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 shared_folders list</span></code></pre></div>
@@ -7593,8 +7603,8 @@ numerical <code>id</code> or by name using percent selector:
 <code>%&lt;field&gt;:&lt;value&gt;</code>.
 e.g. <code>--shared-folder=3</code></p>
 </blockquote>
-<h2 data-number="9.14" id="faspex-5-receive-all-packages-cargo"><span
-class="header-section-number">9.14</span> Faspex 5: Receive all packages
+<h2 data-number="9.15" id="faspex-5-receive-all-packages-cargo"><span
+class="header-section-number">9.15</span> Faspex 5: Receive all packages
 (cargo)</h2>
 <p>To receive all packages, only once, through persistency of already
 received packages:</p>
@@ -7604,16 +7614,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb431-1"><a href
 <code>ALL</code> is used, only newer packages are downloaded:</p>
 <div class="sourceCode" id="cb432"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb432-1"><a href="#cb432-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 packages receive INIT <span class="at">--once-only</span><span class="op">=</span>yes</span></code></pre></div>
-<h2 data-number="9.15" id="faspex-5-invitations"><span
-class="header-section-number">9.15</span> Faspex 5: Invitations</h2>
+<h2 data-number="9.16" id="faspex-5-invitations"><span
+class="header-section-number">9.16</span> Faspex 5: Invitations</h2>
 <p>There are two types of invitations of package submission: public or
 private.</p>
 <p>Public invitations are for external users, provide just the email
 address.</p>
 <p>Private invitations are for internal users, provide the user or
 shared inbox identifier through field <code>recipient_name</code>.</p>
-<h2 data-number="9.16" id="faspex-5-faspex-4-style-postprocessing"><span
-class="header-section-number">9.16</span> Faspex 5: Faspex 4-style
+<h2 data-number="9.17" id="faspex-5-faspex-4-style-postprocessing"><span
+class="header-section-number">9.17</span> Faspex 5: Faspex 4-style
 postprocessing</h2>
 <p><code>ascli</code> provides command <code>postprocessing</code> in
 plugin <code>faspex5</code> to emulate Faspex 4 postprocessing. It

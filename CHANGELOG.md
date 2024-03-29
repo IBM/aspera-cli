@@ -7,6 +7,7 @@
     * `shares`: Added group membership management.
     * `faspex5`: Support public and private invitations.
     * `faspex5`: Automatic detection of HTTPGW.
+    * `faspex5`: Recursive content of package.
   * Issues Fixed:
     * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
     * **global**: removed gem dependency on `bigdecimal`
