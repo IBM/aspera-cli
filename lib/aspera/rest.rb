@@ -132,7 +132,7 @@ module Aspera
       # set global parameters
       def set_parameters(**options)
         options.each do |key, value|
-          Aspera.assert(@@global.key?(key)){"unknown Rest option #{key}"}
+          Aspera.assert(@@global.key?(key)){"Unknown Rest option #{key}"}
           @@global[key] = value
         end
       end
@@ -380,34 +380,35 @@ module Aspera
 
     # @param encoding : one of: :json_params, :url_params
     def create(subpath, params, encoding=:json_params)
-      return call({operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, encoding => params})
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, encoding => params)
     end
 
-    def read(subpath, options=nil)
-      return call({operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: options})
+    def read(subpath, query=nil)
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: query)
     end
 
     def update(subpath, params)
-      return call({operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params})
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params)
     end
 
     def delete(subpath, params=nil)
-      return call({operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: params})
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: params)
     end
 
     def cancel(subpath)
       return call({operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'}})
     end
 
-    # Query by name and returns a single result, else it throws an exception (no or multiple results)
+    # Query entity by general search (read with parameter `q`)
+    # TODO: not generic enough ? move somewhere ? inheritance ?
     # @param subpath path of entity in API
     # @param search_name name of searched entity
-    # @param options additional search options
-    def lookup_by_name(subpath, search_name, options={})
-      # returns entities whose name contains value (case insensitive)
-      matching_items = read(subpath, options.merge({'q' => search_name}))[:data]
+    # @param query additional search query parameters
+    # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
+    def lookup_by_name(subpath, search_name, query={})
+      # returns entities matching the query (it matches against several fields in case insensitive way)
+      matching_items = read(subpath, query.merge({'q' => search_name}))[:data]
       # API style: {totalcount:, ...} cspell: disable-line
-      # TODO: not generic enough ? move somewhere ? inheritance ?
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
       Aspera.assert_type(matching_items, Array)
       case matching_items.length

@@ -187,7 +187,7 @@ module Aspera
             recipient_types = [recipient_types] unless recipient_types.is_a?(Array)
           end
           parameters['recipients'].map! do |recipient_data|
-            # if just a string, assume it is the name
+            # if just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
               matched = @api_v5.lookup_by_name('contacts', recipient_data, {context: 'packages', type: Rest.array_params(recipient_types)})
               recipient_data = {
