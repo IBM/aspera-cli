@@ -2671,16 +2671,18 @@ Agent</strong>.</p>
 <p>There are currently 3 agents, set with option
 <code>transfer</code>:</p>
 <ul>
-<li><a href="#agent-direct"><code>direct</code></a> : a local execution
-of <code>ascp</code></li>
-<li><a href="#agent-connect-client"><code>connect</code></a> : use of a
-local Connect Client</li>
-<li><a href="#agent-node-api"><code>node</code></a> : use of an Aspera
-Transfer Node (potentially <strong>remote</strong>).</li>
-<li><a href="#agent-http-gateway"><code>httpgw</code></a> : use of an
-Aspera HTTP Gateway</li>
+<li><a href="#agent-direct"><code>direct</code></a> : execution of
+<code>ascp</code></li>
 <li><a href="#agent-transfer-sdk"><code>trsdk</code></a> : use of Aspera
-Transfer SDK</li>
+Transfer SDK (local)</li>
+<li><a href="#agent-connect-client"><code>connect</code></a> : use
+Connect Client (local)</li>
+<li><a href="#agent-desktop-client"><code>alpha</code></a> : use the new
+Desktop Client (local)</li>
+<li><a href="#agent-node-api"><code>node</code></a> : use an Aspera
+Transfer Node (<strong>remote</strong>).</li>
+<li><a href="#agent-http-gateway"><code>httpgw</code></a> : use an
+Aspera HTTP Gateway (<strong>remote</strong>)</li>
 </ul>
 <blockquote>
 <p><strong>Note:</strong> All transfer operations are seen from the
@@ -2913,8 +2915,14 @@ class="header-section-number">4.21.2</span> Agent: Connect Client</h3>
 <code>ascli</code> will start transfers using the locally installed
 <strong>IBM Aspera Connect Client</strong>. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.21.3" id="agent-node-api"><span
-class="header-section-number">4.21.3</span> Agent: Node API</h3>
+<h3 data-number="4.21.3" id="agent-desktop-client"><span
+class="header-section-number">4.21.3</span> Agent: Desktop Client</h3>
+<p>By specifying option: <code>--transfer=alpha</code>,
+<code>ascli</code> will start transfers using the locally installed
+<strong>IBM Aspera Desktop Client</strong>. There are no option for
+<code>transfer_info</code>.</p>
+<h3 data-number="4.21.4" id="agent-node-api"><span
+class="header-section-number">4.21.4</span> Agent: Node API</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
 the Node API, either on a local or remote node. This is especially
@@ -2966,8 +2974,8 @@ then the <code>username</code> is expected to be an access key and the
 parameter <code>root_id</code> is mandatory and specifies the root file
 id on the node. It can be either the access key’s root file id, or any
 authorized file id underneath it.</p>
-<h3 data-number="4.21.4" id="agent-http-gateway"><span
-class="header-section-number">4.21.4</span> Agent: HTTP Gateway</h3>
+<h3 data-number="4.21.5" id="agent-http-gateway"><span
+class="header-section-number">4.21.5</span> Agent: HTTP Gateway</h3>
 <p>If it possible to send using a HTTP gateway, in case use of FASP is
 not allowed.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
@@ -3017,8 +3025,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href
 <p><strong>Note:</strong> The gateway only supports transfers authorized
 with a token.</p>
 </blockquote>
-<h3 data-number="4.21.5" id="agent-transfer-sdk"><span
-class="header-section-number">4.21.5</span> Agent: Transfer SDK</h3>
+<h3 data-number="4.21.6" id="agent-transfer-sdk"><span
+class="header-section-number">4.21.6</span> Agent: Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
 (<code>asperatransferd</code>). Set option <code>transfer</code> to
 <code>trsdk</code>.</p>

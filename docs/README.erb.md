@@ -2451,11 +2451,12 @@ This [*transfer-spec*](#transfer-specification) will be executed by a transfer c
 
 There are currently 3 agents, set with option `transfer`:
 
-- [`direct`](#agent-direct) : a local execution of `ascp`
-- [`connect`](#agent-connect-client) : use of a local Connect Client
-- [`node`](#agent-node-api) : use of an Aspera Transfer Node (potentially **remote**).
-- [`httpgw`](#agent-http-gateway) : use of an Aspera HTTP Gateway
-- [`trsdk`](#agent-transfer-sdk) : use of Aspera Transfer SDK
+- [`direct`](#agent-direct) : execution of `ascp`
+- [`trsdk`](#agent-transfer-sdk) : use of Aspera Transfer SDK (local)
+- [`connect`](#agent-connect-client) : use Connect Client (local)
+- [`alpha`](#agent-desktop-client) : use the new Desktop Client (local)
+- [`node`](#agent-node-api) : use an Aspera Transfer Node (**remote**).
+- [`httpgw`](#agent-http-gateway) : use an Aspera HTTP Gateway (**remote**)
 
 > **Note:** All transfer operations are seen from the point of view of the agent.
 For example, a node agent executing an **upload**, or **package send** operation
@@ -2607,7 +2608,13 @@ start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000
 
 #### Agent: Connect Client
 
-By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed **IBM Aspera Connect Client**. There are no option for `transfer_info`.
+By specifying option: `--transfer=connect`, <%=tool%> will start transfers using the locally installed **IBM Aspera Connect Client**.
+There are no option for `transfer_info`.
+
+#### Agent: Desktop Client
+
+By specifying option: `--transfer=alpha`, <%=tool%> will start transfers using the locally installed **IBM Aspera Desktop Client**.
+There are no option for `transfer_info`.
 
 #### Agent: Node API
 
