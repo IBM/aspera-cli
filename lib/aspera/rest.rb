@@ -173,10 +173,12 @@ module Aspera
       Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
       @params[:base_url] = @params[:base_url].gsub(%r{/+$}, '')
-      @http_session = nil
       # default is no auth
       @params[:auth] ||= {type: :none}
       @params[:not_auth_codes] ||= ['401']
+      # persistent session
+      @http_session = nil
+      # OAuth object (created on demand)
       @oauth = nil
       Log.log.debug{Log.dump('REST params(2)', @params)}
     end
@@ -243,7 +245,7 @@ module Aspera
     # :type (:none, :basic, :oauth2, :url)
     # :username   [:basic]
     # :password   [:basic]
-    # :url_query  [:url] a hash
+    # :url_query  [:url]    a hash
     # :*          [:oauth2] see Oauth class
     def call(call_data)
       Aspera.assert_type(call_data, Hash)
