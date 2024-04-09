@@ -10,22 +10,27 @@ require 'aspera/node'
 require 'base64'
 require 'cgi'
 
-Aspera::Oauth.register_token_creator(
-  :aoc_pub_link,
-  lambda{|o|
-    o.api.call({
-      operation:   'POST',
-      subpath:     o.path_token,
-      headers:     {'Accept' => 'application/json'},
-      json_params: o.specific_parameters[:json],
-      url_params:  o.specific_parameters[:url].merge(scope: o.scope) # scope is here because it may change over time (node)
-    })
-  },
-  lambda { |oauth|
-    return [oauth.specific_parameters.dig(:json, :url_token)]
-  })
-
 module Aspera
+  class TokenCreatorPubLink
+    def initialize(oauth)
+      @oauth = oauth
+    end
+
+    def create_token
+      @oauth.api.call({
+        operation:   'POST',
+        subpath:     @oauth.path_token,
+        headers:     {'Accept' => 'application/json'},
+        json_params: @oauth.specific_parameters[:json],
+        url_params:  @oauth.specific_parameters[:url].merge(scope: @oauth.scope) # scope is here because it may change over time (node)
+      })
+    end
+
+    def ids
+      return [@oauth.specific_parameters.dig(:json, :url_token)]
+    end
+  end
+  Aspera::Oauth.register_token_creator(:aoc_pub_link, TokenCreatorPubLink)
   class AoC < Aspera::Rest
     PRODUCT_NAME = 'Aspera on Cloud'
     # Production domain of AoC
