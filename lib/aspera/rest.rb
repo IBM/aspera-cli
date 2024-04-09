@@ -160,7 +160,8 @@ module Aspera
     def oauth
       if @oauth.nil?
         Aspera.assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
-        @oauth = Oauth.new(@params[:auth])
+        oauth_parameters = @params[:auth].reject { |k, _v| k.eql?(:type) }
+        @oauth = Oauth.new(**oauth_parameters)
       end
       return @oauth
     end

@@ -157,11 +157,11 @@ module Aspera
             base_url: AtsApi.base_url + '/v2',
             headers:  rest_add_headers,
             auth:     {
-              type:         :oauth2,
-              base_url:     'https://iam.bluemix.net/identity',
+              type:          :oauth2,
+              base_url:      'https://iam.bluemix.net/identity',
               # does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
-              grant_method: :generic,
-              generic:      {
+              grant_method:  :generic,
+              grant_options: {
                 grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
                 response_type: 'cloud_iam',
                 apikey:        options.get_option(:ibm_api_key, mandatory: true)

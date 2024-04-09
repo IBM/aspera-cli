@@ -17,14 +17,10 @@ module Aspera
   # if a token is expired (api returns 4xx), call again get_authorization({refresh: true})
   # https://tools.ietf.org/html/rfc6749
   class Oauth
-    DEFAULT_CREATE_PARAMS = {
-      path_token:  'token', # default endpoint for /token to generate token
-      token_field: 'access_token', # field with token in result of call to path_token
-      web:         {path_authorize: 'authorize'} # default endpoint for /authorize, used for code exchange
-    }.freeze
-
     # OAuth methods supported by default
     STD_AUTH_TYPES = %i[web jwt].freeze
+    # default endpoint for /authorize, used for code exchange
+    WEB_DEFAULT_GRANT_OPTIONS = {path_authorize: 'authorize'}
 
     @@globals = { # rubocop:disable Style/ClassVars
       # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
@@ -42,7 +38,7 @@ module Aspera
     # prefix for bearer token when in header
     BEARER_PREFIX = 'Bearer '
 
-    private_constant :PERSIST_CATEGORY_TOKEN, :BEARER_PREFIX
+    private_constant :PERSIST_CATEGORY_TOKEN, :BEARER_PREFIX, :WEB_DEFAULT_GRANT_OPTIONS
 
     # persistency manager
     @persist = nil
@@ -190,52 +186,62 @@ module Aspera
       return [oauth.specific_parameters.dig(:payload, :sub)]
     }
 
-    attr_reader :generic_parameters, :specific_parameters, :api
+    attr_reader :path_token, :specific_parameters, :api
+    attr_accessor :grant_method, :scope, :redirect_uri
 
     private
 
-    # [M]=mandatory [D]=has default value [0]=accept nil
-    # :base_url            [M] URL of authentication API
-    # :auth
-    # :grant_method        [M] :generic, :web, :jwt, [custom types]
-    # :client_id           [0]
-    # :client_secret       [0]
-    # :scope               [0]
-    # :path_token          [D] API end point to create a token
-    # :token_field         [D] field in result that contains the token
-    # :jwt:private_key_obj [M] for type :jwt
-    # :jwt:payload         [M] for type :jwt
-    # :jwt:headers         [0] for type :jwt
-    # :web:redirect_uri    [M] for type :web
-    # :web:path_authorize  [D] for type :web
-    # :generic             [M] for type :generic
-    def initialize(a_params)
-      Log.log.debug{"auth=#{a_params}"}
-      # set default values if not set in parameters common to all types
-      @generic_parameters = DEFAULT_CREATE_PARAMS.deep_merge(a_params)
+    # [M]=mandatory [D]=has default value [O]=Optional/nil
+    # @param base_url            [M] URL of authentication API
+    # @param grant_method        [M] :generic, :web, :jwt, [custom types]
+    # @param grant_options       [O] Hash, depending on grant_method
+    # @param auth                [O]
+    # @param client_id           [O]
+    # @param client_secret       [O]
+    # @param scope               [O]
+    # @param path_token          [D] API end point to create a token
+    # @param token_field         [D] field in result that contains the token
+    # @param g_o:private_key_obj [M] for type :jwt
+    # @param g_o:payload         [M] for type :jwt
+    # @param g_o:headers         [0] for type :jwt
+    # @param g_o:redirect_uri    [M] for type :web
+    # @param g_o:path_authorize  [D] for type :web
+    def initialize(
+      base_url:,
+      grant_method:,
+      grant_options: nil,
+      auth: nil,
+      client_id: nil,
+      client_secret: nil,
+      scope: nil,
+      path_token:  'token',       # default endpoint for /token to generate token
+      token_field: 'access_token' # field with token in result of call to path_token
+    )
+      Aspera.assert_type(base_url, String)
+      Aspera.assert_type(grant_method, Symbol)
+      @base_url = base_url
+      @path_token = path_token
+      @token_field = token_field
+      @client_id = client_id
+      @client_secret = client_secret
+      @scope = scope
+      @grant_method = grant_method
+      @specific_parameters = grant_options
+      @specific_parameters = WEB_DEFAULT_GRANT_OPTIONS if @grant_method.eql?(:web) && @specific_parameters.nil?
       # check that type is known
-      self.class.token_creator(@generic_parameters[:grant_method])
+      self.class.token_creator(@grant_method)
       # specific parameters for the creation type
-      @specific_parameters = @generic_parameters[@generic_parameters[:grant_method]]
-      if @generic_parameters[:grant_method].eql?(:web) && @specific_parameters.key?(:redirect_uri)
+      if @grant_method.eql?(:web) && @specific_parameters.key?(:redirect_uri)
         uri = URI.parse(@specific_parameters[:redirect_uri])
         Aspera.assert(%w[http https].include?(uri.scheme)){'redirect_uri scheme must be http or https'}
         Aspera.assert(!uri.port.nil?){'redirect_uri must have a port'}
         # TODO: we could check that host is localhost or local address
       end
-      rest_params = {
-        base_url:     @generic_parameters[:base_url],
-        redirect_max: 2
-      }
-      rest_params[:auth] = a_params[:auth] if a_params.key?(:auth)
       # this is the OAuth API
-      @api = Rest.new(rest_params)
-      # if those are needed use from @api
-      @generic_parameters.delete(:base_url)
-      @generic_parameters.delete(:auth)
-      @generic_parameters.delete(@generic_parameters[:grant_method])
-      Log.log.debug{Log.dump(:generic_parameters, @generic_parameters)}
-      Log.log.debug{Log.dump(:specific_parameters, @specific_parameters)}
+      @api = Rest.new(
+        base_url:     @base_url,
+        redirect_max: 2,
+        auth:         auth)
     end
 
     public
@@ -245,7 +251,7 @@ module Aspera
       Log.log.debug{'Generating a new token'.bg_green}
       return @api.call({
         operation:       'POST',
-        subpath:         @generic_parameters[:path_token],
+        subpath:         @path_token,
         headers:         {'Accept' => 'application/json'},
         www_body_params: www_params})
     end
@@ -253,9 +259,9 @@ module Aspera
     # @return Hash with optional general parameters
     def optional_scope_client_id(add_secret: false)
       call_params = {}
-      call_params[:scope] = @generic_parameters[:scope] unless @generic_parameters[:scope].nil?
-      call_params[:client_id] = @generic_parameters[:client_id] unless @generic_parameters[:client_id].nil?
-      call_params[:client_secret] = @generic_parameters[:client_secret] if add_secret && !@generic_parameters[:client_id].nil?
+      call_params[:scope] = @scope unless @scope.nil?
+      call_params[:client_id] = @client_id unless @client_id.nil?
+      call_params[:client_secret] = @client_secret if add_secret && !@client_id.nil?
       return call_params
     end
 
@@ -265,10 +271,10 @@ module Aspera
       # generate token unique identifier for persistency (memory/disk cache)
       token_id = IdGenerator.from_list([
         PERSIST_CATEGORY_TOKEN,
-        @api.params[:base_url],
-        @generic_parameters[:grant_method],
-        self.class.id_creator(@generic_parameters[:grant_method]).call(self), # array, so we flatten later
-        @generic_parameters[:scope],
+        @base_url,
+        @grant_method,
+        self.class.id_creator(@grant_method).call(self), # array, so we flatten later
+        @scope,
         @api.params.dig(*%i[auth username])
       ].flatten)
 
@@ -279,7 +285,7 @@ module Aspera
       # might help in case the transfer agent cannot refresh himself
       # `direct` agent is equipped with refresh code
       if !use_refresh_token && !token_data.nil?
-        decoded_token = self.class.decode_token(token_data[@generic_parameters[:token_field]])
+        decoded_token = self.class.decode_token(token_data[@token_field])
         Log.log.debug{Log.dump('decoded_token', decoded_token)} unless decoded_token.nil?
         if decoded_token.is_a?(Hash)
           expires_at_sec =
@@ -320,14 +326,14 @@ module Aspera
 
       # no cache, nor refresh: generate a token
       if token_data.nil?
-        resp = self.class.token_creator(@generic_parameters[:grant_method]).call(self)
+        resp = self.class.token_creator(@grant_method).call(self)
         json_data = resp[:http].body
         token_data = JSON.parse(json_data)
         self.class.persist_mgr.put(token_id, json_data)
       end # if ! in_cache
-      Aspera.assert(token_data.key?(@generic_parameters[:token_field])){"API error: No such field in answer: #{@generic_parameters[:token_field]}"}
+      Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"}
       # ok we shall have a token here
-      return self.class.bearer_build(token_data[@generic_parameters[:token_field]])
+      return self.class.bearer_build(token_data[@token_field])
     end
   end # OAuth
 end # Aspera

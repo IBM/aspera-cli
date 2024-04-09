@@ -108,6 +108,7 @@ module Aspera
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
+          @pub_link_context = nil
         end
 
         def api_url
@@ -153,14 +154,14 @@ module Aspera
               }})
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
-            @api_v5 = Rest.new({
+            @api_v5 = Rest.new(
               base_url: api_url,
               auth:     {
-                type:         :oauth2,
-                base_url:     auth_api_url,
-                grant_method: :jwt,
-                client_id:    app_client_id,
-                jwt:          {
+                type:          :oauth2,
+                base_url:      auth_api_url,
+                grant_method:  :jwt,
+                client_id:     app_client_id,
+                grant_options: {
                   payload:         {
                     iss: app_client_id,    # issuer
                     aud: app_client_id,    # audience (this field is not clear...)
@@ -169,7 +170,7 @@ module Aspera
                   private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
                   headers:         {typ: 'JWT'}
                 }
-              }})
+              })
           else Aspera.error_unexpected_value(auth_type)
           end
           # in case user wants to use HTTPGW tell transfer agent how to get address

@@ -113,8 +113,8 @@ module Aspera
               formatter.display_status('We will use web authentication to bootstrap.')
               auto_set_pub_key = true
               auto_set_jwt = true
-              aoc_api.oauth.generic_parameters[:grant_method] = :web
-              aoc_api.oauth.generic_parameters[:scope] = AoC::SCOPE_FILES_ADMIN
+              aoc_api.oauth.grant_method = :web
+              aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
               aoc_api.oauth.specific_parameters[:redirect_uri] = DEFAULT_REDIRECT
             end
             myself = object.aoc_api.read('self')[:data]
@@ -353,7 +353,7 @@ module Aspera
 
         def execute_admin_action
           # upgrade scope to admin
-          aoc_api.oauth.generic_parameters[:scope] = AoC::SCOPE_FILES_ADMIN
+          aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
           command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
           when :auth_providers

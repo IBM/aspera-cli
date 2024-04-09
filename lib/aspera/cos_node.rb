@@ -42,10 +42,10 @@ module Aspera
         not_auth_codes: %w[401 403], # error codes when not authorized
         headers:        {'ibm-service-instance-id' => instance_id},
         auth:           {
-          type:         :oauth2,
-          base_url:     @auth_url,
-          grant_method: :generic,
-          generic:      {
+          type:          :oauth2,
+          base_url:      @auth_url,
+          grant_method:  :generic,
+          grant_options: {
             grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
             response_type: 'cloud_iam',
             apikey:        @api_key
@@ -78,17 +78,16 @@ module Aspera
     # potentially call this if delegated token is expired
     def generate_token
       # OAuth API to get delegated token
-      delegated_oauth = Oauth.new({
-        type:         :oauth2,
+      delegated_oauth = Oauth.new(
         base_url:     @auth_url,
         token_field:  TOKEN_FIELD,
         grant_method: :generic,
-        generic:      {
+        grant_options:      {
           grant_type:          'urn:ibm:params:oauth:grant-type:apikey',
           response_type:       'delegated_refresh_token',
           apikey:              @api_key,
           receiver_client_ids: 'aspera_ats'
-        }})
+        })
       # get delegated token to be placed in rest call header and in transfer tags
       @storage_credentials['token'][TOKEN_FIELD] = Oauth.bearer_extract(delegated_oauth.get_authorization)
       @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@storage_credentials)}
