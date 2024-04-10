@@ -109,13 +109,13 @@ module Aspera
             server_data = @ats_api_pub.all_servers.find {|i| i['id'].start_with?(ak_data['transfer_server_id'])}
             raise Cli::Error, 'no such server found' if server_data.nil?
             node_url = server_data['transfer_setup_url']
-            api_node = Aspera::Node.new(params: {
+            api_node = Aspera::Node.new(
               base_url: node_url,
               auth:     {
                 type:     :basic,
                 username: access_key_id,
                 password: @agents[:config].lookup_secret(url: node_url, username: access_key_id)
-              }})
+              })
             command = options.get_next_command(Node::COMMANDS_GEN4)
             return Node.new(@agents, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster

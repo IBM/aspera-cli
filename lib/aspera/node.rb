@@ -124,9 +124,14 @@ module Aspera
 
     # @param params [Hash] Rest parameters
     # @param app_info [Hash,NilClass] special processing for AoC
-    def initialize(params:, app_info: nil, add_tspec: nil)
+    def initialize(
+      base_url:,
+      auth:,
+      headers: nil,
+      app_info: nil, add_tspec: nil
+    )
       # init Rest
-      super(**params)
+      super(base_url: base_url, auth: auth, headers: headers)
       @app_info = app_info
       # this is added to transfer spec, for instance to add tags (COS)
       @add_tspec = add_tspec

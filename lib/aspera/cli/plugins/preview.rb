@@ -403,7 +403,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           unless %i[check test show].include?(command)
             # this will use node api
-            @api_node = Aspera::Node.new(params: basic_auth_params)
+            @api_node = Aspera::Node.new(**basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.base_url).host
             # get current access key
             @access_key_self = @api_node.read('access_keys/self')[:data]

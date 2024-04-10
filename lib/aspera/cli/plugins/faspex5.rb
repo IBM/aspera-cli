@@ -568,10 +568,7 @@ module Aspera
                 display_fields = Formatter.all_but('user_profile_data_attributes')
               when :oauth_clients
                 display_fields = Formatter.all_but('public_key')
-                adm_api = Rest.new(
-                  base_url: auth_api_url,
-                  **@api_v5.params
-                )
+                adm_api = Rest.new(**@api_v5.params.merge(base_url: auth_api_url))
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
                 special_query = {'all': true}

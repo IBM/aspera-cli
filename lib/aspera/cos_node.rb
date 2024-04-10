@@ -63,13 +63,13 @@ module Aspera
         'token' => {TOKEN_FIELD => nil}
       }
       super(
-        params: {
-          base_url: ats_info['ATSEndpoint'],
-          auth:     {
-            type:     :basic,
-            username: ats_info['AccessKey']['Id'],
-            password: ats_info['AccessKey']['Secret']}},
-        add_tspec: {'tags'=>{Fasp::TransferSpec::TAG_RESERVED=>{'node'=>{'storage_credentials'=>@storage_credentials}}}})
+        base_url: ats_info['ATSEndpoint'],
+        auth:     {
+          type:     :basic,
+          username: ats_info['AccessKey']['Id'],
+          password: ats_info['AccessKey']['Secret']},
+        add_tspec: {'tags'=>{Fasp::TransferSpec::TAG_RESERVED=>{'node'=>{'storage_credentials'=>@storage_credentials}}}}
+        )
       # update storage_credentials AND Rest params
       generate_token
     end
@@ -88,7 +88,7 @@ module Aspera
       )
       # get delegated token to be placed in rest call header and in transfer tags
       @storage_credentials['token'][TOKEN_FIELD] = OAuth::Factory.bearer_extract(delegated_oauth.get_authorization)
-      @params[:headers] = {'X-Aspera-Storage-Credentials' => JSON.generate(@storage_credentials)}
+      @headers['X-Aspera-Storage-Credentials'] = JSON.generate(@storage_credentials)
     end
   end
 end

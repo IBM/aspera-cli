@@ -57,24 +57,6 @@ module Aspera
 
         ACTIONS = %i[health info workflow plugins processes].freeze
 
-        # for JSON format: add extension ".json" or add url parameter: format=json or Accept: application/json
-        # id can be: a parameter id=x, or at the end of url /id, for workflows: work_order[workflow_id]=wf_id
-        #        def call_API_orig(endpoint,id=nil,url_params={format: :json},accept=nil)
-        #          # calls are GET
-        #          call_args={operation: 'GET',subpath: endpoint}
-        #          # specify id if necessary
-        #          call_args[:subpath]=call_args[:subpath]+'/'+id unless id.nil?
-        #          unless url_params.nil?
-        #            if url_params.has_key?(:format)
-        #              call_args[:headers]={'Accept'=>'application/'+url_params[:format].to_s}
-        #            end
-        #            call_args[:headers]={'Accept'=>accept} unless accept.nil?
-        #            # add params if necessary
-        #            call_args[:url_params]=url_params
-        #          end
-        #          return @api_orch.call(call_args)
-        #        end
-
         def call_ao(endpoint, opt={})
           opt[:prefix] = 'api' unless opt.key?(:prefix)
           # calls are GET
@@ -100,7 +82,7 @@ module Aspera
             else Aspera.error_unexpected_value(call_type)
             end
           end
-          result = @api_orch.call(call_args)
+          result = @api_orch.call(**call_args)
           result[:data] = XmlSimple.xml_in(result[:http].body, opt[:xml_opt] || {'ForceArray' => true}) if format.eql?('xml')
           Log.log.debug{Log.dump(:data, result[:data])}
           return result
@@ -147,11 +129,11 @@ module Aspera
             result = call_ao('remote_node_ping', format: 'xml', xml_opt: {'ForceArray' => false})[:data]
             return {type: :single_object, data: result}
           when :processes
-            # TODO: Jira ? API has only XML format
+            # TODO: Bug ? API has only XML format
             result = call_ao('processes_status', format: 'xml')[:data]
             return {type: :object_list, data: result['process']}
           when :plugins
-            # TODO: Jira ? only json format on url
+            # TODO: Bug ? only json format on url
             result = call_ao('plugin_version')[:data]
             return {type: :object_list, data: result['Plugin']}
           when :workflow

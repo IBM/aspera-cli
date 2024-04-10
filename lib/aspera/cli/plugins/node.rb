@@ -126,19 +126,19 @@ module Aspera
               api
             elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
-              Aspera::Node.new(params: {
+              Aspera::Node.new(
                 base_url: options.get_option(:url, mandatory: true),
                 headers:  Aspera::Node.bearer_headers(options.get_option(:password, mandatory: true))
-              })
+              )
             else
               # this is normal case
-              Aspera::Node.new(params: {
+              Aspera::Node.new(
                 base_url: options.get_option(:url, mandatory: true),
                 auth:     {
                   type:     :basic,
                   username: options.get_option(:username, mandatory: true),
                   password: options.get_option(:password, mandatory: true)
-                }})
+                })
             end
         end
 

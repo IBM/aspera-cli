@@ -338,22 +338,23 @@ module Aspera
         app_info[:package_id] = package_info['id']
         app_info[:package_name] = package_info['name']
       end
-      node_rest_params = {base_url: node_info['url']}
+      node_params = {base_url: node_info['url']}
       # if secret is available
       if scope.nil?
-        node_rest_params[:auth] = {
+        node_params[:auth] = {
           type:     :basic,
           username: node_info['access_key'],
           password: @secret_finder&.lookup_secret(url: node_info['url'], username: node_info['access_key'], mandatory: true)
         }
       else
         # OAuth bearer token
-        node_rest_params[:auth] = auth_params.clone
-        node_rest_params[:auth][:scope] = Aspera::Node.token_scope(node_info['access_key'], scope)
+        node_params[:auth] = auth_params.clone
+        node_params[:auth][:scope] = Aspera::Node.token_scope(node_info['access_key'], scope)
         # special header required for bearer token only
-        node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
+        node_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
       end
-      return Node.new(params: node_rest_params, app_info: app_info)
+      node_params[:app_info] = app_info
+      return Node.new(**node_params)
     end
 
     # Check metadata: remove when validation is done server side
