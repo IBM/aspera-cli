@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/aoc'
+require 'aspera/api/aoc'
 
 module Aspera
   module Cli
@@ -14,11 +14,11 @@ module Aspera
           when :entitlement
             entitlement_id = options.get_option(:username, mandatory: true)
             customer_id = options.get_option(:password, mandatory: true)
-            api_metering = AoC.metering_api(entitlement_id, customer_id)
+            api_metering = Api::AoC.metering_api(entitlement_id, customer_id)
             return {type: :single_object, data: api_metering.read('entitlement')[:data]}
           end
         end
-      end # Aspera
-    end # Plugins
-  end # Cli
-end # Aspera
+      end
+    end
+  end
+end

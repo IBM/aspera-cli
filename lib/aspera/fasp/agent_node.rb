@@ -3,7 +3,7 @@
 # cspell:ignore precalc
 require 'aspera/fasp/agent_base'
 require 'aspera/fasp/transfer_spec'
-require 'aspera/node'
+require 'aspera/api/node'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
@@ -30,8 +30,8 @@ module Aspera
         @root_id = options[:root_id]
         rest_params = { base_url: options[:url]}
         if OAuth::Factory.bearer?(options[:password])
-          raise 'root_id is required for access key' if @root_id.nil?
-          rest_params[:headers] = Aspera::Node.bearer_headers(options[:password], access_key: options[:username])
+          Aspera.assert(!@root_id.nil?){'root_id not allowed for access key'}
+          rest_params[:headers] = Api::Node.bearer_headers(options[:password], access_key: options[:username])
         else
           rest_params[:auth] = {
             type:     :basic,
@@ -47,11 +47,9 @@ module Aspera
 
       # used internally to ensure node api is set before using.
       def node_api_
-        raise StandardError, 'Before using this object, set the node_api attribute to a Aspera::Rest object' if @node_api.nil?
+        Aspera.assert(!@node_api.nil?){'Before using this object, set the node_api attribute to a Aspera::Rest object'}
         return @node_api
       end
-      # use this to read the node_api end point.
-      # attr_reader :node_api
 
       # use this to set the node_api end point before using the class.
       def node_api=(new_value)

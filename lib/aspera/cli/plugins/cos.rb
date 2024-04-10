@@ -2,7 +2,7 @@
 
 require 'aspera/cli/plugin'
 require 'aspera/cli/plugins/node'
-require 'aspera/cos_node'
+require 'aspera/api/cos_node'
 require 'aspera/assert'
 
 module Aspera
@@ -17,7 +17,7 @@ module Aspera
           options.declare(:crn, 'Resource instance id (CRN)')
           options.declare(:service_credentials, 'IBM Cloud service credentials', types: Hash)
           options.declare(:region, 'Storage region')
-          options.declare(:identity, "Authentication URL (#{CosNode::IBM_CLOUD_TOKEN_URL})", default: CosNode::IBM_CLOUD_TOKEN_URL)
+          options.declare(:identity, "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!
         end
 
@@ -40,9 +40,9 @@ module Aspera
               cos_node_params[:instance_id] = options.get_option(:crn, mandatory: true)
             else
               Aspera.assert(cos_node_params[:endpoint].nil?, exception_class: Cli::BadArgument){'endpoint not allowed when service credentials provided'}
-              cos_node_params.merge!(CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
+              cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
             end
-            api_node = CosNode.new(**cos_node_params)
+            api_node = Api::CosNode.new(**cos_node_params)
             node_plugin = Node.new(@agents, api: api_node)
             command = options.get_next_command(Node::COMMANDS_COS)
             return node_plugin.execute_action(command)

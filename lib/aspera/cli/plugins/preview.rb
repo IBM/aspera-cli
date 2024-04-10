@@ -9,7 +9,7 @@ require 'aspera/preview/file_types'
 require 'aspera/preview/terminal'
 require 'aspera/fasp/transfer_spec'
 require 'aspera/persistency_action_once'
-require 'aspera/node'
+require 'aspera/api/node'
 require 'aspera/hash_ext'
 require 'aspera/timer_limiter'
 require 'aspera/id_generator'
@@ -403,7 +403,7 @@ module Aspera
           command = options.get_next_command(ACTIONS)
           unless %i[check test show].include?(command)
             # this will use node api
-            @api_node = Aspera::Node.new(**basic_auth_params)
+            @api_node = Api::Node.new(**basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.base_url).host
             # get current access key
             @access_key_self = @api_node.read('access_keys/self')[:data]
@@ -461,11 +461,11 @@ module Aspera
               else
                 @api_node.read("files/#{scan_id}")[:data]
               end
-            @filter_block = Aspera::Node.file_matcher_from_argument(options)
+            @filter_block = Api::Node.file_matcher_from_argument(options)
             scan_folder_files(folder_info, scan_path)
             return Main.result_status('scan finished')
           when :events, :trevents
-            @filter_block = Aspera::Node.file_matcher_from_argument(options)
+            @filter_block = Api::Node.file_matcher_from_argument(options)
             iteration_persistency = nil
             if options.get_option(:once_only, mandatory: true)
               iteration_persistency = PersistencyActionOnce.new(
@@ -501,8 +501,8 @@ module Aspera
         ensure
           Log.log.debug{"cleaning up temp folder #{@tmp_folder}"}
           FileUtils.rm_rf(@tmp_folder)
-        end # execute_action
-      end # Preview
-    end # Plugins
-  end # Cli
-end # Aspera
+        end
+      end
+    end
+  end
+end

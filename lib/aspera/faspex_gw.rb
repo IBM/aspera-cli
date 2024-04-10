@@ -8,12 +8,11 @@ require 'json'
 module Aspera
   # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
-    # @param app_api [Aspera::AoC]
+    # @param app_api
     # @param app_context [String]
     def initialize(server, app_api, app_context)
-      Aspera.assert_values(app_api.class.name, ['Aspera::AoC', 'Aspera::Rest'])
+      Aspera.assert_values(app_api.class.name, ['Aspera::Api::AoC', 'Aspera::Rest'])
       super(server)
-      # typed: Aspera::AoC
       @app_api = app_api
       @app_context = app_context
     end
@@ -72,7 +71,7 @@ module Aspera
           # compare string, as class is not yet known here
           faspex_package_create_result =
             case @app_api.class.name
-            when 'Aspera::AoC'
+            when 'Aspera::Api::AoC'
               faspex4_send_to_aoc(faspex_pkg_parameters)
             when 'Aspera::Rest'
               faspex4_send_to_faspex5(faspex_pkg_parameters)

@@ -6,8 +6,8 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
 require 'aspera/fasp/agent_node'
 require 'aspera/fasp/transfer_spec'
-require 'aspera/aoc'
-require 'aspera/node'
+require 'aspera/api/aoc'
+require 'aspera/api/node'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/assert'
@@ -33,13 +33,13 @@ module Aspera
             # no protocol ?
             base_url = "https://#{base_url}" unless base_url.match?(%r{^[a-z]{1,6}://})
             # only org provided ?
-            base_url = "#{base_url}.#{Aspera::AoC::PROD_DOMAIN}" unless base_url.include?('.')
+            base_url = "#{base_url}.#{Api::AoC::PROD_DOMAIN}" unless base_url.include?('.')
             # AoC is only https
             return nil unless base_url.start_with?('https://')
             result = Rest.new(base_url: base_url, redirect_max: 10).read('')
             # Any AoC is on this domain
-            return nil unless result[:http].uri.host.end_with?(Aspera::AoC::PROD_DOMAIN)
-            Log.log.debug{'AoC Main page: #{result[:http].body.include?(Aspera::AoC::PRODUCT_NAME)}'}
+            return nil unless result[:http].uri.host.end_with?(Api::AoC::PROD_DOMAIN)
+            Log.log.debug{"AoC Main page: #{result[:http].body.include?(Api::AoC::PRODUCT_NAME)}"}
             base_url = result[:http].uri.to_s if result[:http].uri.path.include?('/public')
             # either in standard domain, or product name in page
             return {
@@ -50,7 +50,7 @@ module Aspera
 
           def private_key_required?(url)
             # pub link do not need private key
-            return AoC.link_info(url)[:token].nil?
+            return Api::AoC.link_info(url)[:token].nil?
           end
 
           # @param [Hash] env : options, formatter
@@ -63,7 +63,7 @@ module Aspera
             options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
             options.parse_options!
             instance_url = options.get_option(:url, mandatory: true)
-            pub_link_info = AoC.link_info(instance_url)
+            pub_link_info = Api::AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
               pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
               pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})[:data]
@@ -115,10 +115,10 @@ module Aspera
               formatter.display_status('We will use web authentication to bootstrap.')
               auto_set_pub_key = true
               auto_set_jwt = true
-              raise "TODO"
-              #aoc_api.oauth.grant_method = :web
-              #aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
-              #aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
+              raise 'TODO'
+              # aoc_api.oauth.grant_method = :web
+              # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
+              # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
             end
             myself = object.aoc_api.read('self')[:data]
             if auto_set_pub_key
@@ -183,11 +183,11 @@ module Aspera
           options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
           options.declare(:client_id, 'OAuth API client identifier')
           options.declare(:client_secret, 'OAuth API client secret')
-          options.declare(:scope, 'OAuth scope for AoC API calls', default: AoC::SCOPE_FILES_USER)
+          options.declare(:scope, 'OAuth scope for AoC API calls', default: Api::AoC::SCOPE_FILES_USER)
           options.declare(:redirect_uri, 'OAuth API client redirect URI')
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'RSA private key passphrase')
-          options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Aspera::AoC::DEFAULT_WORKSPACE)
+          options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients')
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
           options.parse_options!
@@ -200,7 +200,7 @@ module Aspera
         def api_from_options(new_base_path)
           create_values = {subpath: new_base_path, secret_finder: @agents[:config]}
           # create an API object with the same options, but with a different subpath
-          return Aspera::AoC.new(**OPTIONS_NEW.each_with_object(create_values) { |i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
+          return Api::AoC.new(**OPTIONS_NEW.each_with_object(create_values) { |i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
         rescue ArgumentError => e
           if (m = e.message.match(/missing keyword: :(.*)$/))
             raise Cli::Error, "Missing option: #{m[1]}"
@@ -210,7 +210,7 @@ module Aspera
 
         def aoc_api
           if @cache_api_aoc.nil?
-            @cache_api_aoc = api_from_options(AoC::API_V1)
+            @cache_api_aoc = api_from_options(Api::AoC::API_V1)
             organization = @cache_api_aoc.read('organization')[:data]
             if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
               transfer.httpgw_url_cb = lambda { organization['http_gateway_server_url'] }
@@ -356,7 +356,7 @@ module Aspera
 
         def execute_admin_action
           # upgrade scope to admin
-          aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
+          aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
           command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
           when :auth_providers
@@ -425,13 +425,13 @@ module Aspera
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
-              auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
+              auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
             }))
             return Ats.new(@agents).execute_action_gen(ats_api)
           when :analytics
             analytics_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
-              auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
+              auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
             }))
             command_analytics = options.get_next_command(%i[application_events transfers])
             case command_analytics
@@ -586,10 +586,10 @@ module Aspera
           when :reminder
             # send an email reminder with list of orgs
             user_email = options.get_option(:username, mandatory: true)
-            Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").create('organization_reminders', {email: user_email})[:data]
+            Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").create('organization_reminders', {email: user_email})[:data]
             return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
-            return {type: :object_list, data: Rest.new(base_url: "#{AoC.api_base_url}/#{AoC::API_V1}").read('servers')[:data]}
+            return {type: :object_list, data: Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers')[:data]}
           when :bearer_token
             return {type: :text, data: aoc_api.oauth_token}
           when :organization
@@ -740,13 +740,13 @@ module Aspera
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")[:data]
-              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: Aspera::Node::SCOPE_USER)
+              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: Api::Node::SCOPE_USER)
             end
           when :files
             command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))
             case command_repo
             when *NODE4_EXT_COMMANDS
-              return execute_nodegen4_command(command_repo, aoc_api.context[:home_node_id], file_id: aoc_api.context[:home_file_id], scope: Aspera::Node::SCOPE_USER)
+              return execute_nodegen4_command(command_repo, aoc_api.context[:home_node_id], file_id: aoc_api.context[:home_file_id], scope: Api::Node::SCOPE_USER)
             when :short_link
               link_type = options.get_next_argument('link type', expected: %i[public private])
               short_link_command = options.get_next_command(%i[create delete list])
@@ -824,7 +824,7 @@ module Aspera
                 if link_type.eql?(:public)
                   # TODO: merge with node permissions ?
                   # TODO: access level as arg
-                  access_levels = Aspera::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
+                  access_levels = Api::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
                   folder_name = File.basename(folder_dest)
                   perm_data = {
                     'file_id'       => shared_apfid[:file_id],
@@ -896,7 +896,7 @@ module Aspera
         end
 
         private :execute_admin_action
-      end # AoC
-    end # Plugins
-  end # Cli
-end # Aspera
+      end
+    end
+  end
+end

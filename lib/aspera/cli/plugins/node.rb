@@ -7,8 +7,8 @@ require 'aspera/fasp/transfer_spec'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
-require 'aspera/node'
-require 'aspera/aoc'
+require 'aspera/api/node'
+require 'aspera/api/aoc'
 require 'aspera/oauth'
 require 'aspera/node_simulator'
 require 'aspera/assert'
@@ -73,7 +73,7 @@ module Aspera
             options.declare(:sync_name, 'Sync name')
             options.declare(
               :default_ports, 'Use standard FASP ports or get from node api (gen4)', values: :bool, default: :yes,
-              handler: {o: Aspera::Node, m: :use_standard_ports})
+              handler: {o: Api::Node, m: :use_standard_ports})
             options.declare(:root_id, 'File id of top folder if using bearer tokens')
             SyncActions.declare_options(options)
             options.parse_options!
@@ -122,17 +122,17 @@ module Aspera
           Node.declare_options(options, force: env[:all_manuals])
           @api_node =
             if !api.nil? || env[:all_manuals]
-              # this can be Aspera::Node or Aspera::Rest (shares)
+              # this can be Api::Node or Aspera::Rest (shares)
               api
             elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
-              Aspera::Node.new(
+              Api::Node.new(
                 base_url: options.get_option(:url, mandatory: true),
-                headers:  Aspera::Node.bearer_headers(options.get_option(:password, mandatory: true))
+                headers:  Api::Node.bearer_headers(options.get_option(:password, mandatory: true))
               )
             else
               # this is normal case
-              Aspera::Node.new(
+              Api::Node.new(
                 base_url: options.get_option(:url, mandatory: true),
                 auth:     {
                   type:     :basic,
@@ -419,7 +419,7 @@ module Aspera
               result[:username] = apifid[:api].auth_params[:username]
               result[:password] = apifid[:api].auth_params[:password]
             when :oauth2
-              result[:username] = apifid[:api].params[:headers][Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY]
+              result[:username] = apifid[:api].params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
               result[:password] = apifid[:api].oauth_token
             else Aspera.error_unreachable_line
             end
@@ -440,12 +440,12 @@ module Aspera
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
-            test_block = Aspera::Node.file_matcher_from_argument(options)
+            test_block = Api::Node.file_matcher_from_argument(options)
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
-            containing_folder_path = options.get_next_argument('path').split(Aspera::Node::PATH_SEPARATOR)
+            containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Aspera::Node::PATH_SEPARATOR))
+            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Api::Node::PATH_SEPARATOR))
             result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})[:data]
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
@@ -490,11 +490,11 @@ module Aspera
               case file_info['type']
               when 'file'
                 # if the single source is a file, we need to split into folder path and filename
-                src_dir_elements = source_folder.split(Aspera::Node::PATH_SEPARATOR)
+                src_dir_elements = source_folder.split(Api::Node::PATH_SEPARATOR)
                 # filename is the last one
                 source_paths = [{'source' => src_dir_elements.pop}]
                 # source folder is what remains
-                source_folder = src_dir_elements.join(Aspera::Node::PATH_SEPARATOR)
+                source_folder = src_dir_elements.join(Api::Node::PATH_SEPARATOR)
                 # TODO: instead of creating a new object, use the same, and change file id with parent folder id ? possible ?
                 apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
               when 'link', 'folder'
@@ -510,9 +510,9 @@ module Aspera
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']
             if source_paths.empty?
-              source_folder = source_folder.split(Aspera::Node::PATH_SEPARATOR)
+              source_folder = source_folder.split(Api::Node::PATH_SEPARATOR)
               source_paths = [{'source' => source_folder.pop}]
-              source_folder = source_folder.join(Aspera::Node::PATH_SEPARATOR)
+              source_folder = source_folder.join(Api::Node::PATH_SEPARATOR)
             end
             raise Cli::BadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
@@ -562,7 +562,7 @@ module Aspera
               create_param = options.get_next_argument('creation data', type: Hash)
               raise 'no file_id' if create_param.key?('file_id')
               create_param['file_id'] = apifid[:file_id]
-              create_param['access_levels'] = Aspera::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
+              create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
               # add application specific tags (AoC)
               the_app = apifid[:api].app_info
               the_app[:api].permissions_set_create_params(create_param: create_param, app_info: the_app) unless the_app.nil?
@@ -903,7 +903,7 @@ module Aspera
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', type: String))
             token_info = options.get_next_argument('user and group identification', type: Hash)
             access_key = options.get_option(:username, mandatory: true)
-            return Main.result_status(Aspera::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
+            return Main.result_status(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           when :simulator
             require 'aspera/node_simulator'
             parameters = value_create_modify(command: command)
@@ -916,8 +916,8 @@ module Aspera
             return Main.result_status('Simulator terminated')
           end # case command
           raise 'ERROR: shall not reach this line'
-        end # execute_action
-      end # Main
-    end # Plugin
-  end # Cli
-end # Aspera
+        end
+      end
+    end
+  end
+end

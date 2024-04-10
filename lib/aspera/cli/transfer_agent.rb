@@ -97,6 +97,7 @@ module Aspera
       end
 
       # analyze options and create new agent if not already created or set
+      # TODO: make a Factory pattern
       def agent_instance
         return @agent unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)

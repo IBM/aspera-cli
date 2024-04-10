@@ -11,7 +11,7 @@ module Aspera
   class NodeSimulatorServlet < WEBrick::HTTPServlet::AbstractServlet
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
-    # @param app_api [Aspera::AoC]
+    # @param app_api [Api::AoC]
     # @param app_context [String]
     def initialize(server, credentials, transfer)
       super(server)

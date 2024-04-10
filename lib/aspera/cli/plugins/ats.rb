@@ -3,7 +3,8 @@
 # cspell:ignore trustpolicy
 
 require 'aspera/cli/plugins/node'
-require 'aspera/ats_api'
+require 'aspera/api/ats'
+require 'aspera/api/aoc'
 require 'aspera/assert'
 
 module Aspera
@@ -36,7 +37,7 @@ module Aspera
         def ats_api_pub_v1
           return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
           @ats_api_pub_v1_cache = Rest.new(
-            base_url: "#{AtsApi.base_url}/pub/v1",
+            base_url: "#{Api::Ats::SERVICE_BASE_URL}/pub/v1",
             auth:     {
               type:     :basic,
               username: options.get_option(:ats_key, mandatory: true),
@@ -99,7 +100,7 @@ module Aspera
             return Main.result_status('modified')
           when :entitlement
             ak = ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
-            api_bss = AoC.metering_api(ak['license']['entitlement_id'], ak['license']['customer_id'])
+            api_bss = Api::AoC.metering_api(ak['license']['entitlement_id'], ak['license']['customer_id'])
             return {type: :single_object, data: api_bss.read('entitlement')[:data]}
           when :delete
             ats_api_pub_v1.delete("access_keys/#{access_key_id}")
@@ -109,7 +110,7 @@ module Aspera
             server_data = @ats_api_pub.all_servers.find {|i| i['id'].start_with?(ak_data['transfer_server_id'])}
             raise Cli::Error, 'no such server found' if server_data.nil?
             node_url = server_data['transfer_setup_url']
-            api_node = Aspera::Node.new(
+            api_node = Api::Node.new(
               base_url: node_url,
               auth:     {
                 type:     :basic,
@@ -153,7 +154,7 @@ module Aspera
 
         def ats_api_v2_auth_ibm(rest_add_headers={})
           return Rest.new(
-            base_url: "#{AtsApi.base_url}/v2",
+            base_url: "#{Api::Ats::SERVICE_BASE_URL}/v2",
             headers:  rest_add_headers,
             auth:     {
               type:          :oauth2,
@@ -212,7 +213,7 @@ module Aspera
           command = options.get_next_command(actions)
           @ats_api_pub_v1_cache = ats_api_arg
           # keep as member variable as we may want to use the api in AoC name space
-          @ats_api_pub = AtsApi.new
+          @ats_api_pub = Api::Ats.new
           case command
           when :cluster # display general ATS cluster information, this uses public API, no auth
             return execute_action_cluster_pub
@@ -233,5 +234,5 @@ module Aspera
         end
       end
     end
-  end # Cli
-end # Aspera
+  end
+end
