@@ -36,7 +36,7 @@ module Aspera
         def ats_api_pub_v1
           return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
           @ats_api_pub_v1_cache = Rest.new({
-            base_url: AtsApi.base_url + '/pub/v1',
+            base_url: "#{AtsApi.base_url}/pub/v1",
             auth:     {
               type:     :basic,
               username: options.get_option(:ats_key, mandatory: true),
@@ -153,19 +153,18 @@ module Aspera
         end
 
         def ats_api_v2_auth_ibm(rest_add_headers={})
-          return Rest.new({
-            base_url: AtsApi.base_url + '/v2',
+          return Rest.new(
+            base_url: "#{AtsApi.base_url}/v2",
             headers:  rest_add_headers,
             auth:     {
               type:          :oauth2,
+              grant_method:  :generic,
               base_url:      'https://iam.bluemix.net/identity',
               # does not work:  base_url:    'https://iam.cloud.ibm.com/identity',
-              grant_method:  :generic,
-              grant_options: {
-                grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
-                response_type: 'cloud_iam',
-                apikey:        options.get_option(:ibm_api_key, mandatory: true)
-              }}})
+              grant_type:    'urn:ibm:params:oauth:grant-type:apikey',
+              response_type: 'cloud_iam',
+              apikey:        options.get_option(:ibm_api_key, mandatory: true)
+            })
         end
 
         def execute_action_api_key

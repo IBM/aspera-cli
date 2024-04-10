@@ -11,26 +11,29 @@ require 'base64'
 require 'cgi'
 
 module Aspera
-  class TokenCreatorPubLink
-    def initialize(oauth)
-      @oauth = oauth
+  class AocPubLink < Aspera::OAuth::Base
+    def initialize(
+      json:,
+      url:,
+      **generic_params
+    )
+      super(**generic_params)
+      @json_params = json
+      @url_params = url
+      @identifiers.push(@json_params[:url_token])
     end
 
     def create_token
-      @oauth.api.call({
+      @api.call({
         operation:   'POST',
-        subpath:     @oauth.path_token,
+        subpath:     @path_token,
         headers:     {'Accept' => 'application/json'},
-        json_params: @oauth.specific_parameters[:json],
-        url_params:  @oauth.specific_parameters[:url].merge(scope: @oauth.scope) # scope is here because it may change over time (node)
+        json_params: @json_params,
+        url_params:  @url_params.merge(scope: @scope) # scope is here because it may change over time (node)
       })
     end
-
-    def ids
-      return [@oauth.specific_parameters.dig(:json, :url_token)]
-    end
   end
-  Aspera::Oauth.register_token_creator(:aoc_pub_link, TokenCreatorPubLink)
+  OAuth::Factory.instance.register_token_creator(AocPubLink)
   class AoC < Aspera::Rest
     PRODUCT_NAME = 'Aspera on Cloud'
     # Production domain of AoC
@@ -189,31 +192,27 @@ module Aspera
       aoc_auth_p[:client_secret] = client_secret
       aoc_auth_p[:scope] = scope
 
-      # fill other auth parameters based on Oauth method
+      # fill other auth parameters based on OAuth method
       case aoc_auth_p[:grant_method]
       when :web
         raise ArgumentError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
-        aoc_auth_p[:grant_options] = {redirect_uri: redirect_uri}
+        aoc_auth_p[:redirect_uri] = redirect_uri
       when :jwt
         raise ArgumentError, 'Missing mandatory option: private_key' if private_key.nil?
         raise ArgumentError, 'Missing mandatory option: username' if username.nil?
-        aoc_auth_p[:grant_options] = {
-          private_key_obj: OpenSSL::PKey::RSA.new(private_key, passphrase),
-          payload:         {
-            iss: aoc_auth_p[:client_id], # issuer
-            sub: username, # subject
-            aud: JWT_AUDIENCE
-          }
+        aoc_auth_p[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
+        aoc_auth_p[:payload] = {
+          iss: aoc_auth_p[:client_id], # issuer
+          sub: username, # subject
+          aud: JWT_AUDIENCE
         }
-        # add jwt payload for global ids
-        aoc_auth_p[:grant_options][:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
+        # add jwt payload for global client id
+        aoc_auth_p[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
       when :aoc_pub_link
-        aoc_auth_p[:grant_options] = {
-          url:  {grant_type: 'url_token'}, # URL arguments
-          json: {url_token: url_info[:token]} # JSON body
-        }
+        aoc_auth_p[:url] = {grant_type: 'url_token'} # URL arguments
+        aoc_auth_p[:json] = {url_token: url_info[:token]} # JSON body
         # password protection of link
-        aoc_auth_p[:grant_options][:json][:password] = password unless password.nil?
+        aoc_auth_p[:json][:password] = password unless password.nil?
         # basic auth required for /token
         aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
       else Aspera.error_unexpected_value(aoc_auth_p[:grant_method])

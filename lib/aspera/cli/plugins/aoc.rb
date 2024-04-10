@@ -20,8 +20,10 @@ module Aspera
       class Aoc < Aspera::Cli::BasicAuthPlugin
         AOC_PATH_API_CLIENTS = 'admin/api-clients'
         # default redirect for AoC web auth
-        DEFAULT_REDIRECT = 'http://localhost:12345'
-        private_constant :AOC_PATH_API_CLIENTS, :DEFAULT_REDIRECT
+        REDIRECT_LOCALHOST = 'http://localhost:12345'
+        # OAuth methods supported
+        STD_AUTH_TYPES = %i[web jwt].freeze
+        private_constant :AOC_PATH_API_CLIENTS, :REDIRECT_LOCALHOST, :STD_AUTH_TYPES
         class << self
           def application_name
             'Aspera on Cloud'
@@ -100,7 +102,7 @@ module Aspera
                 formatter.display_status('Navigate to: 𓃑  → Admin → Integrations → API Clients')
                 formatter.display_status('Check or create in integration:')
                 formatter.display_status("- name: #{@info[:name]}")
-                formatter.display_status("- redirect uri: #{DEFAULT_REDIRECT}")
+                formatter.display_status("- redirect uri: #{REDIRECT_LOCALHOST}")
                 formatter.display_status('- origin: localhost')
                 formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
               end
@@ -113,9 +115,10 @@ module Aspera
               formatter.display_status('We will use web authentication to bootstrap.')
               auto_set_pub_key = true
               auto_set_jwt = true
-              aoc_api.oauth.grant_method = :web
-              aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
-              aoc_api.oauth.specific_parameters[:redirect_uri] = DEFAULT_REDIRECT
+              raise "TODO"
+              #aoc_api.oauth.grant_method = :web
+              #aoc_api.oauth.scope = AoC::SCOPE_FILES_ADMIN
+              #aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
             end
             myself = object.aoc_api.read('self')[:data]
             if auto_set_pub_key
@@ -177,7 +180,7 @@ module Aspera
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
-          options.declare(:auth, 'OAuth type of authentication', values: Oauth::STD_AUTH_TYPES, default: :jwt)
+          options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
           options.declare(:client_id, 'OAuth API client identifier')
           options.declare(:client_secret, 'OAuth API client secret')
           options.declare(:scope, 'OAuth scope for AoC API calls', default: AoC::SCOPE_FILES_USER)

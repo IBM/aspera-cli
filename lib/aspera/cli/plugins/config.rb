@@ -24,6 +24,7 @@ require 'aspera/line_logger'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/oauth'
 require 'open3'
 require 'date'
 require 'erb'
@@ -246,7 +247,7 @@ module Aspera
           options.declare(:silent_insecure, 'Issue a warning if certificate is ignored', values: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
           options.declare(:cert_stores, 'List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
-          options.declare(:cache_tokens, 'Save and reuse Oauth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
+          options.declare(:cache_tokens, 'Save and reuse OAuth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
           options.declare(:proxy_credentials, 'HTTP proxy credentials (user and password)', types: Array)
           options.parse_options!
@@ -283,7 +284,7 @@ module Aspera
             user_agent:  PROGRAM_NAME,
             session_cb:  lambda{|http_session|update_http_session(http_session)},
             progress_bar: @progress_bar)
-          Oauth.persist_mgr = persistency if @option_cache_tokens
+          OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           Fasp::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
           Aspera::RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
@@ -943,7 +944,7 @@ module Aspera
           when :echo # display the content of a value given on command line
             return Formatter.auto_type(options.get_next_argument('value'))
           when :flush_tokens
-            deleted_files = Oauth.flush_tokens
+            deleted_files = OAuth::Factory.instance.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
           when :plugins
             case options.get_next_command(%i[list create])

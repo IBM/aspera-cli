@@ -30,7 +30,7 @@ module Aspera
     BEARER_TOKEN_SCOPE_DEFAULT = SCOPE_USER
 
     # register node special token decoder
-    Oauth.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
+    OAuth::Factory.instance.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
 
     # class instance variable, access with accessors on class
     @use_standard_ports = true
@@ -104,7 +104,7 @@ module Aspera
       def bearer_headers(bearer_auth, access_key: nil)
         # if username is not provided, use the access key from the token
         if access_key.nil?
-          access_key = Aspera::Node.decode_scope(Aspera::Node.decode_bearer_token(Oauth.bearer_extract(bearer_auth))['scope'])[:access_key]
+          access_key = Aspera::Node.decode_scope(Aspera::Node.decode_bearer_token(OAuth::Factory.bearer_extract(bearer_auth))['scope'])[:access_key]
           Aspera.assert(!access_key.nil?)
         end
         return {

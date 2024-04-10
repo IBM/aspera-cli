@@ -31,7 +31,10 @@ module Aspera
         JOB_RUNNING = %w[queued working].freeze
         STANDARD_PATH = '/aspera/faspex'
         PER_PAGE_DEFAULT = 100
-        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT])
+        # OAuth methods supported
+        STD_AUTH_TYPES = %i[web jwt boot].freeze
+        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT
+                             STD_AUTH_TYPES])
         class << self
           def application_name
             'Faspex'
@@ -101,7 +104,7 @@ module Aspera
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
-          options.declare(:auth, 'OAuth type of authentication', values: %i[boot].concat(Oauth::STD_AUTH_TYPES), default: :jwt)
+          options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
           options.declare(:box, "Package inbox, either shared inbox name or one of: #{API_LIST_MAILBOX_TYPES.join(', ')} or #{ExtendedValue::ALL}", default: 'inbox')
@@ -157,19 +160,17 @@ module Aspera
             @api_v5 = Rest.new(
               base_url: api_url,
               auth:     {
-                type:          :oauth2,
-                base_url:      auth_api_url,
-                grant_method:  :jwt,
-                client_id:     app_client_id,
-                grant_options: {
-                  payload:         {
-                    iss: app_client_id,    # issuer
-                    aud: app_client_id,    # audience (this field is not clear...)
-                    sub: "user:#{options.get_option(:username, mandatory: true)}" # subject is a user
-                  },
-                  private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
-                  headers:         {typ: 'JWT'}
-                }
+                type:            :oauth2,
+                grant_method:    :jwt,
+                base_url:        auth_api_url,
+                client_id:       app_client_id,
+                payload:         {
+                  iss: app_client_id, # issuer
+                  aud: app_client_id, # audience (this field is not clear...)
+                  sub: "user:#{options.get_option(:username, mandatory: true)}" # subject is a user
+                },
+                private_key_obj: OpenSSL::PKey::RSA.new(options.get_option(:private_key, mandatory: true), options.get_option(:passphrase)),
+                headers:         {typ: 'JWT'}
               })
           else Aspera.error_unexpected_value(auth_type)
           end

@@ -161,7 +161,8 @@ module Aspera
       if @oauth.nil?
         Aspera.assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
         oauth_parameters = @params[:auth].reject { |k, _v| k.eql?(:type) }
-        @oauth = Oauth.new(**oauth_parameters)
+        Log.log.debug{Log.dump('oauth parameters', oauth_parameters)}
+        @oauth = OAuth::Factory.instance.create(**oauth_parameters)
       end
       return @oauth
     end
@@ -243,11 +244,11 @@ module Aspera
     # :not_auth_codes (array) codes that trigger a refresh/regeneration of bearer token
     # ----
     # authentication (:auth) :
-    # :type (:none, :basic, :oauth2, :url)
+    # :type (:none, :basic, :url, :oauth2)
     # :username   [:basic]
     # :password   [:basic]
     # :url_query  [:url]    a hash
-    # :*          [:oauth2] see Oauth class
+    # :*          [:oauth2] see OAuth::Factory class
     def call(call_data)
       Aspera.assert_type(call_data, Hash)
       call_data[:subpath] = '' if call_data[:subpath].nil?
