@@ -107,24 +107,29 @@ module Aspera
         end
 
         def execute_action
-          rest_params = {base_url: options.get_option(:url, mandatory: true)}
-          case options.get_option(:auth_style, mandatory: true)
-          when :arg_pass
-            rest_params[:auth] = {
-              type:      :url,
-              url_query: {
-                'login'    => options.get_option(:username, mandatory: true),
-                'password' => options.get_option(:password, mandatory: true) }}
-          when :head_basic
-            rest_params[:auth] = {
-              type:     :basic,
-              username: options.get_option(:username, mandatory: true),
-              password: options.get_option(:password, mandatory: true) }
-          when :apikey
-            raise 'Not implemented'
-          end
+          auth_params =
+            case options.get_option(:auth_style, mandatory: true)
+            when :arg_pass
+              {
+                type:      :url,
+                url_query: {
+                  'login'    => options.get_option(:username, mandatory: true),
+                  'password' => options.get_option(:password, mandatory: true) }
+              }
+            when :head_basic
+              {
+                type:     :basic,
+                username: options.get_option(:username, mandatory: true),
+                password: options.get_option(:password, mandatory: true)
+              }
+            when :apikey
+              raise 'Not implemented'
+            end
 
-          @api_orch = Rest.new(rest_params)
+          @api_orch = Rest.new(
+            base_url: options.get_option(:url, mandatory: true),
+            auth: auth_params
+          )
 
           command1 = options.get_next_command(ACTIONS)
           case command1

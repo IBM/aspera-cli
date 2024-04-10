@@ -35,13 +35,13 @@ module Aspera
         # require api key only if needed
         def ats_api_pub_v1
           return @ats_api_pub_v1_cache unless @ats_api_pub_v1_cache.nil?
-          @ats_api_pub_v1_cache = Rest.new({
+          @ats_api_pub_v1_cache = Rest.new(
             base_url: "#{AtsApi.base_url}/pub/v1",
             auth:     {
               type:     :basic,
               username: options.get_option(:ats_key, mandatory: true),
               password: options.get_option(:ats_secret, mandatory: true)}
-          })
+          )
         end
 
         def execute_action_access_key
@@ -119,15 +119,14 @@ module Aspera
             command = options.get_next_command(Node::COMMANDS_GEN4)
             return Node.new(@agents, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
-            ats_url = ats_api_pub_v1.params[:base_url]
-            rest_params = {
+            ats_url = ats_api_pub_v1.base_url
+            api_ak_auth = Rest.new(
               base_url: ats_url,
               auth:     {
                 type:     :basic,
                 username: access_key_id,
                 password: @agents[:config].lookup_secret(url: ats_url, username: access_key_id)
-              }}
-            api_ak_auth = Rest.new(rest_params)
+              })
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
           else Aspera.error_unexpected_value(command)
           end

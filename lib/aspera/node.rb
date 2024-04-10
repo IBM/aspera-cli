@@ -126,7 +126,7 @@ module Aspera
     # @param app_info [Hash,NilClass] special processing for AoC
     def initialize(params:, app_info: nil, add_tspec: nil)
       # init Rest
-      super(params)
+      super(**params)
       @app_info = app_info
       # this is added to transfer spec, for instance to add tags (COS)
       @add_tspec = add_tspec
@@ -308,7 +308,7 @@ module Aspera
         # get default TCP/UDP ports and transfer user
         transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
         # by default: same address as node API
-        transfer_spec['remote_host'] = URI.parse(params[:base_url]).host
+        transfer_spec['remote_host'] = URI.parse(base_url).host
         # AoC allows specification of other url
         if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
           transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']

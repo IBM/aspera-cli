@@ -449,7 +449,7 @@ module Aspera
         # retrieve structure from cloud (CDN) with all versions available
         def connect_versions
           if @connect_versions.nil?
-            api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
+            api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
             javascript = api_connect_cdn.call(operation: 'GET', subpath: CONNECT_VERSIONS)
             # get result on one line
             connect_versions_javascript = javascript[:http].body.gsub(/\r?\n\s*/, '')
@@ -714,7 +714,7 @@ module Aspera
             when :download
               folder_dest = transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
               # folder_dest=self.options.get_next_argument('destination folder')
-              api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
+              api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
               file_url = one_link['href']
               filename = file_url.gsub(%r{.*/}, '')
               api_connect_cdn.call(operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename))
@@ -1066,7 +1066,7 @@ module Aspera
             apps.find{|a|a[:product].eql?(answer)}
           end
           wiz_url = identification[:url]
-          Log.log.debug{Log.dump(:identification, identification, :ruby)}
+          Log.log.debug{Log.dump(:identification, identification)}
           formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
           # set url for instantiation of plugin
           options.add_option_preset({url: wiz_url})

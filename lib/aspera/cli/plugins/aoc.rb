@@ -36,7 +36,7 @@ module Aspera
             base_url = "#{base_url}.#{Aspera::AoC::PROD_DOMAIN}" unless base_url.include?('.')
             # AoC is only https
             return nil unless base_url.start_with?('https://')
-            result = Rest.new({base_url: base_url, redirect_max: 10}).read('')
+            result = Rest.new(base_url: base_url, redirect_max: 10).read('')
             # Any AoC is on this domain
             return nil unless result[:http].uri.host.end_with?(Aspera::AoC::PROD_DOMAIN)
             Log.log.debug{'AoC Main page: #{result[:http].body.include?(Aspera::AoC::PRODUCT_NAME)}'}
@@ -65,7 +65,7 @@ module Aspera
             instance_url = options.get_option(:url, mandatory: true)
             pub_link_info = AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
-              pub_api = Rest.new({base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1"})
+              pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
               pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})[:data]
               preset_value = {
                 link: instance_url
@@ -334,7 +334,7 @@ module Aspera
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
             @agents[:transfer].agent_instance = Fasp::AgentNode.new({
-              url:      client_apfid[:api].params[:base_url],
+              url:      client_apfid[:api].base_url,
               username: client_apfid[:api].app_info[:node_info]['access_key'],
               password: client_apfid[:api].oauth_token,
               root_id:  client_apfid[:file_id]
@@ -423,14 +423,14 @@ module Aspera
             result = bss_api.create('graphql', {'variables' => {'organization_id' => org['id']}, 'query' => graphql_query})[:data]['data']
             return {type: :single_object, data: result['aoc']['bssSubscription']}
           when :ats
-            ats_api = Rest.new(aoc_api.params.deep_merge({
-              base_url: "#{aoc_api.params[:base_url]}/admin/ats/pub/v1",
+            ats_api = Rest.new(**aoc_api.params.deep_merge({
+              base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             return Ats.new(@agents).execute_action_gen(ats_api)
           when :analytics
-            analytics_api = Rest.new(aoc_api.params.deep_merge({
-              base_url: "#{aoc_api.params[:base_url].gsub('/api/v1', '')}/analytics/v2",
+            analytics_api = Rest.new(**aoc_api.params.deep_merge({
+              base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
               auth:     {scope: AoC::SCOPE_FILES_ADMIN_USER}
             }))
             command_analytics = options.get_next_command(%i[application_events transfers])
@@ -853,9 +853,9 @@ module Aspera
           when :automation
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
-            automation_rest_params = aoc_api.params.clone
-            automation_rest_params[:base_url].gsub!('/api/', '/automation/')
-            automation_api = Rest.new(automation_rest_params)
+            automation_api = Rest.new(
+              base_url: aoc_api.base_url.gsub('/api/', '/automation/'),
+              **aoc_api.params)
             command_automation = options.get_next_command(%i[workflows instances])
             case command_automation
             when :instances

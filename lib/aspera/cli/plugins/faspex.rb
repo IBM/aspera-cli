@@ -134,7 +134,7 @@ module Aspera
         def api_v4
           if @api_v4.nil?
             faspex_api_base = options.get_option(:url, mandatory: true)
-            @api_v4 = Rest.new({
+            @api_v4 = Rest.new(
               base_url: "#{faspex_api_base}/api",
               auth:     {
                 type:         :oauth2,
@@ -143,7 +143,7 @@ module Aspera
                 auth:         {type: :basic, username: options.get_option(:username, mandatory: true), password: options.get_option(:password, mandatory: true)},
                 scope:        'admin',
                 grant_type:   'password'
-              }})
+              })
           end
           return @api_v4
         end
@@ -232,7 +232,7 @@ module Aspera
           package_create_params[:passcode] = link_data[:query]['passcode']
           delivery_info[:transfer_type] = 'connect'
           delivery_info[:source_paths_list] = transfer.source_list.join("\r\n")
-          api_public_link = Rest.new({base_url: link_data[:base_url]})
+          api_public_link = Rest.new(base_url: link_data[:base_url])
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
@@ -370,7 +370,7 @@ module Aspera
                   raise Cli::BadArgument, "Pub link is #{link_data[:subpath]}. Expecting #{PUB_LINK_EXTERNAL_MATCH}"
                 end
                 # NOTE: unauthenticated API (authorization is in url params)
-                api_public_link = Rest.new({base_url: link_data[:base_url]})
+                api_public_link = Rest.new(base_url: link_data[:base_url])
                 package_creation_data = api_public_link.call(
                   operation: 'GET',
                   subpath: link_data[:subpath],
@@ -452,12 +452,12 @@ module Aspera
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
                 Log.log.debug{"node=#{node_config}"}
                 Aspera.assert_type(node_config, Hash, exception_class: Cli::Error){source_info[KEY_NODE]}
-                api_node = Rest.new({
+                api_node = Rest.new(
                   base_url: node_config['url'],
                   auth:     {
                     type:     :basic,
                     username: node_config['username'],
-                    password: node_config['password']}})
+                    password: node_config['password']})
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
                 return Node.new(@agents, api: api_node).execute_action(command, source_info[KEY_PATH])
               end

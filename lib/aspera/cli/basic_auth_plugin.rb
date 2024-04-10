@@ -38,7 +38,7 @@ module Aspera
       end
 
       def basic_auth_api(subpath=nil)
-        return Rest.new(basic_auth_params(subpath))
+        return Rest.new(**basic_auth_params(subpath))
       end
     end # BasicAuthPlugin
   end # Cli

@@ -23,7 +23,7 @@ module Aspera
     end
 
     def initialize
-      super({base_url: AtsApi.base_url + '/pub/v1'})
+      super(base_url: "#{AtsApi.base_url}/pub/v1")
       # cache of server data
       @all_servers_cache = nil
     end

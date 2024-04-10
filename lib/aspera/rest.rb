@@ -148,7 +148,7 @@ module Aspera
     # create and start keep alive connection on demand
     def http_session
       if @http_session.nil?
-        @http_session = self.class.start_http_session(@params[:base_url])
+        @http_session = self.class.start_http_session(@base_url)
       end
       return @http_session
     end
@@ -156,6 +156,7 @@ module Aspera
     public
 
     attr_reader :params
+    attr_reader :base_url
 
     def oauth
       if @oauth.nil?
@@ -167,14 +168,13 @@ module Aspera
       return @oauth
     end
 
-    # @param a_rest_params [Hash] default call parameters (merged at call)
-    def initialize(a_rest_params)
-      Aspera.assert_type(a_rest_params, Hash)
-      Aspera.assert_type(a_rest_params[:base_url], String)
-      @params = a_rest_params.clone
+    # @param init_params [Hash] default call parameters (merged at call)
+    def initialize(base_url:, **init_params)
+      Aspera.assert_type(base_url, String)
+      @params = init_params.clone
       Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
-      @params[:base_url] = @params[:base_url].gsub(%r{/+$}, '')
+      @base_url = base_url.gsub(%r{/+$}, '')
       # default is no auth
       @params[:auth] ||= {type: :none}
       @params[:not_auth_codes] ||= ['401']
@@ -193,7 +193,7 @@ module Aspera
     def build_request(call_data)
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri = self.class.build_uri("#{call_data[:base_url]}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
+      uri = self.class.build_uri("#{@base_url}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
       Log.log.debug{"URI=#{uri}"}
       begin
         # instantiate request object based on string name
@@ -251,6 +251,7 @@ module Aspera
     # :*          [:oauth2] see OAuth::Factory class
     def call(call_data)
       Aspera.assert_type(call_data, Hash)
+      Aspera.assert(!call_data.key?(:base_url))
       call_data[:subpath] = '' if call_data[:subpath].nil?
       Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
       call_data[:headers] ||= {}
@@ -350,7 +351,7 @@ module Aspera
         # redirect ? (any code beginning with 3)
         if tries_remain_redirect.positive? && e.response.is_a?(Net::HTTPRedirection)
           tries_remain_redirect -= 1
-          current_uri = URI.parse(call_data[:base_url])
+          current_uri = URI.parse(@base_url)
           new_url = e.response['location']
           # special case: relative redirect
           if URI.parse(new_url).host.nil?
@@ -360,15 +361,17 @@ module Aspera
           end
           Log.log.info{"URL is moved: #{new_url}"}
           redirection_uri = URI.parse(new_url)
-          call_data[:base_url] = new_url
-          call_data[:subpath] = ''
-          if current_uri.host.eql?(redirection_uri.host) && current_uri.port.eql?(redirection_uri.port)
+          # same host, same port ? only change path ?
+          if false && current_uri.host.eql?(redirection_uri.host) && current_uri.port.eql?(redirection_uri.port)
+            #call_data[:subpath] = redirection_uri.path
+            call_data[:subpath] = ''
             req = build_request(call_data)
             retry
           else
-            # change host
+            # change host or port
             Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redirection_uri.host}"}
-            return self.class.new(call_data).call(call_data)
+            call_data[:subpath] = ''
+            return self.class.new(base_url: new_url).call(**call_data)
           end
         end
         # raise exception if could not retry and not return error in result

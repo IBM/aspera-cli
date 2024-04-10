@@ -39,7 +39,7 @@ module Aspera
             password: options[:password]
           }
         end
-        @node_api = Rest.new(rest_params)
+        @node_api = Rest.new(**rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
         # Log.log.debug{Log.dump(:agent_options, @options)}
@@ -89,7 +89,7 @@ module Aspera
         end
         # Optimization in case of sending to the same node
         # TODO: probably remove this, as /etc/hosts shall be used for that
-        if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.params[:base_url]).host)
+        if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.base_url).host)
           transfer_spec['remote_host'] = '127.0.0.1'
         end
         resp = node_api_.create('ops/transfers', transfer_spec)[:data]

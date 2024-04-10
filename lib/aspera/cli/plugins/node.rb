@@ -329,7 +329,7 @@ module Aspera
                 # change API credentials if different access key
                 if !access_key_id.eql?('self')
                   @api_node.params[:auth][:username] = ak_info['id']
-                  @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.params[:base_url], username: ak_info['id'], mandatory: true)
+                  @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
                 end
                 root_file_id = ak_info['root_file_id']
               end
@@ -381,9 +381,9 @@ module Aspera
             if node_license['failure'].is_a?(String) && node_license['failure'].include?('ACL')
               Log.log.error('server must have: asnodeadmin -mu <node user> --acl-add=internal --internal')
             end
-            return { type: :single_object, data: node_license}
+            return {type: :single_object, data: node_license}
           when :api_details
-            return { type: :single_object, data: @api_node.params }
+            return {type: :single_object, data: {base_url: @api_node.base_url}.merge(@api_node.params)}
           end
         end
 
@@ -410,7 +410,7 @@ module Aspera
           when :node_info, :bearer_token_node
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             result = {
-              url:     apifid[:api].params[:base_url],
+              url:     apifid[:api].base_url,
               root_id: apifid[:file_id]
             }
             Aspera.assert_values(apifid[:api].params[:auth][:type], %i[basic oauth2])

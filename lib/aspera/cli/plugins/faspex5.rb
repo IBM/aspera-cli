@@ -134,19 +134,19 @@ module Aspera
             Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
             # ok, we have the additional parameters, get the base url
             @faspex5_api_base_url = @faspex5_api_base_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
-            @api_v5 = Rest.new({
+            @api_v5 = Rest.new(
               base_url: api_url,
               headers:  {'Passcode' => @pub_link_context['passcode']}
-            })
+            )
           when :boot
             # the password here is the token copied directly from browser in developer mode
-            @api_v5 = Rest.new({
+            @api_v5 = Rest.new(
               base_url: api_url,
               headers:  {'Authorization' => options.get_option(:password, mandatory: true)}
-            })
+            )
           when :web
             # opens a browser and ask user to auth using web
-            @api_v5 = Rest.new({
+            @api_v5 = Rest.new(
               base_url: api_url,
               auth:     {
                 type:         :oauth2,
@@ -154,7 +154,7 @@ module Aspera
                 grant_method: :web,
                 client_id:    options.get_option(:client_id, mandatory: true),
                 web:          {redirect_uri: options.get_option(:redirect_uri, mandatory: true)}
-              }})
+              })
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
             @api_v5 = Rest.new(
@@ -568,7 +568,10 @@ module Aspera
                 display_fields = Formatter.all_but('user_profile_data_attributes')
               when :oauth_clients
                 display_fields = Formatter.all_but('public_key')
-                adm_api = Rest.new(@api_v5.params.merge({base_url: auth_api_url}))
+                adm_api = Rest.new(
+                  base_url: auth_api_url,
+                  **@api_v5.params
+                )
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
                 special_query = {'all': true}

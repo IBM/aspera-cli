@@ -89,10 +89,10 @@ module Aspera
       end
 
       def metering_api(entitlement_id, customer_id, api_domain=PROD_DOMAIN)
-        return Rest.new({
+        return Rest.new(
           base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
           headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
-        })
+        )
       end
 
       # split host of http://myorg.asperafiles.com in org and domain
@@ -106,7 +106,7 @@ module Aspera
       # @param url [String] URL of AoC public link
       # @return [Hash] information about public link, or nil if not a public link
       def link_info(url)
-        final_uri = Rest.new({base_url: url, redirect_max: MAX_AOC_URL_REDIRECT}).read('')[:http].uri
+        final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).read('')[:http].uri
         raise 'AoC shall redirect to login page' if final_uri.query.nil?
         decoded_query = Rest.decode_query(final_uri.query)
         # is that a public link ?
@@ -168,15 +168,17 @@ module Aspera
       @cache_user_info = nil
       @cache_url_token_info = nil
       @context_cache = nil
-      # init rest params
-      aoc_rest_p = {auth: {type: :oauth2}}
-      # shortcut to auth section
-      aoc_auth_p = aoc_rest_p[:auth]
+      auth_params = {
+        type:          :oauth2,
+        client_id:     client_id,
+        client_secret: client_secret,
+        scope:         scope
+      }
       # analyze type of url
       url_info = AoC.link_info(url)
       Log.log.debug{Log.dump(:url_info, url_info)}
       @private_link = url_info[:private_link]
-      aoc_auth_p[:grant_method] = if url_info.key?(:token)
+      auth_params[:grant_method] = if url_info.key?(:token)
         :aoc_pub_link
       else
         raise ArgumentError, 'Missing mandatory option: auth' if auth.nil?
@@ -184,40 +186,38 @@ module Aspera
       end
       # this is the base API url
       api_url_base = self.class.api_base_url(api_domain: url_info[:instance_domain])
-      # API URL, including subpath (version ...)
-      aoc_rest_p[:base_url] = "#{api_url_base}/#{subpath}"
       # auth URL
-      aoc_auth_p[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}"
-      aoc_auth_p[:client_id] = client_id
-      aoc_auth_p[:client_secret] = client_secret
-      aoc_auth_p[:scope] = scope
+      auth_params[:base_url] = "#{api_url_base}/#{OAUTH_API_SUBPATH}/#{url_info[:organization]}"
 
       # fill other auth parameters based on OAuth method
-      case aoc_auth_p[:grant_method]
+      case auth_params[:grant_method]
       when :web
         raise ArgumentError, 'Missing mandatory option: redirect_uri' if redirect_uri.nil?
-        aoc_auth_p[:redirect_uri] = redirect_uri
+        auth_params[:redirect_uri] = redirect_uri
       when :jwt
         raise ArgumentError, 'Missing mandatory option: private_key' if private_key.nil?
         raise ArgumentError, 'Missing mandatory option: username' if username.nil?
-        aoc_auth_p[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
-        aoc_auth_p[:payload] = {
-          iss: aoc_auth_p[:client_id], # issuer
+        auth_params[:private_key_obj] = OpenSSL::PKey::RSA.new(private_key, passphrase)
+        auth_params[:payload] = {
+          iss: auth_params[:client_id], # issuer
           sub: username, # subject
           aud: JWT_AUDIENCE
         }
         # add jwt payload for global client id
-        aoc_auth_p[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(aoc_auth_p[:client_id])
+        auth_params[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(auth_params[:client_id])
       when :aoc_pub_link
-        aoc_auth_p[:url] = {grant_type: 'url_token'} # URL arguments
-        aoc_auth_p[:json] = {url_token: url_info[:token]} # JSON body
+        auth_params[:url] = {grant_type: 'url_token'} # URL arguments
+        auth_params[:json] = {url_token: url_info[:token]} # JSON body
         # password protection of link
-        aoc_auth_p[:json][:password] = password unless password.nil?
+        auth_params[:json][:password] = password unless password.nil?
         # basic auth required for /token
-        aoc_auth_p[:auth] = {type: :basic, username: aoc_auth_p[:client_id], password: aoc_auth_p[:client_secret]}
-      else Aspera.error_unexpected_value(aoc_auth_p[:grant_method])
+        auth_params[:auth] = {type: :basic, username: auth_params[:client_id], password: auth_params[:client_secret]}
+      else Aspera.error_unexpected_value(auth_params[:grant_method])
       end
-      super(aoc_rest_p)
+      super(
+        base_url: "#{api_url_base}/#{subpath}",
+        auth: auth_params
+        )
     end
 
     def public_link

@@ -176,7 +176,8 @@ module Aspera
           files_to_read.push(file_to_add)
           total_bytes_to_transfer += item['file_size']
         end
-        upload_url = File.join(@gw_api.params[:base_url], @options[:api_version], 'upload')
+        # TODO: check that this is available in endpoints: @api_info['endpoints']
+        upload_url = File.join(@gw_base_url, @options[:api_version], 'upload')
         notify_progress(session_id: nil, type: :pre_start, info: 'connecting wss')
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_session = Rest.start_http_session(upload_url)
@@ -342,8 +343,8 @@ module Aspera
         super(opts)
         @options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
         # remove /v1 from end of user-provided GW url: we need the base url only
-        @options[:url].gsub(%r{/v1/*$}, '')
-        @gw_api = Rest.new({base_url: @options[:url]})
+        @gw_base_url = @options[:url].gsub(%r{/v1/*$}, '')
+        @gw_api = Rest.new(base_url: @gw_base_url)
         @api_info = @gw_api.read('v1/info')[:data]
         Log.log.debug{Log.dump(:api_info, @api_info)}
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
