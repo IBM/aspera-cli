@@ -304,7 +304,7 @@ module Aspera
             File.basename(transfer_spec['paths'].first['source'])
           end
         file_path = File.join(transfer_spec['destination_root'], file_name)
-        @gw_api.call({operation: 'GET', subpath: "v1/download/#{transfer_uuid}", save_to_file: file_path})
+        @gw_api.call(operation: 'GET', subpath: "v1/download/#{transfer_uuid}", save_to_file: file_path)
       end
 
       # start FASP transfer based on transfer spec (hash table)

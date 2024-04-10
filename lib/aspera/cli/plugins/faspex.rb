@@ -172,7 +172,7 @@ module Aspera
           loop do
             # get a batch of package information
             # order: first batch is latest packages, and then in a batch ids are increasing
-            atom_xml = api_v3.call({operation: 'GET', subpath: "#{mailbox}.atom", headers: {'Accept' => 'application/xml'}, url_params: mailbox_query})[:http].body
+            atom_xml = api_v3.call(operation: 'GET', subpath: "#{mailbox}.atom", headers: {'Accept' => 'application/xml'}, url_params: mailbox_query)[:http].body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
             Log.log.debug{Log.dump(:box_data, box_data)}
             items = box_data.key?('entry') ? box_data['entry'] : []
@@ -236,11 +236,11 @@ module Aspera
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
           # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
           # so extract data from javascript
-          package_creation_data = api_public_link.call({
+          package_creation_data = api_public_link.call(
             operation:   'POST',
             subpath:     create_path,
             json_params: package_create_params,
-            headers:     {'Accept' => 'text/javascript'}})[:http].body
+            headers:     {'Accept' => 'text/javascript'})[:http].body
           # get arguments of function call
           package_creation_data.delete!("\n") # one line
           package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
@@ -294,16 +294,16 @@ module Aspera
                 first_source['paths'].push(*transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
                   Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
-                  source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
+                  source_list = api_v3.call(operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'})[:data]['items']
                   self.class.get_source_id_by_name(value, source_list)
                 end
                 first_source['id'] = source_id.to_i unless source_id.nil?
-                pkg_created = api_v3.call({
+                pkg_created = api_v3.call(
                   operation:   'POST',
                   subpath:     'send',
                   json_params: package_create_params,
                   headers:     {'Accept' => 'application/json'}
-                })[:data]
+                )[:data]
                 if first_source.key?('id')
                   # no transfer spec if remote source: handled by faspex
                   return {data: [pkg_created['links']['status']], type: :value_list, name: 'link'}
@@ -358,7 +358,7 @@ module Aspera
                     when :inbox, :archive then'received'
                     when :sent then 'sent'
                     end
-                  entry_xml = api_v3.call({operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'}})[:http].body
+                  entry_xml = api_v3.call(operation: 'GET', subpath: "#{endpoint}/#{delivery_id}", headers: {'Accept' => 'application/xml'})[:http].body
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                   pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
                 end
@@ -403,11 +403,11 @@ module Aspera
                     sanitized = id_uri[:uri].gsub('&', '&amp;')
                     xml_payload =
                       %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
-                    transfer_spec['token'] = api_v3.call({
+                    transfer_spec['token'] = api_v3.call(
                       operation:        'POST',
                       subpath:          'issue-token?direction=down',
                       headers:          {'Accept' => 'text/plain', 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
-                      text_body_params: xml_payload})[:http].body
+                      text_body_params: xml_payload)[:http].body
                   end
                   transfer_spec['direction'] = Fasp::TransferSpec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)
@@ -421,7 +421,7 @@ module Aspera
             end
           when :source
             command_source = options.get_next_command(%i[list info node])
-            source_list = api_v3.call({operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'}})[:data]['items']
+            source_list = api_v3.call(operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'})[:data]['items']
             case command_source
             when :list
               return {type: :object_list, data: source_list}
@@ -463,13 +463,13 @@ module Aspera
               end
             end
           when :me
-            my_info = api_v3.call({operation: 'GET', subpath: 'me', headers: {'Accept' => 'application/json'}})[:data]
+            my_info = api_v3.call(operation: 'GET', subpath: 'me', headers: {'Accept' => 'application/json'})[:data]
             return {data: my_info, type: :single_object}
           when :dropbox
             command_pkg = options.get_next_command([:list])
             case command_pkg
             when :list
-              dropbox_list = api_v3.call({operation: 'GET', subpath: 'dropboxes', headers: {'Accept' => 'application/json'}})[:data]
+              dropbox_list = api_v3.call(operation: 'GET', subpath: 'dropboxes', headers: {'Accept' => 'application/json'})[:data]
               return {type: :object_list, data: dropbox_list['items'], fields: %w[name id description can_read can_write]}
             end
           when :v4
@@ -516,7 +516,7 @@ module Aspera
             end
             return {type: :object_list, data: users}
           when :login_methods
-            login_meths = api_v3.call({operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'}})[:http].body
+            login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'})[:http].body
             login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
             return {type: :object_list, data: login_methods['XRD']['Service']}
           end # command

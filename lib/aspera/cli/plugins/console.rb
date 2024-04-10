@@ -18,7 +18,7 @@ module Aspera
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 2)
               test_endpoint = 'login'
-              test_page = api.call({operation: 'GET', subpath: test_endpoint, url_params: {local: true}})
+              test_page = api.call(operation: 'GET', subpath: test_endpoint, url_params: {local: true})
               next unless test_page[:http].body.include?('Aspera Console')
               version = 'unknown'
               if (m = test_page[:http].body.match(/\(v([1-9]\..*)\)/))

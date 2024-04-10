@@ -412,12 +412,12 @@ module Aspera
             until folders_to_process.empty?
               path = folders_to_process.shift
               # TODO: support multi-page listing ? offset, limit
-              folder = @api_v5.call({
+              folder = @api_v5.call(
                 operation:   'POST',
                 subpath:     "packages/#{package_id}/files/received",
                 headers:     {'Accept' => 'application/json'},
                 url_params:  query,
-                json_params: {'path' => path, 'filters' => {'basenames'=>[]}}})[:data]
+                json_params: {'path' => path, 'filters' => {'basenames'=>[]}})[:data]
               result[:item_count] += folder['item_count']
               result[:total_count] += folder['total_count']
               result[:items].concat(folder['items'])
@@ -436,7 +436,7 @@ module Aspera
             Aspera.assert_type(ids, Array){'Package identifier'}
             Aspera.assert(ids.all?(String)){'Package id shall be String'}
             # API returns 204, empty on success
-            @api_v5.call({operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids}})
+            @api_v5.call(operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids})
             return Main.result_status('Package(s) deleted')
           when :receive
             return package_receive(package_id)
@@ -532,13 +532,13 @@ module Aspera
               path = options.get_next_argument('folder path', mandatory: false) || '/'
               node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
               raise "No such shared folder id #{shared_folder_id}" if node.nil?
-              result = @api_v5.call({
+              result = @api_v5.call(
                 operation:   'POST',
                 subpath:     "nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse",
                 headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
                 json_params: {'path': path, 'filters': {'basenames': []}},
                 url_params:  {offset: 0, limit: 100}
-              })[:data]
+              )[:data]
               if result.key?('items')
                 return {type: :object_list, data: result['items']}
               else

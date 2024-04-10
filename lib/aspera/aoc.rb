@@ -24,13 +24,13 @@ module Aspera
     end
 
     def create_token
-      @api.call({
+      @api.call(
         operation:   'POST',
         subpath:     @path_token,
         headers:     {'Accept' => 'application/json'},
         json_params: @json_params,
         url_params:  @url_params.merge(scope: @scope) # scope is here because it may change over time (node)
-      })
+      )
     end
   end
   OAuth::Factory.instance.register_token_creator(AocPubLink)

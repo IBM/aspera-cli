@@ -400,7 +400,7 @@ module Aspera
     end
 
     def cancel(subpath)
-      return call({operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'}})
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'})
     end
 
     # Query entity by general search (read with parameter `q`)

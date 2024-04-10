@@ -450,7 +450,7 @@ module Aspera
         def connect_versions
           if @connect_versions.nil?
             api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
-            javascript = api_connect_cdn.call({operation: 'GET', subpath: CONNECT_VERSIONS})
+            javascript = api_connect_cdn.call(operation: 'GET', subpath: CONNECT_VERSIONS)
             # get result on one line
             connect_versions_javascript = javascript[:http].body.gsub(/\r?\n\s*/, '')
             Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
@@ -717,7 +717,7 @@ module Aspera
               api_connect_cdn = Rest.new({base_url: CONNECT_WEB_URL})
               file_url = one_link['href']
               filename = file_url.gsub(%r{.*/}, '')
-              api_connect_cdn.call({operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename)})
+              api_connect_cdn.call(operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename))
               return Main.result_status("Downloaded: #{filename}")
             when :open
               OpenApplication.instance.uri(one_link['href'])
