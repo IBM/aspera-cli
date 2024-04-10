@@ -11,31 +11,9 @@ require 'base64'
 require 'cgi'
 
 module Aspera
-  class AocPubLink < Aspera::OAuth::Base
-    def initialize(
-      json:,
-      url:,
-      **generic_params
-    )
-      super(**generic_params)
-      @json_params = json
-      @url_params = url
-      @identifiers.push(@json_params[:url_token])
-    end
-
-    def create_token
-      @api.call(
-        operation:   'POST',
-        subpath:     @path_token,
-        headers:     {'Accept' => 'application/json'},
-        json_params: @json_params,
-        url_params:  @url_params.merge(scope: @scope) # scope is here because it may change over time (node)
-      )
-    end
-  end
-  OAuth::Factory.instance.register_token_creator(AocPubLink)
   class AoC < Aspera::Rest
     PRODUCT_NAME = 'Aspera on Cloud'
+    DEFAULT_WORKSPACE = ''
     # Production domain of AoC
     PROD_DOMAIN = 'ibmaspera.com' # cspell:disable-line
     # to avoid infinite loop in pub link redirection
@@ -54,9 +32,9 @@ module Aspera
     # types of events for shared folder creation
     # Node events: permission.created permission.modified permission.deleted
     PERMISSIONS_CREATED = ['permission.created'].freeze
-    DEFAULT_WORKSPACE = ''
 
     private_constant :MAX_AOC_URL_REDIRECT,
+      :CLIENT_ID_PREFIX,
       :GLOBAL_CLIENT_APPS,
       :COOKIE_PREFIX_CONSOLE_AOC,
       :PUBLIC_LINK_PATHS,
@@ -179,7 +157,7 @@ module Aspera
       Log.log.debug{Log.dump(:url_info, url_info)}
       @private_link = url_info[:private_link]
       auth_params[:grant_method] = if url_info.key?(:token)
-        :aoc_pub_link
+        :url_json
       else
         raise ArgumentError, 'Missing mandatory option: auth' if auth.nil?
         auth
@@ -205,7 +183,7 @@ module Aspera
         }
         # add jwt payload for global client id
         auth_params[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(auth_params[:client_id])
-      when :aoc_pub_link
+      when :url_json
         auth_params[:url] = {grant_type: 'url_token'} # URL arguments
         auth_params[:json] = {url_token: url_info[:token]} # JSON body
         # password protection of link
@@ -221,7 +199,7 @@ module Aspera
     end
 
     def public_link
-      return nil unless auth_params[:grant_method].eql?(:aoc_pub_link)
+      return nil unless auth_params[:grant_method].eql?(:url_json)
       return @cache_url_token_info unless @cache_url_token_info.nil?
       # TODO: can there be several in list ?
       @cache_url_token_info = read('url_tokens')[:data].first
