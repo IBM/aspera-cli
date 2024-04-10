@@ -153,7 +153,7 @@ module Aspera
                 base_url:     auth_api_url,
                 grant_method: :web,
                 client_id:    options.get_option(:client_id, mandatory: true),
-                web:          {redirect_uri: options.get_option(:redirect_uri, mandatory: true)}
+                redirect_uri: options.get_option(:redirect_uri, mandatory: true)
               })
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)

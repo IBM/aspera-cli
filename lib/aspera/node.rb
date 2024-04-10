@@ -122,13 +122,17 @@ module Aspera
 
     attr_reader :app_info
 
-    # @param params [Hash] Rest parameters
-    # @param app_info [Hash,NilClass] special processing for AoC
+    # @param base_url  [String]          Rest parameters
+    # @param auth      [String,NilClass] Rest parameters
+    # @param headers   [String,NilClass] Rest parameters
+    # @param app_info  [Hash,NilClass]   Special processing for AoC
+    # @param add_tspec [Hash,NilClass]   Additional transfer spec
     def initialize(
       base_url:,
-      auth:,
+      auth: nil,
       headers: nil,
-      app_info: nil, add_tspec: nil
+      app_info: nil,
+      add_tspec: nil
     )
       # init Rest
       super(base_url: base_url, auth: auth, headers: headers)
