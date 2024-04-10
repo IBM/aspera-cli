@@ -274,17 +274,17 @@ module Aspera
     def transfer_spec_gen4(file_id, direction, ts_merge=nil)
       ak_name = nil
       ak_token = nil
-      case params[:auth][:type]
+      case auth_params[:type]
       when :basic
-        ak_name = params[:auth][:username]
-        Aspera.assert(params[:auth][:password]){'no secret in node object'}
-        ak_token = Rest.basic_token(params[:auth][:username], params[:auth][:password])
+        ak_name = auth_params[:username]
+        Aspera.assert(auth_params[:password]){'no secret in node object'}
+        ak_token = Rest.basic_token(auth_params[:username], auth_params[:password])
       when :oauth2
         ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
         # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
         # get bearer token, possibly use cache
         ak_token = oauth_token(force_refresh: false)
-      else Aspera.error_unexpected_value(params[:auth][:type])
+      else Aspera.error_unexpected_value(auth_params[:type])
       end
       transfer_spec = {
         'direction' => direction,

@@ -221,7 +221,7 @@ module Aspera
     end
 
     def public_link
-      return nil unless params[:auth][:grant_method].eql?(:aoc_pub_link)
+      return nil unless auth_params[:grant_method].eql?(:aoc_pub_link)
       return @cache_url_token_info unless @cache_url_token_info.nil?
       # TODO: can there be several in list ?
       @cache_url_token_info = read('url_tokens')[:data].first
@@ -348,7 +348,7 @@ module Aspera
         }
       else
         # OAuth bearer token
-        node_rest_params[:auth] = params[:auth].clone
+        node_rest_params[:auth] = auth_params.clone
         node_rest_params[:auth][:scope] = Aspera::Node.token_scope(node_info['access_key'], scope)
         # special header required for bearer token only
         node_rest_params[:headers] = {Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}

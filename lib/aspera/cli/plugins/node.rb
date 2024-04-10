@@ -328,8 +328,8 @@ module Aspera
                 ak_info = @api_node.read("access_keys/#{access_key_id}")[:data]
                 # change API credentials if different access key
                 if !access_key_id.eql?('self')
-                  @api_node.params[:auth][:username] = ak_info['id']
-                  @api_node.params[:auth][:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
+                  @api_node.auth_params[:username] = ak_info['id']
+                  @api_node.auth_params[:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
                 end
                 root_file_id = ak_info['root_file_id']
               end
@@ -413,11 +413,11 @@ module Aspera
               url:     apifid[:api].base_url,
               root_id: apifid[:file_id]
             }
-            Aspera.assert_values(apifid[:api].params[:auth][:type], %i[basic oauth2])
-            case apifid[:api].params[:auth][:type]
+            Aspera.assert_values(apifid[:api].auth_params[:type], %i[basic oauth2])
+            case apifid[:api].auth_params[:type]
             when :basic
-              result[:username] = apifid[:api].params[:auth][:username]
-              result[:password] = apifid[:api].params[:auth][:password]
+              result[:username] = apifid[:api].auth_params[:username]
+              result[:password] = apifid[:api].auth_params[:password]
             when :oauth2
               result[:username] = apifid[:api].params[:headers][Aspera::Node::HEADER_X_ASPERA_ACCESS_KEY]
               result[:password] = apifid[:api].oauth_token

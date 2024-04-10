@@ -57,18 +57,18 @@ module Aspera
       end
 
       # build URI from URL and parameters and check it is http or https
-      def build_uri(url, params=nil)
+      def build_uri(url, query_hash=nil)
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
-        return uri if params.nil?
-        Log.log.debug{Log.dump('params', params)}
-        Aspera.assert_type(params, Hash)
-        return uri if params.empty?
+        return uri if query_hash.nil?
+        Log.log.debug{Log.dump('query', query_hash)}
+        Aspera.assert_type(query_hash, Hash)
+        return uri if query_hash.empty?
         query = []
-        params.each do |k, v|
+        query_hash.each do |k, v|
           case v
           when Array
-            # support array url params, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+            # support array for query parameter, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
             suffix = array_params?(v) ? v.shift : ''
             v.each do |e|
               query.push(["#{k}#{suffix}", e])
@@ -155,34 +155,63 @@ module Aspera
 
     public
 
-    attr_reader :params
+    attr_reader :auth_params
     attr_reader :base_url
 
-    def oauth
-      if @oauth.nil?
-        Aspera.assert(@params[:auth][:type].eql?(:oauth2)){'no OAuth defined'}
-        oauth_parameters = @params[:auth].reject { |k, _v| k.eql?(:type) }
-        Log.log.debug{Log.dump('oauth parameters', oauth_parameters)}
-        @oauth = OAuth::Factory.instance.create(**oauth_parameters)
-      end
-      return @oauth
+    def params
+      return {
+        base_url:       @base_url,
+        auth:           @auth_params,
+        not_auth_codes: @not_auth_codes,
+        redirect_max:   @redirect_max,
+        headers:        @headers
+      }
     end
 
-    # @param init_params [Hash] default call parameters (merged at call)
-    def initialize(base_url:, **init_params)
+    # @param base_url [String] base URL of REST API
+    # @param auth [Hash] authentication parameters:
+    #     :type (:none, :basic, :url, :oauth2)
+    #     :username   [:basic]
+    #     :password   [:basic]
+    #     :url_query  [:url]    a hash
+    #     :*          [:oauth2] see OAuth::Factory class
+    # @param not_auth_codes [Array] codes that trigger a refresh/regeneration of bearer token
+    # @param redirect_max [int] max redirections allowed
+    def initialize(
+      base_url:,
+      auth: nil,
+      not_auth_codes: nil,
+      redirect_max: 0,
+      headers: nil
+    )
       Aspera.assert_type(base_url, String)
-      @params = init_params.clone
-      Log.log.debug{Log.dump('REST params', @params)}
       # base url without trailing slashes (note: string may be frozen)
       @base_url = base_url.gsub(%r{/+$}, '')
       # default is no auth
-      @params[:auth] ||= {type: :none}
-      @params[:not_auth_codes] ||= ['401']
+      @auth_params = auth.nil? ? {type: :none} : auth
+      Aspera.assert_type(@auth_params, Hash)
+      Aspera.assert(@auth_params.key?(:type)){'no auth type defined'}
+      @not_auth_codes = not_auth_codes.nil? ? ['401'] : not_auth_codes
+      Aspera.assert_type(@not_auth_codes, Array)
       # persistent session
       @http_session = nil
       # OAuth object (created on demand)
       @oauth = nil
-      Log.log.debug{Log.dump('REST params(2)', @params)}
+      @redirect_max = redirect_max
+      @headers = headers.nil? ? {} : headers
+      Aspera.assert_type(@headers, Hash)
+      @headers['User-Agent'] ||= @@global[:user_agent]
+    end
+
+    # @return the OAuth object (create, or cached if already created)
+    def oauth
+      if @oauth.nil?
+        Aspera.assert(@auth_params[:type].eql?(:oauth2)){'no OAuth defined'}
+        oauth_parameters = @auth_params.reject { |k, _v| k.eql?(:type) }
+        Log.log.debug{Log.dump('oauth parameters', oauth_parameters)}
+        @oauth = OAuth::Factory.instance.create(**oauth_parameters)
+      end
+      return @oauth
     end
 
     def oauth_token(force_refresh: false)
@@ -190,98 +219,99 @@ module Aspera
       return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
-    def build_request(call_data)
+    def build_request(
+      operation:,
+      subpath:,
+      json_params:,
+      url_params:,
+      www_body_params:,
+      text_body_params:,
+      headers:
+    )
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
-      uri = self.class.build_uri("#{@base_url}#{['', '/'].include?(call_data[:subpath]) ? '' : '/'}#{call_data[:subpath]}", call_data[:url_params])
+      uri = self.class.build_uri("#{@base_url}#{['', '/'].include?(subpath) ? '' : '/'}#{subpath}", url_params)
       Log.log.debug{"URI=#{uri}"}
       begin
         # instantiate request object based on string name
-        req = Net::HTTP.const_get(call_data[:operation].capitalize).new(uri)
+        req = Net::HTTP.const_get(operation.capitalize).new(uri)
       rescue NameError
-        raise "unsupported operation : #{call_data[:operation]}"
+        raise "unsupported operation : #{operation}"
       end
-      if call_data.key?(:json_params) && !call_data[:json_params].nil?
-        req.body = JSON.generate(call_data[:json_params]) # , ascii_only: true
-        Log.log.debug{Log.dump('body JSON data', call_data[:json_params])}
+      if !json_params.nil?
+        req.body = JSON.generate(json_params) # , ascii_only: true
+        Log.log.debug{Log.dump('body JSON data', json_params)}
         req['Content-Type'] = 'application/json'
-        # call_data[:headers]['Accept']='application/json'
+        # headers['Accept']='application/json'
       end
-      if call_data.key?(:www_body_params)
-        req.body = URI.encode_www_form(call_data[:www_body_params])
+      if !www_body_params.nil?
+        req.body = URI.encode_www_form(www_body_params)
         Log.log.debug{"body www data=#{req.body.chomp}"}
         req['Content-Type'] = 'application/x-www-form-urlencoded'
       end
-      if call_data.key?(:text_body_params)
-        req.body = call_data[:text_body_params]
+      if !text_body_params.nil?
+        req.body = text_body_params
         Log.log.debug{"body data=#{req.body.chomp}"}
       end
       # set headers
-      if call_data.key?(:headers)
-        call_data[:headers].each_key do |key|
-          req[key] = call_data[:headers][key]
-        end
+      headers.each do |key, value|
+        req[key] = value
       end
       # :type = :basic
-      req.basic_auth(call_data[:auth][:username], call_data[:auth][:password]) if call_data[:auth][:type].eql?(:basic)
+      req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
       Log.log.debug{Log.dump(:req_body, req.body)}
       return req
     end
 
     # HTTP/S REST call
-    # call_data has keys:
-    # :auth
-    # :operation
-    # :subpath
-    # :headers
-    # :json_params
-    # :url_params
-    # :www_body_params
-    # :text_body_params
-    # :save_to_file (filepath) default: nil
-    # :return_error (bool) default: nil
-    # :redirect_max (int) default: 0
-    # :not_auth_codes (array) codes that trigger a refresh/regeneration of bearer token
-    # ----
-    # authentication (:auth) :
-    # :type (:none, :basic, :url, :oauth2)
-    # :username   [:basic]
-    # :password   [:basic]
-    # :url_query  [:url]    a hash
-    # :*          [:oauth2] see OAuth::Factory class
-    def call(call_data)
-      Aspera.assert_type(call_data, Hash)
-      Aspera.assert(!call_data.key?(:base_url))
-      call_data[:subpath] = '' if call_data[:subpath].nil?
-      Log.log.debug{"accessing #{call_data[:subpath]}".red.bold.bg_green}
-      call_data[:headers] ||= {}
-      call_data[:headers]['User-Agent'] ||= @@global[:user_agent]
-      # defaults from @params are overridden by call data
-      call_data = @params.deep_merge(call_data)
-      case call_data[:auth][:type]
+    # @param save_to_file (filepath)
+    # @param return_error (bool)
+    def call(
+      operation:,
+      subpath: '',
+      json_params: nil,
+      url_params: nil,
+      www_body_params: nil,
+      text_body_params: nil,
+      save_to_file: nil,
+      return_error: false,
+      headers: nil
+    )
+      subpath = subpath.to_s if subpath.is_a?(Symbol)
+      Aspera.assert_type(subpath, String)
+      if headers.nil?
+        headers = @headers.clone
+      else
+        h = headers
+        headers = @headers.clone
+        headers.merge!(h)
+      end
+      Log.log.debug{"#{operation} #{subpath}".red.bold.bg_green}
+      case @auth_params[:type]
       when :none
         # no auth
       when :basic
         Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
-        call_data[:headers]['Authorization'] = oauth_token unless call_data[:headers].key?('Authorization')
+        headers['Authorization'] = oauth_token unless headers.key?('Authorization')
       when :url
-        call_data[:url_params] ||= {}
-        call_data[:auth][:url_query].each do |key, value|
-          call_data[:url_params][key] = value
+        url_params ||= {}
+        @auth_params[:url_query].each do |key, value|
+          url_params[key] = value
         end
-      else Aspera.error_unexpected_value(call_data[:auth][:type])
+      else Aspera.error_unexpected_value(@auth_params[:type])
       end
-      req = build_request(call_data)
-      Log.log.debug{"call_data = #{call_data}"}
       result = {http: nil}
       # start a block to be able to retry the actual HTTP request
       begin
+        req = build_request(
+          operation: operation, subpath: subpath, json_params: json_params, url_params: url_params, www_body_params: www_body_params,
+          text_body_params: text_body_params, headers: headers)
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
         # initialize with number of initial retries allowed, nil gives zero
-        tries_remain_redirect = call_data[:redirect_max].to_i if tries_remain_redirect.nil?
+        tries_remain_redirect = @redirect_max.to_i if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
         result_mime = nil
         file_saved = false
@@ -290,13 +320,13 @@ module Aspera
           result[:http] = response
           result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first.downcase
           # JSON data needs to be parsed, in case it contains an error code
-          if !call_data[:save_to_file].nil? &&
+          if !save_to_file.nil? &&
               result[:http].code.to_s.start_with?('2') &&
               !result[:http]['Content-Length'].nil? &&
               !JSON_DECODE.include?(result_mime)
             total_size = result[:http]['Content-Length'].to_i
             Log.log.debug('before write file')
-            target_file = call_data[:save_to_file]
+            target_file = save_to_file
             # override user's path to path in header
             if !response['Content-Disposition'].nil? && (m = response['Content-Disposition'].match(/filename="([^"]+)"/))
               target_file = File.join(File.dirname(target_file), m[1])
@@ -332,10 +362,10 @@ module Aspera
         Log.log.debug{Log.dump("result: parsed: #{result_mime}", result[:data])}
         Log.log.debug{"result: code=#{result[:http].code}"}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
-        File.write(call_data[:save_to_file], result[:http].body) unless file_saved || call_data[:save_to_file].nil?
+        File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
         # not authorized: oauth token expired
-        if call_data[:not_auth_codes].include?(result[:http].code.to_s) && call_data[:auth][:type].eql?(:oauth2)
+        if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
             # try to use refresh token
             req['Authorization'] = oauth_token(force_refresh: true)
@@ -345,7 +375,7 @@ module Aspera
             # regenerate a brand new token
             req['Authorization'] = oauth_token(force_refresh: true)
           end
-          Log.log.debug{"using new token=#{call_data[:headers]['Authorization']}"}
+          Log.log.debug{"using new token=#{headers['Authorization']}"}
           retry if (oauth_tries -= 1).nonzero?
         end # if oauth
         # redirect ? (any code beginning with 3)
@@ -361,21 +391,23 @@ module Aspera
           end
           Log.log.info{"URL is moved: #{new_url}"}
           redirection_uri = URI.parse(new_url)
-          # same host, same port ? only change path ?
+          # TODO: same host, same port ? only change path ?
           if false && current_uri.host.eql?(redirection_uri.host) && current_uri.port.eql?(redirection_uri.port)
-            #call_data[:subpath] = redirection_uri.path
-            call_data[:subpath] = ''
-            req = build_request(call_data)
+            # subpath = redirection_uri.path
+            subpath = ''
             retry
           else
             # change host or port
             Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redirection_uri.host}"}
-            call_data[:subpath] = ''
-            return self.class.new(base_url: new_url).call(**call_data)
+            subpath = ''
+            return self.class.new(base_url: new_url, redirect_max: @redirect_max).call(
+              operation: operation, subpath: subpath, json_params: json_params,
+              url_params: url_params, www_body_params: www_body_params, text_body_params: text_body_params,
+              save_to_file: save_to_file, return_error: return_error, headers: headers)
           end
         end
         # raise exception if could not retry and not return error in result
-        raise e unless call_data[:return_error]
+        raise e unless return_error
       end # begin request
       Log.log.debug{"result=#{result}"}
       return result

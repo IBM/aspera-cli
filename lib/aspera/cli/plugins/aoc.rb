@@ -853,9 +853,7 @@ module Aspera
           when :automation
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
-            automation_api = Rest.new(
-              base_url: aoc_api.base_url.gsub('/api/', '/automation/'),
-              **aoc_api.params)
+            automation_api = Rest.new(**aoc_api.params.merge(base_url: aoc_api.base_url.gsub('/api/', '/automation/')))
             command_automation = options.get_next_command(%i[workflows instances])
             case command_automation
             when :instances
