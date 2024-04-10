@@ -3480,7 +3480,7 @@ OPTIONS:
         --silent-insecure=ENUM       Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
-        --cache-tokens=ENUM          Save and reuse Oauth tokens: no, [yes]
+        --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
@@ -3562,7 +3562,7 @@ OPTIONS:
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
         --redirect-uri=VALUE         OAuth redirect URI for web authentication
-        --auth=ENUM                  OAuth type of authentication: boot, web, [jwt]
+        --auth=ENUM                  OAuth type of authentication: web, [jwt], boot
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
         --passphrase=VALUE           OAuth JWT RSA private key passphrase
         --box=VALUE                  Package inbox, either shared inbox name or one of: inbox, inbox_history, inbox_all, inbox_all_history, outbox, outbox_history, pending, pending_history, all or ALL
