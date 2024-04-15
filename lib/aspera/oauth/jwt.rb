@@ -36,7 +36,7 @@ module Aspera
         jwt_payload = {
           exp: seconds_since_epoch + OAuth::Factory.instance.globals[:jwt_expiry_offset_sec], # expiration time
           nbf: seconds_since_epoch - OAuth::Factory.instance.globals[:jwt_accepted_offset_sec], # not before
-          iat: seconds_since_epoch - OAuth::Factory.instance.globals[:jwt_accepted_offset_sec] + 1, # issued at (we tell a little in the past so that server always accepts)
+          iat: seconds_since_epoch - OAuth::Factory.instance.globals[:jwt_accepted_offset_sec] + 1, # issued at
           jti: SecureRandom.uuid # JWT id
         }.merge(@payload)
         Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}

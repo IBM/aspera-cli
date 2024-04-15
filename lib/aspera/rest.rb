@@ -359,8 +359,8 @@ module Aspera
         else # when 'text/plain'
           result[:http].body
         end
-        Log.log.debug{Log.dump("result: parsed: #{result_mime}", result[:data])}
-        Log.log.debug{"result: code=#{result[:http].code}"}
+        Log.log.debug{"result: code=#{result[:http].code} mime=#{result_mime}"}
+        Log.log.debug{Log.dump('data', result[:data])}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
         File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
@@ -379,7 +379,7 @@ module Aspera
           retry if (oauth_tries -= 1).nonzero?
         end # if oauth
         # redirect ? (any code beginning with 3)
-        if tries_remain_redirect.positive? && e.response.is_a?(Net::HTTPRedirection)
+        if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
           tries_remain_redirect -= 1
           current_uri = URI.parse(@base_url)
           new_url = e.response['location']
@@ -387,24 +387,13 @@ module Aspera
           if URI.parse(new_url).host.nil?
             # we don't manage relative redirects with non-absolute path
             Aspera.assert(new_url.start_with?('/')){"redirect location is relative: #{new_url}, but does not start with /."}
-            new_url = current_uri.scheme + '://' + current_uri.host + new_url
+            new_url = "#{current_uri.scheme}://#{current_uri.host}#{new_url}"
           end
-          Log.log.info{"URL is moved: #{new_url}"}
-          redirection_uri = URI.parse(new_url)
-          # TODO: same host, same port ? only change path ?
-          if false && current_uri.host.eql?(redirection_uri.host) && current_uri.port.eql?(redirection_uri.port)
-            # subpath = redirection_uri.path
-            subpath = ''
-            retry
-          else
-            # change host or port
-            Log.log.info{"Redirect changes host: #{current_uri.host} -> #{redirection_uri.host}"}
-            subpath = ''
-            return self.class.new(base_url: new_url, redirect_max: @redirect_max).call(
-              operation: operation, subpath: subpath, json_params: json_params,
-              url_params: url_params, www_body_params: www_body_params, text_body_params: text_body_params,
-              save_to_file: save_to_file, return_error: return_error, headers: headers)
-          end
+          # forwards the request to the new location
+          return self.class.new(base_url: new_url, redirect_max: @redirect_max).call(
+            operation: operation, subpath: '', json_params: json_params,
+            url_params: url_params, www_body_params: www_body_params, text_body_params: text_body_params,
+            save_to_file: save_to_file, return_error: return_error, headers: headers)
         end
         # raise exception if could not retry and not return error in result
         raise e unless return_error
