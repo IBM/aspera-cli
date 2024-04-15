@@ -1553,6 +1553,14 @@ $(T)f5_pack_shbox: $(T).exists
 	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shared_box_name $$(cat $(DIR_TMP)package_box_id1)
 	$(EXE_MAN) faspex5 packages receive --box=@preset:faspex5.shared_box_name $$(cat $(DIR_TMP)package_box_id1) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
+$(T)f5_pack_shbox_public: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 packages send -N --url=@preset:faspex5.public_link_send_shared_box @json:@extend:'{"title":"test title"}' $(TST_ASC_LCL_PATH)
+	@$(STOP_TEST) $@
+$(T)f5_pack_user_public: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 packages send -N --url=@preset:faspex5.public_link_send_f5_user @json:@extend:'{"title":"test title"}' $(TST_ASC_LCL_PATH)
+	@$(STOP_TEST) $@
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(TST_ASC_LCL_PATH)
@@ -1645,5 +1653,5 @@ $(T)f5_postproc: $(T).exists
 	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
+$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################

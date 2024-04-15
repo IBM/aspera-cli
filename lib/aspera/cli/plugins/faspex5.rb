@@ -102,7 +102,7 @@ module Aspera
 
           # @return true if the URL is a public link
           def public_link?(url)
-            url.include?('/public/')
+            url.include?('?context=')
           end
         end
 
@@ -127,9 +127,11 @@ module Aspera
           auth_type = self.class.public_link?(@faspex5_api_base_url) ? :public_link : options.get_option(:auth, mandatory: true)
           case auth_type
           when :public_link
+            # resolve any redirect
+            @faspex5_api_base_url = Rest.new(base_url: @faspex5_api_base_url, redirect_max: 3).read('')[:http].uri.to_s
             encoded_context = Rest.decode_query(URI.parse(@faspex5_api_base_url).query)['context']
             raise 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
-            # metadata for public link (allowed usage)
+            # public link information (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
             # ok, we have the additional parameters, get the base url
