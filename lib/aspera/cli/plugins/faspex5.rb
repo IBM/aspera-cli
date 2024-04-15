@@ -18,7 +18,6 @@ module Aspera
       class Faspex5 < Aspera::Cli::BasicAuthPlugin
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         PACKAGE_TERMINATED = %w[completed failed].freeze
-        API_DETECT = 'api/v5/configuration/ping'
         # list of supported mailbox types (to list packages)
         API_LIST_MAILBOX_TYPES = %w[inbox inbox_history inbox_all inbox_all_history outbox outbox_history pending pending_history all].freeze
         PACKAGE_SEND_FROM_REMOTE_SOURCE = 'remote_source'
@@ -28,12 +27,17 @@ module Aspera
           accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
           metadata_profiles email_notifications alternate_addresses
         ].freeze
+        # states for jobs not in final state
         JOB_RUNNING = %w[queued working].freeze
-        STANDARD_PATH = '/aspera/faspex'
+        PATH_STANDARD_ROOT = '/aspera/faspex'
+        PATH_API_V5 = 'api/v5'
+        # endpoint for authentication API
+        PATH_AUTH = 'auth'
+        PATH_HEALTH = 'configuration/ping'
         PER_PAGE_DEFAULT = 100
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt boot].freeze
-        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED API_DETECT API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT
+        private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED PATH_HEALTH API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT
                              STD_AUTH_TYPES])
         class << self
           def application_name
@@ -43,14 +47,16 @@ module Aspera
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
-            urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
+            urls.push("#{address_or_url}#{PATH_STANDARD_ROOT}") unless address_or_url.end_with?(PATH_STANDARD_ROOT)
 
             urls.each do |base_url|
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
-              result = api.read(API_DETECT)
+              path_api_detect = "#{PATH_API_V5}/#{PATH_HEALTH}"
+              result = api.read(path_api_detect)
               next unless result[:http].code.start_with?('2') && result[:http].body.strip.empty?
-              url_length = -2 - API_DETECT.length
+              # end is at -1, and substract 1 for "/"
+              url_length = -2 - path_api_detect.length
               # take redirect if any
               return {
                 version: result[:http]['x-ibm-aspera'] || '5',
@@ -94,6 +100,7 @@ module Aspera
             }
           end
 
+          # @return true if the URL is a public link
           def public_link?(url)
             url.include?('/public/')
           end
@@ -114,14 +121,6 @@ module Aspera
           @pub_link_context = nil
         end
 
-        def api_url
-          return "#{@faspex5_api_base_url}/api/v5"
-        end
-
-        def auth_api_url
-          return "#{@faspex5_api_base_url}/auth"
-        end
-
         def set_api
           # get endpoint, remove unnecessary trailing slashes
           @faspex5_api_base_url = options.get_option(:url, mandatory: true).gsub(%r{/+$}, '')
@@ -130,27 +129,28 @@ module Aspera
           when :public_link
             encoded_context = Rest.decode_query(URI.parse(@faspex5_api_base_url).query)['context']
             raise 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
+            # metadata for public link (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
             Log.log.trace1{Log.dump(:@pub_link_context, @pub_link_context)}
             # ok, we have the additional parameters, get the base url
             @faspex5_api_base_url = @faspex5_api_base_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             @api_v5 = Rest.new(
-              base_url: api_url,
+              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
               headers:  {'Passcode' => @pub_link_context['passcode']}
             )
           when :boot
             # the password here is the token copied directly from browser in developer mode
             @api_v5 = Rest.new(
-              base_url: api_url,
+              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
               headers:  {'Authorization' => options.get_option(:password, mandatory: true)}
             )
           when :web
             # opens a browser and ask user to auth using web
             @api_v5 = Rest.new(
-              base_url: api_url,
+              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
               auth:     {
                 type:         :oauth2,
-                base_url:     auth_api_url,
+                base_url:     "#{@faspex5_api_base_url}/#{PATH_AUTH}",
                 grant_method: :web,
                 client_id:    options.get_option(:client_id, mandatory: true),
                 redirect_uri: options.get_option(:redirect_uri, mandatory: true)
@@ -158,11 +158,11 @@ module Aspera
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
             @api_v5 = Rest.new(
-              base_url: api_url,
+              base_url: "#{@faspex5_api_base_url}/#{PATH_API_V5}",
               auth:     {
                 type:            :oauth2,
                 grant_method:    :jwt,
-                base_url:        auth_api_url,
+                base_url:        "#{@faspex5_api_base_url}/#{PATH_AUTH}",
                 client_id:       app_client_id,
                 payload:         {
                   iss: app_client_id, # issuer
@@ -442,6 +442,13 @@ module Aspera
             return package_receive(package_id)
           when :send
             parameters = value_create_modify(command: command)
+            # autofill recipient for public url
+            if @pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
+              parameters['recipients'] = [{
+                name:           @pub_link_context['name'],
+                recipient_type: @pub_link_context['recipient_type']
+              }]
+            end
             normalize_recipients(parameters)
             package = @api_v5.create('packages', parameters)[:data]
             shared_folder = options.get_option(:shared_folder)
@@ -568,7 +575,7 @@ module Aspera
                 display_fields = Formatter.all_but('user_profile_data_attributes')
               when :oauth_clients
                 display_fields = Formatter.all_but('public_key')
-                adm_api = Rest.new(**@api_v5.params.merge(base_url: auth_api_url))
+                adm_api = Rest.new(**@api_v5.params.merge(base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}"))
               when :shared_inboxes, :workgroups
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
                 special_query = {'all': true}
