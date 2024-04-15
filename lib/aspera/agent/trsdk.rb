@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/agent/ascp/installation'
+require 'aspera/ascp/installation'
 require 'aspera/temp_file_manager'
 require 'aspera/log'
 require 'aspera/assert'

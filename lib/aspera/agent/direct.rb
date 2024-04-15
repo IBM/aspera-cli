@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/agent/ascp/installation'
-require 'aspera/agent/ascp/resume_policy'
-require 'aspera/agent/ascp/management'
+require 'aspera/ascp/installation'
+require 'aspera/ascp/management'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
+require 'aspera/resumer'
 require 'aspera/log'
 require 'aspera/assert'
 require 'socket'
@@ -202,7 +202,7 @@ module Aspera
           # build arguments and add mgt port
           ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
           # get location of ascp executable
-          ascp_path = Agent::Ascp::Installation.instance.path(env_args[:ascp_version])
+          ascp_path = Ascp::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
           Log.log.debug do
             [
@@ -329,7 +329,7 @@ module Aspera
         # set default options and override if specified
         @options = Base.options(default: DEFAULT_OPTIONS, options: options)
         Log.log.debug{Log.dump(:agent_options, @options)}
-        @resume_policy = Ascp::ResumePolicy.new(@options[:resume].symbolize_keys)
+        @resume_policy = Resumer.new(@options[:resume].symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
         # mutex protects global data accessed by threads

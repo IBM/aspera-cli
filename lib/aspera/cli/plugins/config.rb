@@ -7,8 +7,8 @@ require 'aspera/cli/version'
 require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
-require 'aspera/agent/ascp/installation'
-require 'aspera/agent/ascp/products'
+require 'aspera/ascp/installation'
+require 'aspera/ascp/products'
 require 'aspera/transfer/error_info'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
@@ -232,10 +232,10 @@ module Aspera
           options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
           options.declare(:key_path, 'Wizard: path to private key for JWT')
           # Transfer SDK options
-          options.declare(:ascp_path, 'Path to ascp', handler: {o: Agent::Ascp::Installation.instance, m: :ascp_path})
+          options.declare(:ascp_path, 'Path to ascp', handler: {o: Ascp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
-          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Agent::Ascp::Installation.instance, m: :sdk_folder})
+          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Ascp::Installation.instance, m: :sdk_folder})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # email options
           options.declare(:smtp, 'SMTP configuration', types: Hash)
@@ -253,7 +253,7 @@ module Aspera
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
-          sdk_folder = Agent::Ascp::Installation.instance.sdk_folder rescue nil
+          sdk_folder = Ascp::Installation.instance.sdk_folder rescue nil
           if sdk_folder.nil?
             @sdk_default_location = true
             Log.log.debug('SDK folder is not set, checking default')
@@ -268,7 +268,7 @@ module Aspera
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
             Log.log.debug{"using: #{sdk_folder}"}
-            Agent::Ascp::Installation.instance.sdk_folder = sdk_folder
+            Ascp::Installation.instance.sdk_folder = sdk_folder
           end
           pac_script = options.get_option(:fpac)
           # create PAC executor
@@ -534,7 +534,7 @@ module Aspera
         end
 
         def option_use_product=(value)
-          Agent::Ascp::Installation.instance.use_ascp_from_product(value)
+          Ascp::Installation.instance.use_ascp_from_product(value)
         end
 
         def option_use_product
@@ -733,15 +733,15 @@ module Aspera
             return execute_connect_action
           when :use
             ascp_path = options.get_next_argument('path to ascp')
-            ascp_version = Agent::Ascp::Installation.instance.get_ascp_version(ascp_path)
+            ascp_version = Ascp::Installation.instance.get_ascp_version(ascp_path)
             formatter.display_status("ascp version: #{ascp_version}")
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
           when :show
-            return {type: :status, data: Agent::Ascp::Installation.instance.path(:ascp)}
+            return {type: :status, data: Ascp::Installation.instance.path(:ascp)}
           when :info
             # collect info from ascp executable
-            data = Agent::Ascp::Installation.instance.ascp_info
+            data = Ascp::Installation.instance.ascp_info
             # add command line transfer spec
             data['ts'] = transfer.updated_ts
             # add keys
@@ -753,17 +753,17 @@ module Aspera
             command = options.get_next_command(%i[list use])
             case command
             when :list
-              return {type: :object_list, data: Agent::Ascp::Products.installed_products, fields: %w[name app_root]}
+              return {type: :object_list, data: Ascp::Products.installed_products, fields: %w[name app_root]}
             when :use
               default_product = options.get_next_argument('product name')
-              Agent::Ascp::Installation.instance.use_ascp_from_product(default_product)
-              set_global_default(:ascp_path, Agent::Ascp::Installation.instance.path(:ascp))
+              Ascp::Installation.instance.use_ascp_from_product(default_product)
+              set_global_default(:ascp_path, Ascp::Installation.instance.path(:ascp))
               return Main.result_nothing
             end
           when :install
             # reset to default location, if older default was used
-            Agent::Ascp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
-            v = Agent::Ascp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
+            Ascp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
+            v = Ascp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
             return Main.result_status("Installed version #{v}")
           when :spec
             return {

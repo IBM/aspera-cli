@@ -5,7 +5,7 @@ require 'aspera/assert'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/transfer/error'
-require 'aspera/agent/ascp/installation'
+require 'aspera/ascp/installation'
 require 'aspera/cli/formatter'
 require 'aspera/rest'
 require 'securerandom'
@@ -219,8 +219,8 @@ module Aspera
           @job_spec.delete('wss_port')
           # add SSH bypass keys when authentication is token and no auth is provided
           if @job_spec.key?('token') && !@job_spec.key?('remote_password')
-            # @job_spec['remote_password'] = Agent::Ascp::Installation.instance.ssh_cert_uuid # not used: no passphrase
-            certificates_to_use.concat(Agent::Ascp::Installation.instance.aspera_token_ssh_key_paths)
+            # @job_spec['remote_password'] = Ascp::Installation.instance.ssh_cert_uuid # not used: no passphrase
+            certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths)
           end
         end
         return certificates_to_use
@@ -251,7 +251,7 @@ module Aspera
         @builder.process_params
 
         base64_destination = false
-        # symbol must be index of Agent::Ascp::Installation.paths
+        # symbol must be index of Ascp::Installation.paths
         if @builder.read_param('use_ascp4')
           env_args[:ascp_version] = :ascp4
         else
@@ -275,8 +275,8 @@ module Aspera
         env_args[:args].unshift('-q') if @options[:quiet]
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
-          env_args[:args].unshift('-Y', Agent::Ascp::Installation.instance.path(:fallback_private_key))
-          env_args[:args].unshift('-I', Agent::Ascp::Installation.instance.path(:fallback_certificate))
+          env_args[:args].unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))
+          env_args[:args].unshift('-I', Ascp::Installation.instance.path(:fallback_certificate))
         end
         Log.log.debug{"ascp args: #{env_args}"}
         return env_args
