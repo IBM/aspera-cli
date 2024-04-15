@@ -21,9 +21,9 @@ module Aspera
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
       Aspera::Transfer::Parameters.description.each do |name, description|
         next unless description[:enum].is_a?(Array)
-        self.class.const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
+        const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
         description[:enum].each do |enum|
-          self.class.const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
+          const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
       class << self

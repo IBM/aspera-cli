@@ -89,7 +89,7 @@ module Aspera
           io:                nil,               # management port server socket
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
           # env vars and args to ascp (from transfer spec)
-          env_args:          Parameters.new(transfer_spec, @options).ascp_args
+          env_args:          Transfer::Parameters.new(transfer_spec, @options).ascp_args
         }
 
         if multi_session_info.nil?
@@ -231,14 +231,14 @@ module Aspera
           # TODO: use same value as Encoding.default_external
           ascp_mgt_io.set_encoding(Encoding::UTF_8)
           session[:io] = ascp_mgt_io
-          processor = Management.new
+          processor = Ascp::Management.new
           # read management port, until socket is closed (gets returns nil)
           while (line = ascp_mgt_io.gets)
             event = processor.process_line(line.chomp)
             next unless event
             # event is ready
             Log.log.trace1{Log.dump(:management_port, event)}
-            # Log.log.trace1{"event: #{JSON.generate(Management.enhanced_event_format(event))}"}
+            # Log.log.trace1{"event: #{JSON.generate(Ascp::Management.enhanced_event_format(event))}"}
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
@@ -327,9 +327,9 @@ module Aspera
       def initialize(options={})
         super(options)
         # set default options and override if specified
-        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: options)
+        @options = Base.options(default: DEFAULT_OPTIONS, options: options)
         Log.log.debug{Log.dump(:agent_options, @options)}
-        @resume_policy = ResumePolicy.new(@options[:resume].symbolize_keys)
+        @resume_policy = Ascp::ResumePolicy.new(@options[:resume].symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
         # mutex protects global data accessed by threads

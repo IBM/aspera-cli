@@ -6250,7 +6250,7 @@ asession -h
 Main components:
 
 - `Aspera` generic classes for REST and OAuth
-- `Aspera::Fasp`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
+- `Aspera::Agent::Direct`: starting and monitoring transfers. It can be considered as a FASPManager class for Ruby.
 - `Aspera::Cli`: <%=tool%>.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.

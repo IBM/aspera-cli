@@ -6,6 +6,7 @@ module Aspera
   module Agent
     # Base class for transfer agents
     class Base
+      RUBY_EXT = '.rb'
       class << self
         # compute options from user provided and default options
         def options(default:, options:)
@@ -23,10 +24,12 @@ module Aspera
           return result
         end
 
+        # discover available agents
         def agent_list
+          base_class = File.basename(__FILE__)
           Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|
-            file.start_with?('agent_') && !file.eql?('agent_base.rb')
-          end.map{|file|file.sub(/^agent_/, '').sub(/\.rb$/, '').to_sym}
+            file.end_with?(RUBY_EXT) && !file.eql?(base_class)
+          end.map{|file|file[0..(-1 - RUBY_EXT.length)].to_sym}
         end
       end
       def wait_for_completion

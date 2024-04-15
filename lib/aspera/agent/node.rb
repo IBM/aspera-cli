@@ -25,7 +25,7 @@ module Aspera
       def initialize(opts)
         Aspera.assert_type(opts, Hash){'node agent options'}
         super(opts)
-        options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
+        options = Base.options(default: DEFAULT_OPTIONS, options: opts)
         # root id is required for access key
         @root_id = options[:root_id]
         rest_params = { base_url: options[:url]}

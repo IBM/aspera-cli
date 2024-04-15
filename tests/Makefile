@@ -1393,7 +1393,7 @@ $(T)conf_interactive: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_hint: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) config throw Aspera::Fasp::Error     'Remote host is not who we expected'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config throw Aspera::Transfer::Error 'Remote host is not who we expected'$(EXE_SHW_ERR)
 	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
 	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
 	$(EXE_BEG_ERR) config throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)

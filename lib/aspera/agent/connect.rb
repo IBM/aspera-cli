@@ -21,7 +21,7 @@ module Aspera
         raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          connect_url = Products.connect_uri
+          connect_url = Ascp::Products.connect_uri
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now

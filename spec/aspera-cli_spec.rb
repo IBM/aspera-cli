@@ -2,8 +2,9 @@
 
 require 'spec_helper'
 
-main_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
-gem_lib_folder = File.join(main_folder, 'lib')
+# top folder of project
+project_top_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
+gem_lib_folder = File.join(project_top_folder, 'lib')
 $LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/coverage'
 require 'aspera/transfer/uri'
@@ -48,7 +49,7 @@ NAME_FILE1 = '200KB.1'
 PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}")
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
-PAC_FILE = "file:///#{main_folder}/examples/proxy.pac"
+PAC_FILE = "file:///#{project_top_folder}/examples/proxy.pac"
 
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 

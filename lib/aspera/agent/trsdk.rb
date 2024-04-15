@@ -47,7 +47,7 @@ module Aspera
       # options come from transfer_info
       def initialize(user_opts={})
         super(user_opts)
-        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: user_opts)
+        @options = Base.options(default: DEFAULT_OPTIONS, options: user_opts)
         is_local_auto_port = @options[:url].eql?(AUTO_LOCAL_TCP_PORT)
         raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@options[:keep] || @options[:external])
         Log.log.debug{Log.dump(:agent_options, @options)}

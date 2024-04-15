@@ -160,7 +160,7 @@ module Aspera
         # modify transfer spec to be suitable for GW
         transfer_spec['paths'].each do |item|
           # save actual file location to be able read contents later
-          file_to_add = FauxFile.open(item['source'])
+          file_to_add = Transfer::FauxFile.open(item['source'])
           if file_to_add
             item['source'] = file_to_add.path
             item['file_size'] = file_to_add.size
@@ -228,7 +228,7 @@ module Aspera
             fileIndex:  file_index
           }
           file = files_to_read[file_index]
-          if file.is_a?(FauxFile)
+          if file.is_a?(Transfer::FauxFile)
             slice_info[:name] = file.path
           else
             file = File.open(file)
@@ -341,7 +341,7 @@ module Aspera
 
       def initialize(opts)
         super(opts)
-        @options = AgentBase.options(default: DEFAULT_OPTIONS, options: opts)
+        @options = Base.options(default: DEFAULT_OPTIONS, options: opts)
         # remove /v1 from end of user-provided GW url: we need the base url only
         @gw_base_url = @options[:url].gsub(%r{/v1/*$}, '')
         @gw_api = Rest.new(base_url: @gw_base_url)
