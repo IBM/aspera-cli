@@ -105,7 +105,7 @@ module Aspera
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Aspera::Cli::VERSION)
+        @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
         # data persistency
         Aspera.assert(@agents[:persistency]){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
@@ -119,7 +119,7 @@ module Aspera
         t = ' ' * 8
         return <<~END_OF_BANNER
           NAME
-          #{t}#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Aspera::Cli::VERSION})
+          #{t}#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Cli::VERSION})
 
           SYNOPSIS
           #{t}#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
@@ -155,7 +155,7 @@ module Aspera
         options.declare(:help, 'Show this message', values: :none, short: 'h') { @option_help = true }
         options.declare(:bash_comp, 'Generate bash completion for command', values: :none) { @bash_completion = true }
         options.declare(:show_config, 'Display parameters used for the provided action', values: :none) { @option_show_config = true }
-        options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Aspera::Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
+        options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         options.declare(:warnings, 'Check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
         options.declare(
           :ui, 'Method to start browser',
@@ -223,12 +223,12 @@ module Aspera
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup
-        Aspera::Log.instance.program_name = PROGRAM_NAME
+        Log.instance.program_name = PROGRAM_NAME
         @argv.each do |arg|
           case arg
           when '--' then break
-          when /^--log-level=(.*)/ then Aspera::Log.instance.level = Regexp.last_match(1).to_sym
-          when /^--logger=(.*)/ then Aspera::Log.instance.logger_type = Regexp.last_match(1).to_sym
+          when /^--log-level=(.*)/ then Log.instance.level = Regexp.last_match(1).to_sym
+          when /^--logger=(.*)/ then Log.instance.logger_type = Regexp.last_match(1).to_sym
           end
         rescue => e
           $stderr.puts("Error: #{e}")
@@ -307,8 +307,8 @@ module Aspera
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
         rescue Cli::NoSuchIdentifier => e;          exception_info = {e: e, t: 'Identifier'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
-        rescue Transfer::Error => e;                    exception_info = {e: e, t: 'Transfer'}
-        rescue Aspera::RestCallError => e;          exception_info = {e: e, t: 'Rest'}
+        rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
+        rescue RestCallError => e;                  exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
         rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}
         rescue Interrupt => e;                      exception_info = {e: e, t: 'Interruption', debug: true}
@@ -317,7 +317,7 @@ module Aspera
         TempFileManager.instance.cleanup
         # 1- processing of error condition
         unless exception_info.nil?
-          Log.log.warn(exception_info[:e].message) if Aspera::Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
+          Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           formatter.display_message(:error, "#{Formatter::ERROR_FLASH} #{exception_info[:t]}: #{exception_info[:e].message}")
           formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           # Is that a known error condition with proposal for remediation ?

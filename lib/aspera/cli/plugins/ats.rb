@@ -12,7 +12,7 @@ module Aspera
     module Plugins
       # Access Aspera Transfer Service
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
-      class Ats < Aspera::Cli::Plugin
+      class Ats < Cli::Plugin
         CLOUD_TABLE = %w[id name].freeze
         def initialize(env)
           super(env)

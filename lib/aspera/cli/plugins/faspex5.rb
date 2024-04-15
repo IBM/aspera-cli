@@ -15,7 +15,7 @@ require 'tty-spinner'
 module Aspera
   module Cli
     module Plugins
-      class Faspex5 < Aspera::Cli::BasicAuthPlugin
+      class Faspex5 < Cli::BasicAuthPlugin
         RECIPIENT_TYPES = %w[user workgroup external_user distribution_list shared_inbox].freeze
         PACKAGE_TERMINATED = %w[completed failed].freeze
         # list of supported mailbox types (to list packages)

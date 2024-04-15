@@ -18,7 +18,7 @@ require 'zlib'
 module Aspera
   module Cli
     module Plugins
-      class Node < Aspera::Cli::BasicAuthPlugin
+      class Node < Cli::BasicAuthPlugin
         include SyncActions
         class << self
           @@node_options_declared = false # rubocop:disable Style/ClassVars
@@ -122,7 +122,7 @@ module Aspera
           Node.declare_options(options, force: env[:all_manuals])
           @api_node =
             if !api.nil? || env[:all_manuals]
-              # this can be Api::Node or Aspera::Rest (shares)
+              # this can be Api::Node or Rest (shares)
               api
             elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc

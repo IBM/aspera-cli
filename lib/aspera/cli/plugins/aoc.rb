@@ -17,7 +17,7 @@ require 'date'
 module Aspera
   module Cli
     module Plugins
-      class Aoc < Aspera::Cli::BasicAuthPlugin
+      class Aoc < Cli::BasicAuthPlugin
         AOC_PATH_API_CLIENTS = 'admin/api-clients'
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'

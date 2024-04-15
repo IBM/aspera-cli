@@ -24,7 +24,7 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   RestCallError,
           match:       /Signature has expired/,
           remediation: [
             'There is too much time difference between your computer and the server',

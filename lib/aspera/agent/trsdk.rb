@@ -76,7 +76,7 @@ module Aspera
           Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
           Log.log.warn('no daemon present, starting daemon...') if @options[:external]
           # location of daemon binary
-          sdk_folder = File.realpath(File.join(Installation.instance.sdk_ruby_folder, '..'))
+          sdk_folder = File.realpath(File.join(Ascp::Installation.instance.sdk_ruby_folder, '..'))
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
           Aspera.assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
@@ -99,7 +99,7 @@ module Aspera
           log_stdout = "#{transferd_base_tmp}.out"
           log_stderr = "#{transferd_base_tmp}.err"
           File.write(conf_file, config.to_json)
-          @daemon_pid = Process.spawn(Installation.instance.path(:transferd), '--config', conf_file, out: log_stdout, err: log_stderr)
+          @daemon_pid = Process.spawn(Ascp::Installation.instance.path(:transferd), '--config', conf_file, out: log_stdout, err: log_stderr)
           begin
             # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do

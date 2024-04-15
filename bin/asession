@@ -70,8 +70,10 @@ end
 if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
   Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER]
 end
+session_spec['agent'] = {} unless session_spec.key?('agent')
+session_spec['agent']['quiet'] = true
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-client = Aspera::Agent::Direct.new({quiet: true})
+client = Aspera::Agent::Direct.new(session_spec['agent'])
 # start transfer (asynchronous)
 job_id = client.start_transfer(session_spec[PARAM_SPEC])
 # async commands

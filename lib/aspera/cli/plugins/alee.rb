@@ -5,7 +5,7 @@ require 'aspera/api/aoc'
 module Aspera
   module Cli
     module Plugins
-      class Alee < Aspera::Cli::BasicAuthPlugin
+      class Alee < Cli::BasicAuthPlugin
         ACTIONS = %i[entitlement].freeze
 
         def execute_action

@@ -6,7 +6,7 @@ require 'aspera/cli/plugin'
 module Aspera
   module Cli
     # base class for applications supporting basic authentication
-    class BasicAuthPlugin < Aspera::Cli::Plugin
+    class BasicAuthPlugin < Cli::Plugin
       class << self
         @@basic_options_declared = false # rubocop:disable Style/ClassVars
         def declare_options(options, force: false)

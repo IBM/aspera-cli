@@ -64,8 +64,8 @@ module Aspera
           'license'                    => { cli: { type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
         }.freeze
 
-      Aspera::CommandLineBuilder.normalize_description(PARAMS_VX_INSTANCE)
-      Aspera::CommandLineBuilder.normalize_description(PARAMS_VX_SESSION)
+      CommandLineBuilder.normalize_description(PARAMS_VX_INSTANCE)
+      CommandLineBuilder.normalize_description(PARAMS_VX_SESSION)
 
       PARAMS_VX_KEYS = %w[instance sessions].freeze
 
@@ -188,7 +188,7 @@ module Aspera
             Aspera.assert_type(sync_params['sessions'].first, Hash)
             if sync_params.key?('instance')
               Aspera.assert_type(sync_params['instance'], Hash)
-              instance_builder = Aspera::CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
+              instance_builder = CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
@@ -196,7 +196,7 @@ module Aspera
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least name'}
-              session_builder = Aspera::CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
+              session_builder = CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end

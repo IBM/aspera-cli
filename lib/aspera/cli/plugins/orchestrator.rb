@@ -9,7 +9,7 @@ require 'xmlsimple'
 module Aspera
   module Cli
     module Plugins
-      class Orchestrator < Aspera::Cli::BasicAuthPlugin
+      class Orchestrator < Cli::BasicAuthPlugin
         class << self
           STANDARD_PATH = '/aspera/orchestrator'
           def detect(address_or_url)

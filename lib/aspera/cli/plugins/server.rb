@@ -16,7 +16,7 @@ module Aspera
   module Cli
     module Plugins
       # implement basic remote access with FASP/SSH
-      class Server < Aspera::Cli::BasicAuthPlugin
+      class Server < Cli::BasicAuthPlugin
         include SyncActions
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
@@ -127,14 +127,14 @@ module Aspera
           if !server_uri.scheme.eql?(SSH_SCHEME)
             Log.log.warn('URL scheme is https but no token was provided in transfer spec.')
             Log.log.warn("If you want to access the server, not using WSS for session, then use a URL with scheme \"#{SSH_SCHEME}\" and proper SSH port")
-            assumed_url = "#{SSH_SCHEME}://#{server_transfer_spec['remote_host']}:#{Aspera::Transfer::Spec::SSH_PORT}"
+            assumed_url = "#{SSH_SCHEME}://#{server_transfer_spec['remote_host']}:#{Transfer::Spec::SSH_PORT}"
             Log.log.warn{"Assuming proper URL is: #{assumed_url}"}
             server_uri = URI.parse(assumed_url)
           end
           # Scheme is SSH
           if options.get_option(:username).nil?
-            options.set_option(:username, Aspera::Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
-            Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Transfer::Spec::ACCESS_KEY_TRANSFER_USER}"}
+            options.set_option(:username, Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
+            Log.log.info{"No username provided: Assuming default transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}"}
           end
           server_transfer_spec['remote_user'] = options.get_option(:username, mandatory: true)
           if !server_uri.port.nil?
@@ -189,7 +189,7 @@ module Aspera
         # actions without ascmd
         BASE_ACTIONS = %i[health].concat(TRANSFER_COMMANDS).freeze
         # all actions
-        ACTIONS = [BASE_ACTIONS, Aspera::AsCmd::OPERATIONS, ASCMD_ALIASES.keys].flatten.freeze
+        ACTIONS = [BASE_ACTIONS, AsCmd::OPERATIONS, ASCMD_ALIASES.keys].flatten.freeze
 
         def execute_action
           server_transfer_spec = options_to_base_transfer_spec
@@ -233,9 +233,9 @@ module Aspera
             return nagios.result
           when *TRANSFER_COMMANDS
             return execute_transfer(command, server_transfer_spec)
-          when *Aspera::AsCmd::OPERATIONS
+          when *AsCmd::OPERATIONS
             command_arguments = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
-            ascmd = Aspera::AsCmd.new(ascmd_executor)
+            ascmd = AsCmd.new(ascmd_executor)
             begin
               result = ascmd.execute_single(command, command_arguments)
               case command
@@ -248,7 +248,7 @@ module Aspera
               when :du, :md5sum, :info
                 return {type: :single_object, data: result.stringify_keys}
               end
-            rescue Aspera::AsCmd::Error => e
+            rescue AsCmd::Error => e
               raise Cli::BadArgument, e.extended_message
             end
           else Aspera.error_unreachable_line

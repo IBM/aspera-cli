@@ -8,7 +8,7 @@ require 'aspera/assert'
 module Aspera
   module Cli
     module Plugins
-      class Cos < Aspera::Cli::Plugin
+      class Cos < Cli::Plugin
         def initialize(env)
           super(env)
           options.declare(:bucket, 'Bucket name')

@@ -6,7 +6,7 @@ require 'aspera/nagios'
 module Aspera
   module Cli
     module Plugins
-      class Console < Aspera::Cli::BasicAuthPlugin
+      class Console < Cli::BasicAuthPlugin
         STANDARD_PATH = '/aspera/console'
         class << self
           def detect(address_or_url)

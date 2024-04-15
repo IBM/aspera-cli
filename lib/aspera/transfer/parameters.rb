@@ -40,7 +40,7 @@ module Aspera
           if @param_description_cache.nil?
             # config file in same folder with same name as this source
             description_from_yaml = YAML.load_file("#{__FILE__[0..-3]}yaml")
-            @param_description_cache = Aspera::CommandLineBuilder.normalize_description(description_from_yaml)
+            @param_description_cache = CommandLineBuilder.normalize_description(description_from_yaml)
           end
           return @param_description_cache
         end
@@ -138,7 +138,7 @@ module Aspera
         Log.log.debug{Log.dump(:dismiss_options, options.keys - SUPPORTED_OPTIONS)}
         Aspera.assert_type(@options[:ascp_args], Array){'ascp_args'}
         Aspera.assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
-        @builder = Aspera::CommandLineBuilder.new(@job_spec, self.class.description)
+        @builder = CommandLineBuilder.new(@job_spec, self.class.description)
       end
 
       # either place source files on command line, or add file list file
@@ -178,7 +178,7 @@ module Aspera
                 option = '--file-list'
                 lines = ts_paths_array.map{|i|i['source']}
               end
-              file_list_file = Aspera::TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
+              file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
               Log.log.debug{Log.dump(:file_list, lines)}
               File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
               Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}

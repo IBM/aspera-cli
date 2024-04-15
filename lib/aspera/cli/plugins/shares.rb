@@ -6,7 +6,7 @@ module Aspera
   module Cli
     module Plugins
       # Plugin for Aspera Shares v1
-      class Shares < Aspera::Cli::BasicAuthPlugin
+      class Shares < Cli::BasicAuthPlugin
         API_BASE = 'node_api'
         class << self
           def detect(address_or_url)

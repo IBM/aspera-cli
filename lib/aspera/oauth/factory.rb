@@ -69,7 +69,7 @@ module Aspera
 
       def persist_mgr
         if @persist.nil?
-          # use OAuth::Factory.instance.persist_mgr=Aspera::PersistencyFolder.new)
+          # use OAuth::Factory.instance.persist_mgr=PersistencyFolder.new)
           Log.log.debug('Not using persistency')
           # create NULL persistency class
           @persist = Class.new do

@@ -33,7 +33,7 @@ module Aspera
   module Cli
     module Plugins
       # manage the CLI config file
-      class Config < Aspera::Cli::Plugin
+      class Config < Cli::Plugin
         # folder in $HOME for application files (config, cache)
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # default config file
@@ -120,7 +120,7 @@ module Aspera
           end
 
           # name of englobing module
-          # @return "Aspera::Cli::Plugins"
+          # @return "Cli::Plugins"
           def module_full_name
             return Module.nesting[2].to_s
           end
@@ -134,7 +134,7 @@ module Aspera
           # instantiate a plugin
           # plugins must be Capitalized
           def plugin_class(plugin_name_sym)
-            # Module.nesting[2] is Aspera::Cli::Plugins
+            # Module.nesting[2] is Cli::Plugins
             return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
           end
 
@@ -272,7 +272,7 @@ module Aspera
           end
           pac_script = options.get_option(:fpac)
           # create PAC executor
-          @pac_exec = Aspera::ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
+          @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
           proxy_user_pass = options.get_option(:proxy_credentials)
           if !proxy_user_pass.nil?
             Aspera.assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
@@ -286,9 +286,9 @@ module Aspera
             progress_bar: @progress_bar)
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
-          Aspera::RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
+          RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
-          Aspera::RestErrorsAspera.register_handlers
+          RestErrorsAspera.register_handlers
         end
 
         attr_accessor :main_folder, :option_cache_tokens, :option_insecure, :option_warn_insecure_cert, :option_http_options
@@ -414,9 +414,9 @@ module Aspera
           end
           return {
             name:        @info[:gem],
-            current:     Aspera::Cli::VERSION,
+            current:     Cli::VERSION,
             latest:      latest_version,
-            need_update: Gem::Version.new(Aspera::Cli::VERSION) < Gem::Version.new(latest_version)
+            need_update: Gem::Version.new(Cli::VERSION) < Gem::Version.new(latest_version)
           }
         end
 
@@ -1002,7 +1002,7 @@ module Aspera
           when :gem
             case options.get_next_command(%i[path version name])
             when :path then return Main.result_status(self.class.gem_src_root)
-            when :version then return Main.result_status(Aspera::Cli::VERSION)
+            when :version then return Main.result_status(Cli::VERSION)
             when :name then return Main.result_status(@info[:gem])
             end
           when :folder

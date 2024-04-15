@@ -17,7 +17,7 @@ module Aspera
       def user_interfaces; USER_INTERFACES; end
 
       def default_gui_mode
-        return :graphical if [Aspera::Environment::OS_WINDOWS, Aspera::Environment::OS_X].include?(Aspera::Environment.os)
+        return :graphical if [Environment::OS_WINDOWS, Environment::OS_X].include?(Environment.os)
         # unix family
         return :graphical if ENV.key?('DISPLAY') && !ENV['DISPLAY'].empty?
         return :text
@@ -25,19 +25,19 @@ module Aspera
 
       # command must be non blocking
       def uri_graphical(uri)
-        case Aspera::Environment.os
-        when Aspera::Environment::OS_X       then return system('open', uri.to_s)
-        when Aspera::Environment::OS_WINDOWS then return system('start', 'explorer', %Q{"#{uri}"})
-        when Aspera::Environment::OS_LINUX   then return system('xdg-open', uri.to_s)
+        case Environment.os
+        when Environment::OS_X       then return system('open', uri.to_s)
+        when Environment::OS_WINDOWS then return system('start', 'explorer', %Q{"#{uri}"})
+        when Environment::OS_LINUX   then return system('xdg-open', uri.to_s)
         else
-          raise "no graphical open method for #{Aspera::Environment.os}"
+          raise "no graphical open method for #{Environment.os}"
         end
       end
 
       def editor(file_path)
         if ENV.key?('EDITOR')
           system(ENV['EDITOR'], file_path.to_s)
-        elsif Aspera::Environment.os.eql?(Aspera::Environment::OS_WINDOWS)
+        elsif Environment.os.eql?(Environment::OS_WINDOWS)
           system('notepad.exe', %Q{"#{file_path}"})
         else
           uri_graphical(file_path.to_s)

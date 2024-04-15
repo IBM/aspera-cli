@@ -6180,20 +6180,22 @@ Hopefully, IBM integrates this directly in `ascp`, and this tool is made redunda
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-<%=tool%> expect one single argument: a [*transfer-spec*](#transfer-specification).
+<%=tool%> expect one single argument: a session specification that contains parameters and a [*transfer-spec*](#transfer-specification).
 
-If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transfer-specification) on stdin.
+If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted on stdin.
 
 > **Note:** If JSON is the format, specify `@json:` to tell <%=tool%> to decode the `Hash` using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
-There are special **extended** [*transfer-spec*](#transfer-specification) parameters supported by `asession`:
+Top level parameters supported by `asession`:
 
-- `EX_loglevel` to change log level of <%=tool%>
-- `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
-
-> **Note:** In addition, many (deprecated) `EX_` [*transfer-spec*](#transfer-specification) parameters are supported for the [`direct`](#agent-direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transfer-specification).
+| parameter | description |
+|-----------|-------------|
+| `spec` | the [*transfer-spec*](#transfer-specification) |
+| `agent` | same parameters as transfer-info for agent `direct` |
+| `loglevel` | log level of `asession` |
+| `file_list_folder` | the folder used to store (for garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists` |
 
 ### Comparison of interfaces
 

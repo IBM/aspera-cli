@@ -20,7 +20,7 @@ require 'securerandom'
 module Aspera
   module Cli
     module Plugins
-      class Preview < Aspera::Cli::BasicAuthPlugin
+      class Preview < Cli::BasicAuthPlugin
         # special tag to identify transfers related to generator
         PREV_GEN_TAG = 'preview_generator'
         # defined by node API: suffix for folder containing previews
