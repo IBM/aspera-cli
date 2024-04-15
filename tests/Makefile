@@ -343,7 +343,7 @@ $(T)asession: $(T).exists
 	remote_host=$$($(EXE_NO_MAN) config preset get server_user url)&&\
 	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
 	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
-	$(DIR_BIN)asession @json:@extend:'{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:server_user.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:server_user.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}'
+	$(DIR_BIN)asession @json:@extend:'{"spec":{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:server_user.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:server_user.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
 	@$(STOP_TEST) $@
 $(T)serv_pr1: $(T).exists
 	@$(START_TEST) $@
