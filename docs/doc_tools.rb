@@ -6,7 +6,7 @@
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
-require 'aspera/fasp/parameters'
+require 'aspera/transfer/parameters'
 require 'aspera/cli/info'
 require 'yaml'
 require 'erb'
@@ -40,11 +40,11 @@ end
 # transfer spec description generation
 def spec_table
   # list of fields to display (column titles and key in source table)
-  fields = [:name, :type, Aspera::Fasp::Parameters::SUPPORTED_AGENTS_SHORT, :description].flatten.freeze
+  fields = [:name, :type, Aspera::Transfer::Parameters::SUPPORTED_AGENTS_SHORT, :description].flatten.freeze
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Fasp::Parameters.man_table.each do |p|
+  Aspera::Transfer::Parameters.man_table.each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.strip.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')

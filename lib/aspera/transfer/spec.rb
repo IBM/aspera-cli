@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/parameters'
+require 'aspera/transfer/parameters'
 require 'aspera/assert'
 
 module Aspera
-  module Fasp
+  module Transfer
     # parameters for Transfer Spec
-    class TransferSpec
+    class Spec
       # default transfer username for access key based transfers
       ACCESS_KEY_TRANSFER_USER = 'xfer'
       SSH_PORT = 33_001
@@ -19,11 +19,11 @@ module Aspera
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
-      Aspera::Fasp::Parameters.description.each do |name, description|
+      Aspera::Transfer::Parameters.description.each do |name, description|
         next unless description[:enum].is_a?(Array)
-        TransferSpec.const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
+        self.class.const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
         description[:enum].each do |enum|
-          TransferSpec.const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
+          self.class.const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
       class << self

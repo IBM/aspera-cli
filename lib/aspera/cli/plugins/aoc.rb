@@ -4,8 +4,8 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
-require 'aspera/fasp/agent_node'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/agent/node'
+require 'aspera/transfer/spec'
 require 'aspera/api/aoc'
 require 'aspera/api/node'
 require 'aspera/persistency_action_once'
@@ -321,11 +321,11 @@ module Aspera
             source_folder = options.get_next_argument('folder of source files', type: String)
             case push_pull
             when :push
-              client_direction = Fasp::TransferSpec::DIRECTION_SEND
+              client_direction = Transfer::Spec::DIRECTION_SEND
               client_folder = source_folder
               server_folder = transfer.destination_folder(client_direction)
             when :pull
-              client_direction = Fasp::TransferSpec::DIRECTION_RECEIVE
+              client_direction = Transfer::Spec::DIRECTION_RECEIVE
               client_folder = transfer.destination_folder(client_direction)
               server_folder = source_folder
             else Aspera.error_unreachable_line
@@ -333,7 +333,7 @@ module Aspera
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
-            @agents[:transfer].agent_instance = Fasp::AgentNode.new({
+            @agents[:transfer].agent_instance = Agent::Node.new({
               url:      client_apfid[:api].base_url,
               username: client_apfid[:api].app_info[:node_info]['access_key'],
               password: client_apfid[:api].oauth_token,
@@ -711,7 +711,7 @@ module Aspera
                 statuses = transfer.start(
                   package_node_api.transfer_spec_gen4(
                     package_info['contents_file_id'],
-                    Fasp::TransferSpec::DIRECTION_RECEIVE,
+                    Transfer::Spec::DIRECTION_RECEIVE,
                     {'paths'=> [{'source' => '.'}]}),
                   rest_token: package_node_api)
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})

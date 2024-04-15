@@ -307,7 +307,7 @@ module Aspera
         rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
         rescue Cli::NoSuchIdentifier => e;          exception_info = {e: e, t: 'Identifier'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
-        rescue Fasp::Error => e;                    exception_info = {e: e, t: 'Transfer'}
+        rescue Transfer::Error => e;                    exception_info = {e: e, t: 'Transfer'}
         rescue Aspera::RestCallError => e;          exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
         rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}

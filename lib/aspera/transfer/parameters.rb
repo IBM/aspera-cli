@@ -4,8 +4,8 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
-require 'aspera/fasp/error'
-require 'aspera/fasp/installation'
+require 'aspera/transfer/error'
+require 'aspera/agent/direct/installation'
 require 'aspera/cli/formatter'
 require 'aspera/rest'
 require 'securerandom'
@@ -16,7 +16,7 @@ require 'fileutils'
 require 'openssl'
 
 module Aspera
-  module Fasp
+  module Transfer
     # translate transfer specification to ascp parameter list
     class Parameters
       # Agents shown in manual for parameters (sub list)

@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
+require 'aspera/agent/base'
 require 'aspera/rest'
 require 'aspera/open_application'
 require 'securerandom'
 
 module Aspera
-  module Fasp
-    class AgentConnect < Aspera::Fasp::AgentBase
+  module Agent
+    class Connect < Base
       # try twice the main init url in sequence
       CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/']
       # delay between each try to start connect
@@ -69,7 +69,7 @@ module Aspera
           }]}
         # asynchronous anyway
         res = @connect_api.create('transfers/start', connect_transfer_args)[:data]
-        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id']
+        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id']
       end
 
       def wait_for_transfers_completion
@@ -107,13 +107,13 @@ module Aspera
                 break
               when 'failed'
                 notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, transfer['error_desc']
+                raise Transfer::Error, transfer['error_desc']
               when 'cancelled'
                 notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, 'Transfer cancelled by user'
+                raise Transfer::Error, 'Transfer cancelled by user'
               else
                 notify_progress(type: :end, session_id: session_id)
-                raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
+                raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end
             sleep(1)

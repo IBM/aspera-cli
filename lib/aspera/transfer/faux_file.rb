@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Aspera
-  module Fasp
+  module Transfer
     # generates a pseudo file stream
     class FauxFile
       # marker for faux file

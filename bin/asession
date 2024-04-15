@@ -3,7 +3,7 @@
 
 # Laurent Martin/2017
 $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib")
-require 'aspera/fasp/agent_direct'
+require 'aspera/agent/direct'
 require 'aspera/cli/extended_value'
 require 'aspera/log'
 require 'json'
@@ -70,7 +70,7 @@ if transfer_spec.key?(TS_TMP_FILE_LIST_FOLDER)
   transfer_spec.delete(TS_TMP_FILE_LIST_FOLDER)
 end
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-client = Aspera::Fasp::AgentDirect.new({quiet: true})
+client = Aspera::Agent::Direct.new({quiet: true})
 # start transfer (asynchronous)
 job_id = client.start_transfer(transfer_spec)
 # async commands

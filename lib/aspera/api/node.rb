@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/error'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/transfer/spec'
 require 'aspera/rest'
 require 'aspera/oauth'
 require 'aspera/log'
@@ -300,7 +300,7 @@ module Aspera
           'direction' => direction,
           'token'     => ak_token,
           'tags'      => {
-            Fasp::TransferSpec::TAG_RESERVED => {
+            Transfer::Spec::TAG_RESERVED => {
               'node' => {
                 'access_key' => ak_name,
                 'file_id'    => file_id
@@ -316,7 +316,7 @@ module Aspera
         # add remote host info
         if self.class.use_standard_ports
           # get default TCP/UDP ports and transfer user
-          transfer_spec.merge!(Fasp::TransferSpec::AK_TSPEC_BASE)
+          transfer_spec.merge!(Transfer::Spec::AK_TSPEC_BASE)
           # by default: same address as node API
           transfer_spec['remote_host'] = URI.parse(base_url).host
           # AoC allows specification of other url
@@ -341,8 +341,8 @@ module Aspera
           # copy some parts
           TS_FIELDS_TO_COPY.each {|i| transfer_spec[i] = @std_t_spec_cache[i] if @std_t_spec_cache.key?(i)}
         end
-        Log.log.warn{"Expected transfer user: #{Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
-          unless transfer_spec['remote_user'].eql?(Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
+        Log.log.warn{"Expected transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
+          unless transfer_spec['remote_user'].eql?(Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
         return transfer_spec
       end
     end

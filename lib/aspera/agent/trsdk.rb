@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
-require 'aspera/fasp/installation'
+require 'aspera/agent/base'
+require 'aspera/agent/direct/installation'
 require 'aspera/temp_file_manager'
 require 'aspera/log'
 require 'aspera/assert'
@@ -9,8 +9,8 @@ require 'json'
 require 'uri'
 
 module Aspera
-  module Fasp
-    class AgentTrsdk < Aspera::Fasp::AgentBase
+  module Agent
+    class Trsdk < Base
       # see https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'
@@ -159,7 +159,7 @@ module Aspera
             break
           when :FAILED, :CANCELED
             notify_progress(type: :end, session_id: @transfer_id)
-            raise Fasp::Error, JSON.parse(response.message)['Description']
+            raise Transfer::Error, JSON.parse(response.message)['Description']
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
             notify_progress(session_id: nil, type: :pre_start, info: response.status.to_s.downcase)
           else

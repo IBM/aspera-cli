@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/error'
+require 'aspera/transfer/error'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/assert'
@@ -14,7 +14,7 @@ module Aspera
       # Well know issues that users may get
       ERROR_HINTS = [
         {
-          exception:   Fasp::Error,
+          exception:   Transfer::Error,
           match:       'Remote host is not who we expected',
           remediation: [
             'For this specific error, refer to:',

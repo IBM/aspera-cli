@@ -7,7 +7,7 @@ require 'aspera/rest'
 require 'aspera/command_line_builder'
 
 module Aspera
-  module Fasp
+  module Transfer
     # translates a "faspe:" URI (used in Faspex 4) into transfer spec (Hash)
     class Uri
       SCHEME = 'faspe'
@@ -51,6 +51,6 @@ module Aspera
         end
         return result_ts
       end
-    end # Uri
-  end # Fasp
-end # Aspera
+    end
+  end
+end

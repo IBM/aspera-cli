@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
-require 'aspera/fasp/error'
-require 'aspera/fasp/parameters'
-require 'aspera/fasp/installation'
-require 'aspera/fasp/resume_policy'
-require 'aspera/fasp/transfer_spec'
-require 'aspera/fasp/management'
+require 'aspera/agent/base'
+require 'aspera/agent/direct/installation'
+require 'aspera/agent/direct/resume_policy'
+require 'aspera/agent/direct/management'
+require 'aspera/transfer/parameters'
+require 'aspera/transfer/error'
+require 'aspera/transfer/spec'
 require 'aspera/log'
 require 'aspera/assert'
 require 'socket'
@@ -15,9 +15,9 @@ require 'shellwords'
 require 'English'
 
 module Aspera
-  module Fasp
+  module Agent
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
-    class AgentDirect < Aspera::Fasp::AgentBase
+    class Direct < Base
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
         spawn_timeout_sec: 2,
@@ -35,7 +35,7 @@ module Aspera
       # spellchecker: enable
       private_constant :DEFAULT_OPTIONS, :LISTEN_LOCAL_ADDRESS, :ANY_AVAILABLE_PORT
 
-      # method of Aspera::Fasp::AgentBase
+      # method of Base
       # start ascp transfer(s) (non blocking), single or multi-session
       # session information added to @sessions
       # @param transfer_spec [Hash] aspera transfer specification
@@ -44,15 +44,15 @@ module Aspera
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
         # if there are aspera tags
-        if transfer_spec.dig('tags', Fasp::TransferSpec::TAG_RESERVED).is_a?(Hash)
+        if transfer_spec.dig('tags', Transfer::Spec::TAG_RESERVED).is_a?(Hash)
           # TODO: what is this for ? only on local ascp ?
           # NOTE: important: transfer id must be unique: generate random id
           # using a non unique id results in discard of tags in AoC, and a package is never finalized
           # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
-          transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
+          transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
           Log.log.debug{"xfer id=#{transfer_spec['xfer_id']}"}
           # TODO: useful ? node only ? seems to be a timeout for retry in node
-          transfer_spec['tags'][Fasp::TransferSpec::TAG_RESERVED]['xfer_retry'] ||= 3600
+          transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['xfer_retry'] ||= 3600
         end
         Log.log.debug{Log.dump('ts', transfer_spec)}
         # Compute this before using transfer spec because it potentially modifies the transfer spec
@@ -72,7 +72,7 @@ module Aspera
             multi_session_info = nil
           elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
-            multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : TransferSpec::UDP_PORT
+            multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : Transfer::Spec::UDP_PORT
             # delete from original transfer spec, as we will increment values
             transfer_spec.delete('fasp_port')
             # override if specified, else use default value
@@ -202,7 +202,7 @@ module Aspera
           # build arguments and add mgt port
           ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
           # get location of ascp executable
-          ascp_path = Fasp::Installation.instance.path(env_args[:ascp_version])
+          ascp_path = Agent::Direct::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
           Log.log.debug do
             [
@@ -221,7 +221,7 @@ module Aspera
           Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
           readable, _, _ = IO.select([mgt_server_socket], nil, nil, @options[:spawn_timeout_sec])
           Log.log.debug('after select, before accept')
-          Aspera.assert(readable, exception_class: Fasp::Error){'timeout waiting mgt port connect (select not readable)'}
+          Aspera.assert(readable, exception_class: Transfer::Error){'timeout waiting mgt port connect (select not readable)'}
           # There is a connection to accept
           client_socket, _client_addrinfo = mgt_server_socket.accept
           Log.log.debug('after accept')
@@ -255,7 +255,7 @@ module Aspera
                 Log.log.warn('Regenerating token for transfer')
                 env_args[:env]['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
               end
-              raise Fasp::Error.new(last_event['Description'], last_event['Code'].to_i)
+              raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
             when 'DONE'
               nil
             else
@@ -264,9 +264,9 @@ module Aspera
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
-          raise Fasp::Error, e.message
+          raise Transfer::Error, e.message
         rescue Interrupt
-          raise Fasp::Error, 'transfer interrupted by user'
+          raise Transfer::Error, 'transfer interrupted by user'
         ensure
           mgt_server_socket.close
           # if ascp was successfully started, check its status
@@ -280,7 +280,7 @@ module Aspera
             if !status&.success?
               message = status.nil? ? 'ascp not started' : "ascp failed (#{status})"
               # raise error only if there was not already an exception (ERROR_INFO)
-              raise Fasp::Error, message unless $ERROR_INFO
+              raise Transfer::Error, message unless $ERROR_INFO
               # else display this message also, as main exception is already here
               Log.log.error(message)
             end

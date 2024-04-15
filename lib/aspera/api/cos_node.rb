@@ -68,7 +68,7 @@ module Aspera
             type:     :basic,
             username: ats_info['AccessKey']['Id'],
             password: ats_info['AccessKey']['Secret']},
-          add_tspec: {'tags'=>{Fasp::TransferSpec::TAG_RESERVED=>{'node'=>{'storage_credentials'=>@storage_credentials}}}}
+          add_tspec: {'tags'=>{Transfer::Spec::TAG_RESERVED=>{'node'=>{'storage_credentials'=>@storage_credentials}}}}
           )
         # update storage_credentials AND Rest params
         generate_token

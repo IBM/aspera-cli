@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/agent/base'
+require 'aspera/transfer/spec'
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
@@ -31,7 +31,7 @@ module Aspera
         :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
         :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
-      TRANSFER_AGENTS = Fasp::AgentBase.agent_list.freeze
+      TRANSFER_AGENTS = Agent::Base.agent_list.freeze
 
       class << self
         # @return :success if all sessions statuses returned by "start" are success
@@ -102,7 +102,7 @@ module Aspera
         return @agent unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
         # agent plugin is loaded on demand to avoid loading unnecessary dependencies
-        require "aspera/fasp/agent_#{agent_type}"
+        require "aspera/agent/#{agent_type}"
         # set keys as symbols
         agent_options = @opt_mgr.get_option(:transfer_info).symbolize_keys
         # special cases
@@ -126,7 +126,7 @@ module Aspera
         end
         agent_options[:progress] = @config.progress_bar
         # get agent instance
-        new_agent = Kernel.const_get("Aspera::Fasp::Agent#{agent_type.capitalize}").new(agent_options)
+        new_agent = Kernel.const_get("Aspera::Agent::#{agent_type.capitalize}").new(agent_options)
         self.agent_instance = new_agent
         Log.log.debug{"transfer agent is a #{@agent.class}"}
         return @agent
@@ -143,8 +143,8 @@ module Aspera
         return dest_folder unless dest_folder.nil?
         # default: / on remote, . on local
         case direction.to_s
-        when Fasp::TransferSpec::DIRECTION_SEND then dest_folder = '/'
-        when Fasp::TransferSpec::DIRECTION_RECEIVE then dest_folder = '.'
+        when Transfer::Spec::DIRECTION_SEND then dest_folder = '/'
+        when Transfer::Spec::DIRECTION_RECEIVE then dest_folder = '.'
         else Aspera.error_unexpected_value(direction)
         end
         return dest_folder
@@ -184,7 +184,7 @@ module Aspera
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
-            Fasp::Parameters.ts_has_ascp_file_list(@transfer_spec_command_line, @opt_mgr.get_option(:transfer_info))
+            Transfer::Parameters.ts_has_ascp_file_list(@transfer_spec_command_line, @opt_mgr.get_option(:transfer_info))
           raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths
@@ -220,11 +220,11 @@ module Aspera
         Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}
         # process :src option
         case transfer_spec['direction']
-        when Fasp::TransferSpec::DIRECTION_RECEIVE
+        when Transfer::Spec::DIRECTION_RECEIVE
           # init default if required in any case
           @transfer_spec_command_line['destination_root'] ||= destination_folder(transfer_spec['direction'])
-        when Fasp::TransferSpec::DIRECTION_SEND
-          if transfer_spec.dig('tags', Fasp::TransferSpec::TAG_RESERVED, 'node', 'access_key')
+        when Transfer::Spec::DIRECTION_SEND
+          if transfer_spec.dig('tags', Transfer::Spec::TAG_RESERVED, 'node', 'access_key')
             # gen4
             @transfer_spec_command_line.delete('destination_root') if @transfer_spec_command_line.key?('destination_root_id')
           elsif transfer_spec.key?('token')

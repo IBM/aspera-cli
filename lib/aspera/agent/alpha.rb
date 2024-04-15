@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
+require 'aspera/agent/base'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/json_rpc'
@@ -8,8 +8,8 @@ require 'aspera/open_application'
 require 'securerandom'
 
 module Aspera
-  module Fasp
-    class AgentAlpha < Aspera::Fasp::AgentBase
+  module Agent
+    class Alpha < Base
       # try twice the main init url in sequence
       START_URIS = ['aspera://', 'aspera://', 'aspera://']
       # delay between each try to start the app
@@ -97,13 +97,13 @@ module Aspera
               break
             when 'failed'
               notify_progress(type: :end, session_id: @xfer_id)
-              raise Fasp::Error, transfer['error_desc']
+              raise Transfer::Error, transfer['error_desc']
             when 'cancelled'
               notify_progress(type: :end, session_id: @xfer_id)
-              raise Fasp::Error, 'Transfer cancelled by user'
+              raise Transfer::Error, 'Transfer cancelled by user'
             else
               notify_progress(type: :end, session_id: @xfer_id)
-              raise Fasp::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
+              raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
             end
             sleep(1)
           end

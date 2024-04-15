@@ -27,7 +27,7 @@ cipher:
   :cli:
     :type: :opt_with_arg
     :switch: "-c"
-    :convert: Aspera::Fasp::Parameters.convert_remove_hyphen
+    :convert: Aspera::Transfer::Parameters.convert_remove_hyphen
 content_protection:
   :desc: Enable client-side encryption at rest. (CSEAR, content protection)
   :enum:
@@ -424,7 +424,7 @@ tags:
   :cli:
     :type: :opt_with_arg
     :switch: "--tags64"
-    :convert: Aspera::Fasp::Parameters.convert_json64
+    :convert: Aspera::Transfer::Parameters.convert_json64
 target_rate_cap_kbps:
   :desc: Returned by upload/download_setup node API.
   :accepted_types: :int
@@ -479,7 +479,7 @@ source_root:
   :cli:
     :type: :opt_with_arg
     :switch: "--source-prefix64"
-    :convert: Aspera::Fasp::Parameters.convert_base64
+    :convert: Aspera::Transfer::Parameters.convert_base64
 min_rate_cap_kbps:
   :desc: |-
     The highest minimum rate that an incoming transfer can request, in kilobits per second.
@@ -540,7 +540,7 @@ src_base:
   :cli:
     :type: :opt_with_arg
     :switch: "--src-base64"
-    :convert: Aspera::Fasp::Parameters.convert_base64
+    :convert: Aspera::Transfer::Parameters.convert_base64
 preserve_acls:
   :desc: "Preserve access control lists."
   :enum:

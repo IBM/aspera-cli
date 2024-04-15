@@ -7,7 +7,7 @@ require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
 require 'aspera/preview/terminal'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
 require 'aspera/api/node'
 require 'aspera/hash_ext'
@@ -153,11 +153,11 @@ module Aspera
           end
           return if events.empty?
           events.each do |event|
-            if event['data']['direction'].eql?(Fasp::TransferSpec::DIRECTION_RECEIVE) &&
+            if event['data']['direction'].eql?(Transfer::Spec::DIRECTION_RECEIVE) &&
                 event['data']['status'].eql?('completed') &&
                 event['data']['error_code'].eql?(0) &&
-                event['data'].dig('tags', Fasp::TransferSpec::TAG_RESERVED, PREV_GEN_TAG).nil?
-              folder_id = event.dig('data', 'tags', Fasp::TransferSpec::TAG_RESERVED, 'node', 'file_id')
+                event['data'].dig('tags', Transfer::Spec::TAG_RESERVED, PREV_GEN_TAG).nil?
+              folder_id = event.dig('data', 'tags', Transfer::Spec::TAG_RESERVED, 'node', 'file_id')
               folder_id ||= event.dig('data', 'file_id')
               if !folder_id.nil?
                 folder_entry = @api_node.read("files/#{folder_id}")[:data] rescue nil
@@ -213,10 +213,10 @@ module Aspera
         end
 
         def do_transfer(direction, folder_id, source_filename, destination='/')
-          Aspera.assert(!(destination.nil? && direction.eql?(Fasp::TransferSpec::DIRECTION_RECEIVE)))
+          Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)))
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
-            'tags'  => {Fasp::TransferSpec::TAG_RESERVED => {PREV_GEN_TAG => true}}
+            'tags'  => {Transfer::Spec::TAG_RESERVED => {PREV_GEN_TAG => true}}
           })
           # force destination, need to set this in transfer agent else it gets overwritten, not do: t_spec['destination_root']=destination
           transfer.option_transfer_spec_deep_merge({'destination_root' => destination})
@@ -318,7 +318,7 @@ module Aspera
           if @access_remote
             raise 'missing parent_file_id in entry' if entry['parent_file_id'].nil?
             #  download original file to temp folder
-            do_transfer(Fasp::TransferSpec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
+            do_transfer(Transfer::Spec::DIRECTION_RECEIVE, entry['parent_file_id'], entry['name'], @tmp_folder)
           end
           Log.log.info{"source: #{entry['id']}: #{entry['path']}"}
           gen_infos.each do |gen_info|
@@ -326,7 +326,7 @@ module Aspera
           end
           if @access_remote
             # upload
-            do_transfer(Fasp::TransferSpec::DIRECTION_SEND, @previews_folder_entry['id'], local_entry_preview_dir)
+            do_transfer(Transfer::Spec::DIRECTION_SEND, @previews_folder_entry['id'], local_entry_preview_dir)
             # cleanup after upload
             FileUtils.rm_rf(local_entry_preview_dir)
             File.delete(File.join(@tmp_folder, entry['name']))

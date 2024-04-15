@@ -7,11 +7,11 @@ require 'aspera/cli/version'
 require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
-require 'aspera/fasp/installation'
-require 'aspera/fasp/products'
-require 'aspera/fasp/parameters'
-require 'aspera/fasp/transfer_spec'
-require 'aspera/fasp/error_info'
+require 'aspera/agent/direct/installation'
+require 'aspera/agent/direct/products'
+require 'aspera/transfer/error_info'
+require 'aspera/transfer/parameters'
+require 'aspera/transfer/spec'
 require 'aspera/keychain/encrypted_hash'
 require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
@@ -232,10 +232,10 @@ module Aspera
           options.declare(:test_mode, 'Wizard: skip private key check step', values: :bool, default: false)
           options.declare(:key_path, 'Wizard: path to private key for JWT')
           # Transfer SDK options
-          options.declare(:ascp_path, 'Path to ascp', handler: {o: Fasp::Installation.instance, m: :ascp_path})
+          options.declare(:ascp_path, 'Path to ascp', handler: {o: Agent::Direct::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
-          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Fasp::Installation.instance, m: :sdk_folder})
+          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Agent::Direct::Installation.instance, m: :sdk_folder})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # email options
           options.declare(:smtp, 'SMTP configuration', types: Hash)
@@ -253,7 +253,7 @@ module Aspera
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
-          sdk_folder = Fasp::Installation.instance.sdk_folder rescue nil
+          sdk_folder = Agent::Direct::Installation.instance.sdk_folder rescue nil
           if sdk_folder.nil?
             @sdk_default_location = true
             Log.log.debug('SDK folder is not set, checking default')
@@ -268,7 +268,7 @@ module Aspera
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
             Log.log.debug{"using: #{sdk_folder}"}
-            Fasp::Installation.instance.sdk_folder = sdk_folder
+            Agent::Direct::Installation.instance.sdk_folder = sdk_folder
           end
           pac_script = options.get_option(:fpac)
           # create PAC executor
@@ -285,7 +285,7 @@ module Aspera
             session_cb:  lambda{|http_session|update_http_session(http_session)},
             progress_bar: @progress_bar)
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          Fasp::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
+          Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
           Aspera::RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
           Aspera::RestErrorsAspera.register_handlers
@@ -534,7 +534,7 @@ module Aspera
         end
 
         def option_use_product=(value)
-          Fasp::Installation.instance.use_ascp_from_product(value)
+          Agent::Direct::Installation.instance.use_ascp_from_product(value)
         end
 
         def option_use_product
@@ -712,7 +712,7 @@ module Aspera
             when :list
               return {type: :object_list, data: all_links}
             when :download
-              folder_dest = transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE)
+              folder_dest = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               # folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
               file_url = one_link['href']
@@ -733,15 +733,15 @@ module Aspera
             return execute_connect_action
           when :use
             ascp_path = options.get_next_argument('path to ascp')
-            ascp_version = Fasp::Installation.instance.get_ascp_version(ascp_path)
+            ascp_version = Agent::Direct::Installation.instance.get_ascp_version(ascp_path)
             formatter.display_status("ascp version: #{ascp_version}")
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
           when :show
-            return {type: :status, data: Fasp::Installation.instance.path(:ascp)}
+            return {type: :status, data: Agent::Direct::Installation.instance.path(:ascp)}
           when :info
             # collect info from ascp executable
-            data = Fasp::Installation.instance.ascp_info
+            data = Agent::Direct::Installation.instance.ascp_info
             # add command line transfer spec
             data['ts'] = transfer.updated_ts
             # add keys
@@ -753,27 +753,27 @@ module Aspera
             command = options.get_next_command(%i[list use])
             case command
             when :list
-              return {type: :object_list, data: Fasp::Products.installed_products, fields: %w[name app_root]}
+              return {type: :object_list, data: Agent::Direct::Products.installed_products, fields: %w[name app_root]}
             when :use
               default_product = options.get_next_argument('product name')
-              Fasp::Installation.instance.use_ascp_from_product(default_product)
-              set_global_default(:ascp_path, Fasp::Installation.instance.path(:ascp))
+              Agent::Direct::Installation.instance.use_ascp_from_product(default_product)
+              set_global_default(:ascp_path, Agent::Direct::Installation.instance.path(:ascp))
               return Main.result_nothing
             end
           when :install
             # reset to default location, if older default was used
-            Fasp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
-            v = Fasp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
+            Agent::Direct::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
+            v = Agent::Direct::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
             return Main.result_status("Installed version #{v}")
           when :spec
             return {
               type:   :object_list,
-              data:   Fasp::Parameters.man_table,
-              fields: [%w[name type], Fasp::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
+              data:   Transfer::Parameters.man_table,
+              fields: [%w[name type], Transfer::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
             }
           when :errors
             error_data = []
-            Fasp::ERROR_INFO.each_pair do |code, prop|
+            Transfer::ERROR_INFO.each_pair do |code, prop|
               error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
             return {type: :object_list, data: error_data}

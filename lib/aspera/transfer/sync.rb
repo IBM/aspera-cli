@@ -3,7 +3,7 @@
 # cspell:words logdir bidi watchd cooloff asyncadmin
 
 require 'aspera/command_line_builder'
-require 'aspera/fasp/installation'
+require 'aspera/agent/direct/installation'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
@@ -12,7 +12,7 @@ require 'open3'
 require 'English'
 
 module Aspera
-  module Fasp
+  module Transfer
     # builds command line arg for async
     module Sync
       # sync direction, default is push
@@ -40,7 +40,7 @@ module Aspera
           'private_key_paths'          => { cli: { type: :opt_with_arg, switch: '--private-key-path'}, accepted_types: :array},
           'direction'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
           'checksum'                   => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'tags'                       => { cli: { type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Fasp::Parameters.convert_json64'},
+          'tags'                       => { cli: { type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Transfer::Parameters.convert_json64'},
                                             accepted_types: :hash, ts: true},
           'tcp_port'                   => { cli: { type: :opt_with_arg}, accepted_types: :int, ts: :ssh_port},
           'rate_policy'                => { cli: { type: :opt_with_arg}, accepted_types: :string},
@@ -48,7 +48,7 @@ module Aspera
           'cooloff'                    => { cli: { type: :opt_with_arg}, accepted_types: :int},
           'pending_max'                => { cli: { type: :opt_with_arg}, accepted_types: :int},
           'scan_intensity'             => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'cipher'                     => { cli: { type: :opt_with_arg, convert: 'Aspera::Fasp::Parameters.convert_remove_hyphen'}, accepted_types: :string, ts: true},
+          'cipher'                     => { cli: { type: :opt_with_arg, convert: 'Aspera::Transfer::Parameters.convert_remove_hyphen'}, accepted_types: :string, ts: true},
           'transfer_threads'           => { cli: { type: :opt_with_arg}, accepted_types: :int},
           'preserve_time'              => { cli: { type: :opt_without_arg}, ts: :preserve_times},
           'preserve_access_time'       => { cli: { type: :opt_without_arg}, ts: nil},
@@ -178,7 +178,7 @@ module Aspera
                     session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
                   end
                 end
-                session['private_key_paths'] = Fasp::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
+                session['private_key_paths'] = Agent::Direct::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
               end
             end
@@ -267,7 +267,7 @@ module Aspera
           raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
           return parse_status(stdout)
         end
-      end # end self
-    end # end Sync
-  end # end Fasp
-end # end Aspera
+      end
+    end
+  end
+end

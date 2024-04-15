@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/sync'
+require 'aspera/transfer/sync'
 require 'aspera/assert'
 
 module Aspera
@@ -8,7 +8,7 @@ module Aspera
     # Module for sync actions
     module SyncActions
       SIMPLE_ARGUMENTS_SYNC = {
-        direction:  Aspera::Fasp::Sync::DIRECTIONS,
+        direction:  Aspera::Transfer::Sync::DIRECTIONS,
         local_dir:  String,
         remote_dir: String
       }.stringify_keys.freeze
@@ -51,7 +51,7 @@ module Aspera
             async_params['sessions'].first.merge!(simple_session_args)
           end
           Log.log.debug{Log.dump('async_params', async_params)}
-          Aspera::Fasp::Sync.start(async_params, &block)
+          Aspera::Transfer::Sync.start(async_params, &block)
           return Main.result_success
         when :admin
           command2 = options.get_next_command([:status])
@@ -59,7 +59,7 @@ module Aspera
           when :status
             sync_session_name = options.get_next_argument('name of sync session', mandatory: false, type: String)
             async_params = options.get_option(:sync_info, mandatory: true)
-            return {type: :single_object, data: Aspera::Fasp::Sync.admin_status(async_params, sync_session_name)}
+            return {type: :single_object, data: Aspera::Transfer::Sync.admin_status(async_params, sync_session_name)}
           end # command2
         end # command
       end # execute_action

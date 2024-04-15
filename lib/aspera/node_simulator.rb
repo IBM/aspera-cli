@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
-require 'aspera/fasp/installation'
-require 'aspera/fasp/agent_direct'
+require 'aspera/agent/direct/installation'
+require 'aspera/agent/direct'
 require 'webrick'
 require 'json'
 
@@ -16,7 +16,7 @@ module Aspera
     def initialize(server, credentials, transfer)
       super(server)
       @credentials = credentials
-      @xfer_manager = Aspera::Fasp::AgentDirect.new
+      @xfer_manager = Agent::Direct.new
     end
 
     def do_POST(request, response)
@@ -35,7 +35,7 @@ module Aspera
     def do_GET(request, response)
       case request.path
       when '/info'
-        info = Aspera::Fasp::Installation.instance.ascp_info
+        info = Aspera::Agent::Direct::Installation.instance.ascp_info
         set_json_response(response, {
           application:                           'node',
           current_time:                          Time.now.utc.iso8601(0),

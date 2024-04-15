@@ -3,7 +3,7 @@
 # cspell:ignore ascmd zmode zuid zgid fasping
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/transfer/spec'
 require 'aspera/ascmd'
 require 'aspera/ssh'
 require 'aspera/nagios'
@@ -127,14 +127,14 @@ module Aspera
           if !server_uri.scheme.eql?(SSH_SCHEME)
             Log.log.warn('URL scheme is https but no token was provided in transfer spec.')
             Log.log.warn("If you want to access the server, not using WSS for session, then use a URL with scheme \"#{SSH_SCHEME}\" and proper SSH port")
-            assumed_url = "#{SSH_SCHEME}://#{server_transfer_spec['remote_host']}:#{Aspera::Fasp::TransferSpec::SSH_PORT}"
+            assumed_url = "#{SSH_SCHEME}://#{server_transfer_spec['remote_host']}:#{Aspera::Transfer::Spec::SSH_PORT}"
             Log.log.warn{"Assuming proper URL is: #{assumed_url}"}
             server_uri = URI.parse(assumed_url)
           end
           # Scheme is SSH
           if options.get_option(:username).nil?
-            options.set_option(:username, Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER)
-            Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Fasp::TransferSpec::ACCESS_KEY_TRANSFER_USER}"}
+            options.set_option(:username, Aspera::Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
+            Log.log.info{"No username provided: Assuming default transfer user: #{Aspera::Transfer::Spec::ACCESS_KEY_TRANSFER_USER}"}
           end
           server_transfer_spec['remote_user'] = options.get_option(:username, mandatory: true)
           if !server_uri.port.nil?
@@ -178,7 +178,7 @@ module Aspera
         def execute_transfer(command, transfer_spec)
           case command
           when :upload, :download
-            Fasp::TransferSpec.action_to_direction(transfer_spec, command)
+            Transfer::Spec.action_to_direction(transfer_spec, command)
             return Main.result_transfer(transfer.start(transfer_spec))
           when :sync
             # lets ignore the arguments provided by execute_sync_action, we just give the transfer spec

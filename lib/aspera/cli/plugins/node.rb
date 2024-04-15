@@ -3,7 +3,7 @@
 # cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/transfer/spec'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
 require 'aspera/id_generator'
@@ -284,7 +284,7 @@ module Aspera
             request_transfer_spec[:paths] = if command.eql?(:download)
               transfer.ts_source_paths
             else
-              [{ destination: transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND) }]
+              [{ destination: transfer.destination_folder(Transfer::Spec::DIRECTION_SEND) }]
             end
             # add fixed parameters if any (for COS)
             @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
@@ -301,7 +301,7 @@ module Aspera
             @api_node.call(
               operation: 'GET',
               subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents",
-              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
+              save_to_file: File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
           end
           Aspera.error_unreachable_line
@@ -466,8 +466,8 @@ module Aspera
               # direction is push pull, bidi
               Aspera.assert_values(sync_direction, %i[push pull bidi])
               ts_direction = case sync_direction
-              when :push, :bidi then Fasp::TransferSpec::DIRECTION_SEND
-              when :pull then Fasp::TransferSpec::DIRECTION_RECEIVE
+              when :push, :bidi then Transfer::Spec::DIRECTION_SEND
+              when :pull then Transfer::Spec::DIRECTION_RECEIVE
               else Aspera.error_unreachable_line
               end
               # remote is specified by option to_folder
@@ -477,8 +477,8 @@ module Aspera
               transfer_spec
             end
           when :upload
-            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Fasp::TransferSpec::DIRECTION_SEND))
-            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_SEND)))
+            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND))
+            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_SEND)))
           when :download
             source_paths = transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
@@ -505,7 +505,7 @@ module Aspera
                 raise "Unknown source type: #{file_info['type']}"
               end
             end
-            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Fasp::TransferSpec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+            return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
           when :http_node_download
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']
@@ -520,7 +520,7 @@ module Aspera
             apifid[:api].call(
               operation: 'GET',
               subpath: "files/#{apifid[:file_id]}/content",
-              save_to_file: File.join(transfer.destination_folder(Fasp::TransferSpec::DIRECTION_RECEIVE), file_name))
+              save_to_file: File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
           when :show
             apifid = apifid_from_next_arg(top_file_id)
@@ -781,7 +781,7 @@ module Aspera
                 # do not process last one
                 break if end_date.nil?
                 # init data for this period
-                period_bandwidth = Fasp::TransferSpec::DIRECTION_ENUM_VALUES.map(&:to_sym).each_with_object({}) do |direction, h|
+                period_bandwidth = Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).each_with_object({}) do |direction, h|
                   h[direction] = dir_info.each_with_object({}) do |k2, h2|
                     h2[k2] = 0
                   end
@@ -799,7 +799,7 @@ module Aspera
                   info[:sessions] += 1
                   # end
                 end
-                next if Fasp::TransferSpec::DIRECTION_ENUM_VALUES.map(&:to_sym).all? do |dir|
+                next if Transfer::Spec::DIRECTION_ENUM_VALUES.map(&:to_sym).all? do |dir|
                   period_bandwidth[dir][:sessions].zero?
                 end
                 result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))

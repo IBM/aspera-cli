@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/fasp/agent_base'
-require 'aspera/fasp/transfer_spec'
-require 'aspera/fasp/faux_file'
+require 'aspera/agent/base'
+require 'aspera/transfer/spec'
+require 'aspera/transfer/faux_file'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/rest'
@@ -12,7 +12,7 @@ require 'base64'
 require 'json'
 
 module Aspera
-  module Fasp
+  module Agent
     # Start a transfer using Aspera HTTP Gateway, using web socket secure for uploads
     # ref: https://api.ibm.com/explorer/catalog/aspera/product/ibm-aspera/api/http-gateway-api/doc/guides-toc
     # https://developer.ibm.com/apis/catalog?search=%22aspera%20http%22
@@ -26,7 +26,7 @@ module Aspera
     #   1     JSON.slice_upload   File start          "end_slice_upload"  sent_v2_delimiter
     #   2..   Binary              File binary chunks  "end upload"        sent_general
     #   last  JSON.slice_upload   File end            "end_slice_upload"  sent_v2_delimiter
-    class AgentHttpgw < Aspera::Fasp::AgentBase
+    class Httpgw < Base
       MSG_SEND_TRANSFER_SPEC = 'transfer_spec'
       MSG_SEND_SLICE_UPLOAD = 'slice_upload'
       MSG_RECV_DATA_RECEIVED_SIGNAL = 'end upload'
@@ -318,9 +318,9 @@ module Aspera
         Log.log.debug{Log.dump(:user_spec, transfer_spec)}
         transfer_spec['authentication'] ||= 'token'
         case transfer_spec['direction']
-        when Fasp::TransferSpec::DIRECTION_SEND
+        when Transfer::Spec::DIRECTION_SEND
           upload(transfer_spec)
-        when Fasp::TransferSpec::DIRECTION_RECEIVE
+        when Transfer::Spec::DIRECTION_RECEIVE
           download(transfer_spec)
         else
           raise "unexpected direction: [#{transfer_spec['direction']}]"

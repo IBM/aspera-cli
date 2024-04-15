@@ -6,7 +6,7 @@ main_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
 gem_lib_folder = File.join(main_folder, 'lib')
 $LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/coverage'
-require 'aspera/fasp/uri'
+require 'aspera/transfer/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/assert'
@@ -46,15 +46,15 @@ PATH_FOLDER_NEW = File.join(PATH_FOLDER_DEST, "new_folder-#{TEST_RUN_ID}")
 PATH_FOLDER_RENAMED = File.join(PATH_FOLDER_DEST, "renamed_folder-#{TEST_RUN_ID}")
 NAME_FILE1 = '200KB.1'
 PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
-PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".copy1-#{TEST_RUN_ID}")
-PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, NAME_FILE1 + ".renamed-#{TEST_RUN_ID}")
+PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}")
+PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
 PAC_FILE = "file:///#{main_folder}/examples/proxy.pac"
 
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
-RSpec.describe(Aspera::Fasp::Uri) do
+RSpec.describe(Aspera::Transfer::Uri) do
   it 'parses a FASP URL' do
-    uri = Aspera::Fasp::Uri.new('faspe://user:pass@host:33001/path?token=xx&sshfp=xx&protect=xx&bad=xx')
+    uri = Aspera::Transfer::Uri.new('faspe://user:pass@host:33001/path?token=xx&sshfp=xx&protect=xx&bad=xx')
     ts = uri.transfer_spec
     expect(ts).to(be_a(Hash))
     expect(ts['token']).to(eq('xx'))

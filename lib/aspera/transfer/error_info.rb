@@ -3,7 +3,7 @@
 # cspell:words mnemo PROTO RCVR NOLIC PMTU BRTT VLINK BWMEAS SSEAR FIPS
 
 module Aspera
-  module Fasp
+  module Transfer
     # from https://www.google.com/search?q=FASP+error+codes
     # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
     # rubocop:disable Layout/MultilineHashKeyLineBreaks

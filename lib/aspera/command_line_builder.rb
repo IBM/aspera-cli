@@ -111,7 +111,7 @@ module Aspera
       end
       processing_type = read ? :get_value : options[:cli][:type]
       # check mandatory parameter (nil is valid value)
-      raise Fasp::Error, "Missing mandatory parameter: #{name}" if options[:mandatory] && !@param_hash.key?(name)
+      raise Transfer::Error, "Missing mandatory parameter: #{name}" if options[:mandatory] && !@param_hash.key?(name)
       parameter_value = @param_hash[name]
       # no default setting
       # parameter_value=options[:default] if parameter_value.nil? and options.has_key?(:default)
@@ -127,7 +127,7 @@ module Aspera
         end
       end.flatten
       # check that value is of expected type
-      raise Fasp::Error, "#{name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " \
+      raise Transfer::Error, "#{name} is : #{parameter_value.class} (#{parameter_value}), shall be #{options[:accepted_types]}, " \
         unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
       # special processing will be requested with type get_value
       @used_param_names.push(name) unless processing_type.eql?(:special)
@@ -149,7 +149,7 @@ module Aspera
         # :convert has name of class and encoding method
         conversion_class, conversion_method = options[:cli][:convert].split('.')
         converted_value = Kernel.const_get(conversion_class).send(conversion_method, parameter_value)
-        raise Fasp::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
+        raise Transfer::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
         parameter_value = converted_value
       when NilClass
       else Aspera.error_unexpected_value(options[:cli][:convert].class)

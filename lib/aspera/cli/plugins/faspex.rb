@@ -6,8 +6,8 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/transfer_agent'
-require 'aspera/fasp/uri'
-require 'aspera/fasp/transfer_spec'
+require 'aspera/transfer/uri'
+require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
 require 'aspera/open_application'
 require 'aspera/nagios'
@@ -93,7 +93,7 @@ module Aspera
             return result
           end
 
-          # get Fasp::Uri::SCHEME URI from entry in xml, and fix problems.
+          # get Transfer::Uri::SCHEME URI from entry in xml, and fix problems.
           def get_fasp_uri_from_entry(entry, raise_no_link: true)
             unless entry.key?('link')
               raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
@@ -349,7 +349,7 @@ module Aspera
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 elsif !recipient.nil? && recipient.start_with?('*')
                   found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
-                  raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Fasp::Uri::SCHEME}" if found_package_link.nil?
+                  raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Transfer::Uri::SCHEME}" if found_package_link.nil?
                   pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
                 else
                   # TODO: delivery id is the right one if package was receive by workgroup
@@ -362,7 +362,7 @@ module Aspera
                   package_entry = XmlSimple.xml_in(entry_xml, {'ForceArray' => true})
                   pkg_id_uri = [{id: delivery_id, uri: self.class.get_fasp_uri_from_entry(package_entry)}]
                 end
-              when /^#{Fasp::Uri::SCHEME}:/o
+              when /^#{Transfer::Uri::SCHEME}:/o
                 pkg_id_uri = [{id: 'package', uri: link_url}]
               else
                 link_data = self.class.get_link_data(link_url)
@@ -397,8 +397,8 @@ module Aspera
                   # skip package with no link: empty or content deleted
                   statuses = [:success]
                 else
-                  transfer_spec = Fasp::Uri.new(id_uri[:uri]).transfer_spec
-                  # NOTE: only external users have token in Fasp::Uri::SCHEME link !
+                  transfer_spec = Transfer::Uri.new(id_uri[:uri]).transfer_spec
+                  # NOTE: only external users have token in Transfer::Uri::SCHEME link !
                   if !transfer_spec.key?('token')
                     sanitized = id_uri[:uri].gsub('&', '&amp;')
                     xml_payload =
@@ -409,7 +409,7 @@ module Aspera
                       headers:          {'Accept' => 'text/plain', 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
                       text_body_params: xml_payload)[:http].body
                   end
-                  transfer_spec['direction'] = Fasp::TransferSpec::DIRECTION_RECEIVE
+                  transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)
                 end
                 result_transfer.push({'package' => id_uri[:id], Main::STATUS_FIELD => statuses})

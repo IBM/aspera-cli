@@ -3,9 +3,9 @@
 require 'aspera/log'
 require 'aspera/assert'
 module Aspera
-  module Fasp
+  module Agent
     # Base class for transfer agents
-    class AgentBase
+    class Base
       class << self
         # compute options from user provided and default options
         def options(default:, options:)
