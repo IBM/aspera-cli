@@ -190,7 +190,6 @@ module Aspera
         unless allowed_types.nil?
           allowed_types = [allowed_types] unless allowed_types.is_a?(Array)
           descr = "#{descr} (#{allowed_types.join(', ')})"
-          Log.log.debug{">>>> #{descr}=#{allowed_types}"}
         end
         result =
           if !@unprocessed_cmd_line_arguments.empty?

@@ -27,7 +27,6 @@ module Aspera
         result = session[:ts].clone
         result['id'] = job_id
         set_json_response(response, result)
-        Log.log.debug{">>> transfer started: #{job_id}"}
       else
         set_json_response(response, [{error: 'Bad request'}], code: 400)
       end
