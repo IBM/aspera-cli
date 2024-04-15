@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/agent/direct/installation'
+require 'aspera/agent/ascp/installation'
 require 'aspera/temp_file_manager'
 require 'aspera/log'
 require 'aspera/assert'
@@ -52,7 +52,7 @@ module Aspera
         raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@options[:keep] || @options[:external])
         Log.log.debug{Log.dump(:agent_options, @options)}
         # load SDK stub class on demand, as it's an optional gem
-        $LOAD_PATH.unshift(Installation.instance.sdk_ruby_folder)
+        $LOAD_PATH.unshift(Ascp::Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
         # keep PID for optional shutdown
         @daemon_pid = nil

@@ -5,7 +5,7 @@ require 'aspera/environment'
 
 module Aspera
   module Agent
-    module Direct
+    module Ascp
       # find Aspera standard products installation in standard paths
       class Products
         # known product names

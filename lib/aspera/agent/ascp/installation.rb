@@ -3,7 +3,7 @@
 # cspell:ignore protobuf ckpt
 require 'aspera/environment'
 require 'aspera/data_repository'
-require 'aspera/agent/direct/products'
+require 'aspera/agent/ascp/products'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/web_server_simple'
@@ -17,7 +17,7 @@ require 'openssl'
 
 module Aspera
   module Agent
-    module Direct
+    module Ascp
       # Singleton that tells where to find ascp and other local resources (keys..) , using the "path(:name)" method.
       # It is used by object : AgentDirect to find necessary resources
       # By default it takes the first Aspera product found

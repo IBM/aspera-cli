@@ -6,7 +6,7 @@ require 'aspera/assert'
 
 module Aspera
   module Agent
-    module Direct
+    module Ascp
       # implements a simple resume policy
       class ResumePolicy
         # list of supported parameters and default values

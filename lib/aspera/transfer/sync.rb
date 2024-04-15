@@ -3,7 +3,7 @@
 # cspell:words logdir bidi watchd cooloff asyncadmin
 
 require 'aspera/command_line_builder'
-require 'aspera/agent/direct/installation'
+require 'aspera/agent/ascp/installation'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
@@ -125,7 +125,7 @@ module Aspera
             remote.delete('ws_port')
             # add SSH bypass keys when authentication is token and no auth is provided
             if remote.key?('token') && !remote.key?('pass')
-              certificates_to_use.concat(Installation.instance.aspera_token_ssh_key_paths)
+              certificates_to_use.concat(Agent::Ascp::Installation.instance.aspera_token_ssh_key_paths)
             end
           end
           return certificates_to_use
@@ -178,7 +178,7 @@ module Aspera
                     session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
                   end
                 end
-                session['private_key_paths'] = Agent::Direct::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
+                session['private_key_paths'] = Agent::Ascp::Installation.instance.aspera_token_ssh_key_paths if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
               end
             end

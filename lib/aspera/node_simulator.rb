@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/agent/direct/installation'
+require 'aspera/agent/ascp/installation'
 require 'aspera/agent/direct'
+require 'aspera/log'
 require 'webrick'
 require 'json'
 
@@ -35,7 +35,7 @@ module Aspera
     def do_GET(request, response)
       case request.path
       when '/info'
-        info = Aspera::Agent::Direct::Installation.instance.ascp_info
+        info = Agent::Ascp::Installation.instance.ascp_info
         set_json_response(response, {
           application:                           'node',
           current_time:                          Time.now.utc.iso8601(0),

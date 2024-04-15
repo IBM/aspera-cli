@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/agent/direct/installation'
-require 'aspera/agent/direct/resume_policy'
-require 'aspera/agent/direct/management'
+require 'aspera/agent/ascp/installation'
+require 'aspera/agent/ascp/resume_policy'
+require 'aspera/agent/ascp/management'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
@@ -202,7 +202,7 @@ module Aspera
           # build arguments and add mgt port
           ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
           # get location of ascp executable
-          ascp_path = Agent::Direct::Installation.instance.path(env_args[:ascp_version])
+          ascp_path = Agent::Ascp::Installation.instance.path(env_args[:ascp_version])
           # display ascp command line
           Log.log.debug do
             [

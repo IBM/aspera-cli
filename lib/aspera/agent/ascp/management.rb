@@ -2,7 +2,7 @@
 
 module Aspera
   module Agent
-    module Direct
+    module Ascp
       # processing of ascp management port events
       class Management
         # cspell: disable
