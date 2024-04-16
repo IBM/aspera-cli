@@ -28,7 +28,8 @@ module Aspera
         ascp_args:         [],
         check_ignore:      nil, # callback with host,port
         quiet:             true, # by default no native ascp progress bar
-        trusted_certs:     [] # list of files with trusted certificates (stores)
+        trusted_certs:     [], # list of files with trusted certificates (stores)
+        management_cb:     nil # callback for management events
       }.freeze
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
       ANY_AVAILABLE_PORT = 0 # 0 means any available port
@@ -238,7 +239,7 @@ module Aspera
             next unless event
             # event is ready
             Log.log.trace1{Log.dump(:management_port, event)}
-            # Log.log.trace1{"event: #{JSON.generate(Ascp::Management.enhanced_event_format(event))}"}
+            @options[:management_cb]&.call(event)
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end

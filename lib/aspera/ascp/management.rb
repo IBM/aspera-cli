@@ -202,12 +202,7 @@ module Aspera
         # translates mgt port event into (enhanced) typed event
         def enhanced_event_format(event)
           return event.keys.each_with_object({}) do |e, h|
-            # capital_to_snake_case
-            new_name = e
-                .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-                .gsub(/([a-z\d])(usec)$/, '\1_\2')
-                .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                .downcase
+            new_name = e.capital_to_snake.gsub(/(usec)$/, '_\1').downcase
             value = event[e]
             value = value.to_i if INTEGER_FIELDS.include?(e)
             value = value.eql?(BOOLEAN_TRUE) if BOOLEAN_FIELDS.include?(e)

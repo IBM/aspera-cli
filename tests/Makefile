@@ -343,7 +343,9 @@ $(T)asession: $(T).exists
 	remote_host=$$($(EXE_NO_MAN) config preset get server_user url)&&\
 	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
 	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
-	$(DIR_BIN)asession @json:@extend:'{"spec":{"remote_host":"'"$${remote_host}"'","remote_user":"@preset:server_user.username@","ssh_port":'$${remote_port}',"remote_password":"@preset:server_user.password@","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
+	remote_user=$$($(EXE_NO_MAN) config preset get server_user username)&&\
+	remote_pass=$$($(EXE_NO_MAN) config preset get server_user password)&&\
+	$(DIR_BIN)asession @json:@extend:'{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-small/10MB.1"}]}}'
 	@$(STOP_TEST) $@
 $(T)serv_pr1: $(T).exists
 	@$(START_TEST) $@
@@ -498,6 +500,16 @@ $(T)nd2: $(T).exists
 	$(EXE_MAN) node download @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) node delete @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
+$(T)nd_slash: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node slash
+	@$(STOP_TEST) $@
+$(T)nd2_http: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
+	$(EXE_MAN) node http_node_download @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node delete @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)
+	@$(STOP_TEST) $@
 $(T)nd_2_nd_xfer: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node upload --to-folder=@preset:server.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:node_user.url@","username":"@preset:node_user.username@","password":"@preset:node_user.password@"}'
@@ -526,11 +538,30 @@ $(T)nd7: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node basic_token
 	@$(STOP_TEST) $@
+$(T)nd_browser: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node asperabrowser
+	@$(STOP_TEST) $@
 $(T)nd8: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node upload --username=@preset:aoc.ak_name --password=@preset:aoc.ak_secret $(TST_ASC_LCL_PATH)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd8))
+$(T)nd_central_1: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node central session list
+	$(EXE_MAN) node central file list
+	$(EXE_MAN) node central file modify --validator=1 --query=@json:'{"files":[]}'
+	@$(STOP_TEST) $@
+$(T)nd_watch_1: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node watch_folder list --preset=node_ak_adm
+	$(EXE_BEG_ERR) node watch_folder create @json:'{"source":{"path":"/src1"},"target":{"path":"/dst1"}}' --preset=node_ak_adm$(EXE_END_ERR)
+	@$(STOP_TEST) $@
+$(T)nd_stream_1: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) node stream list --preset=node_ak_adm
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,tnodegen3,$(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd_slash $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd_browser $(T)nd8 $(T)nd_central_1 $(T)nd_watch_1 $(T)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################
@@ -570,6 +601,7 @@ $(T)nd_ak_bearer: $(T).exists
 	$(EXE_BEG_IGN) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username$(EXE_END_IGN)
 	$(EXE_MAN) node -N --preset=tst_node_preview access_key create @json:@extend:'{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
 	sleep 2
+	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key show %id:self
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key set_bearer_key self @file:@preset:file.private_key
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key do self show / --fields=id --output=$(DIR_TMP)root_id
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key do self permission %id:$$(cat $(DIR_TMP)root_id) create @json:'{"access_type":"user","access_id":"666"}'
@@ -1174,6 +1206,7 @@ $(T)sync_other: $(T)sync_create
 	$(EXE_MAN) node ssync stop %name:my_node_sync
 	$(EXE_MAN) node ssync summary %name:my_node_sync
 	$(EXE_MAN) node ssync delete %name:my_node_sync
+	$(EXE_BEG_ERR) node ssync delete notexist $(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsyncs,$(T)sync_create $(T)sync_other))
 #######################################################################################################################

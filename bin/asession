@@ -5,6 +5,7 @@
 $LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib")
 require 'aspera/agent/direct'
 require 'aspera/cli/extended_value'
+require 'aspera/ascp/installation'
 require 'aspera/log'
 require 'json'
 # extended transfer spec parameter (only used in asession)
@@ -42,6 +43,7 @@ def assert_usage(assertion, error_message)
   $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession @json:@stdin))
   Process.exit(1)
 end
+Aspera::Ascp::Installation.instance.sdk_folder = File.join(Dir.home, '.aspera', 'sdk')
 
 parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
 # by default assume JSON input on stdin if no argument
@@ -72,6 +74,9 @@ if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
 end
 session_spec['agent'] = {} unless session_spec.key?('agent')
 session_spec['agent']['quiet'] = true
+session_spec['agent']['management_cb'] = ->(event) do
+  puts JSON.generate(Aspera::Ascp::Management.enhanced_event_format(event))
+end
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
 client = Aspera::Agent::Direct.new(session_spec['agent'])
 # start transfer (asynchronous)
