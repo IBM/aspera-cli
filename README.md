@@ -2371,7 +2371,7 @@ ascli --proxy-credentials=@list::__username_here__:__password_here__ ...
 
 #### Proxy for Legacy Aspera HTTP/S Fallback
 
-Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`. Alternatively, set the [*transfer-spec*](#transfer-specification) parameter: `EX_http_proxy_url`.
+Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`.
 
 #### FASP proxy (forward) for transfers
 
@@ -2566,7 +2566,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                   | Type  | Description |
 |------------------------|-------|-------------|
 | `wss`                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `ascp_args`            | Array | Array of strings with native `ascp` arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
+| `ascp_args`            | Array | Array of strings with native `ascp` arguments.<br/>Default: [] |
 | `spawn_timeout_sec`    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | `spawn_delay_sec`      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
 | `multi_incr_udp`       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
@@ -2597,9 +2597,6 @@ ascli ... --transfer-info=@json:'{"wss":true,"resume":{"iter_max":20}}'
 ascli ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
-> **Note:** The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
-But it is preferred to use the option `transfer_info` with parameter `ascp_args`.
-
 This can be useful to activate logging using option `-L` of `ascp`.
 For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
 
@@ -2614,12 +2611,6 @@ To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--trans
 > **Note:** When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided using `transfer_info` parameter `ascp_args`).
 
 In addition to standard methods described in section [File List](#list-of-files-for-transfers), it is possible to specify the list of file using those additional methods:
-
-- Using the pseudo [*transfer-spec*](#transfer-specification) parameter `EX_file_list`
-
-```bash
---sources=@ts --ts=@json:'{"EX_file_list":"file_list.txt"}'
-```
 
 - Using option `transfer_info` parameter `ascp_args`
 
@@ -2849,8 +2840,6 @@ Columns:
 
 `ascp` argument or environment variable is provided in description.
 
-Fields with EX_ prefix are extensions to transfer agent [`direct`](#agent-direct). (only in `ascli`).
-
 | Field | Type | D | N | C | T | H | Description |
 | ----- | ---- | - | - | - | - | - | ----------- |
 | apply_local_docroot | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Apply local docroot to source paths.<br/>(--apply-local-docroot) |
@@ -2936,17 +2925,6 @@ Fields with EX_ prefix are extensions to transfer agent [`direct`](#agent-direct
 | write_threads | int | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(&lt;ignored&gt;) |
 | wss_enabled | bool | Y | Y | Y | Y | Y | Server has Web Socket service enabled<br/>(&lt;special&gt;) |
 | wss_port | int | Y | Y | Y | Y | Y | TCP port used for websocket service feed<br/>(&lt;special&gt;) |
-| EX_ascp_args | array | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use option transfer_info.ascp_args<br/>Add native command line arguments to ascp<br/>(&lt;special&gt;) |
-| EX_at_rest_password | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.13) Use standard spec parameter: content_protection_password<br/>Content protection password<br/>(env:ASPERA_SCP_FILEPASS) |
-| EX_file_list | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file list, or option transfer_info.ascp_args<br/>source file list<br/>(&lt;special&gt;) |
-| EX_file_pair_list | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use command line file pair list, or option transfer_info.ascp_args<br/>source file pair list<br/>(&lt;special&gt;) |
-| EX_http_proxy_url | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) TODO, use proxy option ?<br/>Specify the proxy server address used by HTTP Fallback<br/>(-x {string}) |
-| EX_http_transfer_jpeg | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>HTTP transfers as JPEG file<br/>(-j {int}) |
-| EX_license_text | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_SCP_LICENSE<br/>License file text override.<br/>By default ascp looks for license file near executable.<br/>(env:ASPERA_SCP_LICENSE) |
-| EX_no_read | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no read source<br/>(--no-read) |
-| EX_no_write | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>no write on destination<br/>(--no-write) |
-| EX_proxy_password | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use env var ASPERA_PROXY_PASS<br/>Password used for Aspera proxy server authentication.<br/>May be overridden by password in URL provided in parameter: proxy.<br/>(env:ASPERA_PROXY_PASS) |
-| EX_ssh_key_paths | array | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | DEPRECATED: (4.14) Use option transfer_info.ascp_args<br/>Use public key authentication for SSH and specify the private key file paths<br/>(-i {array}) |
 
 #### Destination folder for transfers
 
@@ -5573,7 +5551,9 @@ access_key do self permission %id:root_id create @json:'{"access_type":"user","a
 access_key do self show / --fields=id --output=root_id
 access_key list
 access_key set_bearer_key self @file:my_private_key
+access_key show %id:self
 api_details
+asperabrowser
 async bandwidth 1
 async counters 1
 async files 1
@@ -5583,10 +5563,14 @@ async show ALL
 basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
 browse / --log-level=trace2
+central file list
+central file modify --validator=1 --query=@json:'{"files":[]}'
+central session list
 delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 delete my_upload_folder/test_file.bin
 download my_upload_folder/test_file.bin --to-folder=.
 health
+http_node_download my_upload_folder/test_file.bin --to-folder=.
 info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 license
 mkdir my_upload_folder/a_folder
@@ -5597,6 +5581,7 @@ search / --query=@json:'{"sort":"mtime"}'
 service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 service delete service1
 service list
+slash
 space /
 ssync bandwidth %name:my_node_sync
 ssync counters %name:my_node_sync
@@ -5609,6 +5594,7 @@ ssync start %name:my_node_sync
 ssync state %name:my_node_sync
 ssync stop %name:my_node_sync
 ssync summary %name:my_node_sync
+stream list
 sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
@@ -5618,6 +5604,7 @@ transfer sessions
 upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
 upload --username=my_ak_name --password=my_ak_secret test_file.bin
 upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
+watch_folder list
 ```
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
@@ -7055,20 +7042,22 @@ Hopefully, IBM integrates this directly in `ascp`, and this tool is made redunda
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-`ascli` expect one single argument: a [*transfer-spec*](#transfer-specification).
+`ascli` expect one single argument: a session specification that contains parameters and a [*transfer-spec*](#transfer-specification).
 
-If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted [*transfer-spec*](#transfer-specification) on stdin.
+If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted on stdin.
 
 > **Note:** If JSON is the format, specify `@json:` to tell `ascli` to decode the `Hash` using JSON syntax.
 
 During execution, it generates all low level events, one per line, in JSON format on stdout.
 
-There are special **extended** [*transfer-spec*](#transfer-specification) parameters supported by `asession`:
+Top level parameters supported by `asession`:
 
-- `EX_loglevel` to change log level of `ascli`
-- `EX_file_list_folder` to set the folder used to store (exclusively, because of garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists`
-
-> **Note:** In addition, many (deprecated) `EX_` [*transfer-spec*](#transfer-specification) parameters are supported for the [`direct`](#agent-direct) transfer agent (used by `asession`), refer to section [*transfer-spec*](#transfer-specification).
+| parameter | description |
+|-----------|-------------|
+| `spec` | the [*transfer-spec*](#transfer-specification) |
+| `agent` | same parameters as transfer-info for agent `direct` |
+| `loglevel` | log level of `asession` |
+| `file_list_folder` | the folder used to store (for garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists` |
 
 ### Comparison of interfaces
 

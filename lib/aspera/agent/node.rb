@@ -69,17 +69,6 @@ module Aspera
           else Aspera.error_unexpected_value(transfer_spec['direction'])
           end
         end
-        # manage special additional parameter
-        if transfer_spec.key?('EX_ssh_key_paths') && transfer_spec['EX_ssh_key_paths'].is_a?(Array) && !transfer_spec['EX_ssh_key_paths'].empty?
-          # not standard, so place standard field
-          if transfer_spec.key?('ssh_private_key')
-            Log.log.warn('Both ssh_private_key and EX_ssh_key_paths are present, using ssh_private_key')
-          else
-            Log.log.warn('EX_ssh_key_paths has multiple keys, using first one only') unless transfer_spec['EX_ssh_key_paths'].length.eql?(1)
-            transfer_spec['ssh_private_key'] = File.read(transfer_spec['EX_ssh_key_paths'].first)
-            transfer_spec.delete('EX_ssh_key_paths')
-          end
-        end
         # add mandatory retry parameter for node api
         ts_tags = transfer_spec['tags']
         if ts_tags.is_a?(Hash) && ts_tags[Transfer::Spec::TAG_RESERVED].is_a?(Hash)

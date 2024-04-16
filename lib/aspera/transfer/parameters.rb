@@ -85,13 +85,7 @@ module Aspera
             param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
           end
-          return result.sort do |a, b|
-            if a[:name].start_with?('EX_').eql?(b[:name].start_with?('EX_'))
-              a[:name] <=> b[:name]
-            else
-              b[:name] <=> a[:name]
-            end
-          end
+          return result.sort_by { |a| a[:name] }
         end
 
         # special encoding methods used in YAML (key: :convert)
@@ -104,13 +98,9 @@ module Aspera
         def convert_base64(v); Base64.strict_encode64(v); end
 
         # file list is provided directly with ascp arguments
-        def ts_has_ascp_file_list(ts, ascp_args)
-          # it can also be option transfer_info
-          ascp_args = ascp_args['ascp_args'] if ascp_args.is_a?(Hash)
-          (ts['EX_ascp_args'].is_a?(Array) && ts['EX_ascp_args'].any?{|i|FILE_LIST_OPTIONS.include?(i)}) ||
-            (ascp_args.is_a?(Array) && ascp_args.any?{|i|FILE_LIST_OPTIONS.include?(i)}) ||
-            ts.key?('EX_file_list') ||
-            ts.key?('EX_file_pair_list')
+        # @param ascp_args [Array,NilClass] ascp arguments
+        def ascp_args_file_list?(ascp_args)
+          ascp_args&.any?{|i|FILE_LIST_OPTIONS.include?(i)}
         end
 
         # temp file list files are created here
@@ -143,51 +133,40 @@ module Aspera
 
       # either place source files on command line, or add file list file
       def process_file_list
-        # is the file list provided through EX_ parameters?
-        ascp_file_list_provided = self.class.ts_has_ascp_file_list(@job_spec, @options[:ascp_args])
+        # is the file list provided through ascp parameters?
+        ascp_file_list_provided = self.class.ascp_args_file_list?(@options[:ascp_args])
         # set if paths is mandatory in ts
         @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided # cspell:words keepalive
         # get paths in transfer spec (after setting if it is mandatory)
         ts_paths_array = @builder.read_param('paths')
-        if ascp_file_list_provided && !ts_paths_array.nil?
-          raise 'file list provided both in transfer spec and ascp file list. Remove one of them.'
-        end
-        # option 1: EX_file_list
-        file_list_file = @builder.read_param('EX_file_list')
-        if file_list_file.nil?
-          # option 2: EX_file_pair_list
-          file_list_file = @builder.read_param('EX_file_pair_list')
-          if !file_list_file.nil?
-            option = '--file-pair-list'
-          elsif !ts_paths_array.nil?
-            # option 3: in TS, it is an array
-            if self.class.file_list_folder.nil?
-              # not safe for special characters ? (maybe not, depends on OS)
-              Log.log.debug('placing source file list on command line (no file list file)')
-              @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
+        file_list_option = nil
+        # transfer spec contains paths ?
+        if !ts_paths_array.nil?
+          Aspera.assert(!ascp_file_list_provided){'file list provided both in transfer spec and ascp file list. Remove one of them.'}
+          Aspera.assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
+          is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
+          raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
+          if self.class.file_list_folder.nil?
+            Aspera.assert(!is_pair_list){'file pair list is not supported when file list folder is not set'}
+            # not safe for special characters ? (maybe not, depends on OS)
+            Log.log.debug('placing source file list on command line (no file list file)')
+            @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
+          else
+            # safer option: generate a file list file if there is storage defined for it
+            if is_pair_list
+              file_list_option = '--file-pair-list'
+              lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination']) }
             else
-              Aspera.assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
-              is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
-              raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
-              # safer option: generate a file list file if there is storage defined for it
-              # if there is one destination in paths, then use file-pair-list
-              if is_pair_list
-                option = '--file-pair-list'
-                lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination'] || e['source']) }
-              else
-                option = '--file-list'
-                lines = ts_paths_array.map{|i|i['source']}
-              end
-              file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
-              Log.log.debug{Log.dump(:file_list, lines)}
-              File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
-              Log.log.debug{"#{option}=\n#{File.read(file_list_file)}".red}
+              file_list_option = '--file-list'
+              lines = ts_paths_array.map{|i|i['source']}
             end
+            file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
+            Log.log.debug{Log.dump(:file_list, lines)}
+            File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
+            Log.log.debug{"#{file_list_option}=\n#{File.read(file_list_file)}".red}
           end
-        else
-          option = '--file-list'
         end
-        @builder.add_command_line_options(["#{option}=#{file_list_file}"]) unless option.nil?
+        @builder.add_command_line_options(["#{file_list_option}=#{file_list_file}"]) unless file_list_option.nil?
       end
 
       def remote_certificates
@@ -200,7 +179,6 @@ module Aspera
           # This will need to be cleaned up in aspera core
           @job_spec['ssh_port'] = @builder.read_param('wss_port')
           @job_spec.delete('fasp_port')
-          @job_spec.delete('EX_ssh_key_paths')
           @job_spec.delete('sshfp')
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
           certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs].is_a?(Array)
@@ -227,7 +205,6 @@ module Aspera
       end
 
       # translate transfer spec to env vars and command line arguments for ascp
-      # NOTE: parameters starting with "EX_" (extended) are not standard
       def ascp_args
         env_args = {
           args:         [],
@@ -261,7 +238,6 @@ module Aspera
         # destination will be base64 encoded, put this before source path arguments
         @builder.add_command_line_options(['--dest64']) if base64_destination
         # optional arguments, at the end to override previous ones (to allow override)
-        @builder.add_command_line_options(@builder.read_param('EX_ascp_args'))
         @builder.add_command_line_options(@options[:ascp_args])
         # get list of source files to transfer and build arg for ascp
         process_file_list

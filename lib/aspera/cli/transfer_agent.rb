@@ -184,7 +184,7 @@ module Aspera
           Log.log.debug('assume list provided in transfer spec')
           special_case_direct_with_list =
             @opt_mgr.get_option(:transfer, mandatory: true).eql?(:direct) &&
-            Transfer::Parameters.ts_has_ascp_file_list(@transfer_spec_command_line, @opt_mgr.get_option(:transfer_info))
+            Transfer::Parameters.ascp_args_file_list?(@opt_mgr.get_option(:transfer_info)['ascp_args'])
           raise Cli::BadArgument, 'transfer spec on command line must have sources' if @transfer_paths.nil? && !special_case_direct_with_list
           # here we assume check of sources is made in transfer agent
           return @transfer_paths

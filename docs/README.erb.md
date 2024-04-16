@@ -2283,7 +2283,7 @@ If the proxy requires credentials, then use option `proxy_credentials` with user
 
 #### Proxy for Legacy Aspera HTTP/S Fallback
 
-Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`. Alternatively, set the [*transfer-spec*](#transfer-specification) parameter: `EX_http_proxy_url`.
+Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallback, use `ascp` native option `-x` and `ascp_args`: `--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'`.
 
 #### FASP proxy (forward) for transfers
 
@@ -2478,7 +2478,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | Name                   | Type  | Description |
 |------------------------|-------|-------------|
 | `wss`                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `ascp_args`            | Array | Array of strings with native `ascp` arguments<br/>Use this instead of deprecated `EX_ascp_args`.<br/>Default: [] |
+| `ascp_args`            | Array | Array of strings with native `ascp` arguments.<br/>Default: [] |
 | `spawn_timeout_sec`    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | `spawn_delay_sec`      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
 | `multi_incr_udp`       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
@@ -2509,9 +2509,6 @@ Examples:
 <%=cmd%> ... --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}'
 ```
 
-> **Note:** The `direct` agent supports additional `transfer_spec` parameters starting with `EX_` (extended).
-But it is preferred to use the option `transfer_info` with parameter `ascp_args`.
-
 This can be useful to activate logging using option `-L` of `ascp`.
 For example, to activate debug level 2 for `ascp` (`DD`), and display those logs on the terminal (`-`):
 
@@ -2526,12 +2523,6 @@ To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--trans
 > **Note:** When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a file list (or pair) file generated in a temporary folder. (unless `--file-list` or `--file-pair-list` is provided using `transfer_info` parameter `ascp_args`).
 
 In addition to standard methods described in section [File List](#list-of-files-for-transfers), it is possible to specify the list of file using those additional methods:
-
-- Using the pseudo [*transfer-spec*](#transfer-specification) parameter `EX_file_list`
-
-```bash
---sources=@ts --ts=@json:'{"EX_file_list":"file_list.txt"}'
-```
 
 - Using option `transfer_info` parameter `ascp_args`
 
@@ -2760,8 +2751,6 @@ Columns:
 - H=HTTP Gateway
 
 `ascp` argument or environment variable is provided in description.
-
-Fields with EX_ prefix are extensions to transfer agent [`direct`](#agent-direct). (only in <%=tool%>).
 
 <%=spec_table%>
 
