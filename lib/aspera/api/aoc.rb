@@ -25,7 +25,7 @@ module Aspera
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
       # path in URL of public links
-      PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public /public/files /public/send].freeze
+      PUBLIC_LINK_PATHS = %w[/packages/public/receive /packages/public/send /files/public /public/files /public/package /public/send].freeze
       JWT_AUDIENCE = 'https://api.asperafiles.com/api/v1/oauth2/token'
       OAUTH_API_SUBPATH = 'api/v1/oauth2'
       # minimum fields for user info if retrieval fails
@@ -94,7 +94,7 @@ module Aspera
             # ok we get it !
             return {
               instance_domain: url_parts(final_uri)[1],
-              url:             'https://' + final_uri.host,
+              url:             "https://#{final_uri.host}",
               token:           decoded_query['token']
             }
           end
@@ -111,7 +111,7 @@ module Aspera
                   return {
                     instance_domain: parts[1],
                     organization:    parts[0],
-                    url:             'https://' + redirect_uri.host,
+                    url:             "https://#{redirect_uri.host}",
                     private_link:    {
                       workspace_id: m[1],
                       node_id:      m[2],

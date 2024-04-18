@@ -49,8 +49,8 @@ module Aspera
         attr_accessor :option_previews_folder
         attr_accessor :option_folder_reset_cache, :option_skip_folders, :option_overwrite, :option_file_access
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           @skip_types = []
           @default_transfer_spec = nil
           # by default generate all supported formats (clone, as altered by options)
@@ -469,7 +469,7 @@ module Aspera
             iteration_persistency = nil
             if options.get_option(:once_only, mandatory: true)
               iteration_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
+                manager: persistency,
                 data:    [],
                 id:      IdGenerator.from_list([
                   'preview_iteration',

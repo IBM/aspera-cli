@@ -4,6 +4,7 @@ require 'aspera/cli/manager'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/plugin_factory'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
@@ -19,6 +20,9 @@ module Aspera
     class Main
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
+      CONF_PLUGIN_SYM = :config
+
+      private_constant :CONF_PLUGIN_SYM
 
       class << self
         # expect some list, but nothing to display
@@ -69,7 +73,7 @@ module Aspera
 
       # shortcuts helpers like in plugins
       %i[options transfer config formatter persistency].each do |name|
-        define_method(name){@agents[name]}
+        define_method(name){@plug_init[name]}
       end
 
       # =============================================================
@@ -80,7 +84,7 @@ module Aspera
       def initialize(argv)
         @argv = argv
         # environment provided to plugin for various capabilities
-        @agents = {}
+        @plug_init = Plugin::INIT_PARAMS.each_with_object({}) { |key, hash| hash[key] = nil }
         @option_help = false
         @option_show_config = false
         @bash_completion = false
@@ -88,11 +92,12 @@ module Aspera
 
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
       def init_agents_and_options
+        @plug_init[:only_manual] = false
         # create formatter, in case there is an exception, it is used to display.
-        @agents[:formatter] = Formatter.new
+        @plug_init[:formatter] = Formatter.new
         # second : manage debug level (allows debugging of option parser)
         early_debug_setup
-        @agents[:options] = Manager.new(PROGRAM_NAME)
+        @plug_init[:options] = Manager.new(PROGRAM_NAME)
         # give command line arguments to option manager
         options.parse_command_line(@argv)
         # formatter adds options
@@ -105,11 +110,14 @@ module Aspera
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @agents[:config] = Plugins::Config.new(@agents, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
+        @plug_init[:config] = Plugins::Config.new(**@plug_init, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
+        @plug_init[:persistency] = @plug_init[:config].persistency
         # data persistency
-        Aspera.assert(@agents[:persistency]){'missing persistency object'}
+        Aspera.assert(@plug_init[:persistency]){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
-        @agents[:transfer] = TransferAgent.new(options, config)
+        @plug_init[:config].transfer = @plug_init[:transfer] = TransferAgent.new(options, config)
+        nil_keys = @plug_init.select{|_, value|value.nil?}.keys
+        Aspera.assert(nil_keys.empty?){"nil : #{nil_keys}"}
         Log.log.debug('plugin env created'.red)
         # set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
         options.parser.banner = app_banner
@@ -177,20 +185,19 @@ module Aspera
       # also loads the plugin options, and default values from conf file
       # @param plugin_name_sym : symbol for plugin name
       def get_plugin_instance_with_options(plugin_name_sym, env=nil)
-        env ||= @agents
+        env ||= @plug_init
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
-        require config.plugins[plugin_name_sym][:require_stanza]
+        require PluginFactory.instance.plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instantiation
         env[:config].add_plugin_default_preset(plugin_name_sym)
-        command_plugin = Plugins::Config.plugin_class(plugin_name_sym).new(env)
+        command_plugin = PluginFactory.instance.create(plugin_name_sym, **env)
         Log.log.debug{"got #{command_plugin.class}"}
-        # TODO: check that ancestor is Plugin?
         return command_plugin
       end
 
       def generate_bash_completion
         if options.get_next_argument('', expected: :multiple, mandatory: false).nil?
-          config.plugins.each_key{|p|puts p}
+          PluginFactory.instance.plugins.each_key{|p|puts p}
         else
           Log.log.warn('only first level completion so far')
         end
@@ -203,11 +210,11 @@ module Aspera
         formatter.display_message(:error, options.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          config.plugins.each_key do |plugin_name_sym|
-            next if plugin_name_sym.eql?(Plugins::Config::CONF_PLUGIN_SYM)
+          PluginFactory.instance.plugins.each_key do |plugin_name_sym|
+            next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
-            plugin_env = @agents.clone
-            plugin_env[:all_manuals] = true # force declaration of all options
+            plugin_env = @plug_init.clone
+            plugin_env[:only_manual] = true # force declaration of all options
             plugin_env[:options] = Manager.new(PROGRAM_NAME)
             plugin_env[:options].parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym, plugin_env)
@@ -247,16 +254,16 @@ module Aspera
         begin
           init_agents_and_options
           # find plugins, shall be after parse! ?
-          config.add_plugins_from_lookup_folders
+          PluginFactory.instance.add_plugins_from_lookup_folders
           # help requested without command ? (plugins must be known here)
           exit_with_usage(true) if @option_help && options.command_or_arg_empty?
           generate_bash_completion if @bash_completion
           config.periodic_check_newer_gem_version
           command_sym =
             if @option_show_config && options.command_or_arg_empty?
-              Plugins::Config::CONF_PLUGIN_SYM
+              CONF_PLUGIN_SYM
             else
-              options.get_next_command(config.plugins.keys.dup.unshift(:help))
+              options.get_next_command(PluginFactory.instance.plugins.keys.dup.unshift(:help))
             end
           # command will not be executed, but we need manual
           options.fail_on_missing_mandatory = false if @option_help || @option_show_config
@@ -264,7 +271,7 @@ module Aspera
           case command_sym
           when :help
             exit_with_usage(true)
-          when Plugins::Config::CONF_PLUGIN_SYM
+          when CONF_PLUGIN_SYM
             command_plugin = config
           else
             # get plugin, set options, etc

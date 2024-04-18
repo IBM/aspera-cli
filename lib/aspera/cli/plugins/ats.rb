@@ -14,8 +14,8 @@ module Aspera
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Cli::Plugin
         CLOUD_TABLE = %w[id name].freeze
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
           options.declare(:instance, 'ATS instance in ibm cloud')
           options.declare(:ats_key, 'ATS key identifier (ats_xxx)')
@@ -115,10 +115,10 @@ module Aspera
               auth:     {
                 type:     :basic,
                 username: access_key_id,
-                password: @agents[:config].lookup_secret(url: node_url, username: access_key_id)
+                password: config.lookup_secret(url: node_url, username: access_key_id)
               })
             command = options.get_next_command(Node::COMMANDS_GEN4)
-            return Node.new(@agents, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
+            return Node.new(**init_params, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
             ats_url = ats_api_pub_v1.base_url
             api_ak_auth = Rest.new(
@@ -126,7 +126,7 @@ module Aspera
               auth:     {
                 type:     :basic,
                 username: access_key_id,
-                password: @agents[:config].lookup_secret(url: ats_url, username: access_key_id)
+                password: config.lookup_secret(url: ats_url, username: access_key_id)
               })
             return {type: :single_object, data: api_ak_auth.read('servers')[:data]}
           else Aspera.error_unexpected_value(command)

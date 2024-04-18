@@ -46,8 +46,8 @@ module Aspera
           end
         end
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           options.declare(:result, "Specify result value as: 'work_step:parameter'")
           options.declare(:synchronous, 'Wait for completion', values: :bool, default: :no)
           options.declare(:ret_style, 'How return type is requested in api', values: %i[header arg ext], default: :arg)
@@ -73,7 +73,7 @@ module Aspera
           unless format.nil?
             case call_type
             when :header
-              call_args[:headers] = {'Accept' => 'application/' + format}
+              call_args[:headers] = {'Accept' => "application/#{format}" }
             when :arg
               call_args[:url_params] ||= {}
               call_args[:url_params][:format] = format

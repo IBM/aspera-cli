@@ -3473,7 +3473,7 @@ COMMAND: shares
 SUBCOMMANDS: admin files health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
 
 
@@ -3481,7 +3481,7 @@ COMMAND: node
 SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
@@ -3495,7 +3495,7 @@ COMMAND: orchestrator
 SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --result=VALUE               Specify result value as: 'work_step:parameter'
         --synchronous=ENUM           Wait for completion: [no], yes
@@ -3507,7 +3507,7 @@ COMMAND: bss
 SUBCOMMANDS: subscription
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
 
 
@@ -3515,7 +3515,7 @@ COMMAND: alee
 SUBCOMMANDS: entitlement
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
 
 
@@ -3535,7 +3535,7 @@ COMMAND: faspex5
 SUBCOMMANDS: admin bearer_token gateway health invitations packages postprocessing shared_folders user version
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --client-id=VALUE            OAuth client identifier
         --client-secret=VALUE        OAuth client secret
@@ -3564,7 +3564,7 @@ COMMAND: faspex
 SUBCOMMANDS: address_book dropbox health login_methods me package source v4
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --link=VALUE                 Public link for specific operation
         --delivery-info=VALUE        Package delivery information (Hash)
@@ -3578,7 +3578,7 @@ COMMAND: preview
 SUBCOMMANDS: check events scan show test trevents
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --skip-format=ENUM           Skip this preview format (multiple possible): png, mp4
         --folder-reset-cache=ENUM    Force detection of generated preview by refresh cache: [no], header, read
@@ -3614,7 +3614,7 @@ COMMAND: aoc
 SUBCOMMANDS: admin automation bearer_token files gateway organization packages reminder servers tier_restrictions user
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --auth=ENUM                  OAuth type of authentication: web, [jwt]
         --client-id=VALUE            OAuth API client identifier
@@ -3626,13 +3626,19 @@ OPTIONS:
         --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
+        --validator=VALUE            Identifier of validator (optional for central)
+        --asperabrowserurl=VALUE     URL for simple aspera web ui
+        --sync-name=VALUE            Sync name
+        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --root-id=VALUE              File id of top folder if using bearer tokens
+        --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
 COMMAND: server
 SUBCOMMANDS: browse cp delete df download du health info ls md5sum mkdir mv rename rm sync upload
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --ssh-keys=VALUE             SSH key path list (Array or single)
         --passphrase=VALUE           SSH private key passphrase
@@ -3644,7 +3650,7 @@ COMMAND: console
 SUBCOMMANDS: health transfer
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             Username to log in
+        --username=VALUE             User's name to log in
         --password=VALUE             User's password
         --filter-from=DATE           Only after date
         --filter-to=DATE             Only before date

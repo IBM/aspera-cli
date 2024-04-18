@@ -106,8 +106,8 @@ module Aspera
           end
         end
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           options.declare(:client_id, 'OAuth client identifier')
           options.declare(:client_secret, 'OAuth client secret')
           options.declare(:redirect_uri, 'OAuth redirect URI for web authentication')
@@ -319,7 +319,7 @@ module Aspera
           if options.get_option(:once_only, mandatory: true)
             # read ids from persistency
             skip_ids_persistency = PersistencyActionOnce.new(
-              manager: @agents[:persistency],
+              manager: persistency,
               data:    [],
               id:      IdGenerator.from_list([
                 'faspex_recv',

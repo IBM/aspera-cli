@@ -9,8 +9,8 @@ module Aspera
   module Cli
     module Plugins
       class Cos < Cli::Plugin
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           options.declare(:bucket, 'Bucket name')
           options.declare(:endpoint, 'Storage endpoint (URL)')
           options.declare(:apikey, 'Storage API key')
@@ -43,7 +43,7 @@ module Aspera
               cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
             end
             api_node = Api::CosNode.new(**cos_node_params)
-            node_plugin = Node.new(@agents, api: api_node)
+            node_plugin = Node.new(**init_params, api: api_node)
             command = options.get_next_command(Node::COMMANDS_COS)
             return node_plugin.execute_action(command)
           end

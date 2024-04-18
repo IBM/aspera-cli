@@ -21,7 +21,6 @@ module Aspera
       class Node < Cli::BasicAuthPlugin
         include SyncActions
         class << self
-          @@node_options_declared = false # rubocop:disable Style/ClassVars
           def application_name
             'HSTS Node API'
           end
@@ -65,9 +64,7 @@ module Aspera
             }
           end
 
-          def declare_options(options, force: false)
-            return if @@node_options_declared && !force
-            @@node_options_declared = true # rubocop:disable Style/ClassVars
+          def declare_options(options)
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(:sync_name, 'Sync name')
@@ -117,11 +114,12 @@ module Aspera
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 
-        def initialize(env, api: nil)
-          super(env)
-          Node.declare_options(options, force: env[:all_manuals])
+        def initialize(api: nil, **env)
+          super(**env, basic_options: api.nil?)
+          Node.declare_options(options) if api.nil?
+          return if only_manual
           @api_node =
-            if !api.nil? || env[:all_manuals]
+            if !api.nil?
               # this can be Api::Node or Rest (shares)
               api
             elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
@@ -166,7 +164,7 @@ module Aspera
             result = success_msg
             if p.key?('error')
               Log.log.error{"#{p['error']['user_message']} : #{p['path']}"}
-              result = 'ERROR: ' + p['error']['user_message']
+              result = "ERROR: #{p['error']['user_message']}"
               errors.push([p['path'], p['error']['user_message']])
             end
             final_result[:data].push({type => p['path'], 'result' => result})
@@ -192,7 +190,7 @@ module Aspera
           case command
           when :delete
             paths_to_delete = get_next_arg_add_prefix(prefix_path, 'file list', :multiple)
-            resp = @api_node.create('files/delete', { paths: paths_to_delete.map{|i| {'path' => i.start_with?('/') ? i : '/' + i} }})
+            resp = @api_node.create('files/delete', { paths: paths_to_delete.map{|i| {'path' => i.start_with?('/') ? i : "/#{i}"} }})
             return c_result_translate_rem_prefix(resp, 'file', 'deleted', prefix_path)
           when :search
             search_root = get_next_arg_add_prefix(prefix_path, 'search root')
@@ -406,7 +404,7 @@ module Aspera
             command_legacy = options.get_next_command(V3_IN_V4_ACTIONS)
             # TODO: shall we support all methods here ? what if there is a link ?
             apifid = @api_node.resolve_api_fid(top_file_id, '')
-            return Node.new(@agents, api: apifid[:api]).execute_action(command_legacy)
+            return Node.new(**init_params, api: apifid[:api]).execute_action(command_legacy)
           when :node_info, :bearer_token_node
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             result = {
@@ -634,7 +632,7 @@ module Aspera
             skip_ids_persistency = nil
             if options.get_option(:once_only, mandatory: true)
               skip_ids_persistency = PersistencyActionOnce.new(
-                manager: @agents[:persistency],
+                manager: persistency,
                 data:    iteration_data,
                 id:      IdGenerator.from_list([
                   'sync_files',
@@ -895,7 +893,7 @@ module Aspera
             }
             # encode parameters so that it looks good in url
             encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
-            OpenApplication.instance.uri(options.get_option(:asperabrowserurl) + '?goto=' + encoded_params)
+            OpenApplication.instance.uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
             return Main.result_status('done')
           when :basic_token
             return Main.result_status(Rest.basic_token(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))

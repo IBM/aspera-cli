@@ -19,6 +19,7 @@ module Aspera
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
+      INIT_PARAMS = %i[options transfer config formatter persistency only_manual].freeze
 
       class << self
         def declare_generic_options(options)
@@ -33,9 +34,15 @@ module Aspera
         end
       end
 
-      def initialize(env)
-        Aspera.assert_type(env, Hash)
-        @agents = env
+      attr_accessor(*INIT_PARAMS)
+
+      def initialize(options:, transfer:, config:, formatter:, persistency:, only_manual:)
+        @options = options
+        @transfer = transfer
+        @config = config
+        @formatter = formatter
+        @persistency = persistency
+        @only_manual = only_manual
         # check presence in descendant of mandatory method and constant
         Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
         Aspera.assert(self.class.constants.include?(:ACTIONS)){'ACTIONS shall be redefined by subclass'}
@@ -44,6 +51,11 @@ module Aspera
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
         options.parser.separator('OPTIONS:')
+      end
+
+      def init_params
+        # return a hash of instance variables
+        INIT_PARAMS.map{|p| [p, instance_variable_get("@#{p}".to_sym)]}.to_h
       end
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
@@ -249,11 +261,6 @@ module Aspera
           end
         end
         return value
-      end
-
-      # shortcuts helpers for plugin environment
-      %i[options transfer config formatter persistency].each do |name|
-        define_method(name){@agents[name]}
       end
     end # Plugin
   end # Cli

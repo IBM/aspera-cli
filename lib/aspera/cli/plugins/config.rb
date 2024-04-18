@@ -46,20 +46,18 @@ module Aspera
         CONF_PRESET_GLOBAL = 'global_common_defaults'
         # special name to identify value of default
         GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
-        CONF_PLUGIN_SYM = :config # Plugins::Config.name.split('::').last.downcase.to_sym
         CONF_GLOBAL_SYM = :config
         # folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         PERSISTENCY_FOLDER = 'persist_store'
-        RUBY_FILE_EXT = '.rb'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
         APP_NAME_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js' # cspell: disable-line
         TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
-        DEMO = 'demo'
-        DEMO_SERVER_PRESET = 'demoserver' # cspell: disable-line
+        DEMO_SERVER = 'demo'
+        DEMO_PRESET = 'demoserver' # cspell: disable-line
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
@@ -85,11 +83,10 @@ module Aspera
           :CONF_PRESET_DEFAULTS,
           :CONF_PRESET_GLOBAL,
           :ASPERA_PLUGINS_FOLDERNAME,
-          :RUBY_FILE_EXT,
           :ASPERA,
-          :DEMO,
           :TRANSFER_SDK_ARCHIVE_URL,
-          :DEMO_SERVER_PRESET,
+          :DEMO_SERVER,
+          :DEMO_PRESET,
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
           :EXTEND_VAULT,
@@ -119,23 +116,11 @@ module Aspera
             File.dirname(File.expand_path(__FILE__))
           end
 
-          # name of englobing module
-          # @return "Cli::Plugins"
-          def module_full_name
-            return Module.nesting[2].to_s
-          end
-
           # @return main folder where code is, i.e. .../lib
           # go up as many times as englobing modules (not counting class, as it is a file)
           def gem_src_root
-            File.expand_path(module_full_name.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
-          end
-
-          # instantiate a plugin
-          # plugins must be Capitalized
-          def plugin_class(plugin_name_sym)
             # Module.nesting[2] is Cli::Plugins
-            return Object.const_get("#{module_full_name}::#{plugin_name_sym.to_s.capitalize}")
+            File.expand_path(Module.nesting[2].to_s.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
           end
 
           # deep clone hash so that it does not get modified in case of display and secret hide
@@ -158,15 +143,13 @@ module Aspera
           end
         end # self
 
-        def initialize(env, params)
-          Aspera.assert_type(env, Hash)
-          Aspera.assert_type(params, Hash)
-          Aspera.assert(%i[gem help name version].eql?(params.keys.sort)){'missing param'}
+        def initialize(gem:, name:, help:, version:, **env)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
-          super(env)
-          @info = params
-          @plugins = {}
-          @plugin_lookup_folders = []
+          super(**env)
+          @gem = gem
+          @name = name
+          @help = help
+          @version = version
           @use_plugin_defaults = true
           @config_presets = nil
           @config_checksum_on_disk = nil
@@ -193,14 +176,14 @@ module Aspera
             :home, 'Home folder for tool',
             handler: {o: self, m: :main_folder},
             types: String,
-            default: self.class.default_app_main_folder(app_name: @info[:name]))
+            default: self.class.default_app_main_folder(app_name: @name))
           options.parse_options!
-          Log.log.debug{"#{@info[:name]} folder: #{@main_folder}"}
-          # data persistency manager
-          env[:persistency] = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
+          Log.log.debug{"#{@name} folder: #{@main_folder}"}
+          # data persistency manager, created by config plugin
+          @persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folders for plugin lookup
-          add_plugin_lookup_folder(self.class.gem_plugins_folder)
-          add_plugin_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
+          PluginFactory.instance.add_lookup_folder(self.class.gem_plugins_folder)
+          PluginFactory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))
           # option to set config file
           options.declare(
             :config_file, 'Path to YAML file with preset configuration',
@@ -263,7 +246,7 @@ module Aspera
             if !Dir.exist?(sdk_folder)
               Log.log.debug{"not exists: #{sdk_folder}"}
               # former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: @info[:name]), APP_NAME_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: @name), APP_NAME_SDK)
               Log.log.debug{"checking: #{former_sdk_folder}"}
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
@@ -401,7 +384,7 @@ module Aspera
         def check_gem_version
           latest_version =
             begin
-              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@info[:gem]}/latest.json")[:data]['version']
+              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@gem}/latest.json")[:data]['version']
             rescue StandardError
               Log.log.warn('Could not retrieve latest gem version on rubygems.')
               '0'
@@ -413,7 +396,7 @@ module Aspera
             end
           end
           return {
-            name:        @info[:gem],
+            name:        @gem,
             current:     Cli::VERSION,
             latest:      latest_version,
             need_update: Gem::Version.new(Cli::VERSION) < Gem::Version.new(latest_version)
@@ -513,7 +496,7 @@ module Aspera
         end
 
         # $HOME/.aspera/`program_name`
-        attr_reader :gem_url, :plugins
+        attr_reader :gem_url
         attr_accessor :option_config_file
 
         # @return the hash from name (also expands possible includes)
@@ -545,11 +528,11 @@ module Aspera
           Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
           value = [value] if value.is_a?(String)
           Aspera.assert(value.all?(String)){'plugin folder'}
-          value.each{|f|add_plugin_lookup_folder(f)}
+          value.each{|f|PluginFactory.instance.add_lookup_folder(f)}
         end
 
         def option_plugin_folder
-          return @plugin_lookup_folders
+          return PluginFactory.instance.lookup_folders
         end
 
         def option_preset; 'write-only option'; end
@@ -599,7 +582,7 @@ module Aspera
           @config_presets[CONF_PRESET_DEFAULTS].delete(true) if @config_presets[CONF_PRESET_DEFAULTS].is_a?(Hash)
           # ^^^ Place new compatibility code before this line
           # set version to current
-          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @info[:version]
+          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @version
           unless files_to_copy.empty?
             Log.log.warn('Copying referenced files')
             files_to_copy.each do |file|
@@ -614,39 +597,12 @@ module Aspera
           Log.log.debug{"-> #{e.class.name} : #{e}"}
           if File.exist?(@option_config_file)
             # then there is a problem with that file.
-            new_name = "#{@option_config_file}.pre#{@info[:version]}.manual_conversion_needed"
+            new_name = "#{@option_config_file}.pre#{@version}.manual_conversion_needed"
             File.rename(@option_config_file, new_name)
             Log.log.warn{"Renamed config file to #{new_name}."}
             Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
           end
           raise Cli::Error, e.to_s
-        end
-
-        # find plugins in defined paths
-        def add_plugins_from_lookup_folders
-          @plugin_lookup_folders.each do |folder|
-            next unless File.directory?(folder)
-            # TODO: add gem root to load path ? and require short folder ?
-            # $LOAD_PATH.push(folder) if i[:add_path]
-            Dir.entries(folder).select{|file|file.end_with?(RUBY_FILE_EXT)}.each do |source|
-              add_plugin_info(File.join(folder, source))
-            end
-          end
-        end
-
-        def add_plugin_lookup_folder(folder)
-          @plugin_lookup_folders.unshift(folder)
-        end
-
-        def add_plugin_info(path)
-          raise "ERROR: plugin path must end with #{RUBY_FILE_EXT}" if !path.end_with?(RUBY_FILE_EXT)
-          plugin_symbol = File.basename(path, RUBY_FILE_EXT).to_sym
-          req = path.sub(/#{RUBY_FILE_EXT}$/o, '')
-          if @plugins.key?(plugin_symbol)
-            Log.log.warn{"skipping plugin already registered: #{plugin_symbol}"}
-            return
-          end
-          @plugins[plugin_symbol] = {source: path, require_stanza: req}
         end
 
         # Find a plugin, and issue the "require"
@@ -656,23 +612,25 @@ module Aspera
           check_only = options.get_next_argument('plugin name', mandatory: false)
           check_only = check_only.to_sym unless check_only.nil?
           found_apps = []
-          plugins.each do |plugin_name_sym, plugin_info|
+          my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
+          PluginFactory.instance.plugins.each do |plugin_name_sym, plugin_info|
             # no detection for internal plugin
-            next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
+            next if plugin_name_sym.eql?(my_self_plugin_sym)
             next if check_only && !check_only.eql?(plugin_name_sym)
             # load plugin class
             require plugin_info[:require_stanza]
-            detect_plugin_class = self.class.plugin_class(plugin_name_sym)
+            detect_plugin_class = PluginFactory.plugin_class(plugin_name_sym)
             # requires detection method
             next unless detect_plugin_class.respond_to?(:detect)
             detection_info = nil
             begin
+              Log.log.debug{"detecting #{plugin_name_sym} at #{app_url}"}
               detection_info = detect_plugin_class.detect(app_url)
             rescue OpenSSL::SSL::SSLError => e
               Log.log.warn(e.message)
               Log.log.warn('Use option --insecure=yes to allow unchecked certificate') if e.message.include?('cert')
             rescue StandardError => e
-              Log.log.debug{"detect error: #{e}"}
+              Log.log.debug{"detect error: [#{e.class}] #{e}"}
               next
             end
             next if detection_info.nil?
@@ -918,7 +876,7 @@ module Aspera
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
             section = "##{section}" unless section.nil?
-            OpenApplication.instance.uri("#{@info[:help]}#{section}")
+            OpenApplication.instance.uri("#{@help}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
@@ -950,13 +908,13 @@ module Aspera
             case options.get_next_command(%i[list create])
             when :list
               result = []
-              @plugins.each do |name, info|
+              PluginFactory.instance.plugins.each do |name, info|
                 require info[:require_stanza]
-                plugin_class = self.class.plugin_class(name)
+                plugin_klass = PluginFactory.plugin_class(name)
                 result.push({
                   plugin: name,
-                  detect: Formatter.tick(plugin_class.respond_to?(:detect)),
-                  wizard: Formatter.tick(plugin_class.respond_to?(:wizard)),
+                  detect: Formatter.tick(plugin_klass.respond_to?(:detect)),
+                  wizard: Formatter.tick(plugin_klass.respond_to?(:wizard)),
                   path:   info[:source]
                 })
               end
@@ -1003,7 +961,7 @@ module Aspera
             case options.get_next_command(%i[path version name])
             when :path then return Main.result_status(self.class.gem_src_root)
             when :version then return Main.result_status(Cli::VERSION)
-            when :name then return Main.result_status(@info[:gem])
+            when :name then return Main.result_status(@gem)
             end
           when :folder
             return Main.result_status(@main_folder)
@@ -1022,24 +980,24 @@ module Aspera
           when :check_update
             return {type: :single_object, data: check_gem_version}
           when :initdemo
-            if @config_presets.key?(DEMO_SERVER_PRESET)
-              Log.log.warn{"Demo server preset already present: #{DEMO_SERVER_PRESET}"}
+            if @config_presets.key?(DEMO_PRESET)
+              Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
             else
-              Log.log.info{"Creating Demo server preset: #{DEMO_SERVER_PRESET}"}
-              @config_presets[DEMO_SERVER_PRESET] = {
-                'url'                                    => "ssh://#{DEMO}.asperasoft.com:33001",
+              Log.log.info{"Creating Demo server preset: #{DEMO_PRESET}"}
+              @config_presets[DEMO_PRESET] = {
+                'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
                 'username'                               => ASPERA,
-                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO + ASPERA # cspell:disable-line
+                'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
               }
             end
             @config_presets[CONF_PRESET_DEFAULTS] ||= {}
             if @config_presets[CONF_PRESET_DEFAULTS].key?(SERVER_COMMAND)
               Log.log.warn{"Server default preset already set to: #{@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND]}"}
-              Log.log.warn{"Use #{DEMO_SERVER_PRESET} for demo: -P#{DEMO_SERVER_PRESET}"} unless
-                DEMO_SERVER_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND])
+              Log.log.warn{"Use #{DEMO_PRESET} for demo: -P#{DEMO_PRESET}"} unless
+                DEMO_PRESET.eql?(@config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND])
             else
-              @config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_SERVER_PRESET
-              Log.log.info{"Setting server default preset to : #{DEMO_SERVER_PRESET}"}
+              @config_presets[CONF_PRESET_DEFAULTS][SERVER_COMMAND] = DEMO_PRESET
+              Log.log.info{"Setting server default preset to : #{DEMO_PRESET}"}
             end
             return Main.result_status('Done')
           when :vault then execute_vault
@@ -1071,12 +1029,12 @@ module Aspera
           # set url for instantiation of plugin
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called
-          wiz_plugin_class = self.class.plugin_class(identification[:product])
+          wiz_plugin_class = PluginFactory.plugin_class(identification[:product])
           Aspera.assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument) do
             "Detected: #{identification[:product]}, but this application has no wizard"
           end
           # instantiate plugin: command line options will be known, e.g. private_key
-          plugin_instance = wiz_plugin_class.new(@agents)
+          plugin_instance = wiz_plugin_class.new(**init_params)
           wiz_params = {
             object: plugin_instance
           }
@@ -1143,7 +1101,7 @@ module Aspera
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
           # TODO: actually test the command
-          return Main.result_status("You can test with:\n#{@info[:name]} #{identification[:product]} #{test_args}")
+          return Main.result_status("You can test with:\n#{@name} #{identification[:product]} #{test_args}")
         end
 
         # @return [Hash] email server setting with defaults if not defined
@@ -1233,7 +1191,7 @@ module Aspera
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
                   'Please fix the issue: either create preset with one parameter: ' \
-                  "(#{@info[:name]} config id #{default_config_name} init @json:'{}') or remove default (#{@info[:name]} config id default remove #{plugin_name_sym})."
+                  "(#{@name} config id #{default_config_name} init @json:'{}') or remove default (#{@name} config id default remove #{plugin_name_sym})."
               end
             end
             raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)

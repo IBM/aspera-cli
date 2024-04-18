@@ -47,8 +47,8 @@ module Aspera
           end
         end
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
         end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
@@ -79,7 +79,7 @@ module Aspera
           when :repository, :files
             api_shares_node = basic_auth_api(API_BASE)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
-            return Node.new(@agents, api: api_shares_node).execute_action(repo_command)
+            return Node.new(**init_params, api: api_shares_node).execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)

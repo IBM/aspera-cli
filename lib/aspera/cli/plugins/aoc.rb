@@ -175,8 +175,8 @@ module Aspera
           'received'    => true,
           'completed'   => true}.freeze
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           @cache_workspace_info = nil
           @cache_home_node_file = nil
           @cache_api_aoc = nil
@@ -198,7 +198,7 @@ module Aspera
         OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
 
         def api_from_options(new_base_path)
-          create_values = {subpath: new_base_path, secret_finder: @agents[:config]}
+          create_values = {subpath: new_base_path, secret_finder: config}
           # create an API object with the same options, but with a different subpath
           return Api::AoC.new(**OPTIONS_NEW.each_with_object(create_values) { |i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
         rescue ArgumentError => e
@@ -309,7 +309,7 @@ module Aspera
             scope:          scope
           )
           file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")[:data]['root_file_id'] if file_id.nil?
-          node_plugin = Node.new(@agents, api: top_node_api)
+          node_plugin = Node.new(**init_params, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
             return node_plugin.execute_command_gen4(command_repo, file_id)
@@ -333,7 +333,7 @@ module Aspera
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
-            @agents[:transfer].agent_instance = Agent::Node.new({
+            transfer.agent_instance = Agent::Node.new({
               url:      client_apfid[:api].base_url,
               username: client_apfid[:api].app_info[:node_info]['access_key'],
               password: client_apfid[:api].oauth_token,
@@ -427,7 +427,7 @@ module Aspera
               base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
               auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
             }))
-            return Ats.new(@agents).execute_action_gen(ats_api)
+            return Ats.new(**init_params).execute_action_gen(ats_api)
           when :analytics
             analytics_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
@@ -454,7 +454,7 @@ module Aspera
               if options.get_option(:once_only, mandatory: true)
                 saved_date = []
                 start_date_persistency = PersistencyActionOnce.new(
-                  manager: @agents[:persistency],
+                  manager: persistency,
                   data: saved_date,
                   id: IdGenerator.from_list([
                     'aoc_ana_date',
@@ -671,7 +671,7 @@ module Aspera
               if options.get_option(:once_only, mandatory: true)
                 # TODO: add query info to id
                 skip_ids_persistency = PersistencyActionOnce.new(
-                  manager: @agents[:persistency],
+                  manager: persistency,
                   data: skip_ids_data,
                   id: IdGenerator.from_list(
                     ['aoc_recv',

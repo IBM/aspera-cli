@@ -90,8 +90,8 @@ module Aspera
           end
         end
 
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
           options.declare(:passphrase, 'SSH private key passphrase')
           options.declare(:ssh_options, 'SSH options', types: Hash, default: {})

@@ -13,7 +13,7 @@ module Aspera
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
             urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
-
+            error = nil
             urls.each do |base_url|
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 2)
@@ -30,8 +30,10 @@ module Aspera
                 url:     url[0..url.index(test_endpoint) - 2]
               }
             rescue StandardError => e
+              error = e
               Log.log.debug{"detect error: #{e}"}
             end
+            raise error if error
             return nil
           end
 
@@ -49,8 +51,8 @@ module Aspera
         end
         DEFAULT_FILTER_AGE_SECONDS = 3 * 3600
         private_constant :DEFAULT_FILTER_AGE_SECONDS
-        def initialize(env)
-          super(env)
+        def initialize(**env)
+          super
           time_now = Time.now
           options.declare(:filter_from, 'Only after date', values: :date, default: Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS))
           options.declare(:filter_to, 'Only before date', values: :date, default: Manager.time_to_string(time_now))
@@ -83,7 +85,7 @@ module Aspera
               when :submit
                 smart_id = options.get_next_argument('smart_id')
                 params = options.get_next_argument('transfer parameters')
-                return {type: :object_list, data: api_console.create('smart_transfers/' + smart_id, params)[:data]}
+                return {type: :object_list, data: api_console.create("smart_transfers/#{smart_id}", params)[:data]}
               end
             when :current
               command = options.get_next_command([:list])

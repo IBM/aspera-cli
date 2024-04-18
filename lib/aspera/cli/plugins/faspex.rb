@@ -43,7 +43,7 @@ module Aspera
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
             urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
-
+            error = nil
             urls.each do |base_url|
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
@@ -60,8 +60,10 @@ module Aspera
               # take redirect if any
               return {version: version, url: result[:http].uri.to_s}
             rescue StandardError => e
+              error = e
               Log.log.debug{"detect error: #{e}"}
             end
+            raise error if error
             return nil
           end
 
@@ -111,10 +113,10 @@ module Aspera
           end
         end
 
-        def initialize(env)
+        def initialize(**env)
+          super
           @api_v3 = nil
           @api_v4 = nil
-          super(env)
           options.declare(:link, 'Public link for specific operation')
           options.declare(:delivery_info, 'Package delivery information', types: Hash)
           options.declare(:remote_source, 'Remote source for package send (id or %name:)')
@@ -327,7 +329,7 @@ module Aspera
               when nil # usual case: no link
                 if options.get_option(:once_only, mandatory: true)
                   skip_ids_persistency = PersistencyActionOnce.new(
-                    manager: @agents[:persistency],
+                    manager: persistency,
                     data:    skip_ids_data,
                     id:      IdGenerator.from_list([
                       'faspex_recv',
@@ -459,7 +461,7 @@ module Aspera
                     username: node_config['username'],
                     password: node_config['password']})
                 command = options.get_next_command(Node::COMMANDS_FASPEX)
-                return Node.new(@agents, api: api_node).execute_action(command, source_info[KEY_PATH])
+                return Node.new(**init_params, api: api_node).execute_action(command, source_info[KEY_PATH])
               end
             end
           when :me

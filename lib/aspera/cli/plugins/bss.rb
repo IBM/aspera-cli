@@ -12,9 +12,8 @@ module Aspera
           'bssSubscriptions' => %w[id name termVolumeGb termMonths trial startDate endDate plan renewalType chargeAgreementNumber customerName]
         }.freeze
 
-        def initialize(env)
-          super(env)
-          @api_bss = env[:bss_api] if env.key?(:bss_api)
+        def initialize(**env)
+          super
         end
 
         def all_fields(name)
