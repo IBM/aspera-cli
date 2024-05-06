@@ -25,7 +25,7 @@ module Aspera
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       # options that can be provided to the constructor, and then in @options
-      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore quiet trusted_certs].freeze
+      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore_cb quiet trusted_certs].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS, :SUPPORTED_OPTIONS
 
@@ -183,7 +183,7 @@ module Aspera
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
           certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs].is_a?(Array)
           # ignore cert for wss ?
-          if @options[:check_ignore]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
+          if @options[:check_ignore_cb]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
             wss_url = "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}"
             File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))

@@ -112,7 +112,7 @@ module Aspera
             remote.delete('port')
             remote.delete('fingerprint')
             # ignore cert for wss ?
-            # if @options[:check_ignore]&.call(remote['host'], remote['ws_port'])
+            # if @options[:check_ignore_cb]&.call(remote['host'], remote['ws_port'])
             #   wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
             #   wss_url = "https://#{remote['host']}:#{remote['ws_port']}"
             #   File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))

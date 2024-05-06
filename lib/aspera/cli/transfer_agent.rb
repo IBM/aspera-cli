@@ -116,7 +116,7 @@ module Aspera
         when :direct
           # by default do not display ascp native progress bar
           agent_options[:quiet] = true unless agent_options.key?(:quiet)
-          agent_options[:check_ignore] = ->(host, port){@config.ignore_cert?(host, port)}
+          agent_options[:check_ignore_cb] = ->(host, port){@config.ignore_cert?(host, port)}
           agent_options[:trusted_certs] = @config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
         when :httpgw
           unless agent_options.key?(:url) || @httpgw_url_lambda.nil?

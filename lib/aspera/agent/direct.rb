@@ -20,15 +20,15 @@ module Aspera
     class Direct < Base
       # options for initialize (same as values in option transfer_info)
       DEFAULT_OPTIONS = {
+        wss:               true, # true: if both SSH and wss in ts: prefer wss
+        ascp_args:         [],
         spawn_timeout_sec: 2,
         spawn_delay_sec:   2, # optional delay to start between sessions
-        wss:               true, # true: if both SSH and wss in ts: prefer wss
         multi_incr_udp:    true,
-        resume:            {},
-        ascp_args:         [],
-        check_ignore:      nil, # callback with host,port
-        quiet:             true, # by default no native ascp progress bar
         trusted_certs:     [], # list of files with trusted certificates (stores)
+        resume:            {},
+        quiet:             true, # by default no native ascp progress bar
+        check_ignore_cb:   nil, # callback with host,port
         management_cb:     nil # callback for management events
       }.freeze
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
