@@ -5802,7 +5802,7 @@ packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' t
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
-packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages show --box=my_shared_box_name package_box_id1
 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 packages show f5_p31

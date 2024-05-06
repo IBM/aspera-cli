@@ -991,7 +991,7 @@ $(T)aocat7: $(T).exists
 $(T)aocat8: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_BEG_IGN) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
-	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	@$(STOP_TEST) $@
 $(T)aocat9: $(T).exists
 	@$(START_TEST) $@
@@ -1003,7 +1003,7 @@ $(T)aocat10: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocat11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
+	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key node ak1ibmcloud --secret=@preset:misc.secret_here browse /
 	@$(STOP_TEST) $@
 $(T)aocat13: $(T).exists
 	@$(START_TEST) $@
@@ -1119,7 +1119,7 @@ $(T)at3: $(T).exists
 $(T)at8: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_BEG_IGN) ats access_key delete ak2ibmcloud$(EXE_END_IGN)
-	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
+	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	@$(STOP_TEST) $@
@@ -1133,11 +1133,11 @@ $(T)at10: $(T).exists
 	@$(STOP_TEST) $@
 $(T)at11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) ats access_key node ak2ibmcloud browse / --secret=my_secret_here
+	$(EXE_MAN) ats access_key node ak2ibmcloud browse / --secret=@preset:misc.secret_here
 	@$(STOP_TEST) $@
 $(T)at12: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=my_secret_here
+	$(EXE_MAN) ats access_key cluster ak2ibmcloud --secret=@preset:misc.secret_here
 	@$(STOP_TEST) $@
 $(T)at13: $(T).exists
 	@$(START_TEST) $@
@@ -1551,7 +1551,7 @@ $(T)f5_p0: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_p1: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}' $(TST_ASC_LCL_PATH) --ts=@json:'{"content_protection_password":"my_passphrase_here"}'
+	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":[{"name":"@preset:faspex5_user.username@"}]@preset:faspex5.meta@}' $(TST_ASC_LCL_PATH) --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	@$(STOP_TEST) $@
 $(T)f5_p2: $(T).exists
 	@$(START_TEST) $@
