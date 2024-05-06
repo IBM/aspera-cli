@@ -2126,13 +2126,13 @@ mv ${PRIVKEYFILE}.with_des ${PRIVKEYFILE}
 
 ### SSL CA certificate bundle
 
+The SSL CA certificate bundle can be specified using option `cert_stores`, which is a list of files or folders, by default it uses Ruby's default certificate store.
+
 To display trusted certificate store locations:
 
 ```bash
 ascli --show-config --fields=cert_stores
 ```
-
-By default, this displays the list of existing files from default locations.
 
 Use option `cert_stores` to modify the locations of certificate stores (files or folders).
 If you use this option, then default locations are not used.
@@ -2141,7 +2141,15 @@ The value can be either an `Array` or `String` (path).
 Successive options add paths incrementally.
 All files of a folders are added.
 
-`ascli` uses the Ruby `openssl` gem, which uses the `openssl` library.
+`ascli` uses the Ruby `openssl` gem.
+By default it uses the system's `openssl` library, but JRuby uses its own implementation.
+
+For example, on Linux to use the system's certificate store:
+
+```bash
+--cert-stores=$(openssl version -d|cut -f2 -d'"')/cert.pem
+```
+
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
 
@@ -2570,18 +2578,23 @@ The `transfer_info` option accepts the following optional parameters to control 
 | `spawn_timeout_sec`    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
 | `spawn_delay_sec`      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
 | `multi_incr_udp`       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
-| `resume`               | Hash  | Resume<br/>parameters<br/>See below |
-| `resume.iter_max`      | int   | Resume<br/>Max number of retry on error<br/>Default: 7 |
-| `resume.sleep_initial` | int   | Resume<br/>First Sleep before retry<br/>Default: 2 |
-| `resume.sleep_factor`  | int   | Resume<br/>Multiplier of sleep period between attempts<br/>Default: 2 |
-| `resume.sleep_max`     | int   | Resume<br/>Default: 60 |
+| `trusted_certs`        | Array | List of repositories for trusted certificates. |
+| `resume`               | Hash  | Resume parameters. See below |
+| `resume.iter_max`      | int   | Max number of retry on error<br/>Default: 7 |
+| `resume.sleep_initial` | int   | First Sleep before retry<br/>Default: 2 |
+| `resume.sleep_factor`  | int   | Multiplier of sleep period between attempts<br/>Default: 2 |
+| `resume.sleep_max`     | int   | Default: 60 |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
-Sleep between iterations is:
+Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
 
 ```bash
-max( sleep_max , sleep_initial * sleep_factor ^ (iter_index-1) )
+max( sleep_max , sleep_initial * sleep_factor ^ iter_index )
 ```
+
+By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
+In order to use a custom certificate store, use the `trusted_certs` parameter.
+To use `ascp`'s default, use option: `--transfer-info=@json:'{"trusted_certs":null}'`.
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
 The list of known protocol errors and retry level can be listed:
@@ -4561,17 +4574,26 @@ General syntax:
 ascli aoc packages send [package extended value] [other parameters such as file list and transfer parameters]
 ```
 
-Notes:
+Package creation parameter are sent as positional argument.
+Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
 
-- Package creation parameter are sent as positional argument.
-  Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
-- List allowed shared inbox destinations with: `ascli aoc packages shared_inboxes list`
-- Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: user or shared inbox.
-  - Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
-  - or just names: `"recipients":[{"The Dest"}]` . ascli will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
-- If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and
-  - if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
-  - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
+List allowed shared inbox destinations with:
+
+```bash
+ascli aoc packages shared_inboxes list
+```
+
+Use fields: `recipients` and/or `bcc_recipients` to provide the list of recipients: **user** or **shared inbox**:
+
+- Provide either ids as expected by API: `"recipients":[{"type":"dropbox","id":"1234"}]`
+- or just names: `"recipients":[{"The Dest"}]`.
+
+ascli will resolve the list of email addresses and dropbox names to the expected type/id list, based on case insensitive partial match.
+
+If a user recipient (email) is not already registered and the workspace allows external users, then the package is sent to an external user, and:
+
+- if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
+- if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
 #### Example: Send a package with one file to two users, using their email
 
@@ -6091,10 +6113,10 @@ Environment variables at set to the values provided by the web hook which are th
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
-Notes:
+> **Note:** For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
-- The command `v4` requires the use of APIv4, refer to the Faspex Admin manual on how to activate.
-- For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
+This plugin uses APIs versions 3 Faspex v4.
+The `v4` command requires the use of API v4, refer to the Faspex Admin manual on how to activate.
 
 ### Listing Packages
 
