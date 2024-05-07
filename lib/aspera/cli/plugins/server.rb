@@ -58,23 +58,23 @@ module Aspera
               ]
               # wss not practical as it requires a token
             end
-
+            error = nil
             urls.each do |base_url|
               server_uri = URI.parse(base_url)
               Log.log.debug{"URI=#{server_uri}, host=#{server_uri.hostname}, port=#{server_uri.port}, scheme=#{server_uri.scheme}"}
               next unless server_uri.scheme.eql?(SSH_SCHEME)
-              begin
-                socket = TCPSocket.new(server_uri.hostname, server_uri.port)
-                socket.puts('SSH-2.0-Ascli_0.0')
-                version = socket.gets.chomp
-                if version.match?(/^SSH-2.0-/)
-                  return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url}
-                end
-              rescue StandardError => e
-                Log.log.debug{"detect error: #{e}"}
+              socket = TCPSocket.new(server_uri.hostname, server_uri.port)
+              socket.puts('SSH-2.0-Ascli_0.0')
+              version = socket.gets.chomp
+              if version.match?(/^SSH-2.0-/)
+                return {version: version.gsub(/^SSH-2.0-/, ''), url: base_url}
               end
+            rescue StandardError => e
+              error = e
+              Log.log.debug{"detect error: #{e}"}
             end
-            return
+            raise error if error
+            return nil
           end
 
           def wizard(object:, private_key_path: nil, pub_key_pem: nil)

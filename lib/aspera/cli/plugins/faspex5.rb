@@ -45,11 +45,13 @@ module Aspera
           end
 
           def detect(address_or_url)
+            # add scheme if missing
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
             urls.push("#{address_or_url}#{PATH_STANDARD_ROOT}") unless address_or_url.end_with?(PATH_STANDARD_ROOT)
-
+            error = nil
             urls.each do |base_url|
+              # Faspex is always HTTPS
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
               path_api_detect = "#{PATH_API_V5}/#{PATH_HEALTH}"
@@ -63,8 +65,10 @@ module Aspera
                 url:     result[:http].uri.to_s[0..url_length]
               }
             rescue StandardError => e
+              error = e
               Log.log.debug{"detect error: #{e}"}
             end
+            raise error if error
             return nil
           end
 

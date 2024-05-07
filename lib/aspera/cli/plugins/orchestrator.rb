@@ -16,6 +16,7 @@ module Aspera
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
             urls.push("#{address_or_url}#{STANDARD_PATH}") unless address_or_url.end_with?(STANDARD_PATH)
+            error = nil
             urls.each do |base_url|
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)
@@ -28,8 +29,10 @@ module Aspera
                 url:     url[0..url.index(test_endpoint) - 2]
               }
             rescue StandardError => e
+              error = e
               Log.log.debug{"detect error: #{e}"}
             end
+            raise error if error
             return nil
           end
 

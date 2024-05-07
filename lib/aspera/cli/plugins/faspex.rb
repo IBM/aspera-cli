@@ -49,16 +49,21 @@ module Aspera
               api = Rest.new(base_url: base_url, redirect_max: 1)
               result = api.call(
                 operation:        'POST',
-                subpath:          '',
-                headers:          {'Accept' => 'application/xrds+xml', 'Content-type' => 'text/plain'},
-                text_body_params: '')
+                headers:          {
+                  'Content-type' => 'text/plain',
+                  'Accept'       => 'application/xrds+xml'
+                }
+              )
               # 4.x
               next unless result[:http].body.start_with?('<?xml')
               res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
               Log.log.debug{"version: #{result[:http]['X-IBM-Aspera']}"}
               version = res_s['XRD']['application']['version']
               # take redirect if any
-              return {version: version, url: result[:http].uri.to_s}
+              return {
+                version: version,
+                url:     result[:http].uri.to_s
+              }
             rescue StandardError => e
               error = e
               Log.log.debug{"detect error: #{e}"}
