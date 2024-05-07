@@ -15,8 +15,8 @@ require 'erb'
 # just command name
 def cmd; Aspera::Cli::PROGRAM_NAME; end
 
-# used in text with formatting of command
-def tool; '`' + cmd + '`'; end
+# (Markdown) used in text with formatting of command
+def tool; "`#{cmd}`"; end
 
 # env var for option
 def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
