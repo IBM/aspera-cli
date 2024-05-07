@@ -56,7 +56,7 @@ module Aspera
         return values.first.eql?(ARRAY_PARAMS)
       end
 
-      # build URI from URL and parameters and check it is http or https
+      # build URI from URL and parameters and check it is http or https, encode array [] parameters
       def build_uri(url, query_hash=nil)
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
@@ -86,7 +86,7 @@ module Aspera
         URI.decode_www_form(query).each_with_object({}){|v, h|h[v.first] = v.last }
       end
 
-      # start a HTTP/S session, also used for web sockets
+      # Start a HTTP/S session, also used for web sockets
       # @param base_url [String] base url of HTTP/S session
       # @return [Net::HTTP] a started HTTP session
       def start_http_session(base_url)
@@ -153,6 +153,47 @@ module Aspera
       return @http_session
     end
 
+    def build_request(
+      operation:,
+      subpath:,
+      url_params:,
+      json_params:,
+      www_body_params:,
+      text_body_params:,
+      headers:
+    )
+      # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
+      # URI.escape()
+      separator = !['', '/'].include?(subpath) || @base_url.end_with?('/') ? '/' : ''
+      uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", url_params)
+      Log.log.debug{"URI=#{uri}"}
+      begin
+        # instantiate request object based on string name
+        req = Net::HTTP.const_get(operation.capitalize).new(uri)
+      rescue NameError
+        raise "unsupported operation : #{operation}"
+      end
+      if !json_params.nil?
+        req.body = JSON.generate(json_params) # , ascii_only: true
+        req['Content-Type'] = 'application/json'
+      end
+      if !www_body_params.nil?
+        req.body = URI.encode_www_form(www_body_params)
+        req['Content-Type'] = 'application/x-www-form-urlencoded'
+      end
+      if !text_body_params.nil?
+        req.body = text_body_params
+      end
+      # set headers
+      headers.each do |key, value|
+        req[key] = value
+      end
+      # :type = :basic
+      req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
+      Log.log.debug{Log.dump(:req_body, req.body)}
+      return req
+    end
+
     public
 
     attr_reader :auth_params
@@ -185,8 +226,8 @@ module Aspera
       headers: nil
     )
       Aspera.assert_type(base_url, String)
-      # base url without trailing slashes (note: string may be frozen)
-      @base_url = base_url.gsub(%r{/+$}, '')
+      # base url with max one trailing slashes (note: string may be frozen)
+      @base_url = base_url.gsub(%r{//+$}, '/')
       # default is no auth
       @auth_params = auth.nil? ? {type: :none} : auth
       Aspera.assert_type(@auth_params, Hash)
@@ -219,56 +260,12 @@ module Aspera
       return oauth.get_authorization(use_refresh_token: force_refresh)
     end
 
-    def build_request(
-      operation:,
-      subpath:,
-      json_params:,
-      url_params:,
-      www_body_params:,
-      text_body_params:,
-      headers:
-    )
-      # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
-      # URI.escape()
-      uri = self.class.build_uri("#{@base_url}#{['', '/'].include?(subpath) ? '' : '/'}#{subpath}", url_params)
-      Log.log.debug{"URI=#{uri}"}
-      begin
-        # instantiate request object based on string name
-        req = Net::HTTP.const_get(operation.capitalize).new(uri)
-      rescue NameError
-        raise "unsupported operation : #{operation}"
-      end
-      if !json_params.nil?
-        req.body = JSON.generate(json_params) # , ascii_only: true
-        Log.log.debug{Log.dump('body JSON data', json_params)}
-        req['Content-Type'] = 'application/json'
-        # headers['Accept']='application/json'
-      end
-      if !www_body_params.nil?
-        req.body = URI.encode_www_form(www_body_params)
-        Log.log.debug{"body www data=#{req.body.chomp}"}
-        req['Content-Type'] = 'application/x-www-form-urlencoded'
-      end
-      if !text_body_params.nil?
-        req.body = text_body_params
-        Log.log.debug{"body data=#{req.body.chomp}"}
-      end
-      # set headers
-      headers.each do |key, value|
-        req[key] = value
-      end
-      # :type = :basic
-      req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
-      Log.log.debug{Log.dump(:req_body, req.body)}
-      return req
-    end
-
     # HTTP/S REST call
     # @param save_to_file (filepath)
     # @param return_error (bool)
     def call(
       operation:,
-      subpath: '',
+      subpath: nil,
       json_params: nil,
       url_params: nil,
       www_body_params: nil,
@@ -278,6 +275,7 @@ module Aspera
       headers: nil
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
+      subpath = '' if subpath.nil?
       Aspera.assert_type(subpath, String)
       if headers.nil?
         headers = @headers.clone
@@ -286,7 +284,8 @@ module Aspera
         headers = @headers.clone
         headers.merge!(h)
       end
-      Log.log.debug{"#{operation} #{subpath}".red.bold.bg_green}
+      Aspera.assert_type(headers, Hash)
+      Log.log.debug{"#{operation} [#{subpath}]".red.bold.bg_green}
       case @auth_params[:type]
       when :none
         # no auth
@@ -390,8 +389,8 @@ module Aspera
             new_url = "#{current_uri.scheme}://#{current_uri.host}#{new_url}"
           end
           # forwards the request to the new location
-          return self.class.new(base_url: new_url, redirect_max: @redirect_max).call(
-            operation: operation, subpath: '', json_params: json_params,
+          return self.class.new(base_url: new_url, redirect_max: tries_remain_redirect).call(
+            operation: operation, json_params: json_params,
             url_params: url_params, www_body_params: www_body_params, text_body_params: text_body_params,
             save_to_file: save_to_file, return_error: return_error, headers: headers)
         end
