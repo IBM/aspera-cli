@@ -2,6 +2,7 @@
 
 require 'aspera/command_line_builder'
 require 'aspera/assert'
+require 'yaml'
 
 module Aspera
   module Transfer
