@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/transfer/parameters'
+require 'aspera/command_line_builder'
 require 'aspera/assert'
 
 module Aspera
@@ -18,14 +18,6 @@ module Aspera
       }.freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
-      # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
-      Transfer::Parameters.description.each do |name, description|
-        next unless description[:enum].is_a?(Array)
-        const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
-        description[:enum].each do |enum|
-          const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
-        end
-      end
       class << self
         def action_to_direction(tspec, command)
           Aspera.assert_type(tspec, Hash){'transfer spec'}
@@ -45,6 +37,15 @@ module Aspera
           when DIRECTION_RECEIVE then :download
           else Aspera.error_unexpected_value(tspec['direction'])
           end
+        end
+      end
+      DESCRIPTION = CommandLineBuilder.normalize_description(YAML.load_file("#{__FILE__[0..-3]}yaml"))
+      # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
+      DESCRIPTION.each do |name, description|
+        next unless description[:enum].is_a?(Array)
+        const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
+        description[:enum].each do |enum|
+          const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
     end

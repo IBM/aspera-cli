@@ -34,22 +34,12 @@ module Aspera
         # because of garbage collection takes any file there
         # this could be refined, as , for instance, on macos, temp folder is already user specific
         @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists') # cspell:disable-line
-        @param_description_cache = nil
-        # @return normalized description of transfer spec parameters, direct from yaml
-        def description
-          if @param_description_cache.nil?
-            # config file in same folder with same name as this source
-            description_from_yaml = YAML.load_file("#{__FILE__[0..-3]}yaml")
-            @param_description_cache = CommandLineBuilder.normalize_description(description_from_yaml)
-          end
-          return @param_description_cache
-        end
 
         # @param to_text [bool] replace HTML entities with text equivalent
         # @return a table suitable to display in manual
         def man_table
           result = []
-          description.each do |name, options|
+          Spec::DESCRIPTION.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
             # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |a|
@@ -128,7 +118,7 @@ module Aspera
         Log.log.debug{Log.dump(:dismiss_options, options.keys - SUPPORTED_OPTIONS)}
         Aspera.assert_type(@options[:ascp_args], Array){'ascp_args'}
         Aspera.assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
-        @builder = CommandLineBuilder.new(@job_spec, self.class.description)
+        @builder = CommandLineBuilder.new(@job_spec, Spec::DESCRIPTION)
       end
 
       # either place source files on command line, or add file list file
