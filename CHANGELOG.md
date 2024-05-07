@@ -10,21 +10,21 @@
     * `faspex5`: Public links: Auto-fill recipient.
     * `faspex5`: Recursive content of package.
   * Issues Fixed:
-    * `aoc`: #135 `exclude_dropbox_packages` query option can be overridden
-    * **global**: removed gem dependency on `bigdecimal`
-    * **global**: tested with JRuby 9.4.6.0 (use ServerSocket instead of Socket)
+    * `aoc`: `exclude_dropbox_packages` query option can be overridden (#135)
+    * **global**: Removed gem dependency on `bigdecimal`
+    * **global**: Tested with JRuby 9.4.6.0 (use `ServerSocket` instead of `Socket`)
     * **global**: Update version for gem `terminal-table` to 3.0.2
   * Breaking Changes:
-    * `config`: command `remote_certificate` now takes a subcommand.
+    * `config`: Command `remote_certificate` now takes a subcommand.
     * **global**: Moved a few internal classes in new/renamed modules
-    * **global**: Deprecated spec parameter: `EX_ssh_key_paths`. Use spec `ssh_private_key` or option `transfer_info.ascp_args`
-    * **global**: Deprecated pseudo tranfer specification parameters starting with `EX_`:
+    * **global**: Deprecated pseudo transfer specification parameters starting with `EX_`:
+      * `EX_ssh_key_paths`. Use spec `ssh_private_key` or option `transfer_info={"ascp_args":["-i","..."]}`
       * `EX_http_proxy_url`. Use option `transfer_info={"ascp_args":["-x","..."]}`
       * `EX_http_transfer_jpeg`. Use option `transfer_info={"ascp_args":["-j","1"]}`
       * `EX_no_read`. Use option `transfer_info={"ascp_args":["--no-read"]}`
       * `EX_no_write`. Use option `transfer_info={"ascp_args":["--no-write"]}`
-      * `EX_file_list`. Use `ascli` file list feature, or option `transfer_info={"ascp_args":["--file-list","..."]}`
-      * `EX_file_pair_list`. Use `ascli` file list feature, or option `transfer_info={"ascp_args":["--file-pair-list","..."]}`
+      * `EX_file_list`. Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-list","..."]}`
+      * `EX_file_pair_list`. Use `ascli` file list feature or option `transfer_info={"ascp_args":["--file-pair-list","..."]}`
       * `EX_ascp_args`. Use option `transfer_info={"ascp_args":[...]}`
       * `EX_at_rest_password`. Use spec parameter `content_protection_password`
       * `EX_proxy_password`. Set password in spec parameter `proxy` or use env var `ASPERA_PROXY_PASS`.
