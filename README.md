@@ -445,9 +445,23 @@ Choose the latest version from:
 
 <https://www.jruby.org/download>
 
-> **Note:** The startup time is slightly longer using `jruby` than the native Ruby, refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details. The transfer speed is not impacted (executed by `ascp` binary).
+> **Note:** The startup time is slightly longer using `jruby` than the native Ruby, refer to the [JRuby wiki](https://github.com/jruby/jruby/wiki) for details. This can be reduced by using the `--dev` option.
+> The transfer speed is not impacted (executed by `ascp` binary).
 >
 > **Note:** JRuby can be [installed](https://www.jruby.org/getting-started) using `rvm`.
+
+Example: start `ascli` with JRuby and reduce startup time:
+
+```bash
+export JRUBY_OPTS=--dev
+ascli -v
+```
+
+or
+
+```bash
+JRUBY_OPTS=--dev ascli -v
+```
 
 #### Optional gems
 
