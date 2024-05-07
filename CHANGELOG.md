@@ -30,7 +30,7 @@
       * `EX_proxy_password`. Set password in spec parameter `proxy` or use env var `ASPERA_PROXY_PASS`.
       * `EX_license_text`. Use env var `ASPERA_SCP_LICENSE`.
 
-* 4.16.0
+* 4.16.0 2024-02-15
 
   * New Features:
     * **global**: option `output` to redirect result to a file instead of `stdout`
@@ -52,7 +52,7 @@
     * `shares`: option `type` for users and groups is replaced with mandatory positional argument with same value.
     * `aoc`, `faspex`: package `recv` command changed to `receive`, for consistency with faspex5 (`recv` is now an alias command)
 
-* 4.15.0
+* 4.15.0 2023-11-18
 
   * General: removed many redundant options, more consistency between plugins, see below in "break".
   * New Features:
@@ -103,7 +103,7 @@
     * `preview`: command `scan`, `events` and `trevents` replaced option `query` with optional positional parameter for filter (like `find`).
     * **global**: agent `trsdk` parameters `host` and `port` in option `transfer_info` are replaced with parameter `url`, like `grpc://host:port`
 
-* 4.14.0
+* 4.14.0 2023-09-22
 
   * New Features:
     * `server`: option `passphrase` for simpler command line (#114)
@@ -129,7 +129,7 @@
     * `aoc`, `node`: Simplification: gen4 operations: show modify permission thumbnail are now directly under node gen 4 command. Command `file` is suppressed. Option `path` is suppressed. The default expected argument is a path. To provide a file id, use selector syntax: %id:_file_id_
     * `node`: option `token_type` is removed, as starting with HSTS 4.3 basic token is only allowed with access keys, so use gen4 operations: `acc do self`
 
-* 4.13.0
+* 4.13.0 2023-06-29
 
   * New Features:
     * `preview`: option `reencode_ffmpeg` allows overriding all re-encoding options
@@ -149,7 +149,7 @@
     * option `transfer_info` is now cumulative, setting several times merge values
     * change(deprecation): Removed support of Ruby 2.4 and 2.5 : too old, no security update since a long time. If you need older ruby version use older gem version.
 
-* 4.12.0
+* 4.12.0 2023-03-20
 
   * New Features:
     * **container**: build image from official gem version, possibility to deploy beta as well
@@ -170,7 +170,7 @@
     * `shares`: similar changes for `shares admin share user show`
     * option `ascp_opts` is removed, and replaced with `transfer_info` parameter `ascp_args`
 
-* 4.11.0
+* 4.11.0 2023-01-26
 
   * New Features:
     * **global**: `vault`: secret finder, migration from config file
@@ -191,7 +191,7 @@
     * if wss is enabled on server, use wss
     * lots of cleanup and refactoring
 
-* 4.10.0
+* 4.10.0 2022-12-02
 
   * New Features:
     * httpgw transfer agent: support api v2, support transfer through http proxy, including proxy password
@@ -201,7 +201,7 @@
   * Breaking Changes:
     * `config`: option `secrets` is renamed to `vault`
 
-* 4.9.0
+* 4.9.0 2022-09-15
 
   * New Features:
     * `shares`: import of SAML users and LDAP users
@@ -218,7 +218,7 @@
     * `ascli` runs as user `cliuser` instead of `root` in container
     * default access right for config folder is now user only, including private keys
 
-* 4.8.0
+* 4.8.0 2022-06-16
 
   * New Features:
     * #76 add resource `group_membership` in `aoc`
@@ -234,7 +234,7 @@
     * default is now to hide secrets on command output. Set option `show_secrets` to reveal secrets.
     * option `insecure` displays a warning
 
-* 4.7.0
+* 4.7.0 2022-03-23
 
   * New Features:
     * option to specify font used to generate image of text file in `preview`
@@ -253,7 +253,7 @@
     * renamed option `log_passwords` to `log_secrets`
     * removed plugin `shares2` as products is now EOL
 
-* 4.6.0
+* 4.6.0 2022-02-04
 
   * New Features:
     * command `conf plugin create`
@@ -271,7 +271,7 @@
     * command `conf plugin list` replaces `conf plugins`
     * command `conf connect` simplified
 
-* 4.5.0
+* 4.5.0 2021-12-27
 
   * New Features:
     * support transfer agent: [Transfer SDK](README.md#agt_trsdk)
@@ -289,7 +289,7 @@
     * `aoc admin res node` does not take workspace main node as default node if no `id` specified.
     * : `orchestrator workflow status` requires id, and supports special id `ALL`
 
-* 4.4.0
+* 4.4.0 2021-11-13
 
   * New Features:
     * `aoc packages list` add possibility to add filter with option `query`
@@ -301,13 +301,13 @@
     * `server`: option `username` not mandatory anymore: xfer user is by default. If transfer spec token is provided, password or keys are optional, and bypass keys are used by default.
     * resource `apps_new` of `aoc` replaced with `application` (more clear)
 
-* 4.3.0
+* 4.3.0 2021-10-19
 
   * New Features:
     * parameter `multi_incr_udp` for option `transfer_info`: control if UDP port is incremented when multi-session is used on [`direct`](README.md#agt_direct) transfer agent.
     * command `aoc files node_info` to get node information for a given folder in the Files application of AoC. Allows cross-org or cross-workspace transfers.
 
-* 4.2.2
+* 4.2.2 2021-09-23
 
   * New Features:
     * `faspex package list` retrieves the whole list, not just first page
@@ -322,13 +322,13 @@
     * for commands that potentially execute several transfers (`package recv --id=ALL`), if one transfer fails then ascli exits with code 1 (instead of zero=success)
     * option `notify` or `aoc` replaced with `notif_to` and `notif_template`
 
-* 4.2.1
+* 4.2.1 2021-09-01
 
   * New Features:
     * command `faspex package recv` supports link of type: `faspe:`
     * command `faspex package recv` supports option `recipient` to specify dropbox with leading `*`
 
-* 4.2.0
+* 4.2.0 2021-08-24
 
   * New Features:
     * command `aoc remind` to receive organization membership by email
@@ -344,7 +344,7 @@
     * `aoc apiinfo` is removed, use `aoc servers` to provide the list of cloud systems
     * parameters for resume in `transfer-info` for [`direct`](README.md#agt_direct) are now in sub-key `"resume"`
 
-* 4.1.0
+* 4.1.0 2021-06-23
 
   * New Features:
     * update documentation with regard to offline and docker installation
@@ -362,7 +362,7 @@
     * remove keys from transfer spec and command line when not needed
     * default to create_dir:true so that sending single file to a folder does not rename file if folder does not exist
 
-* 4.0.0
+* 4.0.0 2021-02-03
 
   * New Features:
     * now available as open source (github) with general cleanup
