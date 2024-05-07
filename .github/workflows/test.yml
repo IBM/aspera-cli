@@ -32,9 +32,17 @@ jobs:
         CF_HSTS_SSH_USER: "${{ secrets.CF_HSTS_SSH_USER }}"
         CF_HSTS_SSH_PASS: "${{ secrets.CF_HSTS_SSH_PASS }}"
 
-    - name: Run ascli test
+    - name: Run ascli test browse
       run: bundle exec ascli server br /
       env:
         ASCLI_URL: "ssh://eudemo.asperademo.com:33001"
         ASCLI_USERNAME: "${{ secrets.CF_HSTS_SSH_USER }}"
         ASCLI_PASSWORD: "${{ secrets.CF_HSTS_SSH_PASS }}"
+    
+    - name: Run ascli test transfer
+      run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.bin?1k'
+      env:
+        ASCLI_URL: "ssh://eudemo.asperademo.com:33001"
+        ASCLI_USERNAME: "${{ secrets.CF_HSTS_SSH_USER }}"
+        ASCLI_PASSWORD: "${{ secrets.CF_HSTS_SSH_PASS }}"
+      
