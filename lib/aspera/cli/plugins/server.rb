@@ -53,8 +53,8 @@ module Aspera
               [address_or_url]
             else
               [
-                "ssh://#{address_or_url}:33001",
-                "ssh://#{address_or_url}:22"
+                "#{SSH_SCHEME}://#{address_or_url}:33001",
+                "#{SSH_SCHEME}://#{address_or_url}:22"
               ]
               # wss not practical as it requires a token
             end
