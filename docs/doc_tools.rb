@@ -183,6 +183,9 @@ def generate_generic_conf
   o = YAML.load_file(local_config)
   o.each do |k, h|
     h.each do |p, v|
+      if p.eql?('ignore_certificate') && v.is_a?(Array) && v.all?(String)
+        v.map!{|s|s.gsub('aspera-emea', 'example')}
+      end
       next unless v.is_a?(String)
       next if v.start_with?('@preset:')
       if k.eql?('config') && p.eql?('version')
@@ -210,7 +213,7 @@ def generate_generic_conf
         uri.host = if uri.host.end_with?('.ibmaspera.com')
           'example.ibmaspera.com'
         else
-          uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example')
+          uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example').gsub('my_local_server', '127.0.0.1')
         end
         if uri.query.is_a?(String)
           uri.query = uri.query.gsub(/&?token=[^&]*/, 'token=some_token')
