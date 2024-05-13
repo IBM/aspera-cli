@@ -10,7 +10,7 @@
 
 ## Introduction
 
-Version : 4.17.0.pre
+Version : 4.17.0
 
 Laurent/2016-2024
 
@@ -92,7 +92,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```console
 $ ascli --version
-4.17.0.pre
+4.17.0
 ```
 
 ### First use
@@ -484,7 +484,7 @@ gem install rmagick grpc mimemagic
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```bash
-gem install aspera-cli --pre
+gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -659,7 +659,7 @@ ascli -v
 ```
 
 ```text
-4.17.0.pre
+4.17.0
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -3396,7 +3396,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.17.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.17.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
