@@ -37,6 +37,7 @@ module Aspera
         PER_PAGE_DEFAULT = 100
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt boot].freeze
+        HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
         private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED PATH_HEALTH API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT
                              STD_AUTH_TYPES])
         class << self
@@ -396,6 +397,45 @@ module Aspera
           return Main.result_transfer_multiple(result_transfer)
         end
 
+        # browse a folder
+        # @param browse_endpoint [String] the endpoint to browse
+        def browse_folder(browse_endpoint)
+          path = options.get_next_argument('folder path', mandatory: false, default: '/')
+          query = query_read_delete(default: {})
+          query['filters'] = {} unless query.key?('filters')
+          filters = query.delete('filters')
+          filters['basenames'] = [] unless filters.key?('basenames')
+          Aspera.assert_type(filters, Hash){'filters'}
+          max_items = query.delete('max')
+          recursive = query.delete('recursive')
+          all_items = []
+          folders_to_process = [path]
+          until folders_to_process.empty?
+            path = folders_to_process.shift
+            query.delete('iteration_token')
+            loop do
+              response = @api_v5.call(
+                operation:   'POST',
+                subpath:     browse_endpoint,
+                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
+                url_params:  query,
+                json_params: {'path' => path, 'filters' => filters})
+              all_items.concat(response[:data]['items'])
+              if recursive
+                folders_to_process.concat(response[:data]['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
+              end
+              if !max_items.nil? && (all_items.count >= max_items)
+                all_items = all_items.slice(0, max_items) if all_items.count > max_items
+                break
+              end
+              iteration_token = response[:http][HEADER_ITERATION_TOKEN]
+              break if iteration_token.nil? || iteration_token.empty?
+              query['iteration_token'] = iteration_token
+            end
+          end
+          return {type: :object_list, data: all_items}
+        end
+
         def package_action
           command = options.get_next_command(%i[show browse status delete receive send list])
           package_id =
@@ -406,33 +446,12 @@ module Aspera
           when :show
             return {type: :single_object, data: @api_v5.read("packages/#{package_id}")[:data]}
           when :browse
-            path = options.get_next_argument('path', expected: :single, mandatory: false, default: '/')
-            folders_to_process = [path]
-            query = query_read_delete(default: {})
-            recursive = query.delete('recursive')
-            result = {
-              item_count:  0,
-              total_count: 0,
-              items:       []
-            }
-            until folders_to_process.empty?
-              path = folders_to_process.shift
-              # TODO: support multi-page listing ? offset, limit
-              folder = @api_v5.call(
-                operation:   'POST',
-                subpath:     "packages/#{package_id}/files/received",
-                headers:     {'Accept' => 'application/json'},
-                url_params:  query,
-                json_params: {'path' => path, 'filters' => {'basenames'=>[]}})[:data]
-              result[:item_count] += folder['item_count']
-              result[:total_count] += folder['total_count']
-              result[:items].concat(folder['items'])
-              if recursive
-                folders_to_process.concat(folder['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
-              end
+            location = case options.get_option(:box)
+            when 'inbox' then 'received'
+            when 'outbox' then 'sent'
+            else raise 'Browse only available for inbox and outbox'
             end
-            formatter.display_item_count(result[:item_count], result[:total_count])
-            return {type: :object_list, data: result[:items]}
+            return browse_folder("packages/#{package_id}/files/#{location}")
           when :status
             status = wait_package_status(package_id, status_list: nil)
             return {type: :single_object, data: status}
@@ -542,21 +561,9 @@ module Aspera
                 raise "multiple matches for #{field} = #{value}" if matches.length > 1
                 matches.first['id']
               end
-              path = options.get_next_argument('folder path', mandatory: false) || '/'
               node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
               raise "No such shared folder id #{shared_folder_id}" if node.nil?
-              result = @api_v5.call(
-                operation:   'POST',
-                subpath:     "nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse",
-                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
-                json_params: {'path': path, 'filters': {'basenames': []}},
-                url_params:  {offset: 0, limit: 100}
-              )[:data]
-              if result.key?('items')
-                return {type: :object_list, data: result['items']}
-              else
-                return {type: :single_object, data: result['self']}
-              end
+              return browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
             end
           when :admin
             case options.get_next_command(%i[resource smtp].freeze)
@@ -586,7 +593,7 @@ module Aspera
                 available_commands.push(:members, :saml_groups, :invite_external_collaborator)
                 special_query = {'all': true}
               when :nodes
-                available_commands.push(:shared_folders)
+                available_commands.push(:shared_folders, :browse)
               end
               res_command = options.get_next_command(available_commands)
               case res_command
@@ -604,6 +611,8 @@ module Aspera
                          lookup_entity_by_field(
                            type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
                        end
+              when :browse
+                return browse_folder("#{res_path}/#{instance_identifier}/browse")
               when :invite_external_collaborator
                 shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value)['id']}
                 creation_payload = value_create_modify(command: res_command, type: [Hash, String])

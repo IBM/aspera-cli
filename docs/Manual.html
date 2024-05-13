@@ -7412,13 +7412,21 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb422-1"><a href
 <h2 data-number="9.9" id="faspex-5-content-of-a-received-package"><span
 class="header-section-number">9.9</span> Faspex 5: Content of a received
 Package</h2>
+<blockquote>
+<p><strong>Note:</strong> Listing content also applies to shares folder,
+nodes, and received packages (using <code>--box=outbox</code>).</p>
+</blockquote>
 <p>To list the content of a package, use command
-<code>faspex5 packages browse /</code>. To list recursively add option
+<code>faspex5 packages browse /</code>.</p>
+<p>Option <code>query</code> is available.</p>
+<p>To list recursively add option
 <code>--query=@json:{"recursive":true}</code>.</p>
 <blockquote>
-<p><strong>Note:</strong> This option makes recursive API calls, so it
-can take a long time on large packages.</p>
+<p><strong>Note:</strong> Option <code>recirsive</code> makes recursive
+API calls, so it can take a long time on large packages.</p>
 </blockquote>
+<p>To limit the number of items retrieved, use option
+<code>--query=@json:{"max":10}</code>.</p>
 <h2 data-number="9.10" id="faspex-5-receive-a-package"><span
 class="header-section-number">9.10</span> Faspex 5: Receive a
 package</h2>

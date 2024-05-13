@@ -3,15 +3,16 @@
 * 4.17.0
 
   * New Features:
-    * `aoc`: Automatic detection of HTTPGW.
-    * `shares`: Added group membership management.
     * `faspex5`: Automatic detection of HTTPGW.
     * `faspex5`: Support public and private invitations.
     * `faspex5`: Public links: Auto-fill recipient.
     * `faspex5`: Recursive content of package.
+    * `faspex5`: Folder browsing now uses paging, requires >= 5.0.8.
+    * `aoc`: Automatic detection of HTTPGW.
+    * `shares`: Added group membership management.
   * Issues Fixed:
     * `aoc`: `exclude_dropbox_packages` query option can be overridden (#135)
-    * **global**: Removed gem dependency on `bigdecimal`
+    * **global**: Removed gem dependency on `bigdecimal` (not used and requires compilation)
     * **global**: Tested with JRuby 9.4.6.0 (use `ServerSocket` instead of `Socket`)
     * **global**: Update version for gem `terminal-table` to 3.0.2
   * Breaking Changes:

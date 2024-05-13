@@ -5202,10 +5202,17 @@ Examples:
 
 ### Faspex 5: Content of a received Package
 
+> **Note:** Listing content also applies to shares folder, nodes, and received packages (using `--box=outbox`).
+
 To list the content of a package, use command `faspex5 packages browse /`.
+
+Option `query` is available.
+
 To list recursively add option `--query=@json:{"recursive":true}`.
 
-> **Note:** This option makes recursive API calls, so it can take a long time on large packages.
+> **Note:** Option `recirsive` makes recursive API calls, so it can take a long time on large packages.
+
+To limit the number of items retrieved, use option `--query=@json:{"max":10}`.
 
 ### Faspex 5: Receive a package
 
