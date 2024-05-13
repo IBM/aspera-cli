@@ -65,7 +65,21 @@ TODO: document installation of tool chain.
 ### Documentation
 
 Documentation is generated with `pandoc` and `LaTeX`.
-IBM font `Plex` is used, see [IBM Plex](https://www.ibm.com/plex/).
+
+IBM font `Plex` is used, for installation see [IBM Plex](https://www.ibm.com/plex/).
+
+On macOS to install `lualatex` and all packages:
+
+```bash
+brew install texlive
+```
+
+If `lualatex` is installed using another method, ensure that the following packages are installed:
+
+```bash
+tlmgr update --self
+tlmgr install fvextra selnolig lualatex-math
+```
 
 ## Running Tests
 
