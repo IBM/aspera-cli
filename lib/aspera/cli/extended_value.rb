@@ -91,7 +91,7 @@ module Aspera
       # other value types are returned as is
       def evaluate(value)
         return value unless value.is_a?(String)
-        regex = Regexp.new("^#{ext_re}(.*)$")
+        regex = Regexp.new("^#{ext_re}(.*)$", Regexp::MULTILINE)
         # first determine decoders, in reversed order
         handlers_reversed = []
         while (m = value.match(regex))
@@ -101,6 +101,7 @@ module Aspera
           # stop processing if handler is extend (it will be processed later)
           break if handler.eql?(:extend)
         end
+        Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value}"}
         handlers_reversed.each do |handler|
           value = @handlers[handler].call(value)
         end

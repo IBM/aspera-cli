@@ -156,12 +156,14 @@ module Aspera
         until argv.empty?
           value = argv.shift
           if process_options && value.start_with?('-')
+            Log.log.trace1{"opt: #{value}"}
             if value.eql?('--')
               process_options = false
             else
               @unprocessed_cmd_line_options.push(value)
             end
           else
+            Log.log.trace1{"arg: #{value}"}
             @unprocessed_cmd_line_arguments.push(value)
           end
         end

@@ -88,6 +88,8 @@ module Aspera
         @option_help = false
         @option_show_config = false
         @bash_completion = false
+        early_debug_setup
+        Log.log.trace2{Log.dump(:argv, @argv)}
       end
 
       # This can throw exception if there is a problem with the environment, needs to be caught by execute method
@@ -95,8 +97,6 @@ module Aspera
         @plug_init[:only_manual] = false
         # create formatter, in case there is an exception, it is used to display.
         @plug_init[:formatter] = Formatter.new
-        # second : manage debug level (allows debugging of option parser)
-        early_debug_setup
         @plug_init[:options] = Manager.new(PROGRAM_NAME)
         # give command line arguments to option manager
         options.parse_command_line(@argv)
