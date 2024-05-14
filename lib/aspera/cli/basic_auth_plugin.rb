@@ -8,10 +8,7 @@ module Aspera
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Cli::Plugin
       class << self
-        #@@basic_options_declared = false # rubocop:disable Style/ClassVars
         def declare_options(options) # , force: false
-          #return if @@basic_options_declared && !force
-          #@@basic_options_declared = true # rubocop:disable Style/ClassVars
           options.declare(:url, 'URL of application, e.g. https://faspex.example.com/aspera/faspex')
           options.declare(:username, "User's name to log in")
           options.declare(:password, "User's password")
@@ -21,7 +18,6 @@ module Aspera
 
       def initialize(basic_options: true, **env)
         super(**env)
-        # , force: env[:all_manuals]
         BasicAuthPlugin.declare_options(options) if basic_options
       end
 
@@ -41,6 +37,6 @@ module Aspera
       def basic_auth_api(subpath=nil)
         return Rest.new(**basic_auth_params(subpath))
       end
-    end # BasicAuthPlugin
-  end # Cli
-end # Aspera
+    end
+  end
+end
