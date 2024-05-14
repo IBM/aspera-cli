@@ -7244,10 +7244,12 @@ This also requires Ruby header files.
 If Ruby was installed as a Linux Packages, then also install Ruby development package:
 `ruby-dev` or `ruby-devel`, depending on distribution.
 
-### ED255519 key not supported
+### ED25519 key not supported
 
 ED25519 keys are deactivated since `ascli` version 0.9.24 as it requires additional gems that require native compilation and thus caused problems.
 This type of key will just be ignored.
+
+To re-activate, set env var `ASCLI_ENABLE_ED25519` to `true`.
 
 Without this deactivation, if such key was present in user's `.ssh` folder then the following error was generated:
 
@@ -7258,4 +7260,5 @@ OpenSSH keys only supported if ED25519 is available
 Which meant that you do not have Ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key from your `.ssh` folder to solve the issue.
 
-To re-activate, set env var `ASCLI_ENABLE_ED25519` to `true`.
+In addition, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also de-activated by default.
+To re-activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.

@@ -8983,17 +8983,19 @@ This also requires Ruby header files. If Ruby was installed as a Linux
 Packages, then also install Ruby development package:
 <code>ruby-dev</code> or <code>ruby-devel</code>, depending on
 distribution.</p>
-<h2 data-number="23.3" id="ed255519-key-not-supported"><span
-class="header-section-number">23.3</span> ED255519 key not
-supported</h2>
+<h2 data-number="23.3" id="ed25519-key-not-supported"><span
+class="header-section-number">23.3</span> ED25519 key not supported</h2>
 <p>ED25519 keys are deactivated since <code>ascli</code> version 0.9.24
 as it requires additional gems that require native compilation and thus
 caused problems. This type of key will just be ignored.</p>
+<p>To re-activate, set env var <code>ASCLI_ENABLE_ED25519</code> to
+<code>true</code>.</p>
 <p>Without this deactivation, if such key was present in user’s
 <code>.ssh</code> folder then the following error was generated:</p>
 <pre class="output"><code>OpenSSH keys only supported if ED25519 is available</code></pre>
 <p>Which meant that you do not have Ruby support for ED25519 SSH keys.
 You may either install the suggested Gems, or remove your ed25519 key
 from your <code>.ssh</code> folder to solve the issue.</p>
-<p>To re-activate, set env var <code>ASCLI_ENABLE_ED25519</code> to
-<code>true</code>.</p>
+<p>In addition, host keys of type: <code>ecdsa-sha2</code> and
+<code>ecdh-sha2</code> are also de-activated by default. To re-activate,
+set env var <code>ASCLI_ENABLE_ECDSHA2</code> to <code>true</code>.</p>
