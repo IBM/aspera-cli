@@ -67,7 +67,7 @@ module Aspera
           raise "invalid options: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
           return Main.result_status(Preview::Terminal.build(blob, **terminal_options))
         end
-      end # self
+      end
 
       private
 
@@ -347,7 +347,7 @@ module Aspera
           Process.exit(1)
         end
         return nil
-      end # process_command_line
-    end # Main
-  end # Cli
-end # Aspera
+      end
+    end
+  end
+end

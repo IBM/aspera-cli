@@ -262,6 +262,6 @@ module Aspera
         end
         return value
       end
-    end # Plugin
-  end # Cli
-end # Aspera
+    end
+  end
+end

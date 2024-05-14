@@ -136,8 +136,8 @@ module Aspera
               @shared_info[:cond_var].signal
             end
             break
-          end # begin/rescue
-        end # loop
+          end
+        end
         Log.log.debug do
           "#{LOG_WS_RECV}exception: #{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"
         end unless @shared_info[:read_exception].nil?
@@ -266,7 +266,7 @@ module Aspera
             file.close
           end
           file_index += 1
-        end # loop on files
+        end
         # throttling may have skipped last one
         notify_progress(type: :transfer, session_id: session_id, info: session_sent_bytes)
         notify_progress(type: :end, session_id: session_id)
@@ -325,7 +325,7 @@ module Aspera
         else
           raise "unexpected direction: [#{transfer_spec['direction']}]"
         end
-      end # start_transfer
+      end
 
       # wait for completion of all jobs started
       # @return list of :success or error message
@@ -358,6 +358,6 @@ module Aspera
         @options.freeze
         Log.log.debug{Log.dump(:agent_options, @options)}
       end
-    end # AgentHttpgw
+    end
   end
 end

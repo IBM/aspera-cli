@@ -84,7 +84,7 @@ module Aspera
       ensure
         $stderr = real_stderr
       end
-    end # class
+    end
 
     attr_reader :logger_type, :logger
     attr_writer :program_name

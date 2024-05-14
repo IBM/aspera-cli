@@ -102,7 +102,7 @@ module Aspera
             end
           end
         end
-      end # Console
-    end # Plugins
-  end # Cli
-end # Aspera
+      end
+    end
+  end
+end

@@ -252,6 +252,6 @@ module Aspera
           '+repage',
           @destination_file_path])
       end
-    end # Generator
-  end # Preview
-end # Aspera
+    end
+  end
+end

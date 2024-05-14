@@ -8,7 +8,8 @@ module Aspera
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Cli::Plugin
       class << self
-        def declare_options(options) # , force: false
+# , force: false
+        def declare_options(options)
           options.declare(:url, 'URL of application, e.g. https://faspex.example.com/aspera/faspex')
           options.declare(:username, "User's name to log in")
           options.declare(:password, "User's password")

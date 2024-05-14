@@ -103,7 +103,7 @@ module Aspera
 
         # static methods
         attr_reader :file_list_folder
-      end # self
+      end
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(job_spec, options)
@@ -247,6 +247,6 @@ module Aspera
         Log.log.debug{"ascp args: #{env_args}"}
         return env_args
       end
-    end # Parameters
+    end
   end
 end

@@ -117,6 +117,6 @@ module Aspera
           return output_file
         end
       end
-    end # Options
-  end # Preview
-end # Aspera
+    end
+  end
+end

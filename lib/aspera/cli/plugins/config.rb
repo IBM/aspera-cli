@@ -141,7 +141,7 @@ module Aspera
             Aspera.assert(!app_name.empty?)
             return File.join(module_family_folder, app_name)
           end
-        end # self
+        end
 
         def initialize(gem:, name:, help:, version:, **env)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
@@ -639,7 +639,7 @@ module Aspera
             app_name = detect_plugin_class.respond_to?(:application_name) ? detect_plugin_class.application_name : detect_plugin_class.name.split('::').last
             # if there is a redirect, then the detector can override the url.
             found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
-          end # loop
+          end
           raise "No known application found at #{app_url}" if found_apps.empty?
           Aspera.assert(found_apps.all?{|a|a.keys.all?(Symbol)})
           return found_apps
@@ -1198,7 +1198,7 @@ module Aspera
             return default_config_name
           end
           return nil
-        end # get_plugin_default_config_name
+        end
 
         # TODO: delete: ALLOWED_KEYS = %i[password username description].freeze
         # @return [Hash] result of execution of vault command

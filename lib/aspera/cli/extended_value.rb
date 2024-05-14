@@ -110,7 +110,7 @@ module Aspera
           value = @handlers[handler].call(value)
         end
         return value
-      end # evaluate
+      end
 
       # find inner extended values
       def evaluate_all(value)

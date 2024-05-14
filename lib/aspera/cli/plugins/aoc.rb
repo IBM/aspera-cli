@@ -350,9 +350,9 @@ module Aspera
               client_direction,
               add_ts)))
           else Aspera.error_unreachable_line
-          end # command_repo
+          end
           Aspera.error_unreachable_line
-        end # execute_nodegen4_command
+        end
 
         def execute_admin_action
           # upgrade scope to admin
@@ -696,7 +696,7 @@ module Aspera
                 ids_to_download = all_ids.reject{|id|skip_ids_data.include?(id)}
               else
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
-              end # ExtendedValue::ALL
+              end
               # list here
               result_transfer = []
               formatter.display_status("found #{ids_to_download.length} package(s).")
@@ -847,8 +847,8 @@ module Aspera
                   # TODO: event ?
                 end
                 return {type: :single_object, data: result_create_short_link}
-              end # short_link command
-            end # files command
+              end
+            end
             raise 'Error: shall not reach this line'
           when :automation
             Log.log.warn('BETA: work under progress')
@@ -891,7 +891,7 @@ module Aspera
             server.start
             return Main.result_status('Gateway terminated')
           else Aspera.error_unreachable_line
-          end # action
+          end
           Aspera.error_unreachable_line
         end
 

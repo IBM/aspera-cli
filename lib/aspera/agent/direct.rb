@@ -118,7 +118,7 @@ module Aspera
           end
         end
         return session[:job_id]
-      end # start_transfer
+      end
 
       # wait for completion of all jobs started
       # @return list of :success or error message
@@ -261,7 +261,7 @@ module Aspera
               nil
             else
               raise "unexpected last event type: #{last_event['Type']}"
-            end # case
+            end
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
@@ -286,8 +286,8 @@ module Aspera
               Log.log.error(message)
             end
           end
-        end # begin-ensure
-      end # start_transfer_with_args_env
+        end
+      end
 
       # @return [Array] list of sessions for a job
       def sessions_by_job(job_id)
@@ -355,6 +355,6 @@ module Aspera
         end
         Log.log.debug{"EXIT (#{Thread.current[:name]})"}
       end
-    end # AgentDirect
+    end
   end
 end

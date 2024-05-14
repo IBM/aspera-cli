@@ -391,7 +391,7 @@ module Aspera
                 Log.log.debug{Log.dump(:package_entry, package_entry)}
                 transfer_uri = self.class.get_fasp_uri_from_entry(package_entry)
                 pkg_id_uri = [{id: package_entry['id'], uri: transfer_uri}]
-              end # public link
+              end
               # prune packages already downloaded
               # TODO : remove ids from skip not present in inbox to avoid growing too big
               # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
@@ -526,9 +526,9 @@ module Aspera
             login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'})[:http].body
             login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
             return {type: :object_list, data: login_methods['XRD']['Service']}
-          end # command
+          end
         end
       end
     end
-  end # Cli
-end # Aspera
+  end
+end

@@ -28,7 +28,7 @@ module Aspera
       response.body = '<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>'
       return nil
     end
-  end # WebAuthServlet
+  end
 
   # start a local web server, then start a browser that will callback the local server upon authentication
   class WebAuth < WebServerSimple

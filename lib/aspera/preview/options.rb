@@ -36,6 +36,6 @@ module Aspera
       DESCRIPTIONS.each do |opt|
         attr_accessor opt[:name]
       end
-    end # Options
-  end # Preview
-end # Aspera
+    end
+  end
+end

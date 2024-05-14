@@ -510,7 +510,7 @@ module Aspera
               data:   list_packages_with_filter,
               fields: %w[id title release_date total_bytes total_files created_time state]
             }
-          end # case package
+          end
         end
 
         ACTIONS = %i[health version user bearer_token packages shared_folders admin gateway postprocessing invitations].freeze
@@ -714,9 +714,9 @@ module Aspera
             server.mount(uri.path, Faspex4PostProcServlet, parameters[:processing])
             server.start
             return Main.result_status('Gateway terminated')
-          end # case command
-        end # action
-      end # Faspex5
-    end # Plugins
-  end # Cli
-end # Aspera
+          end
+        end
+      end
+    end
+  end
+end

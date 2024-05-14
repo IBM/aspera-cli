@@ -209,7 +209,7 @@ module Aspera
             h[new_name] = value
           end
         end
-      end # class << self
+      end
 
       def initialize
         # current event being parsed line by line
@@ -236,7 +236,7 @@ module Aspera
           return @last_event
         else
           raise "mgt port: unexpected line: [#{line}]"
-        end # case
+        end
         return nil
       end
     end

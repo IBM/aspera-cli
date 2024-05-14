@@ -338,7 +338,7 @@ module Aspera
         rescue StandardError => e
           Log.log.error{"Ignore: #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
-        end # generate_preview
+        end
 
         # scan all files in provided folder entry
         # @param top_path subpath to start folder scan inside

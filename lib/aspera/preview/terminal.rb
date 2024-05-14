@@ -95,7 +95,7 @@ module Aspera
           end
           false
         end
-      end # class << self
-    end # class Terminal
-  end # module Preview
-end # module Aspera
+      end
+    end
+  end
+end

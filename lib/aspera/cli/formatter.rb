@@ -85,7 +85,7 @@ module Aspera
           flatten_any(v, "#{prefix}#{k}")
         end
       end
-    end # class
+    end
 
     # Take care of output
     class Formatter
@@ -150,7 +150,7 @@ module Aspera
           end
           return result
         end
-      end # self
+      end
 
       # initialize the formatter
       def initialize

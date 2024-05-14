@@ -35,7 +35,7 @@ Style/RescueModifier:
 Style/Lambda:
   Enabled: false
 Style/CommentedKeyword:
-  Enabled: false
+  Enabled: true
 Style/NegatedIf:
   Enabled: false
 Style/SingleLineMethods:

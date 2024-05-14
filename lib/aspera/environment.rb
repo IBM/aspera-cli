@@ -125,6 +125,6 @@ module Aspera
         @use_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @use_unicode.nil?
         return @use_unicode
       end
-    end # self
-  end # Environment
-end # Aspera
+    end
+  end
+end

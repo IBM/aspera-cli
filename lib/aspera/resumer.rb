@@ -71,7 +71,7 @@ module Aspera
         sleep_seconds *= @parameters[:sleep_factor]
         # cap value
         sleep_seconds = @parameters[:sleep_max] if sleep_seconds > @parameters[:sleep_max]
-      end # loop
+      end
     end
   end
 end

@@ -133,11 +133,11 @@ module Aspera
           json_data = resp[:http].body
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(token_id, json_data)
-        end # if ! in_cache
+        end
         Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"}
         # ok we shall have a token here
         return OAuth::Factory.bearer_build(token_data[@token_field])
       end
-    end # OAuth
+    end
   end
 end

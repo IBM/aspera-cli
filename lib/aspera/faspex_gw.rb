@@ -94,5 +94,5 @@ module Aspera
         response.body = {error: 'Unsupported endpoint'}.to_json
       end
     end
-  end # Faspex4GWServlet
-end # Aspera
+  end
+end

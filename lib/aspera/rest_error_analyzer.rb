@@ -80,7 +80,7 @@ module Aspera
           end
         end
       end
-    end # add_simple_handler
+    end
 
     class << self
       # used by handler to add an error description to list of errors

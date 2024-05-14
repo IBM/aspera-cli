@@ -61,7 +61,7 @@ module Aspera
             RestErrorAnalyzer.add_error(call_context, type, "missing parameter: #{param}")
           end
         end
-      end # register_handlers
+      end
     end
   end
 end

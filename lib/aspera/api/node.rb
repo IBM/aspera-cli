@@ -205,7 +205,7 @@ module Aspera
             end
           end
         end
-      end # process_folder_tree
+      end
 
       # Navigate the path from given file id
       # @param top_file_id [String] id initial file id

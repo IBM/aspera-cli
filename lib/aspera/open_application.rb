@@ -43,7 +43,7 @@ module Aspera
           uri_graphical(file_path.to_s)
         end
       end
-    end # self
+    end
 
     attr_accessor :url_method
 
@@ -67,5 +67,5 @@ module Aspera
         raise StandardError, "unsupported url open method: #{@url_method}"
       end
     end
-  end # OpenApplication
-end # Aspera
+  end
+end

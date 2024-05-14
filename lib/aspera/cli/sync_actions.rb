@@ -60,9 +60,9 @@ module Aspera
             sync_session_name = options.get_next_argument('name of sync session', mandatory: false, type: String)
             async_params = options.get_option(:sync_info, mandatory: true)
             return {type: :single_object, data: Transfer::Sync.admin_status(async_params, sync_session_name)}
-          end # command2
-        end # command
-      end # execute_action
-    end # SyncActions
-  end # Cli
-end # Aspera
+          end
+        end
+      end
+    end
+  end
+end

@@ -574,9 +574,9 @@ module Aspera
             else Aspera.error_unreachable_line
             end
           else Aspera.error_unreachable_line
-          end # command_repo
+          end
           Aspera.error_unreachable_line
-        end # execute_command_gen4
+        end
 
         # This is older API
         def execute_async
@@ -914,7 +914,7 @@ module Aspera
             server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], transfer)
             server.start
             return Main.result_status('Simulator terminated')
-          end # case command
+          end
           raise 'ERROR: shall not reach this line'
         end
       end

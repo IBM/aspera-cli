@@ -122,7 +122,7 @@ module Aspera
           return [e]
         end
         return [:success]
-      end # wait
-    end # AgentConnect
+      end
+    end
   end
 end

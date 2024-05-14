@@ -196,11 +196,11 @@ module Aspera
               end
               result[:data] = call_ao('initiate', id: wf_id, args: call_params, accept: override_accept)[:data]
               return result
-            end # wf command
+            end
           else Aspera.error_unexpected_value(command)
-          end # case command
-        end # execute_action
-      end # Orchestrator
-    end # Plugins
-  end # Cli
-end # Aspera
+          end
+        end
+      end
+    end
+  end
+end

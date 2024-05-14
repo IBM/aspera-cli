@@ -347,7 +347,7 @@ module Aspera
             # rename at the end
             File.rename(target_file_tmp, target_file)
             file_saved = true
-          end # save_to_file
+          end
         end
         # sometimes there is a UTF8 char (e.g. (c) ), TODO : related to mime type encoding ?
         # result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
@@ -376,7 +376,7 @@ module Aspera
           end
           Log.log.debug{"using new token=#{headers['Authorization']}"}
           retry if (oauth_tries -= 1).nonzero?
-        end # if oauth
+        end
         # redirect ? (any code beginning with 3)
         if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
           tries_remain_redirect -= 1
@@ -396,7 +396,7 @@ module Aspera
         end
         # raise exception if could not retry and not return error in result
         raise e unless return_error
-      end # begin request
+      end
       Log.log.debug{"result=#{result}"}
       return result
     end
@@ -453,4 +453,4 @@ module Aspera
       end
     end
   end
-end # module Aspera
+end

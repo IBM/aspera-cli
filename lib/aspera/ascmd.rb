@@ -94,7 +94,7 @@ module Aspera
       raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
         result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
       return result
-    end # execute_single
+    end
 
     # This exception is raised when +ascmd+ returns an error.
     class Error < StandardError
@@ -103,7 +103,7 @@ module Aspera
 
       def message; "ascmd: #{@errstr} (#{@errno})"; end
       def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
-    end # Error
+    end
 
     # description of result structures (see ascmdtypes.h). Base types are big endian
     # key = name of type
@@ -211,7 +211,7 @@ module Aspera
             end
           end
         else Aspera.error_unexpected_value(type_descr[:decode])
-        end # is_a
+        end
         return result
       end
     end

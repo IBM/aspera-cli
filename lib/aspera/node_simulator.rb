@@ -209,5 +209,5 @@ module Aspera
           session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
       }
     end
-  end # NodeSimulatorServlet
-end # Aspera
+  end
+end

@@ -150,8 +150,8 @@ module Aspera
               end
             end
           end
-        end # execute action
-      end # Shares
-    end # Plugins
-  end # Cli
-end # Aspera
+        end
+      end
+    end
+  end
+end

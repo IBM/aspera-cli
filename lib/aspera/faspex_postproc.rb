@@ -74,5 +74,5 @@ module Aspera
         response.body = {status: 'error', script: script_path, message: e.message}.to_json
       end
     end
-  end # Faspex4PostProcServlet
-end # Aspera
+  end
+end

@@ -128,7 +128,7 @@ module Aspera
             organization:    parts[0]
           }
         end
-      end # static methods
+      end
 
       attr_reader :private_link
 
@@ -405,7 +405,7 @@ module Aspera
             end
           else # unexpected extended value, must be String or Hash
             raise "#{recipient_list_field} item must be a String (email, shared inbox) or Hash (id,type)"
-          end # type of recipient info
+          end
           # add original or resolved recipient info
           resolved_list.push(short_recipient_info)
         end

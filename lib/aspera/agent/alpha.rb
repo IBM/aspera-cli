@@ -111,7 +111,7 @@ module Aspera
           return [e]
         end
         return [:success]
-      end # wait
-    end # AgentAlpha
+      end
+    end
   end
 end
