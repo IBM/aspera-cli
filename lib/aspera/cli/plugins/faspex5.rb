@@ -10,7 +10,6 @@ require 'aspera/nagios'
 require 'aspera/environment'
 require 'aspera/assert'
 require 'securerandom'
-require 'tty-spinner'
 
 module Aspera
   module Cli
@@ -237,16 +236,10 @@ module Aspera
         end
 
         def wait_for_job(job_id)
-          spinner = nil
           loop do
             status = @api_v5.read("jobs/#{job_id}", {type: :formatted})[:data]
             return status unless JOB_RUNNING.include?(status['status'])
-            if spinner.nil?
-              spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
-              spinner.start
-            end
-            spinner.update(title: status['status'])
-            spinner.spin
+            formatter.long_operation_running(status['status'])
             sleep(0.5)
           end
           Aspera.error_unreachable_line
@@ -281,6 +274,7 @@ module Aspera
             remain_pages -= 1 unless remain_pages.nil?
             break if remain_pages == 0
             offset += page_result[item_list_key].length
+            formatter.long_operation_running
           end
           return result
         end
@@ -431,6 +425,7 @@ module Aspera
               iteration_token = response[:http][HEADER_ITERATION_TOKEN]
               break if iteration_token.nil? || iteration_token.empty?
               query['iteration_token'] = iteration_token
+              formatter.long_operation_running(all_items.count)
             end
           end
           return {type: :object_list, data: all_items}

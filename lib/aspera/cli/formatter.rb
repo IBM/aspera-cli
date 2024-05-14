@@ -6,6 +6,7 @@ require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
 require 'terminal-table'
+require 'tty-spinner'
 require 'yaml'
 require 'pp'
 
@@ -155,6 +156,18 @@ module Aspera
       # initialize the formatter
       def initialize
         @options = {}
+        @spinner = nil
+      end
+
+      # call this after REST calls if several api calls are expected
+      def long_operation_running(title = '')
+        return unless Environment.terminal?
+        if @spinner.nil?
+          @spinner = TTY::Spinner.new('[:spinner] :title', format: :classic)
+          @spinner.start
+        end
+        @spinner.update(title: title)
+        @spinner.spin
       end
 
       def option_handler(option_symbol, operation, value=nil)
