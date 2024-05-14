@@ -1048,45 +1048,48 @@ $(T)orch_nagios: $(T).exists
 	$(EXE_MAN) orchestrator health
 	$(EXE_BEG_ERR) orchestrator health --url=https://wrong.url --format=nagios$(EXE_END_ERR)
 	@$(STOP_TEST) $@
-$(T)o2: $(T).exists
+$(T)orch_info: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator info
+	@$(STOP_TEST) $@
+$(T)orch_wf_list: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow list
 	@$(STOP_TEST) $@
-$(T)o3: $(T).exists
+$(T)orch_wf_sta: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow status ALL
 	@$(STOP_TEST) $@
-$(T)o4: $(T).exists
+$(T)orch_wf_inp: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow inputs @preset:orch.workflow_id
 	@$(STOP_TEST) $@
-$(T)o5: $(T).exists
+$(T)orch_wf_sti: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow status @preset:orch.workflow_id
 	@$(STOP_TEST) $@
-$(T)o6: $(T).exists
+$(T)orch_wf_str1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow start @preset:orch.workflow_id @json:'{"Param":"world !"}'
 	@$(STOP_TEST) $@
-$(T)o7: $(T).exists
+$(T)orch_wf_str2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow start @preset:orch.workflow_id @json:'{"Param":"world !"}' --result=ResultStep:Complete_status_message
 	@$(STOP_TEST) $@
-$(T)o8: $(T).exists
+$(T)orch_plugins: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator plugins
 	@$(STOP_TEST) $@
-$(T)o9: $(T).exists
+$(T)orch_processes: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator processes
 	@$(STOP_TEST) $@
-$(T)o10: $(T).exists
+$(T)orch_wf_details: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator workflow details @preset:orch.workflow_id
 	$(EXE_MAN) orchestrator workflow export @preset:orch.workflow_id
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,torc,$(T)orch_wizard $(T)orch_nagios $(T)o2 $(T)o3 $(T)o4 $(T)o5 $(T)o6 $(T)o7 $(T)o8 $(T)o9 $(T)o10))
+$(eval $(call test_suite_all,torc,$(T)orch_wizard $(T)orch_nagios $(T)orch_info $(T)orch_wf_list $(T)orch_wf_sta $(T)orch_wf_inp $(T)orch_wf_sti $(T)orch_wf_str1 $(T)orch_wf_str2 $(T)orch_plugins $(T)orch_processes $(T)orch_wf_details))
 #######################################################################################################################
 $(T)at4: $(T).exists
 	@$(START_TEST) $@

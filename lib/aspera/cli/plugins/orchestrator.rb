@@ -60,21 +60,25 @@ module Aspera
 
         ACTIONS = %i[health info workflow plugins processes].freeze
 
-        def call_ao(endpoint, opt={})
-          opt[:prefix] = 'api' unless opt.key?(:prefix)
+        # call orchestrator api
+        # @param endpoint [String] the endpoint to call
+        # @param prefix [String] the prefix to add to the endpoint
+        # @param id [String] the id to add to the endpoint
+        # @param ret_style [Symbol] the return style, :header, :arg, :ext(ension)
+        # @param format [String] the format to request, 'json', 'xml', nil
+        # @param args [Hash] the arguments to pass
+        # @param xml_arrays [Boolean] if true, force arrays in xml parsing
+        def call_ao(endpoint, prefix: 'api', id: nil, ret_style: nil, format: 'json', args: nil, xml_arrays: true)
           # calls are GET
           call_args = {operation: 'GET', subpath: endpoint}
           # specify prefix if necessary
-          call_args[:subpath] = "#{opt[:prefix]}/#{call_args[:subpath]}" unless opt[:prefix].nil?
+          call_args[:subpath] = "#{prefix}/#{call_args[:subpath]}" unless prefix.nil?
           # specify id if necessary
-          call_args[:subpath] = "#{call_args[:subpath]}/#{opt[:id]}" if opt.key?(:id)
-          call_type = options.get_option(:ret_style, mandatory: true)
-          call_type = opt[:ret_style] if opt.key?(:ret_style)
-          format = 'json'
-          format = opt[:format] if opt.key?(:format)
-          call_args[:url_params] = opt[:args] unless opt[:args].nil?
+          call_args[:subpath] = "#{call_args[:subpath]}/#{id}" unless id.nil?
+          ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
+          call_args[:url_params] = args unless args.nil?
           unless format.nil?
-            case call_type
+            case ret_style
             when :header
               call_args[:headers] = {'Accept' => "application/#{format}" }
             when :arg
@@ -82,11 +86,11 @@ module Aspera
               call_args[:url_params][:format] = format
             when :ext
               call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
-            else Aspera.error_unexpected_value(call_type)
+            else Aspera.error_unexpected_value(ret_style)
             end
           end
           result = @api_orch.call(**call_args)
-          result[:data] = XmlSimple.xml_in(result[:http].body, opt[:xml_opt] || {'ForceArray' => true}) if format.eql?('xml')
+          result[:data] = XmlSimple.xml_in(result[:http].body, {'ForceArray' => xml_arrays}) if format.eql?('xml')
           Log.log.debug{Log.dump(:data, result[:data])}
           return result
         end
@@ -121,7 +125,7 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              info = call_ao('remote_node_ping', format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+              info = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)[:data]
               nagios.add_ok('api', 'accessible')
               nagios.check_product_version('api', 'orchestrator', info['orchestrator-version'])
             rescue StandardError => e
@@ -129,7 +133,7 @@ module Aspera
             end
             return nagios.result
           when :info
-            result = call_ao('remote_node_ping', format: 'xml', xml_opt: {'ForceArray' => false})[:data]
+            result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)[:data]
             return {type: :single_object, data: result}
           when :processes
             # TODO: Bug ? API has only XML format
@@ -146,9 +150,8 @@ module Aspera
             end
             case command
             when :status
-              call_opts = {}
-              call_opts[:id] = wf_id unless wf_id.eql?(ExtendedValue::ALL)
-              result = call_ao('workflows_status', call_opts)[:data]
+              wf_id = nil if wf_id.eql?(ExtendedValue::ALL)
+              result = call_ao('workflows_status', id: wf_id)[:data]
               return {type: :object_list, data: result['workflows']['workflow']}
             when :list
               result = call_ao('workflows_list', id: 0)[:data]
@@ -172,7 +175,6 @@ module Aspera
                 data: nil
               }
               call_params = {format: :json}
-              override_accept = nil
               # get external parameters if any
               options.get_next_argument('external_parameters', mandatory: false, type: Hash, default: {}).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
@@ -192,14 +194,14 @@ module Aspera
               end
               if call_params['synchronous']
                 result[:type] = :text
-                override_accept = 'text/plain'
               end
-              result[:data] = call_ao('initiate', id: wf_id, args: call_params, accept: override_accept)[:data]
+              result[:data] = call_ao('initiate', id: wf_id, args: call_params)[:data]
               return result
             end
           else Aspera.error_unexpected_value(command)
           end
         end
+        private :call_ao
       end
     end
   end
