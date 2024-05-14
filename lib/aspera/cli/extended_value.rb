@@ -22,6 +22,10 @@ module Aspera
       ALL = 'ALL'
       DEF = 'DEF'
 
+      MARKER_START = '@'
+      MARKER_END = ':'
+      MARKER_IN_END = '@'
+
       class << self
         # decode comma separated table text
         def decode_csvt(value)
@@ -61,7 +65,7 @@ module Aspera
           list:   lambda{|v|v[1..-1].split(v[0])},
           none:   lambda{|v|ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
           path:   lambda{|v|File.expand_path(v)},
-          re:     lambda{|v|Regexp.new(v)},
+          re:     lambda{|v|Regexp.new(v, Regexp::MULTILINE)},
           ruby:   lambda{|v|Environment.secure_eval(v, __FILE__, __LINE__)},
           secret: lambda{|v|prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
@@ -84,7 +88,7 @@ module Aspera
 
       # Regex to match an extended value
       def ext_re
-        "@(#{modifiers.join('|')}):"
+        "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
       end
 
       # parse an option value if it is a String using supported extended value modifiers
@@ -110,10 +114,10 @@ module Aspera
 
       # find inner extended values
       def evaluate_all(value)
-        regex = Regexp.new("^(.*)#{ext_re}([^@]*)@(.*)$")
+        regex = Regexp.new("^(.*)#{ext_re}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
         while (m = value.match(regex))
           sub_value = "@#{m[2]}:#{m[3]}"
-          Log.log.debug("evaluating #{sub_value}")
+          Log.log.debug{"evaluating #{sub_value}"}
           value = m[1] + evaluate(sub_value) + m[4]
         end
         return value
