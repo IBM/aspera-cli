@@ -8,7 +8,6 @@ module Aspera
     # base class for applications supporting basic authentication
     class BasicAuthPlugin < Cli::Plugin
       class << self
-# , force: false
         def declare_options(options)
           options.declare(:url, 'URL of application, e.g. https://faspex.example.com/aspera/faspex')
           options.declare(:username, "User's name to log in")
@@ -25,7 +24,7 @@ module Aspera
       # returns a Rest object with basic auth
       def basic_auth_params(subpath=nil)
         api_url = options.get_option(:url, mandatory: true)
-        api_url = api_url + '/' + subpath unless subpath.nil?
+        api_url = "#{api_url}/#{subpath}" unless subpath.nil?
         return {
           base_url: api_url,
           auth:     {
