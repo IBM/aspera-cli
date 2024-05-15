@@ -16,16 +16,16 @@ module Aspera
 
       class << self
         def bearer_build(token)
-          return BEARER_PREFIX + token
+          return "#{BEARER_PREFIX}#{token}"
+        end
+
+        def bearer?(token)
+          return token.start_with?(BEARER_PREFIX)
         end
 
         def bearer_extract(token)
           Aspera.assert(bearer?(token)){'not a bearer token, wrong prefix'}
           return token[BEARER_PREFIX.length..-1]
-        end
-
-        def bearer?(token)
-          return token.start_with?(BEARER_PREFIX)
         end
 
         def id(*params)
@@ -46,11 +46,8 @@ module Aspera
         # token creation methods
         @token_type_classes = {}
         @decoders = []
-        @globals = {
-          # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
-          jwt_accepted_offset_sec:    300,
-          # one hour validity (TODO: configurable?)
-          jwt_expiry_offset_sec:      3600,
+        # default parameters, others can be added by handlers
+        @parameters = {
           # tokens older than 30 minutes will be discarded from cache
           token_cache_expiry_sec:     1800,
           # tokens valid for less than this duration will be regenerated
@@ -60,12 +57,12 @@ module Aspera
 
       public
 
-      attr_reader :globals
+      attr_reader :parameters
 
       def persist_mgr=(manager)
         @persist = manager
         # cleanup expired tokens
-        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @globals[:token_cache_expiry_sec])
+        @persist.garbage_collect(PERSIST_CATEGORY_TOKEN, @parameters[:token_cache_expiry_sec])
       end
 
       def persist_mgr

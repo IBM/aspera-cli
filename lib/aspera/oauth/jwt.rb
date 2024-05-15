@@ -5,41 +5,44 @@ require 'aspera/assert'
 require 'securerandom'
 module Aspera
   module OAuth
+    # remove 5 minutes to account for time offset between client and server (TODO: configurable?)
+    Factory.instance.parameters[:jwt_accepted_offset_sec] = 300
+    # one hour validity (TODO: configurable?)
+    Factory.instance.parameters[:jwt_expiry_offset_sec] = 3600
     # Authentication using private key
+    # https://tools.ietf.org/html/rfc7523
+    # https://tools.ietf.org/html/rfc7519
     class Jwt < Base
-      # @param g_o:private_key_obj [M] for type :jwt
-      # @param g_o:payload         [M] for type :jwt
-      # @param g_o:headers         [0] for type :jwt
+      # @param private_key_obj private key object
+      # @param payload payload to be included in the JWT
+      # @param headers headers to be included in the JWT
       def initialize(
-        payload:,
         private_key_obj:,
+        payload:,
         headers: {},
         **base_params
       )
-        Aspera.assert_type(payload, Hash){'payload'}
         Aspera.assert_type(private_key_obj, OpenSSL::PKey::RSA){'private_key_obj'}
+        Aspera.assert_type(payload, Hash){'payload'}
         Aspera.assert_type(headers, Hash){'headers'}
         super(**base_params)
         @private_key_obj = private_key_obj
-        @payload = payload
+        @additional_payload = payload
         @headers = headers
-        @identifiers.push(@payload[:sub])
+        @identifiers.push(@additional_payload[:sub])
       end
 
       def create_token
-        # https://tools.ietf.org/html/rfc7523
-        # https://tools.ietf.org/html/rfc7519
         require 'jwt'
         seconds_since_epoch = Time.new.to_i
         Log.log.info{"seconds=#{seconds_since_epoch}"}
-        Aspera.assert(@payload.is_a?(Hash)){'missing JWT payload'}
         jwt_payload = {
-          exp: seconds_since_epoch + OAuth::Factory.instance.globals[:jwt_expiry_offset_sec], # expiration time
-          nbf: seconds_since_epoch - OAuth::Factory.instance.globals[:jwt_accepted_offset_sec], # not before
-          iat: seconds_since_epoch - OAuth::Factory.instance.globals[:jwt_accepted_offset_sec] + 1, # issued at
+          exp: seconds_since_epoch + OAuth::Factory.instance.parameters[:jwt_expiry_offset_sec], # expiration time
+          nbf: seconds_since_epoch - OAuth::Factory.instance.parameters[:jwt_accepted_offset_sec], # not before
+          iat: seconds_since_epoch - OAuth::Factory.instance.parameters[:jwt_accepted_offset_sec] + 1, # issued at
           jti: SecureRandom.uuid # JWT id
-        }.merge(@payload)
-        Log.log.debug{"JWT jwt_payload=[#{jwt_payload}]"}
+        }.merge(@additional_payload)
+        Log.log.debug{Log.dump(:jwt_payload,jwt_payload)}
         Log.log.debug{"private=[#{@private_key_obj}]"}
         assertion = JWT.encode(jwt_payload, @private_key_obj, 'RS256', @headers)
         Log.log.debug{"assertion=[#{assertion}]"}

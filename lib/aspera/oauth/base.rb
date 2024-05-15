@@ -96,7 +96,7 @@ module Aspera
               elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
               end
             # force refresh if we see a token too close from expiration
-            use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < OAuth::Factory.instance.globals[:token_expiration_guard_sec]
+            use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < OAuth::Factory.instance.parameters[:token_expiration_guard_sec]
             Log.log.debug{"Expiration: #{expires_at_sec} / #{use_refresh_token}"}
           end
         end
