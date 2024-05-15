@@ -625,6 +625,7 @@ module Aspera
             detection_info = nil
             begin
               Log.log.debug{"detecting #{plugin_name_sym} at #{app_url}"}
+              formatter.long_operation_running("#{plugin_name_sym}\r")
               detection_info = detect_plugin_class.detect(app_url)
             rescue OpenSSL::SSL::SSLError => e
               Log.log.warn(e.message)
