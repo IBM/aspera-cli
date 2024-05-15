@@ -20,7 +20,7 @@ module Aspera
       # to avoid infinite loop in pub link redirection
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
-      # Well-known AoC globals client apps
+      # Well-known AoC global client apps
       GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
