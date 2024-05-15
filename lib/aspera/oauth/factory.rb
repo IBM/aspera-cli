@@ -32,6 +32,7 @@ module Aspera
           return [PERSIST_CATEGORY_TOKEN, *params].flatten
         end
 
+        # snake version of class name is the identifier
         def class_to_id(creator_class)
           return creator_class.name.split('::').last.capital_to_snake.to_sym
         end
@@ -104,7 +105,7 @@ module Aspera
       # @param id_create called to generate unique id for token, for cache
       def register_token_creator(creator_class)
         Aspera.assert_type(creator_class, Class)
-        id = self.class.class_to_id(creator_class)
+        id = Factory.class_to_id(creator_class)
         Log.log.debug{"registering token creator #{id}"}
         @token_type_classes[id] = creator_class
       end

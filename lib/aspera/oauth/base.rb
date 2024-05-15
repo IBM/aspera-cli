@@ -76,7 +76,7 @@ module Aspera
         # generate token unique identifier for persistency (memory/disk cache)
         token_id = IdGenerator.from_list(Factory.id(
           @base_url,
-          @grant_method,
+          Factory.class_to_id(self.class),
           @identifiers,
           @scope
         ))
