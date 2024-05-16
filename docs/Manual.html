@@ -80,7 +80,7 @@ is perfect.</p>
 class="header-section-number">1.3</span> Notations, Shell, Examples</h2>
 <p>Command line operations examples are shown using a shell such as:
 <code>bash</code> or <code>zsh</code>.</p>
-<p>Command line parameters in examples beginning with <code>my_</code>,
+<p>Command line arguments beginning with <code>my_</code> in examples,
 e.g. <code>my_param_value</code>, are user-provided value and not fixed
 value commands.</p>
 <p><code>ascli</code> is an API <strong>Client</strong> toward the
@@ -132,10 +132,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 +------------+--------+-----------+-------+---------------------------+-----------------------+</code></pre>
 <p>If you want to use <code>ascli</code> with another server, and in
 order to make further calls more convenient, it is advised to define a
-<a href="#option-preset">Option Preset</a>’ for the server’s
+<a href="#option-preset">Option Preset</a> for the server’s
 authentication options. The following example will:</p>
 <ul>
-<li>Create a <a href="#option-preset">Option Preset</a>’</li>
+<li>Create a <a href="#option-preset">Option Preset</a></li>
 <li>Define it as default for the <code>server</code> plugin</li>
 <li>List files in a folder</li>
 <li>Download a file</li>
@@ -795,7 +795,7 @@ SaaS)</li>
 <li>Any command line <strong>options</strong> (products URL, credentials
 or any option) can be provided on command line, in configuration file,
 in env var, in files, …</li>
-<li>Supports Commands, Option values and Parameters shortcuts</li>
+<li>Supports Commands, Options, and Option values shortcuts</li>
 <li>FASP <a href="#transfer-clients-agents">Transfer Agents</a> can be:
 local <code>ascp</code>, or Connect Client, or any transfer node</li>
 <li>Transfer parameters can be altered by modification of <a
@@ -861,9 +861,9 @@ line, possibly replacing variables, etc… See <a
 href="https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation">bash
 shell operation</a>. The shell builds the list of arguments and then
 <code>fork</code>/<code>exec</code> Ruby with that list. Ruby receives a
-list parameters from shell and gives it to <code>ascli</code>. Special
-character handling (quotes, spaces, env vars, …) is handled by the shell
-for any command executed.</p>
+list command line arguments from shell and gives it to
+<code>ascli</code>. Special character handling (quotes, spaces, env
+vars, …) is handled by the shell for any command executed.</p>
 <h3 data-number="4.2.2" id="shell-parsing-for-windows"><span
 class="header-section-number">4.2.2</span> Shell parsing for
 Windows</h3>
@@ -973,7 +973,8 @@ PS C:\&gt; ascli conf echo @json:&#39;{&quot;&quot;&quot;k&quot;&quot;&quot;:&qu
 <h3 data-number="4.2.5" id="extended-values-json-ruby"><span
 class="header-section-number">4.2.5</span> Extended Values (JSON, Ruby,
 …)</h3>
-<p>Some of the <code>ascli</code> parameters are expected to be <a
+<p>Some of the values provided to <code>ascli</code> (options,
+positional arguments) are expected to be <a
 href="#extended-value-syntax">Extended Values</a>, i.e. not a simple
 <code>String</code>, but a composite structure (<code>Hash</code>,
 <code>Array</code>). Typically, the <code>@json:</code> modifier is
@@ -1208,10 +1209,10 @@ e.g. <code>ascli aoc admin res node do 8669 browse /</code>:
 class="header-section-number">4.3.2</span> Positional Arguments</h3>
 <p>Positional Arguments are typically mandatory values for a command,
 such as entity creation data.</p>
-<p>It could also be designed as an option, but since it is mandatory and
-typically creation parameters need not be set in a configuration file,
-then it is better to use a positional argument, and not define specific
-options.</p>
+<p>It could also be designed as an option. But since it is mandatory and
+typically creation data need <strong>not</strong> be set in a
+configuration file, then it is better to use a positional argument, and
+not define an additional specific option.</p>
 <p>The advantages of using a positional argument instead of an option
 for the same are that the command line is shorter(no option name, just
 the position) and the value is clearly mandatory.</p>
@@ -1239,6 +1240,8 @@ name (e.g. <code>--log-level=debug</code>)</li>
 <li>Can be used by prefix (avoid), provided that it is unique. E.g.
 <code>--log-l=debug</code> is the same as
 <code>--log-level=debug</code></li>
+<li>Is optional on command line (it has a default value or no
+value)</li>
 </ul>
 <p>Exceptions:</p>
 <ul>
@@ -1283,31 +1286,31 @@ returns currently set values for options.
 default options. In addition, option <code>--show-config</code> can be
 added at the end of any full command line, this displays the options
 that would be used for the command.</p>
-<p>A parameter is typically designed as option if:</p>
+<p>A command line argument is typically designed as option if:</p>
 <ul>
 <li>It is optional, or</li>
-<li>It is a mandatory parameter that would benefit from being set
-persistently (i.e. in a configuration file or environment variable,
-e.g. URL and credentials).</li>
+<li>It is a mandatory parameter with a default value that would benefit
+from being set persistently (i.e. in a configuration file or environment
+variable, e.g. URL and credentials).</li>
 </ul>
 <h2 data-number="4.4" id="interactive-input"><span
 class="header-section-number">4.4</span> Interactive Input</h2>
-<p>Some options and parameters are mandatory and other optional. By
-default, <code>ascli</code> will ask for missing mandatory options or
-parameters for interactive execution.</p>
+<p>Some options and positional arguments are mandatory and other
+optional. By default, <code>ascli</code> will ask for missing mandatory
+options or positional arguments for interactive execution.</p>
 <p>The behavior can be controlled with:</p>
 <ul>
 <li><code>--interactive=&lt;yes|no&gt;</code> (default=yes if STDIN is a
 terminal, else no)
 <ul>
-<li>yes : missing mandatory parameters/options are asked to the
+<li>yes : missing mandatory parameters/arguments are asked to the
 user</li>
-<li>no : missing mandatory parameters/options raise an error
+<li>no : missing mandatory parameters/arguments raise an error
 message</li>
 </ul></li>
 <li><code>--ask-options=&lt;yes|no&gt;</code> (default=no)
 <ul>
-<li>optional parameters/options are asked to user</li>
+<li>optional parameters/arguments are asked to user</li>
 </ul></li>
 </ul>
 <h2 data-number="4.5" id="output"><span
@@ -1334,27 +1337,27 @@ displayed as an array</li>
 class="header-section-number">4.5.2</span> Format of output</h3>
 <p>By default, result of type single_object and object_list are
 displayed using format <code>table</code>. The table style can be
-customized with parameter: <code>table_style</code> (horizontal,
-vertical and intersection characters) and is <code>:.:</code> by
-default.</p>
+customized with option: <code>table_style</code> (horizontal, vertical
+and intersection characters) and is <code>:.:</code> by default.</p>
 <p>In a table format, when displaying <strong>Objects</strong> (single,
 or list), by default, sub object are flattened (option
-<code>flat_hash</code>). So, object
+<code>flat_hash</code>). For example, object
 <code>{"user":{"id":1,"name":"toto"}}</code> will have attributes:
-<code>user.id</code> and <code>user.name</code>. Setting
+<code>user.id</code> and <code>user.name</code>. Setting option
 <code>flat_hash</code> to <code>false</code> will only display one
 field: <code>user</code> and value is the sub <code>Hash</code>. When in
-flatten mode, it is possible to filter fields by compound field name
-using dot as separator.</p>
+flatten mode, it is possible to filter fields usinf the option
+<code>fields</code> using the compound field name using <code>.</code>
+(dot) as separator.</p>
 <p>Object lists are displayed one per line, with attributes as columns.
-Single objects are transposed: one attribute per line. If transposition
-of single object is not desired, use option:
-<code>transpose_single</code> set to <code>no</code>.</p>
-<p>The style of output can be set using the <code>format</code>
-parameter, supporting:</p>
+Single objects (or tables with a single result) are transposed: one
+attribute per line. If transposition of single object is not desired,
+use option: <code>transpose_single</code> set to <code>no</code>.</p>
+<p>The style of output can be set using the <code>format</code> option,
+supporting:</p>
 <ul>
+<li><code>table</code> : Text table (default)</li>
 <li><code>text</code> : Value as String</li>
-<li><code>table</code> : Text table</li>
 <li><code>ruby</code> : Ruby code</li>
 <li><code>json</code> : JSON code</li>
 <li><code>jsonpp</code> : JSON pretty printed</li>
@@ -1388,31 +1391,32 @@ hide secrets from output, set option <code>show_secrets</code> to
 id="option-fields-selection-of-output-object-properties"><span
 class="header-section-number">4.5.4</span> Option: <code>fields</code>:
 Selection of output object properties</h3>
-<p>By default, a table output will display one line per entry, and
-columns for each properties. Depending on the command, columns may
-include by default all properties, or only some selected properties. It
-is possible to define specific columns to be displayed, by setting the
-<code>fields</code> option.</p>
-<p>The <code>fields</code> option can be either a comma separated list,
-or an extended value array.</p>
-<p>Elements of the list can be:</p>
+<p>By default, a <code>table</code> output format will display one line
+per entry, and columns for each fields (attributes, properties).
+Depending on the command, columns may include by default all fields, or
+only some selected fields. It is possible to define specific columns to
+be displayed, by setting the <code>fields</code> option.</p>
+<p>The <code>fields</code> option is a list that can be either a comma
+separated list, or an extended value <code>Array</code>.</p>
+<p>Individual elements of the list can be:</p>
 <ul>
-<li><code>DEF</code> : default display of columns (that’s the default,
-when not set)</li>
-<li><code>ALL</code> : all columns available</li>
+<li><strong>property</strong> : add property to the current list</li>
 <li><code>-</code><strong>property</strong> : remove property from the
 current list</li>
-<li><strong>property</strong> : add property to the current list</li>
-<li>A Ruby <code>RegEx</code> : using <code>@ruby:'/.../'</code></li>
+<li><code>DEF</code> : default list of properties (that’s the default,
+when not set)</li>
+<li><code>ALL</code> : all properties</li>
+<li>A Ruby <code>RegEx</code> : using <code>@ruby:'/.../'</code>, or
+<code>@re:...</code> add those matching to the list</li>
 </ul>
 <p>Examples:</p>
 <ul>
 <li><code>a,b,c</code> : the list of attributes specified as a comma
-separated list</li>
-<li><code>@json:'["a","b","c"]'</code> : Array extended value: same as
-above</li>
-<li><code>DEF,-a,b</code> : default property list, remove <code>a</code>
-and add <code>b</code></li>
+separated list (overrides the all default)</li>
+<li><code>@json:'["a","b","c"]'</code> : <code>Array</code> extended
+value: same as above</li>
+<li><code>b,DEF,-a</code> : default property list, remove <code>a</code>
+and add <code>b</code> in first position</li>
 <li><code>@ruby:'/^server/'</code> : Display all properties whose name
 begin with <code>server</code></li>
 </ul>
@@ -1420,7 +1424,7 @@ begin with <code>server</code></li>
 class="header-section-number">4.5.5</span> Option:
 <code>select</code></h3>
 <p>Table output (<code>object_list</code>) can be filtered using option
-<code>select</code>. This parameter is either a <code>Hash</code> or
+<code>select</code>. This option is either a <code>Hash</code> or
 <code>Proc</code>. The <code>Proc</code> takes as argument a line
 (<code>Hash</code>) in the table and is a Ruby lambda expression that
 returns <code>true</code> or <code>false</code>.</p>
@@ -1434,8 +1438,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb104-1"><a href
 | Laurent Martin                | laurent@example.com              | true      |
 +-------------------------------+----------------------------------+-----------+</code></pre>
 <blockquote>
-<p><strong>Note:</strong> <code>select</code> filters elements from the
-result of command, while the <code>query</code> parameters gives
+<p><strong>Note:</strong> Option <code>select</code> filters elements
+from the result of command, while the <code>query</code> option gives
 filtering parameters to the API when listing elements.</p>
 </blockquote>
 <p>In above example, the same result is obtained with option:</p>
@@ -1738,47 +1742,47 @@ as any option can be provided on the command line.</p>
 provides commands to read and modify it using the <code>config</code>
 command.</p>
 <p>All options for <code>ascli</code> can be set on command line, or by
-env vars, or using <a href="#option-preset">Option Preset</a>’ in the
+env vars, or using <a href="#option-preset">Option Preset</a> in the
 configuration file.</p>
 <p>A configuration file provides a way to define default values,
-especially for authentication parameters, thus avoiding to always having
-to specify those parameters on the command line.</p>
+especially for authentication options, thus avoiding to always having to
+specify those options on the command line.</p>
 <p>The default configuration file is:
 <code>$HOME/.aspera/ascli/config.yaml</code> (this can be overridden
 with option <code>--config-file=path</code> or equivalent env var).</p>
 <p>The configuration file is simply a catalog of pre-defined lists of
-options, called: <a href="#option-preset">Option Preset</a>‘. Then,
+options, called: <a href="#option-preset">Option Preset</a>. Then,
 instead of specifying some common options on the command line
 (e.g. address, credentials), it is possible to invoke the ones of a <a
-href="#option-preset">Option Preset</a>’ (e.g. <code>mypreset</code>)
+href="#option-preset">Option Preset</a> (e.g. <code>mypreset</code>)
 using the option: <code>-Pmypreset</code> or
 <code>--preset=mypreset</code>.</p>
 <h3 data-number="4.9.1" id="option-preset"><span
 class="header-section-number">4.9.1</span> Option Preset</h3>
-<p>A <a href="#option-preset">Option Preset</a>’ is simply a collection
-of parameters and their associated values in a named section in the
+<p>A <a href="#option-preset">Option Preset</a> is simply a collection
+of options and their associated values in a named section in the
 configuration file.</p>
-<p>A named <a href="#option-preset">Option Preset</a>’ can be modified
+<p>A named <a href="#option-preset">Option Preset</a> can be modified
 directly using <code>ascli</code>, which will update the configuration
 file :</p>
 <div class="sourceCode" id="cb122"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set<span class="kw">|</span><span class="ex">delete</span><span class="kw">|</span><span class="ex">show</span><span class="kw">|</span><span class="ex">initialize</span><span class="kw">|</span><span class="ex">update</span> <span class="op">&lt;</span>option preset<span class="op">&gt;</span></span></code></pre></div>
 <p>The command <code>update</code> allows the easy creation of <a
-href="#option-preset">Option Preset</a>’ by simply providing the options
+href="#option-preset">Option Preset</a> by simply providing the options
 in their command line format, e.g. :</p>
 <div class="sourceCode" id="cb123"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update demo_server <span class="at">--url</span><span class="op">=</span>ssh://demo.asperasoft.com:33001 <span class="at">--username</span><span class="op">=</span>asperaweb <span class="at">--password</span><span class="op">=</span>my_password_here <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
 <ul>
-<li>This creates a <a href="#option-preset">Option Preset</a>’
+<li>This creates a <a href="#option-preset">Option Preset</a>
 <code>demo_server</code> with all provided options.</li>
 </ul>
 <p>The command <code>set</code> allows setting individual options in a
-<a href="#option-preset">Option Preset</a>’.</p>
+<a href="#option-preset">Option Preset</a>.</p>
 <div class="sourceCode" id="cb124"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set demo_server password my_password_here</span></code></pre></div>
 <p>The command <code>initialize</code>, like <code>update</code> allows
-to set several parameters at once, but it deletes an existing
-configuration instead of updating it, and expects a <a
+to set several options at once, but it deletes an existing configuration
+instead of updating it, and expects a <a
 href="#extended-value-syntax"><code>Hash</code> Extended Value</a>.</p>
 <div class="sourceCode" id="cb125"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset initialize demo_server @json:<span class="st">&#39;{&quot;url&quot;:&quot;ssh://demo.asperasoft.com:33001&quot;,&quot;username&quot;:&quot;asperaweb&quot;,&quot;password&quot;:&quot;my_pass_here&quot;,&quot;ts&quot;:{&quot;precalculate_job_size&quot;:true}}&#39;</span></span></code></pre></div>
@@ -1786,8 +1790,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb125-1"><a href
 using:</p>
 <div class="sourceCode" id="cb126"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset over</span></code></pre></div>
-<p>A list of <a href="#option-preset">Option Preset</a>’ can be
-displayed using:</p>
+<p>A list of <a href="#option-preset">Option Preset</a> can be displayed
+using:</p>
 <div class="sourceCode" id="cb127"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset list</span></code></pre></div>
 <p>A good practice is to not manually edit the configuration file and
@@ -1851,7 +1855,7 @@ the options independently of the plugin used.</p>
 <blockquote>
 <p><strong>Note:</strong> If no global default is set by the user,
 <code>ascli</code> will use <code>global_common_defaults</code> when
-setting global parameters (e.g. <code>config ascp use</code>)</p>
+setting global options (e.g. <code>config ascp use</code>)</p>
 <p><strong>Note:</strong> If you don’t know the name of the global
 preset, you can use <code>GLOBAL</code> to refer to it.</p>
 </blockquote>
@@ -1970,26 +1974,26 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb137-1"><a href
 <ul>
 <li>The configuration was created with <code>ascli</code> version
 0.3.7</li>
-<li>The default <a href="#option-preset">Option Preset</a>’ to load for
+<li>The default <a href="#option-preset">Option Preset</a> to load for
 <code>server</code> plugin is : <code>demo_server</code></li>
-<li>The <a href="#option-preset">Option Preset</a>’
-<code>demo_server</code> defines some parameters: the URL and
+<li>The <a href="#option-preset">Option Preset</a>
+<code>demo_server</code> defines some options: the URL and
 credentials</li>
-<li>The default <a href="#option-preset">Option Preset</a>’ to load in
+<li>The default <a href="#option-preset">Option Preset</a> to load in
 any case is : <code>cli_default</code></li>
 </ul>
-<p>Two <a href="#option-preset">Option Preset</a>’ are reserved:</p>
+<p>Two <a href="#option-preset">Option Preset</a> are reserved:</p>
 <ul>
 <li><code>config</code> contains a single value: <code>version</code>
 showing the version used to create the configuration file. It is used to
 check compatibility.</li>
 <li><code>default</code> is reserved to define the default <a
-href="#option-preset">Option Preset</a>’ name used for known
+href="#option-preset">Option Preset</a> name used for known
 plugins.</li>
 </ul>
 <p>The user may create as many <a href="#option-preset">Option
-Preset</a>’ as needed. For instance, a particular <a
-href="#option-preset">Option Preset</a>’ can be created for a particular
+Preset</a> as needed. For instance, a particular <a
+href="#option-preset">Option Preset</a> can be created for a particular
 application instance and contain URL and credentials.</p>
 <p>Values in the configuration also follow the <a
 href="#extended-value-syntax">Extended Value Syntax</a>.</p>
@@ -2001,7 +2005,7 @@ the user shall use the <code>@val:</code> prefix. Example:</p>
 </blockquote>
 <div class="sourceCode" id="cb138"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set my_aoc_org private_key @val:@file:<span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
-<p>This creates the <a href="#option-preset">Option Preset</a>’:</p>
+<p>This creates the <a href="#option-preset">Option Preset</a>:</p>
 <div class="sourceCode" id="cb139"><pre
 class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_aoc_org</span><span class="kw">:</span></span>
 <span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">private_key</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@file:/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
@@ -2018,30 +2022,30 @@ plugins. (the plugin is the first level command).</p>
 specified, then no default value is loaded for the plugin</li>
 <li>Else it looks for the name of the plugin as key in section
 <code>default</code>, the value is the name of the default <a
-href="#option-preset">Option Preset</a>’ for it, and loads it.</li>
+href="#option-preset">Option Preset</a> for it, and loads it.</li>
 <li>If option <code>--preset=&lt;name or extended value hash&gt;</code>
 is specified (or <code>-Pxxxx</code>), this reads the <a
-href="#option-preset">Option Preset</a>’ specified from the
-configuration file, or if the value is a <code>Hash</code>, it uses it
-as options values.</li>
+href="#option-preset">Option Preset</a> specified from the configuration
+file, or if the value is a <code>Hash</code>, it uses it as options
+values.</li>
 <li>Environment variables are evaluated</li>
 <li>Command line options are evaluated</li>
 </ul>
-<p>Parameters are evaluated in the order of command line.</p>
+<p>Options are evaluated in the order of command line.</p>
 <p>To avoid loading the default <a href="#option-preset">Option
-Preset</a>’ for a plugin, use: <code>-N</code></p>
-<p>On command line, words in parameter names are separated by a dash
+Preset</a> for a plugin, use: <code>-N</code></p>
+<p>On command line, words in option names are separated by a dash
 (<code>-</code>). In configuration file, separator is an underscore.
 E.g. <code>--xxx-yyy</code> on command line gives <code>xxx_yyy</code>
 in configuration file.</p>
 <p>The main plugin name is <code>config</code>, so it is possible to
-define a default <a href="#option-preset">Option Preset</a>’ for the
-main plugin with:</p>
+define a default <a href="#option-preset">Option Preset</a> for the main
+plugin with:</p>
 <div class="sourceCode" id="cb140"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set cli_default interactive no</span></code></pre></div>
 <div class="sourceCode" id="cb141"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config cli_default</span></code></pre></div>
-<p>A <a href="#option-preset">Option Preset</a>’ value can be removed
+<p>A <a href="#option-preset">Option Preset</a> value can be removed
 with <code>unset</code>:</p>
 <div class="sourceCode" id="cb142"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset unset cli_default interactive</span></code></pre></div>
@@ -2054,7 +2058,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb144-1"><a href
 <h3 data-number="4.10.3" id="wizard"><span
 class="header-section-number">4.10.3</span> Wizard</h3>
 <p>The wizard is a command that asks the user for information and
-creates a <a href="#option-preset">Option Preset</a>’ with the provided
+creates a <a href="#option-preset">Option Preset</a> with the provided
 information.</p>
 <p>It takes an optional argument: the URL of the application, and an
 <strong>option</strong>: <code>query</code> which allows limiting the
@@ -2074,7 +2078,7 @@ command line:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares repo browse / <span class="at">--url</span><span class="op">=</span>https://10.25.0.6 <span class="at">--username</span><span class="op">=</span>john <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
 <p>This can also be provisioned in a configuration file:</p>
 <ul>
-<li>Build <a href="#option-preset">Option Preset</a>’</li>
+<li>Build <a href="#option-preset">Option Preset</a></li>
 </ul>
 <div class="sourceCode" id="cb147"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb147-1"><a href="#cb147-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set shares06 url https://10.25.0.6</span>
@@ -2087,8 +2091,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb148-1"><a href
 <div class="sourceCode" id="cb149"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update shares06 <span class="at">--url</span><span class="op">=</span>https://10.25.0.6 <span class="at">--username</span><span class="op">=</span>john <span class="at">--password</span><span class="op">=</span>my_password_here</span></code></pre></div>
 <ul>
-<li>Define this <a href="#option-preset">Option Preset</a>’ as the
-default <a href="#option-preset">Option Preset</a>’ for the specified
+<li>Define this <a href="#option-preset">Option Preset</a> as the
+default <a href="#option-preset">Option Preset</a> for the specified
 plugin (<code>shares</code>)</li>
 </ul>
 <div class="sourceCode" id="cb150"><pre
@@ -2100,7 +2104,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb150-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb151-1"><a href="#cb151-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset overview</span></code></pre></div>
 <ul>
 <li>Execute a command on the shares application using default
-parameters</li>
+options</li>
 </ul>
 <div class="sourceCode" id="cb152"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares repo browse /</span></code></pre></div>
@@ -2181,7 +2185,7 @@ access key).</p>
 class="header-section-number">4.11.5</span> Securing passwords and
 secrets</h3>
 <p>A passwords can be saved in clear in a <a
-href="#option-preset">Option Preset</a>’ together with other account
+href="#option-preset">Option Preset</a> together with other account
 information (URL, username, etc…). Example:</p>
 <div class="sourceCode" id="cb159"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb159-1"><a href="#cb159-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update myconf <span class="at">--url</span><span class="op">=</span>... <span class="at">--username</span><span class="op">=</span>... <span class="at">--password</span><span class="op">=</span>...</span></code></pre></div>
@@ -2384,12 +2388,10 @@ path to open is displayed on terminal.</li>
 class="header-section-number">4.16</span> Logging, Debugging</h2>
 <p>The gem is equipped with traces, mainly for debugging and learning
 APIs. By default logging level is <code>warn</code> and the output
-channel is <code>stderr</code>. To increase debug level, use parameter
+channel is <code>stderr</code>. To increase debug level, use option
 <code>log_level</code> (e.g. using command line
-<code>--log-level=xx</code>, env var <code>ASCLI_LOG_LEVEL</code>, or a
-parameter in the configuration file).</p>
-<p>It is also possible to activate traces before log facility
-initialization using env var <code>ASCLI_LOG_LEVEL</code>.</p>
+<code>--log-level=xx</code>, env var <code>ASCLI_LOG_LEVEL</code>, or an
+<a href="#option-preset">Option Preset</a>).</p>
 <p>By default passwords and secrets are removed from logs. Use option
 <code>log_secrets</code> set to <code>yes</code> to reveal secrets in
 logs.</p>
@@ -2595,7 +2597,7 @@ href="#agent-direct"><code>direct</code></a> agent</h3>
 <p>To temporarily use an alternate <code>ascp</code> path use option
 <code>ascp_path</code> (<code>--ascp-path=</code>)</p>
 <p>For a permanent change, the command <code>config ascp use</code> sets
-the same parameter for the global default.</p>
+the same option for the global default.</p>
 <p>Using a POSIX shell:</p>
 <div class="sourceCode" id="cb197"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp use @path:<span class="st">&#39;~/Applications/Aspera CLI/bin/ascp&#39;</span></span></code></pre></div>
@@ -2806,7 +2808,7 @@ Sleep between iterations is given by the following formula where
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb210-1"><a href="#cb210-1" aria-hidden="true" tabindex="-1"></a><span class="ex">max</span><span class="er">(</span> <span class="ex">sleep_max</span> , sleep_initial <span class="pp">*</span> sleep_factor ^ iter_index <span class="kw">)</span></span></code></pre></div>
 <p>By default, Ruby’s root CA store is used to validate any HTTPS
 endpoint used by <code>ascp</code> (e.g. WSS). In order to use a custom
-certificate store, use the <code>trusted_certs</code> parameter. To use
+certificate store, use the <code>trusted_certs</code> option. To use
 <code>ascp</code>’s default, use option:
 <code>--transfer-info=@json:'{"trusted_certs":null}'</code>.</p>
 <p>Some transfer errors are considered <strong>retry-able</strong>
@@ -2967,7 +2969,7 @@ useful for direct node-to-node transfers. Parameters provided in option
 </tbody>
 </table>
 <p>Like any other option, <code>transfer_info</code> can get its value
-from a pre-configured <a href="#option-preset">Option Preset</a>’ :</p>
+from a pre-configured <a href="#option-preset">Option Preset</a> :</p>
 <div class="sourceCode" id="cb218"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@preset:_name_here_</span></span></code></pre></div>
 <p>or be specified using the extended value syntax :</p>
@@ -3139,7 +3141,7 @@ is especially useful for <code>ascp</code> command line parameters not
 supported in the transfer spec.</p>
 <p>The use of a <a
 href="#transfer-specification"><em>transfer-spec</em></a> instead of
-<code>ascp</code> parameters has the advantage of:</p>
+<code>ascp</code> command line arguments has the advantage of:</p>
 <ul>
 <li>Common to all <a href="#transfer-clients-agents">Transfer
 Agent</a></li>
@@ -5166,7 +5168,7 @@ links)</li>
 sufficient section: <a href="#api-client-registration">API Client
 Registration</a> (auth=web) as well as <a
 href="#configuration-for-aspera-on-cloud">[Option
-Preset](#option-preset)’ for Aspera on Cloud</a>.</p>
+Preset](#option-preset) for Aspera on Cloud</a>.</p>
 <p>For a more convenient, browser-less, experience follow the <a
 href="#authentication-with-private-key">JWT</a> section (auth=jwt) in
 addition to Client Registration.</p>
@@ -5220,9 +5222,9 @@ next step.</p>
 class="header-section-number">5.2.3</span> Configuration for Aspera on
 Cloud</h3>
 <p>If you did not use the wizard, you can also manually create a <a
-href="#option-preset">Option Preset</a>’ for <code>ascli</code> in its
+href="#option-preset">Option Preset</a> for <code>ascli</code> in its
 configuration file.</p>
-<p>Lets create a <a href="#option-preset">Option Preset</a>’ called:
+<p>Lets create a <a href="#option-preset">Option Preset</a> called:
 <code>my_aoc_org</code> using <code>ask</code> for interactive input
 (client info from previous step):</p>
 <div class="sourceCode" id="cb261"><pre
@@ -5238,7 +5240,7 @@ URL.</p>
 </blockquote>
 <p>(This can also be done in one line using the command
 <code>config preset update my_aoc_org --url=...</code>)</p>
-<p>Define this <a href="#option-preset">Option Preset</a>’ as default
+<p>Define this <a href="#option-preset">Option Preset</a> as default
 configuration for the <code>aspera</code> plugin:</p>
 <div class="sourceCode" id="cb262"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb262-1"><a href="#cb262-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default aoc my_aoc_org</span></code></pre></div>
@@ -5322,9 +5324,9 @@ can be used to verify modifications.</p>
 </blockquote>
 <h3 data-number="5.2.6" id="option-preset-modification-for-jwt"><span
 class="header-section-number">5.2.6</span> <a
-href="#option-preset">Option Preset</a>’ modification for JWT</h3>
+href="#option-preset">Option Preset</a> modification for JWT</h3>
 <p>To activate default use of JWT authentication for <code>ascli</code>
-using the <a href="#option-preset">Option Preset</a>’, do the
+using the <a href="#option-preset">Option Preset</a>, do the
 following:</p>
 <ul>
 <li>Change auth method to JWT</li>
@@ -5362,7 +5364,7 @@ list those shared folder by using a value for option
 <h3 data-number="5.2.8" id="aoc-first-use"><span
 class="header-section-number">5.2.8</span> AoC: First Use</h3>
 <p>Once client has been registered and <a href="#option-preset">Option
-Preset</a>’ created: <code>ascli</code> can be used:</p>
+Preset</a> created: <code>ascli</code> can be used:</p>
 <div class="sourceCode" id="cb272"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb272-1"><a href="#cb272-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files br /</span></code></pre></div>
 <pre class="output"><code>Current Workspace: Default Workspace (default)
@@ -6074,18 +6076,18 @@ transfers</h3>
 <p>It is possible to transfer files directly between organizations
 without having to first download locally and then upload…</p>
 <p>Although optional, the creation of <a href="#option-preset">Option
-Preset</a>’ is recommended to avoid placing all parameters in the
-command line.</p>
+Preset</a> is recommended to avoid placing all parameters in the command
+line.</p>
 <p>Procedure to send a file from org1 to org2:</p>
 <ul>
 <li>Get access to Organization 1 and create a <a
-href="#option-preset">Option Preset</a>’: e.g. <code>org1</code>, for
+href="#option-preset">Option Preset</a>: e.g. <code>org1</code>, for
 instance, use the <a href="#configuration-using-wizard">Wizard</a></li>
 <li>Check that access works and locate the source file
 e.g. <code>mysourcefile</code>, e.g. using command
 <code>files browse</code></li>
 <li>Get access to Organization 2 and create a <a
-href="#option-preset">Option Preset</a>’: e.g. <code>org2</code></li>
+href="#option-preset">Option Preset</a>: e.g. <code>org2</code></li>
 <li>Check that access works and locate the destination folder
 <code>mydestfolder</code></li>
 <li>Execute the following:</li>
@@ -6513,7 +6515,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb376-1"><a href
 <span id="cb376-2"><a href="#cb376-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server browse /aspera-test-dir-large</span>
 <span id="cb376-3"><a href="#cb376-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server download /aspera-test-dir-large/200MB</span></code></pre></div>
 <p><code>initdemo</code> creates a <a href="#option-preset">Option
-Preset</a>’ <code>demoserver</code> and set it as default for plugin
+Preset</a> <code>demoserver</code> and set it as default for plugin
 <code>server</code>.</p>
 <p>If an SSH private key is used for authentication with a passphrase,
 the passphrase needs to be provided to both options:
@@ -7061,7 +7063,7 @@ public link)</td>
 it, unchanged, through the option <code>url</code></p>
 </blockquote>
 <p>For a quick start, one can use the wizard, which will help creating a
-<a href="#option-preset">Option Preset</a>’:</p>
+<a href="#option-preset">Option Preset</a>:</p>
 <div class="sourceCode" id="cb410"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb410-1"><a href="#cb410-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard</span></code></pre></div>
 <pre class="text"><code>argument: url&gt; faspex5.example.com
@@ -7287,7 +7289,8 @@ specific.</p>
 </blockquote>
 <h2 data-number="9.6" id="faspex-5-send-a-package"><span
 class="header-section-number">9.6</span> Faspex 5: Send a package</h2>
-<p>The <code>Hash</code> creation parameter provided to command
+<p>The <code>Hash</code> creation positional argument provided to
+command
 <code>faspex5 packages send [extended value: Hash with package info ] [files...]</code>
 corresponds to the Faspex 5 API: <code>POST /packages</code>.</p>
 <p>The interface is the one of the API (Refer to Faspex5 API
@@ -7395,7 +7398,7 @@ passed)</td>
 </tr>
 </tbody>
 </table>
-<p>A positional parameter in last position, of type <code>Proc</code>,
+<p>A positional argument in last position, of type <code>Proc</code>,
 can be used to filter the list of packages. This advantage of this
 method is that the expression can be any test, even complex, as it is
 Ruby code. But the disadvantage is that the filtering is done in
@@ -7437,7 +7440,7 @@ e.g. <code>@list:,1,2,3</code> as argument.</p>
 <p>The same options as for <code>faspex5 packages list</code> can be
 used to select the box and filter the packages to download. I.e. options
 <code>box</code> and <code>query</code>, as well as last positional
-parameter <code>Proc</code> (filter).</p>
+argument <code>Proc</code> (filter).</p>
 <p>Option <code>--once-only=yes</code> can be used, for “cargo-like”
 behavior. Special package id <code>INIT</code> initializes the
 persistency of already received packages when option
@@ -7464,7 +7467,7 @@ inboxes and work groups</h2>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href="#cb423-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res workgroup list</span></code></pre></div>
 <p>If you are admin or manager, add option:
 <code>--query=@json:'{"all":true}'</code>, this will list items you
-manage, even if you do not belong to them.</p>
+manage, even if you do not belong to them. Example:</p>
 <div class="sourceCode" id="cb424"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb424-1"><a href="#cb424-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;all&quot;:true}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,name</span></code></pre></div>
 <p>Shared inbox members can also be listed, added, removed, and external
@@ -7474,10 +7477,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href
 <p>It is equivalent to:</p>
 <div class="sourceCode" id="cb426"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb426-1"><a href="#cb426-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> @json:<span class="st">&#39;{&quot;email_address&quot;:&quot;john@example.com&quot;}&#39;</span></span></code></pre></div>
-<p>Other payload parameters are possible the <code>Hash</code>
-value:</p>
+<p>Other payload parameters are possible for <code>invite</code> in this
+last <code>Hash</code> positional argument:</p>
 <div class="sourceCode" id="cb427"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb427-1"><a href="#cb427-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb427-1"><a href="#cb427-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span><span class="fu">}</span></span></code></pre></div>
 <h2 data-number="9.12" id="faspex-5-create-metadata-profile"><span
 class="header-section-number">9.12</span> Faspex 5: Create Metadata
 profile</h2>
@@ -7728,12 +7731,13 @@ href="https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/AP
 of Faspex 4</a>.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb440"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb440-1"><a href="#cb440-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;my title&quot;,&quot;recipients&quot;:[&quot;someuser@example.com&quot;]}&#39;</span> <span class="at">--url</span><span class="op">=</span>https://faspex.corp.com/aspera/faspex <span class="at">--username</span><span class="op">=</span>foo <span class="at">--password</span><span class="op">=</span>bar /tmp/file1 /home/bar/file2</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb440-1"><a href="#cb440-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;my title&quot;,&quot;recipients&quot;:[&quot;someuser@example.com&quot;]}&#39;</span> /tmp/file1 /home/bar/file2</span></code></pre></div>
 <p>If the recipient is a dropbox or workgroup: provide the name of the
 dropbox or workgroup preceded with <code>*</code> in the
 <code>recipients</code> field of the <code>delivery_info</code> option:
 <code>"recipients":["*MyDropboxName"]</code></p>
-<p>Additional optional parameters in <code>delivery_info</code>:</p>
+<p>Additional optional parameters in mandatory option
+<code>delivery_info</code>:</p>
 <ul>
 <li>Package Note: : <code>"note":"note this and that"</code></li>
 <li>Package Metadata:
@@ -7757,8 +7761,7 @@ Faspex</li>
 class="header-section-number">10.4</span> Email notification on
 transfer</h2>
 <p>Like for any transfer, a notification can be sent by email using
-parameters: <code>notify_to</code> and <code>notify_template</code>
-.</p>
+options: <code>notify_to</code> and <code>notify_template</code> .</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb441"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb441-1"><a href="#cb441-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex package send <span class="at">--delivery-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;title&quot;:&quot;test pkg 1&quot;,&quot;recipients&quot;:[&quot;aspera.user1@gmail.com&quot;]}&#39;</span> ~/Documents/Samples/200KB.1 <span class="at">--notify-to</span><span class="op">=</span>aspera.user1@gmail.com <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: Package sent: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;metadata&quot;][&quot;_pkg_name&quot;]%&gt; files received\n\nTo user: &lt;%=ts[&quot;tags&quot;][&quot;aspera&quot;][&quot;faspex&quot;][&quot;recipients&quot;].first[&quot;email&quot;]%&gt;}&#39;</span></span></code></pre></div>
@@ -8054,7 +8057,7 @@ Preview generator for AoC</h1>
 and video previews on storage for use primarily in the Aspera on Cloud
 application. It uses the <strong>node API</strong> of Aspera HSTS and
 requires use of Access Keys and its <strong>storage root</strong>.
-Several parameters can be used to tune several aspects:</p>
+Several options can be used to tune several aspects:</p>
 <ul>
 <li>Methods for detection of new files needing generation</li>
 <li>Methods for generation of video preview</li>
@@ -8087,9 +8090,9 @@ trailing <code>/</code>. In general just set the value to
 <p>If another folder is configured on the HSTS, then specify it to
 <code>ascli</code> using the option <code>previews_folder</code>.</p>
 <p>The HSTS node API limits any preview file to a parameter:
-<code>max_request_file_create_size_kb</code> (1 KB is 1024 bytes). This
+<code>max_request_file_create_size_kb</code> (1 KB is 1024 Bytes). This
 size is internally capped to <code>1&lt;&lt;24</code> Bytes (16777216) ,
-i.e. 16384 KBytes.</p>
+i.e. 16384 KB, i.e. 16MB.</p>
 <p>To change this parameter in <code>aspera.conf</code>, use
 <code>asconfigurator</code>. To display the value, use
 <code>asuserdata</code>:</p>
@@ -8172,9 +8175,9 @@ object storage, any user can be used, but when using local storage it is
 usually better to use the user <code>xfer</code>, as uploaded files are
 under this identity: this ensures proper access rights. (we will assume
 this)</p>
-<p>Like any <code>ascli</code> commands, parameters can be passed on
+<p>Like any <code>ascli</code> commands, options can be passed on
 command line or using a configuration <a href="#option-preset">Option
-Preset</a>’. The configuration file must be created with the same user
+Preset</a>. The configuration file must be created with the same user
 used to run so that it is properly used on runtime.</p>
 <p>The <code>xfer</code> user has a special protected shell:
 <code>aspshell</code>, so in order to update the configuration, and when
@@ -8506,16 +8509,16 @@ basis might emulate a hot folder.</p>
 <p><strong>Note:</strong> File detection is not based on events
 (<code>inotify</code>, etc…), but on a simple folder scan on source
 side.</p>
-<p><strong>Note:</strong> Parameters may be saved in a <a
-href="#option-preset">Option Preset</a>’ and used with
+<p><strong>Note:</strong> Options may be saved in a <a
+href="#option-preset">Option Preset</a> and used with
 <code>-P</code>.</p>
 </blockquote>
 <h3 data-number="17.2.3" id="scheduling"><span
 class="header-section-number">17.2.3</span> Scheduling</h3>
-<p>Once <code>ascli</code> parameters are defined, run the command using
-the OS native scheduler, e.g. every minutes, or 5 minutes, etc… Refer to
-section <a href="#scheduler">Scheduler</a>. (on use of option
-<code>lock_port</code>)</p>
+<p>Once <code>ascli</code> command line arguments are defined, run the
+command using the OS native scheduler, e.g. every minutes, or 5 minutes,
+etc… Refer to section <a href="#scheduler">Scheduler</a>. (on use of
+option <code>lock_port</code>)</p>
 <h2 data-number="17.3" id="example-upload-hot-folder"><span
 class="header-section-number">17.3</span> Example: Upload hot
 folder</h2>

@@ -68,7 +68,7 @@ For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
 Command line operations examples are shown using a shell such as: `bash` or `zsh`.
 
-Command line parameters in examples beginning with `my_`, e.g. `my_param_value`, are user-provided value and not fixed value commands.
+Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, are user-provided value and not fixed value commands.
 
 <%=tool%> is an API **Client** toward the remote Aspera application **Server** (Faspex, HSTS, etc...)
 
@@ -120,10 +120,10 @@ To test with Aspera demo transfer server, setup the environment and then test:
 +------------+--------+-----------+-------+---------------------------+-----------------------+
 ```
 
-If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a [Option Preset](#option-preset)' for the server's authentication options.
+If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a [Option Preset](#option-preset) for the server's authentication options.
 The following example will:
 
-- Create a [Option Preset](#option-preset)'
+- Create a [Option Preset](#option-preset)
 - Define it as default for the `server` plugin
 - List files in a folder
 - Download a file
@@ -814,7 +814,7 @@ The `<%=gemspec.name%>` gem provides a command line interface (CLI) which intera
 
 - Supports commands to Aspera server products (on-premise and SaaS)
 - Any command line **options** (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files, ...
-- Supports Commands, Option values and Parameters shortcuts
+- Supports Commands, Options, and Option values shortcuts
 - FASP [Transfer Agents](#transfer-clients-agents) can be: local `ascp`, or Connect Client, or any transfer node
 - Transfer parameters can be altered by modification of [*transfer-spec*](#transfer-specification), this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
@@ -862,7 +862,7 @@ A c-shell (`csh`, `tcsh`) or other shell can also be used.
 In this environment the shell parses the command line, possibly replacing variables, etc...
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
 The shell builds the list of arguments and then `fork`/`exec` Ruby with that list.
-Ruby receives a list parameters from shell and gives it to <%=tool%>.
+Ruby receives a list command line arguments from shell and gives it to <%=tool%>.
 Special character handling (quotes, spaces, env vars, ...) is handled by the shell for any command executed.
 
 #### Shell parsing for Windows
@@ -963,7 +963,7 @@ PS C:\> <%=cmd%> conf echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the <%=tool%> parameters are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Some of the values provided to <%=tool%> (options, positional arguments) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
 Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
 JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
@@ -1201,7 +1201,8 @@ Some sub-commands appear after entity selection, e.g. `<%=cmd%> aoc admin res no
 
 Positional Arguments are typically mandatory values for a command, such as entity creation data.
 
-It could also be designed as an option, but since it is mandatory and typically creation parameters need not be set in a configuration file, then it is better to use a positional argument, and not define specific options.
+It could also be designed as an option.
+But since it is mandatory and typically creation data need **not** be set in a configuration file, then it is better to use a positional argument, and not define an additional specific option.
 
 The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
 
@@ -1220,6 +1221,7 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 - Have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
 - Have a value, separated from name with a `=`
 - Can be used by prefix (avoid), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
+- Is optional on command line (it has a default value or no value)
 
 Exceptions:
 
@@ -1258,23 +1260,23 @@ Option `show_config` dry runs the configuration, and then returns currently set 
 `<%=cmd%> --show-config` outputs global options only, and `<%=cmd%> [plugin] --show-config` outputs global and plugin default options.
 In addition, option `--show-config` can be added at the end of any full command line, this displays the options that would be used for the command.
 
-A parameter is typically designed as option if:
+A command line argument is typically designed as option if:
 
 - It is optional, or
-- It is a mandatory parameter that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
+- It is a mandatory parameter with a default value that would benefit from being set persistently (i.e. in a configuration file or environment variable, e.g. URL and credentials).
 
 ### Interactive Input
 
-Some options and parameters are mandatory and other optional.
-By default, <%=tool%> will ask for missing mandatory options or parameters for interactive execution.
+Some options and positional arguments are mandatory and other optional.
+By default, <%=tool%> will ask for missing mandatory options or positional arguments for interactive execution.
 
 The behavior can be controlled with:
 
 - `--interactive=<yes|no>` (default=yes if STDIN is a terminal, else no)
-  - yes : missing mandatory parameters/options are asked to the user
-  - no : missing mandatory parameters/options raise an error message
+  - yes : missing mandatory parameters/arguments are asked to the user
+  - no : missing mandatory parameters/arguments raise an error message
 - `--ask-options=<yes|no>` (default=no)
-  - optional parameters/options are asked to user
+  - optional parameters/arguments are asked to user
 
 ### Output
 
@@ -1297,20 +1299,21 @@ Depending on action, the output will contain:
 #### Format of output
 
 By default, result of type single_object and object_list are displayed using format `table`.
-The table style can be customized with parameter: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
+The table style can be customized with option: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
 
-In a table format, when displaying **Objects** (single, or list), by default, sub object are
-flattened (option `flat_hash`). So, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
-Setting `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
-When in flatten mode, it is possible to filter fields by compound field name using dot as separator.
+In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash`).
+For example, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
+Setting option `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
+When in flatten mode, it is possible to filter fields usinf the option `fields` using the compound field name using `.` (dot) as separator.
 
-Object lists are displayed one per line, with attributes as columns. Single objects are transposed: one attribute per line.
+Object lists are displayed one per line, with attributes as columns.
+Single objects (or tables with a single result) are transposed: one attribute per line.
 If transposition of single object is not desired, use option: `transpose_single` set to `no`.
 
-The style of output can be set using the `format` parameter, supporting:
+The style of output can be set using the `format` option, supporting:
 
+- `table` : Text table (default)
 - `text` : Value as String
-- `table` : Text table
 - `ruby` : Ruby code
 - `json` : JSON code
 - `jsonpp` : JSON pretty printed
@@ -1336,31 +1339,31 @@ To hide secrets from output, set option `show_secrets` to `no`.
 
 #### Option: `fields`: Selection of output object properties
 
-By default, a table output will display one line per entry, and columns for each properties.
-Depending on the command, columns may include by default all properties, or only some selected properties.
+By default, a `table` output format will display one line per entry, and columns for each fields (attributes, properties).
+Depending on the command, columns may include by default all fields, or only some selected fields.
 It is possible to define specific columns to be displayed, by setting the `fields` option.
 
-The `fields` option can be either a comma separated list, or an extended value array.
+The `fields` option is a list that can be either a comma separated list, or an extended value `Array`.
 
-Elements of the list can be:
+Individual elements of the list can be:
 
-- `DEF` : default display of columns (that's the default, when not set)
-- `ALL` : all columns available
-- `-`**property** : remove property from the current list
 - **property** : add property to the current list
-- A Ruby `RegEx` : using `@ruby:'/.../'`
+- `-`**property** : remove property from the current list
+- `DEF` : default list of properties (that's the default, when not set)
+- `ALL` : all properties
+- A Ruby `RegEx` : using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
 Examples:
 
-- `a,b,c` : the list of attributes specified as a comma separated list
-- `@json:'["a","b","c"]'` : Array extended value: same as above
-- `DEF,-a,b` : default property list, remove `a` and add `b`
+- `a,b,c` : the list of attributes specified as a comma separated list (overrides the all default)
+- `@json:'["a","b","c"]'` : `Array` extended value: same as above
+- `b,DEF,-a` : default property list, remove `a` and add `b` in first position
 - `@ruby:'/^server/'` : Display all properties whose name begin with `server`
 
 #### Option: `select`
 
 Table output (`object_list`) can be filtered using option `select`.
-This parameter is either a `Hash` or `Proc`.
+This option is either a `Hash` or `Proc`.
 The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda expression that returns `true` or `false`.
 
 Example:
@@ -1378,7 +1381,7 @@ Example:
 +-------------------------------+----------------------------------+-----------+
 ```
 
-> **Note:** `select` filters elements from the result of command, while the `query` parameters gives filtering parameters to the API when listing elements.
+> **Note:** Option `select` filters elements from the result of command, while the `query` option gives filtering parameters to the API when listing elements.
 
 In above example, the same result is obtained with option:
 
@@ -1574,39 +1577,39 @@ Nevertheless, there is no mandatory information required in this file, the use o
 
 Although the file is a standard YAML file, <%=tool%> provides commands to read and modify it using the `config` command.
 
-All options for <%=tool%> can be set on command line, or by env vars, or using [Option Preset](#option-preset)' in the configuration file.
+All options for <%=tool%> can be set on command line, or by env vars, or using [Option Preset](#option-preset) in the configuration file.
 
-A configuration file provides a way to define default values, especially for authentication parameters, thus avoiding to always having to specify those parameters on the command line.
+A configuration file provides a way to define default values, especially for authentication options, thus avoiding to always having to specify those options on the command line.
 
 The default configuration file is: `$HOME/.aspera/<%=cmd%>/config.yaml` (this can be overridden with option `--config-file=path` or equivalent env var).
 
-The configuration file is simply a catalog of pre-defined lists of options, called: [Option Preset](#option-preset)'. Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a [Option Preset](#option-preset)' (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
+The configuration file is simply a catalog of pre-defined lists of options, called: [Option Preset](#option-preset). Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a [Option Preset](#option-preset) (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
 
 #### Option Preset
 
-A [Option Preset](#option-preset)' is simply a collection of parameters and their associated values in a named section in the configuration file.
+A [Option Preset](#option-preset) is simply a collection of options and their associated values in a named section in the configuration file.
 
-A named [Option Preset](#option-preset)' can be modified directly using <%=tool%>, which will update the configuration file :
+A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file :
 
 ```bash
 <%=cmd%> config preset set|delete|show|initialize|update <option preset>
 ```
 
-The command `update` allows the easy creation of [Option Preset](#option-preset)' by simply providing the options in their command line format, e.g. :
+The command `update` allows the easy creation of [Option Preset](#option-preset) by simply providing the options in their command line format, e.g. :
 
 ```bash
 <%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=my_password_here --ts=@json:'{"precalculate_job_size":true}'
 ```
 
-- This creates a [Option Preset](#option-preset)' `demo_server` with all provided options.
+- This creates a [Option Preset](#option-preset) `demo_server` with all provided options.
 
-The command `set` allows setting individual options in a [Option Preset](#option-preset)'.
+The command `set` allows setting individual options in a [Option Preset](#option-preset).
 
 ```bash
 <%=cmd%> config preset set demo_server password my_password_here
 ```
 
-The command `initialize`, like `update` allows to set several parameters at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
+The command `initialize`, like `update` allows to set several options at once, but it deletes an existing configuration instead of updating it, and expects a [`Hash` Extended Value](#extended-value-syntax).
 
 ```bash
 <%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"my_pass_here","ts":{"precalculate_job_size":true}}'
@@ -1618,7 +1621,7 @@ A full terminal based overview of the configuration can be displayed using:
 <%=cmd%> config preset over
 ```
 
-A list of [Option Preset](#option-preset)' can be displayed using:
+A list of [Option Preset](#option-preset) can be displayed using:
 
 ```bash
 <%=cmd%> config preset list
@@ -1680,7 +1683,7 @@ The default preset for `config` is read for any plugin invocation, this allows s
 When <%=tool%> starts, it looks for the `default` Option Preset and checks the value for `config`.
 If set, it loads the options independently of the plugin used.
 
-> **Note:** If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global parameters (e.g. `config ascp use`)
+> **Note:** If no global default is set by the user, <%=tool%> will use `global_common_defaults` when setting global options (e.g. `config ascp use`)
 >
 > **Note:** If you don't know the name of the global preset, you can use `GLOBAL` to refer to it.
 
@@ -1725,17 +1728,17 @@ demo_server:
 We can see here:
 
 - The configuration was created with <%=tool%> version 0.3.7
-- The default [Option Preset](#option-preset)' to load for `server` plugin is : `demo_server`
-- The [Option Preset](#option-preset)' `demo_server` defines some parameters: the URL and credentials
-- The default [Option Preset](#option-preset)' to load in any case is : `cli_default`
+- The default [Option Preset](#option-preset) to load for `server` plugin is : `demo_server`
+- The [Option Preset](#option-preset) `demo_server` defines some options: the URL and credentials
+- The default [Option Preset](#option-preset) to load in any case is : `cli_default`
 
-Two [Option Preset](#option-preset)' are reserved:
+Two [Option Preset](#option-preset) are reserved:
 
 - `config` contains a single value: `version` showing the version used to create the configuration file.
   It is used to check compatibility.
-- `default` is reserved to define the default [Option Preset](#option-preset)' name used for known plugins.
+- `default` is reserved to define the default [Option Preset](#option-preset) name used for known plugins.
 
-The user may create as many [Option Preset](#option-preset)' as needed. For instance, a particular [Option Preset](#option-preset)' can be created for a particular application instance and contain URL and credentials.
+The user may create as many [Option Preset](#option-preset) as needed. For instance, a particular [Option Preset](#option-preset) can be created for a particular application instance and contain URL and credentials.
 
 Values in the configuration also follow the [Extended Value Syntax](#extended-value-syntax).
 
@@ -1745,7 +1748,7 @@ Values in the configuration also follow the [Extended Value Syntax](#extended-va
 <%=cmd%> config preset set my_aoc_org private_key @val:@file:"$HOME/.aspera/<%=cmd%>/my_private_key"
 ```
 
-This creates the [Option Preset](#option-preset)':
+This creates the [Option Preset](#option-preset):
 
 ```yaml
 my_aoc_org:
@@ -1761,20 +1764,20 @@ Some options are global, some options are available only for some plugins. (the 
 Options are loaded using this algorithm:
 
 - If option `--no-default` (or `-N`) is specified, then no default value is loaded for the plugin
-- Else it looks for the name of the plugin as key in section `default`, the value is the name of the default [Option Preset](#option-preset)' for it, and loads it.
-- If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the [Option Preset](#option-preset)' specified from the configuration file, or if the value is a `Hash`, it uses it as options values.
+- Else it looks for the name of the plugin as key in section `default`, the value is the name of the default [Option Preset](#option-preset) for it, and loads it.
+- If option `--preset=<name or extended value hash>` is specified (or `-Pxxxx`), this reads the [Option Preset](#option-preset) specified from the configuration file, or if the value is a `Hash`, it uses it as options values.
 - Environment variables are evaluated
 - Command line options are evaluated
 
-Parameters are evaluated in the order of command line.
+Options are evaluated in the order of command line.
 
-To avoid loading the default [Option Preset](#option-preset)' for a plugin, use: `-N`
+To avoid loading the default [Option Preset](#option-preset) for a plugin, use: `-N`
 
-On command line, words in parameter names are separated by a dash (`-`).
+On command line, words in option names are separated by a dash (`-`).
 In configuration file, separator is an underscore.
 E.g. `--xxx-yyy` on command line gives `xxx_yyy` in configuration file.
 
-The main plugin name is `config`, so it is possible to define a default [Option Preset](#option-preset)' for the main plugin with:
+The main plugin name is `config`, so it is possible to define a default [Option Preset](#option-preset) for the main plugin with:
 
 ```bash
 <%=cmd%> config preset set cli_default interactive no
@@ -1784,7 +1787,7 @@ The main plugin name is `config`, so it is possible to define a default [Option 
 <%=cmd%> config preset set default config cli_default
 ```
 
-A [Option Preset](#option-preset)' value can be removed with `unset`:
+A [Option Preset](#option-preset) value can be removed with `unset`:
 
 ```bash
 <%=cmd%> config preset unset cli_default interactive
@@ -1804,7 +1807,7 @@ Example: Define options using a `Hash`:
 
 #### Wizard
 
-The wizard is a command that asks the user for information and creates a [Option Preset](#option-preset)' with the provided information.
+The wizard is a command that asks the user for information and creates a [Option Preset](#option-preset) with the provided information.
 
 It takes an optional argument: the URL of the application, and an **option**: `query` which allows limiting the detection to a given plugin.
 
@@ -1826,7 +1829,7 @@ Those can usually be provided on the command line:
 
 This can also be provisioned in a configuration file:
 
-- Build [Option Preset](#option-preset)'
+- Build [Option Preset](#option-preset)
 
 ```bash
 <%=cmd%> config preset set shares06 url https://10.25.0.6
@@ -1846,7 +1849,7 @@ or
 <%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=my_password_here
 ```
 
-- Define this [Option Preset](#option-preset)' as the default [Option Preset](#option-preset)' for the specified plugin (`shares`)
+- Define this [Option Preset](#option-preset) as the default [Option Preset](#option-preset) for the specified plugin (`shares`)
 
 ```bash
 <%=cmd%> config preset set default shares shares06
@@ -1858,7 +1861,7 @@ or
 <%=cmd%> config preset overview
 ```
 
-- Execute a command on the shares application using default parameters
+- Execute a command on the shares application using default options
 
 ```bash
 <%=cmd%> shares repo browse /
@@ -1951,7 +1954,7 @@ The lookup is done by comparing the service URL and username (or access key).
 
 #### Securing passwords and secrets
 
-A passwords can be saved in clear in a [Option Preset](#option-preset)' together with other account information (URL, username, etc...).
+A passwords can be saved in clear in a [Option Preset](#option-preset) together with other account information (URL, username, etc...).
 Example:
 
 ```bash
@@ -2162,9 +2165,7 @@ It is also possible to force the graphical mode with option --ui :
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
 By default logging level is `warn` and the output channel is `stderr`.
-To increase debug level, use parameter `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or a parameter in the configuration file).
-
-It is also possible to activate traces before log facility initialization using env var `<%=opt_env(%Q`log_level`)%>`.
+To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
 
 By default passwords and secrets are removed from logs.
 Use option `log_secrets` set to `yes` to reveal secrets in logs.
@@ -2361,7 +2362,7 @@ By default, <%=tool%> uses any found local product with `ascp`, including Transf
 
 To temporarily use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
-For a permanent change, the command `config ascp use` sets the same parameter for the global default.
+For a permanent change, the command `config ascp use` sets the same option for the global default.
 
 Using a POSIX shell:
 
@@ -2519,7 +2520,7 @@ max( sleep_max , sleep_initial * sleep_factor ^ iter_index )
 ```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
-In order to use a custom certificate store, use the `trusted_certs` parameter.
+In order to use a custom certificate store, use the `trusted_certs` option.
 To use `ascp`'s default, use option: `--transfer-info=@json:'{"trusted_certs":null}'`.
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).
@@ -2647,7 +2648,7 @@ Parameters provided in option `transfer_info` are:
 | password | string | Password, secret or bearer token</br>Mandatory |
 | root_id  | string | Root file id</br>Mandatory only for bearer token |
 
-Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset)' :
+Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
 
 ```bash
 --transfer-info=@preset:_name_here_
@@ -2746,7 +2747,7 @@ It is possible to specify `ascp` options when the `transfer` option is set to [`
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
 
-The use of a [*transfer-spec*](#transfer-specification) instead of `ascp` parameters has the advantage of:
+The use of a [*transfer-spec*](#transfer-specification) instead of `ascp` command line arguments has the advantage of:
 
 - Common to all [Transfer Agent](#transfer-clients-agents)
 - Not dependent on command line limitations (special characters...)
@@ -3347,7 +3348,7 @@ Several types of OAuth authentication are supported:
 
 The authentication method is controlled by option `auth`.
 
-For a **quick start**, follow the mandatory and sufficient section: [API Client Registration](#api-client-registration) (auth=web) as well as [[Option Preset](#option-preset)' for Aspera on Cloud](#configuration-for-aspera-on-cloud).
+For a **quick start**, follow the mandatory and sufficient section: [API Client Registration](#api-client-registration) (auth=web) as well as [[Option Preset](#option-preset) for Aspera on Cloud](#configuration-for-aspera-on-cloud).
 
 For a more convenient, browser-less, experience follow the [JWT](#authentication-with-private-key) section (auth=jwt) in addition to Client Registration.
 
@@ -3384,9 +3385,9 @@ Once the client is registered, a **Client ID** and **Secret** are created, these
 
 #### Configuration for Aspera on Cloud
 
-If you did not use the wizard, you can also manually create a [Option Preset](#option-preset)' for <%=tool%> in its configuration file.
+If you did not use the wizard, you can also manually create a [Option Preset](#option-preset) for <%=tool%> in its configuration file.
 
-Lets create a [Option Preset](#option-preset)' called: `my_aoc_org` using `ask` for interactive input (client info from previous step):
+Lets create a [Option Preset](#option-preset) called: `my_aoc_org` using `ask` for interactive input (client info from previous step):
 
 ```bash
 <%=cmd%> config preset ask my_aoc_org url client_id client_secret
@@ -3400,7 +3401,7 @@ updated: my_aoc_org
 
 (This can also be done in one line using the command `config preset update my_aoc_org --url=...`)
 
-Define this [Option Preset](#option-preset)' as default configuration for the `aspera` plugin:
+Define this [Option Preset](#option-preset) as default configuration for the `aspera` plugin:
 
 ```bash
 <%=cmd%> config preset set default aoc my_aoc_org
@@ -3491,9 +3492,9 @@ modified
 
 > **Note:** The `aspera user info show` command can be used to verify modifications.
 
-#### [Option Preset](#option-preset)' modification for JWT
+#### [Option Preset](#option-preset) modification for JWT
 
-To activate default use of JWT authentication for <%=tool%> using the [Option Preset](#option-preset)', do the following:
+To activate default use of JWT authentication for <%=tool%> using the [Option Preset](#option-preset), do the following:
 
 - Change auth method to JWT
 - Provide location of private key
@@ -3527,7 +3528,7 @@ In that case, it is possible to list those shared folder by using a value for op
 
 #### AoC: First Use
 
-Once client has been registered and [Option Preset](#option-preset)' created: <%=tool%> can be used:
+Once client has been registered and [Option Preset](#option-preset) created: <%=tool%> can be used:
 
 ```bash
 <%=cmd%> aoc files br /
@@ -4308,13 +4309,13 @@ Public and Private short links can be managed with command:
 
 It is possible to transfer files directly between organizations without having to first download locally and then upload...
 
-Although optional, the creation of [Option Preset](#option-preset)' is recommended to avoid placing all parameters in the command line.
+Although optional, the creation of [Option Preset](#option-preset) is recommended to avoid placing all parameters in the command line.
 
 Procedure to send a file from org1 to org2:
 
-- Get access to Organization 1 and create a [Option Preset](#option-preset)': e.g. `org1`, for instance, use the [Wizard](#configuration-using-wizard)
+- Get access to Organization 1 and create a [Option Preset](#option-preset): e.g. `org1`, for instance, use the [Wizard](#configuration-using-wizard)
 - Check that access works and locate the source file e.g. `mysourcefile`, e.g. using command `files browse`
-- Get access to Organization 2 and create a [Option Preset](#option-preset)': e.g. `org2`
+- Get access to Organization 2 and create a [Option Preset](#option-preset): e.g. `org2`
 - Check that access works and locate the destination folder `mydestfolder`
 - Execute the following:
 
@@ -4573,7 +4574,7 @@ One can test the `server` application using the well known demo server:
 <%=cmd%> server download /aspera-test-dir-large/200MB
 ```
 
-`initdemo` creates a [Option Preset](#option-preset)' `demoserver` and set it as default for plugin `server`.
+`initdemo` creates a [Option Preset](#option-preset) `demoserver` and set it as default for plugin `server`.
 
 If an SSH private key is used for authentication with a passphrase, the passphrase needs to be provided to both options: `ssh_options`, for browsing, and `ts` for transfers:
 
@@ -4955,7 +4956,7 @@ IBM Aspera's newer self-managed application.
 
 > **Note:** If you have a Faspex 5 public link, provide it, unchanged, through the option `url`
 
-For a quick start, one can use the wizard, which will help creating a [Option Preset](#option-preset)':
+For a quick start, one can use the wizard, which will help creating a [Option Preset](#option-preset):
 
 ```bash
 <%=cmd%> config wizard
@@ -5118,7 +5119,7 @@ To select another inbox, use option `box` with one of the following values:
 
 ### Faspex 5: Send a package
 
-The `Hash` creation parameter provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
+The `Hash` creation positional argument provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
 
 The interface is the one of the API (Refer to Faspex5 API documentation, or look at request in browser).
 
@@ -5182,7 +5183,7 @@ Option `query` can be used to filter the list of packages, based on native API p
 | `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
 | `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
 
-A positional parameter in last position, of type `Proc`, can be used to filter the list of packages.
+A positional argument in last position, of type `Proc`, can be used to filter the list of packages.
 This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
 But the disadvantage is that the filtering is done in <%=tool%> and not in Faspex 5, so it is less efficient.
 
@@ -5220,7 +5221,7 @@ To receive one, or several packages at once, use command `faspex5 packages recei
 Provide either a single package id, or an extended value `Array` of package ids, e.g. `@list:,1,2,3` as argument.
 
 The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
-I.e. options `box` and `query`, as well as last positional parameter `Proc` (filter).
+I.e. options `box` and `query`, as well as last positional argument `Proc` (filter).
 
 Option `--once-only=yes` can be used, for "cargo-like" behavior.
 Special package id `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
@@ -5242,6 +5243,7 @@ If you are a regular user, to list work groups you belong to:
 ```
 
 If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
+Example:
 
 ```bash
 <%=cmd%> faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,name
@@ -5259,10 +5261,10 @@ It is equivalent to:
 <%=cmd%> faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
-Other payload parameters are possible the `Hash` value:
+Other payload parameters are possible for `invite` in this last `Hash` positional argument:
 
 ```json
-{"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3
+{"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3}
 ```
 
 ### Faspex 5: Create Metadata profile
@@ -5448,13 +5450,13 @@ The contents of `delivery_info` is directly the contents of the `send` v3 [API o
 Example:
 
 ```bash
-<%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' --url=https://faspex.corp.com/aspera/faspex --username=foo --password=bar /tmp/file1 /home/bar/file2
+<%=cmd%> faspex package send --delivery-info=@json:'{"title":"my title","recipients":["someuser@example.com"]}' /tmp/file1 /home/bar/file2
 ```
 
 If the recipient is a dropbox or workgroup: provide the name of the dropbox or workgroup preceded with `*` in the `recipients` field of the `delivery_info` option:
 `"recipients":["*MyDropboxName"]`
 
-Additional optional parameters in `delivery_info`:
+Additional optional parameters in mandatory option `delivery_info`:
 
 - Package Note: : `"note":"note this and that"`
 - Package Metadata: `"metadata":{"Meta1":"Val1","Meta2":"Val2"}`
@@ -5471,7 +5473,7 @@ The value is a `Hash` with the following keys:
 
 ### Email notification on transfer
 
-Like for any transfer, a notification can be sent by email using parameters: `notify_to` and `notify_template` .
+Like for any transfer, a notification can be sent by email using options: `notify_to` and `notify_template` .
 
 Example:
 
@@ -5671,7 +5673,7 @@ A subset of `node` plugin operations are supported, basically node API:
 
 The `preview` generates thumbnails (office, images, video) and video previews on storage for use primarily in the Aspera on Cloud application.
 It uses the **node API** of Aspera HSTS and requires use of Access Keys and its **storage root**.
-Several parameters can be used to tune several aspects:
+Several options can be used to tune several aspects:
 
 - Methods for detection of new files needing generation
 - Methods for generation of video preview
@@ -5698,10 +5700,11 @@ asnodeadmin --reload
 
 If another folder is configured on the HSTS, then specify it to <%=tool%> using the option `previews_folder`.
 
-The HSTS node API limits any preview file to a parameter: `max_request_file_create_size_kb` (1 KB is 1024 bytes).
-This size is internally capped to `1<<24` Bytes (16777216) , i.e. 16384 KBytes.
+The HSTS node API limits any preview file to a parameter: `max_request_file_create_size_kb` (1 KB is 1024 Bytes).
+This size is internally capped to `1<<24` Bytes (16777216) , i.e. 16384 KB, i.e. 16MB.
 
-To change this parameter in `aspera.conf`, use `asconfigurator`. To display the value, use `asuserdata`:
+To change this parameter in `aspera.conf`, use `asconfigurator`.
+To display the value, use `asuserdata`:
 
 ```bash
 asuserdata -a | grep max_request_file_create_size_kb
@@ -5782,7 +5785,7 @@ chmod a+x /usr/bin/unoconv
 The preview generator should be executed as a non-user.
 When using object storage, any user can be used, but when using local storage it is usually better to use the user `xfer`, as uploaded files are under this identity: this ensures proper access rights. (we will assume this)
 
-Like any <%=tool%> commands, parameters can be passed on command line or using a configuration [Option Preset](#option-preset)'.
+Like any <%=tool%> commands, options can be passed on command line or using a configuration [Option Preset](#option-preset).
 The configuration file must be created with the same user used to run so that it is properly used on runtime.
 
 The `xfer` user has a special protected shell: `aspshell`, so in order to update the configuration, and when changing identity, specify an alternate shell.
@@ -6035,11 +6038,11 @@ Virtually any transfer on a **repository** on a regular basis might emulate a ho
 
 > **Note:** File detection is not based on events (`inotify`, etc...), but on a simple folder scan on source side.
 >
-> **Note:** Parameters may be saved in a [Option Preset](#option-preset)' and used with `-P`.
+> **Note:** Options may be saved in a [Option Preset](#option-preset) and used with `-P`.
 
 #### Scheduling
 
-Once <%=tool%> parameters are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
+Once <%=tool%> command line arguments are defined, run the command using the OS native scheduler, e.g. every minutes, or 5 minutes, etc...
 Refer to section [Scheduler](#scheduler). (on use of option `lock_port`)
 
 ### Example: Upload hot folder
