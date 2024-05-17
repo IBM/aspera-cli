@@ -1578,22 +1578,24 @@ Temporary files are deleted at the end of execution unless option: `clean_temp` 
 
 ### Configuration file
 
-On the first execution of `ascli`, an empty configuration file is created in the configuration folder.
-Nevertheless, there is no mandatory information required in this file, the use of it is optional as any option can be provided on the command line.
+On the first execution of `ascli`, an empty configuration file is created in the configuration folder (`ascli conf folder`).
+There is no mandatory information required in this file.
+The use of it is optional as any option can be provided on the command line.
 
-Although the file is a standard YAML file, `ascli` provides commands to read and modify it using the `config` command.
+Although the file is a standard `YAML` file, `ascli` provides commands to read and modify it using the `config` command.
 
 All options for `ascli` can be set on command line, or by env vars, or using [Option Preset](#option-preset) in the configuration file.
 
 A configuration file provides a way to define default values, especially for authentication options, thus avoiding to always having to specify those options on the command line.
 
-The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `--config-file=path` or equivalent env var).
+The default configuration file is: `$HOME/.aspera/ascli/config.yaml` (this can be overridden with option `--config-file=path` or its env var).
 
-The configuration file is simply a catalog of pre-defined lists of options, called: [Option Preset](#option-preset). Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a [Option Preset](#option-preset) (e.g. `mypreset`) using the option: `-Pmypreset` or `--preset=mypreset`.
+The configuration file is a catalog of named lists of options, called: [Option Preset](#option-preset).
+Then, instead of specifying some common options on the command line (e.g. address, credentials), it is possible to invoke the ones of a [Option Preset](#option-preset) (e.g. `mypreset`) using the option `preset`: `--preset=mypreset` or its shortcut: `-Pmypreset`.
 
 #### Option Preset
 
-A [Option Preset](#option-preset) is simply a collection of options and their associated values in a named section in the configuration file.
+A [Option Preset](#option-preset) is a collection of options and their associated values in a named section in the configuration file.
 
 A named [Option Preset](#option-preset) can be modified directly using `ascli`, which will update the configuration file :
 
@@ -1649,6 +1651,15 @@ ascli config preset set|delete|show|initialize|update <name>
 ascli config preset over
 ascli config preset list
 ```
+
+It is possible to load a [Option Preset](#option-preset) from within another [Option Preset](#option-preset) using the `preset` option.
+For example if `pcommon` is a preset with common options, and `pspecific` is a preset with specific options, then `pspecific` can load `pcommon` using:
+
+```bash
+ascli config preset set pspecific preset pcommon
+```
+
+When `pspecific` is loaded, then cumulative option `preset` will be set and it will also load `pcommon`.
 
 #### Special Option Preset: `config`
 

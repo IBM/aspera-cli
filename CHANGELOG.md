@@ -1,5 +1,12 @@
 # Changes (Release notes)
 
+* dev
+  
+  * New Features:
+    * `faspex5`: added command `admin configuration` for global parameters.
+  * Issues Fixed:
+    * `faspex5`: fixed support for percent selector for metadata profiles.
+
 * 4.17.0
 
   * New Features:

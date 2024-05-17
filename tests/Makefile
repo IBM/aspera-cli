@@ -1600,6 +1600,7 @@ $(T)f5_pack_user_public: $(T).exists
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(TST_ASC_LCL_PATH)
+	sleep 20
 	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups
 	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"status":"completed","limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)workgroup_package_id1
 	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)workgroup_package_id1)
@@ -1616,7 +1617,6 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin res contacts list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res shared_inboxes list 
-	$(EXE_MAN) faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
 	$(EXE_MAN) faspex5 admin res workgroups list
 	$(EXE_MAN) faspex5 admin res saml_configs list
 	$(EXE_MAN) faspex5 admin res metadata_profiles list
@@ -1629,6 +1629,7 @@ $(T)f5_adm: $(T).exists
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res oauth_clients list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res registrations list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
+	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
 	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:john@example.com
 	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_box_name@ johnny@example.com
