@@ -431,7 +431,7 @@ module Aspera
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
             file_info = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
             if file_info['type'].eql?('folder')
-              result = apifid[:api].read("files/#{apifid[:file_id]}/files", old_query_read_delete)
+              result = apifid[:api].read("files/#{apifid[:file_id]}/files", query_read_delete)
               items = result[:data]
               formatter.display_item_count(result[:data].length, result[:http]['X-Total-Count'])
             else
@@ -707,7 +707,7 @@ module Aspera
             command = options.get_next_command(%i[list create show modify cancel])
             case command
             when :list
-              resp = @api_node.read('ops/transfers', old_query_read_delete)
+              resp = @api_node.read('ops/transfers', query_read_delete)
               return { type: :object_list, data: resp[:data], fields: %w[id status] } # TODO: useful?
             when :create
               resp = @api_node.create('streams', value_create_modify(command: command))
@@ -841,7 +841,7 @@ module Aspera
               resp = @api_node.create(res_class_path, value_create_modify(command: command))
               return Main.result_status("#{resp[:data]['id']} created")
             when :list
-              resp = @api_node.read(res_class_path, old_query_read_delete)
+              resp = @api_node.read(res_class_path, query_read_delete)
               return { type: :value_list, data: resp[:data]['ids'], name: 'id' }
             when :show
               return { type: :single_object, data: @api_node.read(one_res_path)[:data]}

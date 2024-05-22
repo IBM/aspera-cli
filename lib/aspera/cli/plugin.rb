@@ -153,13 +153,13 @@ module Aspera
         when :delete
           raise 'cannot delete singleton' if is_singleton
           return do_bulk_operation(command: command, descr: 'identifier', values: one_res_id) do |one_id|
-            rest_api.delete("#{res_class_path}/#{one_id}", old_query_read_delete)
+            rest_api.delete("#{res_class_path}/#{one_id}", query_read_delete)
             {'id' => one_id}
           end
         when :show
           return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
         when :list
-          resp = rest_api.read(res_class_path, old_query_read_delete)
+          resp = rest_api.read(res_class_path, query_read_delete)
           return Main.result_empty if resp[:http].code == '204'
           data = resp[:data]
           # TODO: not generic : which application is this for ?
@@ -212,14 +212,6 @@ module Aspera
         rescue StandardError => e
           raise Cli::BadArgument, "Query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
         end
-        return query
-      end
-
-      # TODO: when deprecation of `value` is completed: remove this method, replace with query_read_delete
-      # deprecation: 4.14
-      def old_query_read_delete
-        query = options.get_option(:value) # legacy, deprecated, remove, one day...
-        query = query_read_delete if query.nil?
         return query
       end
 
