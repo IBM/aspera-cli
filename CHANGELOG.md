@@ -7,7 +7,7 @@
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:
-    * **global**: option `value` is deprecated and replaced with option `query` when used in generic commands: `delete` and `list`, as well as node ak browse, node stream and watch folder list.
+    * **global**: option `value` is deprecated and replaced with option `query` when used in generic commands: `delete` and `list`, as well as node ak browse, node stream and watch folder list. (#142)
 
 * 4.17.0
 
