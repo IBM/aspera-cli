@@ -272,8 +272,8 @@ $(T)serv_sync: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_uploa
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TST_SYNC_LCL_DIR)","reset":true}]}'
-	$(EXE_MAN) server sync admin status my_sync --sync-info=@json:'{"sessions":[{"name":"my_sync","local_dir":"$(TST_SYNC_LCL_DIR)"}]}'
+	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TST_SYNC_LCL_DIR)","reset":true}]}'
+	$(EXE_MAN) server sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"$(TST_SYNC_LCL_DIR)"}]}'
 	$(EXE_MAN) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
 	$(EXE_BEG_FAI) server sync admin status --sync-info=@json:'{"name":"sync2"}' $(EXE_END_FAI)
 	$(EXE_MAN) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TST_SYNC_LCL_DIR)"}}'
