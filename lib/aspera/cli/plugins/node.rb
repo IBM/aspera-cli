@@ -187,6 +187,67 @@ module Aspera
           raise StandardError, 'expect: nil, String or Array'
         end
 
+        # directory: node, container: shares
+        FOLDER_TYPE = %w[directory container].freeze
+
+        def browse_gen3(prefix_path)
+          folders_to_process = [get_next_arg_add_prefix(prefix_path, 'path')]
+          query = options.get_option(:query, default: {})
+          # special parameter: max number of entries in result
+          max_items = query.delete('max')
+          # special parameter: recursive browsing
+          recursive = query.delete('recursive')
+          # special parameter: only return one entry for the path, even if folder
+          only_path = query.delete('self')
+          # allow user to specify a single call, and not recursive
+          single_call = query.key?('skip')
+          # API default is 100, so use 1000 for default
+          query['count'] ||= 1000
+          raise Cli::BadArgument, 'options recursive and skip cannot be used together' if recursive && single_call
+          all_items = []
+          until folders_to_process.empty?
+            path = folders_to_process.shift
+            query['path'] = path
+            offset = 0
+            total_count = nil
+            result = nil
+            loop do
+              # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
+              response = @api_node.call(
+                operation:   'POST',
+                subpath:     'files/browse',
+                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
+                json_params: query)
+              # 'file','symbolic_link'
+              if only_path || !FOLDER_TYPE.include?(response[:data]['self']['type'])
+                result = { type: :single_object, data: response[:data]['self']}
+                break
+              end
+              items = response[:data]['items']
+              total_count ||= response[:data]['total_count']
+              all_items.concat(items)
+              if single_call
+                formatter.display_item_count(response[:data]['item_count'], total_count)
+                break
+              end
+              if recursive
+                folders_to_process.concat(items.select{|i|FOLDER_TYPE.include?(i['type'])}.map{|i|i['path']})
+              end
+              if !max_items.nil? && (all_items.count >= max_items)
+                all_items = all_items.slice(0, max_items) if all_items.count > max_items
+                break
+              end
+              break if all_items.count >= total_count
+              offset += items.count
+              query['skip'] = offset
+              formatter.long_operation_running(all_items.count)
+            end
+            query.delete('skip')
+          end
+          result ||= {type: :object_list, data: all_items}
+          return c_result_remove_prefix_path(result, 'path', prefix_path)
+        end
+
         # file and folder related commands
         def execute_command_gen3(command, prefix_path)
           case command
@@ -235,20 +296,7 @@ module Aspera
             resp = @api_node.create('files/rename', { 'paths' => [{ 'path' => path_base, 'source' => path_src, 'destination' => path_dst }] })
             return c_result_translate_rem_prefix(resp, 'entry', 'moved', prefix_path)
           when :browse
-            query = { path: get_next_arg_add_prefix(prefix_path, 'path')}
-            additional_query = options.get_option(:query)
-            query.merge!(additional_query) unless additional_query.nil?
-            send_result = @api_node.create('files/browse', query)[:data]
-            # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
-            # if there is no items
-            case send_result['self']['type']
-            when 'directory', 'container' # directory: node, container: shares
-              result = { data: send_result['items'], type: :object_list }
-              formatter.display_item_count(send_result['item_count'], send_result['total_count'])
-            else # 'file','symbolic_link'
-              result = { data: send_result['self'], type: :single_object}
-            end
-            return c_result_remove_prefix_path(result, 'path', prefix_path)
+            return browse_gen3(prefix_path)
           when :sync
             return execute_sync_action do |sync_direction, local_path, remote_path|
               # Gen3 API

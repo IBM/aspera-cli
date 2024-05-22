@@ -224,6 +224,7 @@ def generate_generic_conf
         if uri.query.is_a?(String)
           uri.query = uri.query.gsub(/&?token=[^&]*/, 'token=some_token')
           uri.query = uri.query.gsub(/&?passcode=[^&]*/, 'token=some_passcode')
+          uri.query = uri.query.gsub(/&?context=[^&]*/, 'context=some_passcode')
         end
         h[p] = uri.to_s
       rescue

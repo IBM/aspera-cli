@@ -4617,6 +4617,18 @@ Example:
 - `<%=cmd%> node browse /` : list files with **gen3/node user** API
 - `<%=cmd%> node access_key do self browse /` : list files with **gen4/access key** API
 
+## Browse
+
+Native API parameters can be placed in option `query`.
+
+Special parameters can be placed in option `query` for "gen3" browse:
+
+| Parameter | Description |
+|-----------|-------------|
+| `recursive` | Recursively list files |
+| `max` | Maximum number of files to list |
+| `self` | Offset in the list |
+
 ### Operation `find` on **gen4/access key**
 
 The command `find <folder> [filter_expr]` is available for **gen4/access key**, under `access_keys do self`.

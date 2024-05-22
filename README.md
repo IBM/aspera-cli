@@ -5110,8 +5110,8 @@ mkdir my_upload_folder/target_hot
 mv my_upload_folder/200KB.2 my_upload_folder/to.delete
 sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"}}'
 sync admin status --sync-info=@json:'{"name":"sync2"}'
-sync admin status my_sync --sync-info=@json:'{"sessions":[{"name":"my_sync","local_dir":"/data/local_sync"}]}'
-sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"my_sync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
+sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"/data/local_sync"}]}'
+sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
 sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
@@ -5246,6 +5246,18 @@ Example:
 
 - `ascli node browse /` : list files with **gen3/node user** API
 - `ascli node access_key do self browse /` : list files with **gen4/access key** API
+
+## Browse
+
+Native API parameters can be placed in option `query`.
+
+Special parameters can be placed in option `query` for "gen3" browse:
+
+| Parameter | Description |
+|-----------|-------------|
+| `recursive` | Recursively list files |
+| `max` | Maximum number of files to list |
+| `self` | Offset in the list |
 
 ### Operation `find` on **gen4/access key**
 

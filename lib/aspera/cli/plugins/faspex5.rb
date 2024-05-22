@@ -403,7 +403,7 @@ module Aspera
         # browse a folder
         # @param browse_endpoint [String] the endpoint to browse
         def browse_folder(browse_endpoint)
-          path = options.get_next_argument('folder path', mandatory: false, default: '/')
+          folders_to_process = [options.get_next_argument('folder path', mandatory: false, default: '/')]
           query = query_read_delete(default: {})
           query['filters'] = {} unless query.key?('filters')
           filters = query.delete('filters')
@@ -412,10 +412,8 @@ module Aspera
           max_items = query.delete('max')
           recursive = query.delete('recursive')
           all_items = []
-          folders_to_process = [path]
           until folders_to_process.empty?
             path = folders_to_process.shift
-            query.delete('iteration_token')
             loop do
               response = @api_v5.call(
                 operation:   'POST',
@@ -436,6 +434,7 @@ module Aspera
               query['iteration_token'] = iteration_token
               formatter.long_operation_running(all_items.count)
             end
+            query.delete('iteration_token')
           end
           return {type: :object_list, data: all_items}
         end
