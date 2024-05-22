@@ -1584,6 +1584,7 @@ $(T)f5_p3: $(T).exists
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
+	echo "Waiting for package to be available" && sleep 30
 	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.shared_box_name
 	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.shared_box_name --query=@json:'{"status":"completed","limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)package_box_id1
 	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.shared_box_name $$(cat $(DIR_TMP)package_box_id1)
