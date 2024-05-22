@@ -35,9 +35,9 @@ module Aspera
         # this could be refined, as , for instance, on macos, temp folder is already user specific
         @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists') # cspell:disable-line
 
-        # @param to_text [bool] replace HTML entities with text equivalent
+        # @param formatter [Cli::Formatter] formatter to use
         # @return a table suitable to display in manual
-        def man_table
+        def man_table(formatter)
           result = []
           Spec::DESCRIPTION.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
@@ -63,8 +63,8 @@ module Aspera
                 end.map{|n|"{#{n}}"}.join('|')
                 conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
                 "#{options[:cli][:switch]} #{conversion_tag}#{values}"
-              when :special then Cli::Formatter.special('special')
-              when :ignore then Cli::Formatter.special('ignored')
+              when :special then formatter.special_format('special')
+              when :ignore then formatter.special_format('ignored')
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end

@@ -728,7 +728,7 @@ module Aspera
           when :spec
             return {
               type:   :object_list,
-              data:   Transfer::Parameters.man_table,
+              data:   Transfer::Parameters.man_table(formatter),
               fields: [%w[name type], Transfer::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
             }
           when :errors
@@ -1210,7 +1210,7 @@ module Aspera
           when :info
             return {type: :single_object, data: vault_info}
           when :list
-            return {type: :object_list, data: vault.list}
+            return {type: :object_list, data: vault.list, fields: %w(label url username password description)}
           when :show
             return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
           when :create
@@ -1221,8 +1221,9 @@ module Aspera
             vault.set(info)
             return Main.result_status('Password added')
           when :delete
-            vault.delete(label: options.get_next_argument('label'))
-            return Main.result_status('Password deleted')
+            label_to_delete = options.get_next_argument('label')
+            vault.delete(label: label_to_delete)
+            return Main.result_status("Entry deleted: #{label_to_delete}")
           when :password
             Aspera.assert(vault.respond_to?(:password=)){'Vault does not support password change'}
             new_password = options.get_next_argument('new_password')

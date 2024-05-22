@@ -15,8 +15,9 @@ module Aspera
     CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
     # This class is used to transform a complex structure into a simple hash
     class Flattener
-      def initialize
+      def initialize(formatter)
         @result = nil
+        @formatter = formatter
       end
 
       # General method
@@ -49,9 +50,9 @@ module Aspera
         elsif something.is_a?(Array)
           flatten_array(something, name)
         elsif something.is_a?(String) && something.empty?
-          @result[name] = Formatter.special('empty string')
+          @result[name] = @formatter.special_format('empty string')
         elsif something.nil?
-          @result[name] = Formatter.special('null')
+          @result[name] = @formatter.special_format('null')
         # elsif something.eql?(true) || something.eql?(false)
         #  @result[name] = something
         else
@@ -64,7 +65,7 @@ module Aspera
       # @param name [String] name of englobing key
       def flatten_array(array, name)
         if array.empty?
-          @result[name] = Formatter.special('empty list')
+          @result[name] = @formatter.special_format('empty list')
         elsif array.all?(String)
           @result[name] = array.join("\n")
         elsif array.all?{|i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
@@ -106,19 +107,6 @@ module Aspera
       HINT_FLASH = 'HINT:'.bg_green.gray.blink.freeze
 
       class << self
-        # Highlight special values
-        def special(what, use_colors: $stdout.isatty)
-          result = $stdout.isatty ? "<#{what}>" : "&lt;#{what}&gt;"
-          if use_colors
-            result = if %w[null empty].any?{|s|what.include?(s)}
-              result.dim
-            else
-              result.reverse_color
-            end
-          end
-          return result
-        end
-
         def all_but(list)
           list = [list] unless list.is_a?(Array)
           return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(ExtendedValue::ALL)
@@ -159,6 +147,19 @@ module Aspera
         @spinner = nil
       end
 
+      # Highlight special values
+      def special_format(what, use_colors: $stdout.isatty)
+        result = $stdout.isatty ? "<#{what}>" : "&lt;#{what}&gt;"
+        if use_colors
+          result = if %w[null empty].any?{|s|what.include?(s)}
+            result.dim
+          else
+            result.reverse_color
+          end
+        end
+        return result
+      end
+
       # call this after REST calls if several api calls are expected
       def long_operation_running(title = '')
         return unless Environment.terminal?
@@ -170,6 +171,7 @@ module Aspera
         @spinner.spin
       end
 
+      # options are: format, output, display, fields, select, table_style, flat_hash, transpose_single
       def option_handler(option_symbol, operation, value=nil)
         Aspera.assert_values(operation, %i[set get])
         case operation
@@ -287,7 +289,7 @@ module Aspera
         end
         if object_array.empty?
           # no  display for csv
-          display_message(:info, Formatter.special('empty')) if @options[:format].eql?(:table)
+          display_message(:info, special_format('empty')) if @options[:format].eql?(:table)
           return
         end
         if object_array.length == 1 && fields.length == 1
@@ -345,20 +347,20 @@ module Aspera
         when :table, :csv
           case results[:type]
           when :config_over
-            display_table(Flattener.new.config_over(results[:data]), CONF_OVERVIEW_KEYS)
+            display_table(Flattener.new(self).config_over(results[:data]), CONF_OVERVIEW_KEYS)
           when :object_list, :single_object
             obj_list = results[:data]
             obj_list = [obj_list] if results[:type].eql?(:single_object)
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{|obj|Flattener.new.flatten(obj)} if @options[:flat_hash]
+            obj_list = obj_list.map{|obj|Flattener.new(self).flatten(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, results[:fields]))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
             display_table(results[:data].map { |i| { results[:name] => i } }, [results[:name]])
           when :empty # no table
-            display_message(:info, Formatter.special('empty'))
+            display_message(:info, special_format('empty'))
             return
           when :nothing # no result expected
             Log.log.debug('no result expected')

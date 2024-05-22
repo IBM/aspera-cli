@@ -11,6 +11,12 @@ require 'aspera/cli/info'
 require 'yaml'
 require 'erb'
 
+class DocFormatter
+  def special_format(x)
+    return $stdout.isatty ? "<#{x}>" : "&lt;#{x}&gt;"
+  end
+end
+
 # set values used in ERB
 # just command name
 def cmd; Aspera::Cli::PROGRAM_NAME; end
@@ -44,7 +50,7 @@ def spec_table
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Transfer::Parameters.man_table.each do |p|
+  Aspera::Transfer::Parameters.man_table(DocFormatter.new).each do |p|
     p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
     p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.strip.empty?}
     p[:description] = p[:description].gsub("\n", '<br/>')
