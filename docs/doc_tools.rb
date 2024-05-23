@@ -10,6 +10,7 @@ require 'aspera/transfer/parameters'
 require 'aspera/cli/info'
 require 'yaml'
 require 'erb'
+require 'English'
 
 class DocFormatter
   def special_format(x)
@@ -78,7 +79,10 @@ end
 # generate help for the given command
 def generate_help(varname)
   raise "missing #{varname}" unless @env.key?(varname)
-  return %x(#{@env[varname]} -h 2>&1)
+  exec_path = @env[varname]
+  output = %x(#{exec_path} -h 2>&1)
+  raise "Error executing: #{exec_path} -h" unless $CHILD_STATUS.success?
+  return output
 end
 
 def include_usage

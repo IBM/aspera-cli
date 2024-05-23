@@ -41,7 +41,7 @@ def assert_usage(assertion, error_message)
   $stderr.puts('EXAMPLES')
   $stderr.puts(%Q(    asession @json:'{"#{PARAM_SPEC}":{#{SAMPLE_DEMO},#{SAMPLE_DEMO2},"paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'))
   $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession @json:@stdin))
-  Process.exit(1)
+  Process.exit(0)
 end
 Aspera::Ascp::Installation.instance.sdk_folder = File.join(Dir.home, '.aspera', 'sdk')
 
