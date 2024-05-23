@@ -2,12 +2,13 @@
 
 require 'aspera/colors'
 require 'aspera/secret_hider'
-require 'aspera/environment'
-require 'aspera/assert'
 require 'logger'
 require 'pp'
 require 'json'
 require 'singleton'
+
+old_verbose = $VERBOSE
+$VERBOSE = nil
 
 # extend Ruby logger with trace levels
 class Logger
@@ -43,6 +44,8 @@ class Logger
   # declare methods for all levels
   Logger::Severity.constants.each { |severity| make_methods(severity) }
 end
+
+$VERBOSE = old_verbose
 
 module Aspera
   # Singleton object for logging

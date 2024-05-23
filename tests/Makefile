@@ -61,11 +61,13 @@ PACKAGE_TITLE_BASE=$(CLI_NAME) test $(shell LANG=C date)
 
 WIZ_TEST=--test-mode=yes
 CLI_HOME=$(DIR_TMP)$(CLI_NAME)_home/
+#RUBY_WARN=ruby -w
+RUBY_WARN=ruby -w $(DIR_TST)warning_exit_wrapper.rb
 # use configuration file in test folder
-EXE_COMMON=$(CLI_PATH) --home=$(CLI_HOME) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
+EXE_COMMON=$(RUBY_WARN) $(CLI_PATH) --home=$(CLI_HOME) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
 # "EXE_MAN" and "EXE_NO_MAN" are used to call the tool in the testing environment
 # "EXE_MAN" is used to generate sample commands in documentation (see in docs/Makefile)
-EXE_MAN=$(EXE_COMMON) --warnings
+EXE_MAN=$(EXE_COMMON)
 # "EXE_NO_MAN" when the command is not needed in documentation
 EXE_NO_MAN=$(EXE_COMMON)
 # enclose tests that shall result in error

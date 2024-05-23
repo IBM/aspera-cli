@@ -3452,7 +3452,6 @@ OPTIONS: global
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
-    -w, --warnings                   Check for language warnings
         --ui=ENUM                    Method to start browser: text, [graphical]
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog

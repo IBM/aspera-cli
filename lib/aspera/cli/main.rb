@@ -164,7 +164,6 @@ module Aspera
         options.declare(:bash_comp, 'Generate bash completion for command', values: :none) { @bash_completion = true }
         options.declare(:show_config, 'Display parameters used for the provided action', values: :none) { @option_show_config = true }
         options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
-        options.declare(:warnings, 'Check for language warnings', values: :none, short: 'w') { $VERBOSE = true }
         options.declare(
           :ui, 'Method to start browser',
           values: OpenApplication.user_interfaces,

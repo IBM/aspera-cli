@@ -1,8 +1,11 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+old_verbose = $VERBOSE
+$VERBOSE = nil
 Encoding.default_internal = Encoding::UTF_8
 Encoding.default_external = Encoding::UTF_8
+$VERBOSE = old_verbose
 
 begin
   gem_lib_folder = File.join(File.dirname(File.dirname(File.realpath(__FILE__))), 'lib')

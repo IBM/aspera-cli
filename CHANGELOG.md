@@ -10,6 +10,7 @@
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:
     * **global**: option `value` is deprecated and replaced with option `query` when used in generic commands: `delete` and `list`, as well as node ak browse, node stream and watch folder list. (#142)
+    * **global**: option `warnings` (and short `w`) is removed. To get ruby warnings invoke with `ruby -w .../ascli ...`. See `Makefile` in `test`
 
 * 4.17.0
 
