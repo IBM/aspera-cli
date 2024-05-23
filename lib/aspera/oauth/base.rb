@@ -9,9 +9,7 @@ require 'date'
 module Aspera
   module OAuth
     # Implement OAuth 2 for the REST client and generate a bearer token
-    # call get_authorization() to get a token.
-    # bearer tokens are kept in memory and also in a file cache for later re-use
-    # if a token is expired (api returns 4xx), call again get_authorization(refresh: true)
+    # bearer tokens are cached in memory and in a file cache for later re-use
     # https://tools.ietf.org/html/rfc6749
     class Base
       # scope can be modified after creation
@@ -71,9 +69,12 @@ module Aspera
         return call_params
       end
 
-      # OAuth v2 token generation
-      # @param use_refresh_token set to true to force refresh or re-generation (if previous failed)
-      def get_authorization(use_refresh_token: false, use_cache: true)
+      # get an OAuth v2 token (generated, cached, refreshed)
+      # call token() to get a token.
+      # if a token is expired (api returns 4xx), call again token(refresh: true)
+      # @param cache set to false to disable cache
+      # @param refresh set to true to force refresh or re-generation (if previous failed)
+      def token(cache: true, refresh: false)
         # generate token unique identifier for persistency (memory/disk cache)
         token_id = IdGenerator.from_list(Factory.id(
           @base_url,
@@ -83,12 +84,12 @@ module Aspera
         ))
 
         # get token_data from cache (or nil), token_data is what is returned by /token
-        token_data = Factory.instance.persist_mgr.get(token_id) if use_cache
+        token_data = Factory.instance.persist_mgr.get(token_id) if cache
         token_data = JSON.parse(token_data) unless token_data.nil?
         # Optional optimization: check if node token is expired based on decoded content then force refresh if close enough
         # might help in case the transfer agent cannot refresh himself
         # `direct` agent is equipped with refresh code
-        if !use_refresh_token && !token_data.nil?
+        if !refresh && !token_data.nil?
           decoded_token = OAuth::Factory.instance.decode_token(token_data[@token_field])
           Log.log.debug{Log.dump('decoded_token', decoded_token)} unless decoded_token.nil?
           if decoded_token.is_a?(Hash)
@@ -97,13 +98,13 @@ module Aspera
               elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
               end
             # force refresh if we see a token too close from expiration
-            use_refresh_token = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < OAuth::Factory.instance.parameters[:token_expiration_guard_sec]
-            Log.log.debug{"Expiration: #{expires_at_sec} / #{use_refresh_token}"}
+            refresh = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < OAuth::Factory.instance.parameters[:token_expiration_guard_sec]
+            Log.log.debug{"Expiration: #{expires_at_sec} / #{refresh}"}
           end
         end
 
         # an API was already called, but failed, we need to regenerate or refresh
-        if use_refresh_token
+        if refresh
           if token_data.is_a?(Hash) && token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
             # save possible refresh token, before deleting the cache
             refresh_token = token_data['refresh_token']

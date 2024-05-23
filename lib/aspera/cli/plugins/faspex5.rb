@@ -702,7 +702,7 @@ module Aspera
               end
             end
           when :bearer_token
-            return {type: :text, data: @api_v5.oauth_token}
+            return {type: :text, data: @api_v5.oauth.token}
           when :packages
             return package_action
           when :shared_folders

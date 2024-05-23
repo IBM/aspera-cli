@@ -214,11 +214,6 @@ module Aspera
       return @oauth
     end
 
-    def oauth_token(force_refresh: false)
-      Aspera.assert_values(force_refresh, [true, false])
-      return oauth.get_authorization(use_refresh_token: force_refresh)
-    end
-
     # HTTP/S REST call
     # @param operation [String] HTTP operation (GET, POST, PUT, DELETE)
     # @param subpath [String] subpath of REST API
@@ -257,7 +252,7 @@ module Aspera
         Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
-        headers['Authorization'] = oauth_token unless headers.key?('Authorization')
+        headers['Authorization'] = oauth.token unless headers.key?('Authorization')
       when :url
         query ||= {}
         @auth_params[:url_query].each do |key, value|
@@ -360,12 +355,12 @@ module Aspera
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
             # try to use refresh token
-            req['Authorization'] = oauth_token(force_refresh: true)
+            req['Authorization'] = oauth.token(refresh: true)
           rescue RestCallError => e_tok
             e = e_tok
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
-            req['Authorization'] = oauth_token(force_refresh: true)
+            req['Authorization'] = oauth.token(refresh: true)
           end
           Log.log.debug{"using new token=#{headers['Authorization']}"}
           retry if (oauth_tries -= 1).nonzero?

@@ -471,7 +471,7 @@ module Aspera
               result[:password] = apifid[:api].auth_params[:password]
             when :oauth2
               result[:username] = apifid[:api].params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
-              result[:password] = apifid[:api].oauth_token
+              result[:password] = apifid[:api].oauth.token
             else Aspera.error_unreachable_line
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)

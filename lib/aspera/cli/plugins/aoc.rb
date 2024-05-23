@@ -336,7 +336,7 @@ module Aspera
             transfer.agent_instance = Agent::Node.new({
               url:      client_apfid[:api].base_url,
               username: client_apfid[:api].app_info[:node_info]['access_key'],
-              password: client_apfid[:api].oauth_token,
+              password: client_apfid[:api].oauth.token,
               root_id:  client_apfid[:file_id]
             })
             # additional node to node TS info
@@ -591,7 +591,7 @@ module Aspera
           when :servers
             return {type: :object_list, data: Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers')[:data]}
           when :bearer_token
-            return {type: :text, data: aoc_api.oauth_token}
+            return {type: :text, data: aoc_api.oauth.token}
           when :organization
             return { type: :single_object, data: aoc_api.read('organization')[:data] }
           when :tier_restrictions

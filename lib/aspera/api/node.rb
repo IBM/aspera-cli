@@ -271,7 +271,7 @@ module Aspera
       end
 
       def refreshed_transfer_token
-        return oauth_token(force_refresh: true)
+        return oauth.token(refresh: true)
       end
 
       # Create transfer spec for gen4
@@ -285,9 +285,9 @@ module Aspera
           ak_token = Rest.basic_token(auth_params[:username], auth_params[:password])
         when :oauth2
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
-          # TODO: token_generation_lambda = lambda{|do_refresh|oauth_token(force_refresh: do_refresh)}
+          # TODO: token_generation_lambda = lambda{|do_refresh|oauth.token(refresh: do_refresh)}
           # get bearer token, possibly use cache
-          ak_token = oauth_token(force_refresh: false)
+          ak_token = oauth.token(refresh: false)
         else Aspera.error_unexpected_value(auth_params[:type])
         end
         transfer_spec = {
