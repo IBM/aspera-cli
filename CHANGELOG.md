@@ -5,6 +5,7 @@
   * New Features:
     * `faspex5`: added command `admin configuration` for global parameters.
     * `node`: "gen3" browse now returns all elements using pages, and supports option `query` with parameter `recursive`, `max`, `self`.
+    * `httpgw`: new plugin, mainly to detect the GW.
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:
