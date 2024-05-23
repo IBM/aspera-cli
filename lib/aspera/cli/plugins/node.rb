@@ -44,7 +44,8 @@ module Aspera
               next unless result[:http].body.eql?('')
               url_length = -2 - test_endpoint.length
               return {
-                url: result[:http].uri.to_s[0..url_length]
+                url:     result[:http].uri.to_s[0..url_length],
+                version: 'requires authentication'
               }
             rescue StandardError => e
               error = e
