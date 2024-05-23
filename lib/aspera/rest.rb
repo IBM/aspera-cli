@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require 'aspera/rest_errors_aspera'
+require 'aspera/rest_error_analyzer'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
-require 'aspera/rest_error_analyzer'
 require 'aspera/hash_ext'
-require 'aspera/rest_errors_aspera'
 require 'net/http'
 require 'net/https'
 require 'json'
@@ -153,47 +153,6 @@ module Aspera
       return @http_session
     end
 
-    def build_request(
-      operation:,
-      subpath:,
-      url_params:,
-      json_params:,
-      www_body_params:,
-      text_body_params:,
-      headers:
-    )
-      # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
-      # URI.escape()
-      separator = !['', '/'].include?(subpath) || @base_url.end_with?('/') ? '/' : ''
-      uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", url_params)
-      Log.log.debug{"URI=#{uri}"}
-      begin
-        # instantiate request object based on string name
-        req = Net::HTTP.const_get(operation.capitalize).new(uri)
-      rescue NameError
-        raise "unsupported operation : #{operation}"
-      end
-      if !json_params.nil?
-        req.body = JSON.generate(json_params) # , ascii_only: true
-        req['Content-Type'] = 'application/json'
-      end
-      if !www_body_params.nil?
-        req.body = URI.encode_www_form(www_body_params)
-        req['Content-Type'] = 'application/x-www-form-urlencoded'
-      end
-      if !text_body_params.nil?
-        req.body = text_body_params
-      end
-      # set headers
-      headers.each do |key, value|
-        req[key] = value
-      end
-      # :type = :basic
-      req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
-      Log.log.debug{Log.dump(:req_body, req.body)}
-      return req
-    end
-
     public
 
     attr_reader :auth_params
@@ -217,7 +176,7 @@ module Aspera
     #     :url_query  [:url]    a hash
     #     :*          [:oauth2] see OAuth::Factory class
     # @param not_auth_codes [Array] codes that trigger a refresh/regeneration of bearer token
-    # @param redirect_max [int] max redirections allowed
+    # @param redirect_max [int] max redirection allowed
     def initialize(
       base_url:,
       auth: nil,
@@ -302,11 +261,38 @@ module Aspera
       else Aspera.error_unexpected_value(@auth_params[:type])
       end
       result = {http: nil}
-      # start a block to be able to retry the actual HTTP request
+      # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
       begin
-        req = build_request(
-          operation: operation, subpath: subpath, json_params: json_params, url_params: url_params, www_body_params: www_body_params,
-          text_body_params: text_body_params, headers: headers)
+        # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
+        # URI.escape()
+        separator = !['', '/'].include?(subpath) || @base_url.end_with?('/') ? '/' : ''
+        uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", url_params)
+        Log.log.debug{"URI=#{uri}"}
+        begin
+          # instantiate request object based on string name
+          req = Net::HTTP.const_get(operation.capitalize).new(uri)
+        rescue NameError
+          raise "unsupported operation : #{operation}"
+        end
+        if !json_params.nil?
+          req.body = JSON.generate(json_params) # , ascii_only: true
+          req['Content-Type'] = 'application/json'
+        end
+        if !www_body_params.nil?
+          req.body = URI.encode_www_form(www_body_params)
+          req['Content-Type'] = 'application/x-www-form-urlencoded'
+        end
+        if !text_body_params.nil?
+          req.body = text_body_params
+          req['Content-Type'] = 'text/plain'
+        end
+        # set headers
+        headers.each do |key, value|
+          req[key] = value
+        end
+        # :type = :basic
+        req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
+        Log.log.debug{Log.dump(:req_body, req.body)}
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
         # initialize with number of initial retries allowed, nil gives zero

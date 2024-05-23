@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
 require 'aspera/rest_call_error'
+require 'aspera/log'
 require 'singleton'
 
 module Aspera
