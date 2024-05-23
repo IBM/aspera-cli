@@ -50,8 +50,9 @@ module Aspera
         operation:   'POST',
         subpath:     "packages/#{package['id']}/transfer_spec/upload",
         headers:     {'Accept' => 'application/json'},
-        url_params:  {transfer_type: Cli::Plugins::Faspex5::TRANSFER_CONNECT},
-        json_params: {paths: [{'destination'=>'/'}]}
+        query:       {transfer_type: Cli::Plugins::Faspex5::TRANSFER_CONNECT},
+        body:        {paths: [{'destination'=>'/'}]},
+        body_type:   :json
       )[:data]
       transfer_spec.delete('authentication')
       # but we place it in a Faspex package creation response

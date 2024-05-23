@@ -6,14 +6,14 @@ module Aspera
   module OAuth
     class UrlJson < Base
       def initialize(
-        json:,
         url:,
+        json:,
         **generic_params
       )
         super(**generic_params)
-        @json_params = json
-        @url_params = url
-        @identifiers.push(@json_params[:url_token])
+        @body = json
+        @query = url
+        @identifiers.push(@body[:url_token])
       end
 
       def create_token
@@ -21,8 +21,9 @@ module Aspera
           operation:   'POST',
           subpath:     @path_token,
           headers:     {'Accept' => 'application/json'},
-          json_params: @json_params,
-          url_params:  @url_params.merge(scope: @scope) # scope is here because it may change over time (node)
+          query:       @query.merge(scope: @scope), # scope is here because it may change over time (node)
+          body:        @body,
+          body_type:   :json
         )
       end
     end

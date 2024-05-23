@@ -55,10 +55,11 @@ module Aspera
       def create_token_call(www_params)
         Log.log.debug{'Generating a new token'.bg_green}
         return @api.call(
-          operation:       'POST',
-          subpath:         @path_token,
-          headers:         {'Accept' => 'application/json'},
-          www_body_params: www_params)
+          operation: 'POST',
+          subpath:   @path_token,
+          headers:   {'Accept' => 'application/json'},
+          body:      www_params,
+          body_type: :www)
       end
 
       # @return Hash with optional general parameters

@@ -128,7 +128,11 @@ module Aspera
         def get_folder_entries(file_id, request_args=nil)
           headers = {'Accept' => 'application/json'}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
-          return @api_node.call(operation: 'GET', subpath: "files/#{file_id}/files", headers: headers, url_params: request_args)[:data]
+          return @api_node.call(
+            operation: 'GET',
+            subpath:   "files/#{file_id}/files",
+            headers:   headers,
+            query:     request_args)[:data]
           # return @api_node.read("files/#{file_id}/files",request_args)[:data]
         end
 

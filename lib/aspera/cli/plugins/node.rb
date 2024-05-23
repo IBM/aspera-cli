@@ -217,8 +217,9 @@ module Aspera
               response = @api_node.call(
                 operation:   'POST',
                 subpath:     'files/browse',
-                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
-                json_params: query)
+                headers:     {'Accept' => 'application/json'},
+                body:        query,
+                body_type:   :json)
               # 'file','symbolic_link'
               if only_path || !FOLDER_TYPE.include?(response[:data]['self']['type'])
                 result = { type: :single_object, data: response[:data]['self']}
@@ -407,9 +408,10 @@ module Aspera
             begin
               @api_node.call(
                 operation: 'POST',
-                subpath: 'services/soap/Transfer-201210',
-                headers: {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
-                text_body_params: CENTRAL_SOAP_API_TEST)[:http].body
+                subpath:   'services/soap/Transfer-201210',
+                headers:   {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
+                body:      CENTRAL_SOAP_API_TEST,
+                body_type: :text)[:http].body
               nagios.add_ok('central', 'accessible by node')
             rescue StandardError => e
               nagios.add_critical('central', e.to_s)
@@ -744,11 +746,15 @@ module Aspera
             when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids'){|field, value|ssync_lookup(field, value)}
             else
               asyncs_id = instance_identifier {|field, value|ssync_lookup(field, value)}
-              parameters = nil
               if %i[start stop].include?(sync_command)
-                @api_node.create("asyncs/#{asyncs_id}/#{sync_command}", parameters)
+                @api_node.call(
+                  operation: 'POST',
+                  subpath:   "asyncs/#{asyncs_id}/#{sync_command}",
+                  body:      '',
+                  body_type: :text)[:http].body
                 return Main.result_status('Done')
               end
+              parameters = nil
               parameters = query_option(default: {}) if %i[bandwidth counters files].include?(sync_command)
               return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters)[:data] }
             end

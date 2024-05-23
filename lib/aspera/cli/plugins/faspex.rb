@@ -179,7 +179,11 @@ module Aspera
           loop do
             # get a batch of package information
             # order: first batch is latest packages, and then in a batch ids are increasing
-            atom_xml = api_v3.call(operation: 'GET', subpath: "#{mailbox}.atom", headers: {'Accept' => 'application/xml'}, url_params: mailbox_query)[:http].body
+            atom_xml = api_v3.call(
+              operation: 'GET',
+              subpath:   "#{mailbox}.atom",
+              headers:   {'Accept' => 'application/xml'},
+              query:     mailbox_query)[:http].body
             box_data = XmlSimple.xml_in(atom_xml, {'ForceArray' => %w[entry field link to]})
             Log.log.debug{Log.dump(:box_data, box_data)}
             items = box_data.key?('entry') ? box_data['entry'] : []
@@ -246,8 +250,9 @@ module Aspera
           package_creation_data = api_public_link.call(
             operation:   'POST',
             subpath:     create_path,
-            json_params: package_create_params,
-            headers:     {'Accept' => 'text/javascript'})[:http].body
+            headers:     {'Accept' => 'text/javascript'},
+            body:        package_create_params,
+            body_type:   :json)[:http].body
           # get arguments of function call
           package_creation_data.delete!("\n") # one line
           package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
@@ -308,8 +313,9 @@ module Aspera
                 pkg_created = api_v3.call(
                   operation:   'POST',
                   subpath:     'send',
-                  json_params: package_create_params,
-                  headers:     {'Accept' => 'application/json'}
+                  headers:     {'Accept' => 'application/json'},
+                  body:        package_create_params,
+                  body_type:   :json
                 )[:data]
                 if first_source.key?('id')
                   # no transfer spec if remote source: handled by faspex
@@ -380,9 +386,9 @@ module Aspera
                 api_public_link = Rest.new(base_url: link_data[:base_url])
                 package_creation_data = api_public_link.call(
                   operation: 'GET',
-                  subpath: link_data[:subpath],
-                  url_params: {passcode: link_data[:query]['passcode']},
-                  headers: {'Accept' => 'application/xml'})
+                  subpath:   link_data[:subpath],
+                  headers:   {'Accept' => 'application/xml'},
+                  query:     {passcode: link_data[:query]['passcode']})
                 if !package_creation_data[:http].body.start_with?('<?xml ')
                   OpenApplication.instance.uri(link_url)
                   raise Cli::Error, 'Unexpected response: package not found ?'
@@ -411,10 +417,12 @@ module Aspera
                     xml_payload =
                       %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
                     transfer_spec['token'] = api_v3.call(
-                      operation:        'POST',
-                      subpath:          'issue-token?direction=down',
-                      headers:          {'Accept' => 'text/plain', 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
-                      text_body_params: xml_payload)[:http].body
+                      operation:  'POST',
+                      subpath:    'issue-token',
+                      headers:    {'Accept' => 'text/plain', 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
+                      query:      {'direction' => 'down'},
+                      body:       xml_payload,
+                      body_type:  :text)[:http].body
                   end
                   transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)
@@ -502,9 +510,9 @@ module Aspera
           when :address_book
             result = api_v3.call(
               operation: 'GET',
-              subpath: 'address-book',
-              headers: {'Accept' => 'application/json'},
-              url_params: {'format' => 'json', 'count' => 100_000}
+              subpath:   'address-book',
+              headers:   {'Accept' => 'application/json'},
+              query:     {'format' => 'json', 'count' => 100_000}
             )[:data]
             formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users = result['entry']

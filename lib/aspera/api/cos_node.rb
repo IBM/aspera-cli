@@ -52,9 +52,9 @@ module Aspera
         # read FASP connection information for bucket
         xml_result_text = s3_api.call(
           operation: 'GET',
-          subpath: bucket,
-          headers: {'Accept' => 'application/xml'},
-          url_params: {'faspConnectionInfo' => nil}
+          subpath:   bucket,
+          headers:   {'Accept' => 'application/xml'},
+          query:     {'faspConnectionInfo' => nil}
         )[:http].body
         ats_info = XmlSimple.xml_in(xml_result_text, {'ForceArray' => false})
         Aspera::Log.dump('ats_info', ats_info)

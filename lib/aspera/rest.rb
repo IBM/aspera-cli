@@ -220,15 +220,20 @@ module Aspera
     end
 
     # HTTP/S REST call
+    # @param operation [String] HTTP operation (GET, POST, PUT, DELETE)
+    # @param subpath [String] subpath of REST API
+    # @param query [Hash] URL parameters
+    # @param body [Hash, String] body parameters
+    # @param body_type [Symbol] type of body parameters (:json, :www, :text, nil)
     # @param save_to_file (filepath)
     # @param return_error (bool)
+    # @param headers [Hash] additional headers
     def call(
       operation:,
       subpath: nil,
-      json_params: nil,
-      url_params: nil,
-      www_body_params: nil,
-      text_body_params: nil,
+      query: nil,
+      body: nil,
+      body_type: nil,
       save_to_file: nil,
       return_error: false,
       headers: nil
@@ -254,9 +259,9 @@ module Aspera
       when :oauth2
         headers['Authorization'] = oauth_token unless headers.key?('Authorization')
       when :url
-        url_params ||= {}
+        query ||= {}
         @auth_params[:url_query].each do |key, value|
-          url_params[key] = value
+          query[key] = value
         end
       else Aspera.error_unexpected_value(@auth_params[:type])
       end
@@ -266,7 +271,7 @@ module Aspera
         # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
         # URI.escape()
         separator = !['', '/'].include?(subpath) || @base_url.end_with?('/') ? '/' : ''
-        uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", url_params)
+        uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", query)
         Log.log.debug{"URI=#{uri}"}
         begin
           # instantiate request object based on string name
@@ -274,17 +279,19 @@ module Aspera
         rescue NameError
           raise "unsupported operation : #{operation}"
         end
-        if !json_params.nil?
-          req.body = JSON.generate(json_params) # , ascii_only: true
+        case body_type
+        when :json
+          req.body = JSON.generate(body) # , ascii_only: true
           req['Content-Type'] = 'application/json'
-        end
-        if !www_body_params.nil?
-          req.body = URI.encode_www_form(www_body_params)
+        when :www
+          req.body = URI.encode_www_form(body)
           req['Content-Type'] = 'application/x-www-form-urlencoded'
-        end
-        if !text_body_params.nil?
-          req.body = text_body_params
+        when :text
+          req.body = body
           req['Content-Type'] = 'text/plain'
+        when nil
+        else
+          raise "unsupported body type : #{body_type}"
         end
         # set headers
         headers.each do |key, value|
@@ -376,8 +383,7 @@ module Aspera
           end
           # forwards the request to the new location
           return self.class.new(base_url: new_url, redirect_max: tries_remain_redirect).call(
-            operation: operation, json_params: json_params,
-            url_params: url_params, www_body_params: www_body_params, text_body_params: text_body_params,
+            operation: operation, query: query, body: body, body_type: body_type,
             save_to_file: save_to_file, return_error: return_error, headers: headers)
         end
         # raise exception if could not retry and not return error in result
@@ -391,21 +397,20 @@ module Aspera
     # CRUD methods here
     #
 
-    # @param encoding : one of: :json_params, :url_params
-    def create(subpath, params, encoding=:json_params)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, encoding => params)
+    def create(subpath, params)
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)
     end
 
     def read(subpath, query=nil)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: query)
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, query: query)
     end
 
     def update(subpath, params)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, json_params: params)
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)
     end
 
     def delete(subpath, params=nil)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, url_params: params)
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, query: params)
     end
 
     def cancel(subpath)

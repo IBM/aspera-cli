@@ -64,7 +64,7 @@ module Aspera
         # @param endpoint [String] the endpoint to call
         # @param prefix [String] the prefix to add to the endpoint
         # @param id [String] the id to add to the endpoint
-        # @param ret_style [Symbol] the return style, :header, :arg, :ext(ension)
+        # @param ret_style [Symbol] the return style, :header, :arg, :ext(extension)
         # @param format [String] the format to request, 'json', 'xml', nil
         # @param args [Hash] the arguments to pass
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
@@ -76,14 +76,14 @@ module Aspera
           # specify id if necessary
           call_args[:subpath] = "#{call_args[:subpath]}/#{id}" unless id.nil?
           ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
-          call_args[:url_params] = args unless args.nil?
+          call_args[:query] = args unless args.nil?
           unless format.nil?
             case ret_style
             when :header
               call_args[:headers] = {'Accept' => "application/#{format}" }
             when :arg
-              call_args[:url_params] ||= {}
-              call_args[:url_params][:format] = format
+              call_args[:query] ||= {}
+              call_args[:query][:format] = format
             when :ext
               call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
             else Aspera.error_unexpected_value(ret_style)

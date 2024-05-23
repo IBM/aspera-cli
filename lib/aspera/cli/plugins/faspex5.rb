@@ -57,7 +57,7 @@ module Aspera
               path_api_detect = "#{PATH_API_V5}/#{PATH_HEALTH}"
               result = api.read(path_api_detect)
               next unless result[:http].code.start_with?('2') && result[:http].body.strip.empty?
-              # end is at -1, and substract 1 for "/"
+              # end is at -1, and subtract 1 for "/"
               url_length = -2 - path_api_detect.length
               # take redirect if any
               return {
@@ -384,8 +384,9 @@ module Aspera
               operation:   'POST',
               subpath:     "packages/#{pkg_id}/transfer_spec/download",
               headers:     {'Accept' => 'application/json'},
-              url_params:  download_params,
-              json_params: param_file_list
+              query:       download_params,
+              body:        param_file_list,
+              body_type:   :json
             )[:data]
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
@@ -418,9 +419,10 @@ module Aspera
               response = @api_v5.call(
                 operation:   'POST',
                 subpath:     browse_endpoint,
-                headers:     {'Accept' => 'application/json', 'Content-Type' => 'application/json'},
-                url_params:  query,
-                json_params: {'path' => path, 'filters' => filters})
+                headers:     {'Accept' => 'application/json'},
+                query:       query,
+                body:        {'path' => path, 'filters' => filters},
+                body_type:   :json)
               all_items.concat(response[:data]['items'])
               if recursive
                 folders_to_process.concat(response[:data]['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
@@ -464,7 +466,12 @@ module Aspera
             Aspera.assert_type(ids, Array){'Package identifier'}
             Aspera.assert(ids.all?(String)){'Package id shall be String'}
             # API returns 204, empty on success
-            @api_v5.call(operation: 'DELETE', subpath: 'packages', headers: {'Accept' => 'application/json'}, json_params: {ids: ids})
+            @api_v5.call(
+              operation: 'DELETE',
+              subpath:   'packages',
+              headers:   {'Accept' => 'application/json'},
+              body:      {ids: ids},
+              body_type: :json)
             return Main.result_status('Package(s) deleted')
           when :receive
             return package_receive(package_id)
@@ -486,8 +493,9 @@ module Aspera
                 operation:   'POST',
                 subpath:     "packages/#{package['id']}/transfer_spec/upload",
                 headers:     {'Accept' => 'application/json'},
-                url_params:  {transfer_type: TRANSFER_CONNECT},
-                json_params: {paths: transfer.source_list}
+                query:       {transfer_type: TRANSFER_CONNECT},
+                body:        {paths: transfer.source_list},
+                body_type:   :json
               )[:data]
               # well, we asked a TS for connect, but we actually want a generic one
               transfer_spec.delete('authentication')
