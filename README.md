@@ -502,6 +502,25 @@ To check if a new version is available (independently of `version_check_days`):
 ascli config check_update
 ```
 
+#### Gem installation with signature verification
+
+The gem is signed with a private key, and the public certificate is available in the github repository (`certs/aspera-cli-public-cert.pem`).
+When installing the gem, the signature can be optionally verified.
+
+For [secure installation](https://guides.rubygems.org/security/#using-gems), one can install the gem with the public key:
+
+- import the verification certificate:
+
+```bash
+gem cert --add <(curl -Ls https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem)
+```
+
+- Then, install the gem:
+
+```bash
+gem install -P MediumSecurity aspera-cli
+```
+
 ### FASP Protocol
 
 Most file transfers will be executed using the **FASP** protocol, using `ascp`.
