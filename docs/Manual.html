@@ -819,8 +819,8 @@ in env var, in files, …</li>
 <li>FASP <a href="#transfer-clients-agents">Transfer Agents</a> can be:
 local <code>ascp</code>, or Connect Client, or any transfer node</li>
 <li>Transfer parameters can be altered by modification of <a
-href="#transfer-specification"><em>transfer-spec</em></a>, this includes
-requiring multi-session</li>
+href="#transfer-specification"><strong>transfer-spec</strong></a>, this
+includes requiring multi-session</li>
 <li>Allows transfers from products to products, essentially at node
 level (using the node transfer agent)</li>
 <li>Supports FaspStream creation (using Node API)</li>
@@ -2583,9 +2583,9 @@ for legacy HTTP fallback, use <code>ascp</code> native option
 class="header-section-number">4.19.3</span> FASP proxy (forward) for
 transfers</h3>
 <p>To specify a FASP proxy (forward), set the <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameter:
-<code>proxy</code> (only supported with the <code>direct</code>
-agent).</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameter: <code>proxy</code> (only supported with the
+<code>direct</code> agent).</p>
 <p>For example, for an Aspera forward proxy not encrypted (HTTP) without
 authentication running on port 9091, the option would be:</p>
 <div class="sourceCode" id="cb194"><pre
@@ -2707,16 +2707,16 @@ class="header-section-number">4.21</span> Transfer Clients: Agents</h2>
 <p>Some of the actions on Aspera Applications lead to file transfers
 (upload and download) using the FASP protocol (<code>ascp</code>).</p>
 <p>When a transfer needs to be started, a <a
-href="#transfer-specification"><em>transfer-spec</em></a> has been
-internally prepared. This <a
-href="#transfer-specification"><em>transfer-spec</em></a> will be
-executed by a transfer client, here called <strong>Transfer
+href="#transfer-specification"><strong>transfer-spec</strong></a> has
+been internally prepared. This <a
+href="#transfer-specification"><strong>transfer-spec</strong></a> will
+be executed by a transfer client, here called <strong>Transfer
 Agent</strong>.</p>
-<p>There are currently 3 agents, set with option
+<p>The following agents are supported and selected with option
 <code>transfer</code>:</p>
 <ul>
-<li><a href="#agent-direct"><code>direct</code></a> : execution of
-<code>ascp</code></li>
+<li><a href="#agent-direct"><code>direct</code></a> : direct execution
+of <code>ascp</code> (local)</li>
 <li><a href="#agent-transfer-sdk"><code>trsdk</code></a> : use of Aspera
 Transfer SDK (local)</li>
 <li><a href="#agent-connect-client"><code>connect</code></a> : use
@@ -2735,10 +2735,10 @@ point of view of the agent. For example, a node agent executing an
 effectively push files to the related server from the agent node.</p>
 </blockquote>
 <p><code>ascli</code> standardizes on the use of a <a
-href="#transfer-specification"><em>transfer-spec</em></a> instead of
-<strong>native</strong> <code>ascp</code> options to provide parameters
-for a transfer session, as a common method for those three Transfer
-Agents.</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+instead of <strong>native</strong> <code>ascp</code> options to provide
+parameters for a transfer session, as a common method for those three
+Transfer Agents.</p>
 <p>Specific options for agents are provided with option
 <code>transfer_info</code>, cumulatively.</p>
 <h3 data-number="4.21.1" id="agent-direct"><span
@@ -2750,8 +2750,8 @@ locally installed Aspera products, including SDK, and use
 <code>ascp</code> from that component. Refer to section <a
 href="#fasp-configuration">FASP</a>.</p>
 <p>The <code>transfer_info</code> option accepts the following optional
-parameters to control multi-session, Web Socket Session and Resume
-policy:</p>
+parameters to control multi-session, Web Socket Session, Resume policy
+and add any argument to <code>ascp</code>:</p>
 <table>
 <colgroup>
 <col style="width: 54%" />
@@ -2967,8 +2967,8 @@ class="header-section-number">4.21.4</span> Agent: Node API</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
 the Node API, either on a local or remote node. This is especially
-useful for direct node-to-node transfers. Parameters provided in option
-<code>transfer_info</code> are:</p>
+useful for direct node-to-node transfers.</p>
+<p>Parameters provided in option <code>transfer_info</code> are:</p>
 <table>
 <thead>
 <tr class="header">
@@ -3012,13 +3012,17 @@ been configured (name in <code>node</code> for section
 <code>default</code>) then this node is used by default.</p>
 <p>If the <code>password</code> value begins with <code>Bearer</code>
 then the <code>username</code> is expected to be an access key and the
-parameter <code>root_id</code> is mandatory and specifies the root file
-id on the node. It can be either the access key’s root file id, or any
-authorized file id underneath it.</p>
+parameter <code>root_id</code> is mandatory and specifies the file id of
+the top folder to use on the node using this access key. It can be
+either the access key’s root file id, or any authorized file id
+underneath it.</p>
 <h3 data-number="4.21.5" id="agent-http-gateway"><span
 class="header-section-number">4.21.5</span> Agent: HTTP Gateway</h3>
-<p>If it possible to send using a HTTP gateway, in case use of FASP is
-not allowed.</p>
+<p>The Aspera HTTP Gateway is a service that allows to send and receive
+files using HTTPS.</p>
+<p>By specifying option: <code>--transfer=httpgw</code>,
+<code>ascli</code> will start transfers using the Aspera HTTP
+Gateway.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
 <table>
 <colgroup>
@@ -3095,7 +3099,7 @@ daemon</br>Mandatory<br/>Default: <code>:0</code></td>
 <tr class="even">
 <td><code>external</code></td>
 <td>bool</td>
-<td>Use external daemon, do not start<br/>Default:
+<td>Use external daemon, do not start one.<br/>Default:
 <code>false</code></td>
 </tr>
 <tr class="odd">
@@ -3136,8 +3140,8 @@ change the signature of <code>gettimeofday</code> to
 class="header-section-number">4.22</span> Transfer Specification</h2>
 <p>Some commands lead to file transfer (upload/download). All parameters
 necessary for this transfer are described in a <a
-href="#transfer-specification"><em>transfer-spec</em></a> (Transfer
-Specification), such as:</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+(Transfer Specification), such as:</p>
 <ul>
 <li>Server address</li>
 <li>Transfer user name</li>
@@ -3146,18 +3150,18 @@ Specification), such as:</p>
 <li>Etc…</li>
 </ul>
 <p><code>ascli</code> builds the <a
-href="#transfer-specification"><em>transfer-spec</em></a> internally as
-a <code>Hash</code>. It is not necessary to provide additional
-parameters on the command line for this transfer.</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+internally as a <code>Hash</code>. It is not necessary to provide
+additional parameters on the command line for this transfer.</p>
 <p>It is possible to modify or add any of the supported <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameter
-using the <code>ts</code> option. The <code>ts</code> option accepts a
-<a href="#extended-value-syntax"><code>Hash</code> Extended Value</a>
-containing one or several <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameters.
-Multiple <code>ts</code> options on command line are cumulative, and the
-<code>Hash</code> value is deeply merged. To remove a (deep) key from
-transfer spec, set the value to <code>null</code>.</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameter using the <code>ts</code> option. The <code>ts</code> option
+accepts a <a href="#extended-value-syntax"><code>Hash</code> Extended
+Value</a> containing one or several <a
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameters. Multiple <code>ts</code> options on command line are
+cumulative, and the <code>Hash</code> value is deeply merged. To remove
+a (deep) key from transfer spec, set the value to <code>null</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> Default transfer spec values can be displayed
 with command: <code>config ascp info --flat-hash=no</code> under field
@@ -3172,8 +3176,9 @@ Example:
 is especially useful for <code>ascp</code> command line parameters not
 supported in the transfer spec.</p>
 <p>The use of a <a
-href="#transfer-specification"><em>transfer-spec</em></a> instead of
-<code>ascp</code> command line arguments has the advantage of:</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+instead of <code>ascp</code> command line arguments has the advantage
+of:</p>
 <ul>
 <li>Common to all <a href="#transfer-clients-agents">Transfer
 Agent</a></li>
@@ -3182,10 +3187,10 @@ Agent</a></li>
 <h2 data-number="4.23" id="transfer-parameters"><span
 class="header-section-number">4.23</span> Transfer Parameters</h2>
 <p>All standard <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameters can
-be specified. <a
-href="#transfer-specification"><em>transfer-spec</em></a> can also be
-saved/overridden in the configuration file.</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameters can be specified. <a
+href="#transfer-specification"><strong>transfer-spec</strong></a> can
+also be saved/overridden in the configuration file.</p>
 <p>References:</p>
 <ul>
 <li><a
@@ -4176,8 +4181,9 @@ to:</p>
 <li><code>/</code> for uploads</li>
 </ul>
 <p>It is specified by the <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameter
-<code>destination_root</code>. As such, it can be modified with option:
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameter <code>destination_root</code>. As such, it can be modified
+with option:
 <code>--ts=@json:'{"destination_root":"&lt;path&gt;"}'</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code> .</p>
@@ -4195,11 +4201,11 @@ source/destination list (see below) depending on value of option
 <code>src_type</code> (default: <code>list</code>).</p>
 <p>In <code>ascli</code>, all transfer parameters, including file list,
 are provided to the transfer agent in a <a
-href="#transfer-specification"><em>transfer-spec</em></a> so that
-execution of a transfer is independent of the transfer agent (direct,
-connect, node, transfer sdk…). So, eventually, the list of files to
-transfer is provided to the transfer agent using the <a
-href="#transfer-specification"><em>transfer-spec</em></a> field:
+href="#transfer-specification"><strong>transfer-spec</strong></a> so
+that execution of a transfer is independent of the transfer agent
+(direct, connect, node, transfer sdk…). So, eventually, the list of
+files to transfer is provided to the transfer agent using the <a
+href="#transfer-specification"><strong>transfer-spec</strong></a> field:
 <code>"paths"</code> which is a list (array) of pairs of
 <code>"source"</code> (mandatory) and <code>"destination"</code>
 (optional). The <code>sources</code> and <code>src_type</code> options
@@ -6718,7 +6724,7 @@ class="header-section-number">9.4</span> FASP Stream</h2>
 <p>It is possible to start a FASPStream session using the node API:</p>
 <p>Use the command
 <code>ascli node stream create --ts=@json:&lt;value&gt;</code>, with <a
-href="#transfer-specification"><em>transfer-spec</em></a>:</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>:</p>
 <div class="sourceCode" id="cb391"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb391-1"><a href="#cb391-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;send&quot;</span><span class="fu">,</span><span class="dt">&quot;source&quot;</span><span class="fu">:</span><span class="st">&quot;udp://233.3.3.4:3000?loopback=1&amp;ttl=2&quot;</span><span class="fu">,</span><span class="dt">&quot;destination&quot;</span><span class="fu">:</span><span class="st">&quot;udp://233.3.3.3:3001/&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;localhost&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;stream&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_pass_here&quot;</span><span class="fu">}</span></span></code></pre></div>
 <h2 data-number="9.5" id="watchfolder"><span
@@ -8553,11 +8559,11 @@ name shall not be created on destination</li>
 <blockquote>
 <p><strong>Note:</strong> <code>ascli</code> takes transfer parameters
 exclusively as a <a
-href="#transfer-specification"><em>transfer-spec</em></a>, with
+href="#transfer-specification"><strong>transfer-spec</strong></a>, with
 <code>ts</code> option.</p>
 <p><strong>Note:</strong> Most, but not all, native <code>ascp</code>
 arguments are available as standard <a
-href="#transfer-specification"><em>transfer-spec</em></a>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
 parameters.</p>
 <p><strong>Note:</strong> Only for the <a
 href="#agent-direct"><code>direct</code></a> transfer agent (not others,
@@ -8787,7 +8793,8 @@ standardized interface to start a FASP session:
 <code>asession</code>.</p>
 <p>It aims at simplifying the startup of a FASP session from a
 programmatic stand point as formatting a <a
-href="#transfer-specification"><em>transfer-spec</em></a> is:</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+is:</p>
 <ul>
 <li>Common to Aspera Node API (HTTP POST /ops/transfer)</li>
 <li>Common to Aspera Connect API (browser javascript startTransfer)</li>
@@ -8801,7 +8808,7 @@ can spawn a sub process, write to its STDIN, read from STDOUT, generate
 and parse JSON.</p>
 <p><code>ascli</code> expect one single argument: a session
 specification that contains parameters and a <a
-href="#transfer-specification"><em>transfer-spec</em></a>.</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>.</p>
 <p>If no argument is provided, it assumes a value of:
 <code>@json:@stdin:</code>, i.e. a JSON formatted on stdin.</p>
 <blockquote>
@@ -8827,7 +8834,7 @@ JSON format on stdout.</p>
 <tr class="odd">
 <td><code>spec</code></td>
 <td>the <a
-href="#transfer-specification"><em>transfer-spec</em></a></td>
+href="#transfer-specification"><strong>transfer-spec</strong></a></td>
 </tr>
 <tr class="even">
 <td><code>agent</code></td>
@@ -8923,8 +8930,8 @@ per command, formatted in JSON, where parameters shall be
 <strong>snake</strong> style, for example: <code>LongParameter</code>
 -&gt; <code>long_parameter</code></p>
 <p>This is particularly useful for a persistent session ( with the <a
-href="#transfer-specification"><em>transfer-spec</em></a> parameter:
-<code>"keepalive":true</code> )</p>
+href="#transfer-specification"><strong>transfer-spec</strong></a>
+parameter: <code>"keepalive":true</code> )</p>
 <div class="sourceCode" id="cb490"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb490-1"><a href="#cb490-1" aria-hidden="true" tabindex="-1"></a><span class="er">asession</span></span>
 <span id="cb490-2"><a href="#cb490-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;remote_host&quot;</span><span class="fu">:</span><span class="st">&quot;demo.asperasoft.com&quot;</span><span class="fu">,</span><span class="dt">&quot;ssh_port&quot;</span><span class="fu">:</span><span class="dv">33001</span><span class="fu">,</span><span class="dt">&quot;remote_user&quot;</span><span class="fu">:</span><span class="st">&quot;asperaweb&quot;</span><span class="fu">,</span><span class="dt">&quot;remote_password&quot;</span><span class="fu">:</span><span class="st">&quot;my_password_here&quot;</span><span class="fu">,</span><span class="dt">&quot;direction&quot;</span><span class="fu">:</span><span class="st">&quot;receive&quot;</span><span class="fu">,</span><span class="dt">&quot;destination_root&quot;</span><span class="fu">:</span><span class="st">&quot;.&quot;</span><span class="fu">,</span><span class="dt">&quot;keepalive&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;resume_level&quot;</span><span class="fu">:</span><span class="st">&quot;none&quot;</span><span class="fu">}</span></span>
@@ -9005,8 +9012,8 @@ other products APIs</li>
 <li>Supports transfers with multiple <a
 href="#transfer-clients-agents">Transfer Agents</a>, that's why transfer
 parameters moved from <code>ascp</code> command line to <a
-href="#transfer-specification"><em>transfer-spec</em></a> (more reliable
-, more standard)</li>
+href="#transfer-specification"><strong>transfer-spec</strong></a> (more
+reliable , more standard)</li>
 <li><code>ruby</code> is consistent with other Aspera products</li>
 </ul>
 <p>Over the time, a supported command line tool <code>aspera</code> was

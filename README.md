@@ -841,7 +841,7 @@ The `aspera-cli` gem provides a command line interface (CLI) which interacts wit
 - Any command line **options** (products URL, credentials or any option) can be provided on command line, in configuration file, in env var, in files, ...
 - Supports Commands, Options, and Option values shortcuts
 - FASP [Transfer Agents](#transfer-clients-agents) can be: local `ascp`, or Connect Client, or any transfer node
-- Transfer parameters can be altered by modification of [*transfer-spec*](#transfer-specification), this includes requiring multi-session
+- Transfer parameters can be altered by modification of [**transfer-spec**](#transfer-specification), this includes requiring multi-session
 - Allows transfers from products to products, essentially at node level (using the node transfer agent)
 - Supports FaspStream creation (using Node API)
 - Supports **Watchfolder** creation (using Node API)
@@ -2428,7 +2428,7 @@ Only supported with the `direct` agent: To specify a proxy for legacy HTTP fallb
 
 #### FASP proxy (forward) for transfers
 
-To specify a FASP proxy (forward), set the [*transfer-spec*](#transfer-specification) parameter: `proxy` (only supported with the `direct` agent).
+To specify a FASP proxy (forward), set the [**transfer-spec**](#transfer-specification) parameter: `proxy` (only supported with the `direct` agent).
 
 For example, for an Aspera forward proxy not encrypted (HTTP) without authentication running on port 9091, the option would be:
 
@@ -2587,12 +2587,12 @@ Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
 
-When a transfer needs to be started, a [*transfer-spec*](#transfer-specification) has been internally prepared.
-This [*transfer-spec*](#transfer-specification) will be executed by a transfer client, here called **Transfer Agent**.
+When a transfer needs to be started, a [**transfer-spec**](#transfer-specification) has been internally prepared.
+This [**transfer-spec**](#transfer-specification) will be executed by a transfer client, here called **Transfer Agent**.
 
-There are currently 3 agents, set with option `transfer`:
+The following agents are supported and selected with option `transfer`:
 
-- [`direct`](#agent-direct) : execution of `ascp`
+- [`direct`](#agent-direct) : direct execution of `ascp` (local)
 - [`trsdk`](#agent-transfer-sdk) : use of Aspera Transfer SDK (local)
 - [`connect`](#agent-connect-client) : use Connect Client (local)
 - [`alpha`](#agent-desktop-client) : use the new Desktop Client (local)
@@ -2603,7 +2603,7 @@ There are currently 3 agents, set with option `transfer`:
 For example, a node agent executing an **upload**, or **package send** operation
 will effectively push files to the related server from the agent node.
 
-`ascli` standardizes on the use of a [*transfer-spec*](#transfer-specification) instead of **native** `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+`ascli` standardizes on the use of a [**transfer-spec**](#transfer-specification) instead of **native** `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
 
 Specific options for agents are provided with option `transfer_info`, cumulatively.
 
@@ -2614,7 +2614,7 @@ This is the default agent for `ascli` (option `--transfer=direct`).
 `ascli` will search locally installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#fasp-configuration).
 
-The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session and Resume policy:
+The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Name                   | Type  | Description |
 |------------------------|-------|-------------|
@@ -2757,6 +2757,7 @@ There are no option for `transfer_info`.
 
 By specifying option: `--transfer=node`, `ascli` starts transfers in an Aspera Transfer Server using the Node API, either on a local or remote node.
 This is especially useful for direct node-to-node transfers.
+
 Parameters provided in option `transfer_info` are:
 
 | Name     | Type   | Description |
@@ -2780,12 +2781,14 @@ or be specified using the extended value syntax :
 
 If `transfer_info` is not specified and a default node has been configured (name in `node` for section `default`) then this node is used by default.
 
-If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the root file id on the node.
+If the `password` value begins with `Bearer` then the `username` is expected to be an access key and the parameter `root_id` is mandatory and specifies the file id of the top folder to use on the node using this access key.
 It can be either the access key's root file id, or any authorized file id underneath it.
 
 #### Agent: HTTP Gateway
 
-If it possible to send using a HTTP gateway, in case use of FASP is not allowed.
+The Aspera HTTP Gateway is a service that allows to send and receive files using HTTPS.
+
+By specifying option: `--transfer=httpgw`, `ascli` will start transfers using the Aspera HTTP Gateway.
 
 Parameters provided in option `transfer_info` are:
 
@@ -2814,7 +2817,7 @@ Options for `transfer_info` are:
 | Name     | Type   | Description |
 |----------|--------|-------------|
 | `url`      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
-| `external` | bool   | Use external daemon, do not start<br/>Default: `false` |
+| `external` | bool   | Use external daemon, do not start one.<br/>Default: `false` |
 | `keep`     | bool   | Keep the daemon running after exiting `ascli`<br/>Default: `false` |
 
 > **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
@@ -2843,7 +2846,7 @@ On Windows the compilation may fail for various reasons (3.1.1):
 ### Transfer Specification
 
 Some commands lead to file transfer (upload/download).
-All parameters necessary for this transfer are described in a [*transfer-spec*](#transfer-specification) (Transfer Specification), such as:
+All parameters necessary for this transfer are described in a [**transfer-spec**](#transfer-specification) (Transfer Specification), such as:
 
 - Server address
 - Transfer user name
@@ -2851,11 +2854,11 @@ All parameters necessary for this transfer are described in a [*transfer-spec*](
 - File list
 - Etc...
 
-`ascli` builds the [*transfer-spec*](#transfer-specification) internally as a `Hash`.
+`ascli` builds the [**transfer-spec**](#transfer-specification) internally as a `Hash`.
 It is not necessary to provide additional parameters on the command line for this transfer.
 
-It is possible to modify or add any of the supported [*transfer-spec*](#transfer-specification) parameter using the `ts` option.
-The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) containing one or several [*transfer-spec*](#transfer-specification) parameters.
+It is possible to modify or add any of the supported [**transfer-spec**](#transfer-specification) parameter using the `ts` option.
+The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) containing one or several [**transfer-spec**](#transfer-specification) parameters.
 Multiple `ts` options on command line are cumulative, and the `Hash` value is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
 
@@ -2865,15 +2868,15 @@ It is possible to specify `ascp` options when the `transfer` option is set to [`
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
 This is especially useful for `ascp` command line parameters not supported in the transfer spec.
 
-The use of a [*transfer-spec*](#transfer-specification) instead of `ascp` command line arguments has the advantage of:
+The use of a [**transfer-spec**](#transfer-specification) instead of `ascp` command line arguments has the advantage of:
 
 - Common to all [Transfer Agent](#transfer-clients-agents)
 - Not dependent on command line limitations (special characters...)
 
 ### Transfer Parameters
 
-All standard [*transfer-spec*](#transfer-specification) parameters can be specified.
-[*transfer-spec*](#transfer-specification) can also be saved/overridden in the configuration file.
+All standard [**transfer-spec**](#transfer-specification) parameters can be specified.
+[**transfer-spec**](#transfer-specification) can also be saved/overridden in the configuration file.
 
 References:
 
@@ -2991,7 +2994,7 @@ The destination folder is set by `ascli` by default to:
 - `.` for downloads
 - `/` for uploads
 
-It is specified by the [*transfer-spec*](#transfer-specification) parameter `destination_root`.
+It is specified by the [**transfer-spec**](#transfer-specification) parameter `destination_root`.
 As such, it can be modified with option: `--ts=@json:'{"destination_root":"<path>"}'`.
 The option `to_folder` provides an equivalent and convenient way to change this parameter:
 `--to-folder=<path>` .
@@ -3005,8 +3008,8 @@ By default the list of files to transfer is simply provided on the command line.
 The list of (source) files to transfer is specified by (extended value) option `sources` (default: `@args`).
 The list is either simply the list of source files, or a combined source/destination list (see below) depending on value of option `src_type` (default: `list`).
 
-In `ascli`, all transfer parameters, including file list, are provided to the transfer agent in a [*transfer-spec*](#transfer-specification) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer sdk...).
-So, eventually, the list of files to transfer is provided to the transfer agent using the [*transfer-spec*](#transfer-specification) field: `"paths"` which is a list (array) of pairs of `"source"` (mandatory) and `"destination"` (optional).
+In `ascli`, all transfer parameters, including file list, are provided to the transfer agent in a [**transfer-spec**](#transfer-specification) so that execution of a transfer is independent of the transfer agent (direct, connect, node, transfer sdk...).
+So, eventually, the list of files to transfer is provided to the transfer agent using the [**transfer-spec**](#transfer-specification) field: `"paths"` which is a list (array) of pairs of `"source"` (mandatory) and `"destination"` (optional).
 The `sources` and `src_type` options provide convenient ways to populate the transfer spec with the source file list.
 
 Possible values for option `sources` are:
@@ -5385,7 +5388,7 @@ There are three sync types of operations:
 
 It is possible to start a FASPStream session using the node API:
 
-Use the command `ascli node stream create --ts=@json:<value>`, with [*transfer-spec*](#transfer-specification):
+Use the command `ascli node stream create --ts=@json:<value>`, with [**transfer-spec**](#transfer-specification):
 
 ```json
 {"direction":"send","source":"udp://233.3.3.4:3000?loopback=1&ttl=2","destination":"udp://233.3.3.3:3001/","remote_host":"localhost","remote_user":"stream","remote_password":"my_pass_here"}
@@ -6952,9 +6955,9 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 - `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
 - `--src-base` (`src_base`) if top level folder name shall not be created on destination
 
-> **Note:** `ascli` takes transfer parameters exclusively as a [*transfer-spec*](#transfer-specification), with `ts` option.
+> **Note:** `ascli` takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
 >
-> **Note:** Most, but not all, native `ascp` arguments are available as standard [*transfer-spec*](#transfer-specification) parameters.
+> **Note:** Most, but not all, native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters.
 >
 > **Note:** Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 
@@ -7131,7 +7134,7 @@ Transfer is: <%=global_transfer_status%>
 
 This gem comes with a second executable tool providing a simplified standardized interface to start a FASP session: `asession`.
 
-It aims at simplifying the startup of a FASP session from a programmatic stand point as formatting a [*transfer-spec*](#transfer-specification) is:
+It aims at simplifying the startup of a FASP session from a programmatic stand point as formatting a [**transfer-spec**](#transfer-specification) is:
 
 - Common to Aspera Node API (HTTP POST /ops/transfer)
 - Common to Aspera Connect API (browser javascript startTransfer)
@@ -7141,7 +7144,7 @@ Hopefully, IBM integrates this directly in `ascp`, and this tool is made redunda
 
 This makes it easy to integrate with any language provided that one can spawn a sub process, write to its STDIN, read from STDOUT, generate and parse JSON.
 
-`ascli` expect one single argument: a session specification that contains parameters and a [*transfer-spec*](#transfer-specification).
+`ascli` expect one single argument: a session specification that contains parameters and a [**transfer-spec**](#transfer-specification).
 
 If no argument is provided, it assumes a value of: `@json:@stdin:`, i.e. a JSON formatted on stdin.
 
@@ -7153,7 +7156,7 @@ Top level parameters supported by `asession`:
 
 | parameter | description |
 |-----------|-------------|
-| `spec` | the [*transfer-spec*](#transfer-specification) |
+| `spec` | the [**transfer-spec**](#transfer-specification) |
 | `agent` | same parameters as transfer-info for agent `direct` |
 | `loglevel` | log level of `asession` |
 | `file_list_folder` | the folder used to store (for garbage collection) generated file lists. By default it is `[system tmp folder]/[username]_asession_filelists` |
@@ -7186,7 +7189,7 @@ asession < session.json
 
 `asession` also supports asynchronous commands (on the management port). Instead of the traditional text protocol as described in `ascp` manual, the format for commands is: one single line per command, formatted in JSON, where parameters shall be **snake** style, for example: `LongParameter` -&gt; `long_parameter`
 
-This is particularly useful for a persistent session ( with the [*transfer-spec*](#transfer-specification) parameter: `"keepalive":true` )
+This is particularly useful for a persistent session ( with the [**transfer-spec**](#transfer-specification) parameter: `"keepalive":true` )
 
 ```json
 asession
@@ -7255,7 +7258,7 @@ So, it evolved into `ascli`:
 
 - Portable: works on platforms supporting `ruby` (and `ascp`)
 - Easy to install with the `gem` utility
-- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [*transfer-spec*](#transfer-specification) (more reliable , more standard)
+- Supports transfers with multiple [Transfer Agents](#transfer-clients-agents), that&apos;s why transfer parameters moved from `ascp` command line to [**transfer-spec**](#transfer-specification) (more reliable , more standard)
 - `ruby` is consistent with other Aspera products
 
 Over the time, a supported command line tool `aspera` was developed in C++, it was later on deprecated.
