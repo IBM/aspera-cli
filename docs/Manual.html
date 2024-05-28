@@ -994,7 +994,7 @@ PS C:\&gt; ascli conf echo @json:&#39;{&quot;&quot;&quot;k&quot;&quot;&quot;:&qu
 class="header-section-number">4.2.5</span> Extended Values (JSON, Ruby,
 …)</h3>
 <p>Some of the values provided to <code>ascli</code> (options,
-positional arguments) are expected to be <a
+<strong>Command Parameters</strong>) are expected to be <a
 href="#extended-value-syntax">Extended Values</a>, i.e. not a simple
 <code>String</code>, but a composite structure (<code>Hash</code>,
 <code>Array</code>). Typically, the <code>@json:</code> modifier is
@@ -1168,43 +1168,52 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb100-1"><a href
 <span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @ruby:<span class="st">&quot;{&#39;title&#39;=&gt;ENV[&#39;MYTITLE&#39;]}&quot;</span> <span class="at">--format</span><span class="op">=</span>json</span></code></pre></div>
 <div class="sourceCode" id="cb101"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;Test </span><span class="ch">\&quot;</span><span class="st"> &#39; &amp; </span><span class="ch">\\</span><span class="st">&quot;</span><span class="fu">}</span></span></code></pre></div>
-<h2 data-number="4.3" id="commands-options-positional-arguments"><span
-class="header-section-number">4.3</span> Commands, Options, Positional
-Arguments</h2>
+<h2 data-number="4.3" id="positional-arguments-and-options"><span
+class="header-section-number">4.3</span> Positional Arguments and
+Options</h2>
 <p>Command line arguments are the units of command line typically
 separated by spaces (the <code>argv</code> of C). The tokenization of
 the command line is typically done by the shell, refer to the previous
 section <a href="#command-line-parsing-special-characters">Command Line
 Parsing</a>.</p>
-<p><code>ascli</code> handles three types of command line arguments:</p>
+<p><code>ascli</code> handles two types of command line arguments:</p>
 <ul>
-<li>Commands</li>
-<li>Positional Arguments</li>
-<li>Options</li>
+<li><strong>Positional Arguments</strong> : position is significant</li>
+<li><strong>Options</strong> : only order is significant, but not
+position</li>
 </ul>
 <p>For example:</p>
 <div class="sourceCode" id="cb102"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> command subcommand <span class="at">--option-name</span><span class="op">=</span>VAL1 VAL2</span></code></pre></div>
 <ul>
-<li>Executes <strong>command</strong>:
-<code>command subcommand</code></li>
-<li>With one <strong>option</strong>: <code>option_name</code> and its
+<li>Executes <strong>Command</strong> and its <strong>Command
+Parameters</strong> (<strong>Positional Arguments</strong>):
+<code>command subcommand VAL2</code></li>
+<li>With one <strong>Option</strong>: <code>option_name</code> and its
 <strong>value</strong>: <code>VAL1</code></li>
-<li>The command has one additional <strong>positional argument</strong>:
-<code>VAL2</code></li>
 </ul>
 <p>If the value of a command, option or argument is constrained by a
 fixed list of values, then it is possible to use a few of the first
 letters of the value, provided that it uniquely identifies the value.
 For example <code>ascli config pre ov</code> is the same as
 <code>ascli config preset overview</code>.</p>
-<p>The value of options and arguments is evaluated with the <a
+<p>The value of <strong>Options</strong> and <strong>Positional
+Arguments</strong> is evaluated with the <a
 href="#extended-value-syntax">Extended Value Syntax</a>.</p>
-<h3 data-number="4.3.1" id="commands"><span
-class="header-section-number">4.3.1</span> Commands</h3>
-<p>Commands are typically entity types or verbs to act on those
-entities. Its value is a <code>String</code> that must belong to a fixed
-list of values in a given context.</p>
+<h3 data-number="4.3.1" id="positional-arguments"><span
+class="header-section-number">4.3.1</span> Positional Arguments</h3>
+<p><strong>Positional Arguments</strong> are either:</p>
+<ul>
+<li><strong>Commands</strong>, typically at the beginning</li>
+<li><strong>Command Parameters</strong> , e.g. creation data or entity
+identifier</li>
+</ul>
+<p>When options are removed from the command line, the remaining
+arguments are typically <strong>Positional Arguments</strong> with a
+pre-defined order.</p>
+<p><strong>Commands</strong> are typically entity types or verbs to act
+on those entities. Its value is a <code>String</code> that must belong
+to a fixed list of values in a given context.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb103"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info</span></code></pre></div>
@@ -1217,39 +1226,41 @@ be used</li>
 <li><code>info</code> is the third level command: action to be
 performed</li>
 </ul>
-<p>Typically, commands are located at the <strong>beginning</strong> of
-the command line. Order is significant. The provided command must match
-one of the supported commands in the given context. If wrong, or no
-command is provided when expected, an error message is displayed and the
-list of supported commands is displayed.</p>
-<p>Some sub-commands appear after entity selection,
+<p>Typically, <strong>Commands</strong> are located at the
+<strong>beginning</strong> of the command line. Order is significant.
+The provided command must match one of the supported commands in the
+given context. If wrong, or no command is provided when expected, an
+error message is displayed and the list of supported commands is
+displayed.</p>
+<p>Some sub-commands appear after entity selection (identifier),
 e.g. <code>ascli aoc admin res node do 8669 browse /</code>:
 <code>browse</code> is a sub-command of <code>node</code>.</p>
-<h3 data-number="4.3.2" id="positional-arguments"><span
-class="header-section-number">4.3.2</span> Positional Arguments</h3>
-<p>Positional Arguments are typically mandatory values for a command,
-such as entity creation data.</p>
-<p>It could also be designed as an option. But since it is mandatory and
-typically creation data need <strong>not</strong> be set in a
-configuration file, then it is better to use a positional argument, and
-not define an additional specific option.</p>
-<p>The advantages of using a positional argument instead of an option
-for the same are that the command line is shorter(no option name, just
-the position) and the value is clearly mandatory.</p>
-<p>The disadvantage is that it is not possible to define a default value
-in a configuration file or environment variable like for options.
-Nevertheless, <a href="#extended-value-syntax">Extended Values</a>
-syntax is supported, so it is possible to retrieve a value from the
-configuration file or environment variable (using
-<code>@preset:</code>).</p>
-<p>If a Positional Arguments begins with <code>-</code>, then either use
-the <code>@val:</code> syntax (see <a
+<p><strong>Command Parameters</strong> are typically mandatory values
+for a command, such as entity creation data or entity identifier.</p>
+<blockquote>
+<p><strong>Note:</strong> It could also have been designed as an option.
+But since it is mandatory and typically these data need
+<strong>not</strong> be set in a configuration file, then it is better
+designed as a <strong>Command Parameter</strong>, and not designed an
+additional specific option. The advantages of using a <strong>Command
+Parameter</strong> instead of an option for the same are that the
+command line is shorter (no option name, just the position) and the
+value is clearly mandatory. The disadvantage is that it is not possible
+to define a default value in a configuration file or environment
+variable like for options. Nevertheless, <a
+href="#extended-value-syntax">Extended Values</a> syntax is supported,
+so it is possible to retrieve a value from the configuration file (using
+<code>@preset:</code>) or environment variable (using
+<code>@env:</code>).</p>
+</blockquote>
+<p>If a <strong>Command Parameters</strong> begins with <code>-</code>,
+then either use the <code>@val:</code> syntax (see <a
 href="#extended-value-syntax">Extended Values</a>), or use the
 <code>--</code> separator (see below).</p>
-<p>A few positional arguments are optional, they are located at the end
-of the command line.</p>
-<h3 data-number="4.3.3" id="options"><span
-class="header-section-number">4.3.3</span> Options</h3>
+<p>A few <strong>Command Parameters</strong> are optional, they are
+located at the end of the command line.</p>
+<h3 data-number="4.3.2" id="options"><span
+class="header-section-number">4.3.2</span> Options</h3>
 <p>All options, e.g. <code>--log-level=debug</code>, are command line
 arguments that:</p>
 <ul>
@@ -1257,11 +1268,12 @@ arguments that:</p>
 <li>Have a name, in lowercase, using <code>-</code> as word separator in
 name (e.g. <code>--log-level=debug</code>)</li>
 <li>Have a value, separated from name with a <code>=</code></li>
-<li>Can be used by prefix (avoid), provided that it is unique. E.g.
-<code>--log-l=debug</code> is the same as
+<li>Can be used by prefix (not recommended), provided that it is unique.
+E.g. <code>--log-l=debug</code> is the same as
 <code>--log-level=debug</code></li>
 <li>Is optional on command line (it has a default value or no
 value)</li>
+<li>whose position is not significant, but order is significant</li>
 </ul>
 <p>Exceptions:</p>
 <ul>
@@ -1270,8 +1282,9 @@ equivalent to <code>--preset=toto</code>, refer to the manual or
 <code>-h</code>.</li>
 <li>Some options (flags) don’t take a value, e.g. <code>-N</code></li>
 <li>The special option <code>--</code> stops option processing and is
-ignored, following command line arguments are taken as arguments,
-including the ones starting with a <code>-</code>.</li>
+ignored, following command line arguments are taken as
+<strong>Positional Arguments</strong>, including the ones starting with
+a <code>-</code>.</li>
 </ul>
 <p>Example:</p>
 <div class="sourceCode" id="cb104"><pre
@@ -1284,7 +1297,8 @@ argument, and not as an option, due to <code>--</code>.</p>
 </blockquote>
 <p>Options may have a (hardcoded) default value.</p>
 <p>Options can be placed anywhere on command line and are evaluated in
-order.</p>
+order. Usually the last value evaluated overrides previous values, but
+some options are cumulative, e.g. <code>ts</code>.</p>
 <p>Options are typically optional: to change the default behavior. But
 some are mandatory, so they can be placed in a configuration file, for
 example: connection information.</p>
@@ -1315,9 +1329,10 @@ variable, e.g. URL and credentials).</li>
 </ul>
 <h2 data-number="4.4" id="interactive-input"><span
 class="header-section-number">4.4</span> Interactive Input</h2>
-<p>Some options and positional arguments are mandatory and other
-optional. By default, <code>ascli</code> will ask for missing mandatory
-options or positional arguments for interactive execution.</p>
+<p>Some options and <strong>Command Parameters</strong> are mandatory
+and other optional. By default, <code>ascli</code> will ask for missing
+mandatory options or <strong>Command Parameters</strong> for interactive
+execution.</p>
 <p>The behavior can be controlled with:</p>
 <ul>
 <li><code>--interactive=&lt;yes|no&gt;</code> (default=yes if STDIN is a
@@ -1366,7 +1381,7 @@ or list), by default, sub object are flattened (option
 <code>user.id</code> and <code>user.name</code>. Setting option
 <code>flat_hash</code> to <code>false</code> will only display one
 field: <code>user</code> and value is the sub <code>Hash</code>. When in
-flatten mode, it is possible to filter fields usinf the option
+flatten mode, it is possible to filter fields using the option
 <code>fields</code> using the compound field name using <code>.</code>
 (dot) as separator.</p>
 <p>Object lists are displayed one per line, with attributes as columns.
@@ -2232,23 +2247,30 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb164-1"><a href
 </blockquote>
 <h2 data-number="4.12" id="private-key"><span
 class="header-section-number">4.12</span> Private Key</h2>
-<p>Some applications allow the user to be authenticated using a private
-key (Server, AoC, Faspex5, …). It consists in using a pair of keys: the
-private key and its associated public key. The same key can be used for
-multiple applications. Technically, a private key contains the public
-key, which can be extracted from it. The file containing the private key
-can optionally be protected by a passphrase. If the key is protected by
-a passphrase, then it will be prompted when used. (some plugins support
-option <code>passphrase</code>)</p>
-<p>The following commands use the shell variable
-<code>PRIVKEYFILE</code>. Set it to the desired safe location of the
+<p>Some Aspera applications allow the user to be authenticated using <a
+href="https://en.wikipedia.org/wiki/Public-key_cryptography">Public Key
+Cryptography</a>:</p>
+<ul>
+<li>for SSH: Server</li>
+<li>for OAuth JWT: AoC, Faspex5, Faspex, Shares</li>
+</ul>
+<p>It consists in using a pair of associated keys: a private key and a
+public key. The same pair can be used for multiple applications. The
+file containing the private key (key pair) can optionally be protected
+by a passphrase. If the key is protected by a passphrase, then it will
+be prompted when used. (some plugins support option
+<code>passphrase</code>)</p>
+<p>The following sample commands use the shell variable
+<code>KEY_PAIR_PATH</code>. Set it to the desired safe location of the
 private key. Typically, located in folder <code>$HOME/.ssh</code> or
-<code>$HOME/.aspera/ascli</code>:</p>
+<code>$HOME/.aspera/ascli</code>. For example:</p>
 <div class="sourceCode" id="cb165"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb165-1"><a href="#cb165-1" aria-hidden="true" tabindex="-1"></a><span class="va">PRIVKEYFILE</span><span class="op">=</span>~/.aspera/ascli/my_private_key</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb165-1"><a href="#cb165-1" aria-hidden="true" tabindex="-1"></a><span class="va">KEY_PAIR_PATH</span><span class="op">=</span>~/.aspera/ascli/my_private_key</span></code></pre></div>
 <p>Several methods can be used to generate a key pair.</p>
-<p>The format expected for private keys is <a
+<p>The format expected for keys is <a
 href="https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail">PEM</a>.</p>
+<p>If another format is used, such as <code>DER</code>, it can be
+converted to <code>PEM</code>, e.g. using <code>openssl</code>.</p>
 <h3 data-number="4.12.1" id="ascli-for-key-generation"><span
 class="header-section-number">4.12.1</span> <code>ascli</code> for key
 generation</h3>
@@ -2257,14 +2279,14 @@ generation</h3>
 extracted with extension <code>.pub</code>. The key is not passphrase
 protected.</p>
 <div class="sourceCode" id="cb166"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb166-1"><a href="#cb166-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config genkey <span class="va">${PRIVKEYFILE}</span> 4096</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb166-1"><a href="#cb166-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config genkey <span class="va">${KEY_PAIR_PATH}</span> 4096</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> <code>ascli</code> uses the
 <code>openssl</code> library.</p>
 </blockquote>
 <p>To display the public key of a private key:</p>
 <div class="sourceCode" id="cb167"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config pubkey @file:<span class="va">${PRIVKEYFILE}</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config pubkey @file:<span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
 <p>To display the version of <strong>openssl</strong> used in
 <code>ascli</code>:</p>
 <div class="sourceCode" id="cb168"><pre
@@ -2274,14 +2296,14 @@ class="header-section-number">4.12.2</span> <code>ssh-keygen</code></h3>
 <p>Both private and public keys are generated, option <code>-N</code> is
 for passphrase.</p>
 <div class="sourceCode" id="cb169"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh-keygen</span> <span class="at">-t</span> rsa <span class="at">-b</span> 4096 <span class="at">-m</span> PEM <span class="at">-N</span> <span class="st">&#39;&#39;</span> <span class="at">-f</span> <span class="va">${PRIVKEYFILE}</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb169-1"><a href="#cb169-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh-keygen</span> <span class="at">-t</span> rsa <span class="at">-b</span> 4096 <span class="at">-m</span> PEM <span class="at">-N</span> <span class="st">&#39;&#39;</span> <span class="at">-f</span> <span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
 <h3 data-number="4.12.3" id="openssl"><span
 class="header-section-number">4.12.3</span> <code>openssl</code></h3>
-<p>To generate a private key with a passphrase the following can be used
-on any system:</p>
+<p>To generate a key pair with a passphrase the following can be used on
+any system:</p>
 <div class="sourceCode" id="cb170"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> genrsa <span class="at">-passout</span> pass:_passphrase_here_ <span class="at">-out</span> <span class="va">${PRIVKEYFILE}</span> 4096</span>
-<span id="cb170-2"><a href="#cb170-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-pubout</span> <span class="at">-in</span> <span class="va">${PRIVKEYFILE}</span> <span class="at">-out</span> <span class="va">${PRIVKEYFILE}</span>.pub</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb170-1"><a href="#cb170-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> genrsa <span class="at">-passout</span> pass:_passphrase_here_ <span class="at">-out</span> <span class="va">${KEY_PAIR_PATH}</span> 4096</span>
+<span id="cb170-2"><a href="#cb170-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-pubout</span> <span class="at">-in</span> <span class="va">${KEY_PAIR_PATH}</span> <span class="at">-out</span> <span class="va">${KEY_PAIR_PATH}</span>.pub</span></code></pre></div>
 <p><code>openssl</code> is sometimes compiled to support option
 <code>-nodes</code> (no DES, i.e. no passphrase, e.g. on macOS). In that
 case, add option <code>-nodes</code> instead of
@@ -2290,12 +2312,24 @@ passphrase.</p>
 <p>If option <code>-nodes</code> is not available, the passphrase can be
 removed using this method:</p>
 <div class="sourceCode" id="cb171"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-passin</span> pass:_passphrase_here_ <span class="at">-in</span> <span class="va">${PRIVKEYFILE}</span> <span class="at">-out</span> <span class="va">${PRIVKEYFILE}</span>.no_des</span>
-<span id="cb171-2"><a href="#cb171-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${PRIVKEYFILE}</span>.no_des <span class="va">${PRIVKEYFILE}</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-passin</span> pass:_passphrase_here_ <span class="at">-in</span> <span class="va">${KEY_PAIR_PATH}</span> <span class="at">-out</span> <span class="va">${KEY_PAIR_PATH}</span>.no_des</span>
+<span id="cb171-2"><a href="#cb171-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${KEY_PAIR_PATH}</span>.no_des <span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
 <p>To change (or add) the passphrase for a key do:</p>
 <div class="sourceCode" id="cb172"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-des3</span> <span class="at">-in</span> <span class="va">${PRIVKEYFILE}</span> <span class="at">-out</span> <span class="va">${PRIVKEYFILE}</span>.with_des</span>
-<span id="cb172-2"><a href="#cb172-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${PRIVKEYFILE}</span>.with_des <span class="va">${PRIVKEYFILE}</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb172-1"><a href="#cb172-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-des3</span> <span class="at">-in</span> <span class="va">${KEY_PAIR_PATH}</span> <span class="at">-out</span> <span class="va">${KEY_PAIR_PATH}</span>.with_des</span>
+<span id="cb172-2"><a href="#cb172-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${KEY_PAIR_PATH}</span>.with_des <span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
+<h3 data-number="4.12.4"
+id="using-an-application-to-generate-a-key-pair"><span
+class="header-section-number">4.12.4</span> Using an application to
+generate a key pair</h3>
+<p>Many applications are available, including on internet, to generate
+key pairs. For example: <a href="https://cryptotools.net/rsagen"
+class="uri">https://cryptotools.net/rsagen</a></p>
+<blockquote>
+<p><strong>Note:</strong> Be careful that private keys are sensitive
+information, and shall be kept secret (like a password), so using online
+tools is risky.</p>
+</blockquote>
 <h2 data-number="4.13" id="ssl-ca-certificate-bundle"><span
 class="header-section-number">4.13</span> SSL CA certificate bundle</h2>
 <p>The SSL CA certificate bundle can be specified using option
@@ -5947,9 +5981,9 @@ class="header-section-number">5.6.1</span> Send a Package</h3>
 <p>General syntax:</p>
 <div class="sourceCode" id="cb335"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb335-1"><a href="#cb335-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc packages send [package extended value] [other parameters such as file list and transfer parameters]</span></code></pre></div>
-<p>Package creation parameter are sent as positional argument. Refer to
-the AoC package creation API, or display an existing package in JSON to
-list attributes.</p>
+<p>Package creation parameter are sent as <strong>Command
+Parameter</strong>. Refer to the AoC package creation API, or display an
+existing package in JSON to list attributes.</p>
 <p>List allowed shared inbox destinations with:</p>
 <div class="sourceCode" id="cb336"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb336-1"><a href="#cb336-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc packages shared_inboxes list</span></code></pre></div>
@@ -7324,8 +7358,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb419-1"><a href
 <span id="cb419-48"><a href="#cb419-48" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span></code></pre></div>
 <p>Most commands are directly REST API calls. Parameters to commands are
 carried through option <code>query</code>, as extended value, for
-<code>list</code>, or through positional argument for creation. One can
-conveniently use the JSON format with prefix <code>@json:</code>.</p>
+<code>list</code>, or through <strong>Command Parameter</strong> for
+creation. One can conveniently use the JSON format with prefix
+<code>@json:</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> The API is listed in <a
 href="https://developer.ibm.com/apis/catalog?search=%22faspex+5%22">Faspex
@@ -7359,8 +7394,8 @@ specific.</p>
 </blockquote>
 <h2 data-number="10.6" id="faspex-5-send-a-package"><span
 class="header-section-number">10.6</span> Faspex 5: Send a package</h2>
-<p>The <code>Hash</code> creation positional argument provided to
-command
+<p>The <code>Hash</code> creation <strong>Command Parameter</strong>
+provided to command
 <code>faspex5 packages send [extended value: Hash with package info ] [files...]</code>
 corresponds to the Faspex 5 API: <code>POST /packages</code>.</p>
 <p>The interface is the one of the API (Refer to Faspex5 API
@@ -7468,11 +7503,12 @@ passed)</td>
 </tr>
 </tbody>
 </table>
-<p>A positional argument in last position, of type <code>Proc</code>,
-can be used to filter the list of packages. This advantage of this
-method is that the expression can be any test, even complex, as it is
-Ruby code. But the disadvantage is that the filtering is done in
-<code>ascli</code> and not in Faspex 5, so it is less efficient.</p>
+<p>A <strong>Command Parameter</strong> in last position, of type
+<code>Proc</code>, can be used to filter the list of packages. This
+advantage of this method is that the expression can be any test, even
+complex, as it is Ruby code. But the disadvantage is that the filtering
+is done in <code>ascli</code> and not in Faspex 5, so it is less
+efficient.</p>
 <p>Examples:</p>
 <ul>
 <li><p>List only available packages: (filtering is done in Faspex)</p>
@@ -7509,8 +7545,8 @@ id, or an extended value <code>Array</code> of package ids,
 e.g. <code>@list:,1,2,3</code> as argument.</p>
 <p>The same options as for <code>faspex5 packages list</code> can be
 used to select the box and filter the packages to download. I.e. options
-<code>box</code> and <code>query</code>, as well as last positional
-argument <code>Proc</code> (filter).</p>
+<code>box</code> and <code>query</code>, as well as last <strong>Command
+Parameter</strong> <code>Proc</code> (filter).</p>
 <p>Option <code>--once-only=yes</code> can be used, for “cargo-like”
 behavior. Special package id <code>INIT</code> initializes the
 persistency of already received packages when option
@@ -7548,7 +7584,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb428-1"><a href
 <div class="sourceCode" id="cb429"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb429-1"><a href="#cb429-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 admin res shared_inboxes invite <span class="st">&#39;%name:the shared inbox&#39;</span> @json:<span class="st">&#39;{&quot;email_address&quot;:&quot;john@example.com&quot;}&#39;</span></span></code></pre></div>
 <p>Other payload parameters are possible for <code>invite</code> in this
-last <code>Hash</code> positional argument:</p>
+last <code>Hash</code> <strong>Command Parameter</strong>:</p>
 <div class="sourceCode" id="cb430"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb430-1"><a href="#cb430-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;description&quot;</span><span class="fu">:</span><span class="st">&quot;blah&quot;</span><span class="fu">,</span><span class="dt">&quot;prevent_http_upload&quot;</span><span class="fu">:</span><span class="kw">true</span><span class="fu">,</span><span class="dt">&quot;custom_link_expiration_policy&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expires_after_upload&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;set_invitation_link_expiration&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;invitation_expiration_days&quot;</span><span class="fu">:</span><span class="dv">3</span><span class="fu">}</span></span></code></pre></div>
 <h2 data-number="10.12" id="faspex-5-create-metadata-profile"><span

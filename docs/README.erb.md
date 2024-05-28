@@ -982,7 +982,7 @@ PS C:\> <%=cmd%> conf echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 
 #### Extended Values (JSON, Ruby, ...)
 
-Some of the values provided to <%=tool%> (options, positional arguments) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
+Some of the values provided to <%=tool%> (options, **Command Parameters**) are expected to be [Extended Values](#extended-value-syntax), i.e. not a simple `String`, but a composite structure (`Hash`, `Array`).
 Typically, the `@json:` modifier is used, it expects a [JSON](https://www.json.org/) string.
 JSON itself has some special syntax: for example `"` is used to enclose a `String`.
 
@@ -1167,16 +1167,15 @@ If the value to be used is in a more complex structure, then the `@ruby:` modifi
 {"title":"Test \" ' & \\"}
 ```
 
-### Commands, Options, Positional Arguments
+### Positional Arguments and Options
 
 Command line arguments are the units of command line typically separated by spaces (the `argv` of C).
 The tokenization of the command line is typically done by the shell, refer to the previous section [Command Line Parsing](#command-line-parsing-special-characters).
 
-<%=tool%> handles three types of command line arguments:
+<%=tool%> handles two types of command line arguments:
 
-- Commands
-- Positional Arguments
-- Options
+- **Positional Arguments** : position is significant
+- **Options** : only order is significant, but not position
 
 For example:
 
@@ -1184,18 +1183,24 @@ For example:
 <%=cmd%> command subcommand --option-name=VAL1 VAL2
 ```
 
-- Executes **command**: `command subcommand`
-- With one **option**: `option_name` and its **value**: `VAL1`
-- The command has one additional **positional argument**: `VAL2`
+- Executes **Command** and its **Command Parameters** (**Positional Arguments**): `command subcommand VAL2`
+- With one **Option**: `option_name` and its **value**: `VAL1`
 
 If the value of a command, option or argument is constrained by a fixed list of values, then it is possible to use a few of the first letters of the value, provided that it uniquely identifies the value.
 For example `<%=cmd%> config pre ov` is the same as `<%=cmd%> config preset overview`.
 
-The value of options and arguments is evaluated with the [Extended Value Syntax](#extended-value-syntax).
+The value of **Options** and **Positional Arguments** is evaluated with the [Extended Value Syntax](#extended-value-syntax).
 
-#### Commands
+#### Positional Arguments
 
-Commands are typically entity types or verbs to act on those entities.
+**Positional Arguments** are either:
+
+- **Commands**, typically at the beginning
+- **Command Parameters** , e.g. creation data or entity identifier
+
+When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a pre-defined order.
+
+**Commands** are typically entity types or verbs to act on those entities.
 Its value is a `String` that must belong to a fixed list of values in a given context.
 
 Example:
@@ -1209,28 +1214,24 @@ Example:
 - `ascp` is the second level command: name of the component (singleton)
 - `info` is the third level command: action to be performed
 
-Typically, commands are located at the **beginning** of the command line.
+Typically, **Commands** are located at the **beginning** of the command line.
 Order is significant.
 The provided command must match one of the supported commands in the given context.
 If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
-Some sub-commands appear after entity selection, e.g. `<%=cmd%> aoc admin res node do 8669 browse /`: `browse` is a sub-command of `node`.
+Some sub-commands appear after entity selection (identifier), e.g. `<%=cmd%> aoc admin res node do 8669 browse /`: `browse` is a sub-command of `node`.
 
-#### Positional Arguments
+**Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
-Positional Arguments are typically mandatory values for a command, such as entity creation data.
-
-It could also be designed as an option.
-But since it is mandatory and typically creation data need **not** be set in a configuration file, then it is better to use a positional argument, and not define an additional specific option.
-
-The advantages of using a positional argument instead of an option for the same are that the command line is shorter(no option name, just the position) and the value is clearly mandatory.
-
+> **Note:** It could also have been designed as an option.
+But since it is mandatory and typically these data need **not** be set in a configuration file, then it is better designed as a **Command Parameter**, and not designed an additional specific option.
+The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position) and the value is clearly mandatory.
 The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
-Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file or environment variable (using `@preset:`).
+Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
 
-If a Positional Arguments begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
+If a **Command Parameters** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
 
-A few positional arguments are optional, they are located at the end of the command line.
+A few **Command Parameters** are optional, they are located at the end of the command line.
 
 #### Options
 
@@ -1239,14 +1240,15 @@ All options, e.g. `--log-level=debug`, are command line arguments that:
 - Start with `--`
 - Have a name, in lowercase, using `-` as word separator in name  (e.g. `--log-level=debug`)
 - Have a value, separated from name with a `=`
-- Can be used by prefix (avoid), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
+- Can be used by prefix (not recommended), provided that it is unique. E.g. `--log-l=debug` is the same as `--log-level=debug`
 - Is optional on command line (it has a default value or no value)
+- whose position is not significant, but order is significant
 
 Exceptions:
 
 - Some options accept a short form, e.g. `-Ptoto` is equivalent to `--preset=toto`, refer to the manual or `-h`.
 - Some options (flags) don't take a value, e.g. `-N`
-- The special option `--` stops option processing and is ignored, following command line arguments are taken as arguments, including the ones starting with a `-`.
+- The special option `--` stops option processing and is ignored, following command line arguments are taken as **Positional Arguments**, including the ones starting with a `-`.
 
 Example:
 
@@ -1263,6 +1265,7 @@ Example:
 Options may have a (hardcoded) default value.
 
 Options can be placed anywhere on command line and are evaluated in order.
+Usually the last value evaluated overrides previous values, but some options are cumulative, e.g. `ts`.
 
 Options are typically optional: to change the default behavior.
 But some are mandatory, so they can be placed in a configuration file, for example: connection information.
@@ -1286,8 +1289,8 @@ A command line argument is typically designed as option if:
 
 ### Interactive Input
 
-Some options and positional arguments are mandatory and other optional.
-By default, <%=tool%> will ask for missing mandatory options or positional arguments for interactive execution.
+Some options and **Command Parameters** are mandatory and other optional.
+By default, <%=tool%> will ask for missing mandatory options or **Command Parameters** for interactive execution.
 
 The behavior can be controlled with:
 
@@ -1323,7 +1326,7 @@ The table style can be customized with option: `table_style` (horizontal, vertic
 In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash`).
 For example, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
 Setting option `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
-When in flatten mode, it is possible to filter fields usinf the option `fields` using the compound field name using `.` (dot) as separator.
+When in flatten mode, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
 
 Object lists are displayed one per line, with attributes as columns.
 Single objects (or tables with a single result) are transposed: one attribute per line.
@@ -2005,25 +2008,31 @@ For a more secure storage one can do:
 
 ### Private Key
 
-Some applications allow the user to be authenticated using a private key (Server, AoC, Faspex5, ...).
-It consists in using a pair of keys: the private key and its associated public key.
-The same key can be used for multiple applications.
-Technically, a private key contains the public key, which can be extracted from it.
-The file containing the private key can optionally be protected by a passphrase.
+Some Aspera applications allow the user to be authenticated using [Public Key Cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography):
+
+- for SSH: Server
+- for OAuth JWT: AoC, Faspex5, Faspex, Shares
+
+It consists in using a pair of associated keys: a private key and a public key.
+The same pair can be used for multiple applications.
+The file containing the private key (key pair) can optionally be protected by a passphrase.
 If the key is protected by a passphrase, then it will be prompted when used.
 (some plugins support option `passphrase`)
 
-The following commands use the shell variable `PRIVKEYFILE`.
+The following sample commands use the shell variable `KEY_PAIR_PATH`.
 Set it to the desired safe location of the private key.
-Typically, located in folder `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`:
+Typically, located in folder `$HOME/.ssh` or `$HOME/.aspera/<%=cmd%>`.
+For example:
 
 ```bash
-PRIVKEYFILE=~/.aspera/<%=cmd%>/my_private_key
+KEY_PAIR_PATH=~/.aspera/<%=cmd%>/my_private_key
 ```
 
 Several methods can be used to generate a key pair.
 
-The format expected for private keys is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail).
+The format expected for keys is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail).
+
+If another format is used, such as `DER`, it can be converted to `PEM`, e.g. using `openssl`.
 
 #### <%=tool%> for key generation
 
@@ -2032,7 +2041,7 @@ For convenience, the public key is also extracted with extension `.pub`.
 The key is not passphrase protected.
 
 ```bash
-<%=cmd%> config genkey ${PRIVKEYFILE} 4096
+<%=cmd%> config genkey ${KEY_PAIR_PATH} 4096
 ```
 
 > **Note:** <%=tool%> uses the `openssl` library.
@@ -2040,7 +2049,7 @@ The key is not passphrase protected.
 To display the public key of a private key:
 
 ```bash
-<%=cmd%> config pubkey @file:${PRIVKEYFILE}
+<%=cmd%> config pubkey @file:${KEY_PAIR_PATH}
 ```
 
 To display the version of **openssl** used in <%=tool%>:
@@ -2054,16 +2063,16 @@ To display the version of **openssl** used in <%=tool%>:
 Both private and public keys are generated, option `-N` is for passphrase.
 
 ```bash
-ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${PRIVKEYFILE}
+ssh-keygen -t rsa -b 4096 -m PEM -N '' -f ${KEY_PAIR_PATH}
 ```
 
 #### `openssl`
 
-To generate a private key with a passphrase the following can be used on any system:
+To generate a key pair with a passphrase the following can be used on any system:
 
 ```bash
-openssl genrsa -passout pass:_passphrase_here_ -out ${PRIVKEYFILE} 4096
-openssl rsa -pubout -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.pub
+openssl genrsa -passout pass:_passphrase_here_ -out ${KEY_PAIR_PATH} 4096
+openssl rsa -pubout -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.pub
 ```
 
 `openssl` is sometimes compiled to support option `-nodes` (no DES, i.e. no passphrase, e.g. on macOS).
@@ -2072,16 +2081,23 @@ In that case, add option `-nodes` instead of `-passout pass:_passphrase_here_` t
 If option `-nodes` is not available, the passphrase can be removed using this method:
 
 ```bash
-openssl rsa -passin pass:_passphrase_here_ -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.no_des
-mv ${PRIVKEYFILE}.no_des ${PRIVKEYFILE}
+openssl rsa -passin pass:_passphrase_here_ -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.no_des
+mv ${KEY_PAIR_PATH}.no_des ${KEY_PAIR_PATH}
 ```
 
 To change (or add) the passphrase for a key do:
 
 ```bash
-openssl rsa -des3 -in ${PRIVKEYFILE} -out ${PRIVKEYFILE}.with_des
-mv ${PRIVKEYFILE}.with_des ${PRIVKEYFILE}
+openssl rsa -des3 -in ${KEY_PAIR_PATH} -out ${KEY_PAIR_PATH}.with_des
+mv ${KEY_PAIR_PATH}.with_des ${KEY_PAIR_PATH}
 ```
+
+#### Using an application to generate a key pair
+
+Many applications are available, including on internet, to generate key pairs.
+For example: <https://cryptotools.net/rsagen>
+
+> **Note:** Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
 
 ### SSL CA certificate bundle
 
@@ -4164,7 +4180,7 @@ General syntax:
 <%=cmd%> aoc packages send [package extended value] [other parameters such as file list and transfer parameters]
 ```
 
-Package creation parameter are sent as positional argument.
+Package creation parameter are sent as **Command Parameter**.
 Refer to the AoC package creation API, or display an existing package in JSON to list attributes.
 
 List allowed shared inbox destinations with:
@@ -5137,7 +5153,7 @@ Use this token as password and use `--auth=boot`.
 <%=include_commands_for_plugin('faspex5')%>
 
 Most commands are directly REST API calls.
-Parameters to commands are carried through option `query`, as extended value, for `list`, or through positional argument for creation.
+Parameters to commands are carried through option `query`, as extended value, for `list`, or through **Command Parameter** for creation.
 One can conveniently use the JSON format with prefix `@json:`.
 
 > **Note:** The API is listed in [Faspex 5 API Reference](https://developer.ibm.com/apis/catalog?search="faspex+5") under **IBM Aspera Faspex API**.
@@ -5164,7 +5180,7 @@ To select another inbox, use option `box` with one of the following values:
 
 ### Faspex 5: Send a package
 
-The `Hash` creation positional argument provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
+The `Hash` creation **Command Parameter** provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
 
 The interface is the one of the API (Refer to Faspex5 API documentation, or look at request in browser).
 
@@ -5228,7 +5244,7 @@ Option `query` can be used to filter the list of packages, based on native API p
 | `max`     | Special | Maximum number of items to retrieve (stop pages when the maximum is passed) |
 | `pmax`    | Special | Maximum number of pages to request (stop pages when the maximum is passed) |
 
-A positional argument in last position, of type `Proc`, can be used to filter the list of packages.
+A **Command Parameter** in last position, of type `Proc`, can be used to filter the list of packages.
 This advantage of this method is that the expression can be any test, even complex, as it is Ruby code.
 But the disadvantage is that the filtering is done in <%=tool%> and not in Faspex 5, so it is less efficient.
 
@@ -5266,7 +5282,7 @@ To receive one, or several packages at once, use command `faspex5 packages recei
 Provide either a single package id, or an extended value `Array` of package ids, e.g. `@list:,1,2,3` as argument.
 
 The same options as for `faspex5 packages list` can be used to select the box and filter the packages to download.
-I.e. options `box` and `query`, as well as last positional argument `Proc` (filter).
+I.e. options `box` and `query`, as well as last **Command Parameter** `Proc` (filter).
 
 Option `--once-only=yes` can be used, for "cargo-like" behavior.
 Special package id `INIT` initializes the persistency of already received packages when option `--once-only=yes` is used.
@@ -5306,7 +5322,7 @@ It is equivalent to:
 <%=cmd%> faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
-Other payload parameters are possible for `invite` in this last `Hash` positional argument:
+Other payload parameters are possible for `invite` in this last `Hash` **Command Parameter**:
 
 ```json
 {"description":"blah","prevent_http_upload":true,"custom_link_expiration_policy":false,"invitation_expires_after_upload":false,"set_invitation_link_expiration":false,"invitation_expiration_days":3}
