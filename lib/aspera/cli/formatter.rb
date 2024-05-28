@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore jsonpp
+require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'aspera/log'
@@ -95,10 +96,9 @@ module Aspera
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
       # supported output formats
-      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv].freeze
+      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
-      RESULT_PARAMS = %i[type data total fields name].freeze
 
       private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR
       # prefix to display error messages in user messages (terminal)
@@ -177,12 +177,17 @@ module Aspera
         case operation
         when :set
           @options[option_symbol] = value
-          if option_symbol.eql?(:output)
+          case option_symbol
+          when :output
             $stdout = if value.eql?('-')
               STDOUT # rubocop:disable Style/GlobalStdStream
             else
               File.open(value, 'w')
             end
+          when :image
+            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+            unknown_options = value.keys.map(&:to_sym) - allowed_options
+            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
           end
         when :get then return @options[option_symbol]
         else Aspera.error_unreachable_line
@@ -203,6 +208,7 @@ module Aspera
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
+        options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
 
       # main output method
@@ -235,9 +241,9 @@ module Aspera
         data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
       end
 
-      # this method computes the list of fields to display
-      # data: array of hash
-      # default: list of fields to display by default (may contain special values)
+      # @return the list of fields to display
+      # @param data [Array<Hash>] data to display
+      # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
         request =
@@ -322,43 +328,88 @@ module Aspera
         end
       end
 
+      # @return text suitable to display an image from url
+      def status_image(blob)
+        begin
+          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::DEFAULT_PARSER.make_regexp}\z/)
+          # it's a url
+          url = blob
+          unless OpenApplication.instance.url_method.eql?(:text)
+            OpenApplication.instance.uri(url)
+            return ''
+          end
+          # remote_image = Rest.new(base_url: url).read('')
+          # mime = remote_image[:http]['content-type']
+          # blob = remote_image[:http].body
+          # Log.log.warn("Image ? #{remote_image[:http]['content-type']}") unless mime.include?('image/')
+          blob = UriReader.read(url)
+        rescue URI::InvalidURIError
+          nil
+        end
+        # try base64
+        begin
+          blob = Base64.strict_decode64(blob)
+        rescue
+          nil
+        end
+        return Preview::Terminal.build(blob, **@options[:image].symbolize_keys)
+      end
+
       # this method displays the results, especially the table format
-      def display_results(results)
-        Aspera.assert_type(results, Hash)
-        Aspera.assert((results.keys - RESULT_PARAMS).empty?){"result unsupported key: #{results.keys - RESULT_PARAMS}"}
-        Aspera.assert(results.key?(:type)){"result must have type (#{results})"}
-        Aspera.assert(results.key?(:data) || %i[empty nothing].include?(results[:type])){'result must have data'}
-        Log.log.debug{"display_results: #{results[:data].class} #{results[:type]}"}
-        display_item_count(results[:data].length, results[:total]) if results.key?(:total)
-        SecretHider.deep_remove_secret(results[:data]) unless @options[:show_secrets] || @options[:display].eql?(:data)
+      # @param type [Symbol] type of data
+      # @param data [Object] data to display
+      # @param total [Integer] total number of items
+      # @param fields [Array<String>] list of fields to display
+      # @param name [String] name of the column to display
+      def display_results(type:, data: nil, total: nil, fields: nil, name: nil)
+        Log.log.debug{"display_results: #{type} class=#{data.class} data=#{data}"}
+        Aspera.assert_type(type, Symbol){'result must have type'}
+        Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
+        display_item_count(data.length, total) unless total.nil?
+        SecretHider.deep_remove_secret(data) unless @options[:show_secrets] || @options[:display].eql?(:data)
         case @options[:format]
         when :text
-          display_message(:data, results[:data].to_s)
+          display_message(:data, data.to_s)
         when :nagios
-          Nagios.process(results[:data])
+          Nagios.process(data)
         when :ruby
-          display_message(:data, PP.pp(results[:data], +''))
+          display_message(:data, PP.pp(data, +''))
         when :json
-          display_message(:data, JSON.generate(results[:data]))
+          display_message(:data, JSON.generate(data))
         when :jsonpp
-          display_message(:data, JSON.pretty_generate(results[:data]))
+          display_message(:data, JSON.pretty_generate(data))
         when :yaml
-          display_message(:data, results[:data].to_yaml)
+          display_message(:data, data.to_yaml)
+        when :image
+          # assume it is an url
+          url = data
+          case type
+          when :single_object, :object_list
+            url = [url] if type.eql?(:single_object)
+            raise 'image display requires a single result' unless url.length == 1
+            fields = compute_fields(url, fields)
+            raise 'select a field to display' unless fields.length == 1
+            url = url.first
+            raise 'no such field' unless url.key?(fields.first)
+            url = url[fields.first]
+          end
+          raise "not url: #{url.class} #{url}" unless url.is_a?(String)
+          display_message(:data, status_image(url))
         when :table, :csv
-          case results[:type]
+          case type
           when :config_over
-            display_table(Flattener.new(self).config_over(results[:data]), CONF_OVERVIEW_KEYS)
+            display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)
           when :object_list, :single_object
-            obj_list = results[:data]
-            obj_list = [obj_list] if results[:type].eql?(:single_object)
+            obj_list = data
+            obj_list = [obj_list] if type.eql?(:single_object)
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
             obj_list = obj_list.map{|obj|Flattener.new(self).flatten(obj)} if @options[:flat_hash]
-            display_table(obj_list, compute_fields(obj_list, results[:fields]))
+            display_table(obj_list, compute_fields(obj_list, fields))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
-            display_table(results[:data].map { |i| { results[:name] => i } }, [results[:name]])
+            display_table(data.map { |i| { name => i } }, [name])
           when :empty # no table
             display_message(:info, special_format('empty'))
             return
@@ -366,15 +417,15 @@ module Aspera
             Log.log.debug('no result expected')
           when :status # no table
             # :status displays a simple message
-            display_message(:info, results[:data])
+            display_message(:info, data)
           when :text # no table
             # :status displays a simple message
-            display_message(:data, results[:data])
+            display_message(:data, data)
           when :other_struct # no table
             # :other_struct is any other type of structure
-            display_message(:data, PP.pp(results[:data], +''))
+            display_message(:data, PP.pp(data, +''))
           else
-            raise "unknown data type: #{results[:type]}"
+            raise "unknown data type: #{type}"
           end
         end
       end

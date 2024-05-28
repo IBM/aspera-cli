@@ -1347,6 +1347,7 @@ The style of output can be set using the `format` option, supporting:
 - `jsonpp` : JSON pretty printed
 - `yaml` : YAML
 - `csv` : Comma Separated Values
+- `image` : Image URL or Image data
 
 #### Verbosity of output
 
@@ -1465,7 +1466,8 @@ The following decoders are supported:
 | `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | String   | Any     | Execute specified Ruby code |
 | `secret` | None     | String  | Ask password interactively (hides input) |
-| `stdin`  | None     | String  | Read from stdin (no value on right) |
+| `stdin`  | None     | String  | Read from stdin in text mode (no value on right) |
+| `stdbin` | None     | String  | Read from stdin in binary mode (no value on right) |
 | `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | String   | Any     | Decode YAML |
@@ -1796,6 +1798,7 @@ gem path
 gem version
 genkey my_key
 genkey my_key 4096
+image https://eudemo.asperademo.com/wallpaper.jpg
 initdemo
 open
 plugin create my_command
@@ -2271,16 +2274,33 @@ ascli config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
 ### Image and video thumbnails
 
 `ascli` can display thumbnails for images and videos in the terminal.
-This is available with the `thumbnail` command of `node` when using **gen4/access key** API.
-It's also available when using the `show` command of `preview` plugin.
+This is available:
 
-The following options can be specified in the option `query`:
+- in the `thumbnail` command of `node` when using **gen4/access key** API.
+- when using the `show` command of `preview` plugin.
+- `coffee` and `image` commands of `config` plugin.
+- any displayed value which is an url to image can be displayed with option `format` set to `image`
 
-| Option     | Description |
-|------------|-------------|
-| text       | Display text instead of image (Bool) |
-| double     | Display double text resolution (half characters) (Bool) |
-| font_ratio | Font height/width ratio in terminal (Float) |
+The following options can be specified in the option `image`:
+
+| Option     | Type    | Description |
+|------------|---------|-------------|
+| reserve    | Integer | Lines reserved to display a status |
+| text       | Bool    | Display text instead of image|
+| double     | Bool    | Display double text resolution (half characters) |
+| font_ratio | Float   | Font height/width ratio in terminal |
+
+```bash
+ascli conf image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
+```
+
+```bash
+curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli conf image @stdbin:
+```
+
+```bash
+echo -n https://eudemo.asperademo.com/wallpaper.jpg | ascli conf image @uri:@stdin:
+```
 
 ### Graphical Interactions: Browser and Text Editor
 
@@ -3468,7 +3488,7 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, yaml, zlib, extend, preset, vault
+        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, secret, stdin, stdbin, yaml, zlib, extend, preset, vault
         Dates format is 'DD-MM-YY HH:MM:SS', or 'now' or '-<num>h'
 
 ARGS
@@ -3477,7 +3497,7 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
@@ -3486,6 +3506,7 @@ OPTIONS: global
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
         --transpose-single=ENUM      Single object fields output vertically: no, [yes]
         --show-secrets=ENUM          Show secrets on command output: [no], yes
+        --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
         --bash-comp                  Generate bash completion for command
         --show-config                Display parameters used for the provided action
@@ -3500,7 +3521,7 @@ OPTIONS: global
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey initdemo open plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
@@ -6039,7 +6060,7 @@ Option `query` is available.
 
 To list recursively add option `--query=@json:{"recursive":true}`.
 
-> **Note:** Option `recirsive` makes recursive API calls, so it can take a long time on large packages.
+> **Note:** Option `recursive` makes recursive API calls, so it can take a long time on large packages.
 
 To limit the number of items retrieved, use option `--query=@json:{"max":10}`.
 
@@ -7284,7 +7305,7 @@ Enjoy a coffee on me:
 
 ```bash
 ascli config coffee --ui=text
-ascli config coffee --ui=text --query=@json:'{"text":"true"}'
+ascli config coffee --ui=text --image=@json:'{"text":true}'
 ascli config coffee
 ```
 

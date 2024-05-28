@@ -855,6 +855,7 @@ module Aspera
           wizard
           detect
           coffee
+          image
           ascp
           email_test
           smtp_settings
@@ -952,11 +953,9 @@ module Aspera
             } if action.eql?(:detect)
             return wizard_find(apps)
           when :coffee
-            if OpenApplication.instance.url_method.eql?(:text)
-              return Main.result_picture_in_terminal(options, Rest.new(base_url: COFFEE_IMAGE).read('')[:http].body)
-            end
-            OpenApplication.instance.uri(COFFEE_IMAGE)
-            return Main.result_nothing
+            return Main.result_image(COFFEE_IMAGE, formatter: formatter)
+          when :image
+            return Main.result_image(options.get_next_argument('image uri or blob'), formatter: formatter)
           when :ascp
             execute_action_ascp
           when :gem
@@ -1021,7 +1020,7 @@ module Aspera
             apps.first
           else
             formatter.display_status('Multiple applications detected, please select from:')
-            formatter.display_results({type: :object_list, data: apps, fields: %w[product url version]})
+            formatter.display_results(type: :object_list, data: apps, fields: %w[product url version])
             answer = options.prompt_user_input_in_list('product', apps.map{|a|a[:product]})
             apps.find{|a|a[:product].eql?(answer)}
           end

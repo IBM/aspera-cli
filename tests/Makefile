@@ -336,7 +336,7 @@ $(T)serv_nagios_transfer: $(T).exists
 $(T)serv_key: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
-	aspera_key_path=$$($(EXE_NO_MAN) conf ascp info --fields=ssh_private_rsa) &&\
+	aspera_key_path=$$($(EXE_NO_MAN) config ascp info --fields=ssh_private_rsa) &&\
 	$(EXE_MAN) server browse / --password=@none: --ssh-options=@json:'{"number_of_password_prompts":0}' --ssh-keys=$$aspera_key_path
 	@$(STOP_TEST) $@
 $(T)asession: $(T).exists
@@ -1340,6 +1340,7 @@ $(T)conf_help_2: $(T).exists
 $(T)conf_coffee_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config coffee
+	$(EXE_MAN) config image https://eudemo.asperademo.com/wallpaper.jpg
 	@$(STOP_TEST) $@
 $(T)conf_coffee_2: $(T).exists
 	@$(START_TEST) $@

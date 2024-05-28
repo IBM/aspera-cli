@@ -9,7 +9,6 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/cli/hints'
-require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
@@ -60,12 +59,8 @@ module Aspera
           return {type: :object_list, data: status_table}
         end
 
-        def result_picture_in_terminal(options, blob)
-          terminal_options = options.get_option(:query, default: {}).symbolize_keys
-          allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
-          unknown_options = terminal_options.keys - allowed_options
-          raise "invalid options: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
-          return Main.result_status(Preview::Terminal.build(blob, **terminal_options))
+        def result_image(blob, formatter:)
+          return Main.result_status(formatter.status_image(blob))
         end
       end
 
@@ -281,7 +276,7 @@ module Aspera
           # help requested for current plugin
           exit_with_usage(false) if @option_help
           if @option_show_config
-            formatter.display_results({type: :single_object, data: options.known_options(only_defined: true).stringify_keys})
+            formatter.display_results(type: :single_object, data: options.known_options(only_defined: true).stringify_keys)
             execute_command = false
           end
           # locking for single execution (only after "per plugin" option, in case lock port is there)
@@ -303,7 +298,7 @@ module Aspera
             at_exit{File.delete(pid_file)}
           end
           # execute and display (if not exclusive execution)
-          formatter.display_results(command_plugin.execute_action) if execute_command
+          formatter.display_results(**command_plugin.execute_action) if execute_command
           # save config file if command modified it
           config.save_config_file_if_needed
           # finish

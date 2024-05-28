@@ -1341,6 +1341,7 @@ The style of output can be set using the `format` option, supporting:
 - `jsonpp` : JSON pretty printed
 - `yaml` : YAML
 - `csv` : Comma Separated Values
+- `image` : Image URL or Image data
 
 #### Verbosity of output
 
@@ -1459,7 +1460,8 @@ The following decoders are supported:
 | `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | String   | Any     | Execute specified Ruby code |
 | `secret` | None     | String  | Ask password interactively (hides input) |
-| `stdin`  | None     | String  | Read from stdin (no value on right) |
+| `stdin`  | None     | String  | Read from stdin in text mode (no value on right) |
+| `stdbin` | None     | String  | Read from stdin in binary mode (no value on right) |
 | `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | String   | Any     | Decode YAML |
@@ -2183,16 +2185,33 @@ Then, use this file as certificate store (e.g. here, Node API):
 ### Image and video thumbnails
 
 <%=tool%> can display thumbnails for images and videos in the terminal.
-This is available with the `thumbnail` command of `node` when using **gen4/access key** API.
-It's also available when using the `show` command of `preview` plugin.
+This is available:
 
-The following options can be specified in the option `query`:
+- in the `thumbnail` command of `node` when using **gen4/access key** API.
+- when using the `show` command of `preview` plugin.
+- `coffee` and `image` commands of `config` plugin.
+- any displayed value which is an url to image can be displayed with option `format` set to `image`
 
-| Option     | Description |
-|------------|-------------|
-| text       | Display text instead of image (Bool) |
-| double     | Display double text resolution (half characters) (Bool) |
-| font_ratio | Font height/width ratio in terminal (Float) |
+The following options can be specified in the option `image`:
+
+| Option     | Type    | Description |
+|------------|---------|-------------|
+| reserve    | Integer | Lines reserved to display a status |
+| text       | Bool    | Display text instead of image|
+| double     | Bool    | Display double text resolution (half characters) |
+| font_ratio | Float   | Font height/width ratio in terminal |
+
+```bash
+<%=cmd%> conf image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
+```
+
+```bash
+curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> conf image @stdbin:
+```
+
+```bash
+echo -n https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> conf image @uri:@stdin:
+```
 
 ### Graphical Interactions: Browser and Text Editor
 
@@ -5272,7 +5291,7 @@ Option `query` is available.
 
 To list recursively add option `--query=@json:{"recursive":true}`.
 
-> **Note:** Option `recirsive` makes recursive API calls, so it can take a long time on large packages.
+> **Note:** Option `recursive` makes recursive API calls, so it can take a long time on large packages.
 
 To limit the number of items retrieved, use option `--query=@json:{"max":10}`.
 
@@ -6379,7 +6398,7 @@ Enjoy a coffee on me:
 
 ```bash
 <%=cmd%> config coffee --ui=text
-<%=cmd%> config coffee --ui=text --query=@json:'{"text":"true"}'
+<%=cmd%> config coffee --ui=text --image=@json:'{"text":true}'
 <%=cmd%> config coffee
 ```
 
