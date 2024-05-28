@@ -43,7 +43,7 @@ jobs:
         run: bundle exec ascli conf ascp install
 
       - name: Run ascli test transfer
-        run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.bin?1k'
+        run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.${{ matrix.ruby }}?1k'
         env:
           ASCLI_URL: "ssh://eudemo.asperademo.com:33001"
           ASCLI_USERNAME: "${{ secrets.CF_HSTS_SSH_USER }}"
