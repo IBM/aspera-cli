@@ -1,1 +1,1 @@
-martinlaurent/ascli
+docker.io/martinlaurent/ascli

@@ -4,7 +4,7 @@
 # arg: arg_sdk: specify a sdk file or empty (download from default url)
 # cspell:ignore cliuser optipng
 # Review the version of ruby to be used periodically from : https://hub.docker.com/_/ruby
-FROM ruby:3.2.2
+FROM docker.io/ruby:3.2.2
 #erb: if arg_gem.end_with?('.gem')
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .

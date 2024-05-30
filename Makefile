@@ -113,6 +113,7 @@ DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
 PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/' < Dockerfile.tmpl.erb | erb -T 2
+DOCKER=podman
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 	curl -L $$($(CLI_PATH) --show-config --fields=sdk_url) -o $(LOCAL_SDK_FILE)
 # Refer to section "build" in CONTRIBUTING.md
@@ -120,22 +121,22 @@ $(LOCAL_SDK_FILE): $(DIR_TMP).exists
 dockerfile_release:
 	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
 docker: dockerfile_release $(LOCAL_SDK_FILE)
-	docker build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
+	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
 dockerfile_beta:
 	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
 docker_beta_build: dockerfile_beta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
-	docker build --squash --tag $(DOCKER_TAG_VERSION) .
+	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) .
 docker_beta: $(BETA_VERSION_FILE)
 	$(MAKE_BETA) docker_beta_build
 docker_push_beta: $(BETA_VERSION_FILE)
 	$(MAKE_BETA) docker_push_version
 docker_test:
-	docker run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
+	$(DOCKER) run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
 docker_push: docker_push_version docker_push_latest
 docker_push_version:
-	docker push $(DOCKER_TAG_VERSION)
+	$(DOCKER) push $(DOCKER_TAG_VERSION)
 docker_push_latest:
-	docker push $(DOCKER_TAG_LATEST)
+	$(DOCKER) push $(DOCKER_TAG_LATEST)
 clean::
 	rm -f Dockerfile
 ##################################
