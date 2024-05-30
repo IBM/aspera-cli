@@ -7,7 +7,7 @@ module Aspera
     module Plugins
       # Plugin for Aspera Shares v1
       class Shares < Cli::BasicAuthPlugin
-        API_BASE = 'node_api'
+        NODE_API_PREFIX = 'node_api'
         class << self
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -16,7 +16,7 @@ module Aspera
             begin
               # shall fail: shares requires auth, but we check error message
               # TODO: use ping instead ?
-              api.read("#{API_BASE}/app")
+              api.read("#{NODE_API_PREFIX}/app")
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 found = true
@@ -64,22 +64,24 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              Rest
-                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{API_BASE}")
+              res = Rest
+                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{NODE_API_PREFIX}")
                 .call(
                   operation: 'GET',
                   subpath: 'ping',
-                  headers: {'content-type': 'application/json'},
-                  return_error: true)
+                  headers: {'content-type': 'application/json'})
+              raise 'Shares not detected' unless res[:http].body.eql?(' ')
               nagios.add_ok('shares api', 'accessible')
             rescue StandardError => e
-              nagios.add_critical('node api', e.to_s)
+              nagios.add_critical('API', e.to_s)
             end
             return nagios.result
           when :repository, :files
-            api_shares_node = basic_auth_api(API_BASE)
+            api_shares_node = basic_auth_api(NODE_API_PREFIX)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
-            return Node.new(**init_params, api: api_shares_node).execute_action(repo_command)
+            return Node
+                .new(**init_params, api: api_shares_node)
+                .execute_action(repo_command)
           when :admin
             api_shares_admin = basic_auth_api('api/v1')
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)

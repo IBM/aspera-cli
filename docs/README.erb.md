@@ -382,6 +382,12 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
   dnf install -y ruby-devel
   ```
 
+**Example:** Ubuntu
+
+```bash
+apt-get install -y ruby-full
+```
+
 **Other examples:**
 
 ```bash

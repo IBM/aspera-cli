@@ -388,6 +388,12 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
   dnf install -y ruby-devel
   ```
 
+**Example:** Ubuntu
+
+```bash
+apt-get install -y ruby-full
+```
+
 **Other examples:**
 
 ```bash
@@ -620,7 +626,7 @@ gem install aspera-cli -N -i my_gems
 
 ### Container
 
-The container image is: [`martinlaurent/ascli`](https://hub.docker.com/r/martinlaurent/ascli).
+The container image is: [`docker.io/martinlaurent/ascli`](https://hub.docker.com/r/docker.io/martinlaurent/ascli).
 The container contains: Ruby, `ascli` and the Aspera Transfer SDK.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
@@ -634,7 +640,7 @@ podman --version
 Execute this:
 
 ```bash
-podman run --rm --tty --interactive --entrypoint bash martinlaurent/ascli:latest
+podman run --rm --tty --interactive --entrypoint bash docker.io/martinlaurent/ascli:latest
 ```
 
 > **Note:** This command changes the entrypoint to an interactive shell instead of direct execution of `ascli`.
@@ -662,13 +668,13 @@ The entry point is `ascli` and the default command is `help`.
 The container can be executed for individual commands like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)
 
 ```bash
-podman run --rm --tty --interactive martinlaurent/ascli:latest
+podman run --rm --tty --interactive docker.io/martinlaurent/ascli:latest
 ```
 
 For more convenience, you may define a shell alias:
 
 ```bash
-alias ascli='podman run --rm --tty --interactive martinlaurent/ascli:latest'
+alias ascli='podman run --rm --tty --interactive docker.io/martinlaurent/ascli:latest'
 ```
 
 Then, you can execute the container like a local command:
@@ -710,7 +716,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 And if you want all the above, simply use all the options:
 
 ```bash
-alias asclish="podman run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfiles --entrypoint bash martinlaurent/ascli:latest"
+alias asclish="podman run --rm --tty --interactive --user root --env ASCLI_HOME=/home/cliuser/.aspera/ascli --volume $HOME/.aspera/ascli:/home/cliuser/.aspera/ascli --volume $HOME/xferdir:/xferfiles --entrypoint bash docker.io/martinlaurent/ascli:latest"
 ```
 
 ```bash
@@ -733,7 +739,7 @@ Some environment variables can be set for this script to adapt its behavior:
 |----------------|------------------------------------|--------------------------|--------------------------|
 | `ASCLI_HOME` | Configuration folder (persistency) | `$HOME/.aspera/ascli` | `$HOME/.ascli_config` |
 | `docker_args`  | Additional options to `podman`     | &lt;empty&gt;            | `--volume /Users:/Users` |
-| `image`        | Container image name               | `martinlaurent/ascli`    |                          |
+| `image`        | Container image name               | `docker.io/martinlaurent/ascli`    |                          |
 | `version`      | Container image version            | Latest                   | `4.8.0.pre`              |
 
 The wrapping script maps the folder `$ASCLI_HOME` on host to `/home/cliuser/.aspera/ascli` in the container.
@@ -767,8 +773,8 @@ echo 'Local file to transfer' > $xferdir/samplefile.txt
 - First create the image archive:
 
 ```bash
-podman pull martinlaurent/ascli
-podman save martinlaurent/ascli|gzip>ascli_image_latest.tar.gz
+podman pull docker.io/martinlaurent/ascli
+podman save docker.io/martinlaurent/ascli|gzip>ascli_image_latest.tar.gz
 ```
 
 - Then, on air-gapped system:
@@ -806,7 +812,7 @@ dnf install singularity-ce
 Build an image like this:
 
 ```bash
-singularity build ascli.sif docker://martinlaurent/ascli
+singularity build ascli.sif docker://docker.io/martinlaurent/ascli
 ```
 
 Then, start `ascli` like this:

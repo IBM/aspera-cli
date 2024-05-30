@@ -19,6 +19,7 @@ module Aspera
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
+      # instance variables, also constructor parameters
       INIT_PARAMS = %i[options transfer config formatter persistency only_manual].freeze
 
       class << self
