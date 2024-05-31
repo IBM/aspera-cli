@@ -56,6 +56,9 @@ module Aspera
       OPTION_SEP_SYMBOL = '_'
       SOURCE_USER = 'cmdline' # cspell:disable-line
       TYPE_INTEGER = [Integer].freeze
+      OPTION_VALUE_SEPARATOR = '='
+      OPTION_PREFIX = '--'
+      OPTIONS_STOP = '--'
 
       private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER, :TYPE_INTEGER
 
@@ -94,7 +97,7 @@ module Aspera
         end
 
         def option_name_to_line(name)
-          return "--#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
+          return "#{OPTION_PREFIX}#{name.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)}"
         end
 
         # @param what [Symbol] :option or :argument
@@ -157,7 +160,7 @@ module Aspera
           value = argv.shift
           if process_options && value.start_with?('-')
             Log.log.trace1{"opt: #{value}"}
-            if value.eql?('--')
+            if value.eql?(OPTIONS_STOP)
               process_options = false
             else
               @unprocessed_cmd_line_options.push(value)
@@ -167,7 +170,7 @@ module Aspera
             @unprocessed_cmd_line_arguments.push(value)
           end
         end
-        @initial_cli_options = @unprocessed_cmd_line_options.dup
+        @initial_cli_options = @unprocessed_cmd_line_options.dup.freeze
         Log.log.debug{"add_cmd_line_options:commands/arguments=#{@unprocessed_cmd_line_arguments},options=#{@unprocessed_cmd_line_options}".red}
       end
 
@@ -294,7 +297,7 @@ module Aspera
       # @param default [Object] default value
       # @param values [nil, Array, :bool, :date, :none] list of allowed values, :bool for true/false, :date for dates, :none for on/off switch
       # @param short [String] short option name
-      # @param coerce [Class] one of the coerce types accepted par option parser
+      # @param coerce [Class] one of the coerce types accepted by option parser
       # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
@@ -309,7 +312,7 @@ module Aspera
         }
         if !types.nil?
           types = [types] unless types.is_a?(Array)
-          Aspera.assert(types.all?(Class)){"types must be Array of Class: #{types}"}
+          Aspera.assert(types.all?(Class)){"types must be (Array of) Class: #{types}"}
           opt[:types] = types
           description = "#{description} (#{types.map(&:name).join(', ')})"
         end
@@ -360,7 +363,7 @@ module Aspera
           end
         when :none
           Aspera.assert(!block.nil?){"missing block for #{option_symbol}"}
-          on_args.push(symbol_to_option(option_symbol, nil))
+          on_args.push(symbol_to_option(option_symbol))
           on_args.push("-#{short}") if short.is_a?(String)
           @parser.on(*on_args, &block)
         else Aspera.error_unexpected_value(values)
@@ -391,20 +394,20 @@ module Aspera
       end
 
       # get all original options on command line used to generate a config in config file
-      def get_options_table(remove_from_remaining: true)
+      def unprocessed_options_with_value
         result = {}
         @initial_cli_options.each do |option_value|
           case option_value
-          when /^--([^=]+)$/
+          when /^#{OPTION_PREFIX}([^=]+)$/o
             # ignore
-          when /^--([^=]+)=(.*)$/
+          when /^#{OPTION_PREFIX}([^=]+)=(.*)$/o
             name = Regexp.last_match(1)
             value = Regexp.last_match(2)
             name.gsub!(OPTION_SEP_LINE, OPTION_SEP_SYMBOL)
             value = ExtendedValue.instance.evaluate(value)
             Log.log.debug{"option #{name}=#{value}"}
             result[name] = value
-            @unprocessed_cmd_line_options.delete(option_value) if remove_from_remaining
+            @unprocessed_cmd_line_options.delete(option_value)
           else
             raise Cli::BadArgument, "wrong option format: #{option_value}"
           end
@@ -499,9 +502,9 @@ module Aspera
       private
 
       # generate command line option from option symbol
-      def symbol_to_option(symbol, opt_val)
-        result = '--' + symbol.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)
-        result = result + '=' + opt_val unless opt_val.nil?
+      def symbol_to_option(symbol, opt_val = nil)
+        result = [OPTION_PREFIX, symbol.to_s.gsub(OPTION_SEP_SYMBOL, OPTION_SEP_LINE)].join
+        result = [result, OPTION_VALUE_SEPARATOR, opt_val].join unless opt_val.nil?
         return result
       end
 

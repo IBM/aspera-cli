@@ -793,7 +793,7 @@ module Aspera
             return Main.result_status("Modified: #{@option_config_file}")
           when :update
             #  get unprocessed options
-            unprocessed_options = options.get_options_table
+            unprocessed_options = options.unprocessed_options_with_value
             Log.log.debug{"opts=#{unprocessed_options}"}
             @config_presets[name] ||= {}
             @config_presets[name].merge!(unprocessed_options)
