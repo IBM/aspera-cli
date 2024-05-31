@@ -18,12 +18,40 @@ module Aspera
   module Cli
     module Plugins
       class Aoc < Cli::BasicAuthPlugin
-        AOC_PATH_API_CLIENTS = 'admin/api-clients'
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt].freeze
-        private_constant :AOC_PATH_API_CLIENTS, :REDIRECT_LOCALHOST, :STD_AUTH_TYPES
+        # special value for package id
+        ADMIN_OBJECTS = %i[
+          self
+          organization
+          user
+          group
+          group_membership
+          client
+          contact
+          dropbox
+          node
+          operation
+          package
+          saml_configuration
+          workspace
+          workspace_membership
+          dropbox_membership
+          short_link
+          application
+          client_registration_token
+          client_access_key
+          kms_profile].freeze
+        PACKAGE_RECEIVED_BASE_QUERY = {
+          'archived'    => false,
+          'has_content' => true,
+          'received'    => true,
+          'completed'   => true}.freeze
+        # options and parameters for Api::AoC.new
+        OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
+        private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW
         class << self
           def application_name
             'Aspera on Cloud'
@@ -106,7 +134,7 @@ module Aspera
                 formatter.display_status('- origin: localhost')
                 formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
               end
-              OpenApplication.instance.uri("#{instance_url}/#{AOC_PATH_API_CLIENTS}")
+              OpenApplication.instance.uri("#{instance_url}/admin/api-clients")
               options.get_option(:client_id, mandatory: true)
               options.get_option(:client_secret, mandatory: true)
               use_browser_authentication = true
@@ -147,35 +175,8 @@ module Aspera
             }
           end
         end
-        # special value for package id
-        KNOWN_AOC_RES = %i[
-          self
-          organization
-          user
-          group
-          group_membership
-          client
-          contact
-          dropbox
-          node
-          operation
-          package
-          saml_configuration
-          workspace
-          workspace_membership
-          dropbox_membership
-          short_link
-          application
-          client_registration_token
-          client_access_key
-          kms_profile].freeze
-        PACKAGE_RECEIVED_BASE_QUERY = {
-          'archived'    => false,
-          'has_content' => true,
-          'received'    => true,
-          'completed'   => true}.freeze
 
-        def initialize(**env)
+        def initialize(**_)
           super
           @cache_workspace_info = nil
           @cache_home_node_file = nil
@@ -194,8 +195,6 @@ module Aspera
           # add node plugin options (for manual)
           Node.declare_options(options)
         end
-
-        OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
 
         def api_from_options(new_base_path)
           create_values = {subpath: new_base_path, secret_finder: config}
@@ -354,11 +353,97 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
+        def execute_resource_action(resource_type)
+          # get path on API, resource type is singular, but api is plural
+          resource_class_path =
+            case resource_type
+            # special cases: singleton, in admin, with x
+            when :self, :organization then resource_type
+            when :client_registration_token, :client_access_key then "admin/#{resource_type}s"
+            when :application then 'admin/apps_new'
+            when :dropbox then "#{resource_type}es"
+            when :kms_profile then "integrations/#{resource_type}s"
+            else "#{resource_type}s"
+            end
+          # build list of supported operations
+          singleton_object = %i[self organization].include?(resource_type)
+          global_operations =  %i[create list]
+          supported_operations = %i[show modify]
+          supported_operations.push(:delete, *global_operations) unless singleton_object
+          supported_operations.push(:do) if resource_type.eql?(:node)
+          supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
+          command = options.get_next_command(supported_operations)
+          # require identifier for non global commands
+          if !singleton_object && !global_operations.include?(command)
+            res_id = get_resource_id_from_args(resource_class_path)
+            resource_instance_path = "#{resource_class_path}/#{res_id}"
+          end
+          resource_instance_path = resource_class_path if singleton_object
+          case command
+          when :create
+            id_result = 'id'
+            id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
+            # TODO: report inconsistency: creation url is !=, and does not return id.
+            resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
+            return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
+              aoc_api.create(resource_class_path, params)[:data]
+            end
+          when :list
+            default_fields = ['id']
+            default_query = {}
+            case resource_type
+            when :application
+              default_query = {organization_apps: true}
+              default_fields.push('app_type', 'app_name', 'available', 'direct_authorizations_allowed', 'workspace_authorizations_allowed')
+            when :client, :client_access_key, :dropbox, :group, :package, :saml_configuration, :workspace then default_fields.push('name')
+            when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
+            when :contact then default_fields = %w[email name source_id source_type]
+            when :node then default_fields.push('name', 'host', 'access_key')
+            when :operation then default_fields = nil
+            when :short_link then default_fields.push('short_url', 'data.url_token_data.purpose')
+            when :user then default_fields.push('name', 'email')
+            when :group_membership then default_fields.push(*%w[group_id member_type member_id])
+            when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
+            end
+            return result_list(resource_class_path, fields: default_fields, default_query: default_query)
+          when :show
+            object = aoc_api.read(resource_instance_path)[:data]
+            # default: show all, but certificate
+            fields = object.keys.reject{|k|k.eql?('certificate')}
+            return { type: :single_object, data: object, fields: fields }
+          when :modify
+            changes = options.get_next_argument('properties', type: Hash)
+            return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
+              aoc_api.update("#{resource_class_path}/#{one_id}", changes)
+              {'id' => one_id}
+            end
+          when :delete
+            return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
+              aoc_api.delete("#{resource_class_path}/#{one_id}")
+              {'id' => one_id}
+            end
+          when :set_pub_key
+            # special : reads private and generate public
+            the_private_key = options.get_next_argument('private_key PEM value', type: String)
+            the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
+            aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
+            return Main.result_success
+          when :do
+            command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
+            # init context
+            aoc_api.context(:files)
+            return execute_nodegen4_command(command_repo, res_id)
+          else Aspera.error_unexpected_value(command)
+          end
+        end
+
         def execute_admin_action
           # upgrade scope to admin
           aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
           command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
           case command_admin
+          when :resource
+            execute_resource_action(options.get_next_argument('resource', expected: ADMIN_OBJECTS))
           when :auth_providers
             command_auth_prov = options.get_next_command(%i[list update])
             case command_auth_prov
@@ -479,89 +564,6 @@ module Aspera
                 end
               end
               return {type: :object_list, data: events}
-            end
-          when :resource
-            resource_type = options.get_next_argument('resource', expected: KNOWN_AOC_RES)
-            # get path on API, resource type is singular, but api is plural
-            resource_class_path =
-              case resource_type
-              # special cases: singleton, in admin, with x
-              when :self, :organization then resource_type
-              when :client_registration_token, :client_access_key then "admin/#{resource_type}s"
-              when :application then 'admin/apps_new'
-              when :dropbox then "#{resource_type}es"
-              when :kms_profile then "integrations/#{resource_type}s"
-              else "#{resource_type}s"
-              end
-            # build list of supported operations
-            singleton_object = %i[self organization].include?(resource_type)
-            global_operations =  %i[create list]
-            supported_operations = %i[show modify]
-            supported_operations.push(:delete, *global_operations) unless singleton_object
-            supported_operations.push(:do) if resource_type.eql?(:node)
-            supported_operations.push(:set_pub_key) if resource_type.eql?(:client)
-            command = options.get_next_command(supported_operations)
-            # require identifier for non global commands
-            if !singleton_object && !global_operations.include?(command)
-              res_id = get_resource_id_from_args(resource_class_path)
-              resource_instance_path = "#{resource_class_path}/#{res_id}"
-            end
-            resource_instance_path = resource_class_path if singleton_object
-            case command
-            when :create
-              id_result = 'id'
-              id_result = 'token' if resource_class_path.eql?('admin/client_registration_tokens')
-              # TODO: report inconsistency: creation url is !=, and does not return id.
-              resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
-              return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
-                aoc_api.create(resource_class_path, params)[:data]
-              end
-            when :list
-              default_fields = ['id']
-              default_query = {}
-              case resource_type
-              when :application
-                default_query = {organization_apps: true}
-                default_fields.push('app_type', 'app_name', 'available', 'direct_authorizations_allowed', 'workspace_authorizations_allowed')
-              when :client, :client_access_key, :dropbox, :group, :package, :saml_configuration, :workspace then default_fields.push('name')
-              when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
-              when :contact then default_fields = %w[email name source_id source_type]
-              when :node then default_fields.push('name', 'host', 'access_key')
-              when :operation then default_fields = nil
-              when :short_link then default_fields.push('short_url', 'data.url_token_data.purpose')
-              when :user then default_fields.push('name', 'email')
-              when :group_membership then default_fields.push(*%w[group_id member_type member_id])
-              when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
-              end
-              return result_list(resource_class_path, fields: default_fields, default_query: default_query)
-            when :show
-              object = aoc_api.read(resource_instance_path)[:data]
-              # default: show all, but certificate
-              fields = object.keys.reject{|k|k.eql?('certificate')}
-              return { type: :single_object, data: object, fields: fields }
-            when :modify
-              changes = options.get_next_argument('properties', type: Hash)
-              return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
-                aoc_api.update("#{resource_class_path}/#{one_id}", changes)
-                {'id' => one_id}
-              end
-            when :delete
-              return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
-                aoc_api.delete("#{resource_class_path}/#{one_id}")
-                {'id' => one_id}
-              end
-            when :set_pub_key
-              # special : reads private and generate public
-              the_private_key = options.get_next_argument('private_key PEM value', type: String)
-              the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
-              aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
-              return Main.result_success
-            when :do
-              command_repo = options.get_next_command(NODE4_EXT_COMMANDS)
-              # init context
-              aoc_api.context(:files)
-              return execute_nodegen4_command(command_repo, res_id)
-            else Aspera.error_unexpected_value(command)
             end
           when :usage_reports
             return result_list('usage_reports', base_query: {workspace_id: aoc_api.context(:files)[:workspace_id]})
