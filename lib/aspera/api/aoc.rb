@@ -132,7 +132,7 @@ module Aspera
 
       attr_reader :private_link
 
-      def initialize(subpath: API_V1, url:, auth:, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
+      def initialize(url:, auth:, subpath: API_V1, client_id: nil, client_secret: nil, scope: nil, redirect_uri: nil, private_key: nil, passphrase: nil, username: nil,
         password: nil, workspace: nil, secret_finder: nil)
         # test here because link may set url
         raise ArgumentError, 'Missing mandatory option: url' if url.nil?
