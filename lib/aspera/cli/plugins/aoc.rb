@@ -22,7 +22,7 @@ module Aspera
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt].freeze
-        # special value for package id
+        # admin objects that can be manipulated
         ADMIN_OBJECTS = %i[
           self
           organization
@@ -44,6 +44,7 @@ module Aspera
           client_registration_token
           client_access_key
           kms_profile].freeze
+        # query to list fully received packages
         PACKAGE_RECEIVED_BASE_QUERY = {
           'archived'    => false,
           'has_content' => true,
@@ -76,6 +77,8 @@ module Aspera
             }
           end
 
+          # @param [String] url : url to check
+          # @return [Bool] true if private key is required for the url (i.e. no passcode)
           def private_key_required?(url)
             # pub link do not need private key
             return Api::AoC.link_info(url)[:token].nil?
@@ -187,9 +190,9 @@ module Aspera
           options.declare(:scope, 'OAuth scope for AoC API calls', default: Api::AoC::SCOPE_FILES_USER)
           options.declare(:redirect_uri, 'OAuth API client redirect URI')
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
-          options.declare(:passphrase, 'RSA private key passphrase')
+          options.declare(:passphrase, 'RSA private key passphrase', types: String)
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
-          options.declare(:new_user_option, 'New user creation option for unknown package recipients')
+          options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
           options.parse_options!
           # add node plugin options (for manual)
@@ -437,13 +440,18 @@ module Aspera
           end
         end
 
+        ADMIN_ACTIONS = %i[ats resource usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
+
         def execute_admin_action
           # upgrade scope to admin
           aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
-          command_admin = options.get_next_command(%i[ats resource usage_reports analytics subscription auth_providers])
+          command_admin = options.get_next_command(ADMIN_ACTIONS)
           case command_admin
           when :resource
-            execute_resource_action(options.get_next_argument('resource', expected: ADMIN_OBJECTS))
+            Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
+            return execute_resource_action(options.get_next_argument('resource', expected: ADMIN_OBJECTS))
+          when *ADMIN_OBJECTS
+            return execute_resource_action(command_admin)
           when :auth_providers
             command_auth_prov = options.get_next_command(%i[list update])
             case command_auth_prov
