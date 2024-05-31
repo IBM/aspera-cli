@@ -1618,26 +1618,28 @@ $(T)f5_sh_fold: $(T).exists
 $(T)f5_user_res: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 bearer_token
-	$(EXE_MAN) faspex5 admin res contacts list
-	$(EXE_MAN) faspex5 admin res workgroups list
-	$(EXE_MAN) faspex5 admin res shared_inboxes list 
-	$(EXE_MAN) faspex5 admin res workgroups list
-	$(EXE_MAN) faspex5 admin res saml_configs list
-	$(EXE_MAN) faspex5 admin res metadata_profiles list
+	$(EXE_MAN) faspex5 admin contacts list
+	$(EXE_MAN) faspex5 admin workgroups list
+	$(EXE_MAN) faspex5 admin shared_inboxes list 
+	$(EXE_MAN) faspex5 admin workgroups list
+	$(EXE_MAN) faspex5 admin saml_configs list
+	$(EXE_MAN) faspex5 admin metadata_profiles list
 	@$(STOP_TEST) $@
 $(T)f5_adm: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res accounts list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res jobs list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res node list 
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res oauth_clients list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res registrations list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes list --query=@json:'{"all":true}'
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
-	$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:john@example.com
-	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes invite  @extend:%name:@preset:faspex5.shared_box_name@ johnny@example.com
-	-$(EXE_MAN) --preset=f5_admin faspex5 admin res shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:johnny@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin accounts list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin jobs list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node list 
+	$(EXE_MAN) --preset=f5_admin faspex5 admin oauth_clients list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin registrations list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes list --query=@json:'{"all":true}'
+	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:john@example.com
+	$(EXE_MAN) --preset=f5_admin faspex5 admin event app
+	$(EXE_MAN) --preset=f5_admin faspex5 admin event web
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes invite @extend:%name:@preset:faspex5.shared_box_name@ johnny@example.com
+	-$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:johnny@example.com
 	@$(STOP_TEST) $@
 $(T)f5_smtp: $(T).exists
 	@$(START_TEST) $@

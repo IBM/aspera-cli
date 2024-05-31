@@ -24,7 +24,7 @@ module Aspera
         TRANSFER_CONNECT = 'connect'
         ADMIN_RESOURCES = %i[
           accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
-          metadata_profiles email_notifications alternate_addresses
+          metadata_profiles email_notifications alternate_addresses webhooks
         ].freeze
         # states for jobs not in final state
         JOB_RUNNING = %w[queued working].freeze
@@ -245,7 +245,7 @@ module Aspera
           Aspera.error_unreachable_line
         end
 
-        # Get a (full or partial) list of all entities of a given type
+        # Get a (full or partial) list of all entities of a given type with query: offset/limit
         # @param type [String] the type of entity to list (just a name)
         # @param query [Hash,nil] additional query parameters
         # @param real_path [String] real path if it's n ot just the type
@@ -527,8 +527,131 @@ module Aspera
           end
         end
 
+        def execute_resource(res_type)
+          list_key = res_path = res_type.to_s
+          id_as_arg = false
+          display_fields = nil
+          adm_api = @api_v5
+          res_id_query = :default
+          available_commands = [].concat(Plugin::ALL_OPS)
+          case res_type
+          when :metadata_profiles
+            res_path = 'configuration/metadata_profiles'
+            list_key = 'profiles'
+          when :alternate_addresses
+            res_path = 'configuration/alternate_addresses'
+          when :email_notifications
+            list_key = false
+            id_as_arg = 'type'
+          when :accounts
+            display_fields = Formatter.all_but('user_profile_data_attributes')
+          when :oauth_clients
+            display_fields = Formatter.all_but('public_key')
+            adm_api = Rest.new(**@api_v5.params.merge(base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}"))
+          when :shared_inboxes, :workgroups
+            available_commands.push(:members, :saml_groups, :invite_external_collaborator)
+            res_id_query = {'all': true}
+          when :nodes
+            available_commands.push(:shared_folders, :browse)
+          end
+          res_command = options.get_next_command(available_commands)
+          case res_command
+          when *Plugin::ALL_OPS
+            return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg) do |field, value|
+              lookup_entity_by_field(
+                type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
+            end
+          when :shared_folders
+            node_id = instance_identifier do |field, value|
+              lookup_entity_by_field(type: res_type, field: field, value: value)['id']
+            end
+            sh_path = "#{res_path}/#{node_id}/shared_folders"
+            sh_command = options.get_next_command([:user].concat(Plugin::ALL_OPS))
+            case sh_command
+            when *Plugin::ALL_OPS
+              return entity_command(sh_command, adm_api, sh_path, item_list_key: 'shared_folders') do |field, value|
+                       lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
+                     end
+            when :user
+              sh_id = instance_identifier do |field, value|
+                lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
+              end
+              user_path = "#{sh_path}/#{sh_id}/custom_access_users"
+              return entity_action(adm_api, user_path, item_list_key: 'users') do |field, value|
+                       lookup_entity_by_field(type: 'users', real_path: user_path, field: field, value: value)['id']
+                     end
+
+            end
+          when :browse
+            return browse_folder("#{res_path}/#{instance_identifier}/browse")
+          when :invite_external_collaborator
+            shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            creation_payload = value_create_modify(command: res_command, type: [Hash, String])
+            creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
+            res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
+            result = adm_api.create(res_path, creation_payload)[:data]
+            formatter.display_status(result['message'])
+            result = lookup_entity_by_field(
+              type: 'members',
+              real_path: "#{res_type}/#{shared_inbox_id}/members",
+              value: creation_payload['email_address'],
+              query: {})
+            return {type: :single_object, data: result}
+          when :members, :saml_groups
+            res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            res_prefix = "#{res_type}/#{res_id}"
+            res_path = "#{res_prefix}/#{res_command}"
+            list_key = res_command.to_s
+            list_key = 'groups' if res_command.eql?(:saml_groups)
+            sub_command = options.get_next_command(%i[create list modify delete])
+            if sub_command.eql?(:create) && options.get_option(:value).nil?
+              raise "use option 'value' to provide saml group_id and access (refer to API)" unless res_command.eql?(:members)
+              # first arg is one user name or list of users
+              users = options.get_next_argument('user id, %name:, or Array')
+              users = [users] unless users.is_a?(Array)
+              users = users.map do |user|
+                if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
+                  lookup_entity_by_field(
+                    type: 'accounts',
+                    field: m[1],
+                    value: ExtendedValue.instance.evaluate(m[2]),
+                    query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
+                else
+                  # it's the user id (not member id...)
+                  user
+                end
+              end
+              access = options.get_next_argument('level', mandatory: false, expected: %i[submit_only standard shared_inbox_admin], default: :standard)
+              # TODO: unshift to command line parameters instead of using deprecated option "value"
+              options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
+            end
+            return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
+                     lookup_entity_by_field(
+                       type: 'accounts',
+                       field: field,
+                       value: value,
+                       query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
+                   end
+          end
+        end
+
         def execute_admin
-          case options.get_next_command(%i[configuration smtp resource].freeze)
+          command = options.get_next_command(%i[configuration smtp resource events].concat(ADMIN_RESOURCES).freeze)
+          case command
+          when :resource
+            # resource is will be deprecated
+            Log.log.warn('resource command is deprecated, directly use the specific command instead')
+            return execute_resource(options.get_next_command(ADMIN_RESOURCES))
+          when *ADMIN_RESOURCES
+            return execute_resource(command)
+          when :events
+            event_type = options.get_next_command(%i[application webhook])
+            case event_type
+            when :application
+              return {type: :object_list, data: list_entities(type: 'application_events'), fields: %w[event_type created_at application user.name]}
+            when :webhook
+              return {type: :object_list, data: list_entities(type: 'all_webhooks_events', item_list_key: 'events')}
+            end
           when :configuration
             conf_path = 'configuration'
             conf_cmd = options.get_next_command(%i[show modify])
@@ -558,113 +681,6 @@ module Aspera
               result = wait_for_job(creation['job_id'])
               result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
               return { type: :single_object, data: result }
-            end
-          when :resource
-            res_type = options.get_next_command(ADMIN_RESOURCES)
-            list_key = res_path = res_type.to_s
-            id_as_arg = false
-            display_fields = nil
-            adm_api = @api_v5
-            res_id_query = :default
-            available_commands = [].concat(Plugin::ALL_OPS)
-            case res_type
-            when :metadata_profiles
-              res_path = 'configuration/metadata_profiles'
-              list_key = 'profiles'
-            when :alternate_addresses
-              res_path = 'configuration/alternate_addresses'
-            when :email_notifications
-              list_key = false
-              id_as_arg = 'type'
-            when :accounts
-              display_fields = Formatter.all_but('user_profile_data_attributes')
-            when :oauth_clients
-              display_fields = Formatter.all_but('public_key')
-              adm_api = Rest.new(**@api_v5.params.merge(base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}"))
-            when :shared_inboxes, :workgroups
-              available_commands.push(:members, :saml_groups, :invite_external_collaborator)
-              res_id_query = {'all': true}
-            when :nodes
-              available_commands.push(:shared_folders, :browse)
-            end
-            res_command = options.get_next_command(available_commands)
-            case res_command
-            when *Plugin::ALL_OPS
-              return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg) do |field, value|
-                lookup_entity_by_field(
-                  type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
-              end
-            when :shared_folders
-              node_id = instance_identifier do |field, value|
-                lookup_entity_by_field(type: res_type, field: field, value: value)['id']
-              end
-              sh_path = "#{res_path}/#{node_id}/shared_folders"
-              sh_command = options.get_next_command([:user].concat(Plugin::ALL_OPS))
-              case sh_command
-              when *Plugin::ALL_OPS
-                return entity_command(sh_command, adm_api, sh_path, item_list_key: 'shared_folders') do |field, value|
-                         lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
-                       end
-              when :user
-                sh_id = instance_identifier do |field, value|
-                  lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
-                end
-                user_path = "#{sh_path}/#{sh_id}/custom_access_users"
-                return entity_action(adm_api, user_path, item_list_key: 'users') do |field, value|
-                         lookup_entity_by_field(type: 'users', real_path: user_path, field: field, value: value)['id']
-                       end
-
-              end
-            when :browse
-              return browse_folder("#{res_path}/#{instance_identifier}/browse")
-            when :invite_external_collaborator
-              shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
-              creation_payload = value_create_modify(command: res_command, type: [Hash, String])
-              creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
-              res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
-              result = adm_api.create(res_path, creation_payload)[:data]
-              formatter.display_status(result['message'])
-              result = lookup_entity_by_field(
-                type: 'members',
-                real_path: "#{res_type}/#{shared_inbox_id}/members",
-                value: creation_payload['email_address'],
-                query: {})
-              return {type: :single_object, data: result}
-            when :members, :saml_groups
-              res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
-              res_prefix = "#{res_type}/#{res_id}"
-              res_path = "#{res_prefix}/#{res_command}"
-              list_key = res_command.to_s
-              list_key = 'groups' if res_command.eql?(:saml_groups)
-              sub_command = options.get_next_command(%i[create list modify delete])
-              if sub_command.eql?(:create) && options.get_option(:value).nil?
-                raise "use option 'value' to provide saml group_id and access (refer to API)" unless res_command.eql?(:members)
-                # first arg is one user name or list of users
-                users = options.get_next_argument('user id, %name:, or Array')
-                users = [users] unless users.is_a?(Array)
-                users = users.map do |user|
-                  if (m = user.match(REGEX_LOOKUP_ID_BY_FIELD))
-                    lookup_entity_by_field(
-                      type: 'accounts',
-                      field: m[1],
-                      value: ExtendedValue.instance.evaluate(m[2]),
-                      query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
-                  else
-                    # it's the user id (not member id...)
-                    user
-                  end
-                end
-                access = options.get_next_argument('level', mandatory: false, expected: %i[submit_only standard shared_inbox_admin], default: :standard)
-                # TODO: unshift to command line parameters instead of using deprecated option "value"
-                options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
-              end
-              return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
-                       lookup_entity_by_field(
-                         type: 'accounts',
-                         field: field,
-                         value: value,
-                         query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
-                     end
             end
           end
         end
