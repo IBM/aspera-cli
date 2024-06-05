@@ -640,7 +640,7 @@ module Aspera
           case command
           when :resource
             # resource is will be deprecated
-            Log.log.warn('resource command is deprecated, directly use the specific command instead')
+            Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
             return execute_resource(options.get_next_command(ADMIN_RESOURCES))
           when *ADMIN_RESOURCES
             return execute_resource(command)
