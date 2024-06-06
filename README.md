@@ -827,6 +827,124 @@ Or get a shell with access to `ascli` like this:
 singularity shell ascli.sif
 ```
 
+### SSL library
+
+`ascli` uses the Ruby `openssl` gem which uses by default the system's `openssl` library and its CA certificate bundle.
+
+To display the version of **openssl** used in `ascli`:
+
+```bash
+ascli config echo @ruby:OpenSSL::OPENSSL_VERSION --format=text
+```
+
+It is possible to specify to use another SSL library or version by executing:
+
+```bash
+gem install openssl -- --with-openssl-dir=[openssl library folder]
+```
+
+Where `[openssl library folder]` is the path to the folder containing the `lib` and `include` folders of the `openssl` library.
+
+For example, on macOS, to use the `openssl@3` library installed with `brew`:
+
+```bash
+$ openssl version -e|sed -n 's|ENGINESDIR: "\(.*\)/lib[^/]*/.*|\1|p'
+/opt/homebrew/Cellar/openssl@3/3.3.0
+$ gem install openssl -- --with-openssl-dir=/opt/homebrew/Cellar/openssl@3/3.3.0
+```
+
+### SSL CA certificate bundle
+
+SSL certificates are validated using a certificate store, by default the default one of the system's `openssl` library.
+
+To display trusted certificate store locations:
+
+```bash
+ascli --show-config --fields=cert_stores
+```
+
+Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
+Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
+
+One can display those default values:
+
+```bash
+ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
+ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
+```
+
+In order to get certificate validation, the CA certificate bundle must be up-to-date.
+Check this repository on how to update the system's CA certificate bundle: [https://github.com/millermatt/osca](https://github.com/millermatt/osca).
+
+For example on RHEL/Rocky Linux:
+
+```bash
+dnf install -y ca-certificates
+update-ca-trust extract
+```
+
+The SSL CA certificate bundle can be specified using option `cert_stores`, which is a list of files or folders.
+By default it uses Ruby's default certificate store.
+
+If you use this option, then default locations are not used.
+Default locations can be added using special value `DEF`.
+The value can be either an `Array` or `String` (path).
+Successive options add paths incrementally.
+All files of a folders are added.
+
+JRuby uses its own implementation and CA bundles.
+
+For example, on Linux to force use the system's certificate store:
+
+```bash
+--cert-stores=$(openssl version -d|cut -f2 -d'"')/cert.pem
+```
+
+`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of SSH).
+
+By default,`ascp` uses an hardcoded root location `OPENSSLDIR`.
+Original `ascp`'s hardcoded locations can be found using:
+
+```bash
+ascli config ascp info --fields=openssldir
+```
+
+E.g. on macOS: `/Library/Aspera/ssl`.
+Then trusted certificates are taken from `[OPENSSLDIR]/cert.pem` and files in `[OPENSSLDIR]/certs`.
+`ascli` overrides the default hardcoded location used by `ascp` for WSS and uses the same locations as specified in `cert_stores` (using the `-i` option of `ascp`).
+
+To update trusted root certificates for `ascli`:
+Display the trusted certificate store locations used by `ascli`.
+Typically done by updating the system's root certificate store.
+
+An up-to-date version of the certificate bundle can also be retrieved with:
+
+```bash
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
+```
+
+To download that certificate store:
+
+```bash
+ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
+```
+
+Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
+
+To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
+
+```bash
+ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
+```
+
+> **Note:** Use command `name` to display the remote common name of the remote certificate.
+
+Then, use this file as certificate store (e.g. here, Node API):
+
+```bash
+ascli config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
+```
+
 ## Command Line Interface
 
 The command line tool is: ``ascli``
@@ -2141,18 +2259,10 @@ The key is not passphrase protected.
 ascli config genkey ${KEY_PAIR_PATH} 4096
 ```
 
-> **Note:** `ascli` uses the `openssl` library.
-
 To display the public key of a private key:
 
 ```bash
 ascli config pubkey @file:${KEY_PAIR_PATH}
-```
-
-To display the version of **openssl** used in `ascli`:
-
-```bash
-ascli config echo @ruby:OpenSSL::OPENSSL_VERSION --format=text
 ```
 
 #### `ssh-keygen`
@@ -2195,87 +2305,6 @@ Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
 > **Note:** Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
-
-### SSL CA certificate bundle
-
-The SSL CA certificate bundle can be specified using option `cert_stores`, which is a list of files or folders, by default it uses Ruby's default certificate store.
-
-To display trusted certificate store locations:
-
-```bash
-ascli --show-config --fields=cert_stores
-```
-
-Use option `cert_stores` to modify the locations of certificate stores (files or folders).
-If you use this option, then default locations are not used.
-Default locations can be added using special value `DEF`.
-The value can be either an `Array` or `String` (path).
-Successive options add paths incrementally.
-All files of a folders are added.
-
-`ascli` uses the Ruby `openssl` gem.
-By default it uses the system's `openssl` library, but JRuby uses its own implementation.
-
-For example, on Linux to use the system's certificate store:
-
-```bash
---cert-stores=$(openssl version -d|cut -f2 -d'"')/cert.pem
-```
-
-Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, etc..).
-Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
-
-One can display those default values:
-
-```bash
-ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_DIR --format=text
-ascli config echo @ruby:OpenSSL::X509::DEFAULT_CERT_FILE --format=text
-```
-
-`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of SSH).
-
-By default,`ascp` uses an hardcoded root location `OPENSSLDIR`.
-Original `ascp`'s hardcoded locations can be found using:
-
-```bash
-ascli config ascp info --fields=openssldir
-```
-
-E.g. on macOS: `/Library/Aspera/ssl`.
-Then trusted certificates are taken from `[OPENSSLDIR]/cert.pem` and files in `[OPENSSLDIR]/certs`.
-`ascli` overrides the default hardcoded location used by `ascp` for WSS and uses the same locations as specified in `cert_stores` (using the `-i` option of `ascp`).
-
-To update trusted root certificates for `ascli`:
-Display the trusted certificate store locations used by `ascli`.
-Typically done by updating the system's root certificate store.
-
-An up-to-date version of the certificate bundle can also be retrieved with:
-
-```bash
-ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text
-```
-
-To download that certificate store:
-
-```bash
-ascli config echo @uri:https://curl.haxx.se/ca/cacert.pem --format=text --output=/tmp/cacert.pem
-```
-
-Then, use this store by setting the option `cert_stores` (or env var `SSL_CERT_FILE`).
-
-To trust a specific certificate (e.g. self-signed), **provided that the `CN` is correct**, save the certificate chain to a file:
-
-```bash
-ascli config remote_certificate chain https://localhost:9092 --insecure=yes --output=myserver.pem
-```
-
-> **Note:** Use command `name` to display the remote common name of the remote certificate.
-
-Then, use this file as certificate store (e.g. here, Node API):
-
-```bash
-ascli config echo @uri:https://localhost:9092/ping --cert-stores=myserver.pem
-```
 
 ### Image and video thumbnails
 
@@ -3731,9 +3760,9 @@ OPTIONS:
         --scope=VALUE                OAuth scope for AoC API calls
         --redirect-uri=VALUE         OAuth API client redirect URI
         --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
-        --passphrase=VALUE           RSA private key passphrase
+        --passphrase=VALUE           RSA private key passphrase (String)
         --workspace=VALUE            Name of workspace (String, NilClass)
-        --new-user-option=VALUE      New user creation option for unknown package recipients
+        --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
         --validator=VALUE            Identifier of validator (optional for central)
         --asperabrowserurl=VALUE     URL for simple aspera web ui
@@ -5896,24 +5925,26 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 > **Note:** Add `ascli faspex5` in front of the commands:
 
 ```bash
-admin res accounts list
-admin res contacts list
-admin res jobs list
-admin res metadata_profiles list
-admin res node list
-admin res oauth_clients list
-admin res registrations list
-admin res saml_configs list
-admin res shared_inboxes invite %name:my_shared_box_name johnny@example.com
-admin res shared_inboxes list
-admin res shared_inboxes list --query=@json:'{"all":true}'
-admin res shared_inboxes members %name:my_shared_box_name create %name:john@example.com
-admin res shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
-admin res shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
-admin res shared_inboxes members %name:my_shared_box_name list
-admin res workgroups list
+admin accounts list
+admin contacts list
+admin event app
+admin event web
+admin jobs list
+admin metadata_profiles list
+admin node list
+admin oauth_clients list
+admin registrations list
+admin saml_configs list
+admin shared_inboxes invite %name:my_shared_box_name johnny@example.com
+admin shared_inboxes list
+admin shared_inboxes list --query=@json:'{"all":true}'
+admin shared_inboxes members %name:my_shared_box_name create %name:john@example.com
+admin shared_inboxes members %name:my_shared_box_name delete %name:john@example.com
+admin shared_inboxes members %name:my_shared_box_name delete %name:johnny@example.com
+admin shared_inboxes members %name:my_shared_box_name list
 admin smtp show
 admin smtp test my_email_external
+admin workgroups list
 bearer_token
 gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
 health
