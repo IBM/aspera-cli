@@ -1628,7 +1628,7 @@ $(T)f5_user_res: $(T).exists
 $(T)f5_adm: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin accounts list
-	$(EXE_MAN) --preset=f5_admin faspex5 admin jobs list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
 	$(EXE_MAN) --preset=f5_admin faspex5 admin node list 
 	$(EXE_MAN) --preset=f5_admin faspex5 admin oauth_clients list
 	$(EXE_MAN) --preset=f5_admin faspex5 admin registrations list
