@@ -453,8 +453,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href=
 <p><strong>Note:</strong> Those are not installed as part of
 dependencies because they involve compilation of native code.</p>
 </blockquote>
-<h2 data-number="3.2" id="ruby-gem"><span
-class="header-section-number">3.2</span> Ruby Gem</h2>
+<h2 data-number="3.2" id="ruby-gem-aspera-cli"><span
+class="header-section-number">3.2</span> Ruby Gem:
+<code>aspera-cli</code></h2>
 <p>Once you have Ruby and rights to install gems, install the
 <code>aspera-cli</code> gem and its dependencies:</p>
 <div class="sourceCode" id="cb40"><pre
@@ -490,8 +491,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href=
 </ul>
 <div class="sourceCode" id="cb44"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install <span class="at">-P</span> MediumSecurity aspera-cli</span></code></pre></div>
-<h2 data-number="3.3" id="fasp-protocol"><span
-class="header-section-number">3.3</span> FASP Protocol</h2>
+<h2 data-number="3.3" id="fasp-protocol-ascp"><span
+class="header-section-number">3.3</span> FASP Protocol:
+<code>ascp</code></h2>
 <p>Most file transfers will be executed using the <strong>FASP</strong>
 protocol, using <code>ascp</code>. Only two additional files are
 required to perform an Aspera Transfer, which are part of Aspera
@@ -654,9 +656,9 @@ transfer folder as a volume:</p>
 <div class="sourceCode" id="cb63"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--volume</span> <span class="va">$HOME</span>/xferdir:/xferfiles</span></code></pre></div>
 <blockquote>
-<p><strong>Note:</strong> ascli is run inside the container, so
-transfers are also executed inside the container and do not have access
-to host storage by default.</p>
+<p><strong>Note:</strong> <code>ascli</code> is run inside the
+container, so transfers are also executed inside the container and do
+not have access to host storage by default.</p>
 </blockquote>
 <p>And if you want all the above, simply use all the options:</p>
 <div class="sourceCode" id="cb64"><pre
@@ -822,7 +824,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb77-1"><a href=
 <h2 data-number="3.7" id="ssl-ca-certificate-bundle"><span
 class="header-section-number">3.7</span> SSL CA certificate bundle</h2>
 <p>SSL certificates are validated using a certificate store, by default
-the default one of the system’s <code>openssl</code> library.</p>
+it is the one of the system’s <code>openssl</code> library.</p>
 <p>To display trusted certificate store locations:</p>
 <div class="sourceCode" id="cb78"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--fields</span><span class="op">=</span>cert_stores</span></code></pre></div>
@@ -855,12 +857,13 @@ can be either an <code>Array</code> or <code>String</code> (path).
 Successive options add paths incrementally. All files of a folders are
 added.</p>
 <p>JRuby uses its own implementation and CA bundles.</p>
-<p>For example, on Linux to force use the system’s certificate
+<p>For example, on Linux to force the use the system’s certificate
 store:</p>
 <div class="sourceCode" id="cb81"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--cert-stores=</span><span class="va">$(</span><span class="ex">openssl</span> version <span class="at">-d</span><span class="kw">|</span><span class="fu">cut</span> <span class="at">-f2</span> <span class="at">-d</span><span class="st">&#39;&quot;&#39;</span><span class="va">)</span><span class="ex">/cert.pem</span></span></code></pre></div>
 <p><code>ascp</code> also needs to validate certificates when using
-<strong>WSS</strong> for transfer TCP part (instead of SSH).</p>
+<strong>WSS</strong> for transfer TCP part (instead of
+<strong>SSH</strong>).</p>
 <p>By default,<code>ascp</code> uses an hardcoded root location
 <code>OPENSSLDIR</code>. Original <code>ascp</code>’s hardcoded
 locations can be found using:</p>
@@ -969,17 +972,18 @@ class="header-section-number">4.2</span> Command line parsing, Special
 Characters</h2>
 <p><code>ascli</code> is typically executed in a shell, either
 interactively or in a script. <code>ascli</code> receives its arguments
-from this shell (through the Operating System).</p>
+on the command line. The way arguments are parsed and provided to
+<code>ascli</code> depend on the Operating System and shell.</p>
 <h3 data-number="4.2.1"
 id="shell-parsing-for-unix-like-systems-linux-macos-aix"><span
 class="header-section-number">4.2.1</span> Shell parsing for Unix-like
 systems: Linux, macOS, AIX</h3>
-<p>Linux command line parsing is easy: It is fully documented in the
-shell’s documentation.</p>
-<p>On Unix-like environments, this is typically a POSIX shell (bash,
-zsh, ksh, sh). A c-shell (<code>csh</code>, <code>tcsh</code>) or other
-shell can also be used. In this environment the shell parses the command
-line, possibly replacing variables, etc… See <a
+<p>Linux command line parsing is well defined: It is fully documented in
+the shell’s documentation.</p>
+<p>On Unix-like environments, this is typically a POSIX-like shell
+(bash, zsh, ksh, sh). A c-shell (<code>csh</code>, <code>tcsh</code>) or
+other shell can also be used. In this environment the shell parses the
+command line, possibly replacing variables, etc… See <a
 href="https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation">bash
 shell operation</a>. The shell builds the list of arguments and then
 <code>fork</code>/<code>exec</code> Ruby with that list. Ruby receives a
@@ -5226,7 +5230,7 @@ authentication: HTTP Basic Authentication using options:
 <p>By default plugins are looked-up in folders specified by
 (multi-value) option <code>plugin_folder</code>:</p>
 <div class="sourceCode" id="cb265"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb265-1"><a href="#cb265-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;key&quot;:&quot;plugin_folder&quot;}&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb265-1"><a href="#cb265-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--show-config</span> <span class="at">--fields</span><span class="op">=</span>plugin_folder</span></code></pre></div>
 <p>You can create the skeleton of a new plugin like this:</p>
 <div class="sourceCode" id="cb266"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb266-1"><a href="#cb266-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config plugin create foo .</span></code></pre></div>
@@ -5706,8 +5710,8 @@ class="header-section-number">5.4.6</span> Transfer: Using specific
 transfer ports</h3>
 <p>By default transfer nodes are expected to use ports TCP/UDP 33001.
 The web UI enforces that. The option <code>default_ports</code>
-([yes]/no) allows ascli to retrieve the server ports from an API call
-(download_setup) which reads the information from
+([yes]/no) allows <code>ascli</code> to retrieve the server ports from
+an API call (download_setup) which reads the information from
 <code>aspera.conf</code> on the server.</p>
 <h3 data-number="5.4.7" id="using-ats"><span
 class="header-section-number">5.4.7</span> Using ATS</h3>
@@ -6387,10 +6391,10 @@ class="header-section-number">6</span> Plugin: <code>ats</code>: IBM
 Aspera Transfer Service</h1>
 <p>ATS is usable either :</p>
 <ul>
-<li><p>From an AoC subscription : ascli aoc admin ats : use AoC
-authentication</p></li>
-<li><p>Or from an IBM Cloud subscription : ascli ats : use IBM Cloud API
-key authentication</p></li>
+<li><p>From an AoC subscription : <code>ascli aoc admin ats</code> : use
+AoC authentication</p></li>
+<li><p>Or from an IBM Cloud subscription : <code>ascli ats</code> : use
+IBM Cloud API key authentication</p></li>
 </ul>
 <h2 data-number="6.1" id="ibm-cloud-ats-creation-of-api-key"><span
 class="header-section-number">6.1</span> IBM Cloud ATS : Creation of api

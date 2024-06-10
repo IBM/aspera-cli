@@ -479,7 +479,7 @@ gem install rmagick grpc mimemagic
 
 > **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
 
-### Ruby Gem
+### Ruby Gem: `<%=gemspec.name%>`
 
 Once you have Ruby and rights to install gems, install the `<%=gemspec.name%>` gem and its dependencies:
 
@@ -521,7 +521,7 @@ gem cert --add <(curl -Ls https://raw.githubusercontent.com/IBM/aspera-cli/main/
 gem install -P MediumSecurity <%=gemspec.name%>
 ```
 
-### FASP Protocol
+### FASP Protocol: `ascp`
 
 Most file transfers will be executed using the **FASP** protocol, using `ascp`.
 Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
@@ -705,7 +705,7 @@ In this case you need also to specify the shared transfer folder as a volume:
 --volume $HOME/xferdir:/xferfiles
 ```
 
-> **Note:** <%=cmd%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
+> **Note:** <%=tool%> is run inside the container, so transfers are also executed inside the container and do not have access to host storage by default.
 
 And if you want all the above, simply use all the options:
 
@@ -849,7 +849,7 @@ $ gem install openssl -- --with-openssl-dir=/opt/homebrew/Cellar/openssl@3/3.3.0
 
 ### SSL CA certificate bundle
 
-SSL certificates are validated using a certificate store, by default the default one of the system's `openssl` library.
+SSL certificates are validated using a certificate store, by default it is the one of the system's `openssl` library.
 
 To display trusted certificate store locations:
 
@@ -888,13 +888,13 @@ All files of a folders are added.
 
 JRuby uses its own implementation and CA bundles.
 
-For example, on Linux to force use the system's certificate store:
+For example, on Linux to force the use the system's certificate store:
 
 ```bash
 --cert-stores=$(openssl version -d|cut -f2 -d'"')/cert.pem
 ```
 
-`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of SSH).
+`ascp` also needs to validate certificates when using **WSS** for transfer TCP part (instead of **SSH**).
 
 By default,`ascp` uses an hardcoded root location `OPENSSLDIR`.
 Original `ascp`'s hardcoded locations can be found using:
@@ -993,14 +993,15 @@ Moreover all `ascp` options are supported either through transfer spec parameter
 ### Command line parsing, Special Characters
 
 <%=tool%> is typically executed in a shell, either interactively or in a script.
-<%=tool%> receives its arguments from this shell (through the Operating System).
+<%=tool%> receives its arguments on the command line.
+The way arguments are parsed and provided to <%=tool%> depend on the Operating System and shell.
 
 #### Shell parsing for Unix-like systems: Linux, macOS, AIX
 
-Linux command line parsing is easy:
+Linux command line parsing is well defined:
 It is fully documented in the shell's documentation.
 
-On Unix-like environments, this is typically a POSIX shell (bash, zsh, ksh, sh).
+On Unix-like environments, this is typically a POSIX-like shell (bash, zsh, ksh, sh).
 A c-shell (`csh`, `tcsh`) or other shell can also be used.
 In this environment the shell parses the command line, possibly replacing variables, etc...
 See [bash shell operation](https://www.gnu.org/software/bash/manual/bash.html#Shell-Operation).
@@ -3371,7 +3372,7 @@ Aspera on Cloud and Faspex 5 rely on Oauth.
 By default plugins are looked-up in folders specified by (multi-value) option `plugin_folder`:
 
 ```bash
-<%=cmd%> --show-config --select=@json:'{"key":"plugin_folder"}'
+<%=cmd%> --show-config --fields=plugin_folder
 ```
 
 You can create the skeleton of a new plugin like this:
@@ -3834,7 +3835,7 @@ Options:
 #### Transfer: Using specific transfer ports
 
 By default transfer nodes are expected to use ports TCP/UDP 33001. The web UI enforces that.
-The option `default_ports` ([yes]/no) allows <%=cmd%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
+The option `default_ports` ([yes]/no) allows <%=tool%> to retrieve the server ports from an API call (download_setup) which reads the information from `aspera.conf` on the server.
 
 #### Using ATS
 
@@ -4456,9 +4457,9 @@ For instructions, refer to section `find` for plugin `node`.
 
 ATS is usable either :
 
-- From an AoC subscription : <%=cmd%> aoc admin ats : use AoC authentication
+- From an AoC subscription : `<%=cmd%> aoc admin ats` : use AoC authentication
 
-- Or from an IBM Cloud subscription : <%=cmd%> ats : use IBM Cloud API key authentication
+- Or from an IBM Cloud subscription : `<%=cmd%> ats` : use IBM Cloud API key authentication
 
 ### IBM Cloud ATS : Creation of api key
 

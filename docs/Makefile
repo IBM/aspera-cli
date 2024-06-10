@@ -35,6 +35,7 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_D
 		date=$$(date $$ref '+%Y/%m/%d') &&\
 		pandoc \
 			--defaults=$(DIR_DOC)manual_pandoc_defaults.yaml \
+			--resource-path=$(DIR_DOC). \
 			--variable=date:$$date \
 			--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)" \
 			--output=$@\

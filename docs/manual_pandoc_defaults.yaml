@@ -15,8 +15,8 @@ variables:
   geometry: margin=15mm
   include-before:
     - '\newpage'
-resource-path:
-  - ${.}
+#resource-path:
+#  - ${.}
 include-in-header:
   - manual_include_in_header.tex
 include-after-body:

@@ -1,5 +1,6 @@
 % remove creation date and other optional info, so that only change in text trigger checkin
 \pdfvariable suppressoptionalinfo 767
+% fancy verbatim
 % https://ctan.org/pkg/fvextra
 \usepackage{fvextra}
 \fvset{breaklines}
@@ -28,3 +29,13 @@
     \includegraphics[width=\paperwidth]{manual_cover_bottom.png}
   }
 }
+\usepackage{ulem}
+% underline bold text
+\renewcommand{\textbf}[1]{\uline{#1}}
+\let\oldtexttt\texttt
+% place code in lightgray box
+\renewcommand{\texttt}[1]{
+  \colorbox{lightgray}{\oldtexttt{#1}}
+}
+% tight box around code
+\fboxsep1pt
