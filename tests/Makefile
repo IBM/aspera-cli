@@ -933,43 +933,43 @@ $(T)aoc16: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_01: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res self show
-	$(EXE_MAN) --preset=aoc_admin aoc admin res organization show
-	$(EXE_MAN) --preset=aoc_admin aoc admin res user list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res user modify @extend:%name:@preset:aoc.user_email@ @json:'{"deactivated":false}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin self show
+	$(EXE_MAN) --preset=aoc_admin aoc admin organization show
+	$(EXE_MAN) --preset=aoc_admin aoc admin user list
+	$(EXE_MAN) --preset=aoc_admin aoc admin user modify @extend:%name:@preset:aoc.user_email@ @json:'{"deactivated":false}'
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_02: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res group list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res client list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res contact list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res dropbox list
+	$(EXE_MAN) --preset=aoc_admin aoc admin group list
+	$(EXE_MAN) --preset=aoc_admin aoc admin client list
+	$(EXE_MAN) --preset=aoc_admin aoc admin contact list
+	$(EXE_MAN) --preset=aoc_admin aoc admin dropbox list
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_03: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res node list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res operation list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res package list --http-options=@json:'{"read_timeout":120.0}'
-	$(EXE_MAN) --preset=aoc_admin aoc admin res saml_configuration list
+	$(EXE_MAN) --preset=aoc_admin aoc admin node list
+	$(EXE_MAN) --preset=aoc_admin aoc admin operation list
+	$(EXE_MAN) --preset=aoc_admin aoc admin package list --http-options=@json:'{"read_timeout":120.0}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin saml_configuration list
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_04: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res dropbox_membership list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res workspace_membership list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res short_link list
+	$(EXE_MAN) --preset=aoc_admin aoc admin dropbox_membership list
+	$(EXE_MAN) --preset=aoc_admin aoc admin workspace_membership list
+	$(EXE_MAN) --preset=aoc_admin aoc admin short_link list
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_05: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res application list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res client_access_key list
-	$(EXE_MAN) --preset=aoc_admin aoc admin res kms_profile list
+	$(EXE_MAN) --preset=aoc_admin aoc admin application list
+	$(EXE_MAN) --preset=aoc_admin aoc admin client_access_key list
+	$(EXE_MAN) --preset=aoc_admin aoc admin kms_profile list
 	@$(STOP_TEST) $@
 $(T)aoccltreg: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token list
-	$(EXE_NO_MAN) --preset=aoc_admin aoc admin res client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)client_reg_id
-	$(EXE_MAN) --preset=aoc_admin aoc admin res client_registration_token delete $$(cat $(DIR_TMP)client_reg_id)
+	$(EXE_MAN) --preset=aoc_admin aoc admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin client_registration_token list
+	$(EXE_NO_MAN) --preset=aoc_admin aoc admin client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)client_reg_id
+	$(EXE_MAN) --preset=aoc_admin aoc admin client_registration_token delete $$(cat $(DIR_TMP)client_reg_id)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocadm,$(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg))
 #######################################################################################################################
