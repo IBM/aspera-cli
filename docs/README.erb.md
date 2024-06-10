@@ -186,8 +186,8 @@ It is possible to install **either** directly on the host operating system (Linu
 The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby)
-- [<%=gemspec.name%>](#ruby-gem)
-- [Aspera SDK (`ascp`)](#fasp-protocol)
+- [<%=gemspec.name%>](#ruby-gem-aspera-cli)
+- [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
 
 Ruby <%=ruby_version%>.
 
@@ -247,7 +247,7 @@ Install the chosen pre-compiled Ruby version:
 rvm install 3.2.2
 ```
 
-Ruby is now installed for the user, go to [Gem installation](#ruby-gem).
+Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli).
 
 Alternatively RVM can be installed system-wide, for this execute as `root`.
 It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.

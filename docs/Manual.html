@@ -182,8 +182,9 @@ href="#container">container</a> (<code>docker</code>,
 installing:</p>
 <ul>
 <li><a href="#ruby">Ruby</a></li>
-<li><a href="#ruby-gem">aspera-cli</a></li>
-<li><a href="#fasp-protocol">Aspera SDK (<code>ascp</code>)</a></li>
+<li><a href="#ruby-gem-aspera-cli">aspera-cli</a></li>
+<li><a href="#fasp-protocol-ascp">Aspera SDK
+(<code>ascp</code>)</a></li>
 </ul>
 <p>Ruby version: &gt;= 2.6.</p>
 <blockquote>
@@ -243,8 +244,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href=
 <p>Install the chosen pre-compiled Ruby version:</p>
 <div class="sourceCode" id="cb16"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rvm</span> install 3.2.2</span></code></pre></div>
-<p>Ruby is now installed for the user, go to <a href="#ruby-gem">Gem
-installation</a>.</p>
+<p>Ruby is now installed for the user, go to <a
+href="#ruby-gem-aspera-cli">Gem installation</a>.</p>
 <p>Alternatively RVM can be installed system-wide, for this execute as
 <code>root</code>. It then installs by default in
 <code>/usr/local/rvm</code> for all users and creates
@@ -5083,6 +5084,12 @@ OPTIONS:
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:30: warning: already initialized constant Aspera::Api::Httpgw::API_V1
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:22: warning: previous definition of API_V1 was here
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:31: warning: already initialized constant Aspera::Api::Httpgw::API_V2
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:23: warning: previous definition of API_V2 was here
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:39: warning: already initialized constant Aspera::Api::Httpgw::DEFAULT_BASE_PATH
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:21: warning: previous definition of DEFAULT_BASE_PATH was here
 
 
 COMMAND: httpgw

@@ -188,8 +188,8 @@ It is possible to install **either** directly on the host operating system (Linu
 The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby)
-- [aspera-cli](#ruby-gem)
-- [Aspera SDK (`ascp`)](#fasp-protocol)
+- [aspera-cli](#ruby-gem-aspera-cli)
+- [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
 
 Ruby version: >= 2.6.
 
@@ -253,7 +253,7 @@ Install the chosen pre-compiled Ruby version:
 rvm install 3.2.2
 ```
 
-Ruby is now installed for the user, go to [Gem installation](#ruby-gem).
+Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli).
 
 Alternatively RVM can be installed system-wide, for this execute as `root`.
 It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
@@ -3691,6 +3691,12 @@ OPTIONS:
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:30: warning: already initialized constant Aspera::Api::Httpgw::API_V1
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:22: warning: previous definition of API_V1 was here
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:31: warning: already initialized constant Aspera::Api::Httpgw::API_V2
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:23: warning: previous definition of API_V2 was here
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:39: warning: already initialized constant Aspera::Api::Httpgw::DEFAULT_BASE_PATH
+/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:21: warning: previous definition of DEFAULT_BASE_PATH was here
 
 
 COMMAND: httpgw

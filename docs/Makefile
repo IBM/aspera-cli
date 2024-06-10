@@ -33,12 +33,11 @@ $(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_D
 	set -x &&\
 		if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 		date=$$(date $$ref '+%Y/%m/%d') &&\
-		pandoc \
+		GFX_DIR=$(DIR_DOC) pandoc \
 			--defaults=$(DIR_DOC)manual_pandoc_defaults.yaml \
-			--resource-path=$(DIR_DOC). \
 			--variable=date:$$date \
 			--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)" \
-			--output=$@\
+			--output=$@ \
 			$(DIR_TOP)README.md
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
@@ -63,10 +62,18 @@ clean_doc::
 ##################################
 # UML Diagram : requires tools: graphviz and gem xumlidot
 # on mac: `gem install xumlidot pry` and `brew install graphviz`
+# to force another path: XUMLIDOT=.../xumlidot make -e uml
+XUMLIDOT=xumlidot
+DOT=dot
 uml: $(DIR_DOC)uml.png
-$(DIR_DOC)uml.png: $(DIR_TOP)common.mak
-	xumlidot --dot --no-composition --usage $(DIR_LIB). > $(DIR_DOC)uml.dot
-	dot -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
+$(DIR_DOC)uml.png: $(DIR_TOP)common.mak check_tools
+	$(XUMLIDOT) --dot --no-composition --usage $(DIR_LIB). > $(DIR_DOC)uml.dot
+	$(DOT) -Tpng $(DIR_DOC)uml.dot > $(DIR_DOC)uml.png
 	rm -f $(DIR_DOC)uml.dot
 clean_doc::
 	rm -f $(DIR_DOC)uml.dot
+clean_uml: clean_doc
+	rm -f $(DIR_DOC)uml.png
+check_tools:
+	$(XUMLIDOT) >/dev/null 2>&1;\
+	if test $$? -eq 127;then echo "xumlidot not found, please install it with 'gem install xumlidot'";exit 1;fi
