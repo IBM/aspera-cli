@@ -13,8 +13,8 @@ module Aspera
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
-      def initialize(options)
-        super(options)
+      def initialize(**base_options)
+        super(**base_options)
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }

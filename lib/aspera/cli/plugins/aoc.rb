@@ -335,12 +335,12 @@ module Aspera
             client_apfid = top_node_api.resolve_api_fid(file_id, client_folder)
             server_apfid = top_node_api.resolve_api_fid(file_id, server_folder)
             # force node as transfer agent
-            transfer.agent_instance = Agent::Node.new({
+            transfer.agent_instance = Agent::Node.new(
               url:      client_apfid[:api].base_url,
               username: client_apfid[:api].app_info[:node_info]['access_key'],
               password: client_apfid[:api].oauth.token,
               root_id:  client_apfid[:file_id]
-            })
+            )
             # additional node to node TS info
             add_ts = {
               'remote_access_key'   => server_apfid[:api].app_info[:node_info]['access_key'],

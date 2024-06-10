@@ -24,10 +24,8 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      # options that can be provided to the constructor, and then in @options
-      SUPPORTED_OPTIONS = %i[ascp_args wss check_ignore_cb quiet trusted_certs].freeze
 
-      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS, :SUPPORTED_OPTIONS
+      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
       class << self
         # Temp folder for file lists, must contain only file lists
@@ -106,25 +104,30 @@ module Aspera
       end
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
-      def initialize(job_spec, options)
-        Aspera.assert_type(job_spec, Hash)
-        Aspera.assert_type(options, Hash)
+      def initialize(
+        job_spec,
+        ascp_args:,
+        wss:,
+        quiet:,
+        trusted_certs:,
+        check_ignore_cb:
+      )
         @job_spec = job_spec
-        # check necessary options
-        missing_options = SUPPORTED_OPTIONS - options.keys
-        Aspera.assert(missing_options.empty?){"missing options: #{missing_options.join(', ')}"}
-        @options = SUPPORTED_OPTIONS.each_with_object({}){|o, h| h[o] = options[o]}
-        Log.log.debug{Log.dump(:parameters_options, @options)}
-        Log.log.debug{Log.dump(:dismiss_options, options.keys - SUPPORTED_OPTIONS)}
-        Aspera.assert_type(@options[:ascp_args], Array){'ascp_args'}
-        Aspera.assert(@options[:ascp_args].all?(String)){'ascp arguments must Strings'}
+        @ascp_args = ascp_args
+        @wss = wss
+        @quiet = quiet
+        @trusted_certs = trusted_certs
+        @check_ignore_cb = check_ignore_cb
+        Aspera.assert_type(job_spec, Hash)
+        Aspera.assert_type(@ascp_args, Array){'ascp_args'}
+        Aspera.assert(@ascp_args.all?(String)){'ascp arguments must be Strings'}
         @builder = CommandLineBuilder.new(@job_spec, Spec::DESCRIPTION)
       end
 
       # either place source files on command line, or add file list file
       def process_file_list
         # is the file list provided through ascp parameters?
-        ascp_file_list_provided = self.class.ascp_args_file_list?(@options[:ascp_args])
+        ascp_file_list_provided = self.class.ascp_args_file_list?(@ascp_args)
         # set if paths is mandatory in ts
         @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided # cspell:words keepalive
         # get paths in transfer spec (after setting if it is mandatory)
@@ -162,7 +165,7 @@ module Aspera
       def remote_certificates
         certificates_to_use = []
         # use web socket secure for session ?
-        if @builder.read_param('wss_enabled') && (@options[:wss] || !@job_spec.key?('fasp_port'))
+        if @builder.read_param('wss_enabled') && (@wss || !@job_spec.key?('fasp_port'))
           # by default use web socket session if available, unless removed by user
           @builder.add_command_line_options(['--ws-connect'])
           # TODO: option to give order ssh,ws (legacy http is implied by ssh)
@@ -171,9 +174,9 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('sshfp')
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-          certificates_to_use.concat(@options[:trusted_certs]) if @options[:trusted_certs].is_a?(Array)
+          certificates_to_use.concat(@trusted_certs) if @trusted_certs.is_a?(Array)
           # ignore cert for wss ?
-          if @options[:check_ignore_cb]&.call(@job_spec['remote_host'], @job_spec['wss_port'])
+          if @check_ignore_cb&.call(@job_spec['remote_host'], @job_spec['wss_port'])
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
             wss_url = "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}"
             File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))
@@ -228,7 +231,7 @@ module Aspera
         # destination will be base64 encoded, put this before source path arguments
         @builder.add_command_line_options(['--dest64']) if base64_destination
         # optional arguments, at the end to override previous ones (to allow override)
-        @builder.add_command_line_options(@options[:ascp_args])
+        @builder.add_command_line_options(@ascp_args)
         # get list of source files to transfer and build arg for ascp
         process_file_list
         # process destination folder
@@ -238,7 +241,7 @@ module Aspera
         # destination MUST be last command line argument to ascp
         @builder.add_command_line_options([destination_folder])
         @builder.add_env_args(env_args)
-        env_args[:args].unshift('-q') if @options[:quiet]
+        env_args[:args].unshift('-q') if @quiet
         # add fallback cert and key as arguments if needed
         if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
           env_args[:args].unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))

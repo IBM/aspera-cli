@@ -78,7 +78,7 @@ session_spec['agent']['management_cb'] = ->(event) do
   puts JSON.generate(Aspera::Ascp::Management.enhanced_event_format(event))
 end
 # get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-client = Aspera::Agent::Direct.new(session_spec['agent'])
+client = Aspera::Agent::Direct.new(**session_spec['agent'].symbolize_keys)
 # start transfer (asynchronous)
 job_id = client.start_transfer(session_spec[PARAM_SPEC])
 # async commands

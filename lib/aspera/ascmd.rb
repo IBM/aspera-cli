@@ -22,6 +22,7 @@ module Aspera
       mv:     2,
       rm:     1
     }.freeze
+    private_constant :OPS_ARGS
     # list of supported actions
     OPERATIONS = OPS_ARGS.keys.freeze
 

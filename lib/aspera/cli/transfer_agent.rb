@@ -101,8 +101,6 @@ module Aspera
       def agent_instance
         return @agent unless @agent.nil?
         agent_type = @opt_mgr.get_option(:transfer, mandatory: true)
-        # agent plugin is loaded on demand to avoid loading unnecessary dependencies
-        require "aspera/agent/#{agent_type}"
         # set keys as symbols
         agent_options = @opt_mgr.get_option(:transfer_info).symbolize_keys
         # special cases
@@ -126,8 +124,7 @@ module Aspera
         end
         agent_options[:progress] = @config.progress_bar
         # get agent instance
-        new_agent = Kernel.const_get("Aspera::Agent::#{agent_type.capitalize}").new(agent_options)
-        self.agent_instance = new_agent
+        self.agent_instance = Agent::Base.factory_create(agent_type, agent_options)
         Log.log.debug{"transfer agent is a #{@agent.class}"}
         return @agent
       end

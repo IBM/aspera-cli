@@ -8,8 +8,14 @@ module Aspera
     class Base
       RUBY_EXT = '.rb'
       class << self
+        def factory_create(agent, options)
+          # Aspera.assert_values(agent, agent_list)
+          require "aspera/agent/#{agent}"
+          Aspera::Agent.const_get(agent.to_s.capitalize).new(**options)
+        end
+
         # compute options from user provided and default options
-        def options(default:, options:)
+        def to_move_options(default:, options:)
           result = options.symbolize_keys
           available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
           result.each_key do |k|
@@ -43,14 +49,11 @@ module Aspera
 
       private
 
-      def initialize(options)
+      def initialize(progress: nil)
         # method `shutdown` is optional
         Aspera.assert(respond_to?(:start_transfer))
         Aspera.assert(respond_to?(:wait_for_transfers_completion))
-        Aspera.assert_type(options, Hash){'transfer agent options'}
-        Log.log.debug{Log.dump(:agent_options, options)}
-        @progress = options[:progress]
-        options.delete(:progress)
+        @progress = progress
       end
 
       def notify_progress(**parameters)

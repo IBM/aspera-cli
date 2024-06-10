@@ -13,36 +13,35 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Base
-      DEFAULT_OPTIONS = {
-        url:      :required,
-        username: :required,
-        password: :required,
-        root_id:  nil
-      }.freeze
-      # option include: root_id if the node is an access key
-      # attr_writer :options
-
-      def initialize(opts)
-        Aspera.assert_type(opts, Hash){'node agent options'}
-        super(opts)
-        options = Base.options(default: DEFAULT_OPTIONS, options: opts)
+      # @param url [String] the base url of the node api
+      # @param username [String] the username to use for the node api
+      # @param password [String] the password to use for the node api
+      # @param root_id [String] root file id if the node is an access key
+      # @param base_options [Hash] options for base class
+      def initialize(
+        url:,
+        username:,
+        password:,
+        root_id: nil,
+        **base_options
+      )
+        super(**base_options)
         # root id is required for access key
-        @root_id = options[:root_id]
-        rest_params = { base_url: options[:url]}
-        if OAuth::Factory.bearer?(options[:password])
+        @root_id = root_id
+        rest_params = { base_url: url}
+        if OAuth::Factory.bearer?(password)
           Aspera.assert(!@root_id.nil?){'root_id not allowed for access key'}
-          rest_params[:headers] = Api::Node.bearer_headers(options[:password], access_key: options[:username])
+          rest_params[:headers] = Api::Node.bearer_headers(password, access_key: username)
         else
           rest_params[:auth] = {
             type:     :basic,
-            username: options[:username],
-            password: options[:password]
+            username: username,
+            password: password
           }
         end
         @node_api = Rest.new(**rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
-        # Log.log.debug{Log.dump(:agent_options, @options)}
       end
 
       # used internally to ensure node api is set before using.

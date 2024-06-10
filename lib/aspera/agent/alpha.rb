@@ -17,9 +17,9 @@ module Aspera
       APP_IDENTIFIER = 'com.ibm.software.aspera.desktop'
       APP_NAME = 'Aspera Desktop Alpha Client'
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
-      def initialize(options)
+      def initialize(**base_options)
         @application_id = SecureRandom.uuid
-        super(options)
+        super(**base_options)
         raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin

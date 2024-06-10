@@ -17,13 +17,6 @@ module Aspera
       PORT_SEP = ':'
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
-      DEFAULT_OPTIONS = {
-        url:      AUTO_LOCAL_TCP_PORT,
-        external: false,         # expect that an external daemon is already running
-        keep:     false          # do not shutdown daemon on exit
-      }.freeze
-      private_constant :DEFAULT_OPTIONS
-
       class << self
         # Well, the port number is only in log file
         def daemon_port_from_log(log_file)
@@ -44,19 +37,25 @@ module Aspera
         end
       end
 
-      # options come from transfer_info
-      def initialize(user_opts={})
-        super(user_opts)
-        @options = Base.options(default: DEFAULT_OPTIONS, options: user_opts)
-        is_local_auto_port = @options[:url].eql?(AUTO_LOCAL_TCP_PORT)
-        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@options[:keep] || @options[:external])
-        Log.log.debug{Log.dump(:agent_options, @options)}
+      # @param url [String] URL of the transfer manager daemon
+      # @param external [Boolean] if true, expect that an external daemon is already running
+      # @param keep [Boolean] if true, do not shutdown daemon on exit
+      # @param base_options [Hash] base options
+      def initialize(
+        url: AUTO_LOCAL_TCP_PORT,
+        external: false, 
+        keep:     false, 
+        **base_options
+      )
+        super(**base_options)
+        is_local_auto_port = @url.eql?(AUTO_LOCAL_TCP_PORT)
+        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@keep || @external)
         # load SDK stub class on demand, as it's an optional gem
         $LOAD_PATH.unshift(Ascp::Installation.instance.sdk_ruby_folder)
         require 'transfer_services_pb'
         # keep PID for optional shutdown
         @daemon_pid = nil
-        daemon_endpoint = @options[:url]
+        daemon_endpoint = @url
         Log.log.debug{Log.dump(:daemon_endpoint, daemon_endpoint)}
         # retry loop
         begin
@@ -67,14 +66,14 @@ module Aspera
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug{"Daemon info: #{get_info_response}"}
-          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || @options[:external] || @options[:keep]
+          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || @external || @keep
           at_exit{shutdown}
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
-          raise if @options[:external] || !e.message.include?('failed to connect')
+          raise if @external || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
           Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
-          Log.log.warn('no daemon present, starting daemon...') if @options[:external]
+          Log.log.warn('no daemon present, starting daemon...') if @external
           # location of daemon binary
           sdk_folder = File.realpath(File.join(Ascp::Installation.instance.sdk_ruby_folder, '..'))
           # transferd only supports local ip and port
@@ -111,7 +110,7 @@ module Aspera
             nil
           end
           Log.log.debug{"Daemon started with pid #{@daemon_pid}"}
-          Process.detach(@daemon_pid) if @options[:keep]
+          Process.detach(@daemon_pid) if @keep
           at_exit {shutdown}
           # update port for next connection attempt (if auto high port was requested)
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{self.class.daemon_port_from_log(log_stdout)}" if is_local_auto_port
@@ -171,7 +170,7 @@ module Aspera
       end
 
       def shutdown
-        stop_daemon unless @options[:keep]
+        stop_daemon unless @keep
       end
 
       def stop_daemon

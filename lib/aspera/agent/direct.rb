@@ -18,23 +18,10 @@ module Aspera
   module Agent
     # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
     class Direct < Base
-      # options for initialize (same as values in option transfer_info)
-      DEFAULT_OPTIONS = {
-        wss:               true, # true: if both SSH and wss in ts: prefer wss
-        ascp_args:         [],
-        spawn_timeout_sec: 2,
-        spawn_delay_sec:   2, # optional delay to start between sessions
-        multi_incr_udp:    true,
-        trusted_certs:     [], # list of files with trusted certificates (stores)
-        resume:            {},
-        quiet:             true, # by default no native ascp progress bar
-        check_ignore_cb:   nil, # callback with host,port
-        management_cb:     nil # callback for management events
-      }.freeze
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
       ANY_AVAILABLE_PORT = 0 # 0 means any available port
       # spellchecker: enable
-      private_constant :DEFAULT_OPTIONS, :LISTEN_LOCAL_ADDRESS, :ANY_AVAILABLE_PORT
+      private_constant :LISTEN_LOCAL_ADDRESS, :ANY_AVAILABLE_PORT
 
       # method of Base
       # start ascp transfer(s) (non blocking), single or multi-session
@@ -71,7 +58,7 @@ module Aspera
           elsif multi_session_info[:count].eql?(0)
             Log.log.debug('multi_session count is zero: no multi session')
             multi_session_info = nil
-          elsif @options[:multi_incr_udp] # multi_session_info[:count] > 0
+          elsif @multi_incr_udp # multi_session_info[:count] > 0
             # if option not true: keep default udp port for all sessions
             multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : Transfer::Spec::UDP_PORT
             # delete from original transfer spec, as we will increment values
@@ -90,7 +77,7 @@ module Aspera
           io:                nil,               # management port server socket
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
           # env vars and args to ascp (from transfer spec)
-          env_args:          Transfer::Parameters.new(transfer_spec, @options).ascp_args
+          env_args:          Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
 
         if multi_session_info.nil?
@@ -102,7 +89,7 @@ module Aspera
           Log.log.debug('Starting multi session threads')
           1.upto(multi_session_info[:count]) do |i|
             # do not delay the first session
-            sleep(@options[:spawn_delay_sec]) unless i.eql?(1)
+            sleep(@spawn_delay_sec) unless i.eql?(1)
             # do deep copy (each thread has its own copy because it is modified here below and in thread)
             this_session = session.clone
             this_session[:ts] = this_session[:ts].clone
@@ -111,7 +98,7 @@ module Aspera
             # set multi session part
             this_session[:env_args][:args].unshift("-C#{i}:#{multi_session_info[:count]}")
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
-            this_session[:env_args][:args].unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @options[:multi_incr_udp]
+            this_session[:env_args][:args].unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
             this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
             @sessions.push(this_session)
@@ -219,8 +206,8 @@ module Aspera
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
           mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
-          Log.log.debug{"before select, timeout: #{@options[:spawn_timeout_sec]}"}
-          readable, _, _ = IO.select([mgt_server_socket], nil, nil, @options[:spawn_timeout_sec])
+          Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
+          readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
           Log.log.debug('after select, before accept')
           Aspera.assert(readable, exception_class: Transfer::Error){'timeout waiting mgt port connect (select not readable)'}
           # There is a connection to accept
@@ -239,7 +226,7 @@ module Aspera
             next unless event
             # event is ready
             Log.log.trace1{Log.dump(:management_port, event)}
-            @options[:management_cb]&.call(event)
+            @management_cb&.call(event)
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
@@ -324,13 +311,45 @@ module Aspera
 
       private
 
-      # @param options : keys(symbol): see DEFAULT_OPTIONS
-      def initialize(options={})
-        super(options)
-        # set default options and override if specified
-        @options = Base.options(default: DEFAULT_OPTIONS, options: options)
-        Log.log.debug{Log.dump(:agent_options, @options)}
-        @resume_policy = Resumer.new(@options[:resume].symbolize_keys)
+      # options for initialize (same as values in option transfer_info)
+      # @param wss [Boolean] true: if both SSH and wss in ts: prefer wss
+      # @param ascp_args [Array] additional arguments to ascp
+      # @param spawn_timeout_sec [Integer] timeout for ascp spawn
+      # @param spawn_delay_sec [Integer] optional delay to start between sessions
+      # @param multi_incr_udp [Boolean] true: increment udp port for each session
+      # @param trusted_certs [Array] list of files with trusted certificates (stores)
+      # @param resume [Hash] resume policy
+      # @param quiet [Boolean] by default no native ascp progress bar
+      # @param check_ignore_cb [Proc] callback with host,port
+      # @param management_cb [Proc] callback for management events
+      # @param base_options [Hash] other options for base class
+      def initialize(
+        wss:               true,
+        ascp_args:         [],
+        spawn_timeout_sec: 2,
+        spawn_delay_sec:   2,
+        multi_incr_udp:    true,
+        trusted_certs:     [],
+        resume:            {},
+        quiet:             true,
+        check_ignore_cb:   nil,
+        management_cb:     nil,
+        **base_options
+      )
+        super(**base_options)
+        @tr_opts = {
+          ascp_args:       ascp_args,
+          wss:             wss,
+          quiet:           quiet,
+          trusted_certs:   trusted_certs,
+          check_ignore_cb: check_ignore_cb
+        }
+        @spawn_timeout_sec = spawn_timeout_sec
+        @spawn_delay_sec = spawn_delay_sec
+        @multi_incr_udp = multi_incr_udp
+        @resume = resume
+        @management_cb = management_cb
+        @resume_policy = Resumer.new(@resume.symbolize_keys)
         # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
         @sessions = []
         # mutex protects global data accessed by threads
