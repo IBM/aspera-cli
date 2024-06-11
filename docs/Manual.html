@@ -5084,12 +5084,6 @@ OPTIONS:
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:30: warning: already initialized constant Aspera::Api::Httpgw::API_V1
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:22: warning: previous definition of API_V1 was here
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:31: warning: already initialized constant Aspera::Api::Httpgw::API_V2
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:23: warning: previous definition of API_V2 was here
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:39: warning: already initialized constant Aspera::Api::Httpgw::DEFAULT_BASE_PATH
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:21: warning: previous definition of DEFAULT_BASE_PATH was here
 
 
 COMMAND: httpgw
@@ -6287,46 +6281,46 @@ commands:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb364-1"><a href="#cb364-1" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers nodes</span>
 <span id="cb364-2"><a href="#cb364-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers organization <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;status&quot;:&quot;completed&quot;,&quot;direction&quot;:&quot;receive&quot;}&#39;</span> <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--notify-template</span><span class="op">=</span>@ruby:<span class="st">&#39;%Q{From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;\nTo: &lt;&lt;%=to%&gt;&gt;\nSubject: &lt;%=ev[&quot;files_completed&quot;]%&gt; files received\n\n&lt;%=ev.to_yaml%&gt;}&#39;</span></span>
 <span id="cb364-3"><a href="#cb364-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> analytics transfers users <span class="at">--once_only</span><span class="op">=</span>yes</span>
-<span id="cb364-4"><a href="#cb364-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb364-5"><a href="#cb364-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
-<span id="cb364-6"><a href="#cb364-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key delete ak1ibmcloud</span>
-<span id="cb364-7"><a href="#cb364-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key list <span class="at">--fields</span><span class="op">=</span>name,id</span>
-<span id="cb364-8"><a href="#cb364-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key node ak1ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here browse /</span>
-<span id="cb364-9"><a href="#cb364-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster clouds</span>
-<span id="cb364-10"><a href="#cb364-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster list</span>
-<span id="cb364-11"><a href="#cb364-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster show <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>eu-west-1</span>
-<span id="cb364-12"><a href="#cb364-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2</span>
-<span id="cb364-13"><a href="#cb364-13" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> auth_providers list</span>
-<span id="cb364-14"><a href="#cb364-14" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res application list</span>
-<span id="cb364-15"><a href="#cb364-15" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res client list</span>
-<span id="cb364-16"><a href="#cb364-16" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res client_access_key list</span>
-<span id="cb364-17"><a href="#cb364-17" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res client_registration_token create @json:<span class="st">&#39;{&quot;data&quot;:{&quot;name&quot;:&quot;test_client_reg1&quot;,&quot;client_subject_scopes&quot;:[&quot;alee&quot;,&quot;aejd&quot;],&quot;client_subject_enabled&quot;:true}}&#39;</span></span>
-<span id="cb364-18"><a href="#cb364-18" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res client_registration_token delete client_reg_id</span>
-<span id="cb364-19"><a href="#cb364-19" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res client_registration_token list</span>
-<span id="cb364-20"><a href="#cb364-20" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res contact list</span>
-<span id="cb364-21"><a href="#cb364-21" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res dropbox list</span>
-<span id="cb364-22"><a href="#cb364-22" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res dropbox_membership list</span>
-<span id="cb364-23"><a href="#cb364-23" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res group list</span>
-<span id="cb364-24"><a href="#cb364-24" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res kms_profile list</span>
-<span id="cb364-25"><a href="#cb364-25" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res node list</span>
-<span id="cb364-26"><a href="#cb364-26" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res operation list</span>
-<span id="cb364-27"><a href="#cb364-27" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res organization show</span>
-<span id="cb364-28"><a href="#cb364-28" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res package list <span class="at">--http-options</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;read_timeout&quot;:120.0}&#39;</span></span>
-<span id="cb364-29"><a href="#cb364-29" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res saml_configuration list</span>
-<span id="cb364-30"><a href="#cb364-30" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res self show</span>
-<span id="cb364-31"><a href="#cb364-31" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res short_link list</span>
-<span id="cb364-32"><a href="#cb364-32" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res user list</span>
-<span id="cb364-33"><a href="#cb364-33" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res user modify %name:my_user_email @json:<span class="st">&#39;{&quot;deactivated&quot;:false}&#39;</span></span>
-<span id="cb364-34"><a href="#cb364-34" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> res workspace_membership list</span>
-<span id="cb364-35"><a href="#cb364-35" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret browse /</span>
-<span id="cb364-36"><a href="#cb364-36" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret delete /folder1</span>
-<span id="cb364-37"><a href="#cb364-37" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret mkdir /folder1</span>
-<span id="cb364-38"><a href="#cb364-38" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 access_key create @json:<span class="st">&#39;{&quot;id&quot;:&quot;testsub1&quot;,&quot;storage&quot;:{&quot;path&quot;:&quot;/folder1&quot;}}&#39;</span></span>
-<span id="cb364-39"><a href="#cb364-39" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 access_key delete testsub1</span>
-<span id="cb364-40"><a href="#cb364-40" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 events</span>
-<span id="cb364-41"><a href="#cb364-41" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource workspace list</span>
-<span id="cb364-42"><a href="#cb364-42" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> resource workspace_membership list <span class="at">--fields</span><span class="op">=</span>ALL <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;page&quot;:1,&quot;per_page&quot;:50,&quot;embed&quot;:&quot;member&quot;,&quot;inherited&quot;:false,&quot;workspace_id&quot;:11363,&quot;sort&quot;:&quot;name&quot;}&#39;</span></span>
-<span id="cb364-43"><a href="#cb364-43" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> subscription</span>
+<span id="cb364-4"><a href="#cb364-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> application list</span>
+<span id="cb364-5"><a href="#cb364-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak_aws&quot;,&quot;name&quot;:&quot;my test key AWS&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;aws_s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb364-6"><a href="#cb364-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key create <span class="at">--cloud</span><span class="op">=</span>softlayer <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--params</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;id&quot;:&quot;ak1ibmcloud&quot;,&quot;secret&quot;:&quot;my_secret_here&quot;,&quot;name&quot;:&quot;my test key&quot;,&quot;storage&quot;:{&quot;type&quot;:&quot;ibm-s3&quot;,&quot;bucket&quot;:&quot;my_bucket&quot;,&quot;credentials&quot;:{&quot;access_key_id&quot;:&quot;my_access_key&quot;,&quot;secret_access_key&quot;:&quot;my_secret_key&quot;},&quot;path&quot;:&quot;/&quot;}}&#39;</span></span>
+<span id="cb364-7"><a href="#cb364-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key delete ak1ibmcloud</span>
+<span id="cb364-8"><a href="#cb364-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key list <span class="at">--fields</span><span class="op">=</span>name,id</span>
+<span id="cb364-9"><a href="#cb364-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats access_key node ak1ibmcloud <span class="at">--secret</span><span class="op">=</span>my_secret_here browse /</span>
+<span id="cb364-10"><a href="#cb364-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster clouds</span>
+<span id="cb364-11"><a href="#cb364-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster list</span>
+<span id="cb364-12"><a href="#cb364-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster show <span class="at">--cloud</span><span class="op">=</span>aws <span class="at">--region</span><span class="op">=</span>eu-west-1</span>
+<span id="cb364-13"><a href="#cb364-13" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2</span>
+<span id="cb364-14"><a href="#cb364-14" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> auth_providers list</span>
+<span id="cb364-15"><a href="#cb364-15" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> client list</span>
+<span id="cb364-16"><a href="#cb364-16" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> client_access_key list</span>
+<span id="cb364-17"><a href="#cb364-17" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> client_registration_token create @json:<span class="st">&#39;{&quot;data&quot;:{&quot;name&quot;:&quot;test_client_reg1&quot;,&quot;client_subject_scopes&quot;:[&quot;alee&quot;,&quot;aejd&quot;],&quot;client_subject_enabled&quot;:true}}&#39;</span></span>
+<span id="cb364-18"><a href="#cb364-18" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> client_registration_token delete client_reg_id</span>
+<span id="cb364-19"><a href="#cb364-19" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> client_registration_token list</span>
+<span id="cb364-20"><a href="#cb364-20" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> contact list</span>
+<span id="cb364-21"><a href="#cb364-21" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> dropbox list</span>
+<span id="cb364-22"><a href="#cb364-22" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> dropbox_membership list</span>
+<span id="cb364-23"><a href="#cb364-23" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> group list</span>
+<span id="cb364-24"><a href="#cb364-24" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> kms_profile list</span>
+<span id="cb364-25"><a href="#cb364-25" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret browse /</span>
+<span id="cb364-26"><a href="#cb364-26" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret delete /folder1</span>
+<span id="cb364-27"><a href="#cb364-27" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret mkdir /folder1</span>
+<span id="cb364-28"><a href="#cb364-28" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 access_key create @json:<span class="st">&#39;{&quot;id&quot;:&quot;testsub1&quot;,&quot;storage&quot;:{&quot;path&quot;:&quot;/folder1&quot;}}&#39;</span></span>
+<span id="cb364-29"><a href="#cb364-29" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 access_key delete testsub1</span>
+<span id="cb364-30"><a href="#cb364-30" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node do %name:my_ak_name <span class="at">--secret</span><span class="op">=</span>my_ak_secret v3 events</span>
+<span id="cb364-31"><a href="#cb364-31" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
+<span id="cb364-32"><a href="#cb364-32" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> operation list</span>
+<span id="cb364-33"><a href="#cb364-33" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> organization show</span>
+<span id="cb364-34"><a href="#cb364-34" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> package list <span class="at">--http-options</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;read_timeout&quot;:120.0}&#39;</span></span>
+<span id="cb364-35"><a href="#cb364-35" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> saml_configuration list</span>
+<span id="cb364-36"><a href="#cb364-36" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> self show</span>
+<span id="cb364-37"><a href="#cb364-37" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> short_link list</span>
+<span id="cb364-38"><a href="#cb364-38" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> subscription</span>
+<span id="cb364-39"><a href="#cb364-39" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user list</span>
+<span id="cb364-40"><a href="#cb364-40" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user modify %name:my_user_email @json:<span class="st">&#39;{&quot;deactivated&quot;:false}&#39;</span></span>
+<span id="cb364-41"><a href="#cb364-41" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> workspace list</span>
+<span id="cb364-42"><a href="#cb364-42" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> workspace_membership list</span>
+<span id="cb364-43"><a href="#cb364-43" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> workspace_membership list <span class="at">--fields</span><span class="op">=</span>ALL <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;page&quot;:1,&quot;per_page&quot;:50,&quot;embed&quot;:&quot;member&quot;,&quot;inherited&quot;:false,&quot;workspace_id&quot;:11363,&quot;sort&quot;:&quot;name&quot;}&#39;</span></span>
 <span id="cb364-44"><a href="#cb364-44" aria-hidden="true" tabindex="-1"></a><span class="ex">automation</span> workflow action wf_id create @json:<span class="st">&#39;{&quot;name&quot;:&quot;toto&quot;}&#39;</span> <span class="dt">\</span></span>
 <span id="cb364-45"><a href="#cb364-45" aria-hidden="true" tabindex="-1"></a>automation workflow create @json:<span class="st">&#39;{&quot;name&quot;:&quot;test_workflow&quot;}&#39;</span></span>
 <span id="cb364-46"><a href="#cb364-46" aria-hidden="true" tabindex="-1"></a><span class="ex">automation</span> workflow delete wf_id</span>
@@ -7384,7 +7378,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb426-1"><a href
 <span id="cb426-2"><a href="#cb426-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> contacts list</span>
 <span id="cb426-3"><a href="#cb426-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> event app</span>
 <span id="cb426-4"><a href="#cb426-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> event web</span>
-<span id="cb426-5"><a href="#cb426-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> jobs list</span>
+<span id="cb426-5"><a href="#cb426-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> jobs list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;job_type&quot;:&quot;email&quot;,&quot;status&quot;:&quot;failed&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,error_desc</span>
 <span id="cb426-6"><a href="#cb426-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> metadata_profiles list</span>
 <span id="cb426-7"><a href="#cb426-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
 <span id="cb426-8"><a href="#cb426-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> oauth_clients list</span>

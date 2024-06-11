@@ -3691,12 +3691,6 @@ OPTIONS:
         --service-credentials=VALUE  IBM Cloud service credentials (Hash)
         --region=VALUE               Storage region
         --identity=VALUE             Authentication URL (https://iam.cloud.ibm.com/identity)
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:30: warning: already initialized constant Aspera::Api::Httpgw::API_V1
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:22: warning: previous definition of API_V1 was here
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:31: warning: already initialized constant Aspera::Api::Httpgw::API_V2
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:23: warning: previous definition of API_V2 was here
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:39: warning: already initialized constant Aspera::Api::Httpgw::DEFAULT_BASE_PATH
-/Users/laurent/workspace/aspera/aspera-cli/lib/aspera/api/httpgw.rb:21: warning: previous definition of DEFAULT_BASE_PATH was here
 
 
 COMMAND: httpgw
@@ -4930,6 +4924,7 @@ For instructions, refer to section `find` for plugin `node`.
 admin analytics transfers nodes
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once_only=yes
+admin application list
 admin ats access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key delete ak1ibmcloud
@@ -4940,36 +4935,35 @@ admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
 admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 admin auth_providers list
-admin res application list
-admin res client list
-admin res client_access_key list
-admin res client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-admin res client_registration_token delete client_reg_id
-admin res client_registration_token list
-admin res contact list
-admin res dropbox list
-admin res dropbox_membership list
-admin res group list
-admin res kms_profile list
-admin res node list
-admin res operation list
-admin res organization show
-admin res package list --http-options=@json:'{"read_timeout":120.0}'
-admin res saml_configuration list
-admin res self show
-admin res short_link list
-admin res user list
-admin res user modify %name:my_user_email @json:'{"deactivated":false}'
-admin res workspace_membership list
-admin resource node do %name:my_ak_name --secret=my_ak_secret browse /
-admin resource node do %name:my_ak_name --secret=my_ak_secret delete /folder1
-admin resource node do %name:my_ak_name --secret=my_ak_secret mkdir /folder1
-admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-admin resource node do %name:my_ak_name --secret=my_ak_secret v3 access_key delete testsub1
-admin resource node do %name:my_ak_name --secret=my_ak_secret v3 events
-admin resource workspace list
-admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+admin client list
+admin client_access_key list
+admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
+admin client_registration_token delete client_reg_id
+admin client_registration_token list
+admin contact list
+admin dropbox list
+admin dropbox_membership list
+admin group list
+admin kms_profile list
+admin node do %name:my_ak_name --secret=my_ak_secret browse /
+admin node do %name:my_ak_name --secret=my_ak_secret delete /folder1
+admin node do %name:my_ak_name --secret=my_ak_secret mkdir /folder1
+admin node do %name:my_ak_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+admin node do %name:my_ak_name --secret=my_ak_secret v3 access_key delete testsub1
+admin node do %name:my_ak_name --secret=my_ak_secret v3 events
+admin node list
+admin operation list
+admin organization show
+admin package list --http-options=@json:'{"read_timeout":120.0}'
+admin saml_configuration list
+admin self show
+admin short_link list
 admin subscription
+admin user list
+admin user modify %name:my_user_email @json:'{"deactivated":false}'
+admin workspace list
+admin workspace_membership list
+admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 automation workflow action wf_id create @json:'{"name":"toto"}' \
 automation workflow create @json:'{"name":"test_workflow"}'
 automation workflow delete wf_id
@@ -5936,7 +5930,7 @@ admin accounts list
 admin contacts list
 admin event app
 admin event web
-admin jobs list
+admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
 admin metadata_profiles list
 admin node list
 admin oauth_clients list

@@ -892,35 +892,35 @@ $(T)aocadm1: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource workspace list
+	$(EXE_MAN) --preset=aoc_admin aoc admin workspace list
 	@$(STOP_TEST) $@
 $(T)aoc9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 events
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 events
 	@$(STOP_TEST) $@
 $(T)aoc11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@$(STOP_TEST) $@
 $(T)aoc12: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
 	@$(STOP_TEST) $@
 $(T)aoc9b: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret browse /
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret browse /
 	@$(STOP_TEST) $@
 $(T)aoc10: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret mkdir /folder1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret mkdir /folder1
 	@$(STOP_TEST) $@
 $(T)aoc13: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret delete /folder1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret delete /folder1
 	@$(STOP_TEST) $@
 $(T)aoc14: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin resource workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@$(STOP_TEST) $@
 $(T)aoc15: $(T).exists
 	@$(START_TEST) $@
