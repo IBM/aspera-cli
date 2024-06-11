@@ -29,6 +29,7 @@ module Aspera
         client_id: nil,
         client_secret: nil,
         scope: nil,
+        use_query: false,
         path_token:  'token',       # default endpoint for /token to generate token
         token_field: 'access_token' # field with token in result of call to path_token
       )
@@ -40,6 +41,7 @@ module Aspera
         @client_id = client_id
         @client_secret = client_secret
         @scope = scope
+        @use_query = use_query
         @identifiers = []
         @identifiers.push(auth[:username]) if auth.is_a?(Hash) && auth.key?(:username)
         # this is the OAuth API
@@ -50,14 +52,22 @@ module Aspera
       end
 
       # helper method to create token as per RFC
-      def create_token_call(www_params)
+      def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
+        payload = {
+          body:      creation_params,
+          body_type: :www
+        }
+        if @use_query
+          payload[:query] = creation_params
+          payload[:body] = {}
+        end
         return @api.call(
           operation: 'POST',
           subpath:   @path_token,
           headers:   {'Accept' => 'application/json'},
-          body:      www_params,
-          body_type: :www)
+          **payload
+        )
       end
 
       # @return Hash with optional general parameters
