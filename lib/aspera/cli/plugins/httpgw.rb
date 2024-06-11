@@ -12,25 +12,13 @@ module Aspera
             'HTTP Gateway'
           end
 
-          def detect(address_or_url)
-            error = nil
-            [address_or_url].each do |base_url|
-              # only HTTPS
-              next unless base_url.start_with?('https://')
-              api = Rest.new(base_url: base_url, redirect_max: 1)
-              path_api_detect = "#{API_V1}/#{Api::Httpgw::INFO_ENDPOINT}"
-              result = api.read(path_api_detect)[:data]
-              next unless result.is_a?(Hash) && result.key?('download_endpoint')
-              # take redirect if any
-              return {
-                version: result['version'],
-                url:     base_url
-              }
-            rescue StandardError => e
-              error = e
-              Log.log.debug{"detect error: #{e}"}
-            end
-            raise error if error
+          def detect(base_url)
+            api = Api::Httpgw.new(url: base_url)
+            api_info = api.info
+            return {
+              url:     base_url,
+              version: api_info['version']
+            } if api_info.is_a?(Hash) && api_info.key?('download_endpoint')
             return nil
           end
         end
@@ -44,11 +32,11 @@ module Aspera
 
         def execute_action
           base_url = options.get_option(:url, mandatory: true)
-          api_v1 = Api::Httpgw.new(url: base_url, api_version: Api::Httpgw::API_V1)
+          api_v1 = Api::Httpgw.new(url: base_url)
           command = options.get_next_command(ACTIONS)
           case command
           when :info
-            return {type: :single_object, data: api_v1.read(Api::Httpgw::INFO_ENDPOINT)}
+            return {type: :single_object, data: api_v1.info}
           end
         end
       end

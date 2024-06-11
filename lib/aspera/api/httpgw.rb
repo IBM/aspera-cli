@@ -297,6 +297,10 @@ module Aspera
         call(operation: 'GET', subpath: "download/#{transfer_uuid}", save_to_file: file_path)
       end
 
+      def info
+        return @api_info
+      end
+
       # @param url [String] URL of the HTTP Gateway, without version
       def initialize(
         url:,
@@ -308,7 +312,7 @@ module Aspera
       )
         # add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
-        raise 'GW URL shall be with scheme https' unless base_url.start_with?('https://')
+        raise 'GW URL shall be with scheme https' unless url.start_with?('https://')
         # remove trailing slash and version if any
         url = url.gsub(%r{/+$}, '').gsub(%r{/#{API_V1}$}o, '')
         url = File.join(url, DEFAULT_BASE_PATH) unless url.end_with?(DEFAULT_BASE_PATH)
@@ -319,7 +323,7 @@ module Aspera
         @synchronous = synchronous
         @notify_cb = notify_cb
         # get API info
-        @api_info = read('info')[:data]
+        @api_info = read('info')[:data].freeze
         Log.log.debug{Log.dump(:api_info, @api_info)}
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         # is the latest supported? else revert to old api
