@@ -54,7 +54,7 @@ module Aspera
                   grant_method:    :jwt,
                   base_url:        "#{base_url}/auth",
                   client_id:       app_client_id,
-                  #use_query:       true,
+                  use_query:       true,
                   payload:         {
                     iss: app_client_id, # issuer
                     sub: app_client_id  # subject
