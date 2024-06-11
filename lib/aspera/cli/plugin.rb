@@ -109,7 +109,9 @@ module Aspera
             # execute custom code
             res = yield(param)
             # if block returns a hash, let's use this (create)
-            result = res if param.is_a?(Hash)
+            result = res if res.is_a?(Hash)
+            # TODO: remove when faspio gw api fixes this
+            result = res.first if res.is_a?(Array) && res.first.is_a?(Hash)
             # create -> created
             result['status'] = "#{command}#{'e' unless command.to_s.end_with?('e')}d".gsub(/yed$/, 'ied')
           rescue StandardError => e
