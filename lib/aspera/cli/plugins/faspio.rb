@@ -15,17 +15,14 @@ module Aspera
 
           def detect(base_url)
             api = Rest.new(base_url: base_url)
-            result = api.read('ping')[:data]
-            return nil unless result.is_a?(Hash) && result.empty?
-            result = api.call(
-              operation: 'GET',
-              subpath: 'bridges',
-              return_error: true)
+            ping_result = api.read('ping')
+            server_type = ping_result[:http]['Server']
+            return nil unless ping_result[:data].is_a?(Hash) && ping_result[:data].empty?
+            return nil unless server_type.is_a?(String) && server_type.include?('faspio')
             return {
-              version: result['version'],
+              version: server_type.gsub(%r{^.*/}, ''),
               url:     base_url
-            } if result[:http].code.eql?('401') && result[:http]['WWW-Authenticate']&.include?('realm="Bridges"')
-            return nil
+            }
           end
         end
         ACTIONS = %i[health bridges].freeze
