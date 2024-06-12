@@ -100,7 +100,7 @@ module Aspera
             return Main.result_status('modified')
           when :entitlement
             ak = ats_api_pub_v1.read("access_keys/#{access_key_id}")[:data]
-            api_bss = Api::AoC.metering_api(ak['license']['entitlement_id'], ak['license']['customer_id'])
+            api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
             return {type: :single_object, data: api_bss.read('entitlement')[:data]}
           when :delete
             ats_api_pub_v1.delete("access_keys/#{access_key_id}")

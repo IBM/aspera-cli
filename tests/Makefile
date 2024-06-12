@@ -215,15 +215,15 @@ $(T)shares_4: $(T)shares_3
 	@$(STOP_TEST) $@
 $(T)shares_5: $(T)shares_4
 	@$(START_TEST) $@
-	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 $(TST_ASC_LCL_PATH) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy"}'
+	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 $(TST_ASC_LCL_PATH) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
 	@$(STOP_TEST) $@
 $(T)shares_6: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 'faux:///testfile?1m' --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 'faux:///testfile?1m' --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 	@$(STOP_TEST) $@
 $(T)shares_7: $(T)shares_5
 	@$(START_TEST) $@
-	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"https://@preset:misc.http_gw_fqdn_port@/aspera/http-gwy"}'
+	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
 	@$(STOP_TEST) $@
 $(T)shares_8: $(T)shares_7
 	@$(START_TEST) $@
@@ -1698,3 +1698,32 @@ $(T)f5_postproc: $(T).exists
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################
+$(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_detect))
+$(T)httpgw_nagios: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) httpgw health
+	@$(STOP_TEST) $@
+$(T)httpgw_detect: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) config detect @preset:tst_httpgw.url httpgw
+	@$(STOP_TEST) $@
+#######################################################################################################################
+$(eval $(call test_suite_all,tfio,$(T)faspio_detect $(T)faspio_nagios $(T)faspio_blist))
+$(T)faspio_detect: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) config detect @preset:tst_faspio.url faspio
+	@$(STOP_TEST) $@
+$(T)faspio_nagios: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspio health
+	@$(STOP_TEST) $@
+$(T)faspio_blist: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspio bridges list
+	@$(STOP_TEST) $@
+#######################################################################################################################
+$(eval $(call test_suite_all,alee,$(T)alee_nagios))
+$(T)alee_nagios: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) alee health
+	@$(STOP_TEST) $@

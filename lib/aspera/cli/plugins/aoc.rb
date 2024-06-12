@@ -62,12 +62,12 @@ module Aspera
             # no protocol ?
             base_url = "https://#{base_url}" unless base_url.match?(%r{^[a-z]{1,6}://})
             # only org provided ?
-            base_url = "#{base_url}.#{Api::AoC::PROD_DOMAIN}" unless base_url.include?('.')
+            base_url = "#{base_url}.#{Api::SAAS_DOMAIN_PROD}" unless base_url.include?('.')
             # AoC is only https
             return nil unless base_url.start_with?('https://')
             result = Rest.new(base_url: base_url, redirect_max: 10).read('')
             # Any AoC is on this domain
-            return nil unless result[:http].uri.host.end_with?(Api::AoC::PROD_DOMAIN)
+            return nil unless result[:http].uri.host.end_with?(Api::SAAS_DOMAIN_PROD)
             Log.log.debug{"AoC Main page: #{result[:http].body.include?(Api::AoC::PRODUCT_NAME)}"}
             base_url = result[:http].uri.to_s if result[:http].uri.path.include?('/public')
             # either in standard domain, or product name in page

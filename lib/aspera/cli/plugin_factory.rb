@@ -6,7 +6,6 @@ module Aspera
     # option is retrieved from another object using accessor
     class PluginFactory
       include Singleton
-      attr_reader :lookup_folders, :plugins
 
       RUBY_FILE_EXT = '.rb'
       PLUGINS_MODULE = 'Plugins'
@@ -20,8 +19,11 @@ module Aspera
         end
       end
 
+      attr_reader :lookup_folders, :plugins
+
       def initialize
         @lookup_folders = []
+        # information on plugins
         @plugins = {}
       end
 

@@ -2,6 +2,7 @@
 
 require 'aspera/rest'
 require 'aspera/api/httpgw'
+require 'aspera/nagios'
 
 module Aspera
   module Cli
@@ -22,7 +23,7 @@ module Aspera
             return nil
           end
         end
-        ACTIONS = %i[info].freeze
+        ACTIONS = %i[health info].freeze
 
         def initialize(**env)
           super
@@ -32,10 +33,19 @@ module Aspera
 
         def execute_action
           base_url = options.get_option(:url, mandatory: true)
-          api_v1 = Api::Httpgw.new(url: base_url)
           command = options.get_next_command(ACTIONS)
           case command
+          when :health
+            nagios = Nagios.new
+            begin
+              Api::Httpgw.new(url: base_url)
+              nagios.add_ok('api', 'answered ok')
+            rescue StandardError => e
+              nagios.add_critical('api', e.to_s)
+            end
+            return nagios.result
           when :info
+            api_v1 = Api::Httpgw.new(url: base_url)
             return {type: :single_object, data: api_v1.info}
           end
         end

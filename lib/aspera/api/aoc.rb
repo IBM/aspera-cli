@@ -12,11 +12,21 @@ require 'cgi'
 
 module Aspera
   module Api
+    SAAS_DOMAIN_PROD = 'ibmaspera.com'
+    class Alee < Aspera::Rest
+      def initialize(entitlement_id, customer_id, api_domain: SAAS_DOMAIN_PROD, version: 'v1')
+        super(
+          base_url: "https://api.#{api_domain}/metering/#{version}",
+          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
+        )
+      end
+    end
+
     class AoC < Aspera::Rest
       PRODUCT_NAME = 'Aspera on Cloud'
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
-      PROD_DOMAIN = 'ibmaspera.com' # cspell:disable-line
+      SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
       # to avoid infinite loop in pub link redirection
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
@@ -63,20 +73,13 @@ module Aspera
         end
 
         # base API url depends on domain, which could be "qa.xxx"
-        def api_base_url(organization: 'api', api_domain: PROD_DOMAIN)
+        def api_base_url(organization: 'api', api_domain: SAAS_DOMAIN_PROD)
           return "https://#{organization}.#{api_domain}"
-        end
-
-        def metering_api(entitlement_id, customer_id, api_domain=PROD_DOMAIN)
-          return Rest.new(
-            base_url: "#{api_base_url(api_domain: api_domain)}/metering/v1",
-            headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
-          )
         end
 
         # split host of http://myorg.asperafiles.com in org and domain
         def url_parts(uri)
-          raise "No host found in URL.Please check URL format: https://myorg.#{PROD_DOMAIN}" if uri.host.nil?
+          raise "No host found in URL.Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" if uri.host.nil?
           parts = uri.host.split('.', 2)
           Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
           return parts

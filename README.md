@@ -1898,6 +1898,8 @@ detect https://faspex4.example.com/path
 detect https://faspex5.example.com/path
 detect https://node.example.com/path
 detect https://shares.example.com/path shares
+detect https://tst.example.com/path faspio
+detect https://tst.example.com/path httpgw
 detect my_org aoc
 doc
 doc transfer-parameters
@@ -2879,6 +2881,8 @@ ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"h
 
 > **Note:** The gateway only supports transfers authorized with a token.
 
+If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer_info` becomes optional.
+
 #### Agent: Transfer SDK
 
 Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
@@ -3624,6 +3628,18 @@ OPTIONS:
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
+COMMAND: faspio
+SUBCOMMANDS: bridges health
+OPTIONS:
+        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
+        --username=VALUE             User's name to log in
+        --password=VALUE             User's password
+        --auth=ENUM                  OAuth type of authentication: jwt, basic
+        --client-id=VALUE            OAuth client identifier
+        --private-key=VALUE          OAuth JWT RSA private key PEM value (prefix file path with @file:)
+        --passphrase=VALUE           OAuth JWT RSA private key passphrase
+
+
 COMMAND: orchestrator
 SUBCOMMANDS: health info plugins processes workflow
 OPTIONS:
@@ -3636,16 +3652,8 @@ OPTIONS:
         --auth-style=ENUM            Authentication type: arg_pass, [head_basic], apikey
 
 
-COMMAND: bss
-SUBCOMMANDS: subscription
-OPTIONS:
-        --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
-        --username=VALUE             User's name to log in
-        --password=VALUE             User's password
-
-
 COMMAND: alee
-SUBCOMMANDS: entitlement
+SUBCOMMANDS: entitlement health
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User's name to log in
@@ -3694,7 +3702,7 @@ OPTIONS:
 
 
 COMMAND: httpgw
-SUBCOMMANDS: info
+SUBCOMMANDS: health info
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://app.example.com/aspera/app
 
@@ -6497,10 +6505,10 @@ admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 files browse /
 files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
-files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
-files upload --to-folder=my_share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
-files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://my_http_gw_fqdn_port/aspera/http-gwy"}'
+files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 health
 ```
 
@@ -6652,6 +6660,39 @@ node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my
 node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
 node info --log-level=trace2
 node upload test_file.bin
+```
+
+## Plugin: `httpgw`: HTTP Gateway
+
+### Httpgw sample commands
+
+> **Note:** Add `ascli httpgw` in front of the commands:
+
+```bash
+health
+```
+
+## Plugin: `faspio`: Faspio Gateway
+
+### Faspio sample commands
+
+> **Note:** Add `ascli faspio` in front of the commands:
+
+```bash
+bridges list
+health
+```
+
+## Plugin: `alee`: Aspera License Entitlement Engine
+
+Retrieve information on subscription.
+
+### Alee sample commands
+
+> **Note:** Add `ascli alee` in front of the commands:
+
+```bash
+health
 ```
 
 ## Plugin: `preview`: Preview generator for AoC

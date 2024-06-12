@@ -8,6 +8,8 @@
 # get transfer spec parameter description
 require 'aspera/transfer/parameters'
 require 'aspera/cli/info'
+require 'aspera/cli/plugin_factory'
+require 'aspera/cli/plugins/config'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -141,6 +143,7 @@ REPLACEMENTS = [
   ['"my_password"', '"my_password_here"']
 ].freeze
 
+# @return [Hash] all test commands with key by plugin
 def all_test_commands_by_plugin
   if @commands.nil?
     commands = {}
@@ -166,9 +169,9 @@ def all_test_commands_by_plugin
 end
 
 def include_commands_for_plugin(plugin_name)
-  commands = all_test_commands_by_plugin[plugin_name.to_s]
+  commands = all_test_commands_by_plugin.delete(plugin_name.to_s)
   raise "plugin #{plugin_name} not found in test makefile" if commands.nil?
-  all_test_commands_by_plugin.delete(plugin_name.to_s)
+  @undocumented_plugins.delete(plugin_name.to_sym)
   return "### #{plugin_name.capitalize} sample commands\n\n> **Note:** Add `#{cmd} #{plugin_name}` in front of the commands:\n\n```bash\n#{commands.join("\n")}\n```"
 end
 
@@ -251,12 +254,20 @@ end
 
 # main function to generate README.md
 def generate_doc
+  # parameters
   @env = {}
   %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC].each do |var|
     @env[var] = ARGV.shift
     raise "Missing arg: #{var}" if @env[var].nil?
   end
+  # get current plugins
+  plugin_manager = Aspera::Cli::PluginFactory.instance
+  plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
+  plugin_manager.add_plugins_from_lookup_folders
+  @undocumented_plugins = plugin_manager.plugins.keys
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
+  $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}")
+  # check that all test commands are included in the doc
   if !all_test_commands_by_plugin.empty?
     $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
     raise 'Remediate: remove from doc using EXE_NO_MAN or add section in doc'

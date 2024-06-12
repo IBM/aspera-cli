@@ -5,7 +5,8 @@
   * New Features:
     * `faspex5`: added command `admin configuration` for global parameters.
     * `node`: "gen3" browse now returns all elements using pages, and supports option `query` with parameter `recursive`, `max`, `self`.
-    * `httpgw`: new plugin, mainly to detect the GW.
+    * `httpgw`: new plugin, detect the GW.
+    * `faspio`: new plugin, configure bridges.
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:
@@ -13,6 +14,7 @@
     * `faspex5` : `admin resource` is deprecated, use just `admin`.
     * **global**: option `value` is deprecated and replaced with option `query` when used in generic commands: `delete` and `list`, as well as node ak browse, node stream and watch folder list. (#142)
     * **global**: option `warnings` (and short `w`) is removed. To get ruby warnings invoke with `ruby -w .../ascli ...`. See `Makefile` in `test`
+    * **bss**: Removed unused plugin.
 
 * 4.17.0
 

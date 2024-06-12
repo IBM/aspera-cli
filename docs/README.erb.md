@@ -2790,6 +2790,8 @@ Example:
 
 > **Note:** The gateway only supports transfers authorized with a token.
 
+If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then <%=tool%> will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer_info` becomes optional.
+
 #### Agent: Transfer SDK
 
 Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
@@ -5784,6 +5786,20 @@ A subset of `node` plugin operations are supported, basically node API:
 > **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file instead.
 
 <%=include_commands_for_plugin('cos')%>
+
+## Plugin: `httpgw`: HTTP Gateway
+
+<%=include_commands_for_plugin('httpgw')%>
+
+## Plugin: `faspio`: Faspio Gateway
+
+<%=include_commands_for_plugin('faspio')%>
+
+## Plugin: `alee`: Aspera License Entitlement Engine
+
+Retrieve information on subscription.
+
+<%=include_commands_for_plugin('alee')%>
 
 ## Plugin: `preview`: Preview generator for AoC
 
