@@ -47,6 +47,15 @@ module Aspera
             'if you provide a path: prefix with @file:',
             'e.g. --private-key=@file:/path/to/key.pem'
           ]
+        },
+        {
+          exception:   RuntimeError,
+          match:       /unexpected last event type: INIT/,
+          remediation: [
+            'ascp exited unexpectedly',
+            'it might be due to SSH handshake failure',
+            'one can check SSH connection using ssh command'
+          ]
         }
       ]
 
