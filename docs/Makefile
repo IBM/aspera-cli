@@ -77,3 +77,5 @@ clean_uml: clean_doc
 check_tools:
 	$(XUMLIDOT) >/dev/null 2>&1;\
 	if test $$? -eq 127;then echo "xumlidot not found, please install it with 'gem install xumlidot'";exit 1;fi
+show_erb:
+	sed -nEe 's/.*<%=([^>(.%]+).*/\1/p' < $(DIR_DOC)README.erb.md|sort -u
