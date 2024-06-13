@@ -4,6 +4,7 @@ require 'uri'
 require 'aspera/rest'
 
 module Aspera
+  # read some content from some URI, support file: , http: and https: schemes
   module UriReader
     class << self
       # read some content from some URI, support file: , http: and https: schemes

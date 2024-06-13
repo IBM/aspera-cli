@@ -7,6 +7,7 @@ require 'aspera/assert'
 require 'openssl'
 
 module Aspera
+  # Simple WEBrick server with HTTPS support
   class WebServerSimple < WEBrick::HTTPServer
     CERT_PARAMETERS = %i[key cert chain].freeze
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
@@ -18,8 +19,8 @@ module Aspera
       # generates and adds self signed cert to provided webrick options
       def fill_self_signed_cert(cert, key, digest = 'SHA256')
         cert.subject = cert.issuer = OpenSSL::X509::Name.parse(GENERIC_ISSUER)
-        cert.not_before = Time.now
-        cert.not_after = Time.now + ONE_YEAR_SECONDS
+        cert.not_before = cert.not_after = Time.now
+        cert.not_after += ONE_YEAR_SECONDS
         cert.public_key = key.public_key
         cert.serial = 0x0
         cert.version = 2
@@ -56,7 +57,7 @@ module Aspera
         else
           Aspera.assert_type(certificate, Hash)
           certificate = certificate.symbolize_keys
-          raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|k|!CERT_PARAMETERS.include?(k)}
+          raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|key|!CERT_PARAMETERS.include?(key)}
           webrick_options[:SSLPrivateKey] = if certificate.key?(:key)
             OpenSSL::PKey::RSA.new(File.read(certificate[:key]))
           else

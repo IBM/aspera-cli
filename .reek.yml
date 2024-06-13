@@ -1,13 +1,15 @@
 ---
 detectors:
-  IrresponsibleModule:
+  DuplicateMethodCall:
+    exclude:
+      - /Log.log/
+  TooManyStatements:
+    max_statements: 20
+  FeatureEnvy:
     enabled: false
-
-directories:
-  "samples/three_clean_files/":
-    UtilityFunction:
-      enabled: false
-
-exclude_paths:
-  - "samples/two_smelly_files/"
-  - "samples/source_with_non_ruby_files/"
+  BooleanParameter:
+    enabled: false
+  NilCheck:
+    enabled: false
+  TooManyConstants:
+    enabled: false
