@@ -43,8 +43,8 @@ module Aspera
       # @param base_options [Hash] base options
       def initialize(
         url: AUTO_LOCAL_TCP_PORT,
-        external: false, 
-        keep:     false, 
+        external: false,
+        keep:     false,
         **base_options
       )
         super(**base_options)
