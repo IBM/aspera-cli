@@ -614,13 +614,12 @@ module Aspera
           check_only = check_only.to_sym unless check_only.nil?
           found_apps = []
           my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
-          PluginFactory.instance.plugins.each do |plugin_name_sym, plugin_info|
+          PluginFactory.instance.plugin_list.each do |plugin_name_sym|
             # no detection for internal plugin
             next if plugin_name_sym.eql?(my_self_plugin_sym)
             next if check_only && !check_only.eql?(plugin_name_sym)
             # load plugin class
-            require plugin_info[:require_stanza]
-            detect_plugin_class = PluginFactory.plugin_class(plugin_name_sym)
+            detect_plugin_class = PluginFactory.instance.plugin_class(plugin_name_sym)
             # requires detection method
             next unless detect_plugin_class.respond_to?(:detect)
             detection_info = nil
@@ -911,14 +910,13 @@ module Aspera
             case options.get_next_command(%i[list create])
             when :list
               result = []
-              PluginFactory.instance.plugins.each do |name, info|
-                require info[:require_stanza]
-                plugin_klass = PluginFactory.plugin_class(name)
+              PluginFactory.instance.plugin_list.each do |name|
+                plugin_klass = PluginFactory.instance.plugin_class(name)
                 result.push({
                   plugin: name,
                   detect: Formatter.tick(plugin_klass.respond_to?(:detect)),
                   wizard: Formatter.tick(plugin_klass.respond_to?(:wizard)),
-                  path:   info[:source]
+                  path:   PluginFactory.instance.plugin_source(name)
                 })
               end
               return {type: :object_list, data: result, fields: %w[plugin detect wizard path]}
@@ -1030,7 +1028,7 @@ module Aspera
           # set url for instantiation of plugin
           options.add_option_preset({url: wiz_url})
           # instantiate plugin: command line options will be known and wizard can be called
-          wiz_plugin_class = PluginFactory.plugin_class(identification[:product])
+          wiz_plugin_class = PluginFactory.instance.plugin_class(identification[:product])
           Aspera.assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument) do
             "Detected: #{identification[:product]}, but this application has no wizard"
           end

@@ -181,17 +181,16 @@ module Aspera
       def get_plugin_instance_with_options(plugin_name_sym, env=nil)
         env ||= @plug_init
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
-        require PluginFactory.instance.plugins[plugin_name_sym][:require_stanza]
         # load default params only if no param already loaded before plugin instantiation
-        env[:config].add_plugin_default_preset(plugin_name_sym)
         command_plugin = PluginFactory.instance.create(plugin_name_sym, **env)
+        env[:config].add_plugin_default_preset(plugin_name_sym)
         Log.log.debug{"got #{command_plugin.class}"}
         return command_plugin
       end
 
       def generate_bash_completion
         if options.get_next_argument('', expected: :multiple, mandatory: false).nil?
-          PluginFactory.instance.plugins.each_key{|p|puts p}
+          PluginFactory.instance.plugin_list.each{|p|puts p}
         else
           Log.log.warn('only first level completion so far')
         end
@@ -204,7 +203,7 @@ module Aspera
         formatter.display_message(:error, options.parser)
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
-          PluginFactory.instance.plugins.each_key do |plugin_name_sym|
+          PluginFactory.instance.plugin_list.each do |plugin_name_sym|
             next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @plug_init.clone
@@ -257,7 +256,7 @@ module Aspera
             if @option_show_config && options.command_or_arg_empty?
               CONF_PLUGIN_SYM
             else
-              options.get_next_command(PluginFactory.instance.plugins.keys.dup.unshift(:help))
+              options.get_next_command(PluginFactory.instance.plugin_list.unshift(:help))
             end
           # command will not be executed, but we need manual
           options.fail_on_missing_mandatory = false if @option_help || @option_show_config

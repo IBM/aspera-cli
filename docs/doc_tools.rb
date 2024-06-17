@@ -264,7 +264,7 @@ def generate_doc
   plugin_manager = Aspera::Cli::PluginFactory.instance
   plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
   plugin_manager.add_plugins_from_lookup_folders
-  @undocumented_plugins = plugin_manager.plugins.keys
+  @undocumented_plugins = plugin_manager.plugin_list
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
   $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}")
   # check that all test commands are included in the doc
