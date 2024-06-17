@@ -36,7 +36,11 @@ module Aspera
     def pac_dns_functions(context_host)
       context_self = '127.0.0.1'
       context_ip = nil
-      Resolv::DNS.open{|dns|dns.each_address(context_host){|r_addr|context_ip = r_addr.to_s if r_addr.is_a?(Resolv::IPv4)}}
+      Resolv::DNS.open do |dns|
+        dns.each_address(context_host) do |r_addr|
+          context_ip = r_addr.to_s if r_addr.is_a?(Resolv::IPv4)
+        end
+      end
       raise "DNS name not found: #{context_host}" if context_ip.nil?
       # NOTE: Javascript code here with string inclusions
       javascript = <<END_OF_JAVASCRIPT
