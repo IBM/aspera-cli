@@ -118,22 +118,24 @@ module Aspera
       attr_writer :fail_on_missing_mandatory
 
       def initialize(program_name)
-        # command line values not starting with '-'
+        # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
         # command line values starting with '-'
         @unprocessed_cmd_line_options = []
         # a copy of all initial options
         @initial_cli_options = []
-        # option description: key = option symbol, value=hash, :read_write, :accessor, :value, :accepted
+        # option description: key = option symbol, value=Hash, :read_write, :accessor, :value, :accepted
         @declared_options = {}
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
         # ask optional options if not provided and in interactive
         @ask_missing_optional = false
         @fail_on_missing_mandatory = true
-        # those must be set before parse, parse consumes those defined only
-        @unprocessed_defaults = []
-        @unprocessed_env = []
+        # Array of [key(sym), value]
+        # those must be set before parse
+        # parse consumes those defined only
+        @option_pairs_batch = {}
+        @option_pairs_env = {}
         # NOTE: was initially inherited but it is preferred to have specific methods
         @parser = OptionParser.new
         @parser.program_name = program_name
@@ -141,10 +143,10 @@ module Aspera
         env_prefix = program_name.upcase + OPTION_SEP_SYMBOL
         ENV.each do |k, v|
           if k.start_with?(env_prefix)
-            @unprocessed_env.push([k[env_prefix.length..-1].downcase.to_sym, v])
+            @option_pairs_env[k[env_prefix.length..-1].downcase.to_sym] = v
           end
         end
-        Log.log.debug{"env=#{@unprocessed_env}".red}
+        Log.log.debug{"env=#{@option_pairs_env}".red}
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
       end
@@ -237,6 +239,7 @@ module Aspera
       # ask interactively if requested/required
       # @param mandatory [Boolean] if true, raise error if option not set
       def get_option(option_symbol, mandatory: false, default: nil)
+        Aspera.assert_type(option_symbol, Symbol)
         attributes = @declared_options[option_symbol]
         Aspera.assert(attributes){"option not declared: #{option_symbol}"}
         result = nil
@@ -273,6 +276,7 @@ module Aspera
 
       # set an option value by name, either store value or call handler
       def set_option(option_symbol, value, where='code override')
+        Aspera.assert_type(option_symbol, Symbol)
         raise Cli::BadArgument, "Unknown option: #{option_symbol}" unless @declared_options.key?(option_symbol)
         attributes = @declared_options[option_symbol]
         Log.log.warn("#{option_symbol}: Option is deprecated: #{attributes[:deprecation]}") if attributes[:deprecation]
@@ -301,6 +305,7 @@ module Aspera
       # @param types [Class, Array] accepted value type(s)
       # @param block [Proc] block to execute when option is found
       def declare(option_symbol, description, handler: nil, default: nil, values: nil, short: nil, coerce: nil, types: nil, deprecation: nil, &block)
+        Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
@@ -373,11 +378,14 @@ module Aspera
 
       # Adds each of the keys of specified hash as an option
       # @param preset_hash [Hash] hash of options to add
-      def add_option_preset(preset_hash, op: :push)
+      def add_option_preset(preset_hash, where, override: true)
         Aspera.assert_type(preset_hash, Hash)
-        Log.log.debug{"add_option_preset=#{preset_hash}"}
-        # incremental override
-        preset_hash.each{|k, v|@unprocessed_defaults.send(op, [k.to_sym, v])}
+        Log.log.debug{"add_option_preset: #{preset_hash}"}
+        preset_hash.each do |k, v|
+          option_symbol = k.to_sym
+          @option_pairs_batch[option_symbol] = v unless !override && @declared_options[option_symbol]&.key?(:value)
+        end
+        consume_option_pairs(@option_pairs_batch, where)
       end
 
       # check if there were unprocessed values to generate error
@@ -430,8 +438,8 @@ module Aspera
       def parse_options!
         Log.log.debug('parse_options!'.red)
         # first conf file, then env var
-        apply_options_preset(@unprocessed_defaults, 'file')
-        apply_options_preset(@unprocessed_env, 'env')
+        consume_option_pairs(@option_pairs_batch, 'set')
+        consume_option_pairs(@option_pairs_env, 'env')
         # command line override
         unknown_options = []
         begin
@@ -512,23 +520,27 @@ module Aspera
         $stdout.isatty ? value.to_s.red.bold : "[#{value}]"
       end
 
-      def apply_options_preset(preset, where)
-        unprocessed = []
-        preset.each do |pair|
-          k, v = *pair
+      # try to evaluate options set ib batch
+      # @param preset_pairs [Array] list of options to apply (key_sym,value)
+      # @param where [String] where the options come from
+      def consume_option_pairs(preset_pairs, where)
+        Log.log.debug{"consume_option_pairs: #{where}"}
+        processed = []
+        Log.log.debug{PP.pp(@declared_options.keys)}
+        preset_pairs.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
             if @declared_options[k].key?(:values) && v.is_a?(String)
-              v = self.class.get_from_list(v, k.to_s + " in #{where}", @declared_options[k][:values])
+              v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k][:values])
             end
             set_option(k, v, where)
+            processed.push(k)
           else
-            unprocessed.push(pair)
+            Log.log.debug{"unprocessed: #{k}=#{v}"}
           end
         end
         # keep only unprocessed values for next parse
-        preset.clear
-        preset.push(*unprocessed)
+        processed.each{|k|preset_pairs.delete(k)}
       end
     end
   end

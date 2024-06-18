@@ -454,7 +454,7 @@ module Aspera
         def add_plugin_default_preset(plugin_name_sym)
           default_config_name = get_plugin_default_config_name(plugin_name_sym)
           Log.log.debug{"add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}"}
-          options.add_option_preset(preset_by_name(default_config_name), op: :unshift) unless default_config_name.nil?
+          options.add_option_preset(preset_by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
           return nil
         end
 
@@ -540,12 +540,12 @@ module Aspera
 
         def option_preset=(value)
           case value
-          when String
-            options.add_option_preset(preset_by_name(value))
           when Hash
-            options.add_option_preset(value)
+            options.add_option_preset(value, 'set')
+          when String
+            options.add_option_preset(preset_by_name(value), 'set_by_name')
           else
-            raise 'Preset definition must be a String for name, or Hash for value'
+            raise 'Preset definition must be a String for preset name, or Hash for set of values'
           end
         end
 
@@ -1022,11 +1022,11 @@ module Aspera
             answer = options.prompt_user_input_in_list('product', apps.map{|a|a[:product]})
             apps.find{|a|a[:product].eql?(answer)}
           end
-          wiz_url = identification[:url]
           Log.log.debug{Log.dump(:identification, identification)}
+          wiz_url = identification[:url]
           formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
           # set url for instantiation of plugin
-          options.add_option_preset({url: wiz_url})
+          options.add_option_preset({url: wiz_url}, 'wizard')
           # instantiate plugin: command line options will be known and wizard can be called
           wiz_plugin_class = PluginFactory.instance.plugin_class(identification[:product])
           Aspera.assert(wiz_plugin_class.respond_to?(:wizard), exception_class: Cli::BadArgument) do
