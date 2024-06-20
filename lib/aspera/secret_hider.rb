@@ -25,10 +25,8 @@ module Aspera
       /(?<begin> (?:#{ASCP_ENV_SECRETS.join('|')})=)(\\.|[^ ])*(?<end> )/,
       # rendered JSON or Ruby
       /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>?(?:=>|:) *")[^"]+(?<end>")/,
-      # option "secret"
-      /(?<begin>"[^"]*(secret)[^"]*"=>{)[^}]+(?<end>})/,
-      # option "secrets"
-      /(?<begin>(secrets)={)[^}]+(?<end>})/,
+      # logged data
+      /(?<begin>(?:#{ALL_SECRETS.join('|')})[ =:]+).*(?<end>$)/,
       # private key values
       /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)/,
       # cred in http dump
