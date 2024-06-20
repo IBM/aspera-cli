@@ -182,9 +182,8 @@ module Aspera
         env ||= @plug_init
         Log.log.debug{"get_plugin_instance_with_options(#{plugin_name_sym})"}
         # load default params only if no param already loaded before plugin instantiation
-        command_plugin = PluginFactory.instance.create(plugin_name_sym, **env)
         env[:config].add_plugin_default_preset(plugin_name_sym)
-        Log.log.debug{"got #{command_plugin.class}"}
+        command_plugin = PluginFactory.instance.create(plugin_name_sym, **env)
         return command_plugin
       end
 

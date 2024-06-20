@@ -380,10 +380,10 @@ module Aspera
       # @param preset_hash [Hash] hash of options to add
       def add_option_preset(preset_hash, where, override: true)
         Aspera.assert_type(preset_hash, Hash)
-        Log.log.debug{"add_option_preset: #{preset_hash}"}
+        Log.log.debug{"add_option_preset: #{preset_hash}, #{where}, #{override}"}
         preset_hash.each do |k, v|
           option_symbol = k.to_sym
-          @option_pairs_batch[option_symbol] = v unless !override && @declared_options[option_symbol]&.key?(:value)
+          @option_pairs_batch[option_symbol] = v if override || !@option_pairs_batch.key?(option_symbol)
         end
         consume_option_pairs(@option_pairs_batch, where)
       end
@@ -526,7 +526,6 @@ module Aspera
       def consume_option_pairs(preset_pairs, where)
         Log.log.debug{"consume_option_pairs: #{where}"}
         processed = []
-        Log.log.debug{PP.pp(@declared_options.keys)}
         preset_pairs.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
@@ -536,7 +535,7 @@ module Aspera
             set_option(k, v, where)
             processed.push(k)
           else
-            Log.log.debug{"unprocessed: #{k}=#{v}"}
+            Log.log.debug{"unprocessed: #{k}: #{v}"}
           end
         end
         # keep only unprocessed values for next parse
