@@ -173,8 +173,7 @@ module Aspera
         return exe_version
       end
 
-      def ascp_info
-        data = file_paths
+      def ascp_add_pvcl(data)
         # read PATHs from ascp directly, and pvcl modules as well
         Open3.popen3(data['ascp'], '-DDL-') do |_stdin, _stdout, stderr, thread|
           last_line = ''
@@ -202,15 +201,24 @@ module Aspera
             raise last_line
           end
         end
-        # ascp's openssl directory
+      end
+
+      # extract some stings from ascp binary
+      def ascp_add_openssl(data)
         ascp_file = data['ascp']
-        File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |match|
-          if (m = match.match(/OPENSSLDIR.*"(.*)"/))
+        File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |bin_string|
+          if (m = bin_string.match(/OPENSSLDIR.*"(.*)"/))
             data['openssldir'] = m[1]
+          elsif (m = bin_string.match(/OpenSSL (\d+\.\d+\.\d+)/))
+            data['openssl_version'] = m[1]
           end
         end if File.file?(ascp_file)
-        # log is "-" no need to display
-        data.delete('log')
+      end
+
+      def ascp_info
+        data = file_paths
+        ascp_add_pvcl(data)
+        ascp_add_openssl(data)
         return data
       end
 
