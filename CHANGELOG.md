@@ -7,6 +7,7 @@
     * `node`: "gen3" browse now returns all elements using pages, and supports option `query` with parameter `recursive`, `max`, `self`.
     * `httpgw`: new plugin, detect the GW.
     * `faspio`: new plugin, configure bridges.
+    * `config`: `ascp info` also shows the version of the openssl library used by `ascp`.
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:

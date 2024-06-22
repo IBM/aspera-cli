@@ -206,10 +206,10 @@ module Aspera
       # extract some stings from ascp binary
       def ascp_add_openssl(data)
         ascp_file = data['ascp']
-        File.binread(ascp_file).scan(/[\x20-\x7E]{4,}/) do |bin_string|
+        File.binread(ascp_file).scan(/[\x20-\x7E]{10,}/) do |bin_string|
           if (m = bin_string.match(/OPENSSLDIR.*"(.*)"/))
             data['openssldir'] = m[1]
-          elsif (m = bin_string.match(/OpenSSL (\d+\.\d+\.\d+)/))
+          elsif (m = bin_string.match(/OpenSSL (\d[^ -]+)/))
             data['openssl_version'] = m[1]
           end
         end if File.file?(ascp_file)
