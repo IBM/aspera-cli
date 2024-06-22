@@ -385,7 +385,6 @@ module Aspera
           option_symbol = k.to_sym
           @option_pairs_batch[option_symbol] = v if override || !@option_pairs_batch.key?(option_symbol)
         end
-        consume_option_pairs(@option_pairs_batch, where)
       end
 
       # check if there were unprocessed values to generate error
@@ -521,25 +520,27 @@ module Aspera
       end
 
       # try to evaluate options set ib batch
-      # @param preset_pairs [Array] list of options to apply (key_sym,value)
+      # @param unprocessed_options [Array] list of options to apply (key_sym,value)
       # @param where [String] where the options come from
-      def consume_option_pairs(preset_pairs, where)
+      def consume_option_pairs(unprocessed_options, where)
         Log.log.debug{"consume_option_pairs: #{where}"}
-        processed = []
-        preset_pairs.each do |k, v|
+        options_to_set = {}
+        unprocessed_options.each do |k, v|
           if @declared_options.key?(k)
             # constrained parameters as string are revert to symbol
             if @declared_options[k].key?(:values) && v.is_a?(String)
               v = self.class.get_from_list(v, "#{k} in #{where}", @declared_options[k][:values])
             end
-            set_option(k, v, where)
-            processed.push(k)
+            options_to_set[k] = v
           else
             Log.log.debug{"unprocessed: #{k}: #{v}"}
           end
         end
-        # keep only unprocessed values for next parse
-        processed.each{|k|preset_pairs.delete(k)}
+        options_to_set.each do |k, v|
+          set_option(k, v, where)
+          # keep only unprocessed values for next parse
+          unprocessed_options.delete(k)
+        end
       end
     end
   end
