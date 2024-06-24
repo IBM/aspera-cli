@@ -2437,21 +2437,27 @@ Refer to the following sections.
 
 #### Proxy for REST and HTTP Gateway
 
-REST API calls and transfers based on HTTP Gateway both use Ruby `Net::HTTP` gem.
-
-There are two possibilities to define an HTTP proxy to be used when Ruby HTTP is used.
-
-The `http_proxy` environment variable (**lower case**, preferred) can be set to the URL of the proxy.
-E.g. `http://myproxy.org.net:3128`.
+REST API calls and transfers based on HTTP Gateway both use Ruby's `Net::HTTP` class.
 Refer to [Ruby find proxy](https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy).
 
-> **Note:** Ruby expects a URL and `myproxy.org.net:3128` alone is **not** accepted.
+When Ruby HTTP is used, there are two possibilities to define an HTTP proxy to be used .
+
+The `http_proxy` environment variable (**lower case**) can be set to the **URL** of the proxy (with optional credentials).
+Syntax is: `(http|https)://[user:password@]host:port`.
+E.g. `http://myproxy.org.net:3128`.
+
+> **Note:** Ruby expects a URL and `myproxy.org.net:3128` alone is **not** valid.
+
+Credentials for proxy are optional but can also be specified:
 
 ```bash
-export http_proxy=http://proxy.example.com:3128
+export http_proxy=http://user:password@proxy.example.com:3128
 ```
 
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
+
+Note that proxy credentials are not supported in PAC files.
+
 To read the script from a URL (`http:`, `https:` and `file:`), use prefix: `@uri:`.
 A minimal script can be specified to define the use of a local proxy:
 

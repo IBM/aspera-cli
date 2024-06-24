@@ -2629,29 +2629,34 @@ different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <h3 data-number="4.18.1" id="proxy-for-rest-and-http-gateway"><span
 class="header-section-number">4.18.1</span> Proxy for REST and HTTP
 Gateway</h3>
-<p>REST API calls and transfers based on HTTP Gateway both use Ruby
-<code>Net::HTTP</code> gem.</p>
-<p>There are two possibilities to define an HTTP proxy to be used when
-Ruby HTTP is used.</p>
-<p>The <code>http_proxy</code> environment variable (<strong>lower
-case</strong>, preferred) can be set to the URL of the proxy. E.g.
-<code>http://myproxy.org.net:3128</code>. Refer to <a
+<p>REST API calls and transfers based on HTTP Gateway both use Ruby’s
+<code>Net::HTTP</code> class. Refer to <a
 href="https://rubyapi.org/3.0/o/uri/generic#method-i-find_proxy">Ruby
 find proxy</a>.</p>
+<p>When Ruby HTTP is used, there are two possibilities to define an HTTP
+proxy to be used .</p>
+<p>The <code>http_proxy</code> environment variable (<strong>lower
+case</strong>) can be set to the <strong>URL</strong> of the proxy (with
+optional credentials). Syntax is:
+<code>(http|https)://[user:password@]host:port</code>. E.g.
+<code>http://myproxy.org.net:3128</code>.</p>
 <blockquote>
 <p><strong>Note:</strong> Ruby expects a URL and
 <code>myproxy.org.net:3128</code> alone is <strong>not</strong>
-accepted.</p>
+valid.</p>
 </blockquote>
+<p>Credentials for proxy are optional but can also be specified:</p>
 <div class="sourceCode" id="cb191"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://proxy.example.com:3128</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">http_proxy</span><span class="op">=</span>http://user:password@proxy.example.com:3128</span></code></pre></div>
 <p>Alternatively, the <code>fpac</code> option (function for proxy auto
 config) can be set to a <a
 href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto
-Configuration (PAC)</a> javascript value. To read the script from a URL
-(<code>http:</code>, <code>https:</code> and <code>file:</code>), use
-prefix: <code>@uri:</code>. A minimal script can be specified to define
-the use of a local proxy:</p>
+Configuration (PAC)</a> javascript value.</p>
+<p>Note that proxy credentials are not supported in PAC files.</p>
+<p>To read the script from a URL (<code>http:</code>,
+<code>https:</code> and <code>file:</code>), use prefix:
+<code>@uri:</code>. A minimal script can be specified to define the use
+of a local proxy:</p>
 <div class="sourceCode" id="cb192"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb192-1"><a href="#cb192-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url, host){return &quot;PROXY localhost:3128&quot;}&#39;</span> ...</span></code></pre></div>
 <p>The result of a PAC file can be tested with command:
