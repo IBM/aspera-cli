@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore initdemo genkey pubkey asperasoft
+# cspell:ignore initdemo genkey pubkey asperasoft filelists
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/version'
@@ -164,7 +164,6 @@ module Aspera
           @option_http_options = {}
           @ssl_warned_urls = []
           @option_cache_tokens = true
-          @proxy_credentials = nil
           @main_folder = nil
           @option_config_file = nil
           # store is used for ruby https
@@ -231,9 +230,10 @@ module Aspera
           options.declare(:silent_insecure, 'Issue a warning if certificate is ignored', values: :bool, handler: {o: self, m: :option_warn_insecure_cert}, default: :yes)
           options.declare(:cert_stores, 'List of folder with trusted certificates', types: [Array, String], handler: {o: self, m: :trusted_cert_locations})
           options.declare(:http_options, 'Options for HTTP/S socket', types: Hash, handler: {o: self, m: :option_http_options}, default: {})
+          options.declare(:http_proxy, 'URL for HTTP proxy with optional credentials', types: String, handler: {o: self, m: :option_http_proxy})
           options.declare(:cache_tokens, 'Save and reuse OAuth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials (user and password)', types: Array)
+          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac. Array: user,password', types: Array)
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
@@ -256,20 +256,21 @@ module Aspera
           end
           pac_script = options.get_option(:fpac)
           # create PAC executor
-          @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic unless pac_script.nil?
-          proxy_user_pass = options.get_option(:proxy_credentials)
-          if !proxy_user_pass.nil?
-            Aspera.assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
-            @proxy_credentials = {user: proxy_user_pass[0], pass: proxy_user_pass[1]}
-            @pac_exec.proxy_user = @proxy_credentials[:user]
-            @pac_exec.proxy_pass = @proxy_credentials[:pass]
+          if !pac_script.nil?
+            @pac_exec = ProxyAutoConfig.new(pac_script).register_uri_generic
+            proxy_user_pass = options.get_option(:proxy_credentials)
+            if !proxy_user_pass.nil?
+              Aspera.assert(proxy_user_pass.length.eql?(2), exception_class: Cli::BadArgument){"proxy_credentials shall have two elements (#{proxy_user_pass.length})"}
+              @pac_exec.proxy_user = proxy_user_pass[0]
+              @pac_exec.proxy_pass = proxy_user_pass[1]
+            end
           end
           Rest.set_parameters(
             user_agent:  PROGRAM_NAME,
             session_cb:  lambda{|http_session|update_http_session(http_session)},
             progress_bar: @progress_bar)
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists') # cspell: disable-line
+          Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
           RestErrorsAspera.register_handlers
@@ -331,6 +332,15 @@ module Aspera
           return locations
         end
 
+        def option_http_proxy
+          return ENV['http_proxy']
+        end
+
+        def option_http_proxy=(value)
+          URI.parse(value)
+          ENV['http_proxy'] = value
+        end
+
         def option_ignore_cert_host_port=(url_list)
           url_list.each do |url|
             uri = URI.parse(url)
@@ -366,10 +376,6 @@ module Aspera
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           http_session.cert_store = @certificate_store if @certificate_store
           Log.log.debug{"using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
-          if @proxy_credentials
-            http_session.proxy_user = @proxy_credentials[:user]
-            http_session.proxy_pass = @proxy_credentials[:pass]
-          end
           @option_http_options.each do |k, v|
             method = "#{k}=".to_sym
             # check if accessor is a method of Net::HTTP
@@ -911,11 +917,11 @@ module Aspera
             when :list
               result = []
               PluginFactory.instance.plugin_list.each do |name|
-                plugin_klass = PluginFactory.instance.plugin_class(name)
+                plugin_class = PluginFactory.instance.plugin_class(name)
                 result.push({
                   plugin: name,
-                  detect: Formatter.tick(plugin_klass.respond_to?(:detect)),
-                  wizard: Formatter.tick(plugin_klass.respond_to?(:wizard)),
+                  detect: Formatter.tick(plugin_class.respond_to?(:detect)),
+                  wizard: Formatter.tick(plugin_class.respond_to?(:wizard)),
                   path:   PluginFactory.instance.plugin_source(name)
                 })
               end

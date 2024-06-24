@@ -188,7 +188,7 @@ It is possible to install **either** directly on the host operating system (Linu
 The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby)
-- [aspera-cli](#ruby-gem-aspera-cli)
+- [aspera-cli](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
 - [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
 
 Ruby version: >= 2.6.
@@ -253,7 +253,7 @@ Install the chosen pre-compiled Ruby version:
 rvm install 3.2.2
 ```
 
-Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli).
+Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli). <!-- markdownlint-disable-line -->
 
 Alternatively RVM can be installed system-wide, for this execute as `root`.
 It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
@@ -2454,6 +2454,12 @@ Credentials for proxy are optional but can also be specified:
 export http_proxy=http://user:password@proxy.example.com:3128
 ```
 
+Option `http_proxy` does the same (set env var) but on command line:
+
+```bash
+ascli --http-proxy=http://username:password@host:port ...
+```
+
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
 
 Note that proxy credentials are not supported in PAC files.
@@ -2492,7 +2498,7 @@ ascli config proxy_check --fpac=@uri:http://server/proxy.pac http://www.example.
 PROXY proxy.example.com:8080
 ```
 
-If the proxy requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
+If the proxy found with the PAC requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
 
 ```bash
 ascli --proxy-credentials=@json:'["__username_here__","__password_here__"]' ...
@@ -3613,9 +3619,10 @@ OPTIONS:
         --silent-insecure=ENUM       Issue a warning if certificate is ignored: no, [yes]
         --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
         --http-options=VALUE         Options for HTTP/S socket (Hash)
+        --http-proxy=VALUE           URL for HTTP proxy with optional credentials (String)
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials (user and password) (Array)
+        --proxy-credentials=VALUE    HTTP proxy credentials for fpac. Array: user,password (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)

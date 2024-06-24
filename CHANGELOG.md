@@ -8,6 +8,7 @@
     * `httpgw`: new plugin, detect the GW.
     * `faspio`: new plugin, configure bridges.
     * `config`: `ascp info` also shows the version of the openssl library used by `ascp`.
+    * **global**: added option `http_proxy`, as an alias to env var `http_proxy`.
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:

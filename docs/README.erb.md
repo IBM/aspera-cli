@@ -186,7 +186,7 @@ It is possible to install **either** directly on the host operating system (Linu
 The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby)
-- [<%=gemspec.name%>](#ruby-gem-aspera-cli)
+- [<%=gemspec.name%>](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
 - [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
 
 Ruby <%=ruby_version%>.
@@ -247,7 +247,7 @@ Install the chosen pre-compiled Ruby version:
 rvm install 3.2.2
 ```
 
-Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli).
+Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli). <!-- markdownlint-disable-line -->
 
 Alternatively RVM can be installed system-wide, for this execute as `root`.
 It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
@@ -2363,6 +2363,12 @@ Credentials for proxy are optional but can also be specified:
 export http_proxy=http://user:password@proxy.example.com:3128
 ```
 
+Option `http_proxy` does the same (set env var) but on command line:
+
+```bash
+<%=cmd%> --http-proxy=http://username:password@host:port ...
+```
+
 Alternatively, the `fpac` option (function for proxy auto config) can be set to a [Proxy Auto Configuration (PAC)](https://en.wikipedia.org/wiki/Proxy_auto-config) javascript value.
 
 Note that proxy credentials are not supported in PAC files.
@@ -2401,7 +2407,7 @@ PROXY proxy.example.com:8080
 PROXY proxy.example.com:8080
 ```
 
-If the proxy requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
+If the proxy found with the PAC requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
 
 ```bash
 <%=cmd%> --proxy-credentials=@json:'["__username_here__","__password_here__"]' ...
