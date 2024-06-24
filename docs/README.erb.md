@@ -2427,7 +2427,20 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 ### FASP configuration
 
-The `config` plugin also allows specification for the use of a local FASP **client**.
+<%=tool%> uses one of the transfer agents to execute transfers.
+
+By default it uses the `direct` agent, which is basically a local `ascp`.
+Nevertheless, <%=tool%> does not come with `ascp` installed.
+This is the reason why it is advised to install the Aspera Transfer SDK during installation (`<%=cmd%> conf ascp install`).
+
+By default, <%=tool%> uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
+
+The way to specify the location of `ascp` is to use either options:
+
+- `ascp_path`
+- `use_product`
+
+The `config` plugin allows to find and specify the location of `ascp`.
 It provides the following commands for `ascp` subcommand:
 
 - `show` : shows the path of `ascp` used
@@ -2461,7 +2474,7 @@ It provides the following commands for `ascp` subcommand:
 
 By default, <%=tool%> uses any found local product with `ascp`, including Transfer SDK.
 
-To temporarily use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
+To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
 For a permanent change, the command `config ascp use` sets the same option for the global default.
 
@@ -2491,7 +2504,10 @@ Saved to default global preset global_common_defaults
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
 
-#### List locally installed Aspera Transfer products
+If option `ascp_path` is not set, then the product identified with option `use_product` is used.
+
+If `use_product` is not set, then the first product found is used,
+this is equivalent to using option: `--use-product=FIRST`.
 
 Locally installed Aspera products can be listed with:
 
@@ -2509,10 +2525,6 @@ Locally installed Aspera products can be listed with:
 | IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
 +---------------------------------------+----------------------------------------+
 ```
-
-#### Selection of local client for `ascp` for [`direct`](#agent-direct) agent
-
-If no `ascp` is selected, this is equivalent to using option: `--use-product=FIRST`.
 
 Using the option `use_product` finds the `ascp` binary of the selected product.
 

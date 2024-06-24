@@ -2696,9 +2696,25 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--proxy&quot;,&quot;dnat://proxy.example.org:9091&quot;]}&#39;</span></span></code></pre></div>
 <h2 data-number="4.19" id="fasp-configuration"><span
 class="header-section-number">4.19</span> FASP configuration</h2>
-<p>The <code>config</code> plugin also allows specification for the use
-of a local FASP <strong>client</strong>. It provides the following
-commands for <code>ascp</code> subcommand:</p>
+<p><code>ascli</code> uses one of the transfer agents to execute
+transfers.</p>
+<p>By default it uses the <code>direct</code> agent, which is basically
+a local <code>ascp</code>. Nevertheless, <code>ascli</code> does not
+come with <code>ascp</code> installed. This is the reason why it is
+advised to install the Aspera Transfer SDK during installation
+(<code>ascli conf ascp install</code>).</p>
+<p>By default, <code>ascli</code> uses the <code>ascp</code> binary
+found in <strong>well known locations</strong>, i.e. typical Aspera
+product installation paths.</p>
+<p>The way to specify the location of <code>ascp</code> is to use either
+options:</p>
+<ul>
+<li><code>ascp_path</code></li>
+<li><code>use_product</code></li>
+</ul>
+<p>The <code>config</code> plugin allows to find and specify the
+location of <code>ascp</code>. It provides the following commands for
+<code>ascp</code> subcommand:</p>
 <ul>
 <li><code>show</code> : shows the path of <code>ascp</code> used</li>
 <li><code>use</code> : specify the ascp path to use</li>
@@ -2727,7 +2743,7 @@ class="header-section-number">4.19.2</span> Selection of
 href="#agent-direct"><code>direct</code></a> agent</h3>
 <p>By default, <code>ascli</code> uses any found local product with
 <code>ascp</code>, including Transfer SDK.</p>
-<p>To temporarily use an alternate <code>ascp</code> path use option
+<p>To override and use an alternate <code>ascp</code> path use option
 <code>ascp_path</code> (<code>--ascp-path=</code>)</p>
 <p>For a permanent change, the command <code>config ascp use</code> sets
 the same option for the global default.</p>
@@ -2745,10 +2761,11 @@ Saved to default global preset global_common_defaults</code></pre>
 <p>If the path has spaces, read section: <a
 href="#command-line-parsing-special-characters">Shell and Command line
 parsing</a>.</p>
-<h3 data-number="4.19.3"
-id="list-locally-installed-aspera-transfer-products"><span
-class="header-section-number">4.19.3</span> List locally installed
-Aspera Transfer products</h3>
+<p>If option <code>ascp_path</code> is not set, then the product
+identified with option <code>use_product</code> is used.</p>
+<p>If <code>use_product</code> is not set, then the first product found
+is used, this is equivalent to using option:
+<code>--use-product=FIRST</code>.</p>
 <p>Locally installed Aspera products can be listed with:</p>
 <div class="sourceCode" id="cb211"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb211-1"><a href="#cb211-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products list</span></code></pre></div>
@@ -2760,22 +2777,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb211-1"><a href
 | IBM Aspera CLI                        | /Users/laurent/Applications/Aspera CLI |
 | IBM Aspera High-Speed Transfer Server | /Library/Aspera                        |
 +---------------------------------------+----------------------------------------+</code></pre>
-<h3 data-number="4.19.4"
-id="selection-of-local-client-for-ascp-for-direct-agent"><span
-class="header-section-number">4.19.4</span> Selection of local client
-for <code>ascp</code> for <a
-href="#agent-direct"><code>direct</code></a> agent</h3>
-<p>If no <code>ascp</code> is selected, this is equivalent to using
-option: <code>--use-product=FIRST</code>.</p>
 <p>Using the option <code>use_product</code> finds the <code>ascp</code>
 binary of the selected product.</p>
 <p>To permanently use the <code>ascp</code> of a product:</p>
 <div class="sourceCode" id="cb213"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb213-1"><a href="#cb213-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
 <span id="cb213-2"><a href="#cb213-2" aria-hidden="true" tabindex="-1"></a><span class="ex">saved</span> to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp</span></code></pre></div>
-<h3 data-number="4.19.5"
+<h3 data-number="4.19.3"
 id="installation-of-connect-client-on-command-line"><span
-class="header-section-number">4.19.5</span> Installation of Connect
+class="header-section-number">4.19.3</span> Installation of Connect
 Client on command line</h3>
 <div class="sourceCode" id="cb214"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb214-1"><a href="#cb214-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect list</span></code></pre></div>
