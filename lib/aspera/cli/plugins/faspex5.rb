@@ -636,7 +636,7 @@ module Aspera
         end
 
         def execute_admin
-          command = options.get_next_command(%i[configuration smtp resource events].concat(ADMIN_RESOURCES).freeze)
+          command = options.get_next_command(%i[configuration smtp resource events clean_deleted].concat(ADMIN_RESOURCES).freeze)
           case command
           when :resource
             # resource is will be deprecated
@@ -644,6 +644,10 @@ module Aspera
             return execute_resource(options.get_next_command(ADMIN_RESOURCES))
           when *ADMIN_RESOURCES
             return execute_resource(command)
+          when :clean_deleted
+            delete_data = value_create_modify(command: command, default: {days_before_deleting_package_records: 365})
+            res = @api_v5.create('internal/packages/clean_deleted', delete_data)
+            return {type: :single_object, data: res[:data]}
           when :events
             event_type = options.get_next_command(%i[application webhook])
             case event_type
