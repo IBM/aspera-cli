@@ -6,6 +6,7 @@ DIR_TOP=../
 include $(DIR_TOP)common.mak
 # "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
+DIR_PANDOC=$(DIR_DOC)pandoc/
 
 MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
@@ -28,13 +29,13 @@ clean_doc::
 # +pipe_tables
 # Date in PDF header is either the last checked in date or today if file has been modified
 # sudo tlmgr install fvextra
-$(MANUAL_PDF): $(DIR_TOP)README.md $(DIR_DOC)manual_pandoc_defaults.yaml $(DIR_DOC)manual_include_in_header.tex $(DIR_DOC)manual_include_after_body.tex
+$(MANUAL_PDF): $(DIR_TOP)README.md $(PANDOC_DEPS)
 	rm -f $@
 	set -x &&\
 		if test -z "$$(git status --porcelain $(DIR_TOP)README.md)";then ref="-r $$(git log -1 --pretty="format:%cd" --date=unix $(DIR_TOP)README.md)";fi &&\
 		date=$$(date $$ref '+%Y/%m/%d') &&\
-		GFX_DIR=$(DIR_DOC) pandoc \
-			--defaults=$(DIR_DOC)manual_pandoc_defaults.yaml \
+		GFX_DIR=$(DIR_PANDOC) pandoc \
+			--defaults=$(DIR_PANDOC)manual_pandoc_defaults.yaml \
 			--variable=date:$$date \
 			--variable=subtitle:"$(CLI_NAME) $(GEM_VERSION)" \
 			--output=$@ \

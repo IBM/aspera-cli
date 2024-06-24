@@ -5935,6 +5935,7 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 
 ```bash
 admin accounts list
+admin clean_deleted
 admin contacts list
 admin event app
 admin event web
