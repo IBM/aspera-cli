@@ -4,11 +4,13 @@
   
   * New Features:
     * `faspex5`: added command `admin configuration` for global parameters.
+    * `faspex5`: added command `admin clean_deleted`.
     * `node`: "gen3" browse now returns all elements using pages, and supports option `query` with parameter `recursive`, `max`, `self`.
     * `httpgw`: new plugin, detect the GW.
     * `faspio`: new plugin, configure bridges.
     * `config`: `ascp info` also shows the version of the openssl library used by `ascp`.
     * **global**: added option `http_proxy`, as an alias to env var `http_proxy`.
+    * **global**: Possibility to filter fields when using formats like `json` or `yaml`.
   * Issues Fixed:
     * `faspex5`: fixed support for percent selector for metadata profiles.
   * Breaking Changes:

@@ -92,6 +92,7 @@ module Aspera
 
     # Take care of output
     class Formatter
+      # remove a fields from the list
       FIELDS_LESS = '-'
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
@@ -246,9 +247,10 @@ module Aspera
       # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
       def compute_fields(data, default)
         Log.log.debug{"compute_fields: data:#{data.class} default:#{default.class} #{default}"}
+        # the requested list of fields, but if can contain special values
         request =
           case @options[:fields]
-          when NilClass then [ExtendedValue::DEF]
+          # when NilClass then [ExtendedValue::DEF]
           when String then @options[:fields].split(',')
           when Array then @options[:fields]
           when Regexp then return all_fields(data).select{|i|i.match(@options[:fields])}
@@ -282,17 +284,36 @@ module Aspera
         return result
       end
 
+      # filter the list of items on the fields option
+      def filter_list_on_fields(data)
+        # by default, keep all data intact
+        return data if @options[:fields].eql?(ExtendedValue::DEF) && @options[:select].nil?
+        Aspera.assert_type(data, Array){'Filtering fields or select requires result is an Array of Hash'}
+        Aspera.assert(data.all?(Hash)){'Filtering fields or select requires result is an Array of Hash'}
+        filter_columns_on_select(data)
+        return data if @options[:fields].eql?(ExtendedValue::DEF)
+        selected_fields = compute_fields(data, @options[:fields])
+        return data.map{|i|i[selected_fields.first]} if selected_fields.length == 1
+        return data.map{|i|i.select{|k, _|selected_fields.include?(k)}}
+      end
+
+      # filter the list of items on the select option
+      # @param data [Array<Hash>] list of items
+      def filter_columns_on_select(data)
+        case @options[:select]
+        when Proc
+          data.select!{|i|@options[:select].call(i)}
+        when Hash
+          @options[:select].each{|k, v|data.select!{|i|i[k].eql?(v)}}
+        end
+      end
+
       # this method displays a table
       # object_array: array of hash
       # fields: list of column names
       def display_table(object_array, fields)
         Aspera.assert(!fields.nil?){'missing fields parameter'}
-        case @options[:select]
-        when Proc
-          object_array.select!{|i|@options[:select].call(i)}
-        when Hash
-          @options[:select].each{|k, v|object_array.select!{|i|i[k].eql?(v)}}
-        end
+        filter_columns_on_select(object_array)
         if object_array.empty?
           # no  display for csv
           display_message(:info, special_format('empty')) if @options[:format].eql?(:table)
@@ -373,13 +394,13 @@ module Aspera
         when :nagios
           Nagios.process(data)
         when :ruby
-          display_message(:data, PP.pp(data, +''))
+          display_message(:data, PP.pp(filter_list_on_fields(data), +''))
         when :json
-          display_message(:data, JSON.generate(data))
+          display_message(:data, JSON.generate(filter_list_on_fields(data)))
         when :jsonpp
-          display_message(:data, JSON.pretty_generate(data))
+          display_message(:data, JSON.pretty_generate(filter_list_on_fields(data)))
         when :yaml
-          display_message(:data, data.to_yaml)
+          display_message(:data, YAML.dump(filter_list_on_fields(data)))
         when :image
           # assume it is an url
           url = data

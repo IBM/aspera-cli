@@ -464,7 +464,7 @@ module Aspera
             ids = package_id
             ids = [ids] unless ids.is_a?(Array)
             Aspera.assert_type(ids, Array){'Package identifier'}
-            Aspera.assert(ids.all?(String)){'Package id shall be String'}
+            Aspera.assert(ids.all?(String)){"Package id(s) shall be String, but have: #{ids.map(&:class).uniq.join(', ')}"}
             # API returns 204, empty on success
             @api_v5.call(
               operation: 'DELETE',

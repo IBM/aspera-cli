@@ -1497,7 +1497,7 @@ By default, a `table` output format will display one line per entry, and columns
 Depending on the command, columns may include by default all fields, or only some selected fields.
 It is possible to define specific columns to be displayed, by setting the `fields` option.
 
-The `fields` option is a list that can be either a comma separated list, or an extended value `Array`.
+The `fields` option is a list that can be either a comma separated list or an extended value `Array`.
 
 Individual elements of the list can be:
 
@@ -6091,7 +6091,7 @@ Basically, add the field `metadata`, with one key per metadata and the value is 
 
 ### Faspex 5: List packages
 
-Option `box` can be used to list packages from a specific box (see **Inbox selection** above).
+Option `box` can be used to list packages from a specific box (see [Inbox Selection](#faspex-5-inbox-selection) above).
 
 Option `query` can be used to filter the list of packages, based on native API parameters, directly sent to [Faspex 5 API `GET /packages`](https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/api/API--aspera--ibm-aspera-faspex-api#getAllPackages).
 
@@ -6245,6 +6245,37 @@ There are two types of invitations of package submission: public or private.
 Public invitations are for external users, provide just the email address.
 
 Private invitations are for internal users, provide the user or shared inbox identifier through field `recipient_name`.
+
+### Faspex 5: Cleanup packages
+
+> **Note:** Operation requires admin level.
+
+Automated cleanup period can be displayed with:
+
+```bash
+ascli faspex5 admin configuration show --fields=days_before_deleting_package_records
+```
+
+This parameter can also be modified, for example:
+
+```bash
+ascli faspex5 admin configuration modify @json:'{"days_before_deleting_package_records":30}'
+```
+
+To start package purge, i.e. permanently remove packages marked for deletion older than `days_before_deleting_package_records`, use command:
+
+```bash
+ascli faspex5 admin clean_deleted
+```
+
+To delete all packages, one can use the following command:
+
+```bash
+ascli faspex5 packages list --box=ALL --format=yaml --fields=id | ascli faspex5 packages delete @yaml:@stdin:
+```
+
+> **Note:** Above command will mark all packages for deletion, and will be permanently removed after the configured period (`clean_deleted` command).
+> It is possible to add a filter to the list command to only delete packages matching some criteria, e.g. using `--select=@ruby:`.
 
 ### Faspex 5: Faspex 4-style postprocessing
 
