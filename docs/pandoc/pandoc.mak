@@ -1,4 +1,4 @@
-# Makefile
+# See README.md for more information
 PANDOC_DEPS=\
 $(DIR_PANDOC)manual_pandoc_defaults.yaml \
 $(DIR_PANDOC)manual_include_in_header.tex \
