@@ -11,12 +11,10 @@ module Aspera
   # if method is "graphical", then the URL will be opened with the default browser.
   class OpenApplication
     include Singleton
+    USER_INTERFACES = %i[text graphical].freeze
     class << self
-      USER_INTERFACES = %i[text graphical].freeze
-      # User Interfaces
-      def user_interfaces; USER_INTERFACES; end
-
       def default_gui_mode
+        # assume not remotely connected on macos and windows
         return :graphical if [Environment::OS_WINDOWS, Environment::OS_X].include?(Environment.os)
         # unix family
         return :graphical if ENV.key?('DISPLAY') && !ENV['DISPLAY'].empty?

@@ -3,7 +3,9 @@
 
 old_verbose = $VERBOSE
 $VERBOSE = nil
+# internal representation of strings (ruby) is UTF-8
 Encoding.default_internal = Encoding::UTF_8
+# external representation of strings (terminal, files)
 Encoding.default_external = Encoding::UTF_8
 $VERBOSE = old_verbose
 

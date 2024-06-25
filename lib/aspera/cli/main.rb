@@ -19,9 +19,10 @@ module Aspera
     class Main
       # Plugins store transfer result using this key and use result_transfer_multiple()
       STATUS_FIELD = 'status'
-      CONF_PLUGIN_SYM = :config
+      COMMAND_CONFIG = :config
+      COMMAND_HELP = :help
 
-      private_constant :CONF_PLUGIN_SYM
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP
 
       class << self
         # expect some list, but nothing to display
@@ -161,7 +162,7 @@ module Aspera
         options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         options.declare(
           :ui, 'Method to start browser',
-          values: OpenApplication.user_interfaces,
+          values: OpenApplication::USER_INTERFACES,
           handler: {o: OpenApplication.instance, m: :url_method},
           default: OpenApplication.default_gui_mode)
         options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
@@ -203,7 +204,7 @@ module Aspera
         if all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           PluginFactory.instance.plugin_list.each do |plugin_name_sym|
-            next if plugin_name_sym.eql?(CONF_PLUGIN_SYM)
+            next if plugin_name_sym.eql?(COMMAND_CONFIG)
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @plug_init.clone
             plugin_env[:only_manual] = true # force declaration of all options
@@ -253,17 +254,17 @@ module Aspera
           config.periodic_check_newer_gem_version
           command_sym =
             if @option_show_config && options.command_or_arg_empty?
-              CONF_PLUGIN_SYM
+              COMMAND_CONFIG
             else
-              options.get_next_command(PluginFactory.instance.plugin_list.unshift(:help))
+              options.get_next_command(PluginFactory.instance.plugin_list.unshift(COMMAND_HELP))
             end
           # command will not be executed, but we need manual
           options.fail_on_missing_mandatory = false if @option_help || @option_show_config
           # main plugin is not dynamically instantiated
           case command_sym
-          when :help
+          when COMMAND_HELP
             exit_with_usage(true)
-          when CONF_PLUGIN_SYM
+          when COMMAND_CONFIG
             command_plugin = config
           else
             # get plugin, set options, etc
