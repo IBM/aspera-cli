@@ -205,7 +205,7 @@ module Aspera
           types: [String, Array, Regexp, Proc],
           default: ExtendedValue::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, 'Table display style', handler: {o: self, m: :option_handler}, default: ':.:')
+        options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: {})
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
@@ -336,14 +336,11 @@ module Aspera
         # here : fields : list of column names
         case @options[:format]
         when :table
-          style = @options[:table_style].chars
           # display the table !
           display_message(:data, Terminal::Table.new(
             headings:  fields,
             rows:      final_table_rows,
-            border_x:  style[0],
-            border_y:  style[1],
-            border_i:  style[2]))
+            style:     @options[:table_style]&.symbolize_keys))
         when :csv
           display_message(:data, final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
         end
