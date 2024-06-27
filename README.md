@@ -1104,9 +1104,9 @@ Major  Minor  Build  Revision
 -----  -----  -----  --------
 5      1      19041  4046
 
-PS C:\> ascli conf echo  --% @json:'{"k":"v","x":"y"}'
+PS C:\> ascli config echo  --% @json:'{"k":"v","x":"y"}'
 
-PS C:\> ascli conf echo @json:'{"""k""":"""v""","""x""":"""y"""}'
+PS C:\> ascli config echo @json:'{"""k""":"""v""","""x""":"""y"""}'
 ```
 
 > **Note:** The special powershell argument `--%` places powershell in legacy parsing mode.
@@ -1452,7 +1452,16 @@ Depending on action, the output will contain:
 #### Format of output
 
 By default, result of type single_object and object_list are displayed using format `table`.
-The table style can be customized with option: `table_style` (horizontal, vertical and intersection characters) and is `:.:` by default.
+
+The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
+
+For example, to display a table with thick unicode borders:
+
+```bash
+ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
+```
+
+> **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
 In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash`).
 For example, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
@@ -1727,7 +1736,7 @@ Temporary files are deleted at the end of execution unless option: `clean_temp` 
 
 ### Configuration file
 
-On the first execution of `ascli`, an empty configuration file is created in the configuration folder (`ascli conf folder`).
+On the first execution of `ascli`, an empty configuration file is created in the configuration folder (`ascli config folder`).
 There is no mandatory information required in this file.
 The use of it is optional as any option can be provided on the command line.
 
@@ -2329,15 +2338,15 @@ The following options can be specified in the option `image`:
 | font_ratio | Float   | Font height/width ratio in terminal |
 
 ```bash
-ascli conf image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
+ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
 ```
 
 ```bash
-curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli conf image @stdbin:
+curl -so - https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @stdbin:
 ```
 
 ```bash
-echo -n https://eudemo.asperademo.com/wallpaper.jpg | ascli conf image @uri:@stdin:
+echo -n https://eudemo.asperademo.com/wallpaper.jpg | ascli config image @uri:@stdin:
 ```
 
 ### Graphical Interactions: Browser and Text Editor
@@ -2534,7 +2543,7 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 By default it uses the `direct` agent, which is basically a local `ascp`.
 Nevertheless, `ascli` does not come with `ascp` installed.
-This is the reason why it is advised to install the Aspera Transfer SDK during installation (`ascli conf ascp install`).
+This is the reason why it is advised to install the Aspera Transfer SDK during installation (`ascli config ascp install`).
 
 By default, `ascli` uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
 
@@ -3566,7 +3575,7 @@ OPTIONS: global
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
-        --table-style=VALUE          Table display style
+        --table-style=VALUE          Table display style (Hash)
         --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
         --transpose-single=ENUM      Single object fields output vertically: no, [yes]
         --show-secrets=ENUM          Show secrets on command output: [no], yes
