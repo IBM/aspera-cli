@@ -14,9 +14,10 @@ require 'yaml'
 require 'erb'
 require 'English'
 
+# format special value depending on context
 class DocFormatter
-  def special_format(x)
-    return $stdout.isatty ? "<#{x}>" : "&lt;#{x}&gt;"
+  def special_format(special)
+    return $stdout.isatty ? "<#{special}>" : "&lt;#{special}&gt;"
   end
 end
 
@@ -41,9 +42,9 @@ def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 # Generate markdown from the provided table
 def markdown_table(table)
   headings = table.shift
-  table.unshift(headings.map{|h|'-' * h.length})
+  table.unshift(headings.map{|col_name|'-' * col_name.length})
   table.unshift(headings)
-  return table.map {|l| '| ' + l.join(' | ') + " |\n"}.join.chomp
+  return table.map {|line| "| #{line.join(' | ')} |\n"}.join.chomp
 end
 
 # transfer spec description generation
@@ -53,12 +54,12 @@ def spec_table
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Transfer::Parameters.man_table(DocFormatter.new).each do |p|
-    p[:description] += (p[:description].empty? ? '' : "\n") + '(' + p[:cli] + ')' unless p[:cli].to_s.empty?
-    p.each_key{|c|p[c] = '&nbsp;' if p[c].to_s.strip.empty?}
-    p[:description] = p[:description].gsub("\n", '<br/>')
-    p[:type] = p[:type].gsub(',', '<br/>')
-    table.push(fields.map{|f|p[f]})
+  Aspera::Transfer::Parameters.man_table(DocFormatter.new).each do |param|
+    param[:description] += (param[:description].empty? ? '' : "\n") + '(' + param[:cli] + ')' unless param[:cli].to_s.empty?
+    param.each_key{|k|param[k] = '&nbsp;' if param[k].to_s.strip.empty?}
+    param[:description] = param[:description].gsub("\n", '<br/>')
+    param[:type] = param[:type].gsub(',', '<br/>')
+    table.push(fields.map{|field_name|param[field_name]})
   end
   return markdown_table(table)
 end
@@ -147,11 +148,11 @@ REPLACEMENTS = [
 def all_test_commands_by_plugin
   if @commands.nil?
     commands = {}
-    File.open(@env[:TEST_MAKEFILE]) do |f|
-      f.each_line do |line|
+    File.open(@env[:TEST_MAKEFILE]) do |file|
+      file.each_line do |line|
         next unless line.match?(/\$\((EXE_MAN|EXE_BEG_FAI).?\) +/)
         line = line.chomp
-        REPLACEMENTS.each{|r|line = line.gsub(r.first, r.last)}
+        REPLACEMENTS.each{|replace|line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
         # $stderr.puts line
         # plugin name shall be the first argument: command
@@ -193,34 +194,34 @@ SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
 def generate_generic_conf
   local_config = ARGV.first
   raise 'missing argument: local config file' if local_config.nil?
-  o = YAML.load_file(local_config)
-  o.each do |k, h|
-    h.each do |p, v|
-      if p.eql?('ignore_certificate') && v.is_a?(Array) && v.all?(String)
-        v.map!{|s|s.gsub('aspera-emea', 'example')}
+  configuration = YAML.load_file(local_config)
+  configuration.each do |k, preset_hash|
+    preset_hash.each do |param_name, param_value|
+      if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
+        param_value.map!{|fqdn|fqdn.gsub('aspera-emea', 'example')}
       end
-      next unless v.is_a?(String)
-      next if v.start_with?('@preset:')
-      if k.eql?('config') && p.eql?('version')
-        h[p] = '4.0'
+      next unless param_value.is_a?(String)
+      next if param_value.start_with?('@preset:')
+      if k.eql?('config') && param_name.eql?('version')
+        preset_hash[param_name] = '4.0'
         next
       end
-      if v.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
-        h[p] = SAMPLE_EMAIL
+      if param_value.match?(/^[a-z.0-9+]+@[a-z.0-9+]+$/)
+        preset_hash[param_name] = SAMPLE_EMAIL
         next
       end
-      if p.eql?('client_id')
-        h[p] = 'my_client_id'
+      if param_name.eql?('client_id')
+        preset_hash[param_name] = 'my_client_id'
       end
-      if p.eql?('bucket_name') || p.eql?('bucket')
-        h[p] = 'my_bucket'
+      if param_name.eql?('bucket_name') || param_name.eql?('bucket')
+        preset_hash[param_name] = 'my_bucket'
       end
       begin
-        uri = URI.parse(v)
+        uri = URI.parse(param_value)
         raise '' if uri.scheme.nil?
         next if KEEP_HOSTS.include?(uri.host)
         if uri.host.eql?('aspera.pub')
-          h[p] = SHORT_LINK
+          preset_hash[param_name] = SHORT_LINK
           next
         end
         uri.host = if uri.host.end_with?('.ibmaspera.com')
@@ -233,23 +234,23 @@ def generate_generic_conf
           uri.query = uri.query.gsub(/&?passcode=[^&]*/, 'token=some_passcode')
           uri.query = uri.query.gsub(/&?context=[^&]*/, 'context=some_passcode')
         end
-        h[p] = uri.to_s
+        preset_hash[param_name] = uri.to_s
       rescue
         nil
       end
-      case p
+      case param_name
       when 'url'
       when 'username'
-        h[p] = v.include?('@') ? SAMPLE_EMAIL : 'my_user'
+        preset_hash[param_name] = param_value.include?('@') ? SAMPLE_EMAIL : 'my_user'
         next
       when /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
-        h[p] = 'your value here'
+        preset_hash[param_name] = 'your value here'
         next
       end
-      next unless v.start_with?('https://')
+      next unless param_value.start_with?('https://')
     end
   end
-  puts(o.to_yaml)
+  puts(configuration.to_yaml)
 end
 
 # main function to generate README.md

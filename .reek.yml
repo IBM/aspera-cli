@@ -1,10 +1,11 @@
 ---
 detectors:
   DuplicateMethodCall:
+    enabled: false
     exclude:
-      - /Log.log/
+      - Log.log
   TooManyStatements:
-    max_statements: 20
+    max_statements: 48
   FeatureEnvy:
     enabled: false
   BooleanParameter:
@@ -12,4 +13,28 @@ detectors:
   NilCheck:
     enabled: false
   TooManyConstants:
+    enabled: false
+  UncommunicativeVariableName:
+    accept:
+      - _
+      - k
+      - v
+      - i
+      - m
+      - e
+      - a
+      - b
+    enabled: false
+  UncommunicativeMethodName:
+    accept:
+      - base64
+  NestedIterators:
+    max_allowed_nesting: 3
+  UtilityFunction:
+    enabled: false
+  ControlParameter:
+    enabled: false
+  IrresponsibleModule:
+    enabled: false
+  LongParameterList:
     enabled: false

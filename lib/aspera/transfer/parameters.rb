@@ -22,7 +22,7 @@ module Aspera
       # Agents shown in manual for parameters (sub list)
       SUPPORTED_AGENTS = %i[direct node connect trsdk httpgw].freeze
       # Short names of columns in manual
-      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|a|a.to_s[0].to_sym}
+      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|agent_sym|agent_sym.to_s[0].to_sym}
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
@@ -40,11 +40,11 @@ module Aspera
           Spec::DESCRIPTION.each do |name, options|
             param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
             # add flags for supported agents in doc
-            SUPPORTED_AGENTS.each do |a|
-              param[a.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(a))
+            SUPPORTED_AGENTS.each do |agent_sym|
+              param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(agent_sym))
             end
             # only keep lines that are usable in supported agents
-            next if SUPPORTED_AGENTS_SHORT.inject(true){|m, j|m && param[j].empty?}
+            next if SUPPORTED_AGENTS_SHORT.inject(true){|memory, agent_short_sym|memory && param[agent_short_sym].empty?}
             param[:cli] =
               case options[:cli][:type]
               when :envvar then 'env:' + options[:cli][:variable]
@@ -73,17 +73,17 @@ module Aspera
             param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
           end
-          return result.sort_by { |a| a[:name] }
+          return result.sort_by { |parameter_info| parameter_info[:name] }
         end
 
         # special encoding methods used in YAML (key: :convert)
-        def convert_remove_hyphen(v); v.tr('-', ''); end
+        def convert_remove_hyphen(value); value.tr('-', ''); end
 
         # special encoding methods used in YAML (key: :convert)
-        def convert_json64(v); Base64.strict_encode64(JSON.generate(v)); end
+        def convert_json64(value); Base64.strict_encode64(JSON.generate(value)); end
 
         # special encoding methods used in YAML (key: :convert)
-        def convert_base64(v); Base64.strict_encode64(v); end
+        def convert_base64(value); Base64.strict_encode64(value); end
 
         # file list is provided directly with ascp arguments
         # @param ascp_args [Array,NilClass] ascp arguments
@@ -92,8 +92,8 @@ module Aspera
         end
 
         # temp file list files are created here
-        def file_list_folder=(v)
-          @file_list_folder = v
+        def file_list_folder=(value)
+          @file_list_folder = value
           return if @file_list_folder.nil?
           FileUtils.mkdir_p(@file_list_folder)
           TempFileManager.instance.cleanup_expired(@file_list_folder)

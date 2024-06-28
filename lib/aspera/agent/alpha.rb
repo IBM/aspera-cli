@@ -9,6 +9,7 @@ require 'securerandom'
 
 module Aspera
   module Agent
+    # Aspera Desktop Alpha Client
     class Alpha < Base
       # try twice the main init url in sequence
       START_URIS = ['aspera://', 'aspera://', 'aspera://']
@@ -19,6 +20,7 @@ module Aspera
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(**base_options)
         @application_id = SecureRandom.uuid
+        @xfer_id = nil
         super(**base_options)
         raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
         method_index = 0

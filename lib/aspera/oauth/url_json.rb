@@ -4,6 +4,7 @@ require 'aspera/oauth/base'
 
 module Aspera
   module OAuth
+    #
     class UrlJson < Base
       def initialize(
         url:,

@@ -4,6 +4,7 @@ require 'aspera/oauth/base'
 
 module Aspera
   module OAuth
+    # Generic token creator
     class Generic < Base
       def initialize(
         grant_type:,

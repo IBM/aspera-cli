@@ -3,7 +3,7 @@
 module Aspera
   # raised on error after REST call
   class RestCallError < StandardError
-    attr_accessor :request, :response
+    attr_reader :request, :response
 
     # @param req HTTP Request object
     # @param resp HTTP Response object

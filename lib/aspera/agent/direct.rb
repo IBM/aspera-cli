@@ -83,7 +83,7 @@ module Aspera
         if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
-          session[:thread] = Thread.new(session) {|s|transfer_thread_entry(s)}
+          session[:thread] = Thread.new(session) {|session_info|transfer_thread_entry(session_info)}
           @sessions.push(session)
         else
           Log.log.debug('Starting multi session threads')
@@ -100,7 +100,7 @@ module Aspera
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             this_session[:env_args][:args].unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
-            this_session[:thread] = Thread.new(this_session) {|s|transfer_thread_entry(s)}
+            this_session[:thread] = Thread.new(this_session) {|session_info|transfer_thread_entry(session_info)}
             @sessions.push(this_session)
           end
         end
@@ -278,12 +278,12 @@ module Aspera
 
       # @return [Array] list of sessions for a job
       def sessions_by_job(job_id)
-        @sessions.select{|s| s[:job_id].eql?(job_id)}
+        @sessions.select{|session_info| session_info[:job_id].eql?(job_id)}
       end
 
       # @return [Hash] session information
       def session_by_id(id)
-        matches = @sessions.select{|s| s[:id].eql?(id)}
+        matches = @sessions.select{|session_info| session_info[:id].eql?(id)}
         raise 'no such session' if matches.empty?
         raise 'more than one session' if matches.length > 1
         return matches.first

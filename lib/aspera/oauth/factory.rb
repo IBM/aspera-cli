@@ -5,6 +5,7 @@ require 'aspera/assert'
 require 'base64'
 module Aspera
   module OAuth
+    # Factory to create tokens and manage their cache
     class Factory
       include Singleton
       # a prefix for persistency of tokens (simplify garbage collect)
