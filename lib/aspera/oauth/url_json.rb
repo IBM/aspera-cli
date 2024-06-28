@@ -4,7 +4,7 @@ require 'aspera/oauth/base'
 
 module Aspera
   module OAuth
-    #
+    # This class is used to create a token using a JSON body and a URL
     class UrlJson < Base
       def initialize(
         url:,
