@@ -5,6 +5,7 @@
   * New Features:
     * `faspex5`: added command `admin configuration` for global parameters.
     * `faspex5`: added command `admin clean_deleted`.
+    * `faspex5`: added resource `distribution_list`.
     * `node`: "gen3" browse now returns all elements using pages, and supports option `query` with parameter `recursive`, `max`, `self`.
     * `httpgw`: new plugin, detect the GW.
     * `faspio`: new plugin, configure bridges.

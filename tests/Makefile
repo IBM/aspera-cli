@@ -1629,6 +1629,13 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin saml_configs list
 	$(EXE_MAN) faspex5 admin metadata_profiles list
 	@$(STOP_TEST) $@
+$(T)f5_dist_list: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspex5 admin distribution_lists list --query=@json:'{"type":"global"}'
+	$(EXE_MAN) faspex5 admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
+	sleep 10
+	$(EXE_MAN) faspex5 admin distribution_lists delete %name:test4
+	@$(STOP_TEST) $@
 $(T)f5_adm: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin accounts list
@@ -1704,7 +1711,7 @@ $(T)f5_postproc: $(T).exists
 	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_adm $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
+$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################
 $(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_detect))
 $(T)httpgw_nagios: $(T).exists

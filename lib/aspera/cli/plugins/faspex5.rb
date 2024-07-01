@@ -23,7 +23,7 @@ module Aspera
         # Faspex API v5: get transfer spec for connect
         TRANSFER_CONNECT = 'connect'
         ADMIN_RESOURCES = %i[
-          accounts contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
+          accounts distribution_lists contacts jobs workgroups shared_inboxes nodes oauth_clients registrations saml_configs
           metadata_profiles email_notifications alternate_addresses webhooks
         ].freeze
         # states for jobs not in final state
@@ -533,6 +533,7 @@ module Aspera
           display_fields = nil
           adm_api = @api_v5
           res_id_query = :default
+          delete_style = nil
           available_commands = [].concat(Plugin::ALL_OPS)
           case res_type
           when :metadata_profiles
@@ -540,6 +541,10 @@ module Aspera
             list_key = 'profiles'
           when :alternate_addresses
             res_path = 'configuration/alternate_addresses'
+          when :distribution_lists
+            res_path = 'account/distribution_lists'
+            list_key = 'distribution_lists'
+            delete_style = 'ids'
           when :email_notifications
             list_key = false
             id_as_arg = 'type'
@@ -557,7 +562,7 @@ module Aspera
           res_command = options.get_next_command(available_commands)
           case res_command
           when *Plugin::ALL_OPS
-            return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg) do |field, value|
+            return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg, delete_style: delete_style) do |field, value|
               lookup_entity_by_field(
                 type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
             end

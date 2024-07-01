@@ -137,9 +137,16 @@ module Aspera
       # @param item_list_key [String] result is in a sub key of the json
       # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
       # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
+      # @param delete_style [String] if set, the delete operation by array in payload
       # @param block [Proc] block to search for identifier based on attribute value
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path, display_fields: nil, item_list_key: false, id_as_arg: false, is_singleton: false, &block)
+      def entity_command(command, rest_api, res_class_path,
+        display_fields: nil,
+        item_list_key: false,
+        id_as_arg: false,
+        is_singleton: false,
+        delete_style: nil,
+        &block)
         if is_singleton
           one_res_path = res_class_path
         elsif INSTANCE_OPS.include?(command)
@@ -156,6 +163,12 @@ module Aspera
           end
         when :delete
           raise 'cannot delete singleton' if is_singleton
+          if !delete_style.nil?
+            one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
+            Aspera.assert_type(one_res_id, Array, exception_class: Cli::BadArgument)
+            rest_api.call(operation: 'DELETE', subpath: res_class_path, headers: {'Accept' => 'application/json'}, body: {delete_style => one_res_id}, body_type: :json)
+            return Main.result_status('deleted')
+          end
           return do_bulk_operation(command: command, descr: 'identifier', values: one_res_id) do |one_id|
             rest_api.delete("#{res_class_path}/#{one_id}", query_read_delete)
             {'id' => one_id}
