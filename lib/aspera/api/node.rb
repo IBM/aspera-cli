@@ -14,21 +14,23 @@ module Aspera
   module Api
     # Provides additional functions using node API with gen4 extensions (access keys)
     class Node < Aspera::Rest
-      # permissions
+      # node api permissions
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
+      HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
+      SCOPE_SEPARATOR = ':'
+      SCOPE_USER = 'user:all'
+      SCOPE_ADMIN = 'admin:all'
+      SCOPE_NODE_PREFIX = 'node.'
       # prefix for ruby code for filter (deprecated)
       MATCH_EXEC_PREFIX = 'exec:'
       MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
-      HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       PATH_SEPARATOR = '/'
-      TS_FIELDS_TO_COPY = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
-      SCOPE_USER = 'user:all'
-      SCOPE_ADMIN = 'admin:all'
-      SCOPE_PREFIX = 'node.'
-      SCOPE_SEPARATOR = ':'
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
       BEARER_TOKEN_SCOPE_DEFAULT = SCOPE_USER
+      private_constant :MATCH_EXEC_PREFIX, :MATCH_TYPES,
+        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT, :BEARER_TOKEN_SCOPE_DEFAULT,
+        :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX
 
       # register node special token decoder
       OAuth::Factory.instance.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
@@ -62,14 +64,14 @@ module Aspera
 
         # node API scopes
         def token_scope(access_key, scope)
-          return [SCOPE_PREFIX, access_key, SCOPE_SEPARATOR, scope].join('')
+          return [SCOPE_NODE_PREFIX, access_key, SCOPE_SEPARATOR, scope].join('')
         end
 
         def decode_scope(scope)
           items = scope.split(SCOPE_SEPARATOR, 2)
           Aspera.assert(items.length.eql?(2)){"invalid scope: #{scope}"}
-          Aspera.assert(items[0].start_with?(SCOPE_PREFIX)){"invalid scope: #{scope}"}
-          return {access_key: items[0][SCOPE_PREFIX.length..-1], scope: items[1]}
+          Aspera.assert(items[0].start_with?(SCOPE_NODE_PREFIX)){"invalid scope: #{scope}"}
+          return {access_key: items[0][SCOPE_NODE_PREFIX.length..-1], scope: items[1]}
         end
 
         # Create an Aspera Node bearer token
@@ -134,6 +136,7 @@ module Aspera
         @app_info = app_info
         # this is added to transfer spec, for instance to add tags (COS)
         @add_tspec = add_tspec
+        @std_t_spec_cache = nil
         if !@app_info.nil?
           REQUIRED_APP_INFO_FIELDS.each do |field|
             Aspera.assert(@app_info.key?(field)){"app_info lacks field #{field}"}
@@ -274,6 +277,22 @@ module Aspera
         return oauth.token(refresh: true)
       end
 
+      # @return part of transfer spec with transport parameters only
+      def transport_params
+        if @std_t_spec_cache.nil?
+          # retrieve values from API (and keep a copy/cache)
+          full_spec = create(
+            'files/download_setup',
+            {transfer_requests: [{transfer_request: {paths: [{source: '/'}]}}]}
+          )[:data]['transfer_specs'].first['transfer_spec']
+          # set available fields
+          @std_t_spec_cache = Transfer::Spec::TRANSPORT_FIELDS.each_with_object({}) do |i, h|
+            h[i] = full_spec[i] if full_spec.key?(i)
+          end
+        end
+        return @std_t_spec_cache
+      end
+
       # Create transfer spec for gen4
       def transfer_spec_gen4(file_id, direction, ts_merge=nil)
         ak_name = nil
@@ -327,13 +346,7 @@ module Aspera
             transfer_spec[i] = settings[i] if settings.key?(i)
           end if settings.is_a?(Hash)
         else
-          # retrieve values from API (and keep a copy/cache)
-          @std_t_spec_cache ||= create(
-            'files/download_setup',
-            {transfer_requests: [{ transfer_request: {paths: [{'source' => '/'}] } }] }
-          )[:data]['transfer_specs'].first['transfer_spec']
-          # copy some parts
-          TS_FIELDS_TO_COPY.each {|i| transfer_spec[i] = @std_t_spec_cache[i] if @std_t_spec_cache.key?(i)}
+          transfer_spec.merge!(transport_params)
         end
         Log.log.warn{"Expected transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
           unless transfer_spec['remote_user'].eql?(Transfer::Spec::ACCESS_KEY_TRANSFER_USER)

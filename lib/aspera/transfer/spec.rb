@@ -17,6 +17,8 @@ module Aspera
         'ssh_port'    => SSH_PORT,
         'fasp_port'   => UDP_PORT
       }.freeze
+      # fields for transport
+      TRANSPORT_FIELDS = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       class << self

@@ -10,6 +10,7 @@
     * `httpgw`: new plugin, detect the GW.
     * `faspio`: new plugin, configure bridges.
     * `config`: `ascp info` also shows the version of the openssl library used by `ascp`.
+    * `node`: new action: `transport` to display transfer address and ports
     * **global**: added option `http_proxy`, as an alias to env var `http_proxy`.
     * **global**: Possibility to filter fields when using formats like `json` or `yaml`.
   * Issues Fixed:

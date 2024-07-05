@@ -93,7 +93,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download http_node_download sync]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download http_node_download sync transport]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -353,6 +353,8 @@ module Aspera
               subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents",
               save_to_file: File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_name))
             return Main.result_status("downloaded: #{file_name}")
+          when :transport
+            return {type: :single_object, data: @api_node.transport_params}
           end
           Aspera.error_unreachable_line
         end

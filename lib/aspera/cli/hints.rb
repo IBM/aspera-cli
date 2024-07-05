@@ -56,6 +56,15 @@ module Aspera
             'it might be due to SSH handshake failure',
             'one can check SSH connection using ssh command'
           ]
+        },
+        {
+          exception:   RuntimeError,
+          match:       /Wrong remote host:/,
+          remediation: [
+            'If remote node is Cloud Pak For Integration',
+            'Make sure that a LoadBalancer is active on cluster',
+            'Check the external address of Aspera tcp-proxy pod'
+          ]
         }
       ]
 

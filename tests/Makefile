@@ -490,6 +490,7 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 	$(EXE_MAN) node license
 	$(EXE_MAN) node api_details
+	$(EXE_MAN) node transport
 	$(EXE_MAN) node browse / --log-level=trace2
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /

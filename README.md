@@ -3649,7 +3649,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User's name to log in
@@ -5809,6 +5809,7 @@ sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"
 sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 transfer list --query=@json:'{"active_only":true}'
 transfer sessions
+transport
 upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:'{"url":"https://node.example.com/path@","username":"my_username","password":"my_password_here"}'
 upload --username=my_ak_name --password=my_ak_secret test_file.bin
 upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
@@ -5971,6 +5972,9 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 admin accounts list
 admin clean_deleted
 admin contacts list
+admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
+admin distribution_lists delete %name:test4
+admin distribution_lists list --query=@json:'{"type":"global"}'
 admin event app
 admin event web
 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc

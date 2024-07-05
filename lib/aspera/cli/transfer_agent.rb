@@ -26,6 +26,7 @@ module Aspera
 
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
+      CP4I_REMOTE_HOST_LB = 'N/A'
       # % (formatting bug in eclipse)
       private_constant :FILE_LIST_FROM_ARGS,
         :FILE_LIST_FROM_TRANSFER_SPEC,
@@ -215,6 +216,9 @@ module Aspera
       def start(transfer_spec, rest_token: nil)
         # check parameters
         Aspera.assert_type(transfer_spec, Hash){'transfer_spec'}
+        if transfer_spec['remote_host'].eql?(CP4I_REMOTE_HOST_LB)
+          raise "Wrong remote host: #{CP4I_REMOTE_HOST_LB}"
+        end
         # process :src option
         case transfer_spec['direction']
         when Transfer::Spec::DIRECTION_RECEIVE
