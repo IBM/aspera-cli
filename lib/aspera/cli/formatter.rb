@@ -115,7 +115,7 @@ module Aspera
 
         def tick(yes)
           result =
-            if Environment.use_unicode?
+            if Environment.terminal_supports_unicode?
               if yes
                 "\u2713"
               else
@@ -197,6 +197,12 @@ module Aspera
       end
 
       def declare_options(options)
+        default_table_style = if Environment.terminal_supports_unicode?
+          {border: :unicode_round}
+        else
+          {}
+        end
+
         options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
         options.declare(:output, 'Destination for results', types: String, handler: {o: self, m: :option_handler})
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
@@ -205,7 +211,7 @@ module Aspera
           types: [String, Array, Regexp, Proc],
           default: ExtendedValue::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
-        options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: {})
+        options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)

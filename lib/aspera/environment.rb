@@ -27,6 +27,7 @@ module Aspera
     BYTES_PER_MEBIBIT = MEBI / BITS_PER_BYTE
 
     class << self
+      @terminal_supports_unicode = nil
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
       end
@@ -121,9 +122,9 @@ module Aspera
       end
 
       # @return true if we can display Unicode characters
-      def use_unicode?
-        @use_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @use_unicode.nil?
-        return @use_unicode
+      def terminal_supports_unicode?
+        @terminal_supports_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @terminal_supports_unicode.nil?
+        return @terminal_supports_unicode
       end
     end
   end
