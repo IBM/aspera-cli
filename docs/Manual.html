@@ -10,7 +10,7 @@ src="https://bestpractices.coreinfrastructure.org/projects/5861/badge"
 alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
-<p>Version : 4.18.0.pre</p>
+<p>Version : 4.18.0</p>
 <p>Laurent/2016-2024</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
@@ -109,7 +109,7 @@ use.</p>
 <p>Once the gem is installed, <code>ascli</code> shall be
 accessible:</p>
 <pre class="console"><code>$ ascli --version
-4.18.0.pre</code></pre>
+4.18.0</code></pre>
 <h2 data-number="2.1" id="first-use"><span
 class="header-section-number">2.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
@@ -462,7 +462,7 @@ class="header-section-number">3.2</span> Ruby Gem:
 <p>Once you have Ruby and rights to install gems, install the
 <code>aspera-cli</code> gem and its dependencies:</p>
 <div class="sourceCode" id="cb40"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli <span class="at">--pre</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli</span></code></pre></div>
 <p>To upgrade to the latest version:</p>
 <div class="sourceCode" id="cb41"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> update aspera-cli</span></code></pre></div>
@@ -633,7 +633,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a href=
 <p>Then, you can execute the container like a local command:</p>
 <div class="sourceCode" id="cb59"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
-<pre class="text"><code>4.18.0.pre</code></pre>
+<pre class="text"><code>4.18.0</code></pre>
 <p>In order to keep persistency of configuration on the host, you should
 specify your user’s configuration folder as a volume for the container.
 To enable write access, a possibility is to run as <code>root</code> in
@@ -694,7 +694,7 @@ behavior:</p>
 <col style="width: 25%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>env var</th>
 <th>Description</th>
 <th>Default</th>
@@ -702,25 +702,25 @@ behavior:</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>ASCLI_HOME</code></td>
 <td>Configuration folder (persistency)</td>
 <td><code>$HOME/.aspera/ascli</code></td>
 <td><code>$HOME/.ascli_config</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>docker_args</code></td>
 <td>Additional options to <code>podman</code></td>
 <td>&lt;empty&gt;</td>
 <td><code>--volume /Users:/Users</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>image</code></td>
 <td>Container image name</td>
 <td><code>docker.io/martinlaurent/ascli</code></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>version</code></td>
 <td>Container image version</td>
 <td>Latest</td>
@@ -1643,7 +1643,7 @@ and are recognized by the prefix: <code>@</code> and suffix
 <col style="width: 30%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Decoder</th>
 <th>Parameter</th>
 <th>Returns</th>
@@ -1651,26 +1651,26 @@ and are recognized by the prefix: <code>@</code> and suffix
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>base64</code></td>
 <td>String</td>
 <td>String</td>
 <td>Decode a base64 encoded string</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>csvt</code></td>
 <td>String</td>
 <td>Array</td>
 <td>Decode a titled CSV value</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>env</code></td>
 <td>String</td>
 <td>String</td>
 <td>Read from a named env var name,
 e.g. <code>--password=@env:MYPASSVAR</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>file</code></td>
 <td>String</td>
 <td>String</td>
@@ -1678,32 +1678,32 @@ e.g. <code>--password=@env:MYPASSVAR</code></td>
 with the users home folder),
 e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>json</code></td>
 <td>String</td>
 <td>Any</td>
 <td>Decode JSON values (convenient to provide complex structures)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>lines</code></td>
 <td>String</td>
 <td>Array</td>
 <td>Split a string in multiple lines and return an array</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>list</code></td>
 <td>String</td>
 <td>Array</td>
 <td>Split a string in multiple items taking first character as separator
 and return an array</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>none</code></td>
 <td>None</td>
 <td>Nil</td>
 <td>A null value</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>path</code></td>
 <td>String</td>
 <td>String</td>
@@ -1711,7 +1711,7 @@ and return an array</td>
 replaced with the users home folder),
 e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>preset</code></td>
 <td>String</td>
 <td>Hash</td>
@@ -1719,50 +1719,50 @@ e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <code>conf[foo][bar]</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>extend</code></td>
 <td>String</td>
 <td>String</td>
 <td>Evaluates embedded extended value syntax in string</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>re</code></td>
 <td>String</td>
 <td>Regexp</td>
 <td>Ruby Regular Expression (short for <code>@ruby:/.../</code>)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>ruby</code></td>
 <td>String</td>
 <td>Any</td>
 <td>Execute specified Ruby code</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>secret</code></td>
 <td>None</td>
 <td>String</td>
 <td>Ask password interactively (hides input)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>stdin</code></td>
 <td>None</td>
 <td>String</td>
 <td>Read from stdin in text mode (no value on right)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>stdbin</code></td>
 <td>None</td>
 <td>String</td>
 <td>Read from stdin in binary mode (no value on right)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>uri</code></td>
 <td>String</td>
 <td>String</td>
 <td>Read value from specified URL,
 e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>val</code></td>
 <td>String</td>
 <td>String</td>
@@ -1770,13 +1770,13 @@ e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
 to value <code>@file:foo</code>.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>yaml</code></td>
 <td>String</td>
 <td>Any</td>
 <td>Decode YAML</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>zlib</code></td>
 <td>String</td>
 <td>String</td>
@@ -2474,29 +2474,29 @@ option <code>format</code> set to <code>image</code></li>
 <col style="width: 38%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Option</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>reserve</td>
 <td>Integer</td>
 <td>Lines reserved to display a status</td>
 </tr>
-<tr class="even">
+<tr>
 <td>text</td>
 <td>Bool</td>
 <td>Display text instead of image</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>double</td>
 <td>Bool</td>
 <td>Display double text resolution (half characters)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>font_ratio</td>
 <td>Float</td>
 <td>Font height/width ratio in terminal</td>
@@ -2593,25 +2593,25 @@ certificate is ignored. To disable the warning, use option
 adjusted using option <code>http_options</code>:</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Parameter</th>
 <th>Default</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>read_timeout</code></td>
 <td>60</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>write_timeout</code></td>
 <td>60</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>open_timeout</code></td>
 <td>60</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keep_alive_timeout</code></td>
 <td>2</td>
 </tr>
@@ -2890,38 +2890,38 @@ and add any argument to <code>ascp</code>:</p>
 <col style="width: 29%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>wss</code></td>
 <td>Bool</td>
 <td>Web Socket Session<br/>Enable use of web socket session in case it
 is available<br/>Default: true</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>ascp_args</code></td>
 <td>Array</td>
 <td>Array of strings with native <code>ascp</code>
 arguments.<br/>Default: []</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>spawn_timeout_sec</code></td>
 <td>Float</td>
 <td>Multi session<br/>Verification time that <code>ascp</code> is
 running<br/>Default: 3</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>spawn_delay_sec</code></td>
 <td>Float</td>
 <td>Multi session<br/>Delay between startup of sessions<br/>Default:
 2</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>multi_incr_udp</code></td>
 <td>Bool</td>
 <td>Multi Session<br/>Increment UDP port on multi-session<br/>If true,
@@ -2930,32 +2930,32 @@ each session will have a different UDP port starting at
 use <code>fasp_port</code> (or <code>ascp</code> default)<br/>Default:
 true</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>trusted_certs</code></td>
 <td>Array</td>
 <td>List of repositories for trusted certificates.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>resume</code></td>
 <td>Hash</td>
 <td>Resume parameters. See below</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>resume.iter_max</code></td>
 <td>int</td>
 <td>Max number of retry on error<br/>Default: 7</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>resume.sleep_initial</code></td>
 <td>int</td>
 <td>First Sleep before retry<br/>Default: 2</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>resume.sleep_factor</code></td>
 <td>int</td>
 <td>Multiplier of sleep period between attempts<br/>Default: 2</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>resume.sleep_max</code></td>
 <td>int</td>
 <td>Default: 60</td>
@@ -3102,29 +3102,29 @@ useful for direct node-to-node transfers.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>url</td>
 <td>string</td>
 <td>URL of the node API</br>Mandatory</td>
 </tr>
-<tr class="even">
+<tr>
 <td>username</td>
 <td>string</td>
 <td>Node api user or access key</br>Mandatory</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>password</td>
 <td>string</td>
 <td>Password, secret or bearer token</br>Mandatory</td>
 </tr>
-<tr class="even">
+<tr>
 <td>root_id</td>
 <td>string</td>
 <td>Root file id</br>Mandatory only for bearer token</td>
@@ -3162,31 +3162,31 @@ Gateway.</p>
 <col style="width: 54%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>url</td>
 <td>string</td>
 <td>URL of the HTTP GW</br>Mandatory</td>
 </tr>
-<tr class="even">
+<tr>
 <td>upload_chunk_size</td>
 <td>int</td>
 <td>Size in bytes of chunks for upload<br/>Default:
 <code>64000</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>api_version</td>
 <td>string</td>
 <td>Force use of version (<code>v1</code>, <code>v2</code>)<br/>Default:
 <code>v2</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>synchronous</td>
 <td>bool</td>
 <td>Wait for each message acknowledgment<br/>Default:
@@ -3218,26 +3218,26 @@ class="header-section-number">4.20.6</span> Agent: Transfer SDK</h3>
 <col style="width: 41%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>url</code></td>
 <td>string</td>
 <td>IP address and port listened by the
 daemon</br>Mandatory<br/>Default: <code>:0</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>external</code></td>
 <td>bool</td>
 <td>Use external daemon, do not start one.<br/>Default:
 <code>false</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keep</code></td>
 <td>bool</td>
 <td>Keep the daemon running after exiting
@@ -3366,7 +3366,7 @@ description.</p>
 <col style="width: 44%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Field</th>
 <th>Type</th>
 <th>D</th>
@@ -3378,7 +3378,7 @@ description.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>apply_local_docroot</td>
 <td>bool</td>
 <td>Y</td>
@@ -3388,7 +3388,7 @@ description.</p>
 <td> </td>
 <td>Apply local docroot to source paths.<br/>(–apply-local-docroot)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>authentication</td>
 <td>string</td>
 <td> </td>
@@ -3399,7 +3399,7 @@ description.</p>
 <td>value=token for SSH bypass keys, else password asked if not
 provided.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>cipher</td>
 <td>string</td>
 <td>Y</td>
@@ -3411,7 +3411,7 @@ provided.<br/>(&lt;ignored&gt;)</td>
 aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm,
 aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>cipher_allowed</td>
 <td>string</td>
 <td>Y</td>
@@ -3422,7 +3422,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td>returned by node API. Valid literals include “aes-128” and
 “none”.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>compression</td>
 <td>int</td>
 <td> </td>
@@ -3432,7 +3432,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td> </td>
 <td>ascp4 only, 0 / 1?<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>content_protection</td>
 <td>string</td>
 <td>Y</td>
@@ -3444,7 +3444,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
 {enum})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>content_protection_password</td>
 <td>string</td>
 <td>Y</td>
@@ -3455,7 +3455,7 @@ protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
 <td>Specifies CSEAR password. (content
 protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>cookie</td>
 <td>string</td>
 <td>Y</td>
@@ -3466,7 +3466,7 @@ protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 <td>Metadata for transfer specified by
 application<br/>(env:ASPERA_SCP_COOKIE)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>create_dir</td>
 <td>bool</td>
 <td>Y</td>
@@ -3476,7 +3476,7 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 <td>Y</td>
 <td>Specifies whether to create new directories.<br/>(-d)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>delete_before_transfer</td>
 <td>bool</td>
 <td>Y</td>
@@ -3490,7 +3490,7 @@ directories that have matching names.<br/>Objects on the destination
 that have the same name but different type or size as objects<br/>on the
 source are not deleted.<br/>(–delete-before-transfer)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>delete_source</td>
 <td>bool</td>
 <td>Y</td>
@@ -3501,7 +3501,7 @@ source are not deleted.<br/>(–delete-before-transfer)</td>
 <td>Remove SRC files after transfer
 success<br/>(–remove-after-transfer)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>destination_root</td>
 <td>string</td>
 <td>Y</td>
@@ -3511,7 +3511,7 @@ success<br/>(–remove-after-transfer)</td>
 <td>Y</td>
 <td>Destination root directory.<br/>(&lt;special&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>destination_root_id</td>
 <td>string</td>
 <td> </td>
@@ -3523,7 +3523,7 @@ success<br/>(–remove-after-transfer)</td>
 using Bearer token auth for the destination
 node.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>dgram_size</td>
 <td>int</td>
 <td>Y</td>
@@ -3533,7 +3533,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>UDP datagram size in bytes<br/>(-Z {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>direction</td>
 <td>string</td>
 <td>Y</td>
@@ -3544,7 +3544,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Direction of transfer (on client side)<br/>Allowed values: send,
 receive<br/>(–mode (conversion){enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>exclude_newer_than</td>
 <td>int</td>
 <td>Y</td>
@@ -3555,7 +3555,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td>skip src files with mtime &gt; arg<br/>(–exclude-newer-than
 {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>exclude_older_than</td>
 <td>int</td>
 <td>Y</td>
@@ -3566,7 +3566,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td>skip src files with mtime &lt; arg<br/>(–exclude-older-than
 {int})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>fasp_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3576,7 +3576,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td>Y</td>
 <td>Specifies fasp (UDP) port.<br/>(-O {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>fasp_url</td>
 <td>string</td>
 <td> </td>
@@ -3586,7 +3586,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <td> </td>
 <td>Only used in Faspex.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>file_checksum</td>
 <td>string</td>
 <td>Y</td>
@@ -3598,7 +3598,7 @@ receive<br/>(–mode (conversion){enum})</td>
 hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5,
 none<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>http_fallback</td>
 <td>bool<br/>string</td>
 <td>Y</td>
@@ -3609,7 +3609,7 @@ none<br/>(&lt;ignored&gt;)</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
 transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 </tr>
-<tr class="even">
+<tr>
 <td>http_fallback_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3619,7 +3619,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td> </td>
 <td>Specifies http port when no cipher is used<br/>(-t {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>https_fallback_port</td>
 <td>int</td>
 <td>Y</td>
@@ -3629,7 +3629,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>Y</td>
 <td>Specifies https port when cipher is used<br/>(-t {int})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>keepalive</td>
 <td>bool</td>
 <td>Y</td>
@@ -3640,7 +3640,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}</td>
 <td>The session is running in persistent session
 mode.<br/>(–keepalive)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>lock_min_rate</td>
 <td>bool</td>
 <td>Y</td>
@@ -3650,7 +3650,7 @@ mode.<br/>(–keepalive)</td>
 <td>Y</td>
 <td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>lock_min_rate_kbps</td>
 <td>bool</td>
 <td> </td>
@@ -3662,7 +3662,7 @@ mode.<br/>(–keepalive)</td>
 min_rate_kbps.<br/>If false, users can adjust the transfer rate up to
 the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>lock_rate_policy</td>
 <td>bool</td>
 <td> </td>
@@ -3673,7 +3673,7 @@ the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 <td>If true, lock the rate policy to the default
 value.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>lock_target_rate</td>
 <td>bool</td>
 <td>Y</td>
@@ -3683,7 +3683,7 @@ value.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>lock_target_rate_kbps</td>
 <td>bool</td>
 <td>Y</td>
@@ -3695,7 +3695,7 @@ value.<br/>(&lt;ignored&gt;)</td>
 target_rate_kbps.<br/>If false, users can adjust the transfer rate up to
 the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>min_rate_cap_kbps</td>
 <td>int</td>
 <td>Y</td>
@@ -3708,7 +3708,7 @@ kilobits per second.<br/>Client minimum rate requests that exceed the
 minimum rate cap are ignored.<br/>The default value of unlimited applies
 no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>min_rate_kbps</td>
 <td>int</td>
 <td>Y</td>
@@ -3719,7 +3719,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td>Set the minimum transfer rate in kilobits per second.<br/>(-m
 {int})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>move_after_transfer</td>
 <td>string</td>
 <td>Y</td>
@@ -3731,7 +3731,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 transfer at the source side. Available as of
 3.8.0.<br/>(–move-after-transfer {string})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>multi_session</td>
 <td>int</td>
 <td>Y</td>
@@ -3744,7 +3744,7 @@ host needs an independent UDP (-O) port.<br/>Large files are split
 between sessions only when transferring with
 resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>multi_session_threshold</td>
 <td>int</td>
 <td>Y</td>
@@ -3756,7 +3756,7 @@ resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 greater than or equal to the specified value.<br/>(0=no file is
 split)<br/>(–multi-session-threshold {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>obfuscate_file_names</td>
 <td>bool</td>
 <td> </td>
@@ -3767,7 +3767,7 @@ split)<br/>(–multi-session-threshold {int})</td>
 <td>HTTP Gateway obfuscates file names when set to
 true.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>overwrite</td>
 <td>string</td>
 <td>Y</td>
@@ -3779,7 +3779,7 @@ true.<br/>(&lt;ignored&gt;)</td>
 name.<br/>Allowed values: never, always, diff, older,
 diff+older<br/>(–overwrite {enum})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>password</td>
 <td>string</td>
 <td> </td>
@@ -3793,7 +3793,7 @@ impersonating the transfer user and have access to resources
 (e.g. network shares).<br/>Windows only, node api
 only.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>paths</td>
 <td>array</td>
 <td>Y</td>
@@ -3804,7 +3804,7 @@ only.<br/>(&lt;ignored&gt;)</td>
 <td>Array of path to the source (required) and a path to the destination
 (optional).<br/>(&lt;special&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>precalculate_job_size</td>
 <td>bool</td>
 <td>Y</td>
@@ -3815,7 +3815,7 @@ only.<br/>(&lt;ignored&gt;)</td>
 <td>Specifies whether to precalculate the job
 size.<br/>(–precalculate-job-size)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>preserve_access_time</td>
 <td>bool</td>
 <td>Y</td>
@@ -3828,7 +3828,7 @@ destination.<br/>Because source access times are updated by the transfer
 operation,<br/>the timestamp that is preserved is the one just before to
 the transfer.<br/>(–preserve-access-time)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>preserve_acls</td>
 <td>string</td>
 <td>Y</td>
@@ -3839,7 +3839,7 @@ the transfer.<br/>(–preserve-access-time)</td>
 <td>Preserve access control lists.<br/>Allowed values: none, native,
 metafile<br/>(–preserve-acls {enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>preserve_creation_time</td>
 <td>bool</td>
 <td>Y</td>
@@ -3852,7 +3852,7 @@ destination.<br/>Only Windows systems retain information about creation
 time.<br/>If the destination is not a Windows computer, this option is
 ignored.<br/>(–preserve-creation-time)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>preserve_extended_attrs</td>
 <td>string</td>
 <td> </td>
@@ -3863,7 +3863,7 @@ ignored.<br/>(–preserve-creation-time)</td>
 <td>Preserve the extended attributes.<br/>Allowed values: none, native,
 metafile<br/>(–preserve-xattrs {enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>preserve_file_owner_gid</td>
 <td>bool</td>
 <td>Y</td>
@@ -3874,7 +3874,7 @@ metafile<br/>(–preserve-xattrs {enum})</td>
 <td>Preserve the group ID for a file
 owner<br/>(–preserve-file-owner-gid)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>preserve_file_owner_uid</td>
 <td>bool</td>
 <td>Y</td>
@@ -3885,7 +3885,7 @@ owner<br/>(–preserve-file-owner-gid)</td>
 <td>Preserve the user ID for a file
 owner<br/>(–preserve-file-owner-uid)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>preserve_modification_time</td>
 <td>bool</td>
 <td>Y</td>
@@ -3898,7 +3898,7 @@ modified (written), of a transferred file<br/>to the modification of the
 source file or directory.<br/>Preserve source-file modification
 timestamps at the destination.<br/>(–preserve-modification-time)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>preserve_remote_acls</td>
 <td>string</td>
 <td>Y</td>
@@ -3909,7 +3909,7 @@ timestamps at the destination.<br/>(–preserve-modification-time)</td>
 <td>Preserve remote access control lists.<br/>Allowed values: none,
 native, metafile<br/>(–remote-preserve-acls {enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>preserve_source_access_time</td>
 <td>bool</td>
 <td>Y</td>
@@ -3920,7 +3920,7 @@ native, metafile<br/>(–remote-preserve-acls {enum})</td>
 <td>Preserve the time logged for when the source file was
 accessed<br/>(–preserve-source-access-time)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>preserve_times</td>
 <td>bool</td>
 <td> </td>
@@ -3930,7 +3930,7 @@ accessed<br/>(–preserve-source-access-time)</td>
 <td> </td>
 <td>Preserve file timestamps.<br/>(–preserve-times)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>proxy</td>
 <td>string</td>
 <td>Y</td>
@@ -3944,7 +3944,7 @@ for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if
 specified here, overrides the value of environment variable
 ASPERA_PROXY_PASS.<br/>(–proxy {string})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>rate_policy</td>
 <td>string</td>
 <td>Y</td>
@@ -3955,7 +3955,7 @@ ASPERA_PROXY_PASS.<br/>(–proxy {string})</td>
 <td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed
 values: low, fair, high, fixed<br/>(–policy {enum})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>rate_policy_allowed</td>
 <td>string</td>
 <td> </td>
@@ -3967,7 +3967,7 @@ values: low, fair, high, fixed<br/>(–policy {enum})</td>
 by node API.<br/>Allowed values: low, fair, high,
 fixed<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>read_threads</td>
 <td>int</td>
 <td> </td>
@@ -3977,7 +3977,7 @@ fixed<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>remote_access_key</td>
 <td>string</td>
 <td> </td>
@@ -3989,7 +3989,7 @@ fixed<br/>(&lt;ignored&gt;)</td>
 bearer token that is used to authenticate to the remote
 node.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>remote_host</td>
 <td>string</td>
 <td>Y</td>
@@ -4000,7 +4000,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>IP or fully qualified domain name of the remote server<br/>(–host
 {string})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>remote_password</td>
 <td>string</td>
 <td>Y</td>
@@ -4010,7 +4010,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>remote_user</td>
 <td>string</td>
 <td>Y</td>
@@ -4021,7 +4021,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Remote user. Default value is “xfer” on node or connect.<br/>(–user
 {string})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>remove_after_transfer</td>
 <td>bool</td>
 <td>Y</td>
@@ -4032,7 +4032,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Remove SRC files after transfer
 success<br/>(–remove-after-transfer)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>remove_empty_directories</td>
 <td>bool</td>
 <td>Y</td>
@@ -4043,7 +4043,7 @@ success<br/>(–remove-after-transfer)</td>
 <td>Specifies whether to remove empty
 directories.<br/>(–remove-empty-directories)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>remove_empty_source_directory</td>
 <td>bool</td>
 <td>Y</td>
@@ -4054,7 +4054,7 @@ directories.<br/>(–remove-empty-directories)</td>
 <td>Remove empty source subdirectories and remove the source directory
 itself, if empty<br/>(–remove-empty-source-directory)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>remove_skipped</td>
 <td>bool</td>
 <td>Y</td>
@@ -4066,7 +4066,7 @@ itself, if empty<br/>(–remove-empty-source-directory)</td>
 if true, skipped files will be removed as
 well.<br/>(–remove-skipped)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>resume_policy</td>
 <td>string</td>
 <td>Y</td>
@@ -4078,7 +4078,7 @@ well.<br/>(–remove-skipped)</td>
 re-transferring the whole files.<br/>Allowed values: none, attrs,
 sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>retry_duration</td>
 <td>string<br/>int</td>
 <td> </td>
@@ -4089,7 +4089,7 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 <td>Specifies how long to wait before retrying transfer.
 (e.g. “5min”)<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>source_root</td>
 <td>string</td>
 <td>Y</td>
@@ -4101,7 +4101,7 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 conventional path or it can be a URI but only if there is no root
 defined.<br/>(–source-prefix64 (conversion){string})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>source_root_id</td>
 <td>string</td>
 <td> </td>
@@ -4112,7 +4112,7 @@ defined.<br/>(–source-prefix64 (conversion){string})</td>
 <td>The file ID of the source root directory. Required when using Bearer
 token auth for the source node.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>src_base</td>
 <td>string</td>
 <td>Y</td>
@@ -4125,7 +4125,7 @@ object.<br/>The remaining portion of the source path is kept intact at
 the destination.<br/>Special care must be taken when used with cloud
 storage.<br/>(–src-base64 (conversion){string})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>ssh_args</td>
 <td>string</td>
 <td> </td>
@@ -4136,7 +4136,7 @@ storage.<br/>(–src-base64 (conversion){string})</td>
 <td>Array of arguments to pass to SSH. Use with
 caution.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>ssh_port</td>
 <td>int</td>
 <td>Y</td>
@@ -4147,7 +4147,7 @@ caution.<br/>(&lt;ignored&gt;)</td>
 <td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P
 {int})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>ssh_private_key</td>
 <td>string</td>
 <td>Y</td>
@@ -4159,7 +4159,7 @@ caution.<br/>(&lt;ignored&gt;)</td>
 —–BEGIN RSA PRIV4TE KEY—–…<br/>Note the JSON encoding: for
 newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>ssh_private_key_passphrase</td>
 <td>string</td>
 <td>Y</td>
@@ -4170,7 +4170,7 @@ newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 <td>The passphrase associated with the transfer user’s SSH private key.
 Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>sshfp</td>
 <td>string</td>
 <td>Y</td>
@@ -4181,7 +4181,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Check it against server SSH host key fingerprint<br/>(–check-sshfp
 {string})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>symlink_policy</td>
 <td>string</td>
 <td>Y</td>
@@ -4192,7 +4192,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Handle source side symbolic links<br/>Allowed values: follow, copy,
 copy+force, skip<br/>(–symbolic-links {enum})</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>tags</td>
 <td>hash</td>
 <td>Y</td>
@@ -4202,7 +4202,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON<br/>(–tags64 (conversion){hash})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>target_rate_cap_kbps</td>
 <td>int</td>
 <td> </td>
@@ -4213,7 +4213,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Returned by upload/download_setup node
 API.<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>target_rate_kbps</td>
 <td>int</td>
 <td>Y</td>
@@ -4223,7 +4223,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Specifies desired speed for the transfer.<br/>(-l {int})</td>
 </tr>
-<tr class="even">
+<tr>
 <td>target_rate_percentage</td>
 <td>string</td>
 <td>Y</td>
@@ -4233,7 +4233,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>title</td>
 <td>string</td>
 <td> </td>
@@ -4243,7 +4243,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>Title of the transfer<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>token</td>
 <td>string</td>
 <td>Y</td>
@@ -4254,7 +4254,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Authorization token: Bearer, Basic or ATM (Also arg
 -W)<br/>(env:ASPERA_SCP_TOKEN)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>use_ascp4</td>
 <td>bool</td>
 <td>Y</td>
@@ -4264,7 +4264,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>specify version of protocol<br/>(&lt;special&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>use_system_ssh</td>
 <td>string</td>
 <td> </td>
@@ -4274,7 +4274,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>TODO, comment…<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>write_threads</td>
 <td>int</td>
 <td> </td>
@@ -4284,7 +4284,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>wss_enabled</td>
 <td>bool</td>
 <td>Y</td>
@@ -4294,7 +4294,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Server has Web Socket service enabled<br/>(&lt;special&gt;)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>wss_port</td>
 <td>int</td>
 <td>Y</td>
@@ -4456,7 +4456,7 @@ files: <code>f1</code> and <code>d4/f2</code>.</p>
 <col style="width: 33%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source files</th>
 <th>Destination</th>
 <th>Folders on Dest.</th>
@@ -4465,70 +4465,70 @@ files: <code>f1</code> and <code>d4/f2</code>.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>f1</td>
 <td>d/f</td>
 <td>-</td>
 <td>false</td>
 <td>Error: <code>d</code> does not exist.</td>
 </tr>
-<tr class="even">
+<tr>
 <td>f1</td>
 <td>d/f</td>
 <td>d</td>
 <td>false</td>
 <td>d/f (renamed)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>f1</td>
 <td>d/f/.</td>
 <td>d</td>
 <td>false</td>
 <td>d/f (renamed)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>f1</td>
 <td>d/f</td>
 <td>d/f</td>
 <td>false</td>
 <td>d/f/f1</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>f1 f2</td>
 <td>d</td>
 <td>d</td>
 <td>false</td>
 <td>d/f1 d/f2</td>
 </tr>
-<tr class="even">
+<tr>
 <td>d3</td>
 <td>d</td>
 <td>-</td>
 <td>false</td>
 <td>d/f1 d/f2 (renamed)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>f1</td>
 <td>d</td>
 <td>-</td>
 <td>true</td>
 <td>d/f1</td>
 </tr>
-<tr class="even">
+<tr>
 <td>f1 f2</td>
 <td>d</td>
 <td>-</td>
 <td>true</td>
 <td>d/f1 d/f2</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>d1/f1 d2/f2</td>
 <td>d</td>
 <td>-</td>
 <td>true</td>
 <td>d/f1 d/f2</td>
 </tr>
-<tr class="even">
+<tr>
 <td>d3</td>
 <td>d</td>
 <td>-</td>
@@ -4552,7 +4552,7 @@ destination.</p>
 <col style="width: 40%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Source files</th>
 <th>Destination</th>
 <th><code>src_base</code></th>
@@ -4560,7 +4560,7 @@ destination.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>d1/d2/f2 d1/d3/f3</td>
 <td>d</td>
 <td>d1</td>
@@ -4837,40 +4837,40 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb260-1"><a href
 <col style="width: 48%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>count</td>
 <td>int</td>
 <td>Number of files<br/>Mandatory</td>
 </tr>
-<tr class="even">
+<tr>
 <td>file</td>
 <td>string</td>
 <td>Basename for files<br>Default: <code>file</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>size</td>
 <td>int</td>
 <td>Size of first file.<br>Default: 0</td>
 </tr>
-<tr class="even">
+<tr>
 <td>inc</td>
 <td>int</td>
 <td>Increment applied to determine next file size<br>Default: 0</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>seq</td>
 <td>enum</td>
 <td>Sequence in determining next file size<br/>Values: random,
 sequential<br/>Default: sequential</td>
 </tr>
-<tr class="even">
+<tr>
 <td>buf_init</td>
 <td>enum</td>
 <td>How source data is initialized<br/>Option ‘none’ is not allowed for
@@ -4931,7 +4931,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb263-1"><a href
 class="header-section-number">4.28</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.18.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.18.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -6748,21 +6748,21 @@ class="header-section-number">9</span> Browse</h1>
 “gen3” browse:</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th>Parameter</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>recursive</code></td>
 <td>Recursively list files</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>max</code></td>
 <td>Maximum number of files to list</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>self</code></td>
 <td>Offset in the list</td>
 </tr>
@@ -6990,7 +6990,7 @@ following elements:</li>
 <col style="width: 47%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>parameter</th>
 <th>Default</th>
 <th>type</th>
@@ -6998,57 +6998,57 @@ following elements:</li>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>user_id</td>
 <td>-</td>
 <td>Mandatory</td>
 <td>Identifier of user</td>
 </tr>
-<tr class="even">
+<tr>
 <td>scope</td>
 <td><code>node.&lt;access_key&gt;:&lt;_scope&gt;</code></td>
 <td>Mandatory</td>
 <td>API scope,
 e.g. <code>node.&lt;access_key&gt;:&lt;node scope&gt;</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>expires_at</td>
 <td><code>now+&lt;_validity&gt;</code></td>
 <td>Mandatory</td>
 <td>Format: <code>%Y-%m-%dT%H:%M:%SZ</code>
 e.g. <code>2021-12-31T23:59:59Z</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td>auth_type</td>
 <td><code>access_key</code></td>
 <td>Optional</td>
 <td><code>access_key</code>, <code>node_user</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>group_ids</td>
 <td>-</td>
 <td>Optional</td>
 <td>List of group ids</td>
 </tr>
-<tr class="even">
+<tr>
 <td>organization_id</td>
 <td>-</td>
 <td>Optional</td>
 <td>Organization id</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>watermarking_json_base64</td>
 <td>-</td>
 <td>Optional</td>
 <td>Watermarking information (not used)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>_scope</td>
 <td><code>user:all</code></td>
 <td>Special</td>
 <td>Either <code>user:all</code> or <code>admin:all</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td>_validity</td>
 <td>86400</td>
 <td>Special</td>
@@ -7245,25 +7245,25 @@ IBM Aspera Faspex v5</h1>
 <col style="width: 84%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>Method</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>jwt</code></td>
 <td>General purpose, private-key based authentication</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>web</code></td>
 <td>Requires authentication with web browser</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>boot</code></td>
 <td>Use authentication token copied from browser (experimental)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>public_link</code></td>
 <td>Public link authentication (set when option <code>url</code> is a
 public link)</td>
@@ -7573,44 +7573,44 @@ href="https://developer.ibm.com/apis/catalog/aspera--ibm-aspera-faspex-5-0-api/a
 <col style="width: 39%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>parameter</th>
 <th>Type</th>
 <th>description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>offset</code></td>
 <td>Native</td>
 <td>Managed by <code>ascli</code>: Offset of first package. Default:
 0</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>limit</code></td>
 <td>Native</td>
 <td>Managed by <code>ascli</code>: # of packages per API call. Default:
 100</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>q</code></td>
 <td>Native</td>
 <td>General search string (case insensitive, matches if value is
 contained in several fields)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>…</td>
 <td>Native</td>
 <td>Other native parameters are supported (Refer to API
 documentation)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>max</code></td>
 <td>Special</td>
 <td>Maximum number of items to retrieve (stop pages when the maximum is
 passed)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>pmax</code></td>
 <td>Special</td>
 <td>Maximum number of pages to request (stop pages when the maximum is
@@ -7801,7 +7801,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href
 <col style="width: 46%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>parameter</th>
 <th>type</th>
 <th>default</th>
@@ -7809,55 +7809,55 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb452-1"><a href
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>url</td>
 <td>string</td>
 <td>http://localhost:8080</td>
 <td>Base url on which requests are listened</td>
 </tr>
-<tr class="even">
+<tr>
 <td>certificate</td>
 <td>hash</td>
 <td>nil</td>
 <td>Certificate information (if HTTPS)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>certificate.key</td>
 <td>string</td>
 <td>nil</td>
 <td>Path to private key file</td>
 </tr>
-<tr class="even">
+<tr>
 <td>certificate.cert</td>
 <td>string</td>
 <td>nil</td>
 <td>Path to certificate</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>certificate.chain</td>
 <td>string</td>
 <td>nil</td>
 <td>Path to intermediary certificates</td>
 </tr>
-<tr class="even">
+<tr>
 <td>processing</td>
 <td>hash</td>
 <td>nil</td>
 <td>Behavior of post processing</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>processing.script_folder</td>
 <td>string</td>
 <td>.</td>
 <td>Prefix added to script path</td>
 </tr>
-<tr class="even">
+<tr>
 <td>processing.fail_on_error</td>
 <td>bool</td>
 <td>false</td>
 <td>Fail if true and process exit with non zero</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>processing.timeout_seconds</td>
 <td>integer</td>
 <td>60</td>
@@ -8877,7 +8877,7 @@ with the following fields:</p>
 <col style="width: 35%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>field</th>
 <th>default</th>
 <th>example</th>
@@ -8885,55 +8885,55 @@ with the following fields:</p>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>server</code></td>
 <td>-</td>
 <td>smtp.gmail.com</td>
 <td>SMTP server address</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>tls</code></td>
 <td>true</td>
 <td>true</td>
 <td>Enable STARTTLS (port 587)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>ssl</code></td>
 <td>false</td>
 <td>false</td>
 <td>Enable TLS (port 465)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>port</code></td>
 <td>587 or 465 or 25</td>
 <td>587</td>
 <td>Port for service</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>domain</code></td>
 <td>domain of server</td>
 <td>gmail.com</td>
 <td>Email domain of user</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>username</code></td>
 <td>-</td>
 <td>john@example.com</td>
 <td>User to authenticate on SMTP server, leave empty for open auth.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>password</code></td>
 <td>-</td>
 <td>my_password_here</td>
 <td>Password for above username</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>from_email</code></td>
 <td>username if defined</td>
 <td>johnny@example.com</td>
 <td>Address used if receiver replies</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>from_name</code></td>
 <td>same as email</td>
 <td>John Wayne</td>
@@ -9039,26 +9039,26 @@ JSON format on stdout.</p>
 <col style="width: 54%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>parameter</th>
 <th>description</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>spec</code></td>
 <td>the <a
 href="#transfer-specification"><strong>transfer-spec</strong></a></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>agent</code></td>
 <td>same parameters as transfer-info for agent <code>direct</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>loglevel</code></td>
 <td>log level of <code>asession</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>file_list_folder</code></td>
 <td>the folder used to store (for garbage collection) generated file
 lists. By default it is
@@ -9077,7 +9077,7 @@ class="header-section-number">24.1</span> Comparison of interfaces</h2>
 <col style="width: 13%" />
 </colgroup>
 <thead>
-<tr class="header">
+<tr>
 <th>feature/tool</th>
 <th>Transfer SDK</th>
 <th>FaspManager</th>
@@ -9086,21 +9086,21 @@ class="header-section-number">24.1</span> Comparison of interfaces</h2>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>language integration</td>
 <td>Many</td>
 <td>C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/></td>
 <td>Any</td>
 <td>Any</td>
 </tr>
-<tr class="even">
+<tr>
 <td>required additional components to <code>ascp</code></td>
 <td>Daemon</td>
 <td>Library<br/>(+headers)</td>
 <td>-</td>
 <td>Ruby<br/>Aspera gem</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>startup</td>
 <td>Daemon</td>
 <td>API</td>
@@ -9108,7 +9108,7 @@ class="header-section-number">24.1</span> Comparison of interfaces</h2>
 <td>JSON on stdin<br/>(standard
 APIs:<br/>JSON.generate<br/>Process.spawn)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>events</td>
 <td>Poll</td>
 <td>Callback</td>
@@ -9116,7 +9116,7 @@ APIs:<br/>JSON.generate<br/>Process.spawn)</td>
 syntax</td>
 <td>JSON on stdout</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>platforms</td>
 <td>Any with <code>ascp</code> and transfer daemon</td>
 <td>Any with <code>ascp</code> (and SDK if compiled)</td>

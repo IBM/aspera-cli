@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* dev
+* 4.18.0
   
   * New Features:
     * `faspex5`: added command `admin configuration` for global parameters.
