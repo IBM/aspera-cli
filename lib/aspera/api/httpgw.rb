@@ -310,6 +310,7 @@ module Aspera
         notify_cb:         nil,
         **opts
       )
+        Log.log.debug{Log.dump(:gw_url, url)}
         # add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
         raise 'GW URL shall be with scheme https' unless url.start_with?('https://')

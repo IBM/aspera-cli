@@ -50,7 +50,7 @@ module Aspera
         super(**base_options)
         @gw_api = Api::Httpgw.new(
           # remove /v1 from end of user-provided GW url: we need the base url only
-          url:               url.gsub(%r{/#{Api::Httpgw::API_V1}/*$}o, ''),
+          url:               url,
           api_version:       api_version,
           upload_chunk_size: upload_chunk_size,
           synchronous:       synchronous,
