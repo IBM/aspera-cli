@@ -314,8 +314,10 @@ module Aspera
         # add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
         raise 'GW URL shall be with scheme https' unless url.start_with?('https://')
-        # remove trailing slash and version if any
+        # remove trailing slash and version (o=only once) if present
+        # TODO: issue warning ?
         url = url.gsub(%r{/+$}, '').gsub(%r{/#{API_V1}$}o, '')
+        # assume GW is always under specific path (TODO: remove this ?)
         url = File.join(url, DEFAULT_BASE_PATH) unless url.end_with?(DEFAULT_BASE_PATH)
         @gw_root_url = url
         super(base_url: "#{@gw_root_url}/#{API_V1}", **opts)
