@@ -3,6 +3,7 @@
 # cspell:ignore initdemo genkey pubkey asperasoft filelists
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/special_values'
 require 'aspera/cli/version'
 require 'aspera/cli/formatter'
 require 'aspera/cli/info'
@@ -293,7 +294,7 @@ module Aspera
             Aspera.assert_type(path, String){'Expecting a String for certificate location'}
             paths_to_add = [path]
             Log.log.debug{"Adding cert location: #{path}"}
-            if path.eql?(ExtendedValue::DEF)
+            if path.eql?(SpecialValues::DEF)
               @certificate_store.set_default_paths
               paths_to_add = [
                 OpenSSL::X509::DEFAULT_CERT_DIR,
@@ -324,7 +325,7 @@ module Aspera
           locations = @certificate_paths
           if locations.nil?
             # compute default locations
-            self.trusted_cert_locations = ExtendedValue::DEF
+            self.trusted_cert_locations = SpecialValues::DEF
             locations = @certificate_paths
             # restore defaults
             @certificate_paths = @certificate_store = nil

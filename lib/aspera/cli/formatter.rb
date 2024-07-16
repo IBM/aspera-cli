@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore jsonpp
+require 'aspera/cli/special_values'
 require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/environment'
@@ -110,7 +111,7 @@ module Aspera
       class << self
         def all_but(list)
           list = [list] unless list.is_a?(Array)
-          return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(ExtendedValue::ALL)
+          return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
 
         def tick(yes)
@@ -207,9 +208,9 @@ module Aspera
         options.declare(:output, 'Destination for results', types: String, handler: {o: self, m: :option_handler})
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
         options.declare(
-          :fields, "Comma separated list of: fields, or #{ExtendedValue::ALL}, or #{ExtendedValue::DEF}", handler: {o: self, m: :option_handler},
+          :fields, "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF}", handler: {o: self, m: :option_handler},
           types: [String, Array, Regexp, Proc],
-          default: ExtendedValue::DEF)
+          default: SpecialValues::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
         options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
         options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
@@ -256,7 +257,7 @@ module Aspera
         # the requested list of fields, but if can contain special values
         request =
           case @options[:fields]
-          # when NilClass then [ExtendedValue::DEF]
+          # when NilClass then [SpecialValues::DEF]
           when String then @options[:fields].split(',')
           when Array then @options[:fields]
           when Regexp then return all_fields(data).select{|i|i.match(@options[:fields])}
@@ -272,10 +273,10 @@ module Aspera
             item = item[1..-1]
           end
           case item
-          when ExtendedValue::ALL
+          when SpecialValues::ALL
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
             request.unshift(*all_fields(data))
-          when ExtendedValue::DEF
+          when SpecialValues::DEF
             default = all_fields(data).select{|i|default.call(i)} if default.is_a?(Proc)
             default = all_fields(data) if default.nil?
             request.unshift(*default)
@@ -293,11 +294,11 @@ module Aspera
       # filter the list of items on the fields option
       def filter_list_on_fields(data)
         # by default, keep all data intact
-        return data if @options[:fields].eql?(ExtendedValue::DEF) && @options[:select].nil?
+        return data if @options[:fields].eql?(SpecialValues::DEF) && @options[:select].nil?
         Aspera.assert_type(data, Array){'Filtering fields or select requires result is an Array of Hash'}
         Aspera.assert(data.all?(Hash)){'Filtering fields or select requires result is an Array of Hash'}
         filter_columns_on_select(data)
-        return data if @options[:fields].eql?(ExtendedValue::DEF)
+        return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])
         return data.map{|i|i[selected_fields.first]} if selected_fields.length == 1
         return data.map{|i|i.select{|k, _|selected_fields.include?(k)}}

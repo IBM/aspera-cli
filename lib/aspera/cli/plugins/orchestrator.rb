@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/basic_auth_plugin'
+require 'aspera/cli/special_values'
 require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
@@ -150,7 +151,7 @@ module Aspera
             end
             case command
             when :status
-              wf_id = nil if wf_id.eql?(ExtendedValue::ALL)
+              wf_id = nil if wf_id.eql?(SpecialValues::ALL)
               result = call_ao('workflows_status', id: wf_id)[:data]
               return {type: :object_list, data: result['workflows']['workflow']}
             when :list

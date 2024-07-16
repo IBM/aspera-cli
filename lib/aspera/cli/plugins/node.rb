@@ -3,6 +3,7 @@
 # cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/sync_actions'
+require 'aspera/cli/special_values'
 require 'aspera/transfer/spec'
 require 'aspera/nagios'
 require 'aspera/hash_ext'
@@ -638,7 +639,7 @@ module Aspera
             async_name = options.get_option(:sync_name)
             if async_name.nil?
               async_id = instance_identifier
-              if async_id.eql?(ExtendedValue::ALL) && %i[show delete].include?(command)
+              if async_id.eql?(SpecialValues::ALL) && %i[show delete].include?(command)
                 async_ids = @api_node.read('async/list')[:data]['sync_ids']
               else
                 Integer(async_id) # must be integer
@@ -661,7 +662,7 @@ module Aspera
           when :show
             resp = @api_node.create('async/summary', post_data)[:data]['sync_summaries']
             return Main.result_empty if resp.empty?
-            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if async_id.eql?(ExtendedValue::ALL)
+            return { type: :object_list, data: resp, fields: %w[snid name local_dir remote_dir] } if async_id.eql?(SpecialValues::ALL)
             return { type: :single_object, data: resp.first }
           when :delete
             resp = @api_node.create('async/delete', post_data)[:data]

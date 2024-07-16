@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore csvt jsonpp
+# cspell:ignore csvt jsonpp stdbin
 require 'aspera/uri_reader'
 require 'aspera/environment'
 require 'aspera/log'
@@ -16,11 +16,6 @@ module Aspera
     # command line extended values
     class ExtendedValue
       include Singleton
-
-      # special values
-      INIT = 'INIT'
-      ALL = 'ALL'
-      DEF = 'DEF'
 
       MARKER_START = '@'
       MARKER_END = ':'
@@ -74,9 +69,21 @@ module Aspera
           zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
           extend: lambda{|v|ExtendedValue.instance.evaluate_all(v)}
         }
+        @default_decoder = nil
+      end
+
+      # Regex to match an extended value
+      def handler_regex_string
+        "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
       end
 
       public
+
+      def default_decoder=(value)
+        Log.log.debug{"setting default decoder to #{value} (#{value.class})"}
+        Aspera.assert(value.nil? || @handlers.key?(value))
+        @default_decoder = value
+      end
 
       def modifiers; @handlers.keys; end
 
@@ -87,16 +94,13 @@ module Aspera
         @handlers[name] = method
       end
 
-      # Regex to match an extended value
-      def ext_re
-        "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
-      end
-
-      # parse an option value if it is a String using supported extended value modifiers
+      # parse an string value to extended value, if it is a String using supported extended value modifiers
       # other value types are returned as is
+      # @param value [String] the value to parse
+      # @param expect [Class,Array] one or a list of expected types
       def evaluate(value)
         return value unless value.is_a?(String)
-        regex = Regexp.new("^#{ext_re}(.*)$", Regexp::MULTILINE)
+        regex = Regexp.new("^#{handler_regex_string}(.*)$", Regexp::MULTILINE)
         # first determine decoders, in reversed order
         handlers_reversed = []
         while (m = value.match(regex))
@@ -113,9 +117,18 @@ module Aspera
         return value
       end
 
+      # parse string value as extended value
+      # use default decoder if none is specified
+      def evaluate_with_default(value)
+        if value.is_a?(String) && value.match(/^#{handler_regex_string}.*$/).nil? && !@default_decoder.nil?
+          value = [MARKER_START, @default_decoder, MARKER_END, value].join
+        end
+        return evaluate(value)
+      end
+
       # find inner extended values
       def evaluate_all(value)
-        regex = Regexp.new("^(.*)#{ext_re}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
+        regex = Regexp.new("^(.*)#{handler_regex_string}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
         while (m = value.match(regex))
           sub_value = "@#{m[2]}:#{m[3]}"
           Log.log.debug{"evaluating #{sub_value}"}
