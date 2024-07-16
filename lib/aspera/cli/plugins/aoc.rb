@@ -4,6 +4,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/transfer_agent'
+require 'aspera/cli/special_values'
 require 'aspera/agent/node'
 require 'aspera/transfer/spec'
 require 'aspera/api/aoc'
@@ -690,13 +691,13 @@ module Aspera
                     ].concat(aoc_api.additional_persistence_ids)))
               end
               case ids_to_download
-              when ExtendedValue::ALL, ExtendedValue::INIT
+              when SpecialValues::ALL, SpecialValues::INIT
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 Aspera.assert_type(query, Hash){'query'}
                 resolve_dropbox_name_default_ws_id(query)
                 # remove from list the ones already downloaded
                 all_ids = api_read_all('packages', query)[:data].map{|e|e['id']}
-                if ids_to_download.eql?(ExtendedValue::INIT)
+                if ids_to_download.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'Only with option once_only'}
                   skip_ids_persistency.data.clear.concat(all_ids)
                   skip_ids_persistency.save

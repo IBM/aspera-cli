@@ -5,6 +5,7 @@ require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/special_values'
 require 'aspera/cli/transfer_agent'
 require 'aspera/transfer/uri'
 require 'aspera/transfer/spec'
@@ -353,9 +354,9 @@ module Aspera
                 delivery_id = instance_identifier
                 raise 'empty id' if delivery_id.empty?
                 recipient = options.get_option(:recipient)
-                if delivery_id.eql?(ExtendedValue::ALL)
+                if delivery_id.eql?(SpecialValues::ALL)
                   pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
-                elsif delivery_id.eql?(ExtendedValue::INIT)
+                elsif delivery_id.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'Only with option once_only'}
                   skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD]}})
                   skip_ids_persistency.save

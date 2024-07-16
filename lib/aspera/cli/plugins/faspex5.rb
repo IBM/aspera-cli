@@ -4,6 +4,7 @@
 
 require 'aspera/cli/basic_auth_plugin'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/special_values'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/nagios'
@@ -118,7 +119,7 @@ module Aspera
           options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'OAuth JWT RSA private key passphrase')
-          options.declare(:box, "Package inbox, either shared inbox name or one of: #{API_LIST_MAILBOX_TYPES.join(', ')} or #{ExtendedValue::ALL}", default: 'inbox')
+          options.declare(:box, "Package inbox, either shared inbox name or one of: #{API_LIST_MAILBOX_TYPES.join(', ')} or #{SpecialValues::ALL}", default: 'inbox')
           options.declare(:shared_folder, 'Send package with files from shared folder')
           options.declare(:group_type, 'Type of shared box', values: %i[shared_inboxes workgroups], default: :shared_inboxes)
           options.parse_options!
@@ -309,7 +310,7 @@ module Aspera
           box = options.get_option(:box)
           real_path =
             case box
-            when ExtendedValue::ALL then 'packages' # only admin can list all packages globally
+            when SpecialValues::ALL then 'packages' # only admin can list all packages globally
             when *API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
@@ -338,12 +339,12 @@ module Aspera
           end
           packages = []
           case package_ids
-          when ExtendedValue::INIT
+          when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency){'Only with option once_only'}
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
             skip_ids_persistency.save
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
-          when ExtendedValue::ALL
+          when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
             packages = list_packages_with_filter(query: {'status' => 'completed'})
             Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
@@ -562,10 +563,12 @@ module Aspera
           res_command = options.get_next_command(available_commands)
           case res_command
           when *Plugin::ALL_OPS
-            return entity_command(res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg, delete_style: delete_style) do |field, value|
-              lookup_entity_by_field(
-                type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
-            end
+            return entity_command(
+              res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg,
+              delete_style: delete_style) do |field, value|
+                     lookup_entity_by_field(
+                       type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
+                   end
           when :shared_folders
             node_id = instance_identifier do |field, value|
               lookup_entity_by_field(type: res_type, field: field, value: value)['id']
