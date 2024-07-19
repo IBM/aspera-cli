@@ -123,7 +123,7 @@ module Aspera
 
       # @return true if we can display Unicode characters
       def terminal_supports_unicode?
-        @terminal_supports_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first.include?('UTF-8') if @terminal_supports_unicode.nil?
+        @terminal_supports_unicode = terminal? && ENV.values_at('LC_ALL', 'LC_CTYPE', 'LANG').compact.first&.include?('UTF-8') if @terminal_supports_unicode.nil?
         return @terminal_supports_unicode
       end
     end
