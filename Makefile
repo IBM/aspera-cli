@@ -115,7 +115,7 @@ LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
 PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/' < Dockerfile.tmpl.erb | erb -T 2
 DOCKER=podman
 $(LOCAL_SDK_FILE): $(DIR_TMP).exists
-	curl -L $$($(CLI_PATH) --show-config --fields=sdk_url) -o $(LOCAL_SDK_FILE)
+	curl -Lo $(LOCAL_SDK_FILE) $$($(CLI_PATH) --show-config --fields=sdk_url --display=data)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 dockerfile_release:
