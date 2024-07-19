@@ -12,7 +12,7 @@ require 'json'
 require 'base64'
 require 'cgi'
 
-# add cancel method to http
+# Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
   METHOD = 'CANCEL'
   REQUEST_HAS_BODY  = false
@@ -24,12 +24,16 @@ module Aspera
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    # global settings also valid for any subclass
+    # Global settings also valid for any subclass
+    # @param user_agent [String] HTTP request header: 'User-Agent'
+    # @param download_partial_suffix [String] suffix for partial download
+    # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
+    # @param progress_bar [Object] progress bar object
     @@global = { # rubocop:disable Style/ClassVars
-      user_agent:              'Ruby',          # goes to HTTP request header: 'User-Agent'
-      download_partial_suffix: '.http_partial', # suffix for partial download
-      session_cb:              nil,             # a lambda which takes the Net::HTTP as arg, use this to change parameters
-      progress_bar:            nil # progress bar object
+      user_agent:              'RubyAsperaRest',
+      download_partial_suffix: '.http_partial',
+      session_cb:              nil,
+      progress_bar:            nil
     }
 
     # flag for array parameters prefixed with []
@@ -44,9 +48,10 @@ module Aspera
     JSON_DECODE = ['application/json', 'application/vnd.api+json', 'application/x-javascript'].freeze
 
     class << self
+      # @return [String] Basic auth token
       def basic_token(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
-      # used to build a parameter list prefixed with "[]"
+      # Build a parameter list prefixed with "[]"
       # @param values [Array] list of values
       def array_params(values)
         return [ARRAY_PARAMS].concat(values)
@@ -56,7 +61,7 @@ module Aspera
         return values.first.eql?(ARRAY_PARAMS)
       end
 
-      # build URI from URL and parameters and check it is http or https, encode array [] parameters
+      # Build URI from URL and parameters and check it is http or https, encode array [] parameters
       def build_uri(url, query_hash=nil)
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
@@ -82,8 +87,16 @@ module Aspera
         return uri
       end
 
+      # decode query string as hash
+      # Does not support arrays in query string, no standard, e.g. PHP's way is p[]=1&p[]=2
+      # @param query [String] query string
+      # @return [Hash] decoded query
       def decode_query(query)
-        URI.decode_www_form(query).each_with_object({}){|v, h|h[v.first] = v.last }
+        URI.decode_www_form(query).each_with_object({}) do |pair, h|
+          key = pair.first
+          raise "Array not supported in query string: #{key}" if key.include?('[]') || h.key?(key)
+          h[key] = pair.last
+        end
       end
 
       # Start a HTTP/S session, also used for web sockets
