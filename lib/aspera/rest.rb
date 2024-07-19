@@ -141,6 +141,17 @@ module Aspera
       def user_agent
         return @@global[:user_agent]
       end
+
+      def parse_header(header)
+        type, *params = header.split(/;\s*/)
+        parameters = params.map do |param|
+          one = param.split(/=\s*/)
+          one[0] = one[0].to_sym
+          one[1] = one[1].gsub(/\A"|"\z/, '')
+          one
+        end.to_h
+        { type: type.downcase, parameters: parameters }
+      end
     end
 
     private
@@ -305,7 +316,7 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          result_mime = (result[:http]['Content-Type'] || 'text/plain').split(';').first.downcase
+          result_mime = self.class.parse_header(result[:http]['Content-Type'] || 'text/plain')[:type]
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
               result[:http].code.to_s.start_with?('2') &&
@@ -315,8 +326,11 @@ module Aspera
             Log.log.debug('before write file')
             target_file = save_to_file
             # override user's path to path in header
-            if !response['Content-Disposition'].nil? && (m = response['Content-Disposition'].match(/filename="([^"]+)"/))
-              target_file = File.join(File.dirname(target_file), m[1])
+            if !response['Content-Disposition'].nil?
+              disposition = self.class.parse_header(response['Content-Disposition'])
+              if disposition[:parameters].key?(:filename)
+                target_file = File.join(File.dirname(target_file), disposition[:parameters][:filename])
+              end
             end
             # download with temp filename
             target_file_tmp = "#{target_file}#{@@global[:download_partial_suffix]}"
