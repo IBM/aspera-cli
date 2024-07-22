@@ -1,7 +1,10 @@
 # Changes (Release notes)
 
 * 4.19.0.pre
-  * ...
+  * New Features:
+  * Issues Fixed:
+    * **global**: #146 (@junkimu) Fix problem on Windows WRT terminal detection
+  * Breaking Changes:
 
 * 4.18.0
   
