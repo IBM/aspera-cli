@@ -1715,7 +1715,6 @@ $(T)f5_postproc: $(T).exists
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################
-$(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_detect))
 $(T)httpgw_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) httpgw health
@@ -1724,8 +1723,8 @@ $(T)httpgw_detect: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config detect @preset:tst_httpgw.url httpgw
 	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_detect))
 #######################################################################################################################
-$(eval $(call test_suite_all,tfio,$(T)faspio_detect $(T)faspio_nagios $(T)faspio_blist))
 $(T)faspio_detect: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config detect @preset:tst_faspio.url faspio
@@ -1738,9 +1737,18 @@ $(T)faspio_blist: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspio bridges list
 	@$(STOP_TEST) $@
+$(T)faspio_bcreate: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspio bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
+	@$(STOP_TEST) $@
+$(T)faspio_bclean: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) faspio bridges list --fields=id --format=json | $(EXE_MAN) faspio bridges delete --bulk=yes @json:@stdin:
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,tfio,$(T)faspio_detect $(T)faspio_nagios $(T)faspio_blist $(T)faspio_bcreate $(T)faspio_bclean))
 #######################################################################################################################
-$(eval $(call test_suite_all,alee,$(T)alee_nagios))
 $(T)alee_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) alee health
 	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,alee,$(T)alee_nagios))
