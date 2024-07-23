@@ -83,7 +83,7 @@ end
 def generate_help(varname)
   raise "missing #{varname}" unless @env.key?(varname)
   exec_path = @env[varname]
-  output = %x(#{exec_path} -h 2>&1)
+  output = %x(#{exec_path} help 2>&1)
   raise "Error executing: #{exec_path} -h" unless $CHILD_STATUS.success?
   return output
 end
@@ -267,7 +267,7 @@ def generate_doc
   plugin_manager.add_plugins_from_lookup_folders
   @undocumented_plugins = plugin_manager.plugin_list
   puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
-  $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}")
+  $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
   # check that all test commands are included in the doc
   if !all_test_commands_by_plugin.empty?
     $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)

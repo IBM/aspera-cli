@@ -3570,6 +3570,7 @@ ARGS
 OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
+        --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
         --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
@@ -5389,7 +5390,7 @@ Example:
 - `ascli node browse /` : list files with **gen3/node user** API
 - `ascli node access_key do self browse /` : list files with **gen4/access key** API
 
-## Browse
+#### Browse
 
 Native API parameters can be placed in option `query`.
 
@@ -6337,6 +6338,14 @@ Then, the postprocessing script executed will be `script1.sh`.
 
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
 
+### Faspex 5: Missing commands
+
+If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
+
+```bash
+curl -H "Authorization: $(ascli ascli bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
+```
+
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
 > **Note:** For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
@@ -6749,6 +6758,8 @@ health
 > **Note:** Add `ascli faspio` in front of the commands:
 
 ```bash
+bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
+bridges delete --bulk=yes @json:@stdin:
 bridges list
 health
 ```
@@ -7394,6 +7405,7 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```bash
 asession -h
+ERROR: The value must be a hash table (argument), did you specify: "@json:" ?
 USAGE
     asession
     asession -h|--help

@@ -4745,7 +4745,7 @@ Example:
 - `<%=cmd%> node browse /` : list files with **gen3/node user** API
 - `<%=cmd%> node access_key do self browse /` : list files with **gen4/access key** API
 
-## Browse
+#### Browse
 
 Native API parameters can be placed in option `query`.
 
@@ -5553,6 +5553,14 @@ In Faspex 5, configure like this:
 Then, the postprocessing script executed will be `script1.sh`.
 
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+
+### Faspex 5: Missing commands
+
+If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
+
+```bash
+curl -H "Authorization: $(ascli <%=cmd%> bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
+```
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 

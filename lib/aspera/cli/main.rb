@@ -197,11 +197,11 @@ module Aspera
         Process.exit(0)
       end
 
-      def exit_with_usage(all_plugins)
-        Log.log.debug('exit_with_usage'.bg_red)
+      def exit_with_usage(include_all_plugins)
+        Log.log.debug{"exit_with_usage(#{include_all_plugins})".bg_red}
         # display main plugin options
         formatter.display_message(:error, options.parser)
-        if all_plugins
+        if include_all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           PluginFactory.instance.plugin_list.each do |plugin_name_sym|
             next if plugin_name_sym.eql?(COMMAND_CONFIG)
