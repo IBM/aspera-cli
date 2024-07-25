@@ -787,7 +787,7 @@ module Aspera
           when :set
             param_name = options.get_next_argument('parameter name')
             param_name = Manager.option_line_to_name(param_name)
-            param_value = options.get_next_argument('parameter value')
+            param_value = options.get_next_argument('parameter value', type: nil)
             set_preset_key(name, param_name, param_value)
             return Main.result_nothing
           when :initialize
@@ -909,7 +909,7 @@ module Aspera
               return Main.result_status(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
             end
           when :echo # display the content of a value given on command line
-            return Formatter.auto_type(options.get_next_argument('value'))
+            return Formatter.auto_type(options.get_next_argument('value', type: nil))
           when :flush_tokens
             deleted_files = OAuth::Factory.instance.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}

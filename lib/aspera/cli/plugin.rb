@@ -68,7 +68,7 @@ module Aspera
         if as_option.nil?
           # use of option `id` is deprecated
           res_id = options.get_option(:id)
-          res_id = options.get_next_argument(description) if res_id.nil?
+          res_id = options.get_next_argument(description, type: options.get_option(:bulk) ? Array : String) if res_id.nil?
         else
           res_id = options.get_option(as_option)
         end

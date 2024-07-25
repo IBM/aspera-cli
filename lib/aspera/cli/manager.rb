@@ -55,14 +55,13 @@ module Aspera
       # option name separator in code (symbol)
       OPTION_SEP_SYMBOL = '_'
       SOURCE_USER = 'cmdline' # cspell:disable-line
-      TYPE_INTEGER = [Integer].freeze
       OPTION_VALUE_SEPARATOR = '='
       OPTION_PREFIX = '--'
       OPTIONS_STOP = '--'
 
       DEFAULT_PARSER_TYPES = [Array, Hash].freeze
 
-      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER, :TYPE_INTEGER
+      private_constant :FALSE_VALUES, :TRUE_VALUES, :BOOLEAN_VALUES, :OPTION_SEP_LINE, :OPTION_SEP_SYMBOL, :SOURCE_USER
 
       class << self
         def enum_to_bool(enum)
@@ -104,14 +103,17 @@ module Aspera
 
         # @param what [Symbol] :option or :argument
         # @param descr [String] description for help
-        # @param value [Object] value to check
+        # @param to_check [Object] value to check
         # @param type_list [NilClass, Class, Array[Class]] accepted value type(s)
-        def validate_type(what, descr, value, type_list)
+        def validate_type(what, descr, to_check, type_list, check_array: false)
           return nil if type_list.nil?
           Aspera.assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
-          raise Cli::BadArgument,
-            "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
-            type_list.any?{|t|value.is_a?(t)}
+          value_list = check_array ? to_check : [to_check]
+          value_list.each do |value|
+            raise Cli::BadArgument,
+              "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
+              type_list.any?{|t|value.is_a?(t)}
+          end
         end
       end
 
@@ -183,20 +185,20 @@ module Aspera
       # @param descr [String] description for help
       # @param expected is
       #   - Array of allowed value (single value)
-      #   - :multiple for remaining values
       #   - :single for a single unconstrained value
-      #   - :integer for a single integer value
+      #   - :multiple for remaining values
       # @param mandatory [Boolean] if true, raise error if option not set
-      # @param type [Class, Array] accepted value type(s)
+      # @param type [Class, Array] accepted value type(s), TODO: default to String ?
       # @param aliases [Hash] map of aliases: key = alias, value = real value
       # @param default [Object] default value
       # @return value, list or nil
-      def get_next_argument(descr, expected: :single, mandatory: true, type: nil, aliases: nil, default: nil)
+      def get_next_argument(descr, expected: :single, mandatory: true, type: String, aliases: nil, default: nil)
         Aspera.assert(%i[single multiple].include?(expected) || (expected.is_a?(Array) && expected.all?(Symbol))) do
           'expected must be single, multiple, or array of symbol'
         end
+        type = nil if expected.is_a?(Array)
         Aspera.assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
-        Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash'}
+        Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash:Symbol: Symbol'}
         allowed_types = type
         unless allowed_types.nil?
           allowed_types = [allowed_types] unless allowed_types.is_a?(Array)
@@ -225,14 +227,16 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(:argument, descr, expected: expected)
           end
-        if result.is_a?(String) && allowed_types.eql?(TYPE_INTEGER)
+        if result.is_a?(String) && type.eql?(Integer)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
         end
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
-        self.class.validate_type(:argument, descr, result, allowed_types) unless result.nil? && !mandatory
+        # if value comes from JSON/YAML, it may come as Integer
+        result = result.to_s if result.is_a?(Integer) && type.eql?(String)
+        self.class.validate_type(:argument, descr, result, allowed_types, check_array: expected.eql?(:multiple)) unless result.nil? && !mandatory
         return result
       end
 

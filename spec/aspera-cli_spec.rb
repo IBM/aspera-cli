@@ -30,7 +30,7 @@ params = {}
 %i[url user pass].each do |p|
   env = "CF_HSTS_SSH_#{p.to_s.upcase}"
   params[p] = ENV.fetch(env, nil)
-  raise "missing env var: #{env}" unless params[p].is_a?(String)
+  raise "missing env var: #{env}" unless params[p].is_a?(String) && !params[p].empty?
 end
 ssh_url = URI.parse(params[:url])
 # main folder relative to docroot and server executor
