@@ -1078,7 +1078,7 @@ module Aspera
           Log.log.debug{"wizard result: #{wizard_result}"}
           Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
           # get preset name from user or default
-          wiz_preset_name = options.get_option(:id)
+          wiz_preset_name = nil
           if wiz_preset_name.nil?
             elements = [
               identification[:product],

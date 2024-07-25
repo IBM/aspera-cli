@@ -647,7 +647,7 @@ module Aspera
           command = options.get_next_command(%i[configuration smtp resource events clean_deleted].concat(ADMIN_RESOURCES).freeze)
           case command
           when :resource
-            # resource is will be deprecated
+            # resource will be deprecated
             Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
             return execute_resource(options.get_next_command(ADMIN_RESOURCES))
           when *ADMIN_RESOURCES

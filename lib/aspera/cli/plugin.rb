@@ -29,7 +29,6 @@ module Aspera
             :value, 'Value for create, update, list filter', types: Hash,
             deprecation: '(4.14) Use positional value for create/modify or option: query for list/delete')
           options.declare(:property, 'Name of property to set (modify operation)')
-          options.declare(:id, 'Resource identifier', deprecation: "(4.14) Use positional identifier after verb (#{INSTANCE_OPS.join(',')})")
           options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
           options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
         end
@@ -66,8 +65,6 @@ module Aspera
       # @return [String, Array] identifier or list of ids
       def instance_identifier(description: 'identifier', as_option: nil, &block)
         if as_option.nil?
-          # use of option `id` is deprecated
-          res_id = options.get_option(:id)
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
         else
           res_id = options.get_option(as_option)
