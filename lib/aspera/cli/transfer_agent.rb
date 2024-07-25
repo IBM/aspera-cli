@@ -175,7 +175,7 @@ module Aspera
         when nil, FILE_LIST_FROM_ARGS
           Log.log.debug('getting file list as parameters')
           # get remaining arguments
-          file_list = @opt_mgr.get_next_argument('source file list', expected: :multiple)
+          file_list = @opt_mgr.get_next_argument('source file list', multiple: true)
           raise Cli::BadArgument, 'specify at least one file on command line or use ' \
             "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
@@ -244,7 +244,7 @@ module Aspera
         updated_ts(transfer_spec)
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
         if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
-          transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', true)
+          transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', sensitive: true)
         end
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)

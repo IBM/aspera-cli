@@ -232,7 +232,7 @@ module Aspera
           when *TRANSFER_COMMANDS
             return execute_transfer(command, server_transfer_spec)
           when *AsCmd::OPERATIONS
-            command_arguments = options.get_next_argument('ascmd command arguments', expected: :multiple, mandatory: false)
+            command_arguments = options.get_next_argument('ascmd command arguments', multiple: true, mandatory: false)
             ascmd = AsCmd.new(ascmd_executor)
             begin
               result = ascmd.execute_single(command, command_arguments)

@@ -320,8 +320,8 @@ module Aspera
             # client side is agent
             # server side is transfer server
             # in same workspace
-            push_pull = options.get_next_argument('direction', expected: %i[push pull])
-            source_folder = options.get_next_argument('folder of source files', type: String)
+            push_pull = options.get_next_argument('direction', accept_list: %i[push pull])
+            source_folder = options.get_next_argument('folder of source files', validation: String)
             case push_pull
             when :push
               client_direction = Transfer::Spec::DIRECTION_SEND
@@ -416,7 +416,7 @@ module Aspera
             fields = object.keys.reject{|k|k.eql?('certificate')}
             return { type: :single_object, data: object, fields: fields }
           when :modify
-            changes = options.get_next_argument('properties', type: Hash)
+            changes = options.get_next_argument('properties', validation: Hash)
             return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
               aoc_api.update("#{resource_class_path}/#{one_id}", changes)
               {'id' => one_id}
@@ -428,7 +428,7 @@ module Aspera
             end
           when :set_pub_key
             # special : reads private and generate public
-            the_private_key = options.get_next_argument('private_key PEM value', type: String)
+            the_private_key = options.get_next_argument('private_key PEM value', validation: String)
             the_public_key = OpenSSL::PKey::RSA.new(the_private_key).public_key.to_s
             aoc_api.update(resource_instance_path, {jwt_grant_enabled: true, public_key: the_public_key})
             return Main.result_success
@@ -450,7 +450,7 @@ module Aspera
           case command_admin
           when :resource
             Log.log.warn('resource command is deprecated (4.18), directly use the specific command instead')
-            return execute_resource_action(options.get_next_argument('resource', expected: ADMIN_OBJECTS))
+            return execute_resource_action(options.get_next_argument('resource', accept_list: ADMIN_OBJECTS))
           when *ADMIN_OBJECTS
             return execute_resource_action(command_admin)
           when :auth_providers
@@ -535,7 +535,7 @@ module Aspera
               return {type: :object_list, data: events}
             when :transfers
               event_type = command_analytics.to_s
-              filter_resource = options.get_next_argument('resource', expected: %i[organizations users nodes])
+              filter_resource = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
               filter_id = options.get_next_argument('identifier', mandatory: false) ||
                 case filter_resource
                 when :organizations then aoc_api.current_user_info['organization_id']
@@ -623,7 +623,7 @@ module Aspera
               when :show
                 return { type: :single_object, data: aoc_api.current_user_info(exception: true) }
               when :modify
-                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', type: Hash))
+                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
               end
             when :preferences
@@ -632,7 +632,7 @@ module Aspera
               when :show
                 return { type: :single_object, data: aoc_api.read(user_preferences_res)[:data] }
               when :modify
-                aoc_api.update(user_preferences_res, options.get_next_argument('properties', type: Hash))
+                aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
               end
             end
@@ -759,9 +759,9 @@ module Aspera
             when *NODE4_EXT_COMMANDS
               return execute_nodegen4_command(command_repo, aoc_api.context[:home_node_id], file_id: aoc_api.context[:home_file_id], scope: Api::Node::SCOPE_USER)
             when :short_link
-              link_type = options.get_next_argument('link type', expected: %i[public private])
+              link_type = options.get_next_argument('link type', accept_list: %i[public private])
               short_link_command = options.get_next_command(%i[create delete list])
-              folder_dest = options.get_next_argument('path', type: String)
+              folder_dest = options.get_next_argument('path', validation: String)
               home_node_api = aoc_api.node_api_from(
                 node_id:        aoc_api.context[:home_node_id],
                 workspace_id:   aoc_api.context[:workspace_id],

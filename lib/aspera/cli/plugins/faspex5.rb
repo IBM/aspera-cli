@@ -305,7 +305,7 @@ module Aspera
 
         # list all packages with optional filter
         def list_packages_with_filter(query: {})
-          filter = options.get_next_argument('filter', mandatory: false, type: Proc, default: ->(_x){true})
+          filter = options.get_next_argument('filter', mandatory: false, validation: Proc, default: ->(_x){true})
           # translate box name to API prefix (with ending slash)
           box = options.get_option(:box)
           real_path =
@@ -629,7 +629,7 @@ module Aspera
                   user
                 end
               end
-              access = options.get_next_argument('level', mandatory: false, expected: %i[submit_only standard shared_inbox_admin], default: :standard)
+              access = options.get_next_argument('level', mandatory: false, accept_list: %i[submit_only standard shared_inbox_admin], default: :standard)
               # TODO: unshift to command line parameters instead of using deprecated option "value"
               options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
             end
@@ -725,7 +725,7 @@ module Aspera
               when :show
                 return { type: :single_object, data: @api_v5.read('account/preferences')[:data] }
               when :modify
-                @api_v5.update('account/preferences', options.get_next_argument('modified parameters', type: Hash))
+                @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
                 return Main.result_status('modified')
               end
             end

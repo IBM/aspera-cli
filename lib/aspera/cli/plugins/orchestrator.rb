@@ -177,7 +177,7 @@ module Aspera
               }
               call_params = {format: :json}
               # get external parameters if any
-              options.get_next_argument('external_parameters', mandatory: false, type: Hash, default: {}).each do |name, value|
+              options.get_next_argument('external_parameters', mandatory: false, validation: Hash, default: {}).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
               end
               # synchronous call ?

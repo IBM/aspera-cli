@@ -87,9 +87,9 @@ module Aspera
 
         # Generates error message with list of allowed values
         # @param error_msg [String] error message
-        # @param choices [Array] list of allowed values
-        def multi_choice_assert(assertion, error_msg, choices)
-          raise Cli::BadArgument, [error_msg, 'Use:'].concat(choices.map{|c|"- #{c}"}.sort).join("\n") unless assertion
+        # @param accept_list [Array] list of allowed values
+        def multi_choice_assert(assertion, error_msg, accept_list)
+          raise Cli::BadArgument, [error_msg, 'Use:'].concat(accept_list.map{|c|"- #{c}"}.sort).join("\n") unless assertion
         end
 
         # change option name with dash to name with underscore
@@ -183,20 +183,16 @@ module Aspera
       end
 
       # @param descr [String] description for help
-      # @param expected is
-      #   - Array of allowed value (single value)
-      #   - :single for a single unconstrained value
-      #   - :multiple for remaining values
       # @param mandatory [Boolean] if true, raise error if option not set
-      # @param type [Class, Array] accepted value type(s), TODO: default to String ?
+      # @param multiple [Boolean] if true, return remaining arguments
+      # @param accept_list [Array] list of allowed values (Symbol)
+      # @param validation [Class, Array] accepted value type(s) or list of Symbols
       # @param aliases [Hash] map of aliases: key = alias, value = real value
       # @param default [Object] default value
-      # @return value, list or nil
-      def get_next_argument(descr, expected: :single, mandatory: true, type: String, aliases: nil, default: nil)
-        Aspera.assert(%i[single multiple].include?(expected) || (expected.is_a?(Array) && expected.all?(Symbol))) do
-          'expected must be single, multiple, or array of symbol'
-        end
-        type = nil if expected.is_a?(Array)
+      # @return one value, list or nil (if optional and no default)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: String, aliases: nil, default: nil)
+        Aspera.assert(accept_list.nil? || (accept_list.is_a?(Array) && accept_list.all?(Symbol)))
+        type = Symbol if accept_list
         Aspera.assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
         Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash:Symbol: Symbol'}
         allowed_types = type
@@ -206,26 +202,20 @@ module Aspera
         end
         result =
           if !@unprocessed_cmd_line_arguments.empty?
-            # there are values
-            case expected
-            when :single
-              evaluate_extended_value(@unprocessed_cmd_line_arguments.shift, allowed_types)
-            when :multiple
-              value = @unprocessed_cmd_line_arguments.shift(@unprocessed_cmd_line_arguments.length).map{|v|evaluate_extended_value(v, allowed_types)}
-              # if expecting list and only one arg of type array : it is the list
-              if value.length.eql?(1) && value.first.is_a?(Array)
-                value = value.first
-              end
-              value
-            when Array
-              allowed_values = [].concat(expected)
+            how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
+            values = @unprocessed_cmd_line_arguments.shift(how_many)
+            # if expecting list and only one arg of type array : it is the list
+            values = values.first if values.length.eql?(1) && values.first.is_a?(Array)
+            values = values.map{|v|evaluate_extended_value(v, allowed_types)}
+            if accept_list
+              allowed_values = [].concat(accept_list)
               allowed_values.concat(aliases.keys) unless aliases.nil?
-              self.class.get_from_list(@unprocessed_cmd_line_arguments.shift, descr, allowed_values)
-            else Aspera.error_unexpected_value(expected)
+              values = values.map{|v|self.class.get_from_list(v, descr, allowed_values)}
             end
+            multiple ? values : values.first
           elsif !default.nil? then default
             # no value provided, either get value interactively, or exception
-          elsif mandatory then get_interactive(:argument, descr, expected: expected)
+          elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list)
           end
         if result.is_a?(String) && type.eql?(Integer)
           int_result = Integer(result, exception: false)
@@ -236,11 +226,11 @@ module Aspera
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
         result = result.to_s if result.is_a?(Integer) && type.eql?(String)
-        self.class.validate_type(:argument, descr, result, allowed_types, check_array: expected.eql?(:multiple)) unless result.nil? && !mandatory
+        self.class.validate_type(:argument, descr, result, allowed_types, check_array: multiple) unless result.nil? && !mandatory
         return result
       end
 
-      def get_next_command(command_list, aliases: nil); return get_next_argument('command', expected: command_list, aliases: aliases); end
+      def get_next_command(command_list, aliases: nil); return get_next_argument('command', accept_list: command_list, aliases: aliases); end
 
       # Get an option value by name
       # either return value or calls handler, can return nil
@@ -269,12 +259,12 @@ module Aspera
             raise Cli::BadArgument, "Missing mandatory option: #{option_symbol}" if mandatory
           elsif @ask_missing_optional || mandatory
             # ask_missing_mandatory
-            expected = :single
+            accept_list = nil
             # print "please enter: #{option_symbol.to_s}"
             if @declared_options.key?(option_symbol) && attributes.key?(:values)
-              expected = attributes[:values]
+              accept_list = attributes[:values]
             end
-            result = get_interactive(:option, option_symbol.to_s, expected: expected)
+            result = get_interactive(option_symbol.to_s, option: true, accept_list: accept_list)
             set_option(option_symbol, result, where: 'interactive')
           end
         end
@@ -470,7 +460,7 @@ module Aspera
         @unprocessed_cmd_line_options = unknown_options
       end
 
-      def prompt_user_input(prompt, sensitive)
+      def prompt_user_input(prompt, sensitive: false)
         return $stdin.getpass("#{prompt}> ") if sensitive
         print("#{prompt}> ")
         line = $stdin.gets
@@ -484,7 +474,7 @@ module Aspera
       # @return [Symbol] selected symbol
       def prompt_user_input_in_list(prompt, sym_list)
         loop do
-          input = prompt_user_input(prompt, false).to_sym
+          input = prompt_user_input(prompt).to_sym
           if sym_list.any?{|a|a.eql?(input)}
             return input
           else
@@ -493,21 +483,26 @@ module Aspera
         end
       end
 
-      # prompt user for input in a list of symbols
-      # @param type [String] type of data to input
+      # Prompt user for input in a list of symbols
       # @param descr [String] description for help
-      # @param expected [Array] list of expected values, or :single, :multiple
-      def get_interactive(type, descr, expected: :single)
+      # @param option [Boolean] true if command line option
+      # @param multiple [Boolean] true if multiple values expected
+      # @param accept_list [Array] list of expected values
+      def get_interactive(descr, option: false, multiple: false, accept_list: nil)
         if !@ask_missing_mandatory
-          raise Cli::BadArgument, "missing argument (#{expected}): #{descr}" unless expected.is_a?(Array)
-          self.class.multi_choice_assert(false, "missing: #{descr}", expected)
+          what = option ? 'option' : 'argument'
+          message = "missing #{what}: #{descr}"
+          if accept_list.nil?
+            raise Cli::BadArgument, message
+          else
+            self.class.multi_choice_assert(false, message, accept_list)
+          end
         end
         result = nil
         sensitive = type.eql?(:option) && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
         default_prompt = "#{type}: #{descr}"
         # ask interactively
-        case expected
-        when :multiple
+        if multiple
           result = []
           puts(' (one per line, end with empty line)')
           loop do
@@ -515,11 +510,10 @@ module Aspera
             break if entry.empty?
             result.push(ExtendedValue.instance.evaluate(entry))
           end
-        when :single
+        else
           result = ExtendedValue.instance.evaluate(prompt_user_input(default_prompt, sensitive))
-        else # one fixed
-          result = self.class.get_from_list(prompt_user_input("#{expected.join(' ')}\n#{default_prompt}", sensitive), descr, expected)
         end
+        result = self.class.get_from_list(prompt_user_input("#{accept_list.join(' ')}\n#{default_prompt}", sensitive), descr, accept_list)
         return result
       end
 

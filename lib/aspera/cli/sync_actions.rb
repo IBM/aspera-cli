@@ -29,9 +29,9 @@ module Aspera
           SIMPLE_ARGUMENTS_SYNC.each do |arg, check|
             value = options.get_next_argument(
               arg,
-              type: check.is_a?(Class) ? check : nil,
-              expected: check.is_a?(Class) ? :single : check,
-              mandatory: false)
+              mandatory: false,
+              validation: check.is_a?(Class) ? check : nil,
+              accept_list: check.is_a?(Class) ? nil : check)
             break if value.nil?
             simple_session_args[arg] = value.to_s
           end
@@ -57,7 +57,7 @@ module Aspera
           command2 = options.get_next_command([:status])
           case command2
           when :status
-            sync_session_name = options.get_next_argument('name of sync session', mandatory: false, type: String)
+            sync_session_name = options.get_next_argument('name of sync session', mandatory: false, validation: String)
             async_params = options.get_option(:sync_info, mandatory: true)
             return {type: :single_object, data: Transfer::Sync.admin_status(async_params, sync_session_name)}
           end

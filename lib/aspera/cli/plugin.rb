@@ -68,7 +68,7 @@ module Aspera
         if as_option.nil?
           # use of option `id` is deprecated
           res_id = options.get_option(:id)
-          res_id = options.get_next_argument(description, type: options.get_option(:bulk) ? Array : String) if res_id.nil?
+          res_id = options.get_next_argument(description, validation: options.get_option(:bulk) ? Array : String) if res_id.nil?
         else
           res_id = options.get_option(as_option)
         end
@@ -255,7 +255,7 @@ module Aspera
         Log.log.warn("option `value` is deprecated. Use positional parameter for #{command}") unless value.nil?
         value = options.get_next_argument(
           "parameters for #{command}#{description.nil? ? '' : " (#{description})"}", mandatory: default.nil?,
-          type: bulk ? Array : type) if value.nil?
+          validation: bulk ? Array : type) if value.nil?
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)

@@ -189,7 +189,7 @@ module Aspera
       end
 
       def generate_bash_completion
-        if options.get_next_argument('', expected: :multiple, mandatory: false).nil?
+        if options.get_next_argument('', multiple: true, mandatory: false).nil?
           PluginFactory.instance.plugin_list.each{|p|puts p}
         else
           Log.log.warn('only first level completion so far')

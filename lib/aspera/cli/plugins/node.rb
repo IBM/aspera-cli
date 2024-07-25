@@ -163,7 +163,7 @@ module Aspera
         # translates paths results into CLI result, and removes prefix
         def c_result_translate_rem_prefix(response, type, success_msg, path_prefix)
           errors = []
-          final_result = { data: [], type: :object_list, fields: [type, 'result']}
+          final_result = {type: :object_list, data: [], fields: [type, 'result']}
           JSON.parse(response[:http].body)['paths'].each do |p|
             result = success_msg
             if p.key?('error')
@@ -184,7 +184,7 @@ module Aspera
         FOLDER_TYPE = %w[directory container].freeze
 
         def browse_gen3(prefix_path)
-          folders_to_process = [get_next_arg_with_prefix(prefix_path, 'path')]
+          folders_to_process = [get_one_argument_with_prefix(prefix_path, 'path')]
           query = options.get_option(:query, default: {})
           # special parameter: max number of entries in result
           max_items = query.delete('max')
@@ -246,11 +246,12 @@ module Aspera
         def execute_command_gen3(command, prefix_path)
           case command
           when :delete
-            paths_to_delete = get_next_args_with_prefix(prefix_path, 'file list')
+            # TODO: add query for recursive
+            paths_to_delete = get_all_arguments_with_prefix(prefix_path, 'file list')
             resp = @api_node.create('files/delete', { paths: paths_to_delete.map{|i| {'path' => i.start_with?('/') ? i : "/#{i}"} }})
             return c_result_translate_rem_prefix(resp, 'file', 'deleted', prefix_path)
           when :search
-            search_root = get_next_arg_with_prefix(prefix_path, 'search root')
+            search_root = get_one_argument_with_prefix(prefix_path, 'search root')
             parameters = {'path' => search_root}
             other_options = query_option
             parameters.merge!(other_options) unless other_options.nil?
@@ -262,30 +263,30 @@ module Aspera
             formatter.display_status("params: #{resp[:data]['parameters'].keys.map{|k|"#{k}:#{resp[:data]['parameters'][k]}"}.join(',')}")
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :space
-            path_list = get_next_arg_with_prefix(prefix_path, 'folder path or ext.val. list')
-            path_list = [path_list] unless path_list.is_a?(Array)
+            path_list = get_all_arguments_with_prefix(prefix_path, 'folder path or ext.val. list')
             resp = @api_node.create('space', { 'paths' => path_list.map {|i| { path: i} } })
-            result = { data: resp[:data]['paths'], type: :object_list}
+            result = { type: :object_list, data: resp[:data]['paths']}
             # return c_result_translate_rem_prefix(resp,'folder','created',prefix_path)
             return c_result_remove_prefix_path(result, 'path', prefix_path)
           when :mkdir
-            path_list = get_next_args_with_prefix(prefix_path, 'folder path or ext.val. list')
+            path_list = get_all_arguments_with_prefix(prefix_path, 'folder path or ext.val. list')
             resp = @api_node.create('files/create', { 'paths' => path_list.map{|i|{ type: :directory, path: i }}})
             return c_result_translate_rem_prefix(resp, 'folder', 'created', prefix_path)
           when :mklink
-            target = get_next_arg_with_prefix(prefix_path, 'target')
-            path_list = get_next_arg_with_prefix(prefix_path, 'link path')
-            resp = @api_node.create('files/create', { 'paths' => [{ type: :symbolic_link, path: path_list, target: { path: target} }] })
+            target = get_one_argument_with_prefix(prefix_path, 'target')
+            one_path = get_one_argument_with_prefix(prefix_path, 'link path')
+            resp = @api_node.create('files/create', { 'paths' => [{ type: :symbolic_link, path: one_path, target: { path: target} }] })
             return c_result_translate_rem_prefix(resp, 'folder', 'created', prefix_path)
           when :mkfile
-            path_list = get_next_arg_with_prefix(prefix_path, 'file path')
+            one_path = get_one_argument_with_prefix(prefix_path, 'file path')
             contents64 = Base64.strict_encode64(options.get_next_argument('contents'))
-            resp = @api_node.create('files/create', { 'paths' => [{ type: :file, path: path_list, contents: contents64 }] })
+            resp = @api_node.create('files/create', { 'paths' => [{ type: :file, path: one_path, contents: contents64 }] })
             return c_result_translate_rem_prefix(resp, 'folder', 'created', prefix_path)
           when :rename
-            path_base = get_next_arg_with_prefix(prefix_path, 'path_base')
-            path_src = get_next_arg_with_prefix(prefix_path, 'path_src')
-            path_dst = get_next_arg_with_prefix(prefix_path, 'path_dst')
+            # TODO: multiple ?
+            path_base = get_one_argument_with_prefix(prefix_path, 'path_base')
+            path_src = get_one_argument_with_prefix(prefix_path, 'path_src')
+            path_dst = get_one_argument_with_prefix(prefix_path, 'path_dst')
             resp = @api_node.create('files/rename', { 'paths' => [{ 'path' => path_base, 'source' => path_src, 'destination' => path_dst }] })
             return c_result_translate_rem_prefix(resp, 'entry', 'moved', prefix_path)
           when :browse
@@ -337,7 +338,7 @@ module Aspera
             transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
           when :http_node_download
-            remote_path = get_next_arg_with_prefix(prefix_path, 'remote path')
+            remote_path = get_one_argument_with_prefix(prefix_path, 'remote path')
             file_name = File.basename(remote_path)
             @api_node.call(
               operation: 'GET',
@@ -381,7 +382,7 @@ module Aspera
             when :set_bearer_key
               access_key_id = options.get_next_argument('access key id')
               access_key_id = @api_node.read('access_keys/self')[:data]['id'] if access_key_id.eql?('self')
-              bearer_key_pem = options.get_next_argument('public or private RSA key PEM value', type: String)
+              bearer_key_pem = options.get_next_argument('public or private RSA key PEM value', validation: String)
               key = OpenSSL::PKey.read(bearer_key_pem)
               key = key.public_key if key.private?
               bearer_key_pem = key.to_pem
@@ -572,7 +573,7 @@ module Aspera
             return {type: :single_object, data: items}
           when :modify
             apifid = apifid_from_next_arg(top_file_id)
-            update_param = options.get_next_argument('update data', type: Hash)
+            update_param = options.get_next_argument('update data', validation: Hash)
             apifid[:api].update("files/#{apifid[:file_id]}", update_param)[:data]
             return Main.result_status('Done')
           when :thumbnail
@@ -603,7 +604,7 @@ module Aspera
                 {'id' => one_id}
               end
             when :create
-              create_param = options.get_next_argument('creation data', type: Hash)
+              create_param = options.get_next_argument('creation data', validation: Hash)
               raise 'no file_id' if create_param.key?('file_id')
               create_param['file_id'] = apifid[:file_id]
               create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
@@ -806,7 +807,7 @@ module Aspera
               resp = @api_node.read(one_res_path)
               return { type: :other_struct, data: resp[:data] }
             when :modify
-              resp = @api_node.update(one_res_path, options.get_next_argument('update value', type: Hash))
+              resp = @api_node.update(one_res_path, options.get_next_argument('update value', validation: Hash))
               return { type: :other_struct, data: resp[:data] }
             when :bandwidth_average
               transfers_data = @api_node.read(res_class_path, query_read_delete)[:data]
@@ -867,7 +868,7 @@ module Aspera
               return { type: :object_list, data: resp[:data]['services'] }
             when :create
               # @json:'{"type":"WATCHFOLDERD","run_as":{"user":"user1"}}'
-              params = options.get_next_argument('creation data', type: Hash)
+              params = options.get_next_argument('creation data', validation: Hash)
               resp = @api_node.create('rund/services', params)
               return Main.result_status("#{resp[:data]['id']} created")
             when :delete
@@ -948,8 +949,8 @@ module Aspera
           when :basic_token
             return Main.result_status(Rest.basic_token(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
-            private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', type: String))
-            token_info = options.get_next_argument('user and group identification', type: Hash)
+            private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
+            token_info = options.get_next_argument('user and group identification', validation: Hash)
             access_key = options.get_option(:username, mandatory: true)
             return Main.result_status(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           when :simulator
@@ -969,15 +970,15 @@ module Aspera
         private
 
         # get remaining path arguments from command line, and add prefix
-        def get_next_args_with_prefix(path_prefix, name)
-          path_args = options.get_next_argument(name, expected: :multiple)
+        def get_all_arguments_with_prefix(path_prefix, name)
+          path_args = options.get_next_argument(name, multiple: true)
           return path_args if path_prefix.nil?
           return path_args.map {|p| File.join(path_prefix, p)}
         end
 
         # get next path argument from command line, and add prefix
-        def get_next_arg_with_prefix(path_prefix, name)
-          path_arg = options.get_next_argument(name, type: String)
+        def get_one_argument_with_prefix(path_prefix, name)
+          path_arg = options.get_next_argument(name, validation: String)
           return path_arg if path_prefix.nil?
           return File.join(path_prefix, path_arg)
         end

@@ -787,11 +787,11 @@ module Aspera
           when :set
             param_name = options.get_next_argument('parameter name')
             param_name = Manager.option_line_to_name(param_name)
-            param_value = options.get_next_argument('parameter value', type: nil)
+            param_value = options.get_next_argument('parameter value', validation: nil)
             set_preset_key(name, param_name, param_value)
             return Main.result_nothing
           when :initialize
-            config_value = options.get_next_argument('extended value', type: Hash)
+            config_value = options.get_next_argument('extended value', validation: Hash)
             if @config_presets.key?(name)
               Log.log.warn{"configuration already exists: #{name}, overwriting"}
             end
@@ -805,10 +805,10 @@ module Aspera
             @config_presets[name].merge!(unprocessed_options)
             return Main.result_status("Updated: #{name}")
           when :ask
-            options.ask_missing_mandatory = :yes
+            options.ask_missing_mandatory = true
             @config_presets[name] ||= {}
-            options.get_next_argument('option names', expected: :multiple).each do |option_name|
-              option_value = options.get_interactive(:option, option_name)
+            options.get_next_argument('option names', multiple: true).each do |option_name|
+              option_value = options.get_interactive(option_name, option: true)
               @config_presets[name][option_name] = option_value
             end
             return Main.result_status("Updated: #{name}")
@@ -889,7 +889,7 @@ module Aspera
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
-            private_key_length = options.get_next_argument('size in bits', mandatory: false, type: Integer, default: DEFAULT_PRIV_KEY_LENGTH)
+            private_key_length = options.get_next_argument('size in bits', mandatory: false, validation: Integer, default: DEFAULT_PRIV_KEY_LENGTH)
             self.class.generate_rsa_private_key(path: private_key_path, length: private_key_length)
             return Main.result_status("Generated #{private_key_length} bit RSA key: #{private_key_path}")
           when :pubkey # get pub key
@@ -909,7 +909,7 @@ module Aspera
               return Main.result_status(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
             end
           when :echo # display the content of a value given on command line
-            return Formatter.auto_type(options.get_next_argument('value', type: nil))
+            return Formatter.auto_type(options.get_next_argument('value', validation: nil))
           when :flush_tokens
             deleted_files = OAuth::Factory.instance.flush_tokens
             return {type: :value_list, data: deleted_files, name: 'file'}
@@ -928,8 +928,8 @@ module Aspera
               end
               return {type: :object_list, data: result, fields: %w[plugin detect wizard path]}
             when :create
-              plugin_name = options.get_next_argument('name', expected: :single).downcase
-              destination_folder = options.get_next_argument('folder', expected: :single, mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
+              plugin_name = options.get_next_argument('name').downcase
+              destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
               plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
               content = <<~END_OF_PLUGIN_CODE
                 require 'aspera/cli/plugin'
@@ -1218,8 +1218,8 @@ module Aspera
           when :show
             return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
           when :create
-            label = options.get_next_argument('label', type: String)
-            info = options.get_next_argument('info', type: Hash)
+            label = options.get_next_argument('label', validation: String)
+            info = options.get_next_argument('info', validation: Hash)
             info = info.symbolize_keys
             info[:label] = label
             vault.set(info)

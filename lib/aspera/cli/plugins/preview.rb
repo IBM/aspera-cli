@@ -489,7 +489,7 @@ module Aspera
             return Main.result_status('Tools validated')
           when :test, :show
             source = options.get_next_argument('source file')
-            format = options.get_next_argument('format', expected: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
+            format = options.get_next_argument('format', accept_list: Aspera::Preview::Generator::PREVIEW_FORMATS, default: :png)
             generated_file_path = preview_filename(format, options.get_option(:base))
             g = Aspera::Preview::Generator.new(source, generated_file_path, @gen_options, @tmp_folder, nil)
             g.generate

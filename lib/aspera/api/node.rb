@@ -59,7 +59,7 @@ module Aspera
         end
 
         def file_matcher_from_argument(options)
-          return file_matcher(options.get_next_argument('filter', type: MATCH_TYPES, mandatory: false))
+          return file_matcher(options.get_next_argument('filter', validation: MATCH_TYPES, mandatory: false))
         end
 
         # node API scopes
