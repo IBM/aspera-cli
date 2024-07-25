@@ -4,6 +4,7 @@
   * New Features:
   * Issues Fixed:
     * **global**: #146 (@junkimu) Fix problem on Windows WRT terminal detection
+    * `shares`: #147 Fix problem for `shares files mkdir`
   * Breaking Changes:
 
 * 4.18.0
