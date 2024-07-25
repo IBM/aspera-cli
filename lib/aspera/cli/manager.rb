@@ -204,9 +204,9 @@ module Aspera
           if !@unprocessed_cmd_line_arguments.empty?
             how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
             values = @unprocessed_cmd_line_arguments.shift(how_many)
+            values = values.map{|v|evaluate_extended_value(v, allowed_types)}
             # if expecting list and only one arg of type array : it is the list
             values = values.first if values.length.eql?(1) && values.first.is_a?(Array)
-            values = values.map{|v|evaluate_extended_value(v, allowed_types)}
             if accept_list
               allowed_values = [].concat(accept_list)
               allowed_values.concat(aliases.keys) unless aliases.nil?
