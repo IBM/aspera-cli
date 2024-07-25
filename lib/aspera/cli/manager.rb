@@ -192,10 +192,10 @@ module Aspera
       # @return one value, list or nil (if optional and no default)
       def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: String, aliases: nil, default: nil)
         Aspera.assert(accept_list.nil? || (accept_list.is_a?(Array) && accept_list.all?(Symbol)))
-        type = Symbol if accept_list
-        Aspera.assert(type.nil? || type.is_a?(Class) || (type.is_a?(Array) && type.all?(Class))){'type must be Class or Array of Class'}
+        validation = Symbol if accept_list
+        Aspera.assert(validation.nil? || validation.is_a?(Class) || (validation.is_a?(Array) && validation.all?(Class))){'validation must be Class or Array of Class'}
         Aspera.assert(aliases.nil? || (aliases.is_a?(Hash) && aliases.keys.all?(Symbol) && aliases.values.all?(Symbol))){'aliases must be Hash:Symbol: Symbol'}
-        allowed_types = type
+        allowed_types = validation
         unless allowed_types.nil?
           allowed_types = [allowed_types] unless allowed_types.is_a?(Array)
           descr = "#{descr} (#{allowed_types.join(', ')})"
@@ -217,7 +217,7 @@ module Aspera
             # no value provided, either get value interactively, or exception
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list)
           end
-        if result.is_a?(String) && type.eql?(Integer)
+        if result.is_a?(String) && validation.eql?(Integer)
           int_result = Integer(result, exception: false)
           raise Cli::BadArgument, "Invalid integer: #{result}" if int_result.nil?
           result = int_result
@@ -225,7 +225,7 @@ module Aspera
         Log.log.debug{"#{descr}=#{result}"}
         result = aliases[result] if aliases&.key?(result)
         # if value comes from JSON/YAML, it may come as Integer
-        result = result.to_s if result.is_a?(Integer) && type.eql?(String)
+        result = result.to_s if result.is_a?(Integer) && validation.eql?(String)
         self.class.validate_type(:argument, descr, result, allowed_types, check_array: multiple) unless result.nil? && !mandatory
         return result
       end
@@ -489,8 +489,8 @@ module Aspera
       # @param multiple [Boolean] true if multiple values expected
       # @param accept_list [Array] list of expected values
       def get_interactive(descr, option: false, multiple: false, accept_list: nil)
+        what = option ? 'option' : 'argument'
         if !@ask_missing_mandatory
-          what = option ? 'option' : 'argument'
           message = "missing #{what}: #{descr}"
           if accept_list.nil?
             raise Cli::BadArgument, message
@@ -499,21 +499,21 @@ module Aspera
           end
         end
         result = nil
-        sensitive = type.eql?(:option) && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
-        default_prompt = "#{type}: #{descr}"
+        sensitive = option && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
+        default_prompt = "#{what}: #{descr}"
         # ask interactively
-        if multiple
-          result = []
-          puts(' (one per line, end with empty line)')
-          loop do
-            entry = prompt_user_input(default_prompt, sensitive)
-            break if entry.empty?
-            result.push(ExtendedValue.instance.evaluate(entry))
-          end
-        else
-          result = ExtendedValue.instance.evaluate(prompt_user_input(default_prompt, sensitive))
+        result = []
+        puts(' (one per line, end with empty line)') if multiple
+        loop do
+          prompt = default_prompt
+          prompt = "#{accept_list.join(' ')}\n#{default_prompt}" if accept_list
+          entry = prompt_user_input(prompt, sensitive: sensitive)
+          break if entry.empty? && multiple
+          entry = ExtendedValue.instance.evaluate(entry)
+          entry = self.class.get_from_list(entry, descr, accept_list) if accept_list
+          return entry unless multiple
+          result.push(entry)
         end
-        result = self.class.get_from_list(prompt_user_input("#{accept_list.join(' ')}\n#{default_prompt}", sensitive), descr, accept_list)
         return result
       end
 
