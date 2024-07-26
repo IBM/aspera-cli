@@ -237,8 +237,8 @@ $(T)shares_8: $(T)shares_7
 	@$(STOP_TEST) $@
 $(T)shares_9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares files mkdir @extend:@preset:shares.share1@/todelete
-	$(EXE_MAN) shares files delete @extend:@preset:shares.share1@/todelete
+	$(EXE_MAN) shares files mkdir @extend:@preset:shares.share1@/new_folder
+	$(EXE_MAN) shares files delete @extend:@preset:shares.share1@/new_folder
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_7 $(T)shares_8 $(T)shares_9))
 #######################################################################################################################
