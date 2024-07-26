@@ -93,11 +93,11 @@ module Aspera
         @plug_init[:only_manual] = false
         # create formatter, in case there is an exception, it is used to display.
         @plug_init[:formatter] = Formatter.new
-        @plug_init[:options] = Manager.new(PROGRAM_NAME)
-        # give command line arguments to option manager
-        options.parse_command_line(@argv)
+        # create command line manager with arguments
+        @plug_init[:options] = Manager.new(PROGRAM_NAME, @argv)
         # formatter adds options
-        formatter.declare_options(options)
+        @plug_init[:formatter].declare_options(options)
+        ExtendedValue.instance.default_decoder = options.get_option(:struct_parser)
         # compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
         formatter.display_message(

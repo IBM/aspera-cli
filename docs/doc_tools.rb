@@ -83,7 +83,7 @@ end
 def generate_help(varname)
   raise "missing #{varname}" unless @env.key?(varname)
   exec_path = @env[varname]
-  output = %x(#{exec_path} help 2>&1)
+  output = %x(#{exec_path} -h 2>&1)
   raise "Error executing: #{exec_path} -h" unless $CHILD_STATUS.success?
   return output
 end

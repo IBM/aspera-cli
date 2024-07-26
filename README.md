@@ -3605,7 +3605,6 @@ OPTIONS:
         --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
         --value=VALUE                Value for create, update, list filter (Hash) (deprecated: (4.14) Use positional value for create/modify or option: query for list/delete)
         --property=VALUE             Name of property to set (modify operation)
-        --id=VALUE                   Resource identifier (deprecated: (4.14) Use positional identifier after verb (modify,delete,show))
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
     -N, --no-default                 Do not load default configuration for plugin
@@ -6583,8 +6582,10 @@ admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 files browse /
 files delete my_share1/test_file.bin
+files delete my_share1/todelete
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files mkdir my_share1/todelete
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
 files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
@@ -7405,7 +7406,6 @@ Nodejs: [https://www.npmjs.com/package/aspera](https://www.npmjs.com/package/asp
 
 ```bash
 asession -h
-ERROR: The value must be a hash table (argument), did you specify: "@json:" ?
 USAGE
     asession
     asession -h|--help

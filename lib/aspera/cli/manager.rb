@@ -121,7 +121,7 @@ module Aspera
       attr_accessor :ask_missing_mandatory, :ask_missing_optional
       attr_writer :fail_on_missing_mandatory
 
-      def initialize(program_name)
+      def initialize(program_name, argv = nil)
         # command line values *not* starting with '-'
         @unprocessed_cmd_line_arguments = []
         # command line values starting with '-'
@@ -153,9 +153,7 @@ module Aspera
         Log.log.debug{"env=#{@option_pairs_env}".red}
         @unprocessed_cmd_line_options = []
         @unprocessed_cmd_line_arguments = []
-      end
-
-      def parse_command_line(argv)
+        return if argv.nil?
         process_options = true
         until argv.empty?
           value = argv.shift
@@ -178,8 +176,7 @@ module Aspera
         declare(:interactive, 'Use interactive input of missing params', values: :bool, handler: {o: self, m: :ask_missing_mandatory})
         declare(:ask_options, 'Ask even optional options', values: :bool, handler: {o: self, m: :ask_missing_optional})
         declare(:struct_parser, 'Default parser when expected value is a struct', values: %i[json ruby])
-        parse_options!
-        ExtendedValue.instance.default_decoder = get_option(:struct_parser)
+        # do not parse options yet, let's wait for option `-h` to be overriden
       end
 
       # @param descr [String] description for help
