@@ -200,11 +200,16 @@ module Aspera
             when 'folder'
               folders_to_explore.push({id: entry['id'], path: relative_path})
             when 'link'
-              node_id_to_node(entry['target_node_id'])&.process_folder_tree(
-                state:         state,
-                top_file_id:   entry['target_id'],
-                top_file_path: relative_path,
-                &block)
+              entry.delete('target_node_id')
+              if !entry['target_node_id'].nil? && !entry['target_id'].nil?
+                node_id_to_node(entry['target_node_id'])&.process_folder_tree(
+                  state:         state,
+                  top_file_id:   entry['target_id'],
+                  top_file_path: relative_path,
+                  &block)
+              else
+                Log.log.warn{"Missing target information for link: #{entry['name']}"}
+              end
             end
           end
         end
