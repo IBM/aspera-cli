@@ -162,8 +162,14 @@ module Aspera
             workspace_id: @app_info[:workspace_id],
             workspace_name: @app_info[:workspace_name])
         end
-        Log.log.warn{"cannot resolve link with node id #{node_id}"}
+        Log.log.warn{"Cannot resolve link with node id #{node_id}, no resolver"}
         return nil
+      end
+
+      def entry_has_link_information(entry)
+        return true unless entry['target_node_id'].nil? || entry['target_id'].nil?
+        Log.log.warn{"Missing target information for link: #{entry['name']}"}
+        return false
       end
 
       # Recursively browse in a folder (with non-recursive method)
@@ -193,22 +199,19 @@ module Aspera
           folder_contents.each do |entry|
             relative_path = File.join(current_item[:path], entry['name'])
             Log.log.debug{"process_folder_tree checking #{relative_path}"}
-            # continue only if method returns true
+            # call block, continue only if method returns true
             next unless yield(entry, relative_path, state)
             # entry type is file, folder or link
             case entry['type']
             when 'folder'
               folders_to_explore.push({id: entry['id'], path: relative_path})
             when 'link'
-              entry.delete('target_node_id')
-              if !entry['target_node_id'].nil? && !entry['target_id'].nil?
+              if entry_has_link_information(entry)
                 node_id_to_node(entry['target_node_id'])&.process_folder_tree(
                   state:         state,
                   top_file_id:   entry['target_id'],
                   top_file_path: relative_path,
                   &block)
-              else
-                Log.log.warn{"Missing target information for link: #{entry['name']}"}
               end
             end
           end
@@ -248,8 +251,11 @@ module Aspera
             if state[:path].empty?
               if process_last_link
                 # we found it
-                other_node = node_id_to_node(entry['target_node_id'])
-                raise 'cannot resolve link' if other_node.nil?
+                other_node = nil
+                if entry_has_link_information(entry)
+                  other_node = node_id_to_node(entry['target_node_id'])
+                end
+                raise 'Cannot resolve link' if other_node.nil?
                 state[:result] = {api: other_node, file_id: entry['target_id']}
               else
                 # we found it but we do not process the link
