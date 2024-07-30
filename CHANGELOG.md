@@ -6,7 +6,7 @@
     * **global**: #146 (@junkimu) Fix problem on Windows WRT terminal detection
     * `shares`: #147 Fix problem for `shares files mkdir`
   * Breaking Changes:
-    * **global**: Removed option `id`, deprecated in 4.14.0
+    * **global**: Removed option `id`, deprecated since 4.14.0
 
 * 4.18.0
   

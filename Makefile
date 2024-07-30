@@ -103,7 +103,7 @@ version:
 changes:
 	@latest_tag=$$(git describe --tags --abbrev=0);\
 	echo "Changes since [$$latest_tag]";\
-	git log $$latest_tag..HEAD --oneline
+	PAGER= git log $$latest_tag..HEAD --oneline
 
 ##################################
 # Docker image
