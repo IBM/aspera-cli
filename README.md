@@ -410,6 +410,26 @@ One can remove all installed gems, for example to start fresh:
 gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 ```
 
+#### Linux as simple user
+
+If you don't have root access, you can install Ruby in your home directory using `rbenv` see [rbenv-installer](https://github.com/rbenv/rbenv-installer#rbenv-installer):
+
+```bash
+curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+```
+
+Then open a new terminal, or "source" the shell initialization script:
+
+```bash
+source ~/.bashrc
+```
+
+Then install Ruby:
+
+```bash
+rbenv install 3.2.2
+```
+
 #### Other Unixes (AIX)
 
 Ruby is sometimes made available as an installable package through third party providers.
@@ -6581,11 +6601,11 @@ admin user ldap add the_name
 admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
 files browse /
+files delete my_share1/new_folder
 files delete my_share1/test_file.bin
-files delete my_share1/todelete
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
-files mkdir my_share1/todelete
+files mkdir my_share1/new_folder
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
 files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'

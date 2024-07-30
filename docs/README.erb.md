@@ -404,6 +404,26 @@ One can remove all installed gems, for example to start fresh:
 gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
 ```
 
+#### Linux as simple user
+
+If you don't have root access, you can install Ruby in your home directory using `rbenv` see [rbenv-installer](https://github.com/rbenv/rbenv-installer#rbenv-installer):
+
+```bash
+curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+```
+
+Then open a new terminal, or "source" the shell initialization script:
+
+```bash
+source ~/.bashrc
+```
+
+Then install Ruby:
+
+```bash
+rbenv install 3.2.2
+```
+
 #### Other Unixes (AIX)
 
 Ruby is sometimes made available as an installable package through third party providers.
