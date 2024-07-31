@@ -14,23 +14,28 @@ module Aspera
   module Api
     # Provides additional functions using node API with gen4 extensions (access keys)
     class Node < Aspera::Rest
-      # node api permissions
-      ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
-      HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       SCOPE_SEPARATOR = ':'
-      SCOPE_USER = 'user:all'
-      SCOPE_ADMIN = 'admin:all'
       SCOPE_NODE_PREFIX = 'node.'
       # prefix for ruby code for filter (deprecated)
       MATCH_EXEC_PREFIX = 'exec:'
       MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
-      PATH_SEPARATOR = '/'
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
-      BEARER_TOKEN_SCOPE_DEFAULT = SCOPE_USER
-      private_constant :MATCH_EXEC_PREFIX, :MATCH_TYPES,
-        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT, :BEARER_TOKEN_SCOPE_DEFAULT,
-        :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX
+      # fields in @app_info
+      REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
+      # methods of @app_info[:api]
+      REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
+      private_constant :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX, :MATCH_EXEC_PREFIX, :MATCH_TYPES,
+        :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
+        :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
+
+      # node api permissions
+      ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
+      HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
+      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
+      SCOPE_USER = 'user:all'
+      SCOPE_ADMIN = 'admin:all'
+      PATH_SEPARATOR = '/'
 
       # register node special token decoder
       OAuth::Factory.instance.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
@@ -86,7 +91,7 @@ module Aspera
           # manage convenience parameters
           expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
           payload.delete('_validity')
-          scope = payload['_scope'] || BEARER_TOKEN_SCOPE_DEFAULT
+          scope = payload['_scope'] || SCOPE_USER
           payload.delete('_scope')
           payload['scope'] ||= token_scope(access_key, scope)
           payload['auth_type'] ||= 'access_key'
@@ -117,19 +122,13 @@ module Aspera
         end
       end
 
-      # fields in @app_info
-      REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
-      # methods of @app_info[:api]
-      REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
-      private_constant :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
-
       attr_reader :app_info
 
+      # @param app_info  [Hash,NilClass]   Special processing for AoC
+      # @param add_tspec [Hash,NilClass]   Additional transfer spec
       # @param base_url  [String]          Rest parameters
       # @param auth      [String,NilClass] Rest parameters
       # @param headers   [String,NilClass] Rest parameters
-      # @param app_info  [Hash,NilClass]   Special processing for AoC
-      # @param add_tspec [Hash,NilClass]   Additional transfer spec
       def initialize(app_info: nil, add_tspec: nil, **rest_args)
         # init Rest
         super(**rest_args)
@@ -166,7 +165,16 @@ module Aspera
         return nil
       end
 
+      # Check if a link entry in folder has target information
+      # @param entry [Hash] entry in folder
+      # @return [Boolean] true if target information is available
       def entry_has_link_information(entry)
+        # if target information is missing in folder, try to get it on entry
+        if entry['target_node_id'].nil? || entry['target_id'].nil?
+          link_entry = read("files/#{entry['id']}")[:data]
+          entry['target_node_id'] = link_entry['target_node_id']
+          entry['target_id'] = link_entry['target_id']
+        end
         return true unless entry['target_node_id'].nil? || entry['target_id'].nil?
         Log.log.warn{"Missing target information for link: #{entry['name']}"}
         return false
@@ -174,19 +182,21 @@ module Aspera
 
       # Recursively browse in a folder (with non-recursive method)
       # sub folders are processed if the processing method returns true
+      # links are processed on the respective node
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
       # @param block [Proc] processing method, arguments: entry, path, state
-      def process_folder_tree(state:, top_file_id:, top_file_path: '/', &block)
+      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/')
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
-        Aspera.assert(block){'Missing block'}
+        Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # start at top folder
         folders_to_explore = [{id: top_file_id, path: top_file_path}]
         Log.log.debug{Log.dump(:folders_to_explore, folders_to_explore)}
         until folders_to_explore.empty?
+          # consume first in job list
           current_item = folders_to_explore.shift
-          Log.log.debug{"searching #{current_item[:path]}".bg_green}
+          Log.log.debug{"Exploring #{current_item[:path]}".bg_green}
           # get folder content
           folder_contents =
             begin
@@ -198,9 +208,9 @@ module Aspera
           Log.log.debug{Log.dump(:folder_contents, folder_contents)}
           folder_contents.each do |entry|
             relative_path = File.join(current_item[:path], entry['name'])
-            Log.log.debug{"process_folder_tree checking #{relative_path}"}
+            Log.log.debug{"process_folder_tree: checking #{relative_path}"}
             # call block, continue only if method returns true
-            next unless yield(entry, relative_path, state)
+            next unless send(method_sym, entry, relative_path, state)
             # entry type is file, folder or link
             case entry['type']
             when 'folder'
@@ -208,10 +218,10 @@ module Aspera
             when 'link'
               if entry_has_link_information(entry)
                 node_id_to_node(entry['target_node_id'])&.process_folder_tree(
+                  method_sym:    method_sym,
                   state:         state,
                   top_file_id:   entry['target_id'],
-                  top_file_path: relative_path,
-                  &block)
+                  top_file_path: relative_path)
               end
             end
           end
@@ -224,63 +234,23 @@ module Aspera
       # @return [Hash] {.api,.file_id}
       def resolve_api_fid(top_file_id, path)
         Aspera.assert_type(top_file_id, String)
+        Aspera.assert_type(path, String)
+        # if last element is a link and followed by "/", we list the content of that folder, else we return the link
         process_last_link = path.end_with?(PATH_SEPARATOR)
+        # keep only non-empty elements
         path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
         return {api: self, file_id: top_file_id} if path_elements.empty?
-        resolve_state = {path: path_elements, result: nil}
-        process_folder_tree(state: resolve_state, top_file_id: top_file_id) do |entry, _path, state|
-          # this block is called recursively for each entry in folder
-          # stop digging here if not in right path
-          next false unless entry['name'].eql?(state[:path].first)
-          # ok it matches, so we remove the match
-          state[:path].shift
-          case entry['type']
-          when 'file'
-            # file must be terminal
-            raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless state[:path].empty?
-            # it's terminal, we found it
-            state[:result] = {api: self, file_id: entry['id']}
-            next false
-          when 'folder'
-            if state[:path].empty?
-              # we found it
-              state[:result] = {api: self, file_id: entry['id']}
-              next false
-            end
-          when 'link'
-            if state[:path].empty?
-              if process_last_link
-                # we found it
-                other_node = nil
-                if entry_has_link_information(entry)
-                  other_node = node_id_to_node(entry['target_node_id'])
-                end
-                raise 'Cannot resolve link' if other_node.nil?
-                state[:result] = {api: other_node, file_id: entry['target_id']}
-              else
-                # we found it but we do not process the link
-                state[:result] = {api: self, file_id: entry['id']}
-              end
-              next false
-            end
-          else
-            Log.log.warn{"Unknown element type: #{entry['type']}"}
-          end
-          # continue to dig folder
-          next true
-        end
+        resolve_state = {path: path_elements, result: nil, process_last_link: process_last_link}
+        process_folder_tree(method_sym: :process_api_fid, state: resolve_state, top_file_id: top_file_id)
         raise "entry not found: #{resolve_state[:path]}" if resolve_state[:result].nil?
+        Log.log.debug{"resolve_api_fid: #{path} -> #{resolve_state[:result][:api].base_url} #{resolve_state[:result][:file_id]}"}
         return resolve_state[:result]
       end
 
       def find_files(top_file_id, test_block)
         Log.log.debug{"find_files: file id=#{top_file_id}"}
         find_state = {found: [], test_block: test_block}
-        process_folder_tree(state: find_state, top_file_id: top_file_id) do |entry, path, state|
-          state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
-          # test all files deeply
-          true
-        end
+        process_folder_tree(method_sym: :process_find_files, state: find_state, top_file_id: top_file_id)
         return find_state[:found]
       end
 
@@ -317,7 +287,7 @@ module Aspera
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
           # TODO: token_generation_lambda = lambda{|do_refresh|oauth.token(refresh: do_refresh)}
           # get bearer token, possibly use cache
-          ak_token = oauth.token(refresh: false)
+          ak_token = oauth.token
         else Aspera.error_unexpected_value(auth_params[:type])
         end
         transfer_spec = {
@@ -362,6 +332,58 @@ module Aspera
         Log.log.warn{"Expected transfer user: #{Transfer::Spec::ACCESS_KEY_TRANSFER_USER}, but have #{transfer_spec['remote_user']}"} \
           unless transfer_spec['remote_user'].eql?(Transfer::Spec::ACCESS_KEY_TRANSFER_USER)
         return transfer_spec
+      end
+
+      private
+
+      def process_api_fid(entry, path, state)
+        # this block is called recursively for each entry in folder
+        # stop digging here if not in right path
+        return false unless entry['name'].eql?(state[:path].first)
+        # ok it matches, so we remove the match, and continue digging
+        state[:path].shift
+        path_fully_consumed = state[:path].empty?
+        case entry['type']
+        when 'file'
+          # file must be terminal
+          raise "#{entry['name']} is a file, expecting folder to find: #{state[:path]}" unless path_fully_consumed
+          # it's terminal, we found it
+          Log.log.debug{"resolve_api_fid: found #{path} -> #{entry['id']}"}
+          state[:result] = {api: self, file_id: entry['id']}
+          return false
+        when 'folder'
+          if path_fully_consumed
+            # we found it
+            state[:result] = {api: self, file_id: entry['id']}
+            return false
+          end
+        when 'link'
+          if path_fully_consumed
+            if state[:process_last_link]
+              # we found it
+              other_node = nil
+              if entry_has_link_information(entry)
+                other_node = node_id_to_node(entry['target_node_id'])
+              end
+              raise 'Cannot resolve link' if other_node.nil?
+              state[:result] = {api: other_node, file_id: entry['target_id']}
+            else
+              # we found it but we do not process the link
+              state[:result] = {api: self, file_id: entry['id']}
+            end
+            return false
+          end
+        else
+          Log.log.warn{"Unknown element type: #{entry['type']}"}
+        end
+        # continue to dig folder
+        return true
+      end
+
+      def process_find_files(entry, _path, state)
+        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
+        # test all files deeply
+        return true
       end
     end
   end
