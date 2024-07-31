@@ -1051,6 +1051,7 @@ $(T)aocauto10: $(DIR_TMP)wf_id
 $(eval $(call test_suite_all,taocauto,$(T)aocauto1 $(T)aocauto2 $(T)aocauto3 $(T)aocauto10))
 #######################################################################################################################
 taoc: taocgen taocf taocp taocadm taocts taocauto
+clean_taoc: clean_taocgen clean_taocf clean_taocp clean_taocadm clean_taocts clean_taocauto
 #######################################################################################################################
 $(T)orch_wizard: $(T).exists
 	@$(START_TEST) $@
