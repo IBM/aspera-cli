@@ -686,6 +686,12 @@ $(T)aocfbr: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files browse /
 	@$(STOP_TEST) $@
+$(T)aocfbr1: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) aoc files browse @preset:aoc.remote_folder
+	$(EXE_MAN) aoc files browse @extend:@preset:aoc.remote_folder@/
+	$(EXE_MAN) aoc files browse @preset:aoc.remote_file
+	@$(STOP_TEST) $@
 $(T)aocfbt: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files bearer_token_node / --cache-tokens=no
@@ -834,7 +840,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc files short_link private list /testdst
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbr1 $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
 #######################################################################################################################
 $(T)aoc_pack_send1: $(T).exists
 	@$(START_TEST) $@

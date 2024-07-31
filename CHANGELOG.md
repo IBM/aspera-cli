@@ -2,8 +2,10 @@
 
 * 4.19.0.pre
   * New Features:
+    * none
   * Issues Fixed:
     * **global**: #146 (@junkimu) Fix problem on Windows WRT terminal detection
+    * **global**: node gen4 (aoc) browsing through link now follows the link correctly
     * `shares`: #147 Fix problem for `shares files mkdir`
   * Breaking Changes:
     * **global**: Removed option `id`, deprecated since 4.14.0
