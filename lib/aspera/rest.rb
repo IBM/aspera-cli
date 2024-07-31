@@ -209,8 +209,12 @@ module Aspera
       headers: nil
     )
       Aspera.assert_type(base_url, String)
-      # base url with max one trailing slashes (note: string may be frozen)
-      @base_url = base_url.gsub(%r{//+$}, '/')
+      # base url with no trailing slashes (note: string may be frozen)
+      @base_url = base_url.gsub(%r{/+$}, '')
+      # remove trailing port if it is 443 and scheme is https
+      @base_url = @base_url.gsub(/:443$/, '') if @base_url.start_with?('https://')
+      @base_url = @base_url.gsub(/:80$/, '') if @base_url.start_with?('http://')
+      Log.log.debug{"Rest.new(#{@base_url})"}
       # default is no auth
       @auth_params = auth.nil? ? {type: :none} : auth
       Aspera.assert_type(@auth_params, Hash)
@@ -289,7 +293,7 @@ module Aspera
       begin
         # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
         # URI.escape()
-        separator = !['', '/'].include?(subpath) || @base_url.end_with?('/') ? '/' : ''
+        separator = ['', '/'].include?(subpath) ? '' : '/'
         uri = self.class.build_uri("#{@base_url}#{separator}#{subpath}", query)
         Log.log.debug{"URI=#{uri}"}
         begin
