@@ -294,52 +294,6 @@ Download the Ruby installer executable from <https://rubyinstaller.org/downloads
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
-Installation without network:
-
-It is essentially the same procedure, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
-
-- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
-
-  ```bash
-  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
-  curl -o ${v##*/} $v
-  ```
-
-- Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
-
-  ```bat
-  gem install aspera-cli -N -i my_gems
-  ```
-
-  Zip the files `*.gem` from folder `repo/my_gems`
-
-- Download the SDK from: <https://ibm.biz/aspera_sdk>
-
-Create a Zip with all those files, and transfer to the target system.
-
-Then, on the target system:
-
-- Unzip the archive
-- Execute the installer:
-
-```bat
-rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
-```
-
-- Install the gems:
-
-```bat
-gem install --force --local *.gem
-```
-
-- Install the SDK
-
-```bash
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
-```
-
-> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
-
 #### macOS: `brew`
 
 **macOS** come with Ruby.
@@ -558,7 +512,7 @@ This can be installed either be installing an Aspera transfer software, or using
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
 ```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
 ```
 
 ```bash
@@ -588,6 +542,18 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 > **Note:** No pre-packaged version is provided yet.
 
+#### Gem files and dependencies
+
+The sample script: [examples/build_package.sh](examples/build_package.sh) can be used to download all necessary gems and dependencies in a tar gz.
+
+```console
+$ ./build_package.sh aspera-cli 4.18.0
+
+Archive: aspera-cli-4.18.0-gems.tgz
+```
+
+#### Unix-like
+
 A method to build one is provided here:
 
 The procedure:
@@ -609,7 +575,7 @@ cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 - Download the SDK archive from that URL
 
 ```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
 ```
 
 - Transfer those 2 files to the target system
@@ -632,11 +598,47 @@ source ~/.rvm/scripts/rvm
 source ~/.rvm/scripts/rvm
 ```
 
-> **Note:** Alternatively, to download all necessary gems in folder `my_gems`, execute:
+#### Windows
+
+Installation without network:
+
+It is essentially the same procedure as installation for Windows with internet, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
+
+- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
+
+  ```bash
+  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  curl -o ${v##*/} $v
+  ```
+
+- Create an archive with necessary gems like in previous section
+
+- Download the SDK from: <https://ibm.biz/aspera_transfer_sdk>
+
+- Create a Zip with all those files, and transfer to the target system.
+
+Then, on the target system:
+
+- Unzip the archive
+- Execute the installer:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+- Install the gems: Extract the gem archive, and then:
+
+```bat
+gem install --force --local *.gem
+```
+
+- Install the SDK
 
 ```bash
-gem install aspera-cli -N -i my_gems
+<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
+
+> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
 
 ### Container
 

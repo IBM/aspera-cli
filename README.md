@@ -300,52 +300,6 @@ Download the Ruby installer executable from <https://rubyinstaller.org/downloads
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
-Installation without network:
-
-It is essentially the same procedure, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
-
-- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
-
-  ```bash
-  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
-  curl -o ${v##*/} $v
-  ```
-
-- Create an archive with necessary gems: <https://help.rubygems.org/kb/rubygems/installing-gems-with-no-network>
-
-  ```bat
-  gem install aspera-cli -N -i my_gems
-  ```
-
-  Zip the files `*.gem` from folder `repo/my_gems`
-
-- Download the SDK from: <https://ibm.biz/aspera_sdk>
-
-Create a Zip with all those files, and transfer to the target system.
-
-Then, on the target system:
-
-- Unzip the archive
-- Execute the installer:
-
-```bat
-rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
-```
-
-- Install the gems:
-
-```bat
-gem install --force --local *.gem
-```
-
-- Install the SDK
-
-```bash
-ascli config ascp install --sdk-url=file:///sdk.zip
-```
-
-> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
-
 #### macOS: `brew`
 
 **macOS** come with Ruby.
@@ -564,7 +518,7 @@ ascli config ascp install
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
 ```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
 ```
 
 ```bash
@@ -594,6 +548,18 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 > **Note:** No pre-packaged version is provided yet.
 
+#### Gem files and dependencies
+
+The sample script: [examples/build_package.sh](examples/build_package.sh) can be used to download all necessary gems and dependencies in a tar gz.
+
+```console
+$ ./build_package.sh aspera-cli 4.18.0
+
+Archive: aspera-cli-4.18.0-gems.tgz
+```
+
+#### Unix-like
+
 A method to build one is provided here:
 
 The procedure:
@@ -615,7 +581,7 @@ ascli --show-config --fields=sdk_url
 - Download the SDK archive from that URL
 
 ```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_sdk
+curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
 ```
 
 - Transfer those 2 files to the target system
@@ -638,11 +604,47 @@ ascli config ascp install --sdk-url=file:///sdk.zip
 source ~/.rvm/scripts/rvm
 ```
 
-> **Note:** Alternatively, to download all necessary gems in folder `my_gems`, execute:
+#### Windows
+
+Installation without network:
+
+It is essentially the same procedure as installation for Windows with internet, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
+
+- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
+
+  ```bash
+  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  curl -o ${v##*/} $v
+  ```
+
+- Create an archive with necessary gems like in previous section
+
+- Download the SDK from: <https://ibm.biz/aspera_transfer_sdk>
+
+- Create a Zip with all those files, and transfer to the target system.
+
+Then, on the target system:
+
+- Unzip the archive
+- Execute the installer:
+
+```bat
+rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
+```
+
+- Install the gems: Extract the gem archive, and then:
+
+```bat
+gem install --force --local *.gem
+```
+
+- Install the SDK
 
 ```bash
-gem install aspera-cli -N -i my_gems
+ascli config ascp install --sdk-url=file:///sdk.zip
 ```
+
+> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
 
 ### Container
 
@@ -3052,7 +3054,7 @@ Columns:
 | fasp_port | int | Y | Y | Y | Y | Y | Specifies fasp (UDP) port.<br/>(-O {int}) |
 | fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex.<br/>(&lt;ignored&gt;) |
 | file_checksum | string | Y | Y | &nbsp; | &nbsp; | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(&lt;ignored&gt;) |
-| http_fallback | bool<br/>string | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){bool}|{string}) |
+| http_fallback | bool<br/>string | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){bool}\|{string}) |
 | http_fallback_port | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specifies http port when no cipher is used<br/>(-t {int}) |
 | https_fallback_port | int | Y | Y | Y | Y | Y | Specifies https port when cipher is used<br/>(-t {int}) |
 | keepalive | bool | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The session is running in persistent session mode.<br/>(--keepalive) |
@@ -5039,6 +5041,9 @@ files browse /
 files browse / --url=my_private_link
 files browse / --url=my_public_link_folder_no_pass
 files browse / --url=my_public_link_folder_pass --password=my_public_link_password
+files browse my_remote_file
+files browse my_remote_folder
+files browse my_remote_folder/
 files delete /testsrc
 files download --transfer=alpha testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin

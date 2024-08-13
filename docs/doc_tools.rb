@@ -44,7 +44,7 @@ def markdown_table(table)
   headings = table.shift
   table.unshift(headings.map{|col_name|'-' * col_name.length})
   table.unshift(headings)
-  return table.map {|line| "| #{line.join(' | ')} |\n"}.join.chomp
+  return table.map {|line| "| #{line.map{|i|i.to_s.gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
 end
 
 # transfer spec description generation
