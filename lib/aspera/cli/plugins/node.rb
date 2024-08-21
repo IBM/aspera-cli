@@ -944,7 +944,7 @@ module Aspera
             }
             # encode parameters so that it looks good in url
             encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
-            OpenApplication.instance.uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
+            Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
             return Main.result_status('done')
           when :basic_token
             return Main.result_status(Rest.basic_token(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))

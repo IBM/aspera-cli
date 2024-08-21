@@ -124,7 +124,7 @@ module Aspera
               formatter.display_status(pub_key_pem)
               if !options.get_option(:test_mode)
                 formatter.display_status('Once updated or validated, press enter.')
-                OpenApplication.instance.uri(instance_url)
+                Environment.instance.open_uri(instance_url)
                 $stdin.gets
               end
             else
@@ -138,7 +138,7 @@ module Aspera
                 formatter.display_status('- origin: localhost')
                 formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
               end
-              OpenApplication.instance.uri("#{instance_url}/admin/api-clients")
+              Environment.instance.open_uri("#{instance_url}/admin/api-clients")
               options.get_option(:client_id, mandatory: true)
               options.get_option(:client_secret, mandatory: true)
               use_browser_authentication = true

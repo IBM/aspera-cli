@@ -162,9 +162,9 @@ module Aspera
         options.declare(:version, 'Display version', values: :none, short: 'v') { formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon, Layout/LineLength
         options.declare(
           :ui, 'Method to start browser',
-          values: OpenApplication::USER_INTERFACES,
-          handler: {o: OpenApplication.instance, m: :url_method},
-          default: OpenApplication.default_gui_mode)
+          values: Environment::USER_INTERFACES,
+          handler: {o: Environment.instance, m: :url_method},
+          default: Environment.default_gui_mode)
         options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)

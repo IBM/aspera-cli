@@ -10,7 +10,7 @@ require 'aspera/cli/transfer_agent'
 require 'aspera/transfer/uri'
 require 'aspera/transfer/spec'
 require 'aspera/persistency_action_once'
-require 'aspera/open_application'
+require 'aspera/environment'
 require 'aspera/nagios'
 require 'aspera/id_generator'
 require 'aspera/log'
@@ -391,7 +391,7 @@ module Aspera
                   headers:   {'Accept' => 'application/xml'},
                   query:     {passcode: link_data[:query]['passcode']})
                 if !package_creation_data[:http].body.start_with?('<?xml ')
-                  OpenApplication.instance.uri(link_url)
+                  Environment.instance.open_uri(link_url)
                   raise Cli::Error, 'Unexpected response: package not found ?'
                 end
                 package_entry = XmlSimple.xml_in(package_creation_data[:http].body, {'ForceArray' => false})

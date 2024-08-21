@@ -4,7 +4,7 @@ require 'aspera/agent/base'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/json_rpc'
-require 'aspera/open_application'
+require 'aspera/environment'
 require 'securerandom'
 
 module Aspera
@@ -22,7 +22,7 @@ module Aspera
         @application_id = SecureRandom.uuid
         @xfer_id = nil
         super(**base_options)
-        raise 'Using client requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
+        raise 'Using client requires a graphical environment' if !Environment.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
           # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'
@@ -36,8 +36,8 @@ module Aspera
           method_index += 1
           raise StandardError, "Unable to start #{APP_NAME} #{method_index} times" if start_url.nil?
           Log.log.warn{"#{APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..."}
-          if !OpenApplication.uri_graphical(start_url)
-            OpenApplication.uri_graphical('https://www.ibm.com/aspera/connect/')
+          if !Environment.open_uri_graphical(start_url)
+            Environment.open_uri_graphical('https://www.ibm.com/aspera/connect/')
             raise StandardError, "#{APP_NAME} is not installed"
           end
           sleep(SLEEP_SEC_BETWEEN_RETRY)

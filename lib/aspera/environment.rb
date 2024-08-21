@@ -4,17 +4,21 @@
 require 'aspera/log'
 require 'aspera/assert'
 require 'rbconfig'
+require 'singleton'
 
 # cspell:words MEBI mswin bccwin
 
 module Aspera
   # detect OS, architecture, and specific stuff
   class Environment
+    include Singleton
+    USER_INTERFACES = %i[text graphical].freeze
+
     OS_WINDOWS = :windows
-    OS_X = :osx
+    OS_MACOS = :osx
     OS_LINUX = :linux
     OS_AIX = :aix
-    OS_LIST = [OS_WINDOWS, OS_X, OS_LINUX, OS_AIX].freeze
+    OS_LIST = [OS_WINDOWS, OS_MACOS, OS_LINUX, OS_AIX].freeze
     CPU_X86_64 = :x86_64
     CPU_ARM64 = :arm64
     CPU_PPC64 = :ppc64
@@ -37,7 +41,7 @@ module Aspera
         when /mswin/, /msys/, /mingw/, /cygwin/, /bccwin/, /wince/, /emc/
           return OS_WINDOWS
         when /darwin/, /mac os/
-          return OS_X
+          return OS_MACOS
         when /linux/
           return OS_LINUX
         when /aix/
@@ -127,6 +131,60 @@ module Aspera
       def terminal_supports_unicode?
         @terminal_supports_unicode = terminal? && %w(LC_ALL LC_CTYPE LANG).any?{|var|ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
         return @terminal_supports_unicode
+      end
+
+      def default_gui_mode
+        # assume not remotely connected on macos and windows
+        return :graphical if [Environment::OS_WINDOWS, Environment::OS_MACOS].include?(Environment.os)
+        # unix family
+        return :graphical if ENV.key?('DISPLAY') && !ENV['DISPLAY'].empty?
+        return :text
+      end
+
+      # command must be non blocking
+      def open_uri_graphical(uri)
+        case Environment.os
+        when Environment::OS_MACOS then return system('open', uri.to_s)
+        when Environment::OS_WINDOWS then return system('start', 'explorer', %Q{"#{uri}"})
+        when Environment::OS_LINUX   then return system('xdg-open', uri.to_s)
+        else
+          raise "no graphical open method for #{Environment.os}"
+        end
+      end
+
+      def open_editor(file_path)
+        if ENV.key?('EDITOR')
+          system(ENV['EDITOR'], file_path.to_s)
+        elsif Environment.os.eql?(Environment::OS_WINDOWS)
+          system('notepad.exe', %Q{"#{file_path}"})
+        else
+          open_uri_graphical(file_path.to_s)
+        end
+      end
+    end
+    attr_accessor :url_method
+
+    def initialize
+      @url_method = self.class.default_gui_mode
+    end
+
+    # Allows a user to open a Url
+    # if method is "text", then URL is displayed on terminal
+    # if method is "graphical", then the URL will be opened with the default browser.
+    # this is non blocking
+    def open_uri(the_url)
+      case @url_method
+      when :graphical
+        self.class.open_uri_graphical(the_url)
+      when :text
+        case the_url.to_s
+        when /^http/
+          puts "USER ACTION: please enter this url in a browser:\n#{the_url.to_s.red}\n"
+        else
+          puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
+        end
+      else
+        raise StandardError, "unsupported url open method: #{@url_method}"
       end
     end
   end

@@ -359,8 +359,8 @@ module Aspera
           raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::DEFAULT_PARSER.make_regexp}\z/)
           # it's a url
           url = blob
-          unless OpenApplication.instance.url_method.eql?(:text)
-            OpenApplication.instance.uri(url)
+          unless Environment.instance.url_method.eql?(:text)
+            Environment.instance.open_uri(url)
             return ''
           end
           # remote_image = Rest.new(base_url: url).read('')

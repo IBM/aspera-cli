@@ -82,7 +82,7 @@ module Aspera
             if options.get_option(:client_id).nil? || options.get_option(:client_secret).nil?
               formatter.display_status('Ask the ascli client id and secret to your Administrator.'.red)
               formatter.display_status("Admin should login to: #{instance_url}")
-              OpenApplication.instance.uri(instance_url)
+              Environment.instance.open_uri(instance_url)
               formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
               formatter.display_status('Create an API client with:')
               formatter.display_status('- name: ascli')

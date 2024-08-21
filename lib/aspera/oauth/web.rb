@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/oauth/base'
-require 'aspera/open_application'
+require 'aspera/environment'
 require 'aspera/web_auth'
 require 'aspera/assert'
 module Aspera
@@ -34,7 +34,7 @@ module Aspera
         # start a web server to receive request code
         web_server = WebAuth.new(@redirect_uri)
         # start browser on login page
-        OpenApplication.instance.uri(login_page_url)
+        Environment.instance.open_uri(login_page_url)
         # wait for code in request
         received_params = web_server.received_request
         Aspera.assert(random_state.eql?(received_params['state'])){'wrong received state'}

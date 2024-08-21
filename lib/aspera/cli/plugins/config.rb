@@ -16,7 +16,7 @@ require 'aspera/transfer/spec'
 require 'aspera/keychain/encrypted_hash'
 require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
-require 'aspera/open_application'
+require 'aspera/environment'
 require 'aspera/persistency_action_once'
 require 'aspera/id_generator'
 require 'aspera/persistency_folder'
@@ -686,7 +686,7 @@ module Aspera
               api_connect_cdn.call(operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename))
               return Main.result_status("Downloaded: #{filename}")
             when :open
-              OpenApplication.instance.uri(one_link['href'])
+              Environment.instance.open_uri(one_link['href'])
               return Main.result_status("Opened: #{one_link['href']}")
             end
           end
@@ -880,12 +880,12 @@ module Aspera
           when :preset # newer syntax
             return execute_preset
           when :open
-            OpenApplication.editor(@option_config_file.to_s)
+            Environment.open_editor(@option_config_file.to_s)
             return Main.result_nothing
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
             section = "##{section}" unless section.nil?
-            OpenApplication.instance.uri("#{@help}#{section}")
+            Environment.instance.open_uri("#{@help}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
@@ -1271,7 +1271,7 @@ module Aspera
                 info[:password])
             when 'system'
               case Environment.os
-              when Environment::OS_X
+              when Environment::OS_MACOS
                 @vault = Keychain::MacosSystem.new(info[:name], info[:password])
               else
                 raise 'not implemented for this OS'

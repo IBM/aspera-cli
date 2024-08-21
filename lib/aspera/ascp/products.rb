@@ -44,7 +44,7 @@ module Aspera
               app_root: File.join('C:', 'Program Files', 'Aspera', 'Enterprise Server'),
               log_root: File.join('C:', 'Program Files', 'Aspera', 'Enterprise Server', 'var', 'log')
             }]
-            when Aspera::Environment::OS_X then [{
+            when Aspera::Environment::OS_MACOS then [{
               expected: CONNECT,
               app_root: File.join(Dir.home, 'Applications', 'Aspera Connect.app'),
               log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Connect'),

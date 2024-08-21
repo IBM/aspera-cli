@@ -2,7 +2,6 @@
 
 require 'aspera/agent/base'
 require 'aspera/rest'
-require 'aspera/open_application'
 require 'securerandom'
 
 module Aspera
@@ -18,7 +17,7 @@ module Aspera
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
-        raise 'Using connect requires a graphical environment' if !OpenApplication.default_gui_mode.eql?(:graphical)
+        raise 'Using connect requires a graphical environment' if !Environment.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
           connect_url = Ascp::Products.connect_uri
@@ -34,8 +33,8 @@ module Aspera
           method_index += 1
           raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?
           Log.log.warn{"Aspera Connect is not started (#{e}). Trying to start it ##{method_index}..."}
-          if !OpenApplication.uri_graphical(start_url)
-            OpenApplication.uri_graphical('https://www.ibm.com/aspera/connect/')
+          if !Environment.uri_graphical(start_url)
+            Environment.open_uri_graphical('https://www.ibm.com/aspera/connect/')
             raise StandardError, 'Connect is not installed'
           end
           sleep(SLEEP_SEC_BETWEEN_RETRY)
