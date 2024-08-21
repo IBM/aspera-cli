@@ -1370,10 +1370,12 @@ $(T)conf_coffee_3: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config coffee --ui=text --query=@json:'{"text":"true"}'
 	@$(STOP_TEST) $@
+# unset: to test like on Windows
 $(T)conf_plugins: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config plugin list
-	$(EXE_MAN) config plugin create my_command $(DIR_TMP)
+	$(EXE_MAN) config plugins list
+	unset LC_ALL LC_CTYPE LANG && $(EXE_NO_MAN) config plugins list
+	$(EXE_MAN) config plugins create my_command $(DIR_TMP)
 	$(EXE_NO_MAN) my_command --plugin-folder=$(DIR_TMP)
 	@$(STOP_TEST) $@
 $(T)conf_wizard_org: $(T).exists

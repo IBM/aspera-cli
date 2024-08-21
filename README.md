@@ -1959,8 +1959,8 @@ genkey my_key 4096
 image https://eudemo.asperademo.com/wallpaper.jpg
 initdemo
 open
-plugin create my_command
-plugin list
+plugins create my_command
+plugins list
 preset delete conf_name
 preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
