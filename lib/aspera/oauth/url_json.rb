@@ -6,6 +6,8 @@ module Aspera
   module OAuth
     # This class is used to create a token using a JSON body and a URL
     class UrlJson < Base
+      # @param url  URL to send the JSON body
+      # @param json JSON body to send
       def initialize(
         url:,
         json:,

@@ -8,8 +8,8 @@ module Aspera
   module OAuth
     # Authentication using Web browser
     class Web < Base
-      # @param g_o:redirect_uri    [M] for type :web
-      # @param g_o:path_authorize  [D] for type :web
+      # @param redirect_uri    url to receive the code after auth (to be exchanged for token)
+      # @param path_authorize  path to login page on web app
       def initialize(
         redirect_uri:,
         path_authorize: 'authorize',
@@ -21,11 +21,12 @@ module Aspera
         uri = URI.parse(@redirect_uri)
         Aspera.assert(%w[http https].include?(uri.scheme)){'redirect_uri scheme must be http or https'}
         Aspera.assert(!uri.port.nil?){'redirect_uri must have a port'}
-        # TODO: we could check that host is localhost or local address
+        # TODO: we could check that host is localhost or local address, as we are going to listen locally
       end
 
       def create_token
-        random_state = SecureRandom.uuid # used to check later
+        # generate secure state to check later
+        random_state = SecureRandom.uuid
         login_page_url = Rest.build_uri(
           "#{@base_url}/#{@path_authorize}",
           optional_scope_client_id.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state))
