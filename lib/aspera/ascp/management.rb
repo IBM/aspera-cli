@@ -188,7 +188,7 @@ module Aspera
       # empty line is separator to end event information
       MGT_FRAME_SEPARATOR = ''
       # fields description for JSON generation
-      # spellchecker: disable
+      # cspell: disable
       INTEGER_FIELDS = %w[Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy
                           DatagramSize XoptFlags VLinkVersion PeerVLinkVersion DSPipelineDepth PeerDSPipelineDepth ReadBlockSize WriteBlockSize
                           ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes TransferBytes PMTU Elapsedusec ArgScansAttempted
