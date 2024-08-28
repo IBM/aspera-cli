@@ -41,7 +41,8 @@ module Aspera
         </CONF>
       END_OF_CONFIG_FILE
       # all ascp files (in SDK)
-      FILES = %i[ascp ascp4 transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].freeze
+      EXE_FILES = %i[ascp ascp4 async].freeze
+      FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER, :DEFAULT_ASPERA_CONF, :FILES
       # set ascp executable path
       def ascp_path=(v)
@@ -110,14 +111,14 @@ module Aspera
       def path(k)
         file_is_optional = false
         case k
-        when :ascp, :ascp4
+        when *EXE_FILES
+          file_is_optional = k.eql?(:async)
           use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
-          file = @path_to_ascp
           # NOTE: that there might be a .exe at the end
-          file = file.gsub('ascp', 'ascp4') if k.eql?(:ascp4)
+          file = @path_to_ascp.gsub('ascp', k.to_s)
         when :transferd
-          file = transferd_filepath
           file_is_optional = true
+          file = transferd_filepath
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
@@ -169,13 +170,14 @@ module Aspera
         raise "An error occurred when testing #{ascp_filename}: #{cmd_out}" unless $CHILD_STATUS == 0
         # get version from ascp, only after full extract, as windows requires DLLs (SSL/TLS/etc...)
         m = cmd_out.match(/ version ([0-9.]+)/)
-        exe_version = m[1] unless m.nil?
+        exe_version = m[1].gsub(/\.$/, '') unless m.nil?
         return exe_version
       end
 
-      def ascp_add_pvcl(data)
+      def ascp_pvcl_info
+        data = {}
         # read PATHs from ascp directly, and pvcl modules as well
-        Open3.popen3(data['ascp'], '-DDL-') do |_stdin, _stdout, stderr, thread|
+        Open3.popen3(ascp_path, '-DDL-') do |_stdin, _stdout, stderr, thread|
           last_line = ''
           while (line = stderr.gets)
             line.chomp!
@@ -194,32 +196,32 @@ module Aspera
               data['product_name'] = Regexp.last_match(1)
               data['product_version'] = Regexp.last_match(2)
             when /^LOG Initializing FASP version ([^,]+),/
-              data['ascp_version'] = Regexp.last_match(1)
+              data['sdk_ascp_version'] = Regexp.last_match(1)
             end
           end
           if !thread.value.exitstatus.eql?(1) && !data.key?('root')
             raise last_line
           end
         end
+        return data
       end
 
       # extract some stings from ascp binary
-      def ascp_add_openssl(data)
-        ascp_file = data['ascp']
-        File.binread(ascp_file).scan(/[\x20-\x7E]{10,}/) do |bin_string|
+      def ascp_ssl_info
+        data = {}
+        File.binread(ascp_path).scan(/[\x20-\x7E]{10,}/) do |bin_string|
           if (m = bin_string.match(/OPENSSLDIR.*"(.*)"/))
             data['openssldir'] = m[1]
           elsif (m = bin_string.match(/OpenSSL (\d[^ -]+)/))
             data['openssl_version'] = m[1]
           end
-        end if File.file?(ascp_file)
+        end if File.file?(ascp_path)
+        return data
       end
 
       def ascp_info
-        data = file_paths
-        ascp_add_pvcl(data)
-        ascp_add_openssl(data)
-        return data
+        files = file_paths
+        return files.merge(ascp_pvcl_info).merge(ascp_ssl_info)
       end
 
       # download aspera SDK or use local file
@@ -263,19 +265,22 @@ module Aspera
         # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)
         path(:aspera_conf)
-        ascp_file = Products.ascp_filename
-        ascp_path = File.join(sdk_folder, ascp_file)
-        raise "No #{ascp_file} found in SDK archive" unless File.exist?(ascp_path)
-        Environment.restrict_file_access(ascp_path, mode: 0o755)
-        Environment.restrict_file_access(ascp_path.gsub('ascp', 'ascp4'), mode: 0o755)
-        ascp_version = get_ascp_version(ascp_path)
-        trd_path = transferd_filepath
-        Log.log.warn{"No #{trd_path} in SDK archive"} unless File.exist?(trd_path)
-        Environment.restrict_file_access(trd_path, mode: 0o755) if File.exist?(trd_path)
-        transferd_version = get_exe_version(trd_path, 'version')
-        sdk_version = transferd_version || ascp_version
-        File.write(File.join(sdk_folder, Products::INFO_META_FILE), "<product><name>IBM Aspera SDK</name><version>#{sdk_version}</version></product>")
-        return sdk_version
+        sdk_ascp_file = Products.ascp_filename
+        sdk_ascp_path = File.join(sdk_folder, sdk_ascp_file)
+        raise "No #{sdk_ascp_file} found in SDK archive" unless File.exist?(sdk_ascp_path)
+        EXE_FILES.each do |exe_sym|
+          exe_path = sdk_ascp_path.gsub('ascp', exe_sym.to_s)
+          Environment.restrict_file_access(exe_path, mode: 0o755) if File.exist?(exe_path)
+        end
+        sdk_ascp_version = get_ascp_version(sdk_ascp_path)
+        sdk_daemon_path = transferd_filepath
+        Log.log.warn{"No #{sdk_daemon_path} in SDK archive"} unless File.exist?(sdk_daemon_path)
+        Environment.restrict_file_access(sdk_daemon_path, mode: 0o755) if File.exist?(sdk_daemon_path)
+        transferd_version = get_exe_version(sdk_daemon_path, 'version')
+        sdk_name = 'IBM Aspera Transfer SDK'
+        sdk_version = transferd_version || sdk_ascp_version
+        File.write(File.join(sdk_folder, Products::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        return sdk_name, sdk_version
       end
 
       private

@@ -729,8 +729,8 @@ module Aspera
           when :install
             # reset to default location, if older default was used
             Ascp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
-            v = Ascp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
-            return Main.result_status("Installed version #{v}")
+            n, v = Ascp::Installation.instance.install_sdk(options.get_option(:sdk_url, mandatory: true))
+            return Main.result_status("Installed #{n} version #{v}")
           when :spec
             return {
               type:   :object_list,

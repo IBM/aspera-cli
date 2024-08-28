@@ -1,7 +1,8 @@
 # Changes (Release notes)
 
 * 4.19.0.pre
-  * 
+  * New Features:
+    * `server`: add support for `async` from SDK
   
 * 4.18.1
   * New Features:

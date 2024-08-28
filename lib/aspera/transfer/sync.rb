@@ -83,10 +83,9 @@ module Aspera
         'tags'            => 'tags'
       }.freeze
 
-      ASYNC_EXECUTABLE = 'async'
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
 
-      private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :TS_TO_PARAMS_V2, :ASYNC_EXECUTABLE, :ASYNC_ADMIN_EXECUTABLE
+      private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :TS_TO_PARAMS_V2, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
         # Set remote_dir in sync parameters based on transfer spec
@@ -205,8 +204,9 @@ module Aspera
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
           Log.log.debug{Log.dump(:sync_params, sync_params)}
-          Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{ASYNC_EXECUTABLE}\" \"#{env_args[:args].join('" "')}\""}
-          res = system(env_args[:env], [ASYNC_EXECUTABLE, ASYNC_EXECUTABLE], *env_args[:args])
+          async_exec = Ascp::Installation.instance.path(:async)
+          Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_exec}\" \"#{env_args[:args].join('" "')}\""}
+          res = system(env_args[:env], [async_exec, async_exec], *env_args[:args])
           Log.log.debug{"result=#{res}"}
           case res
           when true then return nil
