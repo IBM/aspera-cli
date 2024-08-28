@@ -37,7 +37,7 @@ all:: $(DIR_TOP).gems_checked
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
 
-use_rmagick: optional_gems $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3
+use_rmagick: optional_gems $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3 $(T)conf_image
 use_grpc: optional_gems $(T)serv_upload4
 use_mimemagic: optional_gems $(T)prev_dcm_mm $(T)prev_jpg_unk_mm 
 
@@ -1360,7 +1360,6 @@ $(T)conf_help_2: $(T).exists
 $(T)conf_coffee_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config coffee
-	$(EXE_MAN) config image https://eudemo.asperademo.com/wallpaper.jpg
 	@$(STOP_TEST) $@
 $(T)conf_coffee_2: $(T).exists
 	@$(START_TEST) $@
@@ -1368,7 +1367,12 @@ $(T)conf_coffee_2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_coffee_3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config coffee --ui=text --query=@json:'{"text":"true"}'
+	$(EXE_MAN) config coffee --ui=text --image=@json:'{"text":true}'
+	$(EXE_MAN) config coffee --ui=text --image=@json:'{"text":true,"double":false}'
+	@$(STOP_TEST) $@
+$(T)conf_image: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) config image https://eudemo.asperademo.com/wallpaper.jpg
 	@$(STOP_TEST) $@
 # unset: to test like on Windows
 $(T)conf_plugins: $(T).exists
