@@ -126,7 +126,7 @@ module Aspera
 
         # filename for ascp with optional extension (Windows)
         def ascp_filename
-          return 'ascp' + Environment.exe_extension
+          return "ascp#{Environment.exe_extension}"
         end
 
         # @return folder paths for specified applications
@@ -150,12 +150,6 @@ module Aspera
           end
           raise "no connect uri file found in #{folder}"
         end
-
-        # @ return path to configuration file of aspera CLI
-        # def cli_conf_file
-        #  connect = folders(PRODUCT_CLI_V1)
-        #  return File.join(connect[:app_root], BIN_SUBFOLDER, '.aspera_cli_conf')
-        # end
       end
     end
   end
