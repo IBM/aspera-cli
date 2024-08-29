@@ -25,7 +25,7 @@ module Aspera
       end
 
       def event(session_id:, type:, info: nil)
-        Log.log.debug{"progress: #{type} #{session_id} #{info}"}
+        Log.log.trace1{"progress: #{type} #{session_id} #{info}"}
         Aspera.assert(!session_id.nil? || type.eql?(:pre_start)){'session_id is nil'}
         return if @completed
         if @progress_bar.nil?
