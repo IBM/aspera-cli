@@ -45,7 +45,7 @@ module Aspera
         else
           @shared_info[:count][:sent_general] += 1
         end
-        Log.log.debug do
+        Log.log.trace1 do
           log_data = payload.dup
           log_data[:data] = "[data #{log_data[:data].length} bytes]" if log_data.key?(:data)
           "#{LOG_WS_SEND}json: #{msg_type}: #{JSON.generate(log_data)}"
@@ -55,7 +55,7 @@ module Aspera
 
       # send data on http gw web socket
       def ws_send(ws_type:, data:)
-        Log.log.debug{"#{LOG_WS_SEND}sending: #{ws_type} (#{data&.length || 0} bytes)"}
+        Log.log.trace1{"#{LOG_WS_SEND}sending: #{ws_type} (#{data&.length || 0} bytes)"}
         @shared_info[:count][:sent_general] += 1 if ws_type.eql?(:binary)
         frame_generator = ::WebSocket::Frame::Outgoing::Client.new(data: data, type: ws_type, version: @ws_handshake.version)
         @ws_io.write(frame_generator.to_s)
@@ -68,13 +68,13 @@ module Aspera
                 (((@shared_info[:count][:sent_general] - @shared_info[:count][:received_general]) > 1) ||
                   ((@shared_info[:count][:received_v2_delimiter] - @shared_info[:count][:sent_v2_delimiter]) > 1))
               if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
-                Log.log.debug{"#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}"}
+                Log.log.trace1{"#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}"}
               end
             end
           end
         end
         raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
-        Log.log.debug{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
+        Log.log.trace2{"#{LOG_WS_SEND}counts: #{@shared_info[:count]}"}
       end
 
       # message processing for read thread
@@ -114,12 +114,12 @@ module Aspera
             # ready byte by byte until frame is ready
             # blocking read
             byte = @ws_io.read(1)
-            Log.log.trace1{"#{LOG_WS_RECV}read: #{byte} (#{byte.class}) eof=#{@ws_io.eof?}"}
+            Log.log.trace2{"#{LOG_WS_RECV}read: #{byte} (#{byte.class}) eof=#{@ws_io.eof?}"}
             frame_parser << byte
             frame_ok = frame_parser.next
             next if frame_ok.nil?
             process_received_message(frame_ok.data.to_s)
-            Log.log.debug{"#{LOG_WS_RECV}counts: #{@shared_info[:count]}"}
+            Log.log.trace2{"#{LOG_WS_RECV}counts: #{@shared_info[:count]}"}
           rescue => e
             Log.log.debug{"#{LOG_WS_RECV}Exception: #{e}"}
             @shared_info[:mutex].synchronize do
@@ -139,34 +139,12 @@ module Aspera
         # identify this session uniquely
         session_id = SecureRandom.uuid
         @notify_cb&.call(session_id: nil, type: :pre_start, info: 'starting')
-        # total size of all files
-        total_bytes_to_transfer = 0
-        # we need to keep track of actual file path because transfer spec is modified to be sent in web socket
-        files_to_read = []
-        # get source root or nil
-        source_root = transfer_spec.key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] : nil
-        # source root is ignored by GW, used only here
-        transfer_spec.delete('source_root')
-        # compute total size of files to upload (for progress)
-        # modify transfer spec to be suitable for GW
-        transfer_spec['paths'].each do |item|
-          # save actual file location to be able read contents later
-          file_to_add = Transfer::FauxFile.open(item['source'])
-          if file_to_add
-            item['source'] = file_to_add.path
-            item['file_size'] = file_to_add.size
-          else
-            file_to_add = item['source']
-            # add source root if needed
-            file_to_add = File.join(source_root, file_to_add) unless source_root.nil?
-            # GW expects a simple file name in 'source' but if user wants to change the name, we take it
-            item['source'] = File.basename(item['destination'].nil? ? item['source'] : item['destination'])
-            item['file_size'] = File.size(file_to_add)
-          end
-          # save so that we can actually read the file later
-          files_to_read.push(file_to_add)
-          total_bytes_to_transfer += item['file_size']
-        end
+        # process files to send, modify `paths` in transfer_spec
+        files_to_send = process_upload_list(transfer_spec)
+        # total size of all files is last element
+        total_bytes_to_transfer = files_to_send.pop
+        Log.log.trace1{Log.dump(:modified_tspec, transfer_spec)}
+        Log.log.trace1{Log.dump(:files_to_send, files_to_send)}
         # TODO: check that this is available in endpoints: @api_info['endpoints']
         upload_url = File.join(@gw_root_url, @upload_version, 'upload')
         @notify_cb&.call(session_id: nil, type: :pre_start, info: 'connecting wss')
@@ -180,11 +158,6 @@ module Aspera
         @ws_handshake << @ws_io.readuntil("\r\n\r\n")
         Aspera.assert(@ws_handshake.finished?){'Error in websocket handshake'}
         Log.log.debug{"#{LOG_WS_SEND}handshake success"}
-        # start read thread after handshake
-        @ws_read_thread = Thread.new {process_read_thread}
-        @notify_cb&.call(session_id: session_id, type: :session_start)
-        @notify_cb&.call(session_id: session_id, type: :session_size, info: total_bytes_to_transfer)
-        sleep(1)
         # data shared between main thread and read thread
         @shared_info = {
           read_exception: nil, # error message if any in callback
@@ -197,34 +170,34 @@ module Aspera
           mutex:          Mutex.new,
           cond_var:       ConditionVariable.new
         }
+        # start read thread after handshake
+        @ws_read_thread = Thread.new {process_read_thread}
+        @notify_cb&.call(session_id: session_id, type: :session_start)
+        @notify_cb&.call(session_id: session_id, type: :session_size, info: total_bytes_to_transfer)
+        sleep(1)
         # notify progress bar
         @notify_cb&.call(type: :session_size, session_id: session_id, info: total_bytes_to_transfer)
         # first step send transfer spec
-        Log.log.debug{Log.dump(:ws_spec, transfer_spec)}
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
         # current file index
         file_index = 0
         # aggregate size sent
         session_sent_bytes = 0
         # process each file
-        transfer_spec['paths'].each do |item|
+        files_to_send.each do |file_to_send|
+          last_slice = (file_to_send[:size] - 1) / @upload_chunk_size
           slice_info = {
-            name:       nil,
+            name:         file_to_send[:name],
             # TODO: get mime type?
-            type:       'application/octet-stream',
-            size:       item['file_size'],
-            slice:      0, # current slice index
+            type:         'application/octet-stream',
+            size:         file_to_send[:size],
+            slice:        0, # current slice index
             # index of last slice (i.e number of slices - 1)
-            last_slice: (item['file_size'] - 1) / @upload_chunk_size,
-            fileIndex:  file_index
+            total_slices: last_slice + 1,
+            fileIndex:    file_index
           }
-          file = files_to_read[file_index]
-          if file.is_a?(Transfer::FauxFile)
-            slice_info[:name] = file.path
-          else
-            file = File.open(file)
-            slice_info[:name] = File.basename(item[item['destination'].nil? ? 'source' : 'destination'])
-          end
+          file = file_to_send[:file]
+          file = File.open(file) unless file.is_a?(Transfer::FauxFile)
           begin
             until file.eof?
               slice_bin_data = file.read(@upload_chunk_size)
@@ -238,9 +211,9 @@ module Aspera
                   # send once, before data, at beginning
                   ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(0)
                   ws_send(ws_type: :binary, data: slice_bin_data)
-                  Log.log.debug{"#{LOG_WS_SEND}buffer: file: #{file_index}, slice: #{slice_info[:slice]}/#{slice_info[:last_slice]}"}
+                  Log.log.trace1{"#{LOG_WS_SEND}buffer: file: #{file_index}, slice: #{slice_info[:slice]}/#{last_slice}"}
                   # send once, after data, at end
-                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(slice_info[:last_slice])
+                  ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(last_slice)
                 end
               rescue Errno::EPIPE => e
                 raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
@@ -336,6 +309,68 @@ module Aspera
             @upload_version = API_V1
           end
         end
+      end
+
+      private
+
+      # compute total size of files to upload (for progress)
+      # modify transfer spec to be suitable for HTTPGW
+      # @param transfer_spec [Hash] transfer specification
+      # @return [Array] info on files to send
+      def process_upload_list(transfer_spec)
+        total_bytes_to_transfer = 0
+        source_prefix = transfer_spec.key?('source_root') && !transfer_spec['source_root'].empty? ? transfer_spec['source_root'] + '/' : ''
+        files_to_send = []
+        transfer_spec['paths'].each do |one_path|
+          source_path = source_prefix + one_path['source']
+          faux_file = Transfer::FauxFile.create(source_path)
+          if faux_file
+            total_bytes_to_transfer += faux_file.size
+            files_to_send.push({
+              file: faux_file,
+              name: faux_file.path,
+              size: faux_file.size
+            })
+          elsif File.file?(source_path)
+            # regular file
+            file_size = File.size(source_path)
+            total_bytes_to_transfer += file_size
+            files_to_send.push({
+              file: source_path,
+              # GW expects a simple file name in 'source' but if user wants to change the name, we take it
+              name: File.basename(one_path['destination'].nil? ? source_path : one_path['destination']),
+              size: file_size
+            })
+          elsif File.directory?(source_path)
+            folders_to_process = [source_path]
+            until folders_to_process.empty?
+              folder = folders_to_process.shift
+              # read all entries
+              Dir.entries(folder).each do |entry|
+                next if entry.eql?('.') || entry.eql?('..')
+                entry_path = File.join(folder, entry)
+                if File.directory?(entry_path)
+                  folders_to_process.push(entry_path)
+                elsif File.file?(entry_path)
+                  file_size = File.size(entry_path)
+                  total_bytes_to_transfer += file_size
+                  files_to_send.push({
+                    file: entry_path,
+                    name: entry_path,
+                    size: file_size
+                  })
+                else
+                  Log.log.warn{"Ignoring non file/directory: #{entry_path}"}
+                end
+              end
+            end
+          else
+            raise "File not found: #{source_path}"
+          end
+        end
+        transfer_spec['paths'] = files_to_send.map{|i|{'source' => i[:name]}}
+        files_to_send.push(total_bytes_to_transfer)
+        return files_to_send
       end
     end
   end

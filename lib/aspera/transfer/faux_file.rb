@@ -9,7 +9,8 @@ module Aspera
       # size suffix
       SUFFIX = %w[k m g t p e]
       class << self
-        def open(name)
+        # @return nil if not a faux: scheme, else a FauxFile instance
+        def create(name)
           return nil unless name.start_with?(PREFIX)
           parts = name[PREFIX.length..-1].split('?')
           raise 'Format: #{PREFIX}<file path>?<size>' unless parts.length.eql?(2)
