@@ -7,7 +7,10 @@ module Aspera
     module Plugins
       # Plugin for Aspera Shares v1
       class Shares < Cli::BasicAuthPlugin
-        NODE_API_PREFIX = 'node_api'
+        # path for node API after base url
+        NODE_API_PATH = 'node_api'
+        # path for node admin after base url
+        ADMIN_API_PATH = 'api/v1'
         class << self
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -16,7 +19,7 @@ module Aspera
             begin
               # shall fail: shares requires auth, but we check error message
               # TODO: use ping instead ?
-              api.read("#{NODE_API_PREFIX}/app")
+              api.read("#{NODE_API_PATH}/app")
             rescue RestCallError => e
               if e.response.code.to_s.eql?('401') && e.response.body.eql?('{"error":{"user_message":"API user authentication failed"}}')
                 found = true
@@ -65,7 +68,7 @@ module Aspera
             nagios = Nagios.new
             begin
               res = Rest
-                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{NODE_API_PREFIX}")
+                .new(base_url: "#{options.get_option(:url, mandatory: true)}/#{NODE_API_PATH}")
                 .call(
                   operation: 'GET',
                   subpath: 'ping',
@@ -77,13 +80,13 @@ module Aspera
             end
             return nagios.result
           when :repository, :files
-            api_shares_node = basic_auth_api(NODE_API_PREFIX)
+            api_shares_node = basic_auth_api(NODE_API_PATH)
             repo_command = options.get_next_command(Node::COMMANDS_SHARES)
             return Node
                 .new(**init_params, api: api_shares_node)
                 .execute_action(repo_command)
           when :admin
-            api_shares_admin = basic_auth_api('api/v1')
+            api_shares_admin = basic_auth_api(ADMIN_API_PATH)
             admin_command = options.get_next_command(%i[node share transfer_settings user group].freeze)
             case admin_command
             when :node
@@ -92,8 +95,9 @@ module Aspera
               share_command = options.get_next_command(%i[user_permissions group_permissions].concat(Plugin::ALL_OPS))
               case share_command
               when *Plugin::ALL_OPS
-                return entity_command(share_command, api_shares_admin, 'data/shares')
-                # return {type: :object_list, data: all_shares, fields: %w[id name status status_message]}
+                return entity_command(
+                  share_command, api_shares_admin, 'data/shares',
+                  display_fields: %w[id name node_id directory percent_free])
               when :user_permissions, :group_permissions
                 share_id = instance_identifier
                 return entity_action(api_shares_admin, "data/shares/#{share_id}/#{share_command}")
