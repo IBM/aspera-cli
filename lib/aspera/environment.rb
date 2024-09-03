@@ -66,10 +66,13 @@ module Aspera
         raise "Unknown CPU: #{RbConfig::CONFIG['host_cpu']}"
       end
 
+      # normalized architecture name
+      # see constants: OS_* and CPU_*
       def architecture
         return "#{os}-#{cpu}"
       end
 
+      # executable file extension for current OS
       def exe_extension
         return '.exe' if os.eql?(OS_WINDOWS)
         return ''
@@ -83,6 +86,7 @@ module Aspera
         Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
       end
 
+      # empty variable binding for secure eval
       def empty_binding
         return Kernel.binding
       end
@@ -92,7 +96,11 @@ module Aspera
         Kernel.send('lave'.reverse, code, empty_binding, file, line)
       end
 
-      # value is provided in block
+      # Write content to a file, with restricted access
+      # @param path [String] the file path
+      # @param force [Boolean] if true, overwrite the file
+      # @param mode [Integer] the file mode (permissions)
+      # @block [Proc] return the content to write to the file
       def write_file_restricted(path, force: false, mode: nil)
         Aspera.assert(block_given?, exception_class: Aspera::InternalError)
         if force || !File.exist?(path)
@@ -105,6 +113,7 @@ module Aspera
         return path
       end
 
+      # restrict access to a file or folder to user only
       def restrict_file_access(path, mode: nil)
         if mode.nil?
           # or FileUtils ?
@@ -121,6 +130,7 @@ module Aspera
         Log.log.warn(e.message)
       end
 
+      # @return true if we are in a terminal
       def terminal?
         $stdout.tty?
       end
@@ -133,6 +143,7 @@ module Aspera
         return @terminal_supports_unicode
       end
 
+      # @return :text or :graphical depending on the environment
       def default_gui_mode
         # assume not remotely connected on macos and windows
         return :graphical if [Environment::OS_WINDOWS, Environment::OS_MACOS].include?(Environment.os)
@@ -141,6 +152,7 @@ module Aspera
         return :text
       end
 
+      # open a URI in a graphical browser
       # command must be non blocking
       def open_uri_graphical(uri)
         case Environment.os
@@ -152,6 +164,7 @@ module Aspera
         end
       end
 
+      # open a file in an editor
       def open_editor(file_path)
         if ENV.key?('EDITOR')
           system(ENV['EDITOR'], file_path.to_s)
