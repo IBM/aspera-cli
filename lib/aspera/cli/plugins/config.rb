@@ -871,7 +871,9 @@ module Aspera
           check_update
           initdemo
           vault
-          throw].freeze
+          throw
+          platform
+        ].freeze
 
         # Main action procedure for plugin
         def execute_action
@@ -1015,6 +1017,8 @@ module Aspera
             exception_class = Object.const_get(exception_class_name)
             Aspera.assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
             raise exception_class, exception_text
+          when :platform
+            return Main.result_status(Environment.architecture)
           else Aspera.error_unreachable_line
           end
         end
