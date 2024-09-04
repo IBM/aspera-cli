@@ -1,24 +1,85 @@
 #!/bin/bash
-# https://github.com/you54f/ruby-packer
-# https://github.com/YOU54F/ruby-packer/releases
+
 set -e
-FOLDER="$(dirname $0)/../tmp"
-RUBYC="$FOLDER/rubyc"
-if test ! -e "$RUBYC"; then
-    mkdir -p "$FOLDER"
-    case $(uname -sm|tr ' ' -) in
-        Darwin-arm64)
-            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Darwin-arm64.tar.gz | tar -xz -C "$FOLDER"
-            mv "$FOLDER/rubyc-Darwin-arm64" "$RUBYC"
+
+if test $# -ne 2; then
+    echo "Usage: $0 <CLI_TARGET_EXECUTABLE> <CLI_ENTRY_SCRIPT>" 1>&2
+    exit 1
+fi
+
+CLI_TARGET_EXECUTABLE=$1
+CLI_ENTRY_SCRIPT=$(realpath $2)
+CLI_EXEC_NAME=$(basename $CLI_TARGET_EXECUTABLE)
+CLI_ROOT=$(dirname $(dirname $CLI_ENTRY_SCRIPT))
+
+echo "Project folder: $CLI_ROOT"
+echo "Executable:     $CLI_TARGET_EXECUTABLE"
+echo "Exec Name:      $CLI_EXEC_NAME"
+echo "Entry:          $CLI_ENTRY_SCRIPT"
+
+# tebako press --root=$(TB_WORK_DIR) --entry-point=ascli --output=$(TB_WORK_DIR)/$(CLI_TARGET_EXECUTABLE) --Ruby=3.2.4
+
+if true;then
+    tebako_command=tebako
+    tebako_args="--root=$CLI_ROOT --entry-point=ascli --output=$CLI_TARGET_EXECUTABLE --Ruby=3.3.3"
+    case $(uname -s) in
+        Darwin)
+            brew update
+            brew install gnu-sed bash pkg-config bison flex binutils libffi gdbm zlib \
+                ncurses double-conversion boost jemalloc  glog libevent libsodium lz4 xz \
+                libyaml openssl@3
+            # brew install m4
+            # boost fmt
+            #export PATH=$(dirname $(brew ls m4|grep '/m4$'|head -n 1)):$PATH
+            #export PATH=$(dirname $(brew ls binutils|grep '/ar$'|head -n 1)):$PATH
+            #tebako_bin=$CLI_ROOT/tmp/tbkbin
+            tebako_root=$CLI_ROOT/../tebako-tmp
+            #export PATH=$tebako_bin:$PATH
+            mkdir -p $tebako_root
+            #mkdir -p $tebako_bin
+            # need ar from apple
+            #rm -f $tebako_bin/ar
+            #ln -s /usr/bin/ar $tebako_bin
+            export PATH=$(echo $PATH|tr : \\n|grep -v /binutils/|tr \\n :)
+            #tebako setup --Ruby=3.3.4 --prefix=$tebako_root
+            tebako press --Ruby=3.3.4 --prefix=$tebako_root --root=$CLI_ROOT/examples/tebako --entry-point=ascli --output=$CLI_TARGET_EXECUTABLE
+            #tebako press --Ruby=3.3.4 --prefix=$tebako_root --root=$CLI_ROOT --entry-point=$CLI_ENTRY_SCRIPT --output=$CLI_TARGET_EXECUTABLE
+            exit 0
             ;;
-        Linux-x86_64)
-            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Linux-x86_64.tar.gz | tar -xz -C "$FOLDER"
-            mv "$FOLDER/rubyc-Linux-x86_64" "$RUBYC"
+        Linux)
+            work_dir=/mnt/w
+            tebako press --root=$work_dir --entry-point=ascli --output=$work_dir/ascli.exe --Ruby=3.3.3 
+            tebako_prefix="podman run -it --rm -v $PWD:$work_dir ghcr.io/tamatebako/tebako-ubuntu-20.04:0.8.6"
+            tebako_opts=--patchelf
             ;;
         *)
-            echo "This architecture is not supported." >&2
+            echo "This OS is not supported." >&2
             exit 1
             ;;
     esac
+    command $tebako_command $tebako_args
+else
+    # https://github.com/you54f/ruby-packer
+    # https://github.com/YOU54F/ruby-packer/releases
+    set -e
+    FOLDER="$(dirname $0)/../tmp"
+    RUBYC="$FOLDER/rubyc"
+    if test ! -e "$RUBYC"; then
+        mkdir -p "$FOLDER"
+        case $(uname -sm|tr ' ' -) in
+            Darwin-arm64)
+                curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Darwin-arm64.tar.gz | tar -xz -C "$FOLDER"
+                mv "$FOLDER/rubyc-Darwin-arm64" "$RUBYC"
+                ;;
+            Linux-x86_64)
+                curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Linux-x86_64.tar.gz | tar -xz -C "$FOLDER"
+                mv "$FOLDER/rubyc-Linux-x86_64" "$RUBYC"
+                ;;
+            *)
+                echo "This architecture is not supported." >&2
+                exit 1
+                ;;
+        esac
+    fi
+    exec "$RUBYC" -o "$CLI_TARGET_EXECUTABLE" "$CLI_ENTRY_SCRIPT"
 fi
-exec "$RUBYC" "$@"

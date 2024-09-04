@@ -228,7 +228,7 @@ Then procedure is as follows:
 
 ## Docker image build
 
-The Dockerfile template allows customizing the optional copy of gem file , versus install from rubygems,org as well as customizing the retrieval of the SDK.
+The `Dockerfile.tmpl.erb` template allows customization of the optional copying of the `aspera-cli.gem` file, as opposed to installing from rubygems.org. It also supports customizing the retrieval of the SDK.
 
 ### Default image build
 
@@ -278,19 +278,11 @@ make docker_push_beta
 
 ## Single executable build
 
-It is possible to build `ascli` as a single native executable using `rubyc` (gem `ruby-packer`).
+Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) and [here](https://github.com/you54f/ruby-packer)) was used to build a single executable.
 
-```bash
-make single
-```
+https://www.tebako.org/
 
-This is based on tool `rubyc` (gem `ruby-packer`): either place the executable in folder `tmp`, or the architecture-specific version will be automatically downloaded.
-
-> **Note:** Perl `Findbin` is needed, install on Linux with:
-
-```bash
-sudo dnf install -y perl perl-FindBin perl-IPC-Cmd
-```
+A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
 
 ## Long Term Implementation and delivery improvements
 
@@ -299,3 +291,4 @@ sudo dnf install -y perl perl-FindBin perl-IPC-Cmd
   - <https://github.com/oauth-xx/oauth2>
 - use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
 - Package a single-file executable for various architectures with <https://github.com/pmq20/ruby-packer> (`rubyc`)
+- look at <https://github.com/phusion/traveling-ruby>

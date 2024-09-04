@@ -142,13 +142,11 @@ clean::
 ##################################
 # Single executable using https://github.com/pmq20/ruby-packer
 CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(shell uname -ms|tr ' ' '-')
-RUBY_PACKER=$(DIR_TOP)examples/rubyc
+EXE_BUILDER=$(DIR_TOP)examples/build_exec
 single:$(CLI_EXECUTABLE)
+.PHONY: single
 $(CLI_EXECUTABLE):
-	@set -e && for v in '' -ruby -ruby-api;do\
-		echo "Version ($$v): $$($(RUBY_PACKER) -$$v-version)";\
-	done
-	$(RUBY_PACKER) -o $(CLI_EXECUTABLE) $(CLI_PATH)
+	$(EXE_BUILDER) $(CLI_EXECUTABLE) $(CLI_PATH)
 clean::
 	rm -f $(CLI_EXECUTABLE)
 ##################################
