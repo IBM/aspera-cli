@@ -1924,7 +1924,8 @@ ascp use /usr/bin/ascp
 check_update
 coffee
 coffee --ui=text
-coffee --ui=text --query=@json:'{"text":"true"}'
+coffee --ui=text --image=@json:'{"text":true,"double":false}'
+coffee --ui=text --image=@json:'{"text":true}'
 detect https://faspex4.example.com/path
 detect https://faspex5.example.com/path
 detect https://node.example.com/path
@@ -3617,7 +3618,7 @@ OPTIONS: global
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
 OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
