@@ -531,16 +531,17 @@ module Aspera
             # if a single file: split into folder and path
             apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
             if source_paths.empty?
+              # get precise info in this element
               file_info = apifid[:api].read("files/#{apifid[:file_id]}")[:data]
               case file_info['type']
               when 'file'
                 # if the single source is a file, we need to split into folder path and filename
                 src_dir_elements = source_folder.split(Api::Node::PATH_SEPARATOR)
-                # filename is the last one
+                # filename is the last one, source folder is what remains
                 source_paths = [{'source' => src_dir_elements.pop}]
-                # source folder is what remains
+                # add trailing / so that link is resolved, if it's a shared folder
+                src_dir_elements.push('')
                 source_folder = src_dir_elements.join(Api::Node::PATH_SEPARATOR)
-                # TODO: instead of creating a new object, use the same, and change file id with parent folder id ? possible ?
                 apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
               when 'link', 'folder'
                 # single source is 'folder' or 'link'

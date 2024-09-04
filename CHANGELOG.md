@@ -4,8 +4,11 @@
   * New Features:
     * `server`: add support for `async` from SDK
     * **global**: #156 support sending folders with httpgw
+  * Issues Fixed:
+    * `aoc`: #157 fix problem with `files browse` on a link
   
 * 4.18.1
+
   * New Features:
     * none
   * Issues Fixed:
