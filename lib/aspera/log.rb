@@ -6,6 +6,7 @@ require 'logger'
 require 'pp'
 require 'json'
 require 'singleton'
+require 'stringio'
 
 old_verbose = $VERBOSE
 $VERBOSE = nil

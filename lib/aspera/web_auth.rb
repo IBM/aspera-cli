@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'aspera/web_server_simple'
-require 'stringio'
 
 module Aspera
   # servlet called on callback: it records the callback request
