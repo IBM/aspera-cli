@@ -4,12 +4,13 @@ require 'webrick'
 require 'webrick/https'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/hash_ext'
 require 'openssl'
 
 module Aspera
   # Simple WEBrick server with HTTPS support
   class WebServerSimple < WEBrick::HTTPServer
-    CERT_PARAMETERS = %i[key cert chain].freeze
+    CERT_PARAMETERS = %i[key cert chain pkcs12].freeze
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
     ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
 
@@ -58,19 +59,29 @@ module Aspera
           Aspera.assert_type(certificate, Hash)
           certificate = certificate.symbolize_keys
           raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|key|!CERT_PARAMETERS.include?(key)}
-          webrick_options[:SSLPrivateKey] = if certificate.key?(:key)
-            OpenSSL::PKey::RSA.new(File.read(certificate[:key]))
+          if certificate.key?(:pkcs12)
+            Log.log.debug('Using PKCS12 certificate')
+            raise 'pkcs12 requires a password' unless certificate.key?(:key)
+            pkcs12 = OpenSSL::PKCS12.new(File.read(certificate[:pkcs12]), certificate[:key])
+            webrick_options[:SSLCertificate] = pkcs12.certificate
+            webrick_options[:SSLPrivateKey] = pkcs12.key
+            webrick_options[:SSLExtraChainCert] = pkcs12.ca_certs
           else
-            OpenSSL::PKey::RSA.new(4096)
-          end
-          if certificate.key?(:cert)
-            webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read(certificate[:cert]))
-          else
-            webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new
-            self.class.fill_self_signed_cert(webrick_options[:SSLCertificate], webrick_options[:SSLPrivateKey])
-          end
-          if certificate.key?(:chain)
-            webrick_options[:SSLExtraChainCert] = [OpenSSL::X509::Certificate.new(File.read(certificate[:chain]))]
+            Log.log.debug('Using PEM certificate')
+            webrick_options[:SSLPrivateKey] = if certificate.key?(:key)
+              OpenSSL::PKey::RSA.new(File.read(certificate[:key]))
+            else
+              OpenSSL::PKey::RSA.new(4096)
+            end
+            if certificate.key?(:cert)
+              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read(certificate[:cert]))
+            else
+              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new
+              self.class.fill_self_signed_cert(webrick_options[:SSLCertificate], webrick_options[:SSLPrivateKey])
+            end
+            if certificate.key?(:chain)
+              webrick_options[:SSLExtraChainCert] = [OpenSSL::X509::Certificate.new(File.read(certificate[:chain]))]
+            end
           end
         end
       end
