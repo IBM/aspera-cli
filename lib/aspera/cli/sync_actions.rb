@@ -33,6 +33,50 @@ module Aspera
         end
       end
 
+      # Read command line arguments (3) and converts to sync_info format
+      def sync_args_to_params(async_params)
+        # sync session parameters can be provided on command line instead of sync_info
+        arguments = {}
+        SYNC_ARGUMENTS_INFO.each do |info|
+          value = options.get_next_argument(
+            info[:conf],
+            mandatory: false,
+            validation: info[:type],
+            accept_list: info[:values])
+          break if value.nil?
+          arguments[info[:conf]] = value.to_s
+        end
+        Log.log.debug{Log.dump('arguments', arguments)}
+        raise Cli::BadArgument, "Provide 0 or 3 arguments, not #{arguments.keys.length} for: #{SYNC_SIMPLE_ARGS.join(', ')}" unless
+          [0, 3].include?(arguments.keys.length)
+        if !arguments.empty?
+          session_info = async_params
+          param_path = :conf
+          if async_params.key?('sessions') || async_params.key?('instance')
+            async_params['sessions'] ||= [{}]
+            Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported with arguments'}
+            session_info = async_params['sessions'][0]
+            param_path = :args
+          end
+          SYNC_ARGUMENTS_INFO.each do |info|
+            key_path = info[param_path].split('.')
+            hash_for_key = session_info
+            if key_path.length > 1
+              first = key_path.shift
+              async_params[first] ||= {}
+              hash_for_key = async_params[first]
+            end
+            raise "Parameter #{info[:conf]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
+            hash_for_key[key_path.last] = arguments[info[:conf]]
+          end
+          if !session_info.key?('name')
+            session_info['name'] = SYNC_SIMPLE_ARGS.map do |arg_name|
+              arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
+            end.compact.reject(&:empty?).join('_')
+          end
+        end
+      end
+
       def execute_sync_action(&block)
         Aspera.assert(block){'No block given'}
         command = options.get_next_command(%i[start admin])
@@ -41,50 +85,7 @@ module Aspera
         when :start
           # possibilities are:
           async_params = options.get_option(:sync_info, default: {})
-          # sync session parameters can be provided on command line instead of sync_info
-          arguments = {}
-          SYNC_ARGUMENTS_INFO.each do |info|
-            value = options.get_next_argument(
-              info[:conf],
-              mandatory: false,
-              validation: info[:type],
-              accept_list: info[:values])
-            break if value.nil?
-            arguments[info[:conf]] = value.to_s
-          end
-          Log.log.debug{Log.dump('arguments', arguments)}
-          raise Cli::BadArgument, "Provide 0 or 3 arguments: #{SYNC_SIMPLE_ARGS.join(', ')}, not #{arguments.keys.length}" unless
-            [0, 3].include?(arguments.keys.length)
-
-          raise "Provide 0 or 3 arguments: #{SYNC_SIMPLE_ARGS.join(', ')} with option sync_info in async conf format" if arguments.empty? && !async_params.key?('sessions') && !async_params.key?('instance')
-
-          if !arguments.empty?
-            session_info = async_params
-            param_path = :conf
-            if async_params.key?('sessions') || async_params.key?('instance')
-              async_params['sessions'] ||= [{}]
-              Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported with arguments'}
-              session_info = async_params['sessions'][0]
-              param_path = :args
-            end
-            SYNC_ARGUMENTS_INFO.each do |info|
-              key_path = info[param_path].split('.')
-              hash_for_key = session_info
-              if key_path.length > 1
-                first = key_path.shift
-                async_params[first] ||= {}
-                hash_for_key = async_params[first]
-              end
-              raise "Parameter #{info[:conf]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
-              hash_for_key[key_path.last] = arguments[info[:conf]]
-            end
-            if !session_info.key?('name')
-              session_info['name'] = SYNC_SIMPLE_ARGS.map do |arg_name|
-                arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
-              end.compact.reject(&:empty?).join('_')
-            end
-          end
-          Log.log.debug{Log.dump('async_params', async_params)}
+          sync_args_to_params(async_params)
           Transfer::Sync.start(async_params, &block)
           return Main.result_success
         when :admin

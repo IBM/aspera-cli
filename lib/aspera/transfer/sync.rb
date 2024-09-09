@@ -134,6 +134,7 @@ module Aspera
         # @param sync_params [Hash] sync parameters, old or new format
         # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params, &block)
+          Log.log.debug{Log.dump(:sync_params, sync_params)}
           Aspera.assert_type(sync_params, Hash)
           env_args = {
             args: [],
