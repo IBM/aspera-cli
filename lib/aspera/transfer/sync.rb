@@ -210,14 +210,9 @@ module Aspera
           end
           Log.log.debug{Log.dump(:sync_params, sync_params)}
           async_exec = Ascp::Installation.instance.path(:async)
-          Log.log.debug{"execute: #{env_args[:env].map{|k, v| "#{k}=\"#{v}\""}.join(' ')} \"#{async_exec}\" \"#{env_args[:args].join('" "')}\""}
-          res = system(env_args[:env], [async_exec, async_exec], *env_args[:args])
-          Log.log.debug{"result=#{res}"}
-          case res
-          when true then return nil
-          when false then raise "failed: #{$CHILD_STATUS}"
-          when nil then raise "not started: #{$CHILD_STATUS}"
-          else Aspera.error_unexpected_value(res)
+          Process.wait(Environment.secure_spawn(env: env_args[:env], exec: async_exec, args: env_args[:args]))
+          if $CHILD_STATUS.exitstatus != 0
+            raise "Sync failed with exit: #{$CHILD_STATUS.exitstatus}"
           end
         end
 
@@ -239,15 +234,15 @@ module Aspera
         end
 
         def admin_status(sync_params, session_name)
-          command_line = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
+          arguments = ['--quiet']
           if sync_params.key?('local')
             Aspera.assert(!sync_params['name'].nil?){'Missing session name'}
             Aspera.assert(session_name.nil? || session_name.eql?(sync_params['name'])){'Session not found'}
-            command_line.push("--name=#{sync_params['name']}")
+            arguments.push("--name=#{sync_params['name']}")
             if sync_params.key?('local_db_dir')
-              command_line.push("--local-db-dir=#{sync_params['local_db_dir']}")
+              arguments.push("--local-db-dir=#{sync_params['local_db_dir']}")
             elsif sync_params.dig('local', 'path')
-              command_line.push("--local-dir=#{sync_params.dig('local', 'path')}")
+              arguments.push("--local-dir=#{sync_params.dig('local', 'path')}")
             else
               raise 'Missing either local_db_dir or local.path'
             end
@@ -255,19 +250,19 @@ module Aspera
             session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{|s|s['name'].eql?(session_name)}
             raise "Session #{session_name} not found in #{sync_params['sessions'].map{|s|s['name']}.join(',')}" if session.nil?
             raise 'Missing session name' if session['name'].nil?
-            command_line.push("--name=#{session['name']}")
+            arguments.push("--name=#{session['name']}")
             if session.key?('local_db_dir')
-              command_line.push("--local-db-dir=#{session['local_db_dir']}")
+              arguments.push("--local-db-dir=#{session['local_db_dir']}")
             elsif session.key?('local_dir')
-              command_line.push("--local-dir=#{session['local_dir']}")
+              arguments.push("--local-dir=#{session['local_dir']}")
             else
               raise 'Missing either local_db_dir or local_dir'
             end
           else
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
-          Log.log.debug{"execute: #{command_line.join(' ')}"}
-          stdout, stderr, status = Open3.capture3(*command_line)
+          Environment.secure_spawn(env: {}, exec: ASYNC_ADMIN_EXECUTABLE, args: arguments, log_only: true)
+          stdout, stderr, status = Open3.capture3(*[ASYNC_ADMIN_EXECUTABLE].concat(arguments))
           Log.log.debug{"status=#{status}, stderr=#{stderr}"}
           Log.log.trace1{"stdout=#{stdout}"}
           raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?

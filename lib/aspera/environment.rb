@@ -5,6 +5,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'rbconfig'
 require 'singleton'
+require 'English'
 
 # cspell:words MEBI mswin bccwin
 
@@ -94,6 +95,24 @@ module Aspera
       # secure execution of Ruby code
       def secure_eval(code, file, line)
         Kernel.send('lave'.reverse, code, empty_binding, file, line)
+      end
+
+      # start process in background, or raise exception
+      # caller can call Process.wait on returned value
+      def secure_spawn(env:, exec:, args:, log_only: false)
+        Log.log.debug do
+          [
+            'execute:'.red,
+            env.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
+            Shellwords.shellescape(exec),
+            args.map{|a|Shellwords.shellescape(a)}
+          ].flatten.join(' ')
+        end
+        return if log_only
+        # start ascp in separate process
+        ascp_pid = Process.spawn(env, [exec, exec], *args, close_others: true)
+        Log.log.debug{"pid: #{ascp_pid}"}
+        return ascp_pid
       end
 
       # Write content to a file, with restricted access

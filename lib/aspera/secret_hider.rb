@@ -16,17 +16,18 @@ module Aspera
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     HTTP_SECRETS = %w[Authorization].freeze
     ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
+    ALL_SECRETS2 = [KEY_SECRETS, HTTP_SECRETS].flatten.freeze
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
       # CLI manager get/set options
       /(?<begin>[sg]et (?:#{KEY_SECRETS.join('|')})=).*(?<end>)/,
       # env var ascp exec
-      /(?<begin> (?:#{ASCP_ENV_SECRETS.join('|')})=)(\\.|[^ ])*(?<end> )/,
+      /(?<begin> (?:#{ASCP_ENV_SECRETS.join('|')})=)[^ ]+(?<end> )/,
       # rendered JSON or Ruby
       /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>?(?:=>|:) *")[^"]+(?<end>")/,
       # logged data
-      /(?<begin>(?:#{ALL_SECRETS.join('|')})[ =:]+).*(?<end>$)/,
+      /(?<begin>(?:#{ALL_SECRETS2.join('|')})[ =:]+).*(?<end>$)/,
       # private key values
       /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)/,
       # cred in http dump

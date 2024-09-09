@@ -191,18 +191,7 @@ module Aspera
           ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(env_args[:args])
           # get location of ascp executable
           ascp_path = Ascp::Installation.instance.path(env_args[:ascp_version])
-          # display ascp command line
-          Log.log.debug do
-            [
-              'execute:'.red,
-              env_args[:env].map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
-              Shellwords.shellescape(ascp_path),
-              ascp_arguments.map{|a|Shellwords.shellescape(a)}
-            ].flatten.join(' ')
-          end
-          # start ascp in separate process
-          ascp_pid = Process.spawn(env_args[:env], [ascp_path, ascp_path], *ascp_arguments, close_others: true)
-          Log.log.debug{"spawned ascp pid #{ascp_pid}"}
+          ascp_pid = Environment.secure_spawn(env: env_args[:env], exec: ascp_path, args: ascp_arguments)
           notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
           mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
