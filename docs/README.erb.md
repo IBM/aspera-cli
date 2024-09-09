@@ -6198,27 +6198,51 @@ An interface for the `async` utility is provided in the following plugins:
 - `aoc files sync` (uses node)
 - `shares files sync` (uses node)
 
-The main advantage over the `async` command line when using `server` is the possibility to use a configuration file, using standard options of <%=tool%>.
+One advantage over the `async` command line is the possibility to use a configuration file, using standard options of <%=tool%>.
+Moreover <%=tool%> supports sync with application requiring token-based authorization.
 
-In this case, some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
+Some of the `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
-> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`).
+> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Transfer SDK 1.3 includes this.
 
-Two JSON syntax are supported for option `sync_info`.
+`sync` supports 0 or 3 arguments:
 
-### `async` JSON: API format
+- direction
+- local folder
+- remote folder
+
+Additional options can be provided with option `sync_info`, for which two syntax are possible, as follows.
+
+### `async` API and conf format
 
 It is the same payload as specified on the option `--conf` of `async` or in node API `/asyncs`.
 This is the preferred syntax and allows a single session definition.
-But there is no progress output nor error messages.
+
+> **Note:** No progress, nor error messages is provided on terminal.
 
 Documentation on Async node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-### `async` JSON: Options mapping
+If 3 arguments are provided they are mapped to:
+
+- `direction`
+- `local.path`
+- `remote.path`
+
+### `async` options mapping
 
 <%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
 It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+
+This is the mode selection if there is either keys `sessions` or `instance` in option `sync_info`.
+
+> **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
+
+If 3 arguments are provided, they are applied to the first (and only) session and mapped to:
+
+- `direction`
+- `local_dir`
+- `remote_dir`
 
 ## Hot folder
 

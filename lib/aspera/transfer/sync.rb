@@ -17,8 +17,8 @@ module Aspera
     module Sync
       # sync direction, default is push
       DIRECTIONS = %i[push pull bidi].freeze
-      # custom JSON for async instance command line options
-      PARAMS_VX_INSTANCE =
+      # JSON for async instance command line options
+      CMDLINE_PARAMS_INSTANCE =
         {
           'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
           'watchd'              => { cli: { type: :opt_with_arg}, accepted_types: :string},
@@ -28,7 +28,7 @@ module Aspera
         }.freeze
 
       # map sync session parameters to transfer spec: sync -> ts, true if same
-      PARAMS_VX_SESSION =
+      CMDLINE_PARAMS_SESSION =
         {
           'name'                       => { cli: { type: :opt_with_arg}, accepted_types: :string},
           'local_dir'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
@@ -65,13 +65,13 @@ module Aspera
           'license'                    => { cli: { type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
         }.freeze
 
-      CommandLineBuilder.normalize_description(PARAMS_VX_INSTANCE)
-      CommandLineBuilder.normalize_description(PARAMS_VX_SESSION)
+      CommandLineBuilder.normalize_description(CMDLINE_PARAMS_INSTANCE)
+      CommandLineBuilder.normalize_description(CMDLINE_PARAMS_SESSION)
 
-      PARAMS_VX_KEYS = %w[instance sessions].freeze
+      CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
       # Translation of transfer spec parameters to async v2 API (asyncs)
-      TS_TO_PARAMS_V2 = {
+      TS_TO_PARAMS_CONF = {
         'remote_host'     => 'remote.host',
         'remote_user'     => 'remote.user',
         'remote_password' => 'remote.pass',
@@ -85,7 +85,7 @@ module Aspera
 
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
 
-      private_constant :PARAMS_VX_INSTANCE, :PARAMS_VX_SESSION, :PARAMS_VX_KEYS, :TS_TO_PARAMS_V2, :ASYNC_ADMIN_EXECUTABLE
+      private_constant :CMDLINE_PARAMS_INSTANCE, :CMDLINE_PARAMS_SESSION, :CMDLINE_PARAMS_KEYS, :TS_TO_PARAMS_CONF, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
         # Set remote_dir in sync parameters based on transfer spec
@@ -140,8 +140,11 @@ module Aspera
             env:  {}
           }
           if sync_params.key?('local')
+            # async native JSON format (conf option)
+            Aspera.assert_type(sync_params['remote'], Hash){'remote'}
+            Aspera.assert_type(sync_params['local'], Hash){'local'}
+            Aspera.assert_type(sync_params['remote']['path'], String){'remote path'}
             remote = sync_params['remote']
-            # async native JSON format (v2)
             Aspera.assert_type(remote, Hash)
             # get transfer spec if possible, and feed back to new structure
             if block
@@ -149,7 +152,7 @@ module Aspera
               # async native JSON format
               Aspera.assert_type(sync_params['local'], Hash)
               # translate transfer spec to async parameters
-              TS_TO_PARAMS_V2.each do |ts_param, sy_path|
+              TS_TO_PARAMS_CONF.each do |ts_param, sy_path|
                 next unless transfer_spec.key?(ts_param)
                 sy_dig = sy_path.split('.')
                 param = sy_dig.pop
@@ -168,11 +171,17 @@ module Aspera
             Aspera.assert_type(sync_params, Hash)
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
           elsif sync_params.key?('sessions')
-            # ascli JSON format (v1)
+            # ascli JSON format (cmdline)
+            raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
+              sync_params.keys.push('instance').uniq.sort.eql?(CMDLINE_PARAMS_KEYS)
+            Aspera.assert_type(sync_params['sessions'], Array)
+            Aspera.assert_type(sync_params['sessions'].first, Hash)
             if block
               sync_params['sessions'].each do |session|
+                Aspera.assert_type(session['local_dir'], String){'local_dir'}
+                Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield((session['direction'] || 'push').to_sym, session['local_dir'], session['remote_dir'])
-                PARAMS_VX_SESSION.each do |async_param, behavior|
+                CMDLINE_PARAMS_SESSION.each do |async_param, behavior|
                   if behavior.key?(:ts)
                     tspec_param = behavior[:ts].is_a?(TrueClass) ? async_param : behavior[:ts].to_s
                     session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
@@ -182,13 +191,9 @@ module Aspera
                 update_remote_dir(session, 'remote_dir', transfer_spec)
               end
             end
-            raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
-              sync_params.keys.push('instance').uniq.sort.eql?(PARAMS_VX_KEYS)
-            Aspera.assert_type(sync_params['sessions'], Array)
-            Aspera.assert_type(sync_params['sessions'].first, Hash)
             if sync_params.key?('instance')
               Aspera.assert_type(sync_params['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(sync_params['instance'], PARAMS_VX_INSTANCE)
+              instance_builder = CommandLineBuilder.new(sync_params['instance'], CMDLINE_PARAMS_INSTANCE)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
@@ -196,7 +201,7 @@ module Aspera
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least name'}
-              session_builder = CommandLineBuilder.new(session_params, PARAMS_VX_SESSION)
+              session_builder = CommandLineBuilder.new(session_params, CMDLINE_PARAMS_SESSION)
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end

@@ -6,6 +6,7 @@
     * **global**: #156 support sending folders with httpgw
   * Issues Fixed:
     * `aoc`: #157 fix problem with `files browse` on a link
+    * `sync`: better documentation and handling of options.
   
 * 4.18.1
 

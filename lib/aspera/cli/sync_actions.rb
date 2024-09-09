@@ -7,11 +7,25 @@ module Aspera
   module Cli
     # Module for sync actions
     module SyncActions
-      SIMPLE_ARGUMENTS_SYNC = {
-        direction:  Transfer::Sync::DIRECTIONS,
-        local_dir:  String,
-        remote_dir: String
-      }.stringify_keys.freeze
+      # optional simple command line arguments for sync
+      # in Array to keep option order
+      SYNC_ARGUMENTS_INFO = [
+        {
+          conf:   'direction',
+          args:   'direction',
+          values: Transfer::Sync::DIRECTIONS
+        }, {
+          conf: 'remote.path',
+          args: 'remote_dir',
+          type: String
+        }, {
+          conf: 'local.path',
+          args: 'local_dir',
+          type: String
+        }
+      ].freeze
+      SYNC_SIMPLE_ARGS = SYNC_ARGUMENTS_INFO.map{|i|i[:conf]}.freeze
+      private_constant :SYNC_ARGUMENTS_INFO, :SYNC_SIMPLE_ARGS
 
       class << self
         def declare_options(options)
@@ -25,30 +39,50 @@ module Aspera
         # try to get 3 arguments as simple arguments
         case command
         when :start
-          simple_session_args = {}
-          SIMPLE_ARGUMENTS_SYNC.each do |arg, check|
+          # possibilities are:
+          async_params = options.get_option(:sync_info, default: {})
+          # sync session parameters can be provided on command line instead of sync_info
+          arguments = {}
+          SYNC_ARGUMENTS_INFO.each do |info|
             value = options.get_next_argument(
-              arg,
+              info[:conf],
               mandatory: false,
-              validation: check.is_a?(Class) ? check : nil,
-              accept_list: check.is_a?(Class) ? nil : check)
+              validation: info[:type],
+              accept_list: info[:values])
             break if value.nil?
-            simple_session_args[arg] = value.to_s
+            arguments[info[:conf]] = value.to_s
           end
-          async_params = nil
-          if simple_session_args.empty?
-            async_params = options.get_option(:sync_info, mandatory: true)
-          else
-            raise Cli::BadArgument,
-              "Provide zero or 3 arguments: #{SIMPLE_ARGUMENTS_SYNC.keys.join(',')}" unless simple_session_args.keys.sort == SIMPLE_ARGUMENTS_SYNC.keys.sort
-            async_params = options.get_option(
-              :sync_info,
-              mandatory: false,
-              default: {'sessions' => [{'name' => File.basename(simple_session_args['local_dir'])}]})
-            Aspera.assert_type(async_params, Hash){'sync_info'}
-            Aspera.assert_type(async_params['sessions'], Array){'sync_info[sessions]'}
-            Aspera.assert_type(async_params['sessions'].first, Hash){'sync_info[sessions][0]'}
-            async_params['sessions'].first.merge!(simple_session_args)
+          Log.log.debug{Log.dump('arguments', arguments)}
+          raise Cli::BadArgument, "Provide 0 or 3 arguments: #{SYNC_SIMPLE_ARGS.join(', ')}, not #{arguments.keys.length}" unless
+            [0, 3].include?(arguments.keys.length)
+
+          raise "Provide 0 or 3 arguments: #{SYNC_SIMPLE_ARGS.join(', ')} with option sync_info in async conf format" if arguments.empty? && !async_params.key?('sessions') && !async_params.key?('instance')
+
+          if !arguments.empty?
+            session_info = async_params
+            param_path = :conf
+            if async_params.key?('sessions') || async_params.key?('instance')
+              async_params['sessions'] ||= [{}]
+              Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported with arguments'}
+              session_info = async_params['sessions'][0]
+              param_path = :args
+            end
+            SYNC_ARGUMENTS_INFO.each do |info|
+              key_path = info[param_path].split('.')
+              hash_for_key = session_info
+              if key_path.length > 1
+                first = key_path.shift
+                async_params[first] ||= {}
+                hash_for_key = async_params[first]
+              end
+              raise "Parameter #{info[:conf]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
+              hash_for_key[key_path.last] = arguments[info[:conf]]
+            end
+            if !session_info.key?('name')
+              session_info['name'] = SYNC_SIMPLE_ARGS.map do |arg_name|
+                arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
+              end.compact.reject(&:empty?).join('_')
+            end
           end
           Log.log.debug{Log.dump('async_params', async_params)}
           Transfer::Sync.start(async_params, &block)

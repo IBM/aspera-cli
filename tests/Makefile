@@ -757,6 +757,8 @@ $(T)aocfsync1: $(T).exists
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
+	$(EXE_MAN) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"reset":true}'
+	$(EXE_MAN) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"sessions":[{"reset":true}]}'
 	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'
 	$(EXE_MAN) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'
 	@$(STOP_TEST) $@
