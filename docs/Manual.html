@@ -2904,9 +2904,9 @@ parameters to control multi-session, Web Socket Session, Resume policy
 and add any argument to <code>ascp</code>:</p>
 <table>
 <colgroup>
-<col style="width: 54%" />
-<col style="width: 15%" />
-<col style="width: 29%" />
+<col style="width: 52%" />
+<col style="width: 19%" />
+<col style="width: 28%" />
 </colgroup>
 <thead>
 <tr>
@@ -2923,36 +2923,49 @@ and add any argument to <code>ascp</code>:</p>
 is available<br/>Default: true</td>
 </tr>
 <tr>
-<td><code>ascp_args</code></td>
-<td>Array</td>
-<td>Array of strings with native <code>ascp</code>
-arguments.<br/>Default: []</td>
-</tr>
-<tr>
-<td><code>spawn_timeout_sec</code></td>
-<td>Float</td>
-<td>Multi session<br/>Verification time that <code>ascp</code> is
-running<br/>Default: 3</td>
-</tr>
-<tr>
-<td><code>spawn_delay_sec</code></td>
-<td>Float</td>
-<td>Multi session<br/>Delay between startup of sessions<br/>Default:
-2</td>
-</tr>
-<tr>
-<td><code>multi_incr_udp</code></td>
+<td><code>quiet</code></td>
 <td>Bool</td>
-<td>Multi Session<br/>Increment UDP port on multi-session<br/>If true,
-each session will have a different UDP port starting at
-<code>fasp_port</code> (or default 33001)<br/>Else, each session will
-use <code>fasp_port</code> (or <code>ascp</code> default)<br/>Default:
-true</td>
+<td>If <code>true</code>, then <code>ascp</code> progress bar is not
+shown.<br/>Default: <code>false</code></td>
 </tr>
 <tr>
 <td><code>trusted_certs</code></td>
 <td>Array</td>
 <td>List of repositories for trusted certificates.</td>
+</tr>
+<tr>
+<td><code>client_ssh_key</code></td>
+<td>String</td>
+<td>SSH Keys to use for token-based transfers. One of:
+<code>dsa_rsa</code>, <code>rsa</code>, <code>per_client</code>.
+Default: <code>rsa</code></td>
+</tr>
+<tr>
+<td><code>ascp_args</code></td>
+<td>Array</td>
+<td>Array of strings with native <code>ascp</code>
+arguments.<br/>Default: <code>[]</code></td>
+</tr>
+<tr>
+<td><code>spawn_timeout_sec</code></td>
+<td>Float</td>
+<td>Multi session<br/>Verification time that <code>ascp</code> is
+running<br/>Default: <code>3</code></td>
+</tr>
+<tr>
+<td><code>spawn_delay_sec</code></td>
+<td>Float</td>
+<td>Multi session<br/>Delay between startup of sessions<br/>Default:
+<code>2</code></td>
+</tr>
+<tr>
+<td><code>multi_incr_udp</code></td>
+<td>Bool</td>
+<td>Multi Session<br/>Increment UDP port on multi-session<br/>If
+<code>true</code>, each session will have a different UDP port starting
+at <code>fasp_port</code> (or default 33001)<br/>Else, each session will
+use <code>fasp_port</code> (or <code>ascp</code> default)<br/>Default:
+<code>true</code> on Windows, else <code>false</code></td>
 </tr>
 <tr>
 <td><code>resume</code></td>
@@ -2961,23 +2974,24 @@ true</td>
 </tr>
 <tr>
 <td><code>resume.iter_max</code></td>
-<td>int</td>
-<td>Max number of retry on error<br/>Default: 7</td>
+<td>Integer</td>
+<td>Max number of retry on error<br/>Default: <code>7</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_initial</code></td>
-<td>int</td>
-<td>First Sleep before retry<br/>Default: 2</td>
+<td>Integer</td>
+<td>First Sleep before retry<br/>Default: <code>2</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_factor</code></td>
-<td>int</td>
-<td>Multiplier of sleep period between attempts<br/>Default: 2</td>
+<td>Integer</td>
+<td>Multiplier of sleep period between attempts<br/>Default:
+<code>2</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_max</code></td>
-<td>int</td>
-<td>Default: 60</td>
+<td>Integer</td>
+<td>Default: <code>60</code></td>
 </tr>
 </tbody>
 </table>
@@ -2990,8 +3004,9 @@ Sleep between iterations is given by the following formula where
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb224-1"><a href="#cb224-1" aria-hidden="true" tabindex="-1"></a><span class="ex">max</span><span class="er">(</span> <span class="ex">sleep_max</span> , sleep_initial <span class="pp">*</span> sleep_factor ^ iter_index <span class="kw">)</span></span></code></pre></div>
 <p>By default, Ruby’s root CA store is used to validate any HTTPS
 endpoint used by <code>ascp</code> (e.g. WSS). In order to use a custom
-certificate store, use the <code>trusted_certs</code> option. To use
-<code>ascp</code>’s default, use option:
+certificate store, use the <code>trusted_certs</code> option of direct
+agent’s option <code>transfer_info</code>. To use <code>ascp</code>’s
+default, use option:
 <code>--transfer-info=@json:'{"trusted_certs":null}'</code>.</p>
 <p>Some transfer errors are considered <strong>retry-able</strong>
 (e.g. timeout) and some other not (e.g. wrong password). The list of

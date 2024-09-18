@@ -39,7 +39,7 @@ module Aspera
         set_json_response(response, {
           application:                           'node',
           current_time:                          Time.now.utc.iso8601(0),
-          version:                               info['ascp_version'].gsub(/ .*$/, ''),
+          version:                               info['sdk_ascp_version'].gsub(/ .*$/, ''),
           license_expiration_date:               info['expiration_date'],
           license_max_rate:                      info['maximum_bandwidth'],
           os:                                    %x(uname -srv).chomp,

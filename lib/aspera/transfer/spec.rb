@@ -22,23 +22,21 @@ module Aspera
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       class << self
-        def action_to_direction(tspec, command)
-          Aspera.assert_type(tspec, Hash){'transfer spec'}
-          tspec['direction'] = case command.to_sym
-          when :upload then DIRECTION_SEND
-          when :download then DIRECTION_RECEIVE
-          else Aspera.error_unexpected_value(command.to_sym)
-          end
-          return tspec
+        # translate upload/download to send/receive
+        def transfer_type_to_direction(transfer_type)
+          return case transfer_type.to_sym
+                 when :upload then DIRECTION_SEND
+                 when :download then DIRECTION_RECEIVE
+                 else Aspera.error_unexpected_value(transfer_type.to_sym)
+                 end
         end
 
-        def action(tspec)
-          Aspera.assert_type(tspec, Hash){'transfer spec'}
-          Aspera.assert_values(tspec['direction'], [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
-          case tspec['direction']
+        def direction_to_transfer_type(direction)
+          Aspera.assert_values(direction, [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
+          case direction
           when DIRECTION_SEND then :upload
           when DIRECTION_RECEIVE then :download
-          else Aspera.error_unexpected_value(tspec['direction'])
+          else Aspera.error_unexpected_value(direction)
           end
         end
       end

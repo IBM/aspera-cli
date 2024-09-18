@@ -44,6 +44,8 @@ module Aspera
       EXE_FILES = %i[ascp ascp4 async].freeze
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER, :DEFAULT_ASPERA_CONF, :FILES
+      # options for SSH client private key
+      CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp = v
@@ -152,8 +154,16 @@ module Aspera
         return DataRepository.instance.item(:uuid)
       end
 
-      def aspera_token_ssh_key_paths
-        return %i[ssh_private_dsa ssh_private_rsa].map{|i|Installation.instance.path(i)}
+      # get paths of SSH keys to use for ascp client
+      # @param types [Symbol] types to use
+      def aspera_token_ssh_key_paths(types)
+        Aspera.assert_values(types, CLIENT_SSH_KEY_OPTIONS)
+        return case types
+               when :dsa_rsa, :rsa
+                 types.to_s.split('_').map{|i|Installation.instance.path("ssh_private_#{i}".to_sym)}
+               when :per_client
+                 raise 'Not yet implemented'
+               end
       end
 
       # use in plugin `config`

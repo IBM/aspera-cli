@@ -699,8 +699,7 @@ module Aspera
             return execute_connect_action
           when :use
             ascp_path = options.get_next_argument('path to ascp')
-            ascp_version = Ascp::Installation.instance.get_ascp_version(ascp_path)
-            formatter.display_status("ascp version: #{ascp_version}")
+            formatter.display_status("ascp version: #{Ascp::Installation.instance.get_ascp_version(ascp_path)}")
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
           when :show

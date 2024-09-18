@@ -2746,19 +2746,21 @@ Refer to section [FASP](#fasp-configuration).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-| Name                   | Type  | Description |
-|------------------------|-------|-------------|
-| `wss`                  | Bool  | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `ascp_args`            | Array | Array of strings with native `ascp` arguments.<br/>Default: [] |
-| `spawn_timeout_sec`    | Float | Multi session<br/>Verification time that `ascp` is running<br/>Default: 3 |
-| `spawn_delay_sec`      | Float | Multi session<br/>Delay between startup of sessions<br/>Default: 2 |
-| `multi_incr_udp`       | Bool  | Multi Session<br/>Increment UDP port on multi-session<br/>If true, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: true |
-| `trusted_certs`        | Array | List of repositories for trusted certificates. |
-| `resume`               | Hash  | Resume parameters. See below |
-| `resume.iter_max`      | int   | Max number of retry on error<br/>Default: 7 |
-| `resume.sleep_initial` | int   | First Sleep before retry<br/>Default: 2 |
-| `resume.sleep_factor`  | int   | Multiplier of sleep period between attempts<br/>Default: 2 |
-| `resume.sleep_max`     | int   | Default: 60 |
+| Name                   | Type    | Description |
+|------------------------|---------|-------------|
+| `wss`                  | Bool    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| `quiet`                | Bool    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
+| `trusted_certs`        | Array   | List of repositories for trusted certificates. |
+| `client_ssh_key`       | String  | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
+| `ascp_args`            | Array   | Array of strings with native `ascp` arguments.<br/>Default: `[]` |
+| `spawn_timeout_sec`    | Float   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
+| `spawn_delay_sec`      | Float   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
+| `multi_incr_udp`       | Bool    | Multi Session<br/>Increment UDP port on multi-session<br/>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: `true` on Windows, else `false` |
+| `resume`               | Hash    | Resume parameters. See below |
+| `resume.iter_max`      | Integer | Max number of retry on error<br/>Default: `7` |
+| `resume.sleep_initial` | Integer | First Sleep before retry<br/>Default: `2` |
+| `resume.sleep_factor`  | Integer | Multiplier of sleep period between attempts<br/>Default: `2` |
+| `resume.sleep_max`     | Integer | Default: `60` |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -2768,7 +2770,7 @@ max( sleep_max , sleep_initial * sleep_factor ^ iter_index )
 ```
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
-In order to use a custom certificate store, use the `trusted_certs` option.
+In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer_info`.
 To use `ascp`'s default, use option: `--transfer-info=@json:'{"trusted_certs":null}'`.
 
 Some transfer errors are considered **retry-able** (e.g. timeout) and some other not (e.g. wrong password).

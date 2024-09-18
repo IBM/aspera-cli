@@ -20,6 +20,8 @@ skip_$(1): $(T).exists
 	touch $(2)
 clean_$(1):
 	rm -f $(2)
+tests::
+	@echo "$(1)"
 endef
 # same as previous, but adds to target: all
 define test_suite_all

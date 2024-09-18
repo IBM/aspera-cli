@@ -476,7 +476,7 @@ module Aspera
       # callback in Node (transfer_spec_gen4)
       def add_ts_tags(transfer_spec:, app_info:)
         # translate transfer direction to upload/download
-        transfer_type = Transfer::Spec.action(transfer_spec)
+        transfer_type = Transfer::Spec.direction_to_transfer_type(transfer_spec['direction'])
         # Analytics tags
         ################
         transfer_spec.deep_merge!({

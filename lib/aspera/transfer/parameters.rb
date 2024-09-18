@@ -21,9 +21,10 @@ module Aspera
     class Parameters
       # Agents shown in manual for parameters (sub list)
       SUPPORTED_AGENTS = %i[direct node connect trsdk httpgw].freeze
+      FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|agent_sym|agent_sym.to_s[0].to_sym}
-      FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
+      HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
@@ -106,21 +107,25 @@ module Aspera
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(
         job_spec,
-        ascp_args:,
-        wss:,
-        quiet:,
-        trusted_certs:,
-        check_ignore_cb:
+        ascp_args:       nil,
+        wss:             true,
+        quiet:           true,
+        trusted_certs:   nil,
+        client_ssh_key:  nil,
+        check_ignore_cb: nil
       )
         @job_spec = job_spec
-        @ascp_args = ascp_args
+        @ascp_args = ascp_args.nil? ? [] : ascp_args
         @wss = wss
         @quiet = quiet
-        @trusted_certs = trusted_certs
+        @trusted_certs = trusted_certs.nil? ? [] : trusted_certs
+        @client_ssh_key = client_ssh_key.nil? ? :rsa : client_ssh_key.to_sym
         @check_ignore_cb = check_ignore_cb
-        Aspera.assert_type(job_spec, Hash)
+        Aspera.assert_type(@job_spec, Hash)
         Aspera.assert_type(@ascp_args, Array){'ascp_args'}
-        Aspera.assert(@ascp_args.all?(String)){'ascp arguments must be Strings'}
+        Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
+        Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
+        Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
         @builder = CommandLineBuilder.new(@job_spec, Spec::DESCRIPTION)
       end
 
@@ -191,7 +196,7 @@ module Aspera
           # add SSH bypass keys when authentication is token and no auth is provided
           if @job_spec.key?('token') && !@job_spec.key?('remote_password')
             # @job_spec['remote_password'] = Ascp::Installation.instance.ssh_cert_uuid # not used: no passphrase
-            certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths)
+            certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths(@client_ssh_key))
           end
         end
         return certificates_to_use
@@ -200,9 +205,9 @@ module Aspera
       # translate transfer spec to env vars and command line arguments for ascp
       def ascp_args
         env_args = {
-          args:         [],
-          env:          {},
-          ascp_version: :ascp
+          args: [],
+          env:  {},
+          name: :ascp
         }
 
         # special cases
@@ -213,7 +218,7 @@ module Aspera
 
         # add ssh or wss certificates
         # (reverse, to keep order, as we unshift)
-        remote_certificates.reverse_each do |cert|
+        remote_certificates&.reverse_each do |cert|
           env_args[:args].unshift('-i', cert)
         end
 
@@ -223,9 +228,9 @@ module Aspera
         base64_destination = false
         # symbol must be index of Ascp::Installation.paths
         if @builder.read_param('use_ascp4')
-          env_args[:ascp_version] = :ascp4
+          env_args[:name] = :ascp4
         else
-          env_args[:ascp_version] = :ascp
+          env_args[:name] = :ascp
           base64_destination = true
         end
         # destination will be base64 encoded, put this before source path arguments
@@ -243,7 +248,7 @@ module Aspera
         @builder.add_env_args(env_args)
         env_args[:args].unshift('-q') if @quiet
         # add fallback cert and key as arguments if needed
-        if ['1', 1, true, 'force'].include?(@job_spec['http_fallback'])
+        if HTTP_FALLBACK_ACTIVATION_VALUES.include?(@job_spec['http_fallback'])
           env_args[:args].unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))
           env_args[:args].unshift('-I', Ascp::Installation.instance.path(:fallback_certificate))
         end
