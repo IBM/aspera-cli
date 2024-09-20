@@ -38,6 +38,8 @@ module Aspera
           end.map{|file|file[0..(-1 - RUBY_EXT.length)].to_sym}
         end
       end
+
+      # Wait for all sessions to terminate and return the status of each session
       def wait_for_completion
         # list of: :success or "error message string"
         statuses = wait_for_transfers_completion

@@ -219,6 +219,9 @@ module Aspera
       end
       attr_reader :last_event
 
+      # process line of mgt port event
+      # @param line [String] line of mgt port event
+      # @return [Hash] event hash or nil if event is not yet complete
       def process_line(line)
         # Log.log.debug{"line=[#{line}]"}
         case line
