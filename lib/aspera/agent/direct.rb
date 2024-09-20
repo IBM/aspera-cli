@@ -135,8 +135,117 @@ module Aspera
         @sessions.select{|session_info| session_info[:job_id].eql?(job_id)}
       end
 
+      # This is the low level method to start the transfer process
+      # Start process with management port.
+      # returns
+      # raises FaspError on error
+      # @param session this session information, keys :io and :token_regenerator
+      # @param env  [Hash]   environment variables
+      # @param name [Symbol] name of executable: :ascp, :ascp4 or :async
+      # @param args [Array]  command line arguments
+      # @return [nil] when process has exited
+      def start_and_monitor_process(
+        session:,
+        env:,
+        name:,
+        args:
+      )
+        Aspera.assert_type(session, Hash)
+        notify_progress(session_id: nil, type: :pre_start, info: 'starting')
+        begin
+          command_pid = nil
+          # we use Socket directly, instead of TCPServer, as it gives access to lower level options
+          socket_class = RUBY_ENGINE.eql?('jruby') ? ServerSocket : Socket
+          mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+          # open any available (0) local TCP port for use as management port
+          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
+          # build arguments and add mgt port
+          command_arguments = if name.eql?(:async)
+            ["--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
+          else
+            ['-M', mgt_server_socket.local_address.ip_port.to_s]
+          end
+          command_arguments.concat(args)
+          # get location of command executable (ascp, async)
+          command_path = Ascp::Installation.instance.path(name)
+          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments)
+          notify_progress(session_id: nil, type: :pre_start, info: "waiting for #{name} to start")
+          mgt_server_socket.listen(1)
+          # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
+          Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
+          readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
+          Log.log.debug('after select, before accept')
+          Aspera.assert(readable, exception_class: Transfer::Error){'timeout waiting mgt port connect (select not readable)'}
+          # There is a connection to accept
+          client_socket, _client_addrinfo = mgt_server_socket.accept
+          Log.log.debug('after accept')
+          management_port_io = client_socket.to_io
+          # management messages include file names which may be utf8
+          # by default socket is US-ASCII
+          # TODO: use same value as Encoding.default_external
+          management_port_io.set_encoding(Encoding::UTF_8)
+          session[:io] = management_port_io
+          processor = Ascp::Management.new
+          # read management port, until socket is closed (gets returns nil)
+          while (line = management_port_io.gets)
+            event = processor.process_line(line.chomp)
+            next unless event
+            # event is ready
+            Log.log.trace1{Log.dump(:management_port, event)}
+            @management_cb&.call(event)
+            process_progress(event)
+            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
+          end
+          Log.log.debug('management io closed')
+          last_event = processor.last_event
+          # check that last status was received before process exit
+          if last_event.is_a?(Hash)
+            case last_event['Type']
+            when 'ERROR'
+              if /bearer token/i.match?(last_event['Description']) &&
+                  session[:token_regenerator].respond_to?(:refreshed_transfer_token)
+                # regenerate token here, expired, or error on it
+                # Note: in multi-session, each session will have a different one.
+                Log.log.warn('Regenerating token for transfer')
+                env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
+              end
+              raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
+            when 'DONE'
+              nil
+            else
+              raise "unexpected last event type: #{last_event['Type']}"
+            end
+          end
+        rescue SystemCallError => e
+          # Process.spawn failed, or socket error
+          raise Transfer::Error, e.message
+        rescue Interrupt
+          raise Transfer::Error, 'transfer interrupted by user'
+        ensure
+          mgt_server_socket.close
+          # if command was successfully started, check its status
+          unless command_pid.nil?
+            # "wait" for process to avoid zombie
+            Process.wait(command_pid)
+            status = $CHILD_STATUS
+            # command_pid = nil
+            session.delete(:io)
+            # status is nil if an exception occurred before starting command
+            if !status&.success?
+              message = status.nil? ? "#{name} not started" : "#{name} failed (#{status})"
+              # raise error only if there was not already an exception (ERROR_INFO)
+              raise Transfer::Error, message unless $ERROR_INFO
+              # else display this message also, as main exception is already here
+              Log.log.error(message)
+            end
+          end
+        end
+        nil
+      end
+
       private
 
+      # notify progress to callback
       # @param event management port event
       def process_progress(event)
         session_id = event['SessionId']
@@ -174,109 +283,6 @@ module Aspera
         end
       end
 
-      # This is the low level method to start the transfer process
-      # Start process with management port.
-      # returns
-      # raises FaspError on error
-      # @param session this session information, keys :io and :token_regenerator
-      # @param env  [Hash]   environment variables
-      # @param name [Symbol] name of executable: :ascp, :ascp4 or :async
-      # @param args [Array]  command line arguments
-      # @return [nil] when process has exited
-      def start_and_monitor_process(
-        session:,
-        env:,
-        name:,
-        args:
-      )
-        Aspera.assert_type(session, Hash)
-        notify_progress(session_id: nil, type: :pre_start, info: 'starting')
-        begin
-          ascp_pid = nil
-          # we use Socket directly, instead of TCPServer, as it gives access to lower level options
-          socket_class = RUBY_ENGINE.eql?('jruby') ? ServerSocket : Socket
-          mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-          # open any available (0) local TCP port for use as ascp management port
-          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
-          # build arguments and add mgt port
-          ascp_arguments = ['-M', mgt_server_socket.local_address.ip_port.to_s].concat(args)
-          # get location of ascp executable
-          ascp_path = Ascp::Installation.instance.path(name)
-          ascp_pid = Environment.secure_spawn(env: env, exec: ascp_path, args: ascp_arguments)
-          notify_progress(session_id: nil, type: :pre_start, info: 'waiting for ascp')
-          mgt_server_socket.listen(1)
-          # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
-          Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
-          readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
-          Log.log.debug('after select, before accept')
-          Aspera.assert(readable, exception_class: Transfer::Error){'timeout waiting mgt port connect (select not readable)'}
-          # There is a connection to accept
-          client_socket, _client_addrinfo = mgt_server_socket.accept
-          Log.log.debug('after accept')
-          ascp_mgt_io = client_socket.to_io
-          # management messages include file names which may be utf8
-          # by default socket is US-ASCII
-          # TODO: use same value as Encoding.default_external
-          ascp_mgt_io.set_encoding(Encoding::UTF_8)
-          session[:io] = ascp_mgt_io
-          processor = Ascp::Management.new
-          # read management port, until socket is closed (gets returns nil)
-          while (line = ascp_mgt_io.gets)
-            event = processor.process_line(line.chomp)
-            next unless event
-            # event is ready
-            Log.log.trace1{Log.dump(:management_port, event)}
-            @management_cb&.call(event)
-            process_progress(event)
-            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
-          end
-          Log.log.debug('management io closed')
-          last_event = processor.last_event
-          # check that last status was received before process exit
-          if last_event.is_a?(Hash)
-            case last_event['Type']
-            when 'ERROR'
-              if /bearer token/i.match?(last_event['Description']) &&
-                  session[:token_regenerator].respond_to?(:refreshed_transfer_token)
-                # regenerate token here, expired, or error on it
-                # Note: in multi-session, each session will have a different one.
-                Log.log.warn('Regenerating token for transfer')
-                env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
-              end
-              raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
-            when 'DONE'
-              nil
-            else
-              raise "unexpected last event type: #{last_event['Type']}"
-            end
-          end
-        rescue SystemCallError => e
-          # Process.spawn failed, or socket error
-          raise Transfer::Error, e.message
-        rescue Interrupt
-          raise Transfer::Error, 'transfer interrupted by user'
-        ensure
-          mgt_server_socket.close
-          # if ascp was successfully started, check its status
-          unless ascp_pid.nil?
-            # "wait" for process to avoid zombie
-            Process.wait(ascp_pid)
-            status = $CHILD_STATUS
-            ascp_pid = nil
-            session.delete(:io)
-            # status is nil if an exception occurred before starting ascp
-            if !status&.success?
-              message = status.nil? ? 'ascp not started' : "ascp failed (#{status})"
-              # raise error only if there was not already an exception (ERROR_INFO)
-              raise Transfer::Error, message unless $ERROR_INFO
-              # else display this message also, as main exception is already here
-              Log.log.error(message)
-            end
-          end
-        end
-        nil
-      end
-
       # @return [Hash] session information
       def session_by_id(id)
         matches = @sessions.select{|session_info| session_info[:id].eql?(id)}
@@ -285,7 +291,7 @@ module Aspera
         return matches.first
       end
 
-      # send command of management port to ascp session (used in `asession)
+      # send command to management port of command (used in `asession)
       # @param job_id identified transfer process
       # @param session_index index of session (for multi session)
       # @param data command on mgt port, examples:

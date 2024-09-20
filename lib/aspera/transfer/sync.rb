@@ -4,6 +4,7 @@
 
 require 'aspera/command_line_builder'
 require 'aspera/ascp/installation'
+require 'aspera/agent/direct'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
@@ -171,6 +172,9 @@ module Aspera
             end
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
+            Log.log.debug{Log.dump(:sync_params_enriched, sync_params)}
+            agent = Agent::Direct.new
+            agent.start_and_monitor_process(session: {}, name: :async, **env_args)
           elsif sync_params.key?('sessions')
             # ascli JSON format (cmdline)
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
@@ -206,15 +210,15 @@ module Aspera
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end
+            async_exec = Ascp::Installation.instance.path(:async)
+            Process.wait(Environment.secure_spawn(env: env_args[:env], exec: async_exec, args: env_args[:args]))
+            if $CHILD_STATUS.exitstatus != 0
+              raise "Sync failed with exit: #{$CHILD_STATUS.exitstatus}"
+            end
           else
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
-          Log.log.debug{Log.dump(:sync_params_enriched, sync_params)}
-          async_exec = Ascp::Installation.instance.path(:async)
-          Process.wait(Environment.secure_spawn(env: env_args[:env], exec: async_exec, args: env_args[:args]))
-          if $CHILD_STATUS.exitstatus != 0
-            raise "Sync failed with exit: #{$CHILD_STATUS.exitstatus}"
-          end
+          return nil
         end
 
         def parse_status(stdout)
