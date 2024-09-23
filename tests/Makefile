@@ -759,8 +759,9 @@ $(T)aocfsync1: $(T).exists
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(EXE_MAN) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"reset":true}'
+	$(EXE_MAN) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"reset":true,"quiet":false}'
 	$(EXE_MAN) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"sessions":[{"reset":true}]}'
+	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'
 	$(EXE_MAN) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'
 	$(EXE_MAN) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'
 	@$(STOP_TEST) $@
@@ -1203,7 +1204,7 @@ $(T)ndsyncv1: $(T).exists
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(EXE_MAN) node sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/aspera-test-dir-tiny"}}]}'
 	$(EXE_MAN) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 	@$(STOP_TEST) $@
 $(T)ndsyncv2: $(T).exists
