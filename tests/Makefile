@@ -1204,7 +1204,7 @@ $(T)ndsyncv1: $(T).exists
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/aspera-test-dir-tiny"}}]}'
+	$(EXE_MAN) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	$(EXE_MAN) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 	@$(STOP_TEST) $@
 $(T)ndsyncv2: $(T).exists

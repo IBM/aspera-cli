@@ -1528,6 +1528,8 @@ use option: <code>transpose_single</code> set to <code>no</code>.</p>
 supporting:</p>
 <ul>
 <li><code>table</code> : Text table (default)</li>
+<li><code>multi</code> : List of elements are displayed as a list of
+tables</li>
 <li><code>text</code> : Value as String</li>
 <li><code>ruby</code> : Ruby code</li>
 <li><code>json</code> : JSON code</li>
@@ -4997,7 +4999,7 @@ OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
         --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], multi, csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
@@ -7264,7 +7266,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href
 <span id="cb423-64"><a href="#cb423-64" aria-hidden="true" tabindex="-1"></a><span class="ex">stream</span> list</span>
 <span id="cb423-65"><a href="#cb423-65" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb423-66"><a href="#cb423-66" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_node_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;remote_dir&quot;:&quot;/aspera-test-dir-tiny&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb423-67"><a href="#cb423-67" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync1&quot;,&quot;reset&quot;:true,&quot;quiet&quot;:false,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}]}&#39;</span></span>
+<span id="cb423-67"><a href="#cb423-67" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync1&quot;,&quot;reset&quot;:true,&quot;quiet&quot;:false,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb423-68"><a href="#cb423-68" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_node_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/aspera-test-dir-tiny&quot;}}&#39;</span></span>
 <span id="cb423-69"><a href="#cb423-69" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;active_only&quot;:true}&#39;</span></span>
 <span id="cb423-70"><a href="#cb423-70" aria-hidden="true" tabindex="-1"></a><span class="ex">transfer</span> sessions</span>

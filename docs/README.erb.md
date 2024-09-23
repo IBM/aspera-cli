@@ -1491,6 +1491,7 @@ If transposition of single object is not desired, use option: `transpose_single`
 The style of output can be set using the `format` option, supporting:
 
 - `table` : Text table (default)
+- `multi` : List of elements are displayed as a list of tables
 - `text` : Value as String
 - `ruby` : Ruby code
 - `json` : JSON code

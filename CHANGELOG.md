@@ -5,6 +5,7 @@
     * `server`: add support for `async` from SDK
     * **global**: #156 support sending folders with httpgw
     * **global**: Token based transfers now use the RSA key only. Direct agent option `transfer_info.client_ssh_key` allows changing this behavior.
+    * **global**: new value for option `format`: `multi`
   * Issues Fixed:
     * `aoc`: #157 fix problem with `files browse` on a link
     * `sync`: better documentation and handling of options.

@@ -1497,6 +1497,7 @@ If transposition of single object is not desired, use option: `transpose_single`
 The style of output can be set using the `format` option, supporting:
 
 - `table` : Text table (default)
+- `multi` : List of elements are displayed as a list of tables
 - `text` : Value as String
 - `ruby` : Ruby code
 - `json` : JSON code
@@ -3596,7 +3597,7 @@ OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
         --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], multi, csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
@@ -5836,7 +5837,7 @@ ssync summary %name:my_node_sync
 stream list
 sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
-sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}]}'
+sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 transfer list --query=@json:'{"active_only":true}'
 transfer sessions
