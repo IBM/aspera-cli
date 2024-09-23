@@ -9,6 +9,10 @@ module Aspera
     module SyncActions
       # optional simple command line arguments for sync
       # in Array to keep option order
+      # conf: key in option --conf
+      # args: key for command line args
+      # values: possible values for argument
+      # type: type for validation
       SYNC_ARGUMENTS_INFO = [
         {
           conf:   'direction',
@@ -24,6 +28,7 @@ module Aspera
           type: String
         }
       ].freeze
+      # name of minimal arguments required, also used to generate a session name
       SYNC_SIMPLE_ARGS = SYNC_ARGUMENTS_INFO.map{|i|i[:conf]}.freeze
       private_constant :SYNC_ARGUMENTS_INFO, :SYNC_SIMPLE_ARGS
 
@@ -70,6 +75,7 @@ module Aspera
             hash_for_key[key_path.last] = arguments[info[:conf]]
           end
           if !session_info.key?('name')
+            # if no name is specified, generate one from simple arguments
             session_info['name'] = SYNC_SIMPLE_ARGS.map do |arg_name|
               arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
             end.compact.reject(&:empty?).join('_')
