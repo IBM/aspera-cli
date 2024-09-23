@@ -117,7 +117,7 @@ module Aspera
 
         def tick(yes)
           result =
-            if Environment.terminal_supports_unicode?
+            if Environment.instance.terminal_supports_unicode?
               if yes
                 "\u2713"
               else
@@ -199,7 +199,7 @@ module Aspera
       end
 
       def declare_options(options)
-        default_table_style = if Environment.terminal_supports_unicode?
+        default_table_style = if Environment.instance.terminal_supports_unicode?
           {border: :unicode_round}
         else
           {}
