@@ -5,7 +5,7 @@ require 'aspera/assert'
 
 module Aspera
   module Cli
-    # base class for plugins modules
+    # Base class for plugins
     class Plugin
       # operations without id
       GLOBAL_OPS = %i[create list].freeze
@@ -53,8 +53,8 @@ module Aspera
         options.parser.separator('OPTIONS:')
       end
 
+      # @return a hash of instance variables
       def init_params
-        # return a hash of instance variables
         INIT_PARAMS.map{|p| [p, instance_variable_get("@#{p}".to_sym)]}.to_h
       end
 
