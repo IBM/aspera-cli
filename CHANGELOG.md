@@ -2,15 +2,15 @@
 
 * 4.19.0.pre
   * New Features:
-    * `server`: add support for `async` from SDK
+    * `server`: add support for `async` from Transfer SDK
     * **global**: #156 support sending folders with httpgw
-    * **global**: Token based transfers now use the RSA key only. Direct agent option `transfer_info.client_ssh_key` allows changing this behavior.
     * **global**: new value for option `format`: `multi`
   * Issues Fixed:
     * `aoc`: #157 fix problem with `files browse` on a link
     * `sync`: better documentation and handling of options.
   * Breaking Changes:
     * **global**: Default value for direct agent option `transfer_info.multi_incr_udp` is `true` on Windows, and now `false` on other platforms.
+    * **global**: Token based transfers now use the RSA key only. Direct agent option `transfer_info.client_ssh_key` allows changing this behavior.
   
 * 4.18.1
 
