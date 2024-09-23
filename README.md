@@ -5064,9 +5064,10 @@ files show /
 files show testdst/test_file.bin
 files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
+files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-files sync start pull /testdst /data/local_sync --sync-info=@json:'{"reset":true}'
+files sync start pull /testdst /data/local_sync --sync-info=@json:'{"reset":true,"quiet":false}'
 files sync start pull /testdst /data/local_sync --sync-info=@json:'{"sessions":[{"reset":true}]}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
@@ -5835,8 +5836,8 @@ ssync summary %name:my_node_sync
 stream list
 sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}]}'
 sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-sync start --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 transfer list --query=@json:'{"active_only":true}'
 transfer sessions
 transport
