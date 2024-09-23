@@ -151,16 +151,9 @@ module Aspera
       end
 
       # Highlight special values
-      def special_format(what, use_colors: $stdout.isatty)
-        result = $stdout.isatty ? "<#{what}>" : "&lt;#{what}&gt;"
-        if use_colors
-          result = if %w[null empty].any?{|s|what.include?(s)}
-            result.dim
-          else
-            result.reverse_color
-          end
-        end
-        return result
+      def special_format(what)
+        result = "<#{what}>"
+        return %w[null empty].any?{|s|what.include?(s)} ? result.dim : result.reverse_color
       end
 
       # call this after REST calls if several api calls are expected

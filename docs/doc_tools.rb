@@ -15,9 +15,9 @@ require 'erb'
 require 'English'
 
 # format special value depending on context
-class DocFormatter
+class HtmlFormatter
   def special_format(special)
-    return $stdout.isatty ? "<#{special}>" : "&lt;#{special}&gt;"
+    "&lt;#{special}&gt;"
   end
 end
 
@@ -54,7 +54,7 @@ def spec_table
   # Headings
   table = [fields.map(&:capitalize)]
   table.first[0] = 'Field'
-  Aspera::Transfer::Parameters.man_table(DocFormatter.new).each do |param|
+  Aspera::Transfer::Parameters.man_table(HtmlFormatter.new).each do |param|
     param[:description] += (param[:description].empty? ? '' : "\n") + '(' + param[:cli] + ')' unless param[:cli].to_s.empty?
     param.each_key{|k|param[k] = '&nbsp;' if param[k].to_s.strip.empty?}
     param[:description] = param[:description].gsub("\n", '<br/>')
