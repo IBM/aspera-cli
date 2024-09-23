@@ -439,7 +439,7 @@ module Aspera
       # create a package
       # @param package_data [Hash] package creation (with extensions...)
       # @param validate_meta [TrueClass,FalseClass] true to validate parameters locally
-      # @param new_user_option [Hash] options if an unknown user is specified
+      # @param new_user_option [Hash,NilClass] options if an unknown user is specified
       # @return transfer spec, node api and package information
       def create_package_simple(package_data, validate_meta, new_user_option)
         update_package_metadata_for_api(package_data)

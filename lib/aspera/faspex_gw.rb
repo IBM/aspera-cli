@@ -29,7 +29,7 @@ module Aspera
         'recipients'   => faspex_pkg_delivery['recipients'],
         'workspace_id' => @app_context
       }
-      created_package = @app_api.create_package_simple(package_data, true, @new_user_option)
+      created_package = @app_api.create_package_simple(package_data, true, nil)
       # but we place it in a Faspex package creation response
       return {
         'links'         => { 'status' => 'unused' },
