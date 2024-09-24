@@ -24,15 +24,15 @@ module Aspera
       class << self
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)
-          return case transfer_type.to_sym
-                 when :upload then DIRECTION_SEND
-                 when :download then DIRECTION_RECEIVE
-                 else Aspera.error_unexpected_value(transfer_type.to_sym)
-                 end
+          case transfer_type.to_sym
+          when :upload then DIRECTION_SEND
+          when :download then DIRECTION_RECEIVE
+          else Aspera.error_unexpected_value(transfer_type.to_sym)
+          end
         end
 
+        # translate send/receive to upload/download
         def direction_to_transfer_type(direction)
-          Aspera.assert_values(direction, [DIRECTION_SEND, DIRECTION_RECEIVE]){'direction'}
           case direction
           when DIRECTION_SEND then :upload
           when DIRECTION_RECEIVE then :download
