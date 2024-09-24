@@ -72,8 +72,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('rspec', '~> 3.0')
   spec.add_development_dependency('rubocop', '~> 1.12')
   spec.add_development_dependency('rubocop-ast', '~> 1.4')
-  spec.add_development_dependency('rubocop-performance', '~> 1.10') unless RUBY_ENGINE.eql?('jruby')
+  spec.add_development_dependency('rubocop-performance', '~> 1.10') unless defined?(JRUBY_VERSION)
   spec.add_development_dependency('rubocop-shopify', '~> 2.0')
   spec.add_development_dependency('simplecov', '~> 0.22')
-  spec.add_development_dependency('solargraph', '~> 0.48') unless RUBY_ENGINE.eql?('jruby')
+  spec.add_development_dependency('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
 end
