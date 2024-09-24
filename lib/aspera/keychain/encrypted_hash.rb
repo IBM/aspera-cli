@@ -16,10 +16,12 @@ module Aspera
       FILE_TYPE = 'encrypted_hash_vault'
       CONTENT_KEYS = %i[label username password url description].freeze
       FILE_KEYS = %w[version type cipher data].sort.freeze
+      private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :CONTENT_KEYS, :FILE_KEYS
       def initialize(path, current_password)
         Aspera.assert_type(path, String){'path to vault file'}
         @path = path
         @all_secrets = {}
+        @cipher_name = DEFAULT_CIPHER_NAME
         vault_encrypted_data = nil
         if File.exist?(@path)
           vault_file = File.read(@path)
