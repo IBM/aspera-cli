@@ -578,7 +578,7 @@ module Aspera
             @config_checksum_on_disk = config_checksum
           end
           files_to_copy = []
-          Log.log.debug{Log.dump('Available_presets', @config_presets)}
+          Log.log.trace1{Log.dump('Available_presets', @config_presets)}
           Aspera.assert_type(@config_presets, Hash){'config file YAML'}
           # check there is at least the config section
           Aspera.assert(@config_presets.key?(CONF_PRESET_CONFIG)){"Cannot find key: #{CONF_PRESET_CONFIG}"}

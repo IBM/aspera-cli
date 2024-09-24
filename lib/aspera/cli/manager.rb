@@ -20,7 +20,7 @@ module Aspera
         @method = method_name
         @option_name = option_name
         @has_writer = @object.respond_to?(writer_method)
-        Log.log.debug{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
+        Log.log.trace1{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
         Aspera.assert(@object.respond_to?(@method)) {"#{object} does not respond to #{method_name}"}
       end
 
@@ -328,7 +328,7 @@ module Aspera
         if opt[:read_write].eql?(:accessor)
           Aspera.assert_type(handler, Hash)
           Aspera.assert(handler.keys.sort.eql?(%i[m o]))
-          Log.log.debug{"set attr obj #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
+          Log.log.trace1{"set attr obj: #{option_symbol} (#{handler[:o]},#{handler[:m]})"}
           opt[:accessor] = AttrAccessor.new(handler[:o], handler[:m], option_symbol)
         end
         set_option(option_symbol, default, where: 'default') unless default.nil?
@@ -372,7 +372,7 @@ module Aspera
           @parser.on(*on_args, &block)
         else Aspera.error_unexpected_value(values)
         end
-        Log.log.debug{"on_args=#{on_args}"}
+        Log.log.trace1{"on_args=#{on_args}"}
       end
 
       # Adds each of the keys of specified hash as an option
@@ -435,7 +435,7 @@ module Aspera
 
       # removes already known options from the list
       def parse_options!
-        Log.log.debug('parse_options!'.red)
+        Log.log.trace1('parse_options!'.red)
         # first conf file, then env var
         consume_option_pairs(@option_pairs_batch, 'set')
         consume_option_pairs(@option_pairs_env, 'env')
@@ -443,16 +443,16 @@ module Aspera
         unknown_options = []
         begin
           # remove known options one by one, exception if unknown
-          Log.log.debug('before parse'.red)
+          Log.log.trace1('before parse'.red)
           @parser.parse!(@unprocessed_cmd_line_options)
-          Log.log.debug('After parse'.red)
+          Log.log.trace1('After parse'.red)
         rescue OptionParser::InvalidOption => e
-          Log.log.debug{"InvalidOption #{e}".red}
+          Log.log.trace1{"InvalidOption #{e}".red}
           # save for later processing
           unknown_options.push(e.args.first)
           retry
         end
-        Log.log.debug{"remains: #{unknown_options}"}
+        Log.log.trace1{"remains: #{unknown_options}"}
         # set unprocessed options for next time
         @unprocessed_cmd_line_options = unknown_options
       end
@@ -538,7 +538,7 @@ module Aspera
       # @param unprocessed_options [Array] list of options to apply (key_sym,value)
       # @param where [String] where the options come from
       def consume_option_pairs(unprocessed_options, where)
-        Log.log.debug{"consume_option_pairs: #{where}"}
+        Log.log.trace1{"consume_option_pairs: #{where}"}
         options_to_set = {}
         unprocessed_options.each do |k, v|
           if @declared_options.key?(k)
@@ -548,7 +548,7 @@ module Aspera
             end
             options_to_set[k] = v
           else
-            Log.log.debug{"unprocessed: #{k}: #{v}"}
+            Log.log.trace1{"unprocessed: #{k}: #{v}"}
           end
         end
         options_to_set.each do |k, v|
