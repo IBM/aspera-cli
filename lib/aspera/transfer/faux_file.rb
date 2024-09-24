@@ -8,20 +8,21 @@ module Aspera
       PREFIX = 'faux:///'
       # size suffix
       SUFFIX = %w[k m g t p e]
+      private_constant :PREFIX, :SUFFIX
       class << self
         # @return nil if not a faux: scheme, else a FauxFile instance
         def create(name)
           return nil unless name.start_with?(PREFIX)
-          parts = name[PREFIX.length..-1].split('?')
-          raise 'Format: #{PREFIX}<file path>?<size>' unless parts.length.eql?(2)
-          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = parts[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
+          url_parts = name[PREFIX.length..-1].split('?')
+          raise 'Format: #{PREFIX}<file path>?<size>' unless url_parts.length.eql?(2)
+          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = url_parts[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
           size = m[1].to_i
           suffix = m[2]
           SUFFIX.each do |s|
             size *= 1024
             break if s.eql?(suffix)
           end
-          return FauxFile.new(parts[0], size)
+          return FauxFile.new(url_parts[0], size)
         end
       end
       attr_reader :path, :size
