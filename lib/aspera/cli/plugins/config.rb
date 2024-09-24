@@ -281,6 +281,8 @@ module Aspera
         attr_reader :option_ignore_cert_host_port, :progress_bar
 
         # add files, folders or default locations to the certificate store
+        # @param path_list [Array<String>] list of paths to add
+        # @return the list of paths
         def trusted_cert_locations=(path_list)
           path_list = [path_list] unless path_list.is_a?(Array)
           Aspera.assert_type(path_list, Array){'cert locations'}
@@ -296,10 +298,10 @@ module Aspera
             Log.log.debug{"Adding cert location: #{path}"}
             if path.eql?(SpecialValues::DEF)
               @certificate_store.set_default_paths
-              paths_to_add = [
-                OpenSSL::X509::DEFAULT_CERT_DIR,
-                OpenSSL::X509::DEFAULT_CERT_FILE
-              ].select{|f|File.exist?(f)}
+              paths_to_add = [OpenSSL::X509::DEFAULT_CERT_DIR]
+              # JRuby cert file seems not to be PEM
+              paths_to_add.push(OpenSSL::X509::DEFAULT_CERT_FILE) unless defined?(JRUBY_VERSION)
+              paths_to_add.select!{|f|File.exist?(f)}
             elsif File.file?(path)
               @certificate_store.add_file(path)
             elsif File.directory?(path)

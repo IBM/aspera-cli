@@ -155,7 +155,7 @@ module Aspera
         begin
           command_pid = nil
           # we use Socket directly, instead of TCPServer, as it gives access to lower level options
-          socket_class = RUBY_ENGINE.eql?('jruby') ? ServerSocket : Socket
+          socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
           mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
           # open any available (0) local TCP port for use as management port
           mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))

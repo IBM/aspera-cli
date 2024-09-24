@@ -167,6 +167,7 @@ module Aspera
         @builder.add_command_line_options(["#{file_list_option}=#{file_list_file}"]) unless file_list_option.nil?
       end
 
+      # @return the list of certificates to use when token/ssh or wss are used
       def remote_certificates
         certificates_to_use = []
         # use web socket secure for session ?
@@ -179,7 +180,7 @@ module Aspera
           @job_spec.delete('fasp_port')
           @job_spec.delete('sshfp')
           # set location for CA bundle to be the one of Ruby, see env var SSL_CERT_FILE / SSL_CERT_DIR
-          certificates_to_use.concat(@trusted_certs) if @trusted_certs.is_a?(Array)
+          certificates_to_use.concat(@trusted_certs)
           # ignore cert for wss ?
           if @check_ignore_cb&.call(@job_spec['remote_host'], @job_spec['wss_port'])
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
