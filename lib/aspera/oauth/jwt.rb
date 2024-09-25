@@ -35,7 +35,7 @@ module Aspera
       def create_token
         require 'jwt'
         seconds_since_epoch = Time.new.to_i
-        Log.log.info{"seconds=#{seconds_since_epoch}"}
+        Log.log.debug{"seconds_since_epoch=#{seconds_since_epoch}"}
         jwt_payload = {
           exp: seconds_since_epoch + OAuth::Factory.instance.parameters[:jwt_expiry_offset_sec], # expiration time
           nbf: seconds_since_epoch - OAuth::Factory.instance.parameters[:jwt_accepted_offset_sec], # not before
