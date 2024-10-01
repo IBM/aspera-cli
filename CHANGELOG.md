@@ -2,7 +2,7 @@
 
 * 4.19.0.pre
   * New Features:
-    * `server`: add support for `async` from Transfer SDK
+    * `server`: add support for `async` (Aspera Sync) from Transfer SDK
     * **global**: #156 support sending folders with httpgw
     * **global**: new value for option `format`: `multi`
   * Issues Fixed:
