@@ -253,6 +253,8 @@ module Aspera
           env_args[:args].unshift('-Y', Ascp::Installation.instance.path(:fallback_private_key))
           env_args[:args].unshift('-I', Ascp::Installation.instance.path(:fallback_certificate))
         end
+        # disable redis in client
+        env_args[:env]['ASPERA_TEST_REDIS_DISABLE'] = 'true'
         Log.log.debug{"ascp args: #{env_args}"}
         return env_args
       end
