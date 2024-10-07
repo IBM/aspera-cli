@@ -106,8 +106,16 @@ module Aspera
       def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
     end
 
-    # description of result structures (see ascmdtypes.h). Base types are big endian
+    # protocol is based on Type-Length-Value
+    # type start at one, but array index start at zero
+    ENUM_START = 1
+
+    # description of result structures (see ascmdtypes.h).
+    # Base types are big endian
     # key = name of type
+    # index in array: fields is the type (minus ENUM_START)
+    # decoding always start at `result`
+    # some fields have special handling indicated by `special`
     TYPES_DESCR = {
       result: {decode: :field_list,
                fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :sub_struct}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
@@ -141,9 +149,6 @@ module Aspera
       zstr:   {decode: :base, unpack: 'Z*'},
       blist:  {decode: :buffer_list}
     }.freeze
-
-    # protocol enum start at one, but array index start at zero
-    ENUM_START = 1
 
     private_constant :TYPES_DESCR, :ENUM_START
 
