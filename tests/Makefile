@@ -700,7 +700,9 @@ $(T)aocfbt: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocffin: $(T).exists
 	@$(START_TEST) $@
+	$(EXE_MAN) aoc files find /
 	$(EXE_MAN) aoc files find / '\.partial$$'
+	$(EXE_MAN) aoc files find / @ruby:'->(f){f["type"].eql?("file")}'
 	@$(STOP_TEST) $@
 $(T)aoc_tstsrc: $(T).exists
 	@$(START_TEST) $@
