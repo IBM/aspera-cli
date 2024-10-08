@@ -380,7 +380,7 @@ module Aspera
         return true
       end
 
-      def process_find_files(entry, _path, state)
+      def process_find_files(entry, path, state)
         state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
         # test all files deeply
         return true
