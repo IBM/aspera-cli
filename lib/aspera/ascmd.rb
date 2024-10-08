@@ -113,7 +113,7 @@ module Aspera
     # description of result structures (see ascmdtypes.h).
     # Base types are big endian
     # key = name of type
-    # index in array: fields is the type (minus ENUM_START)
+    # index in array `fields` is the type (minus ENUM_START)
     # decoding always start at `result`
     # some fields have special handling indicated by `special`
     TYPES_DESCR = {
@@ -198,16 +198,16 @@ module Aspera
             field_info = field_description(type_name, typed_buffer)
             Log.log.trace1{"#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green}
             case field_info[:special]
-            when nil
+            when nil # normal case
               result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)
-            when :return_true
+            when :return_true # nothing to parse, just return true
               result[field_info[:name]] = true
-            when :sub_struct
+            when :sub_struct # field is an array of values in a list of buffers
               result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{|r|parse(r[:buffer], field_info[:is_a], indent_level)}
-            when :multiple
+            when :multiple # field is an array of values and appears multiple times
               result[field_info[:name]] ||= []
               result[field_info[:name]].push(parse(typed_buffer[:buffer], field_info[:is_a], indent_level))
-            when :restart_on_first
+            when :restart_on_first # field is an array of values, but a new value is started on index 1
               fl = result[field_info[:name]] = []
               parse(typed_buffer[:buffer], :blist, indent_level).map do |tb|
                 fl.push({}) if tb[:btype].eql?(ENUM_START)
