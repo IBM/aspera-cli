@@ -55,6 +55,7 @@ module Aspera
       arg_batches.each do |args|
         command = [main_command]
         # enclose arguments in double quotes, protect backslash and double quotes
+        # ascmd uses space as token separator, and optional quotes ('") or \ to escape
         args.each do |v|
           command.push(%Q{"#{v.gsub(/["\\]/){|s|"\\#{s}"}}"})
         end
