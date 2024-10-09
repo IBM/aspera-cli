@@ -40,3 +40,9 @@
 }
 % tight box around code
 \fboxsep1pt
+% black border for quotes
+\usepackage{framed}
+\renewenvironment{quote}
+  {\def\FrameCommand{\vrule width 3pt \hspace{10pt}}
+   \MakeFramed{\advance\hsize-\width \FrameRestore}\itshape}
+  {\endMakeFramed}

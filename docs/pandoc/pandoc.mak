@@ -1,4 +1,7 @@
 # See README.md for more information
+ifndef DIR_PANDOC
+$(error The macro DIR_PANDOC is not set. Please set it and try again.)
+endif
 PANDOC_DEPS=\
 $(DIR_PANDOC)manual_pandoc_defaults.yaml \
 $(DIR_PANDOC)manual_include_in_header.tex \
