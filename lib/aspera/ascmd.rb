@@ -22,7 +22,54 @@ module Aspera
       mv:     2,
       rm:     1
     }.freeze
-    private_constant :OPS_ARGS
+
+    # protocol is based on Type-Length-Value
+    # type start at one, but array index start at zero
+    ENUM_START = 1
+
+    # description of result structures (see ascmdtypes.h).
+    # Base types are big endian
+    # key = name of type
+    # index in array `fields` is the type (minus ENUM_START)
+    # decoding always start at `result`
+    # some fields have special handling indicated by `special`
+    # field_list, list_tlv_list, list_tlv_restart are composed with a list of TLV
+    TYPES_DESCR = {
+      result: {decode: :field_list,
+               fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :list_tlv_list}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
+                        {name: :info, is_a: :info}, {name: :success, is_a: nil, special: :return_true}, {name: :exit, is_a: nil},
+                        {name: :df, is_a: :mnt, special: :list_tlv_restart}, {name: :md5sum, is_a: :md5sum}]},
+      stat:   {decode: :field_list,
+               fields: [{name: :name, is_a: :zstr}, {name: :size, is_a: :int64}, {name: :mode, is_a: :int32, check: nil}, {name: :zmode, is_a: :zstr},
+                        {name: :uid, is_a: :int32, check: nil}, {name: :zuid, is_a: :zstr}, {name: :gid, is_a: :int32, check: nil}, {name: :zgid, is_a: :zstr},
+                        {name: :ctime, is_a: :epoch}, {name: :zctime, is_a: :zstr}, {name: :mtime, is_a: :epoch}, {name: :zmtime, is_a: :zstr},
+                        {name: :atime, is_a: :epoch}, {name: :zatime, is_a: :zstr}, {name: :symlink, is_a: :zstr}, {name: :errno, is_a: :int32},
+                        {name: :errstr, is_a: :zstr}]},
+      info:   {decode: :field_list,
+               fields: [{name: :platform, is_a: :zstr}, {name: :version, is_a: :zstr}, {name: :lang, is_a: :zstr}, {name: :territory, is_a: :zstr},
+                        {name: :codeset, is_a: :zstr}, {name: :lc_ctype, is_a: :zstr}, {name: :lc_numeric, is_a: :zstr}, {name: :lc_time, is_a: :zstr},
+                        {name: :lc_all, is_a: :zstr}, {name: :dev, is_a: :zstr, special: :list_multiple}, {name: :browse_caps, is_a: :zstr},
+                        {name: :protocol, is_a: :zstr}]},
+      size:   {decode: :field_list,
+               fields: [{name: :size, is_a: :int64}, {name: :fcount, is_a: :int32}, {name: :dcount, is_a: :int32}, {name: :failed_fcount, is_a: :int32},
+                        {name: :failed_dcount, is_a: :int32}]},
+      error:  {decode: :field_list,
+               fields: [{name: :errno, is_a: :int32}, {name: :errstr, is_a: :zstr}]},
+      mnt:    {decode: :field_list,
+               fields: [{name: :fs, is_a: :zstr}, {name: :dir, is_a: :zstr}, {name: :is_a, is_a: :zstr}, {name: :total, is_a: :int64},
+                        {name: :used, is_a: :int64}, {name: :free, is_a: :int64}, {name: :fcount, is_a: :int64}, {name: :errno, is_a: :int32},
+                        {name: :errstr, is_a: :zstr}]},
+      md5sum: {decode: :field_list, fields: [{name: :md5sum, is_a: :zstr}]},
+      int8:   {decode: :base, unpack: 'C', size: 1},
+      int32:  {decode: :base, unpack: 'L>', size: 4},
+      int64:  {decode: :base, unpack: 'Q>', size: 8},
+      epoch:  {decode: :base, unpack: 'Q>', size: 8},
+      zstr:   {decode: :base, unpack: 'Z*'},
+      blist:  {decode: :buffer_list}
+    }.freeze
+
+    private_constant :TYPES_DESCR, :ENUM_START, :OPS_ARGS
+
     # list of supported actions
     OPERATIONS = OPS_ARGS.keys.freeze
 
@@ -107,52 +154,6 @@ module Aspera
       def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
     end
 
-    # protocol is based on Type-Length-Value
-    # type start at one, but array index start at zero
-    ENUM_START = 1
-
-    # description of result structures (see ascmdtypes.h).
-    # Base types are big endian
-    # key = name of type
-    # index in array `fields` is the type (minus ENUM_START)
-    # decoding always start at `result`
-    # some fields have special handling indicated by `special`
-    TYPES_DESCR = {
-      result: {decode: :field_list,
-               fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :sub_struct}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
-                        {name: :info, is_a: :info}, {name: :success, is_a: nil, special: :return_true}, {name: :exit, is_a: nil},
-                        {name: :df, is_a: :mnt, special: :restart_on_first}, {name: :md5sum, is_a: :md5sum}]},
-      stat:   {decode: :field_list,
-               fields: [{name: :name, is_a: :zstr}, {name: :size, is_a: :int64}, {name: :mode, is_a: :int32, check: nil}, {name: :zmode, is_a: :zstr},
-                        {name: :uid, is_a: :int32, check: nil}, {name: :zuid, is_a: :zstr}, {name: :gid, is_a: :int32, check: nil}, {name: :zgid, is_a: :zstr},
-                        {name: :ctime, is_a: :epoch}, {name: :zctime, is_a: :zstr}, {name: :mtime, is_a: :epoch}, {name: :zmtime, is_a: :zstr},
-                        {name: :atime, is_a: :epoch}, {name: :zatime, is_a: :zstr}, {name: :symlink, is_a: :zstr}, {name: :errno, is_a: :int32},
-                        {name: :errstr, is_a: :zstr}]},
-      info:   {decode: :field_list,
-               fields: [{name: :platform, is_a: :zstr}, {name: :version, is_a: :zstr}, {name: :lang, is_a: :zstr}, {name: :territory, is_a: :zstr},
-                        {name: :codeset, is_a: :zstr}, {name: :lc_ctype, is_a: :zstr}, {name: :lc_numeric, is_a: :zstr}, {name: :lc_time, is_a: :zstr},
-                        {name: :lc_all, is_a: :zstr}, {name: :dev, is_a: :zstr, special: :multiple}, {name: :browse_caps, is_a: :zstr},
-                        {name: :protocol, is_a: :zstr}]},
-      size:   {decode: :field_list,
-               fields: [{name: :size, is_a: :int64}, {name: :fcount, is_a: :int32}, {name: :dcount, is_a: :int32}, {name: :failed_fcount, is_a: :int32},
-                        {name: :failed_dcount, is_a: :int32}]},
-      error:  {decode: :field_list,
-               fields: [{name: :errno, is_a: :int32}, {name: :errstr, is_a: :zstr}]},
-      mnt:    {decode: :field_list,
-               fields: [{name: :fs, is_a: :zstr}, {name: :dir, is_a: :zstr}, {name: :is_a, is_a: :zstr}, {name: :total, is_a: :int64},
-                        {name: :used, is_a: :int64}, {name: :free, is_a: :int64}, {name: :fcount, is_a: :int64}, {name: :errno, is_a: :int32},
-                        {name: :errstr, is_a: :zstr}]},
-      md5sum: {decode: :field_list, fields: [{name: :md5sum, is_a: :zstr}]},
-      int8:   {decode: :base, unpack: 'C', size: 1},
-      int32:  {decode: :base, unpack: 'L>', size: 4},
-      int64:  {decode: :base, unpack: 'Q>', size: 8},
-      epoch:  {decode: :base, unpack: 'Q>', size: 8},
-      zstr:   {decode: :base, unpack: 'Z*'},
-      blist:  {decode: :buffer_list}
-    }.freeze
-
-    private_constant :TYPES_DESCR, :ENUM_START
-
     class << self
       # get description of structure's field, @param struct_name, @param typed_buffer provides field name
       def field_description(struct_name, typed_buffer)
@@ -181,6 +182,7 @@ module Aspera
           Log.log.trace1{"#{'   .' * indent_level}-> base:#{byte_array} -> #{result}"}
           result = Time.at(result) if type_name.eql?(:epoch)
         when :buffer_list
+          # return a list of type_buffer
           result = []
           until buffer.empty?
             btype = parse(buffer, :int8, indent_level)
@@ -203,12 +205,12 @@ module Aspera
               result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)
             when :return_true # nothing to parse, just return true
               result[field_info[:name]] = true
-            when :sub_struct # field is an array of values in a list of buffers
-              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{|r|parse(r[:buffer], field_info[:is_a], indent_level)}
-            when :multiple # field is an array of values and appears multiple times
+            when :list_multiple # field appears multiple times, and is an array of values (base type)
               result[field_info[:name]] ||= []
               result[field_info[:name]].push(parse(typed_buffer[:buffer], field_info[:is_a], indent_level))
-            when :restart_on_first # field is an array of values, but a new value is started on index 1
+            when :list_tlv_list # field is an array of values in a list of buffers
+              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{|r|parse(r[:buffer], field_info[:is_a], indent_level)}
+            when :list_tlv_restart # field is an array of values, but a new value is started on index 1
               fl = result[field_info[:name]] = []
               parse(typed_buffer[:buffer], :blist, indent_level).map do |tb|
                 fl.push({}) if tb[:btype].eql?(ENUM_START)
