@@ -11,6 +11,7 @@ require 'net/https'
 require 'json'
 require 'base64'
 require 'cgi'
+require 'singleton'
 
 # Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
@@ -20,22 +21,30 @@ class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModul
 end
 
 module Aspera
+  # Global settings
+  # @param user_agent [String] HTTP request header: 'User-Agent'
+  # @param download_partial_suffix [String] suffix for partial download
+  # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
+  # @param progress_bar [Object] progress bar object
+  class RestParameters
+    include Singleton
+
+    attr_accessor :user_agent, :download_partial_suffix, :session_cb, :progress_bar
+
+    private
+
+    def initialize
+      @user_agent = 'RubyAsperaRest'
+      @download_partial_suffix = '.http_partial'
+      @session_cb = nil
+      @progress_bar = nil
+    end
+  end
+
   # a simple class to make HTTP calls, equivalent to rest-client
   # rest call errors are raised as exception RestCallError
   # and error are analyzed in RestErrorAnalyzer
   class Rest
-    # Global settings also valid for any subclass
-    # @param user_agent [String] HTTP request header: 'User-Agent'
-    # @param download_partial_suffix [String] suffix for partial download
-    # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
-    # @param progress_bar [Object] progress bar object
-    @@global = { # rubocop:disable Style/ClassVars
-      user_agent:              'RubyAsperaRest',
-      download_partial_suffix: '.http_partial',
-      session_cb:              nil,
-      progress_bar:            nil
-    }
-
     # flag for array parameters prefixed with []
     ARRAY_PARAMS = '[]'
 
@@ -108,7 +117,7 @@ module Aspera
         http_session = Net::HTTP.new(uri.host, uri.port)
         http_session.use_ssl = uri.scheme.eql?('https')
         # set http options in callback, such as timeout and cert. verification
-        @@global[:session_cb]&.call(http_session)
+        RestParameters.instance.session_cb&.call(http_session)
         # manually start session for keep alive (if supported by server, else, session is closed every time)
         http_session.start
         return http_session
@@ -140,19 +149,6 @@ module Aspera
         end
         result = result.map(&:to_pem).join("\n") if as_string
         return result
-      end
-
-      # set global parameters
-      def set_parameters(**options)
-        options.each do |key, value|
-          Aspera.assert(@@global.key?(key)){"Unknown Rest option #{key}"}
-          @@global[key] = value
-        end
-      end
-
-      # @return [String] HTTP agent name
-      def user_agent
-        return @@global[:user_agent]
       end
 
       def parse_header(header)
@@ -228,7 +224,7 @@ module Aspera
       @redirect_max = redirect_max
       @headers = headers.nil? ? {} : headers
       Aspera.assert_type(@headers, Hash)
-      @headers['User-Agent'] ||= @@global[:user_agent]
+      @headers['User-Agent'] ||= RestParameters.instance.user_agent
     end
 
     # @return the OAuth object (create, or cached if already created)
@@ -350,19 +346,19 @@ module Aspera
               end
             end
             # download with temp filename
-            target_file_tmp = "#{target_file}#{@@global[:download_partial_suffix]}"
+            target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
             Log.log.debug{"saving to: #{target_file}"}
             written_size = 0
-            @@global[:progress_bar]&.event(session_id: 1, type: :session_start)
-            @@global[:progress_bar]&.event(session_id: 1, type: :session_size, info: total_size)
+            RestParameters.instance.progress_bar&.event(session_id: 1, type: :session_start)
+            RestParameters.instance.progress_bar&.event(session_id: 1, type: :session_size, info: total_size)
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 written_size += fragment.length
-                @@global[:progress_bar]&.event(session_id: 1, type: :transfer, info: written_size)
+                RestParameters.instance.progress_bar&.event(session_id: 1, type: :transfer, info: written_size)
               end
             end
-            @@global[:progress_bar]&.event(session_id: 1, type: :end)
+            RestParameters.instance.progress_bar&.event(session_id: 1, type: :end)
             # rename at the end
             File.rename(target_file_tmp, target_file)
             file_saved = true

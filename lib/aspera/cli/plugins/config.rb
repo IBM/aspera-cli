@@ -266,10 +266,9 @@ module Aspera
               @pac_exec.proxy_pass = proxy_user_pass[1]
             end
           end
-          Rest.set_parameters(
-            user_agent:  PROGRAM_NAME,
-            session_cb:  lambda{|http_session|update_http_session(http_session)},
-            progress_bar: @progress_bar)
+          RestParameters.instance.user_agent = PROGRAM_NAME
+          RestParameters.instance.progress_bar = @progress_bar
+          RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
