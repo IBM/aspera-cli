@@ -87,11 +87,11 @@ module Aspera
         return uri
       end
 
-      # decode query string as hash
+      # Decode query string as Hash
       # Does not support arrays in query string, no standard, e.g. PHP's way is p[]=1&p[]=2
-      # @param query [String] query string
+      # @param query [String] query string as in URI.query
       # @return [Hash] decoded query
-      def decode_query(query)
+      def query_to_h(query)
         URI.decode_www_form(query).each_with_object({}) do |pair, h|
           key = pair.first
           raise "Array not supported in query string: #{key}" if key.include?('[]') || h.key?(key)
@@ -420,27 +420,28 @@ module Aspera
     end
 
     #
-    # CRUD methods here
+    # CRUD simplified methods here
+    # If specific elements are needed, then use the full `call` method
     #
 
     def create(subpath, params)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)[:data]
     end
 
     def read(subpath, query=nil)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, query: query)
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, query: query)[:data]
     end
 
     def update(subpath, params)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)[:data]
     end
 
     def delete(subpath, params=nil)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, query: params)
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, query: params)[:data]
     end
 
     def cancel(subpath)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'})
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'})[:data]
     end
 
     # Query entity by general search (read with parameter `q`)
@@ -449,9 +450,10 @@ module Aspera
     # @param search_name name of searched entity
     # @param query additional search query parameters
     # @returns [Hash] A single entity matching the search, or an exception if not found or multiple found
-    def lookup_by_name(subpath, search_name, query={})
+    def lookup_by_name(subpath, search_name, query: nil)
+      query = {} if query.nil?
       # returns entities matching the query (it matches against several fields in case insensitive way)
-      matching_items = read(subpath, query.merge({'q' => search_name}))[:data]
+      matching_items = read(subpath, query.merge({'q' => search_name}))
       # API style: {totalcount:, ...} cspell: disable-line
       matching_items = matching_items[subpath] if matching_items.is_a?(Hash)
       Aspera.assert_type(matching_items, Array)

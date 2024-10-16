@@ -34,7 +34,7 @@ module Aspera
         if @all_servers_cache.nil?
           @all_servers_cache = []
           CLOUD_NAME.each_key do |name|
-            read("servers/#{name.to_s.upcase}")[:data].each do |i|
+            read("servers/#{name.to_s.upcase}").each do |i|
               @all_servers_cache.push(i)
             end
           end

@@ -78,42 +78,50 @@ module Aspera
         end
 
         # split host of http://myorg.asperafiles.com in org and domain
-        def url_parts(uri)
+        def split_org_domain(uri)
           raise "No host found in URL.Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" if uri.host.nil?
           parts = uri.host.split('.', 2)
           Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
-          return parts
+          parts[0] = nil if parts[0].eql?('api')
+          return %i{organization domain}.zip(parts).to_h
         end
 
         # @param url [String] URL of AoC public link
         # @return [Hash] information about public link, or nil if not a public link
         def link_info(url)
-          final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).read('')[:http].uri
-          raise 'AoC shall redirect to login page' if final_uri.query.nil?
-          decoded_query = Rest.decode_query(final_uri.query)
+          final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET')[:http].uri
+          Log.log.trace1{Log.dump(:final_uri, final_uri)}
+          org_domain = split_org_domain(final_uri)
+          if (m = final_uri.path.match(%r{/oauth2/([^/]+)/login$}))
+            org_domain[:organization] = m[1] if org_domain[:organization].nil?
+          else
+            Log.log.debug{"path=#{final_uri.path} does not end with /login"}
+          end
+          raise 'AoC shall redirect to login page with a query' if final_uri.query.nil?
+          query = Rest.query_to_h(final_uri.query)
+          Log.log.trace1{Log.dump(:query, query)}
           # is that a public link ?
-          if decoded_query.key?('token')
+          if query.key?('token')
             Log.log.warn{"Unknown pub link path: #{final_uri.path}"} unless PUBLIC_LINK_PATHS.include?(final_uri.path)
             # ok we get it !
             return {
-              instance_domain: url_parts(final_uri)[1],
+              instance_domain: org_domain[:domain],
               url:             "https://#{final_uri.host}",
-              token:           decoded_query['token']
+              token:           query['token']
             }
           end
-          Log.log.debug{"path=#{final_uri.path} does not end with /login"} unless final_uri.path.end_with?('/login')
-          if decoded_query['state']
+          if query['state']
             # can be a private link
-            state_uri = URI.parse(decoded_query['state'])
-            if state_uri.query && decoded_query['redirect_uri']
-              decoded_state = Rest.decode_query(state_uri.query)
+            state_uri = URI.parse(query['state'])
+            if state_uri.query && query['redirect_uri']
+              decoded_state = Rest.query_to_h(state_uri.query)
               if decoded_state.key?('short_link_url')
                 if (m = state_uri.path.match(%r{/files/workspaces/([0-9]+)/all/([0-9]+):([0-9]+)}))
-                  redirect_uri = URI.parse(decoded_query['redirect_uri'])
-                  parts = url_parts(redirect_uri)
+                  redirect_uri = URI.parse(query['redirect_uri'])
+                  org_domain = split_org_domain(redirect_uri)
                   return {
-                    instance_domain: parts[1],
-                    organization:    parts[0],
+                    instance_domain: org_domain[:domain],
+                    organization:    org_domain[:organization],
                     url:             "https://#{redirect_uri.host}",
                     private_link:    {
                       workspace_id: m[1],
@@ -125,10 +133,10 @@ module Aspera
               end
             end
           end
-          parts = url_parts(URI.parse(url))
+          Log.log.debug{Log.dump(:org_domain, org_domain)}
           return {
-            instance_domain: parts[1],
-            organization:    parts[0]
+            instance_domain: org_domain[:domain],
+            organization:    org_domain[:organization]
           }
         end
       end
@@ -206,7 +214,7 @@ module Aspera
         return nil unless auth_params[:grant_method].eql?(:url_json)
         return @cache_url_token_info unless @cache_url_token_info.nil?
         # TODO: can there be several in list ?
-        @cache_url_token_info = read('url_tokens')[:data].first
+        @cache_url_token_info = read('url_tokens').first
         return @cache_url_token_info
       end
 
@@ -225,7 +233,7 @@ module Aspera
         # get our user's default information
         @cache_user_info =
           begin
-            read('self')[:data]
+            read('self')
           rescue StandardError => e
             raise e if exception
             Log.log.debug{"ignoring error: #{e}"}
@@ -261,7 +269,7 @@ module Aspera
           if ws_id.nil?
             nil
           else
-            read("workspaces/#{ws_id}")[:data]
+            read("workspaces/#{ws_id}")
           end
         @context_cache = if ws_info.nil?
           {
@@ -304,9 +312,9 @@ module Aspera
       # @returns [Node] a node API for access key
       def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::SCOPE_USER, package_info: nil)
         Aspera.assert_type(node_id, String)
-        node_info = read("nodes/#{node_id}")[:data]
+        node_info = read("nodes/#{node_id}")
         if workspace_name.nil? && !workspace_id.nil?
-          workspace_name = read("workspaces/#{workspace_id}")[:data]['name']
+          workspace_name = read("workspaces/#{workspace_id}")['name']
         end
         app_info = {
           api:            self, # for callback
@@ -346,7 +354,7 @@ module Aspera
           pkg_data['recipients'].first.is_a?(Hash) &&
           pkg_data['recipients'].first.key?('type') &&
           pkg_data['recipients'].first['type'].eql?('dropbox')
-        meta_schema = read("dropboxes/#{pkg_data['recipients'].first['id']}")[:data]['metadata_schema']
+        meta_schema = read("dropboxes/#{pkg_data['recipients'].first['id']}")['metadata_schema']
         if meta_schema.nil? || meta_schema.empty?
           Log.log.debug('no metadata in shared inbox')
           return
@@ -390,7 +398,7 @@ module Aspera
             # email: user, else dropbox
             entity_type = short_recipient_info.include?('@') ? 'contacts' : 'dropboxes'
             begin
-              full_recipient_info = lookup_by_name(entity_type, short_recipient_info, {'current_workspace_id' => ws_id})
+              full_recipient_info = lookup_by_name(entity_type, short_recipient_info, query: {'current_workspace_id' => ws_id})
             rescue RuntimeError => e
               raise e unless e.message.start_with?(ENTITY_NOT_FOUND)
               # dropboxes cannot be created on the fly
@@ -399,7 +407,7 @@ module Aspera
               full_recipient_info = create('contacts', {
                 'current_workspace_id' => ws_id,
                 'email'                => short_recipient_info
-              }.merge(new_user_option))[:data]
+              }.merge(new_user_option))
             end
             short_recipient_info = if entity_type.eql?('dropboxes')
               {'id' => full_recipient_info['id'], 'type' => 'dropbox'}
@@ -453,7 +461,7 @@ module Aspera
         validate_metadata(package_data) if validate_meta
 
         #  create a new package container
-        created_package = create('packages', package_data)[:data]
+        created_package = create('packages', package_data)
 
         package_node_api = node_api_from(
           node_id: created_package['node_id'],
@@ -463,7 +471,7 @@ module Aspera
         # tell AoC what to expect in package: 1 transfer (can also be done after transfer)
         # TODO: if multi session was used we should probably tell
         # also, currently no "multi-source" , i.e. only from client-side files, unless "node" agent is used
-        update("packages/#{created_package['id']}", {'sent' => true, 'transfers_expected' => 1})[:data]
+        update("packages/#{created_package['id']}", {'sent' => true, 'transfers_expected' => 1})
 
         return {
           spec: package_node_api.transfer_spec_gen4(created_package['contents_file_id'], Transfer::Spec::DIRECTION_SEND),
@@ -555,7 +563,7 @@ module Aspera
           contact_info = lookup_by_name(
             'contacts',
             create_param['with'],
-            {'current_workspace_id' => app_info[:workspace_id], 'context' => 'share_folder'})
+            query: {'current_workspace_id' => app_info[:workspace_id], 'context' => 'share_folder'})
           create_param.delete('with')
           create_param['access_type'] = contact_info['source_type']
           create_param['access_id'] = contact_info['source_id']

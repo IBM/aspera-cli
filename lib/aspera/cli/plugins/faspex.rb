@@ -37,7 +37,8 @@ module Aspera
         # sub path in url for public link delivery
         PUB_LINK_EXTERNAL_MATCH = 'external_deliveries/'
         STANDARD_PATH = '/aspera/faspex'
-        private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH])
+        HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
+        private_constant(*%i[KEY_NODE KEY_PATH PACKAGE_MATCH_FIELD ATOM_MAILBOXES ATOM_PARAMS ATOM_EXT_PARAMS PUB_LINK_EXTERNAL_MATCH HEADER_FASPEX_VERSION])
 
         class << self
           def detect(address_or_url)
@@ -58,7 +59,7 @@ module Aspera
               # 4.x
               next unless result[:http].body.start_with?('<?xml')
               res_s = XmlSimple.xml_in(result[:http].body, {'ForceArray' => false})
-              Log.log.debug{"version: #{result[:http]['X-IBM-Aspera']}"}
+              Log.log.debug{"version: #{result[:http][HEADER_FASPEX_VERSION]}"}
               version = res_s['XRD']['application']['version']
               # take redirect if any
               return {
@@ -95,7 +96,7 @@ module Aspera
             result = {
               base_url: "#{public_uri.scheme}://#{public_uri.host}#{port_add}#{base}",
               subpath:  subpath,
-              query:    Rest.decode_query(public_uri.query)
+              query:    Rest.query_to_h(public_uri.query)
             }
             Log.log.debug{Log.dump('link data', result)}
             return result
@@ -246,7 +247,7 @@ module Aspera
           delivery_info[:source_paths_list] = transfer.source_list.join("\r\n")
           api_public_link = Rest.new(base_url: link_data[:base_url])
           # Hum, as this does not always work (only user, but not dropbox), we get the javascript and need hack
-          # pkg_created=api_public_link.create(create_path,package_create_params)[:data]
+          # pkg_created=api_public_link.create(create_path,package_create_params)
           # so extract data from javascript
           package_creation_data = api_public_link.call(
             operation:   'POST',
@@ -307,17 +308,11 @@ module Aspera
                 first_source['paths'].push(*transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
                   Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
-                  source_list = api_v3.call(operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'})[:data]['items']
+                  source_list = api_v3.read('source_shares')['items']
                   self.class.get_source_id_by_name(value, source_list)
                 end
                 first_source['id'] = source_id.to_i unless source_id.nil?
-                pkg_created = api_v3.call(
-                  operation:   'POST',
-                  subpath:     'send',
-                  headers:     {'Accept' => 'application/json'},
-                  body:        package_create_params,
-                  body_type:   :json
-                )[:data]
+                pkg_created = api_v3.create('send', package_create_params)
                 if first_source.key?('id')
                   # no transfer spec if remote source: handled by faspex
                   return {data: [pkg_created['links']['status']], type: :value_list, name: 'link'}
@@ -437,7 +432,7 @@ module Aspera
             end
           when :source
             command_source = options.get_next_command(%i[list info node])
-            source_list = api_v3.call(operation: 'GET', subpath: 'source_shares', headers: {'Accept' => 'application/json'})[:data]['items']
+            source_list = api_v3.read('source_shares')['items']
             case command_source
             when :list
               return {type: :object_list, data: source_list}
@@ -479,13 +474,13 @@ module Aspera
               end
             end
           when :me
-            my_info = api_v3.call(operation: 'GET', subpath: 'me', headers: {'Accept' => 'application/json'})[:data]
+            my_info = api_v3.read('me')
             return {data: my_info, type: :single_object}
           when :dropbox
             command_pkg = options.get_next_command([:list])
             case command_pkg
             when :list
-              dropbox_list = api_v3.call(operation: 'GET', subpath: 'dropboxes', headers: {'Accept' => 'application/json'})[:data]
+              dropbox_list = api_v3.read('dropboxes')
               return {type: :object_list, data: dropbox_list['items'], fields: %w[name id description can_read can_write]}
             end
           when :v4
@@ -509,12 +504,7 @@ module Aspera
               return entity_action(api_v4, "#{pkg_box_type}/#{pkg_box_id}/packages")
             end
           when :address_book
-            result = api_v3.call(
-              operation: 'GET',
-              subpath:   'address-book',
-              headers:   {'Accept' => 'application/json'},
-              query:     {'format' => 'json', 'count' => 100_000}
-            )[:data]
+            result = api_v3.read('address-book', {'format' => 'json', 'count' => 100_000})
             formatter.display_status("users: #{result['itemsPerPage']}/#{result['totalResults']}, start:#{result['startIndex']}")
             users = result['entry']
             # add missing entries

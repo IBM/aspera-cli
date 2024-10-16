@@ -34,12 +34,14 @@ module Aspera
         # endpoint for authentication API
         PATH_AUTH = 'auth'
         PATH_HEALTH = 'configuration/ping'
+        PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
         PER_PAGE_DEFAULT = 100
         # OAuth methods supported
         STD_AUTH_TYPES = %i[web jwt boot].freeze
         HEADER_ITERATION_TOKEN = 'X-Aspera-Next-Iteration-Token'
+        HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
         private_constant(*%i[JOB_RUNNING RECIPIENT_TYPES PACKAGE_TERMINATED PATH_HEALTH API_LIST_MAILBOX_TYPES PACKAGE_SEND_FROM_REMOTE_SOURCE PER_PAGE_DEFAULT
-                             STD_AUTH_TYPES])
+                             STD_AUTH_TYPES HEADER_ITERATION_TOKEN HEADER_FASPEX_VERSION])
         class << self
           def application_name
             'Faspex'
@@ -55,15 +57,14 @@ module Aspera
               # Faspex is always HTTPS
               next unless base_url.start_with?('https://')
               api = Rest.new(base_url: base_url, redirect_max: 1)
-              path_api_detect = "#{PATH_API_V5}/#{PATH_HEALTH}"
-              result = api.read(path_api_detect)
-              next unless result[:http].code.start_with?('2') && result[:http].body.strip.empty?
+              response = api.call(operation: 'GET', subpath: PATH_API_DETECT)[:http]
+              next unless response.code.start_with?('2') && response.body.strip.empty?
               # end is at -1, and subtract 1 for "/"
-              url_length = -2 - path_api_detect.length
+              url_length = -2 - PATH_API_DETECT.length
               # take redirect if any
               return {
-                version: result[:http]['x-ibm-aspera'] || '5',
-                url:     result[:http].uri.to_s[0..url_length]
+                version: response[HEADER_FASPEX_VERSION] || '5',
+                url:     response.uri.to_s[0..url_length]
               }
             rescue StandardError => e
               error = e
@@ -133,8 +134,8 @@ module Aspera
           case auth_type
           when :public_link
             # resolve any redirect
-            @faspex5_api_base_url = Rest.new(base_url: @faspex5_api_base_url, redirect_max: 3).read('')[:http].uri.to_s
-            encoded_context = Rest.decode_query(URI.parse(@faspex5_api_base_url).query)['context']
+            @faspex5_api_base_url = Rest.new(base_url: @faspex5_api_base_url, redirect_max: 3).call(operation: 'GET')[:http].uri.to_s
+            encoded_context = Rest.query_to_h(URI.parse(@faspex5_api_base_url).query)['context']
             raise 'Bad faspex5 public link, missing context in query' if encoded_context.nil?
             # public link information (allowed usage)
             @pub_link_context = JSON.parse(Base64.decode64(encoded_context))
@@ -182,7 +183,7 @@ module Aspera
           else Aspera.error_unexpected_value(auth_type)
           end
           # in case user wants to use HTTPGW tell transfer agent how to get address
-          transfer.httpgw_url_cb = lambda { @api_v5.read('account')[:data]['gateway_url'] }
+          transfer.httpgw_url_cb = lambda { @api_v5.read('account')['gateway_url'] }
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
@@ -198,7 +199,7 @@ module Aspera
           parameters['recipients'].map! do |recipient_data|
             # if just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
-              matched = @api_v5.lookup_by_name('contacts', recipient_data, {context: 'packages', type: Rest.array_params(recipient_types)})
+              matched = @api_v5.lookup_by_name('contacts', recipient_data, query: {context: 'packages', type: Rest.array_params(recipient_types)})
               recipient_data = {
                 name:           matched['name'],
                 recipient_type: matched['type']
@@ -213,7 +214,7 @@ module Aspera
         def wait_package_status(id, status_list: PACKAGE_TERMINATED)
           total_sent = false
           loop do
-            status = @api_v5.read("packages/#{id}/upload_details")[:data]
+            status = @api_v5.read("packages/#{id}/upload_details")
             status['id'] = id
             # user asked to not follow
             return status if status_list.nil?
@@ -238,7 +239,7 @@ module Aspera
 
         def wait_for_job(job_id)
           loop do
-            status = @api_v5.read("jobs/#{job_id}", {type: :formatted})[:data]
+            status = @api_v5.read("jobs/#{job_id}", {type: :formatted})
             return status unless JOB_RUNNING.include?(status['status'])
             formatter.long_operation_running(status['status'])
             sleep(0.5)
@@ -266,7 +267,7 @@ module Aspera
           query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
           loop do
             query['offset'] = offset
-            page_result = @api_v5.read(real_path, query)[:data]
+            page_result = @api_v5.read(real_path, query)
             Aspera.assert_type(page_result[item_list_key], Array)
             result.concat(page_result[item_list_key])
             # reach the limit set by user ?
@@ -356,7 +357,7 @@ module Aspera
             package_ids = [package_ids] unless package_ids.is_a?(Array)
             Aspera.assert_type(package_ids, Array){'Expecting a single package id or a list of ids'}
             Aspera.assert(package_ids.all?(String)){'Package id shall be String'}
-            # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")[:data]}
+            # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map{|pkg_id|{'id'=>pkg_id}}
           end
           result_transfer = []
@@ -450,7 +451,7 @@ module Aspera
             end
           case command
           when :show
-            return {type: :single_object, data: @api_v5.read("packages/#{package_id}")[:data]}
+            return {type: :single_object, data: @api_v5.read("packages/#{package_id}")}
           when :browse
             location = case options.get_option(:box)
             when 'inbox' then 'received'
@@ -486,7 +487,7 @@ module Aspera
               }]
             end
             normalize_recipients(parameters)
-            package = @api_v5.create('packages', parameters)[:data]
+            package = @api_v5.create('packages', parameters)
             shared_folder = options.get_option(:shared_folder)
             if shared_folder.nil?
               # send from local files
@@ -511,7 +512,7 @@ module Aspera
               end
               transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
               # start remote transfer and get first status
-              result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)[:data]
+              result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)
               result['id'] = package['id']
               unless result['status'].eql?('completed')
                 formatter.display_status("Package #{package['id']}")
@@ -597,7 +598,7 @@ module Aspera
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
             creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
             res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
-            result = adm_api.create(res_path, creation_payload)[:data]
+            result = adm_api.create(res_path, creation_payload)
             formatter.display_status(result['message'])
             result = lookup_entity_by_field(
               type: 'members',
@@ -655,7 +656,7 @@ module Aspera
           when :clean_deleted
             delete_data = value_create_modify(command: command, default: {days_before_deleting_package_records: 365})
             res = @api_v5.create('internal/packages/clean_deleted', delete_data)
-            return {type: :single_object, data: res[:data]}
+            return {type: :single_object, data: res}
           when :events
             event_type = options.get_next_command(%i[application webhook])
             case event_type
@@ -669,27 +670,27 @@ module Aspera
             conf_cmd = options.get_next_command(%i[show modify])
             case conf_cmd
             when :show
-              return { type: :single_object, data: @api_v5.read(conf_path)[:data] }
+              return { type: :single_object, data: @api_v5.read(conf_path) }
             when :modify
-              return { type: :single_object, data: @api_v5.update(conf_path, value_create_modify(command: conf_cmd))[:data] }
+              return { type: :single_object, data: @api_v5.update(conf_path, value_create_modify(command: conf_cmd)) }
             end
           when :smtp
             smtp_path = 'configuration/smtp'
             smtp_cmd = options.get_next_command(%i[show create modify delete test])
             case smtp_cmd
             when :show
-              return { type: :single_object, data: @api_v5.read(smtp_path)[:data] }
+              return { type: :single_object, data: @api_v5.read(smtp_path) }
             when :create
-              return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
+              return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)) }
             when :modify
-              return { type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd))[:data] }
+              return { type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)) }
             when :delete
-              @api_v5.delete(smtp_path)[:data]
+              @api_v5.delete(smtp_path)
               return Main.result_status('SMTP configuration deleted')
             when :test
               test_data = options.get_next_argument('Email or test data, see API')
               test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
-              creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)[:data]
+              creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
               result = wait_for_job(creation['job_id'])
               result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
               return { type: :single_object, data: result }
@@ -704,11 +705,11 @@ module Aspera
           set_api unless command.eql?(:postprocessing)
           case command
           when :version
-            return { type: :single_object, data: @api_v5.read('version')[:data] }
+            return { type: :single_object, data: @api_v5.read('version') }
           when :health
             nagios = Nagios.new
             begin
-              result = Rest.new(base_url: @faspex5_api_base_url).read('health')[:data]
+              result = Rest.new(base_url: @faspex5_api_base_url).read('health')
               result.each do |k, v|
                 nagios.add_ok(k, v.to_s)
               end
@@ -719,11 +720,11 @@ module Aspera
           when :user
             case options.get_next_command(%i[account profile])
             when :account
-              return { type: :single_object, data: @api_v5.read('account')[:data] }
+              return { type: :single_object, data: @api_v5.read('account') }
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: @api_v5.read('account/preferences')[:data] }
+                return { type: :single_object, data: @api_v5.read('account/preferences') }
               when :modify
                 @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
                 return Main.result_status('modified')
@@ -734,7 +735,7 @@ module Aspera
           when :packages
             return package_action
           when :shared_folders
-            all_shared_folders = @api_v5.read('shared_folders')[:data]['shared_folders']
+            all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
             case options.get_next_command(%i[list browse])
             when :list
               return {type: :object_list, data: all_shared_folders}
@@ -758,7 +759,7 @@ module Aspera
             when :create
               return do_bulk_operation(command: invitation_command, descr: 'data') do |params|
                 invitation_endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
-                @api_v5.create(invitation_endpoint, params)[:data]
+                @api_v5.create(invitation_endpoint, params)
               end
             when :resend
               @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend")

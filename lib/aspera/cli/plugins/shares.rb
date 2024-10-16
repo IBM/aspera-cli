@@ -144,11 +144,11 @@ module Aspera
                   entity_parameters.each_key do |p|
                     raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
                   end
-                  api_shares_admin.create("#{entities_path}/import", entity_parameters)[:data]
+                  api_shares_admin.create("#{entities_path}/import", entity_parameters)
                 end
               when :add # ldap
                 return do_bulk_operation(command: entity_verb, descr: "#{entity_type} name", values: String) do |entity_name|
-                  api_shares_admin.create(entities_path, {entity_type=>entity_name})[:data]
+                  api_shares_admin.create(entities_path, {entity_type=>entity_name})
                 end
               when :users # group
                 return entity_action(api_shares_admin, "#{entities_path}/#{instance_identifier}/#{entities_prefix}users")

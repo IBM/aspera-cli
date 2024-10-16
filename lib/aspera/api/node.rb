@@ -171,7 +171,7 @@ module Aspera
       def entry_has_link_information(entry)
         # if target information is missing in folder, try to get it on entry
         if entry['target_node_id'].nil? || entry['target_id'].nil?
-          link_entry = read("files/#{entry['id']}")[:data]
+          link_entry = read("files/#{entry['id']}")
           entry['target_node_id'] = link_entry['target_node_id']
           entry['target_id'] = link_entry['target_id']
         end
@@ -200,7 +200,7 @@ module Aspera
           # get folder content
           folder_contents =
             begin
-              read("files/#{current_item[:id]}/files")[:data]
+              read("files/#{current_item[:id]}/files")
             rescue StandardError => e
               Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
               []
@@ -265,7 +265,7 @@ module Aspera
           full_spec = create(
             'files/download_setup',
             {transfer_requests: [{transfer_request: {paths: [{source: '/'}]}}]}
-          )[:data]['transfer_specs'].first['transfer_spec']
+          )['transfer_specs'].first['transfer_spec']
           # set available fields
           @std_t_spec_cache = Transfer::Spec::TRANSPORT_FIELDS.each_with_object({}) do |i, h|
             h[i] = full_spec[i] if full_spec.key?(i)
@@ -317,7 +317,7 @@ module Aspera
           if !@app_info.nil? && !@app_info[:node_info]['transfer_url'].nil? && !@app_info[:node_info]['transfer_url'].empty?
             transfer_spec['remote_host'] = @app_info[:node_info]['transfer_url']
           end
-          info = read('info')[:data]
+          info = read('info')
           # get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
           # get settings from name.value array to hash key.value

@@ -26,7 +26,7 @@ module Aspera
         # faspex 4 does not encode trailing base64 padding, fix that to be able to decode properly
         fixed_query = @fasp_uri.query.gsub(/(=+)$/){|trail_equals|'%3D' * trail_equals.length}
 
-        Rest.decode_query(fixed_query).each do |name, value|
+        Rest.query_to_h(fixed_query).each do |name, value|
           case name
           when 'cookie'      then result_ts['cookie'] = value
           when 'token'       then result_ts['token'] = value

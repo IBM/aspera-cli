@@ -44,7 +44,7 @@ module Aspera
         'note'       => faspex_pkg_delivery['note'],
         'recipients' => faspex_pkg_delivery['recipients'].map{|name|{'name'=>name}}
       }
-      package = @app_api.create('packages', package_data)[:data]
+      package = @app_api.create('packages', package_data)
       # TODO: option to send from remote source or httpgw
       transfer_spec = @app_api.call(
         operation:   'POST',
@@ -85,7 +85,7 @@ module Aspera
         rescue => e
           response.status = 500
           response['Content-Type'] = 'application/json'
-          response.body = {error: e.message}.to_json
+          response.body = {error: e.message, stacktrace: e.backtrace}.to_json
           Log.log.error(e.message)
           Log.log.debug{e.backtrace.join("\n")}
         end

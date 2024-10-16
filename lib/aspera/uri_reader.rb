@@ -12,7 +12,7 @@ module Aspera
         uri = URI.parse(uri_to_read)
         case uri.scheme
         when 'http', 'https'
-          return Rest.new(base_url: uri_to_read, redirect_max: 5).call(operation: 'GET', subpath: '', headers: {'Accept' => 'text/plain'})[:data]
+          return Rest.new(base_url: uri_to_read, redirect_max: 5).call(operation: 'GET', headers: {'Accept' => '*/*'})[:data]
         when 'file', NilClass
           local_file_path = uri.path
           raise 'URL shall have a path, check syntax' if local_file_path.nil?

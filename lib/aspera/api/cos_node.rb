@@ -19,7 +19,7 @@ module Aspera
             Aspera.assert(service_credentials.key?(field)){"service_credentials must have a field: #{field}"}
           end
           # read endpoints from service provided in service credentials
-          endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')[:data]
+          endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')
           Aspera::Log.dump('endpoints', endpoints)
           endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
           raise "no such region: #{bucket_region}" if endpoint.nil?

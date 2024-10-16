@@ -5051,7 +5051,9 @@ files browse my_remote_folder/
 files delete /testsrc
 files download --transfer=alpha testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin
+files find /
 files find / '\.partial$'
+files find / @ruby:'->(f){f["type"].eql?("file")}'
 files http_node_download --to-folder=. testdst/test_file.bin
 files mkdir /testsrc
 files modify my_test_folder

@@ -133,7 +133,7 @@ module Aspera
             subpath:   "files/#{file_id}/files",
             headers:   headers,
             query:     request_args)[:data]
-          # return @api_node.read("files/#{file_id}/files",request_args)[:data]
+          # return @api_node.read("files/#{file_id}/files",request_args)
         end
 
         # old version based on folders
@@ -146,7 +146,7 @@ module Aspera
           # optionally add iteration token from persistency
           events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
           begin
-            events = @api_node.read('events', events_filter)[:data]
+            events = @api_node.read('events', events_filter)
           rescue RestCallError => e
             if e.message.include?('Invalid iteration_token')
               Log.log.warn{"Retrying without iteration token: #{e}"}
@@ -164,7 +164,7 @@ module Aspera
               folder_id = event.dig('data', 'tags', Transfer::Spec::TAG_RESERVED, 'node', 'file_id')
               folder_id ||= event.dig('data', 'file_id')
               if !folder_id.nil?
-                folder_entry = @api_node.read("files/#{folder_id}")[:data] rescue nil
+                folder_entry = @api_node.read("files/#{folder_id}") rescue nil
                 scan_folder_files(folder_entry) unless folder_entry.nil?
               end
             end
@@ -188,12 +188,12 @@ module Aspera
           }
           # optionally add iteration token from persistency
           events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
-          events = @api_node.read('events', events_filter)[:data]
+          events = @api_node.read('events', events_filter)
           return if events.empty?
           events.each do |event|
             # process only files
             if event.dig('data', 'type').eql?('file')
-              file_entry = @api_node.read("files/#{event['data']['id']}")[:data] rescue nil
+              file_entry = @api_node.read("files/#{event['data']['id']}") rescue nil
               if !file_entry.nil? &&
                   @option_skip_folders.none?{|d|file_entry['path'].start_with?(d)}
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
@@ -248,7 +248,7 @@ module Aspera
           # original_mtime=DateTime.parse(entry['modified_time'])
           # out: where previews are generated
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
-          file_info = @api_node.read("files/#{entry['id']}")[:data]
+          file_info = @api_node.read("files/#{entry['id']}")
           # TODO: this does not work because previews is hidden in api (gen4)
           # this_preview_folder_entries=get_folder_entries(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
           # TODO: use gen3 api to list files and get date
@@ -410,10 +410,10 @@ module Aspera
             @api_node = Api::Node.new(**basic_auth_params)
             @transfer_server_address = URI.parse(@api_node.base_url).host
             # get current access key
-            @access_key_self = @api_node.read('access_keys/self')[:data]
+            @access_key_self = @api_node.read('access_keys/self')
             # TODO: check events is activated here:
             # note that docroot is good to look at as well
-            node_info = @api_node.read('info')[:data]
+            node_info = @api_node.read('info')
             Log.log.debug{"root: #{node_info['docroot']}"}
             @access_remote = @option_file_access.eql?(:remote)
             Log.log.debug{"remote: #{@access_remote}"}
@@ -463,7 +463,7 @@ module Aspera
                   'type' => 'folder',
                   'path' => '/' }
               else
-                @api_node.read("files/#{scan_id}")[:data]
+                @api_node.read("files/#{scan_id}")
               end
             @filter_block = Api::Node.file_matcher_from_argument(options)
             scan_folder_files(folder_info, scan_path)

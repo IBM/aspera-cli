@@ -192,14 +192,13 @@ module Aspera
       @terminal_supports_unicode = nil
     end
 
-          # @return true if we can display Unicode characters
-      # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
-      # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
-      def terminal_supports_unicode?
-        @terminal_supports_unicode = self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{|var|ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
-        return @terminal_supports_unicode
-      end
-
+    # @return true if we can display Unicode characters
+    # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
+    # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
+    def terminal_supports_unicode?
+      @terminal_supports_unicode = self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{|var|ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
+      return @terminal_supports_unicode
+    end
 
     # Allows a user to open a Url
     # if method is "text", then URL is displayed on terminal

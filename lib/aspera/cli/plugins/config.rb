@@ -394,7 +394,7 @@ module Aspera
         def check_gem_version
           latest_version =
             begin
-              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@gem}/latest.json")[:data]['version']
+              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@gem}/latest.json")['version']
             rescue StandardError
               Log.log.warn('Could not retrieve latest gem version on rubygems.')
               '0'

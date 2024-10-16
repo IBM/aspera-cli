@@ -16,7 +16,7 @@ module Aspera
             nagios = Nagios.new
             begin
               api = Api::Alee.new(nil, nil, version: 'ping')
-              result = api.call(operation: 'GET', subpath: '')
+              result = api.call(operation: 'GET')
               raise "unexpected response: #{result[:http].body}" unless result[:http].body.eql?('pong')
               nagios.add_ok('api', 'answered ok')
             rescue StandardError => e
@@ -27,7 +27,7 @@ module Aspera
             entitlement_id = options.get_option(:username, mandatory: true)
             customer_id = options.get_option(:password, mandatory: true)
             api_metering = Api::Alee.new(entitlement_id, customer_id)
-            return {type: :single_object, data: api_metering.read('entitlement')[:data]}
+            return {type: :single_object, data: api_metering.read('entitlement')}
           end
         end
       end

@@ -156,7 +156,7 @@ module Aspera
         when :create
           raise 'cannot create singleton' if is_singleton
           return do_bulk_operation(command: command, descr: 'data', fields: display_fields) do |params|
-            rest_api.create(res_class_path, params)[:data]
+            rest_api.create(res_class_path, params)
           end
         when :delete
           raise 'cannot delete singleton' if is_singleton
@@ -171,9 +171,9 @@ module Aspera
             {'id' => one_id}
           end
         when :show
-          return {type: :single_object, data: rest_api.read(one_res_path)[:data], fields: display_fields}
+          return {type: :single_object, data: rest_api.read(one_res_path), fields: display_fields}
         when :list
-          resp = rest_api.read(res_class_path, query_read_delete)
+          resp = rest_api.call(operation: 'GET', subpath: res_class_path, headers: {'Accept' => 'application/json'}, query: query_read_delete)
           return Main.result_empty if resp[:http].code == '204'
           data = resp[:data]
           # TODO: not generic : which application is this for ?

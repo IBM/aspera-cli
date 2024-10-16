@@ -15,7 +15,7 @@ module Aspera
 
           def detect(base_url)
             api = Rest.new(base_url: base_url)
-            ping_result = api.read('ping')
+            ping_result = api.call(operation: 'GET', subpath: 'ping', headers: {'Accept' => 'application/json'})
             server_type = ping_result[:http]['Server']
             return nil unless ping_result[:data].is_a?(Hash) && ping_result[:data].empty?
             return nil unless server_type.is_a?(String) && server_type.include?('faspio')
@@ -65,7 +65,7 @@ module Aspera
           when :health
             nagios = Nagios.new
             begin
-              result = api.read('ping')[:data]
+              result = api.read('ping')
               if result.is_a?(Hash) && result.empty?
                 nagios.add_ok('api', 'answered ok')
               else

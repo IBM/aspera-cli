@@ -78,7 +78,7 @@ module Aspera
         if !transfer_spec['wss_enabled'] && transfer_spec['remote_host'].eql?(URI.parse(node_api_.base_url).host)
           transfer_spec['remote_host'] = '127.0.0.1'
         end
-        resp = node_api_.create('ops/transfers', transfer_spec)[:data]
+        resp = node_api_.create('ops/transfers', transfer_spec)
         @transfer_id = resp['id']
         Log.log.debug{"tr_id=#{@transfer_id}"}
         return @transfer_id
@@ -92,7 +92,7 @@ module Aspera
         # lets emulate management events to display progress bar
         loop do
           # status is empty sometimes with status 200...
-          transfer_data = node_api_.read("ops/transfers/#{@transfer_id}")[:data] || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
+          transfer_data = node_api_.read("ops/transfers/#{@transfer_id}") || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
           when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)'
             notify_progress(session_id: nil, type: :pre_start, info: transfer_data['status'])

@@ -256,7 +256,7 @@ module Aspera
           end
           transfer_spec['download_name'] = download_name
         end
-        creation = create('download', {'transfer_spec' => transfer_spec})[:data]
+        creation = create('download', {'transfer_spec' => transfer_spec})
         transfer_uuid = creation['url'].split('/').last
         file_name =
           if transfer_spec['zip_required'] || transfer_spec['paths'].length > 1
@@ -299,7 +299,7 @@ module Aspera
         @synchronous = synchronous
         @notify_cb = notify_cb
         # get API info
-        @api_info = read('info')[:data].freeze
+        @api_info = read('info').freeze
         Log.log.debug{Log.dump(:api_info, @api_info)}
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         # is the latest supported? else revert to old api

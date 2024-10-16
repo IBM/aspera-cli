@@ -25,7 +25,7 @@ module Aspera
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
             headers: {'Origin' => Rest.user_agent})
-          connect_info = @connect_api.read('info/version')[:data]
+          connect_info = @connect_api.read('info/version')
           Log.log.info('Connect was reached') if method_index > 0
           Log.log.debug{Log.dump(:connect_version, connect_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
@@ -51,7 +51,7 @@ module Aspera
             'title'                   => 'Select Files',
             'suggestedName'           => '',
             'allowMultipleSelection'  => true,
-            'allowedFileTypes'        => ''})[:data]
+            'allowedFileTypes'        => ''})
           transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']}}
         end
         @request_id = SecureRandom.uuid
@@ -67,7 +67,7 @@ module Aspera
             'transfer_spec' => transfer_spec
           }]}
         # asynchronous anyway
-        res = @connect_api.create('transfers/start', connect_transfer_args)[:data]
+        res = @connect_api.create('transfers/start', connect_transfer_args)
         @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id']
       end
 
@@ -78,7 +78,7 @@ module Aspera
         session_id = @xfer_id
         begin
           loop do
-            tr_info = @connect_api.create("transfers/info/#{@xfer_id}", connect_activity_args)[:data]
+            tr_info = @connect_api.create("transfers/info/#{@xfer_id}", connect_activity_args)
             Log.log.trace1{Log.dump(:tr_info, tr_info)}
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']

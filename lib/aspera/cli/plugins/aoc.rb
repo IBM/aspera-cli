@@ -66,11 +66,11 @@ module Aspera
             base_url = "#{base_url}.#{Api::SAAS_DOMAIN_PROD}" unless base_url.include?('.')
             # AoC is only https
             return nil unless base_url.start_with?('https://')
-            result = Rest.new(base_url: base_url, redirect_max: 10).read('')
+            res_http = Rest.new(base_url: base_url, redirect_max: 10).call(operation: 'GET')[:http]
             # Any AoC is on this domain
-            return nil unless result[:http].uri.host.end_with?(Api::SAAS_DOMAIN_PROD)
-            Log.log.debug{"AoC Main page: #{result[:http].body.include?(Api::AoC::PRODUCT_NAME)}"}
-            base_url = result[:http].uri.to_s if result[:http].uri.path.include?('/public')
+            return nil unless res_http.uri.host.end_with?(Api::SAAS_DOMAIN_PROD)
+            Log.log.debug{"AoC Main page: #{res_http.body.include?(Api::AoC::PRODUCT_NAME)}"}
+            base_url = res_http.uri.to_s if res_http.uri.path.include?('/public')
             # either in standard domain, or product name in page
             return {
               version: 'SaaS',
@@ -98,7 +98,7 @@ module Aspera
             pub_link_info = Api::AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
               pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
-              pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})[:data]
+              pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})
               preset_value = {
                 link: instance_url
               }
@@ -152,7 +152,7 @@ module Aspera
               # aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
               # aoc_api.oauth.specific_parameters[:redirect_uri] = REDIRECT_LOCALHOST
             end
-            myself = object.aoc_api.read('self')[:data]
+            myself = object.aoc_api.read('self')
             if auto_set_pub_key
               Aspera.assert(myself['public_key'].empty?, exception_class: Cli::Error){'Public key is already set in profile (use --override=yes)'} unless option_override
               formatter.display_status('Updating profile with the public key.')
@@ -214,7 +214,7 @@ module Aspera
         def aoc_api
           if @cache_api_aoc.nil?
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
-            organization = @cache_api_aoc.read('organization')[:data]
+            organization = @cache_api_aoc.read('organization')
             if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
               transfer.httpgw_url_cb = lambda { organization['http_gateway_server_url'] }
               # @cache_api_aoc.current_user_info['connect_disabled']
@@ -237,6 +237,7 @@ module Aspera
         end
 
         # Call block with same query using paging and response information
+        # block must return a hash with :data and :http keys
         # @return [Hash] {data: , total: }
         def api_call_paging(base_query={})
           Aspera.assert_type(base_query, Hash){'query'}
@@ -254,6 +255,8 @@ module Aspera
             query = base_query.clone
             query['page'] = current_page
             result = yield(query)
+            Aspera.assert(result[:data])
+            Aspera.assert(result[:http])
             total_count = result[:http]['X-Total-Count']
             page_count += 1
             current_page += 1
@@ -272,7 +275,7 @@ module Aspera
         # @return [Hash] {data: , total: }
         def api_read_all(resource_class_path, base_query={})
           return api_call_paging(base_query) do |query|
-            aoc_api.read(resource_class_path, query)
+            aoc_api.call(operation: 'GET', subpath: resource_class_path, headers: {'Accept' => 'application/json'}, query: query)
           end
         end
 
@@ -311,7 +314,7 @@ module Aspera
             workspace_name: aoc_api.context[:workspace_name],
             scope:          scope
           )
-          file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")[:data]['root_file_id'] if file_id.nil?
+          file_id = top_node_api.read("access_keys/#{top_node_api.app_info[:node_info]['access_key']}")['root_file_id'] if file_id.nil?
           node_plugin = Node.new(**init_params, api: top_node_api)
           case command_repo
           when *Node::COMMANDS_GEN4
@@ -390,7 +393,7 @@ module Aspera
             # TODO: report inconsistency: creation url is !=, and does not return id.
             resource_class_path = 'admin/client_registration/token' if resource_class_path.eql?('admin/client_registration_tokens')
             return do_bulk_operation(command: command, descr: 'creation data', id_result: id_result) do |params|
-              aoc_api.create(resource_class_path, params)[:data]
+              aoc_api.create(resource_class_path, params)
             end
           when :list
             default_fields = ['id']
@@ -411,7 +414,7 @@ module Aspera
             end
             return result_list(resource_class_path, fields: default_fields, default_query: default_query)
           when :show
-            object = aoc_api.read(resource_instance_path)[:data]
+            object = aoc_api.read(resource_instance_path)
             # default: show all, but certificate
             fields = object.keys.reject{|k|k.eql?('certificate')}
             return { type: :single_object, data: object, fields: fields }
@@ -462,7 +465,7 @@ module Aspera
               raise 'not implemented'
             end
           when :subscription
-            org = aoc_api.read('organization')[:data]
+            org = aoc_api.read('organization')
             bss_api = api_from_options('bss/platform')
             # cspell:disable
             graphql_query = "
@@ -514,7 +517,7 @@ module Aspera
     }
   "
             # cspell:enable
-            result = bss_api.create('graphql', {'variables' => {'organization_id' => org['id']}, 'query' => graphql_query})[:data]['data']
+            result = bss_api.create('graphql', {'variables' => {'organization_id' => org['id']}, 'query' => graphql_query})['data']
             return {type: :single_object, data: result['aoc']['bssSubscription']}
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
@@ -531,7 +534,7 @@ module Aspera
             case command_analytics
             when :application_events
               event_type = command_analytics.to_s
-              events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/#{event_type}")[:data][event_type]
+              events = analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/#{event_type}")[event_type]
               return {type: :object_list, data: events}
             when :transfers
               event_type = command_analytics.to_s
@@ -565,7 +568,7 @@ module Aspera
                 filter['start_time'] = start_date_time unless start_date_time.nil?
                 filter['stop_time'] = stop_date_time
               end
-              events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", query_read_delete(default: filter))[:data][event_type]
+              events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", query_read_delete(default: filter))[event_type]
               start_date_persistency&.save
               if !options.get_option(:notify_to).nil?
                 events.each do |tr_event|
@@ -589,7 +592,7 @@ module Aspera
             app_context = aoc_api.context(command)
             formatter.display_status("Workspace: #{app_context[:workspace_name].to_s.red}#{default_flag}")
             if !aoc_api.private_link.nil?
-              folder_name = aoc_api.node_api_from(node_id: app_context[:home_node_id]).read("files/#{app_context[:home_file_id]}")[:data]['name']
+              folder_name = aoc_api.node_api_from(node_id: app_context[:home_node_id]).read("files/#{app_context[:home_file_id]}")['name']
               formatter.display_status("Private Folder: #{folder_name}")
             end
           end
@@ -597,26 +600,26 @@ module Aspera
           when :reminder
             # send an email reminder with list of orgs
             user_email = options.get_option(:username, mandatory: true)
-            Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").create('organization_reminders', {email: user_email})[:data]
+            Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").create('organization_reminders', {email: user_email})
             return Main.result_status("List of organizations user is member of, has been sent by e-mail to #{user_email}")
           when :servers
-            return {type: :object_list, data: Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers')[:data]}
+            return {type: :object_list, data: Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers')}
           when :bearer_token
             return {type: :text, data: aoc_api.oauth.token}
           when :organization
-            return { type: :single_object, data: aoc_api.read('organization')[:data] }
+            return { type: :single_object, data: aoc_api.read('organization') }
           when :tier_restrictions
-            return { type: :single_object, data: aoc_api.read('tier_restrictions')[:data] }
+            return { type: :single_object, data: aoc_api.read('tier_restrictions') }
           when :user
             case options.get_next_command(%i[workspaces profile preferences])
             # when :settings
-            # return {type: :object_list,data: aoc_api.read('client_settings/')[:data]}
+            # return {type: :object_list,data: aoc_api.read('client_settings/')}
             when :workspaces
               case options.get_next_command(%i[list current])
               when :list
                 return result_list('workspaces', fields: %w[id name])
               when :current
-                return { type: :single_object, data: aoc_api.read("workspaces/#{aoc_api.context(:files)[:workspace_id]}")[:data] }
+                return { type: :single_object, data: aoc_api.read("workspaces/#{aoc_api.context(:files)[:workspace_id]}") }
               end
             when :profile
               case options.get_next_command(%i[show modify])
@@ -630,7 +633,7 @@ module Aspera
               user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/user_interaction_preferences"
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: aoc_api.read(user_preferences_res)[:data] }
+                return { type: :single_object, data: aoc_api.read(user_preferences_res) }
               when :modify
                 aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
@@ -646,7 +649,7 @@ module Aspera
                 default_query['workspace_id'] = aoc_api.context[:workspace_id] unless aoc_api.context[:workspace_id].eql?(:undefined)
                 return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
               when :show
-                return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)[:data]}
+                return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)}
               end
             when :send
               package_data = value_create_modify(command: package_command)
@@ -712,7 +715,7 @@ module Aspera
               result_transfer = []
               formatter.display_status("found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
-                package_info = aoc_api.read("packages/#{package_id}")[:data]
+                package_info = aoc_api.read("packages/#{package_id}")
                 formatter.display_status("downloading package: [#{package_info['id']}] #{package_info['name']}")
                 package_node_api = aoc_api.node_api_from(
                   node_id: package_info['node_id'],
@@ -735,7 +738,7 @@ module Aspera
               return Main.result_transfer_multiple(result_transfer)
             when :show
               package_id = instance_identifier
-              package_info = aoc_api.read("packages/#{package_id}")[:data]
+              package_info = aoc_api.read("packages/#{package_id}")
               return { type: :single_object, data: package_info }
             when :list
               display_fields = %w[id name bytes_transferred]
@@ -746,11 +749,11 @@ module Aspera
             when :delete
               return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
                 Aspera.assert_values(id.class, [String, Integer]){'identifier'}
-                aoc_api.delete("packages/#{id}")[:data]
+                aoc_api.delete("packages/#{id}")
               end
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
-              package_info = aoc_api.read("packages/#{package_id}")[:data]
+              package_info = aoc_api.read("packages/#{package_id}")
               return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: Api::Node::SCOPE_USER)
             end
           when :files
@@ -788,7 +791,7 @@ module Aspera
                 aoc_api.delete("short_links/#{one_id}", delete_params)
                 if link_type.eql?(:public)
                   # TODO: get permission id..
-                  # shared_apfid[:api].delete('permissions', {ids: })[:data]
+                  # shared_apfid[:api].delete('permissions', {ids: })
                 end
                 return Main.result_status('deleted')
               when :list
@@ -830,7 +833,7 @@ module Aspera
                     }
                   }
                 end
-                result_create_short_link = aoc_api.create('short_links', creation_params)[:data]
+                result_create_short_link = aoc_api.create('short_links', creation_params)
                 # public: Creation: permission on node
                 if link_type.eql?(:public)
                   # TODO: merge with node permissions ?
@@ -853,7 +856,7 @@ module Aspera
                       'node'             => shared_apfid[:api].app_info[:node_info]['host']
                     }
                   }
-                  created_data = shared_apfid[:api].create('permissions', perm_data)[:data]
+                  created_data = shared_apfid[:api].create('permissions', perm_data)
                   aoc_api.permissions_send_event(created_data: created_data, app_info: shared_apfid[:api].app_info)
                   # TODO: event ?
                 end
@@ -876,18 +879,18 @@ module Aspera
                 return entity_command(wf_command, automation_api, 'workflows')
               when :launch
                 wf_id = instance_identifier
-                data = automation_api.create("workflows/#{wf_id}/launch", {})[:data]
+                data = automation_api.create("workflows/#{wf_id}/launch", {})
                 return {type: :single_object, data: data}
               when :action
                 # TODO: not complete
                 wf_id = instance_identifier
                 wf_action_cmd = options.get_next_command(%i[list create show])
                 Log.log.warn{"Not implemented: #{wf_action_cmd}"}
-                step = automation_api.create('steps', {'workflow_id' => wf_id})[:data]
+                step = automation_api.create('steps', {'workflow_id' => wf_id})
                 automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
-                action = automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})[:data]
+                action = automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
                 automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
-                wf = automation_api.read("workflows/#{wf_id}")[:data]
+                wf = automation_api.read("workflows/#{wf_id}")
                 return {type: :single_object, data: wf}
               end
             end

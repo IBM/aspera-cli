@@ -5,7 +5,7 @@ module Warning
   class << self
     def warn(message)
       # display and raise only if in custom code, not gems
-      if message.to_s.include?("/aspera/")
+      if message.to_s.include?('/aspera/')
         super
         raise message.to_s
       end

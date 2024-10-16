@@ -13,16 +13,16 @@ module Aspera
         # @return nil if not a faux: scheme, else a FauxFile instance
         def create(name)
           return nil unless name.start_with?(PREFIX)
-          url_parts = name[PREFIX.length..-1].split('?')
-          raise 'Format: #{PREFIX}<file path>?<size>' unless url_parts.length.eql?(2)
-          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = url_parts[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
+          name_params = name[PREFIX.length..-1].split('?', 2)
+          raise 'Format: #{PREFIX}<file path>?<size>' unless name_params.length.eql?(2)
+          raise "Format: <integer>[#{SUFFIX.join(',')}]" unless (m = name_params[1].downcase.match(/^(\d+)([#{SUFFIX.join('')}])$/))
           size = m[1].to_i
           suffix = m[2]
           SUFFIX.each do |s|
             size *= 1024
             break if s.eql?(suffix)
           end
-          return FauxFile.new(url_parts[0], size)
+          return FauxFile.new(name_params[0], size)
         end
       end
       attr_reader :path, :size
