@@ -257,6 +257,7 @@ module Aspera
       return_error: false,
       headers: nil
     )
+      Log.log.trace1{Log.dump(:req_data, body)}
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
       Aspera.assert_type(subpath, String)
@@ -374,7 +375,7 @@ module Aspera
           result[:http].body
         end
         Log.log.debug{"result: code=#{result[:http].code} mime=#{result_mime}"}
-        Log.log.debug{Log.dump('data', result[:data])}
+        Log.log.debug{Log.dump('result_data', result[:data])}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
         File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
