@@ -3,6 +3,7 @@
 * 4.20.0.pre
   * New Features:
   * Issues Fixed:
+    * `aoc`: Fixed `find` command not working. (undefined variable)
   * Breaking Changes:
   
 * 4.19.0
