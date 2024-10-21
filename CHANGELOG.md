@@ -5,6 +5,7 @@
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
   * Breaking Changes:
+    * Internal: Basic REST calls now return data directly. (no more `data` key). For advanced calls, use `call`.
   
 * 4.19.0
   * New Features:
