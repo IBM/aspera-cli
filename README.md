@@ -5018,7 +5018,7 @@ For instructions, refer to section `find` for plugin `node`.
 ```bash
 admin analytics transfers nodes
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
-admin analytics transfers users --once_only=yes
+admin analytics transfers users --once-only=yes
 admin application list
 admin ats access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 admin ats access_key create --cloud=softlayer --region=my_region --params=@json:'{"id":"ak1ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
@@ -5820,7 +5820,7 @@ access_key do my_ak_name node_info /
 access_key do my_ak_name rename /folder1 folder2
 access_key do my_ak_name show %id:1
 access_key do my_ak_name show /testfile1
-access_key do my_ak_name upload 'faux:///testfile1?1k' --default_ports=no
+access_key do my_ak_name upload 'faux:///testfile1?1k' --default-ports=no
 access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self show / --fields=id --output=root_id
 access_key list
@@ -6593,7 +6593,7 @@ package receive f4_prs2 --to-folder=. --box=sent
 package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_dbx"]}' test_file.bin
 package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["*my_wkg"]}' test_file.bin
 package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal","my_username"]}' test_file.bin
-package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"]}' --remote_source=%name:my_src sample_source.txt
+package send --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_email_internal"]}' --remote-source=%name:my_src sample_source.txt
 package send --link=https://app.example.com/send_to_dropbox_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
 package send --link=https://app.example.com/send_to_user_path --delivery-info=@json:'{"title":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin
 source info %name:my_src --storage=@preset:faspex4_storage

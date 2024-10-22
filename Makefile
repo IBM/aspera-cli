@@ -140,7 +140,7 @@ docker_push_latest:
 clean::
 	rm -f Dockerfile
 ##################################
-# Single executable using https://github.com/pmq20/ruby-packer
+# Single executable : make single
 CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(shell uname -ms|tr ' ' '-')
 EXE_BUILDER=$(DIR_TOP)examples/build_exec
 single:$(CLI_EXECUTABLE)
