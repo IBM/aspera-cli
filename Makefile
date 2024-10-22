@@ -160,4 +160,6 @@ tidy:
 	rubocop $(DIR_LIB).
 reek:
 	reek -c $(DIR_TOP).reek.yml
-# cspell:ignore pubkey gemdir oneline demoaspera firstword noout pubout
+semgrep:
+	semgrep scan --config auto
+# cspell:ignore pubkey gemdir oneline demoaspera firstword noout pubout semgrep
