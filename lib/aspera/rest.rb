@@ -257,7 +257,7 @@ module Aspera
       return_error: false,
       headers: nil
     )
-      Log.log.trace1{Log.dump(:req_data, body)}
+      Log.log.debug{Log.dump(:req_data, body)}
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
       Aspera.assert_type(subpath, String)
@@ -319,7 +319,7 @@ module Aspera
         end
         # :type = :basic
         req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
-        Log.log.debug{Log.dump(:req_body, req.body)}
+        Log.log.trace1{Log.dump(:req_body, req.body)}
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
         # initialize with number of initial retries allowed, nil gives zero
