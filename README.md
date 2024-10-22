@@ -59,7 +59,7 @@ It is designed for:
 If the need is to perform operations programmatically in languages such as: C, Go, Python, nodejs, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 - Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Ruby, etc...)
+- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
@@ -1328,7 +1328,7 @@ The tokenization of the command line is typically done by the shell, refer to th
 `ascli` handles two types of command line arguments:
 
 - **Positional Arguments** : position is significant
-- **Options** : only order is significant, but not position
+- **Options** : only order is significant, but not absolute position
 
 For example:
 
@@ -1349,11 +1349,11 @@ The value of **Options** and **Positional Arguments** is evaluated with the [Ext
 **Positional Arguments** are either:
 
 - **Commands**, typically at the beginning
-- **Command Parameters** , e.g. creation data or entity identifier
+- **Command Parameters**, mandatory arguments, e.g. creation data or entity identifier
 
 When options are removed from the command line, the remaining arguments are typically **Positional Arguments** with a pre-defined order.
 
-**Commands** are typically entity types or verbs to act on those entities.
+**Commands** are typically entity types (e.g. `users`) or verbs (e.g. `create`) to act on those entities.
 Its value is a `String` that must belong to a fixed list of values in a given context.
 
 Example:
@@ -1372,19 +1372,22 @@ Order is significant.
 The provided command must match one of the supported commands in the given context.
 If wrong, or no command is provided when expected, an error message is displayed and the list of supported commands is displayed.
 
-Some sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin res node do 8669 browse /`: `browse` is a sub-command of `node`.
+Standard **Commands** are: `create`, `show`, `list`, `modify`, `delete`.
+Some entities also support additional commands.
+When those additional commands are related to an entity also reachable in another context, then those commands are located below command `do`.
+For example sub-commands appear after entity selection (identifier), e.g. `ascli aoc admin node do 1234 browse /`: `browse` is a sub-command of `node`.
 
 **Command Parameters** are typically mandatory values for a command, such as entity creation data or entity identifier.
 
 > **Note:** It could also have been designed as an option.
-But since it is mandatory and typically these data need **not** be set in a configuration file, then it is better designed as a **Command Parameter**, and not designed an additional specific option.
-The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position) and the value is clearly mandatory.
-The disadvantage is that it is not possible to define a default value in a configuration file or environment variable like for options.
+But since it is mandatory and typically these data do not need to be set in a configuration file, it is better designed as a Command Parameter, rather than as an additional specific option.
+The advantages of using a **Command Parameter** instead of an option for the same are that the command line is shorter (no option name, just the position), the value is clearly mandatory and position clearly indicates its role.
+The disadvantage is that it is not possible to define a default value in a configuration file or environment variable using an option value.
 Nevertheless, [Extended Values](#extended-value-syntax) syntax is supported, so it is possible to retrieve a value from the configuration file (using `@preset:`) or environment variable (using `@env:`).
 
 If a **Command Parameters** begins with `-`, then either use the `@val:` syntax (see [Extended Values](#extended-value-syntax)), or use the `--` separator (see below).
 
-A few **Command Parameters** are optional, they are located at the end of the command line.
+A few **Command Parameters** are optional, they are always located at the end of the command line.
 
 #### Options
 
@@ -1555,7 +1558,7 @@ The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda e
 Example:
 
 ```bash
-ascli aoc admin res user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
+ascli aoc admin user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
 ```
 
 ```output
@@ -1580,10 +1583,10 @@ In above example, the same result is obtained with option:
 The percent selector allows identification of an entity by another unique identifier other than the native identifier.
 
 When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command:
-e.g. `ascli aoc admin res user show 1234` where `1234` is the user's identifier.
+e.g. `ascli aoc admin user show 1234` where `1234` is the user's identifier.
 
 Some commands provide the following capability:
-If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `ascli aoc admin res user show %name:john` where `john` is the user name.
+If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `ascli aoc admin user show %name:john` where `john` is the user name.
 
 Syntax: `%<field>:<value>`
 
@@ -2455,7 +2458,7 @@ Like any other option, those can be set either on command line, or in configurat
 Example:
 
 ```bash
-ascli aoc admin res package list --http-options=@json:'{"read_timeout":10.0}'
+ascli aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
 ### Proxy
@@ -4070,7 +4073,7 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 - Using command line
 
 ```bash
-ascli aoc admin res client list
+ascli aoc admin client list
 ```
 
 ```output
@@ -4082,7 +4085,7 @@ ascli aoc admin res client list
 ```
 
 ```bash
-ascli aoc admin res client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
+ascli aoc admin client modify my_BJbQiFw @json:'{"jwt_grant_enabled":true,"explicit_authorization_required":false}'
 ```
 
 ```output
@@ -4107,7 +4110,7 @@ Open the previously generated public key located here: `$HOME/.aspera/ascli/my_p
 ##### Using command line
 
 ```bash
-ascli aoc admin res user list
+ascli aoc admin user list
 ```
 
 ```output
@@ -4194,7 +4197,7 @@ ascli aoc files bearer_token_node /
 ```
 
 ```bash
-ascli aoc admin res node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
+ascli aoc admin node v4 1234 --secret=_ak_secret_here_ bearer_token_node /
 ```
 
 ### Administration
@@ -4205,7 +4208,8 @@ It allows actions (create, update, delete) on **resources**: users, group, nodes
 
 #### Listing resources
 
-The command `aoc admin res <type> list` lists all entities of given type. It uses paging and multiple requests if necessary.
+The command `aoc admin <type> list` lists all entities of given type.
+It uses paging and multiple requests if necessary.
 
 The option `query` can be optionally used.
 It expects a `Hash` using [Extended Value Syntax](#extended-value-syntax), generally provided using: `--query=@json:{...}`.
@@ -4236,19 +4240,19 @@ Examples:
 - List users with `laurent` in name:
 
 ```bash
-ascli aoc admin res user list --query=@json:'{"q":"laurent"}'
+ascli aoc admin user list --query=@json:'{"q":"laurent"}'
 ```
 
 - List users who logged-in before a date:
 
 ```bash
-ascli aoc admin res user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
+ascli aoc admin user list --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
 - List external users and sort in reverse alphabetical order using name:
 
 ```bash
-ascli aoc admin res user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
+ascli aoc admin user list --query=@json:'{"member_of_any_workspace":false,"sort":"-name"}'
 ```
 
 Refer to the AoC API for full list of query parameters, or use the browser in developer mode with the web UI.
@@ -4261,17 +4265,17 @@ Resources are identified by a unique `id`, as well as a unique `name` (case inse
 
 To execute an action on a specific resource, select it using one of those methods:
 
-- **recommended**: give id directly on command line **after the action**: `aoc admin res node show 123`
-- Give name on command line **after the action**: `aoc admin res node show name abc`
-- Provide option `id` : `aoc admin res node show 123`
-- Provide option `name` : `aoc admin res node show --name=abc`
+- **recommended**: give id directly on command line **after the action**: `aoc admin node show 123`
+- Give name on command line **after the action**: `aoc admin node show name abc`
+- Provide option `id` : `aoc admin node show 123`
+- Provide option `name` : `aoc admin node show --name=abc`
 
 #### Creating a resource
 
 New resources (users, groups, workspaces, etc..) can be created using a command like:
 
 ```bash
-ascli aoc admin res create <resource type> @json:'{<...parameters...>}'
+ascli aoc admin create <resource type> @json:'{<...parameters...>}'
 ```
 
 Some of the API endpoints are described [here](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22). Sadly, not all.
@@ -4279,7 +4283,7 @@ Some of the API endpoints are described [here](https://developer.ibm.com/apis/ca
 Nevertheless, it is possible to guess the structure of the creation value by simply dumping an existing resource, and use the same parameters for the creation.
 
 ```bash
-ascli aoc admin res group show 12345 --format=json
+ascli aoc admin group show 12345 --format=json
 ```
 
 ```json
@@ -4291,7 +4295,7 @@ Remove the parameters that are either obviously added by the system: `id`, `crea
 And then craft your command:
 
 ```bash
-ascli aoc admin res group create @json:'{"description":"test to delete","name":"test 1 to delete","saml_group":false}'
+ascli aoc admin group create @json:'{"description":"test to delete","name":"test 1 to delete","saml_group":false}'
 ```
 
 If the command returns an error, example:
@@ -4318,7 +4322,7 @@ The secret is provided using the `secret` option.
 For example in a command like:
 
 ```bash
-ascli aoc admin res node 123 --secret="my_secret_here" v3 info
+ascli aoc admin node 123 --secret="my_secret_here" v3 info
 ```
 
 It is also possible to store secrets in the [secret vault](#secret-vault) and then automatically find the related secret using the [config finder](#configuration-finder).
@@ -4407,7 +4411,7 @@ Current Workspace: Default (default)
 #### Example: Bulk creation of users
 
 ```bash
-ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
+ascli aoc admin user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"},{"email":"dummyuser2@example.com"}]'
 ```
 
 ```output
@@ -4422,7 +4426,7 @@ ascli aoc admin res user create --bulk=yes @json:'[{"email":"dummyuser1@example.
 #### Example: Find with filter and delete
 
 ```bash
-ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,email
+ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id,email
 ```
 
 ```output
@@ -4435,7 +4439,7 @@ ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id,emai
 ```
 
 ```bash
-ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | ascli aoc admin res user delete @lines:@stdin: --bulk=yes
+ascli aoc admin user list --query='@json:{"q":"dummyuser"}' --fields=id --display=data --format=csv | ascli aoc admin user delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
@@ -4450,7 +4454,7 @@ ascli aoc admin res user list --query='@json:{"q":"dummyuser"}' --fields=id --di
 #### Example: Find deactivated users since more than 2 years
 
 ```ruby
-ascli aoc admin res user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+ascli aoc admin user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
 ```
 
 To delete them use the same method as before
@@ -4482,7 +4486,7 @@ ascli aoc admin resource node --name=_node_name_ --secret=_secret_ v4 access_key
 #### Example: Display transfer events (ops/transfer)
 
 ```bash
-ascli aoc admin res node --secret=_secret_ v3 transfer list --query=@json:'[["q","*"],["count",5]]'
+ascli aoc admin node --secret=_secret_ v3 transfer list --query=@json:'[["q","*"],["count",5]]'
 ```
 
 Examples of query:
@@ -4498,13 +4502,13 @@ Examples of query:
 #### Example: Display node events (events)
 
 ```bash
-ascli aoc admin res node --secret=_secret_ v3 events
+ascli aoc admin node --secret=_secret_ v3 events
 ```
 
 #### Example: Display members of a workspace
 
 ```bash
-ascli aoc admin res workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+ascli aoc admin workspace_membership list --fields=member_type,manager,member.email --query=@json:'{"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 ```
 
 ```output
@@ -4532,20 +4536,20 @@ a- Get id of first workspace
 
 ```bash
 WS1='First Workspace'
-WS1ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
+WS1ID=$(ascli aoc admin workspace list --query=@json:'{"q":"'"$WS1"'"}' --select=@json:'{"name":"'"$WS1"'"}' --fields=id --format=csv)
 ```
 
 b- Get id of second workspace
 
 ```bash
 WS2='Second Workspace'
-WS2ID=$(ascli aoc admin res workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
+WS2ID=$(ascli aoc admin workspace list --query=@json:'{"q":"'"$WS2"'"}' --select=@json:'{"name":"'"$WS2"'"}' --fields=id --format=csv)
 ```
 
 c- Extract membership information
 
 ```bash
-ascli aoc admin res workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
+ascli aoc admin workspace_membership list --fields=manager,member_id,member_type,workspace_id --query=@json:'{"workspace_id":'"$WS1ID"'}' --format=jsonpp --output=ws1_members.json
 ```
 
 d- Convert to creation data for second workspace:
@@ -4563,13 +4567,13 @@ jq '[.[] | {member_type,member_id,workspace_id,manager,workspace_id:"'"$WS2ID"'"
 e- Add members to second workspace
 
 ```bash
-ascli aoc admin res workspace_membership create --bulk=yes @json:@file:ws2_members.json
+ascli aoc admin workspace_membership create --bulk=yes @json:@file:ws2_members.json
 ```
 
 #### Example: Get users who did not log since a date
 
 ```bash
-ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
+ascli aoc admin user list --fields=email --query=@json:'{"q":"last_login_at:<2018-05-28"}'
 ```
 
 ```output
@@ -4584,7 +4588,7 @@ ascli aoc admin res user list --fields=email --query=@json:'{"q":"last_login_at:
 #### Example: List **Limited** users
 
 ```bash
-ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
+ascli aoc admin user list --fields=email --select=@json:'{"member_of_any_workspace":false}'
 ```
 
 #### Example: Create a group, add to workspace and add user to group
@@ -4592,7 +4596,7 @@ ascli aoc admin res user list --fields=email --select=@json:'{"member_of_any_wor
 - Create the group and take note of `id`
 
 ```bash
-ascli aoc admin res group create @json:'{"name":"group 1","description":"my super group"}'
+ascli aoc admin group create @json:'{"name":"group 1","description":"my super group"}'
 ```
 
 Group: `11111`
@@ -4600,7 +4604,7 @@ Group: `11111`
 - Get the workspace id
 
 ```bash
-ascli aoc admin res workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
+ascli aoc admin workspace list --query=@json:'{"q":"myworkspace"}' --fields=id --format=csv --display=data
 ```
 
 Workspace: 22222
@@ -4608,13 +4612,13 @@ Workspace: 22222
 - Add group to workspace
 
 ```bash
-ascli aoc admin res workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
+ascli aoc admin workspace_membership create @json:'{"workspace_id":22222,"member_type":"user","member_id":11111}'
 ```
 
 - Get a user's id
 
 ```bash
-ascli aoc admin res user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
+ascli aoc admin user list --query=@json:'{"q":"manu.macron@example.com"}' --fields=id --format=csv --display=data
 ```
 
 User: 33333
@@ -4622,7 +4626,7 @@ User: 33333
 - Add user to group
 
 ```bash
-ascli aoc admin res group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
+ascli aoc admin group_membership create @json:'{"group_id":11111,"member_type":"user","member_id":33333}'
 ```
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders
@@ -4670,7 +4674,7 @@ ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AW
 #### Example: Create registration key to register a node
 
 ```bash
-ascli aoc admin res client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
+ascli aoc admin client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
 ```
 
 ```output
@@ -4680,7 +4684,7 @@ jfqslfdjlfdjfhdjklqfhdkl
 #### Example: Delete all registration keys
 
 ```bash
-ascli aoc admin res client list --fields=id --format=csv|ascli aoc admin res client delete @lines:@stdin: --bulk=yes
+ascli aoc admin client list --fields=id --format=csv|ascli aoc admin client delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
@@ -4731,7 +4735,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
   Then use the returned address for the `url` key to actually create the AoC Node entity:
 
   ```bash
-  ascli aoc admin res node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
+  ascli aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
   ```
 
 Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
@@ -4798,13 +4802,13 @@ ascli aoc packages send @json:'{"name":"my title","note":"my note","recipients":
 #### Example: Send a package to a shared inbox with metadata
 
 ```bash
-ascli aoc packages send --workspace=eudemo @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
+ascli aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
 ```
 
 It is also possible to use identifiers and API parameters:
 
 ```bash
-ascli aoc packages send --workspace=eudemo @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
+ascli aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
 #### Example: List packages in a given shared inbox
@@ -4907,13 +4911,26 @@ ascli aoc files download <single file path>
 
 #### Shared folders
 
-Shared folder created by users are managed through **permissions**.
+Shared folder created by users are managed through **permissions** on node.
+In addition, when a permission is created, an event is sent to AoC to create a **link** file in the user's home folder.
 
 For creation, parameters are the same as for node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
-`ascli` expects the same payload for creation, but it will automatically populate required tags if needed.
+`ascli` expects the same payload for creation.
+`ascli` automatically populates required tags with default values.
+To change them, override with desired values.
 
-Also, the pseudo key `with` is available: it will lookup the name in the contacts and fill the proper type and id.
-The pseudo parameter `link_name` allows changing default **shared as** name.
+Shared folders can be created either:
+
+- by normal users in a workspace: they can share a folder with other users in the same workspace: `aoc files perm`
+- by administrators: they can share a folder with users in any workspace: `aoc admin node do [node id] perm`
+
+In both cases, it is necessary to specify a workspace.
+
+The following optional additional helper keys are supported by `ascli`:
+
+- `with` : Who to shared with. Can be a user name, a group name, or a workspace name. `ascli` will resolve the name to the proper type and id in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action).
+- `link_name` : The name of the link file created in the user's home folder for private links.
+- `as` : The name of the link file created in the user's home folder for admin shared folders.
 
 - List permissions on a shared folder as user
 
@@ -4940,6 +4957,16 @@ ascli aoc files short_link private create _path_here_
 ascli aoc files short_link private list _path_here_
 ascli aoc files short_link public list _path_here_
 ascli aoc files short_link public delete _id_
+```
+
+- Create an admin shared folder and shared with a user or group or workspace
+
+```bash
+ascli aoc admin node do 1234 mkdir folder_on_node
+ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_users"}' --workspace="my ws"
+ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"group 1","as":"folder_for_users"}' --workspace="my ws"
+ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"my ws","as":"folder_for_users"}' --workspace="my ws"
 ```
 
 #### Cross Organization transfers
@@ -4979,7 +5006,7 @@ The command `aoc files find` allows to search for files in a given workspace.
 It works also on `node` resource using the `v4` command:
 
 ```bash
-ascli aoc admin res node --name='my node name' --secret='my_secret_here' v4 find ...
+ascli aoc admin node --name='my node name' --secret='my_secret_here' v4 find ...
 ```
 
 For instructions, refer to section `find` for plugin `node`.
@@ -5013,12 +5040,17 @@ admin dropbox list
 admin dropbox_membership list
 admin group list
 admin kms_profile list
-admin node do %name:my_ak_name --secret=my_ak_secret browse /
-admin node do %name:my_ak_name --secret=my_ak_secret delete /folder1
-admin node do %name:my_ak_name --secret=my_ak_secret mkdir /folder1
-admin node do %name:my_ak_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
-admin node do %name:my_ak_name --secret=my_ak_secret v3 access_key delete testsub1
-admin node do %name:my_ak_name --secret=my_ak_secret v3 events
+admin node do %name:my_node_name --secret=my_ak_secret browse /
+admin node do %name:my_node_name --secret=my_ak_secret delete /folder1
+admin node do %name:my_node_name --secret=my_ak_secret mkdir /folder1
+admin node do %name:my_node_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+admin node do %name:my_node_name --secret=my_ak_secret v3 access_key delete testsub1
+admin node do %name:my_node_name --secret=my_ak_secret v3 events
+admin node do %name:my_node_name delete test_shared_folder
+admin node do %name:my_node_name mkdir test_shared_folder
+admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"","as":"other_name_shared"}' --workspace=my_workspace_shared_inbox
+admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"my_user_email","as":"other_name_shared"}' --workspace=my_workspace_shared_inbox
+admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"my_user_group","as":"other_name_shared"}' --workspace=my_workspace_shared_inbox
 admin node list
 admin operation list
 admin organization show
@@ -6207,26 +6239,26 @@ To keep the content encrypted, use option: `--ts=@json:'{"content_protection":nu
 If you are a regular user, to list work groups you belong to:
 
 ```bash
-ascli faspex5 admin res workgroup list
+ascli faspex5 admin workgroup list
 ```
 
 If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
 Example:
 
 ```bash
-ascli faspex5 admin res shared list --query=@json:'{"all":true}' --fields=id,name
+ascli faspex5 admin shared list --query=@json:'{"all":true}' --fields=id,name
 ```
 
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
 
 ```bash
-ascli faspex5 admin res shared_inboxes invite '%name:the shared inbox' john@example.com
+ascli faspex5 admin shared_inboxes invite '%name:the shared inbox' john@example.com
 ```
 
 It is equivalent to:
 
 ```bash
-ascli faspex5 admin res shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
+ascli faspex5 admin shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
 Other payload parameters are possible for `invite` in this last `Hash` **Command Parameter**:
@@ -6238,13 +6270,13 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 ### Faspex 5: Create Metadata profile
 
 ```bash
-ascli faspex5 admin res metadata_profiles create @json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
+ascli faspex5 admin metadata_profiles create @json:'{"name":"the profile","default":false,"title":{"max_length":200,"illegal_chars":[]},"note":{"max_length":400,"illegal_chars":[],"enabled":false},"fields":[{"ordering":0,"name":"field1","type":"text_area","require":true,"illegal_chars":[],"max_length":100},{"ordering":1,"name":"fff2","type":"option_list","require":false,"choices":["opt1","opt2"]}]}'
 ```
 
 ### Faspex 5: Create a Shared inbox with specific metadata profile
 
 ```bash
-ascli faspex5 admin res shared create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
+ascli faspex5 admin shared create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
 ### Faspex 5: List content in Shared folder and send package from remote source

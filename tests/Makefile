@@ -921,27 +921,27 @@ $(T)aoc8: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc9: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 events
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 events
 	@$(STOP_TEST) $@
 $(T)aoc11: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@$(STOP_TEST) $@
 $(T)aoc12: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
 	@$(STOP_TEST) $@
 $(T)aoc9b: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret browse /
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret browse /
 	@$(STOP_TEST) $@
 $(T)aoc10: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret mkdir /folder1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret mkdir /folder1
 	@$(STOP_TEST) $@
 $(T)aoc13: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.ak_name --secret=@preset:aoc.ak_secret delete /folder1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1
 	@$(STOP_TEST) $@
 $(T)aoc14: $(T).exists
 	@$(START_TEST) $@
@@ -995,6 +995,27 @@ $(T)aoccltreg: $(T).exists
 	$(EXE_MAN) --preset=aoc_admin aoc admin client_registration_token list
 	$(EXE_NO_MAN) --preset=aoc_admin aoc admin client_registration_token list --select=@json:'{"data.name":"test_client_reg1"}' --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)client_reg_id
 	$(EXE_MAN) --preset=aoc_admin aoc admin client_registration_token delete $$(cat $(DIR_TMP)client_reg_id)
+	@$(STOP_TEST) $@
+$(T)aocadmndcr: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_BEG_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder$(EXE_END_IGN)
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name mkdir test_shared_folder
+	@$(STOP_TEST) $@
+$(T)aocadmndsh1: $(T)aocadmndcr
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name perm test_shared_folder create @json:'{"with":"","as":"other_name_shared"}' --workspace=@preset:aoc.workspace_shared_inbox
+	@$(STOP_TEST) $@
+$(T)aocadmndsh2: $(T)aocadmndsh1
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name perm test_shared_folder create @json:@extend:'{"with":"@preset:aoc.user_email@","as":"other_name_shared"}' --workspace=@preset:aoc.workspace_shared_inbox
+	@$(STOP_TEST) $@
+$(T)aocadmndsh3: $(T)aocadmndsh1
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name perm test_shared_folder create @json:@extend:'{"with":"@preset:aoc.user_group@","as":"other_name_shared"}' --workspace=@preset:aoc.workspace_shared_inbox
+	@$(STOP_TEST) $@
+$(T)aocadmndsh4: $(T)aocadmndsh2 $(T)aocadmndsh3
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocadm,$(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg))
 #######################################################################################################################

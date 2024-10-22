@@ -157,7 +157,8 @@ module Aspera
         @workspace_name = workspace
         @cache_user_info = nil
         @cache_url_token_info = nil
-        @context_cache = nil
+        @workspace_info = nil
+        @home_info = nil
         auth_params = {
           type:          :oauth2,
           client_id:     client_id,
@@ -243,11 +244,20 @@ module Aspera
         return @cache_user_info
       end
 
-      # @param application [Symbol] :files or :packages
+      def workspace
+        raise 'internal error: AoC workspace context is not set' if @workspace_info.nil?
+        @workspace_info
+      end
+
+      def home
+        raise 'internal error: AoC home context is not set' if @home_info.nil?
+        @home_info
+      end
+
+      # Set the application context
+      # @param application [Symbol,NilClass] :files or :packages
       # @return [Hash] current context information: workspace, and home node/file if app is "Files"
-      def context(application = nil)
-        return @context_cache unless @context_cache.nil?
-        Aspera.assert(!application.nil?){'application must be set once'}
+      def context=(application)
         Aspera.assert_values(application, %i[files packages])
         ws_id =
           if !public_link.nil?
@@ -271,37 +281,47 @@ module Aspera
           else
             read("workspaces/#{ws_id}")
           end
-        @context_cache = if ws_info.nil?
-          {
-            workspace_id:   nil,
-            workspace_name: 'Shared folders'
-          }
-        else
-          {
-            workspace_id:   ws_info['id'],
-            workspace_name: ws_info['name']
-          }
-        end
-        return @context_cache unless application.eql?(:files)
-        if !public_link.nil?
-          assert_public_link_types(['view_shared_file'])
-          @context_cache[:home_node_id] = public_link['data']['node_id']
-          @context_cache[:home_file_id] = public_link['data']['file_id']
-        elsif !private_link.nil?
-          @context_cache[:home_node_id] = private_link[:node_id]
-          @context_cache[:home_file_id] = private_link[:file_id]
-        elsif ws_info
-          @context_cache[:home_node_id] = ws_info['home_node_id']
-          @context_cache[:home_file_id] = ws_info['home_file_id']
-        else
-          # not part of any workspace, but has some folder shared
-          user_info = current_user_info(exception: true) rescue {'read_only_home_node_id' => nil, 'read_only_home_file_id' => nil}
-          @context_cache[:home_node_id] = user_info['read_only_home_node_id']
-          @context_cache[:home_file_id] = user_info['read_only_home_file_id']
-        end
-        raise "Cannot get user's home node id, check your default workspace or specify one" if @context_cache[:home_node_id].to_s.empty?
-        Log.log.debug{Log.dump(:context, @context_cache)}
-        return @context_cache
+        @workspace_info =
+          if ws_info.nil?
+            {
+              id:   nil,
+              name: 'Shared folders'
+            }
+          else
+            {
+              id:   ws_info['id'],
+              name: ws_info['name']
+            }
+          end
+        Log.log.debug{Log.dump(:context, @workspace_info)}
+        return nil unless application.eql?(:files)
+        @home_info =
+          if !public_link.nil?
+            assert_public_link_types(['view_shared_file'])
+            {
+              node_id: public_link['data']['node_id'],
+              file_id: public_link['data']['file_id']
+            }
+          elsif !private_link.nil?
+            {
+              node_id: private_link[:node_id],
+              file_id: private_link[:file_id]
+            }
+          elsif ws_info
+            {
+              node_id: ws_info['home_node_id'],
+              file_id: ws_info['home_file_id']
+            }
+          else
+            # not part of any workspace, but has some folder shared
+            user_info = current_user_info(exception: true) rescue {'read_only_home_node_id' => nil, 'read_only_home_file_id' => nil}
+            {
+              node_id: user_info['read_only_home_node_id'],
+              file_id: user_info['read_only_home_file_id']
+            }
+          end
+        raise "Cannot get user's home node id, check your default workspace or specify one" if @home_info[:node_id].to_s.empty?
+        Log.log.debug{Log.dump(:context, @home_info)}
       end
 
       # @param node_id [String] identifier of node in AoC
@@ -532,14 +552,14 @@ module Aspera
       ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
       # Callback from Plugins::Node
       # add application specific tags to permissions creation
-      # @param create_param [Hash] parameters for creating permissions
+      # @param perm_data [Hash] parameters for creating permissions
       # @param app_info [Hash] application information
-      def permissions_set_create_params(create_param:, app_info:)
+      def permissions_set_create_params(perm_data:, app_info:)
         # workspace shared folder:
         # access_id = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
-        default_params = {
+        defaults = {
           # 'access_type'   => 'user', # mandatory: user or group
-          # 'access_id'     => access_id, # id of user or group
+          # 'access_id'     => access_id, # id of user or group or special
           'tags' => {
             Transfer::Spec::TAG_RESERVED => {
               'files' => {
@@ -551,6 +571,7 @@ module Aspera
                   'shared_by_name'    => current_user_info['name'],
                   'shared_by_email'   => current_user_info['email'],
                   # 'shared_with_name'  => access_id,
+                  # 'share_as'  => new_name_for_folder,
                   'access_key'        => app_info[:node_info]['access_key'],
                   'node'              => app_info[:node_info]['name']
                 }
@@ -558,34 +579,42 @@ module Aspera
             }
           }
         }
-        create_param.deep_merge!(default_params)
-        if create_param.key?('with')
-          contact_info = lookup_by_name(
-            'contacts',
-            create_param['with'],
-            query: {'current_workspace_id' => app_info[:workspace_id], 'context' => 'share_folder'})
-          create_param.delete('with')
-          create_param['access_type'] = contact_info['source_type']
-          create_param['access_id'] = contact_info['source_id']
-          create_param['tags'][Transfer::Spec::TAG_RESERVED]['files']['workspace']['shared_with_name'] = contact_info['email']
+        perm_data.deep_merge!(defaults)
+        tag_workspace = perm_data['tags'][Transfer::Spec::TAG_RESERVED]['files']['workspace']
+        case perm_data['with']
+        when NilClass
+        when ''
+          perm_data['access_type'] = 'user'
+          perm_data['access_id'] = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
+          tag_workspace['shared_with_name'] = perm_data['access_id']
+        else
+          entity_info = lookup_by_name('contacts', perm_data['with'], query: {'current_workspace_id' => app_info[:workspace_id]})
+          perm_data['access_type'] = entity_info['source_type']
+          perm_data['access_id'] = entity_info['source_id']
+          tag_workspace['shared_with_name'] = entity_info['email']
+        end
+        perm_data.delete('with')
+        if perm_data.key?('as')
+          tag_workspace['share_as'] = perm_data['as']
+          perm_data.delete('as')
         end
         # optional
-        app_info[:opt_link_name] = create_param.delete('link_name')
+        app_info[:opt_link_name] = perm_data.delete('link_name')
       end
 
       # Callback from Plugins::Node
       # send shared folder event to AoC
-      # @param created_data [Hash] response from permission creation
+      # @param event_data [Hash] response from permission creation
       # @param app_info [Hash] hash with app info
       # @param types [Array] event types
-      def permissions_send_event(created_data:, app_info:, types: PERMISSIONS_CREATED)
+      def permissions_send_event(event_data:, app_info:, types: PERMISSIONS_CREATED)
         Aspera.assert_type(types, Array)
         Aspera.assert(!types.empty?)
         event_creation = {
           'types'        => types,
           'node_id'      => app_info[:node_info]['id'],
           'workspace_id' => app_info[:workspace_id],
-          'data'         => created_data
+          'data'         => event_data
         }
         # (optional). The name of the folder to be displayed to the destination user.
         # Use it if its value is different from the "share_as" field.

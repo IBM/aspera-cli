@@ -42,7 +42,12 @@ if true;then
             #ln -s /usr/bin/ar $tebako_bin
             export PATH=$(echo $PATH|tr : \\n|grep -v /binutils/|tr \\n :)
             #tebako setup --Ruby=3.3.4 --prefix=$tebako_root
-            tebako press --Ruby=3.3.4 --prefix=$tebako_root --root=$CLI_ROOT/examples/tebako --entry-point=ascli --output=$CLI_TARGET_EXECUTABLE
+            tebako press \
+            --Ruby=3.3.4 \
+            --prefix=$tebako_root \
+            --root=$CLI_ROOT/examples/tebako \
+            --entry-point=ascli \
+            --output=$CLI_TARGET_EXECUTABLE
             #tebako press --Ruby=3.3.4 --prefix=$tebako_root --root=$CLI_ROOT --entry-point=$CLI_ENTRY_SCRIPT --output=$CLI_TARGET_EXECUTABLE
             exit 0
             ;;

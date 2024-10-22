@@ -2,6 +2,7 @@
 
 * 4.20.0.pre
   * New Features:
+    * `aoc`: Improved usability for creation of Admin shared folders.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
   * Breaking Changes:
