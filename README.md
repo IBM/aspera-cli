@@ -4914,11 +4914,6 @@ ascli aoc files download <single file path>
 Shared folder created by users are managed through **permissions** on node.
 In addition, when a permission is created, an event is sent to AoC to create a **link** file in the user's home folder.
 
-For creation, parameters are the same as for node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/api/API--aspera--node-api#post960739960).
-`ascli` expects the same payload for creation.
-`ascli` automatically populates required tags with default values.
-To change them, override with desired values.
-
 Shared folders can be created either:
 
 - by normal users in a workspace: they can share a folder with other users in the same workspace: `aoc files perm`
@@ -4926,9 +4921,35 @@ Shared folders can be created either:
 
 In both cases, it is necessary to specify a workspace.
 
+Shared folders, and so "permissions" are created using the node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction).
+
+The basic payload (last argument at creation usually specified with `@json:`) is:
+
+```json
+{
+  "file_id": "50",
+  "access_levels": ["list","read","write","delete","mkdir","rename","preview"],
+  "access_type": "user",
+  "access_id": "john@example.com",
+  "tags": {...},
+}
+```
+
+`ascli` expects the same payload for creation.
+`ascli` automatically populates this payload like this:
+
+- `file_id` : the id of the folder to share whose path is specified in the command line
+- `access_levels` : are set by default to full access.
+- `tags` : are set with expected values for AoC: user name who creates, and workspace in which the shared folder is created.
+- `access_type` and `access_id` : need to be set by the user, or using special key as follows.
+
+To change `access_levels`, just provide the list of levels in the `@json:` payload.
+
+In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace id]]`. This is conveniently set by `ascli` using an empty string for the pseudo key `with`. In order to share a folder with a different, special tags are set, but this is conveniently done by `ascli` using the `as` key.
+
 The following optional additional helper keys are supported by `ascli`:
 
-- `with` : Who to shared with. Can be a user name, a group name, or a workspace name. `ascli` will resolve the name to the proper type and id in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action).
+- `with` : Recipient of shared folder. Can be a user name, a group name, or a workspace name. `ascli` will resolve the name to the proper type and id in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below).
 - `link_name` : The name of the link file created in the user's home folder for private links.
 - `as` : The name of the link file created in the user's home folder for admin shared folders.
 
@@ -4968,6 +4989,8 @@ ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"john@exa
 ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"group 1","as":"folder_for_users"}' --workspace="my ws"
 ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"my ws","as":"folder_for_users"}' --workspace="my ws"
 ```
+
+> **Note:** The node can be conveniently identified using the **percent selector** instead of numerical id.
 
 #### Cross Organization transfers
 
