@@ -430,7 +430,7 @@ $(T)f4_remote_src: $(T).exists
 	$(EXE_MAN) faspex source list
 	$(EXE_MAN) faspex source info %name:@preset:faspex4.src --storage=@preset:faspex4_storage
 	$(EXE_MAN) faspex source node %name:@preset:faspex4.src br / --storage=@preset:faspex4_storage
-	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}' --remote_source=@extend:%name:@preset:faspex4.src sample_source.txt
+	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["@preset:misc.email_internal@"]}' --remote-source=@extend:%name:@preset:faspex4.src sample_source.txt
 	@$(STOP_TEST) $@
 $(T)f4_misc: $(T).exists
 	@$(START_TEST) $@
@@ -602,7 +602,7 @@ $(T)nd_ak2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)nd_ak3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name upload 'faux:///testfile1?1k' --default_ports=no
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name upload 'faux:///testfile1?1k' --default-ports=no
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name download testfile1 --to-folder=$(DIR_TMP).
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name show /testfile1
 	$(EXE_BEG_ERR) node --preset=node_ak_adm access_key do @preset:aoc.ak_name thumbnail /testfile1$(EXE_END_ERR)
@@ -953,7 +953,7 @@ $(T)aoc15: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc16: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers users --once_only=yes
+	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers users --once-only=yes
 #	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers nodes
 	@$(STOP_TEST) $@
 $(T)aoc_adm_res_01: $(T).exists
@@ -1017,7 +1017,7 @@ $(T)aocadmndsh4: $(T)aocadmndsh2 $(T)aocadmndsh3
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocadm,$(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg))
+$(eval $(call test_suite_all,taocadm,$(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg $(T)aocadmndsh4))
 #######################################################################################################################
 $(T)aocat4: $(T).exists
 	@$(START_TEST) $@
