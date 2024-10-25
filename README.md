@@ -37,6 +37,11 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
+This documentation does not provide ALL the detailed description of all options and commands.
+The reason is that most commands and payloads are directly Rest API calls on the various Aspera products.
+So, to get the full description of all options and commands, refer to the official Aspera API documentation.
+(To see which API is used, set option `--log-level=debug`)
+
 ### When to use and when not to use
 
 `ascli` is designed to be used as a command line tool to:
@@ -65,6 +70,16 @@ Using APIs (application REST API and transfer SDK) will prove to be easier to de
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, `ascli` is perfect.
+
+So, which is Aspera's CLI ? ``ascli`` or `ascp`
+
+`ascp` is the low level Aspera command line for **transfers**.
+It is in fact the implementation of the FASP protocol.
+So, ANY Aspera transfer leads to one ascp process running on client side and another on server side.
+`ascp` can be used as a command line, but it is very low level, and practically it can be used on command line only if there is no Aspera web ap (AoC, Faspex, etc..) and ONLY to do a transfer (send/receive), not for any operation on Aspera apps (e.g. listing remote files).
+`ascp` does not provide a configuration file to store credentials or options, it does not resume automatically on transfer error.
+
+In fact, ``ascli`` can do everything that `ascp` does, and much more, and in an easier way.
 
 ### Notations, Shell, Examples
 
@@ -6345,6 +6360,10 @@ ascli faspex5 packages receive INIT --once-only=yes
 There are two types of invitations of package submission: public or private.
 
 Public invitations are for external users, provide just the email address.
+
+```bash
+ascli faspex5 invitations create @json:'{"email_address":"john@example.com"}' --fields=access_url
+```
 
 Private invitations are for internal users, provide the user or shared inbox identifier through field `recipient_name`.
 

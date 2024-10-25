@@ -35,6 +35,11 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
+This documentation does not provide ALL the detailed description of all options and commands.
+The reason is that most commands and payloads are directly Rest API calls on the various Aspera products.
+So, to get the full description of all options and commands, refer to the official Aspera API documentation.
+(To see which API is used, set option `--log-level=debug`)
+
 ### When to use and when not to use
 
 <%=tool%> is designed to be used as a command line tool to:
@@ -63,6 +68,16 @@ Using APIs (application REST API and transfer SDK) will prove to be easier to de
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, <%=tool%> is perfect.
+
+So, which is Aspera's CLI ? `<%=tool%>` or `ascp`
+
+`ascp` is the low level Aspera command line for **transfers**.
+It is in fact the implementation of the FASP protocol.
+So, ANY Aspera transfer leads to one ascp process running on client side and another on server side.
+`ascp` can be used as a command line, but it is very low level, and practically it can be used on command line only if there is no Aspera web ap (AoC, Faspex, etc..) and ONLY to do a transfer (send/receive), not for any operation on Aspera apps (e.g. listing remote files).
+`ascp` does not provide a configuration file to store credentials or options, it does not resume automatically on transfer error.
+
+In fact, `<%=tool%>` can do everything that `ascp` does, and much more, and in an easier way.
 
 ### Notations, Shell, Examples
 
@@ -5549,6 +5564,10 @@ There are two types of invitations of package submission: public or private.
 
 Public invitations are for external users, provide just the email address.
 
+```bash
+<%=cmd%> faspex5 invitations create @json:'{"email_address":"john@example.com"}' --fields=access_url
+```
+
 Private invitations are for internal users, provide the user or shared inbox identifier through field `recipient_name`.
 
 ### Faspex 5: Cleanup packages
@@ -5634,7 +5653,7 @@ Environment variables at set to the values provided by the web hook which are th
 If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
 
 ```bash
-curl -H "Authorization: $(ascli <%=cmd%> bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
+curl -H "Authorization: $(<%=cmd%> <%=cmd%> bearer)" https://faspex5.example.com/aspera/faspex/api/v5/api_endpoint_here
 ```
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
@@ -5808,13 +5827,13 @@ Supported commands are listed in Share's API documentation:
 Example:
 
 ```bash
-ascli shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
+<%=cmd%> shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
-share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
+share_id=$(<%=cmd%> shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
 
-user_id=$(ascli shares admin user list --select=@json:'{"username":"entity1"}' --fields=id)
+user_id=$(<%=cmd%> shares admin user list --select=@json:'{"username":"entity1"}' --fields=id)
 
-ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
+<%=cmd%> shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
 ```
 
 To figure out the entities payload, for example for creation, refer to the API documentation above.
