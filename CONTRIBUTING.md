@@ -284,6 +284,10 @@ Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) an
 
 A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
 
+```bash
+make GEM_VERSION=4.11.0 single
+```
+
 ## Long Term Implementation and delivery improvements
 
 - replace rest and oauth classes with ruby standard gems:

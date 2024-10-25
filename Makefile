@@ -141,12 +141,12 @@ clean::
 	rm -f Dockerfile
 ##################################
 # Single executable : make single
-CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(shell uname -ms|tr ' ' '-')
+CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(shell uname -ms|tr ' ' '-')
 EXE_BUILDER=$(DIR_TOP)examples/build_exec
 single:$(CLI_EXECUTABLE)
 .PHONY: single
 $(CLI_EXECUTABLE):
-	$(EXE_BUILDER) $(CLI_EXECUTABLE) $(CLI_PATH)
+	$(EXE_BUILDER) $(CLI_EXECUTABLE) $(CLI_PATH) $(GEM_NAME) $(GEM_VERSION) $(DIR_TMP)
 clean::
 	rm -f $(CLI_EXECUTABLE)
 ##################################
