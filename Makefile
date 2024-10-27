@@ -141,7 +141,7 @@ clean::
 	rm -f Dockerfile
 ##################################
 # Single executable : make single
-CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(shell uname -ms|tr ' ' '-')
+CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(shell $(CLI_PATH) conf platform)
 EXE_BUILDER=$(DIR_TOP)examples/build_exec
 single:$(CLI_EXECUTABLE)
 .PHONY: single
