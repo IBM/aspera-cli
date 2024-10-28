@@ -499,12 +499,31 @@ SDK:</p>
 software, or using an embedded command:</p>
 <div class="sourceCode" id="cb43"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install</span></code></pre></div>
+<p>This command will retrieve the list of current archives for all
+platforms from: <a href="https://ibm.biz/sdk_location"
+class="uri">https://ibm.biz/sdk_location</a> and then select the latest
+version for the current platform. In this case, the default value for
+option <code>sdk_url</code> is <code>DEF</code>.</p>
 <p>If a local SDK installation is preferred instead of fetching from
 internet: one can specify the location of the SDK file:</p>
+<ol type="1">
+<li><p>Locate the appropriate SDK archive for your platform, by visiting
+either:</p>
+<ul>
+<li><a
+href="https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20SDK%22">IBM
+API Hub</a></li>
+<li>or looking at this file: <a href="https://ibm.biz/sdk_location"
+class="uri">https://ibm.biz/sdk_location</a></li>
+</ul></li>
+<li><p>Download the SDK archive using a browser, or <code>curl</code> or
+<code>wget</code>, etc…</p>
 <div class="sourceCode" id="cb44"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> sdk.zip https://ibm.biz/aspera_transfer_sdk</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-Lso</span> sdk.zip https://...</span></code></pre></div></li>
+<li><p>Install using the local archive</p>
 <div class="sourceCode" id="cb45"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div></li>
+</ol>
 <p>The format is: <code>file:///&lt;path&gt;</code>, where
 <code>&lt;path&gt;</code> can be either a relative path (not starting
 with <code>/</code>), or an absolute path.</p>

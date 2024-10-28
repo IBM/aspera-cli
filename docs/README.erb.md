@@ -524,15 +524,27 @@ This can be installed either be installing an Aspera transfer software, or using
 <%=cmd%> config ascp install
 ```
 
+This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then select the latest version for the current platform.
+In this case, the default value for option `sdk_url` is `DEF`.
+
 If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
 
-```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
-```
+1. Locate the appropriate SDK archive for your platform, by visiting either:
 
-```bash
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
-```
+    - [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20SDK%22)
+    - or looking at this file: <https://ibm.biz/sdk_location>
+
+2. Download the SDK archive using a browser, or `curl` or `wget`, etc...
+
+    ```bash
+    curl -Lso sdk.zip https://...
+    ```
+
+3. Install using the local archive
+
+    ```bash
+    <%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+    ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
 
