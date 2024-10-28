@@ -57,7 +57,6 @@ module Aspera
         APP_NAME_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js' # cspell: disable-line
-        TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
         DEMO_SERVER = 'demo'
         DEMO_PRESET = 'demoserver' # cspell: disable-line
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
@@ -86,7 +85,6 @@ module Aspera
           :CONF_PRESET_GLOBAL,
           :ASPERA_PLUGINS_FOLDERNAME,
           :ASPERA,
-          :TRANSFER_SDK_ARCHIVE_URL,
           :DEMO_SERVER,
           :DEMO_PRESET,
           :EMAIL_TEST_TEMPLATE,
@@ -218,7 +216,7 @@ module Aspera
           # Transfer SDK options
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Ascp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
-          options.declare(:sdk_url, 'URL to get SDK', default: TRANSFER_SDK_ARCHIVE_URL)
+          options.declare(:sdk_url, 'URL to get SDK', default: SpecialValues::DEF)
           options.declare(:sdk_folder, 'SDK folder path', handler: {o: Ascp::Installation.instance, m: :sdk_folder})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # email options

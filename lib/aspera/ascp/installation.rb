@@ -43,9 +43,12 @@ module Aspera
       # all ascp files (in SDK)
       EXE_FILES = %i[ascp ascp4 async].freeze
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
-      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER, :DEFAULT_ASPERA_CONF, :FILES
+      TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
+      TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
+      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_ARCHIVE_URL, :TRANSFER_SDK_LOCATION_URL
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
+
       # set ascp executable path
       def ascp_path=(v)
         @path_to_ascp = v
@@ -236,8 +239,10 @@ module Aspera
 
       # download aspera SDK or use local file
       # extracts ascp binary for current system architecture
+      # @param sdk_url [String] URL to SDK archive, or SpecialValues::DEF
       # @return ascp version (from execution)
       def install_sdk(sdk_url)
+        sdk_url = TRANSFER_SDK_ARCHIVE_URL if sdk_url.eql?('DEF')
         # SDK is organized by architecture, check this first, in case architecture is not supported
         arch_filter = "#{Environment.architecture}/"
         require 'zip'
