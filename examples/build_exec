@@ -13,62 +13,44 @@ GEM_NAME=$3
 GEM_VERSION=$4
 DIR_TMP=$(realpath $5)
 
-local=true
-
 echo "Building: $(basename $CLI_EXECUTABLE)"
 
 # tebako compilation
 tebako_env=$DIR_TMP/tebako-env
 # project files (gem)
 tebako_root=$DIR_TMP/tebako-root
-#
-entry_point=$(basename $CLI_PATH)
+# only provide the name, not path
+tebako_entry=$(basename $CLI_PATH)
+tebako_output=$CLI_EXECUTABLE
 
-if $local;then
-    gem install tebako
-    mkdir -p $tebako_env $tebako_root
-    (cd $tebako_root && gem fetch $GEM_NAME:$GEM_VERSION)
-    case $(uname -s) in
-    Darwin)
-        brew update
-        brew install bison flex binutils libffi double-conversion boost jemalloc fmt glog gnu-sed bash
-        brew install pkg-config gdbm zlib ncurses libevent libsodium lz4 xz libyaml openssl@3
-        export PATH=/opt/homebrew/opt/flex/bin:/opt/homebrew/opt/bison/bin:$(echo $PATH|tr : \\n|grep -v /binutils/|tr \\n :)
-        ;;
-    Linux)
-        #tebako_root=/mnt/w
-        #tebako press --root=$tebako_root --entry-point=ascli --output=$tebako_root/ascli.exe --Ruby=3.3.3 
-        #tebako_prefix="podman run -it --rm -v $PWD:$tebako_root ghcr.io/tamatebako/tebako-ubuntu-20.04:0.8.6"
-        #tebako_opts=--patchelf
-        ;;
-    *)
-        echo "This OS is not supported." >&2
-        exit 1
-        ;;
-    esac
-    exec tebako press --root=$tebako_root --entry-point=$entry_point --output=$CLI_EXECUTABLE --prefix=$tebako_env
-else
-    # https://github.com/you54f/ruby-packer
-    # https://github.com/YOU54F/ruby-packer/releases
-    set -e
-    FOLDER="$(dirname $0)/../tmp"
-    RUBYC="$FOLDER/rubyc"
-    if test ! -e "$RUBYC"; then
-        mkdir -p "$FOLDER"
-        case $(uname -sm|tr ' ' -) in
-            Darwin-arm64)
-                curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Darwin-arm64.tar.gz | tar -xz -C "$FOLDER"
-                mv "$FOLDER/rubyc-Darwin-arm64" "$RUBYC"
-                ;;
-            Linux-x86_64)
-                curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Linux-x86_64.tar.gz | tar -xz -C "$FOLDER"
-                mv "$FOLDER/rubyc-Linux-x86_64" "$RUBYC"
-                ;;
-            *)
-                echo "This architecture is not supported." >&2
-                exit 1
-                ;;
-        esac
-    fi
-    exec "$RUBYC" -o "$CLI_EXECUTABLE" "$CLI_PATH"
-fi
+container_tag=alpine-3.17
+#container_tag=ubuntu-20.04
+
+gem install tebako
+mkdir -p $tebako_env $tebako_root
+(cd $tebako_root && gem fetch $GEM_NAME:$GEM_VERSION)
+case $(uname -s) in
+Darwin)
+    brew update
+    # install tools
+    brew install bash binutils bison flex gnu-sed lz4 pkg-config xz
+    # install libs
+    brew install boost double-conversion fmt gdbm glog jemalloc libevent libffi libsodium libyaml ncurses openssl@3 zlib
+    # make sure tools are reachable
+    export PATH=/opt/homebrew/opt/flex/bin:/opt/homebrew/opt/bison/bin:$PATH
+    # remove binutils from path so that macos `ar` is used
+    export PATH=$(echo $PATH|tr : \\n|grep -v /binutils/|tr \\n :)
+    ;;
+Linux)
+    tebako_root=/mnt/w
+    tebako_prefix="podman run -it --rm -v $PWD:$tebako_root ghcr.io/tamatebako/tebako-${container_tag}:0.8.6"
+    tebako_opts=--patchelf
+    tebako_output=$tebako_root/$(basename $CLI_EXECUTABLE)
+    ;;
+*)
+    echo "This OS is not supported." >&2
+    exit 1
+    ;;
+esac
+set -x
+exec $tebako_prefix tebako press --root=$tebako_root --entry-point=$tebako_entry --output=$tebako_output --prefix=$tebako_env $tebako_opts

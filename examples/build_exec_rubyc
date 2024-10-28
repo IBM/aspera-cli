@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -e
+
+if test $# -ne 5; then
+    echo "Usage: $0 <CLI_EXECUTABLE> <CLI_PATH> <GEM_NAME> <GEM_VERSION> <DIR_TMP>" 1>&2
+    exit 1
+fi
+
+CLI_EXECUTABLE=$1
+CLI_PATH=$(realpath $2)
+GEM_NAME=$3
+GEM_VERSION=$4
+DIR_TMP=$(realpath $5)
+
+echo "Building: $(basename $CLI_EXECUTABLE)"
+
+# https://github.com/you54f/ruby-packer
+# https://github.com/you54f/ruby-packer/releases
+set -e
+FOLDER="$(dirname $0)/../tmp"
+RUBYC="$FOLDER/rubyc"
+if test ! -e "$RUBYC"; then
+    mkdir -p "$FOLDER"
+    case $(uname -sm|tr ' ' -) in
+        Darwin-arm64)
+            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Darwin-arm64.tar.gz | tar -xz -C "$FOLDER"
+            mv "$FOLDER/rubyc-Darwin-arm64" "$RUBYC"
+            ;;
+        Linux-x86_64)
+            curl -L https://github.com/YOU54F/ruby-packer/releases/download/rel-20230812/rubyc-Linux-x86_64.tar.gz | tar -xz -C "$FOLDER"
+            mv "$FOLDER/rubyc-Linux-x86_64" "$RUBYC"
+            ;;
+        *)
+            echo "This architecture is not supported." >&2
+            exit 1
+            ;;
+    esac
+fi
+exec "$RUBYC" -o "$CLI_EXECUTABLE" "$CLI_PATH"
