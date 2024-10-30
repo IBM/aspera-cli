@@ -490,7 +490,7 @@ module Aspera
             containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
             # add trailing slash to force last link to be resolved
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.push('').join(Api::Node::PATH_SEPARATOR))
+            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Api::Node::PATH_SEPARATOR), true)
             result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
@@ -522,14 +522,14 @@ module Aspera
               transfer_spec
             end
           when :upload
-            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND))
+            apifid = @api_node.resolve_api_fid(top_file_id, transfer.destination_folder(Transfer::Spec::DIRECTION_SEND), true)
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_SEND)))
           when :download
             source_paths = transfer.ts_source_paths
             # special case for AoC : all files must be in same folder
             source_folder = source_paths.shift['source']
             # if a single file: split into folder and path
-            apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
+            apifid = @api_node.resolve_api_fid(top_file_id, source_folder, true)
             if source_paths.empty?
               # get precise info in this element
               file_info = apifid[:api].read("files/#{apifid[:file_id]}")
@@ -539,10 +539,7 @@ module Aspera
                 src_dir_elements = source_folder.split(Api::Node::PATH_SEPARATOR)
                 # filename is the last one, source folder is what remains
                 source_paths = [{'source' => src_dir_elements.pop}]
-                # add trailing / so that link is resolved, if it's a shared folder
-                src_dir_elements.push('')
-                source_folder = src_dir_elements.join(Api::Node::PATH_SEPARATOR)
-                apifid = @api_node.resolve_api_fid(top_file_id, source_folder)
+                apifid = @api_node.resolve_api_fid(top_file_id, src_dir_elements.join(Api::Node::PATH_SEPARATOR), true)
               when 'link', 'folder'
                 # single source is 'folder' or 'link'
                 # TODO: add this ? , 'destination'=>file_info['name']

@@ -229,16 +229,15 @@ module Aspera
       end
 
       # Navigate the path from given file id on current node, and return the node and file id of target.
-      # If the path ends with a "/", the content of the folder is listed.
+      # If the path ends with a "/" or process_last_link is true then if the last item in path is a link, it is followed.
       # @param top_file_id [String] id initial file id
-      # @param path [String] file or folder path (end with / to ensure last link is followed)
+      # @param path [String] file or folder path (end with "/" is like setting process_last_link)
+      # @param process_last_link [Boolean] if true, follow the last link
       # @return [Hash] {.api,.file_id}
-      def resolve_api_fid(top_file_id, path)
+      def resolve_api_fid(top_file_id, path, process_last_link=false)
         Aspera.assert_type(top_file_id, String)
         Aspera.assert_type(path, String)
-        # if last element is a link and followed by "/", we list the content of that folder, else we return the link
-        process_last_link = path.end_with?(PATH_SEPARATOR)
-        # keep only non-empty elements
+        process_last_link ||= path.end_with?(PATH_SEPARATOR)
         path_elements = path.split(PATH_SEPARATOR).reject(&:empty?)
         return {api: self, file_id: top_file_id} if path_elements.empty?
         resolve_state = {path: path_elements, result: nil, process_last_link: process_last_link}
