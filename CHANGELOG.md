@@ -5,6 +5,7 @@
     * `aoc`: Improved usability for creation of Admin shared folders.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
+    * `aoc`: #165 aoc mkdir now follows the last link of containing folder
   * Breaking Changes:
     * Internal: Basic REST calls now return data directly. (no more `data` key). For advanced calls, use `call`.
     * Internal: Transfer SDK download is now a 2-step procedure: First get the YAML file from github with URLS for the various platforms and versions, and then download the archive from the official IBM repository.

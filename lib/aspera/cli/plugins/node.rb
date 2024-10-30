@@ -489,7 +489,8 @@ module Aspera
           when :mkdir
             containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
-            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Api::Node::PATH_SEPARATOR))
+            # add trailing slash to force last link to be resolved
+            apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.push('').join(Api::Node::PATH_SEPARATOR))
             result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})
             return Main.result_status("created: #{result['name']} (id=#{result['id']})")
           when :rename
