@@ -228,9 +228,10 @@ module Aspera
         end
       end
 
-      # Navigate the path from given file id
+      # Navigate the path from given file id on current node, and return the node and file id of target.
+      # If the path ends with a "/", the content of the folder is listed.
       # @param top_file_id [String] id initial file id
-      # @param path [String]  file path
+      # @param path [String] file or folder path (end with / to ensure last link is followed)
       # @return [Hash] {.api,.file_id}
       def resolve_api_fid(top_file_id, path)
         Aspera.assert_type(top_file_id, String)
