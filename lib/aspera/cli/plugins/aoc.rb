@@ -324,7 +324,7 @@ module Aspera
             # server side is transfer server
             # in same workspace
             push_pull = options.get_next_argument('direction', accept_list: %i[push pull])
-            source_folder = options.get_next_argument('folder of source files', validation: String)
+            source_folder = options.get_next_argument('folder or source files', validation: String)
             case push_pull
             when :push
               client_direction = Transfer::Spec::DIRECTION_SEND
