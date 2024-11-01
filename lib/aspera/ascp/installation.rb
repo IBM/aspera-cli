@@ -87,7 +87,7 @@ module Aspera
       def use_ascp_from_product(product_name)
         if product_name.eql?(FIRST_FOUND)
           pl = Products.installed_products.first
-          raise "no FASP installation found\nPlease check manual on how to install FASP." if pl.nil?
+          raise "ascp found: no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
         else
           pl = Products.installed_products.find{|i|i[:name].eql?(product_name)}
           raise "no such product installed: #{product_name}" if pl.nil?
