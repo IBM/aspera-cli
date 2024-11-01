@@ -47,6 +47,14 @@ Linux)
     tebako_opts=--patchelf
     tebako_output=$tebako_root/$(basename $CLI_EXECUTABLE)
     ;;
+LinuxLocal)
+    dnf module reset ruby
+    dnf module install ruby:3.3
+    dnf install -y cmake git bash sudo autoconf boost-devel flex bison make clang binutils-devel libevent-devel libacl-devel sed python3 pkgconfig curl lz4-devel openssl-devel zlib-devel xz zip unzip tar xz-devel elfutils-devel libffi-devel gdbm-devel ncurses-devel readline-devel ruby-devel gettext-devel brotli-devel clang libxslt-devel
+    echo TODO
+    exit 1
+    dnf install 
+    ;;
 *)
     echo "This OS is not supported." >&2
     exit 1
