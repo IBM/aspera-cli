@@ -255,11 +255,11 @@ make docker_push
 
 ### Specific version image build
 
-To build a specific version: set envvar `GEM_VERSION` and `make` with option `-e`:
+To build a specific version: override `make` macro `GEM_VERSION`:
 
 ```bash
-GEM_VERSION=4.11.0 make -e docker
-GEM_VERSION=4.11.0 make -e docker_push
+make docker GEM_VERSION=4.11.0
+make docker_push GEM_VERSION=4.11.0
 ```
 
 > **Note:** This does not use the locally generated gem file.
@@ -285,7 +285,7 @@ Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) an
 A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
 
 ```bash
-make GEM_VERSION=4.11.0 single
+make single GEM_VERSION=4.11.0
 ```
 
 ## Long Term Implementation and delivery improvements
