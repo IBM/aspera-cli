@@ -1,11 +1,6 @@
 # must be first target
 all::
 
-# configuration file used for tests, template is generated in "docs"
-# this is the actual conf file, create your own from template located in "docs"
-ifndef ASPERA_CLI_TEST_CONF_FILE
-$(error ASPERA_CLI_TEST_CONF_FILE is not set. Refer to CONTRIBUTING.md.)
-endif
 DIR_PRIV=$(ASPERA_CLI_PRIVATE)/
 
 # just the name of the command line tool as in bin folder

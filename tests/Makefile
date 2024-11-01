@@ -12,6 +12,12 @@ DIR_TOP=../
 
 include $(DIR_TOP)common.mak
 
+# configuration file used for tests, template is generated in "docs"
+# this is the actual conf file, create your own from template located in "docs"
+ifndef ASPERA_CLI_TEST_CONF_FILE
+$(error ASPERA_CLI_TEST_CONF_FILE is not set. Refer to CONTRIBUTING.md.)
+endif
+
 # macros to define a test suite
 # defines targets: $(1), skip_$(1)
 define test_suite

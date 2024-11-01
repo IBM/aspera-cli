@@ -192,8 +192,9 @@ SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
 # main function to generate template configuration file for tests
 # hide sensitive information
 def generate_generic_conf
-  local_config = ARGV.first
-  raise 'missing argument: local config file' if local_config.nil?
+  local_config = ENV['ASPERA_CLI_TEST_CONF_FILE']
+  raise 'missing env var ASPERA_CLI_TEST_CONF_FILE: local config file' if local_config.nil?
+  raise "Missing conf file: #{local_config}" if !File.exist?(local_config)
   configuration = YAML.load_file(local_config)
   configuration.each do |k, preset_hash|
     preset_hash.each do |param_name, param_value|

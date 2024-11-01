@@ -20,8 +20,8 @@ all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF
 doc: all
 
 # generate template configuration file for tests, remove own secrets
-$(TMPL_CONF_FILE_PATH): $(ASPERA_CLI_TEST_CONF_FILE) $(DIR_DOC)doc_tools.rb
-	$(DOC_TOOL) generate_generic_conf $(ASPERA_CLI_TEST_CONF_FILE) > $@
+$(TMPL_CONF_FILE_PATH): $(DIR_DOC)doc_tools.rb
+	$(DOC_TOOL) generate_generic_conf > $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
 
