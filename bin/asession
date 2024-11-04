@@ -16,6 +16,7 @@ PARAM_LOG_LEVEL = 'loglevel'
 PARAM_AGENT = 'agent'
 # by default go to /tmp/username.filelist
 PARAM_TMP_FILE_LIST_FOLDER = 'file_list_folder'
+PARAM_SDK = 'sdk'
 # place transfer spec in that
 SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
 SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
@@ -25,7 +26,7 @@ def assert_usage(assertion, error_message)
   $stderr.puts('USAGE')
   $stderr.puts('    asession')
   $stderr.puts('    asession -h|--help')
-  $stderr.puts('    asession <session spec extended value>')
+  $stderr.puts('    asession [<session spec extended value>]')
   $stderr.puts('    ')
   $stderr.puts('    If no argument is provided, default will be used: @json:@stdin')
   $stderr.puts('    -h, --help display this message')
@@ -34,11 +35,12 @@ def assert_usage(assertion, error_message)
   $stderr.puts("       the JSON description itself, e.g. @json:'{\"xx\":\"yy\",...}'")
   $stderr.puts('       @json:@stdin, if the JSON is provided from stdin')
   $stderr.puts('       @json:@file:<path>, if the JSON is provided from a file')
-  $stderr.puts('    The following keys are recognized:')
+  $stderr.puts('    The following keys are recognized in session spec:')
   $stderr.puts("       #{PARAM_SPEC} : mandatory, contains the transfer spec")
   $stderr.puts("       #{PARAM_LOG_LEVEL} : modify log level (to stderr)")
   $stderr.puts("       #{PARAM_AGENT} : modify transfer agent parameters, e.g. ascp_args")
   $stderr.puts("       #{PARAM_TMP_FILE_LIST_FOLDER} : location of temporary files")
+  $stderr.puts("       #{PARAM_SDK} : location of SDK (ascp)")
   $stderr.puts('    Asynchronous commands can be provided on STDIN, examples:')
   $stderr.puts('       {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}')
   $stderr.puts('       {"type":"START","source":"xx","destination":"yy"}')
@@ -48,8 +50,6 @@ def assert_usage(assertion, error_message)
   $stderr.puts(%Q(    echo '{"#{PARAM_SPEC}":{"remote_host":...}}'|asession @json:@stdin))
   Process.exit(0)
 end
-Aspera::Ascp::Installation.instance.sdk_folder = File.join(Dir.home, '.aspera', 'sdk')
-
 parameter_source_err_msg = ' (argument), did you specify: "@json:" ?'
 # by default assume JSON input on stdin if no argument
 if ARGV.empty?
@@ -67,16 +67,16 @@ rescue
   assert_usage(false, "Cannot parse argument: #{session_argument}")
 end
 # ensure right type
-assert_usage(session_spec.is_a?(Hash), "The value must be a hash table#{parameter_source_err_msg}")
-assert_usage(session_spec[PARAM_SPEC].is_a?(Hash), "the value must contain key #{PARAM_SPEC}")
+assert_usage(session_spec.is_a?(Hash), "The value must be a Hash#{parameter_source_err_msg}")
+assert_usage(session_spec[PARAM_SPEC].is_a?(Hash), "The value must contain key #{PARAM_SPEC} with Hash value")
 # additional debug capability
-if session_spec.key?(PARAM_LOG_LEVEL)
-  Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL]
-end
+Aspera::Log.instance.level = session_spec[PARAM_LOG_LEVEL] if session_spec.key?(PARAM_LOG_LEVEL)
 # possibly override temp folder
 if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
   Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER]
 end
+session_spec[PARAM_SDK] = File.join(Dir.home, '.aspera', 'sdk') unless session_spec.key?(PARAM_SDK)
+Aspera::Ascp::Installation.instance.sdk_folder = session_spec[PARAM_SDK]
 session_spec[PARAM_AGENT] = {} unless session_spec.key?(PARAM_AGENT)
 agent_params = session_spec[PARAM_AGENT]
 agent_params['quiet'] = true
