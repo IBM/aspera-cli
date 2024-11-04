@@ -8,13 +8,13 @@ module Aspera
   end
   class << self
     # the block is executed in the context of the Aspera module
-    def assert(assertion, info = nil, level: 2, exception_class: AssertError)
+    def assert(assertion, info = nil, exception_class: AssertError)
       raise InternalError, 'bad assert: both info and block given' unless info.nil? || !block_given?
       return if assertion
       message = 'assertion failed'
       info = yield if block_given?
       message = "#{message}: #{info}" if info
-      message = "#{message}: #{caller(level..level).first}"
+      message = "#{message}: #{caller.find{|call|!call.start_with?(__FILE__)}}"
       raise exception_class, message
     end
 
@@ -22,12 +22,12 @@ module Aspera
     # @param value [Object] the value to check
     # @param type [Class] the expected type
     def assert_type(value, type, exception_class: AssertError)
-      assert(value.is_a?(type), level: 3, exception_class: exception_class){"#{block_given? ? "#{yield}: " : nil}expecting #{type}, but have #{value.inspect}"}
+      assert(value.is_a?(type), exception_class: exception_class){"#{block_given? ? "#{yield}: " : nil}expecting #{type}, but have #{value.inspect}"}
     end
 
     # assert that value is one of the given values
     def assert_values(value, values, exception_class: AssertError)
-      assert(values.include?(value), level: 3, exception_class: exception_class) do
+      assert(values.include?(value), exception_class: exception_class) do
         "#{block_given? ? "#{yield}: " : nil}expecting one of #{values.inspect}, but have #{value.inspect}"
       end
     end
