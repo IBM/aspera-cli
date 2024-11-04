@@ -29,10 +29,21 @@ module Aspera
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
 
       class << self
+        # temp file list files are created here
+        def file_list_folder=(value)
+          @file_list_folder = value
+          return if @file_list_folder.nil?
+
+          FileUtils.mkdir_p(@file_list_folder)
+          TempFileManager.instance.cleanup_expired(@file_list_folder)
+        end
+
         # Temp folder for file lists, must contain only file lists
         # because of garbage collection takes any file there
-        # this could be refined, as , for instance, on macos, temp folder is already user specific
-        @file_list_folder = TempFileManager.instance.new_file_path_global('asession_filelists') # cspell:disable-line
+        # this could be refined, as, for example, on macos, temp folder is already user specific
+        def file_list_folder
+          @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
+        end
 
         # @param formatter [Cli::Formatter] formatter to use
         # @return a table suitable to display in manual
@@ -67,9 +78,7 @@ module Aspera
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end
-            if options.key?(:enum)
-              param[:description] += "\nAllowed values: #{options[:enum].join(', ')}"
-            end
+            param[:description] += "\nAllowed values: #{options[:enum].join(', ')}" if options.key?(:enum)
             # replace "solidus" HTML entity with its text value
             param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
@@ -91,17 +100,6 @@ module Aspera
         def ascp_args_file_list?(ascp_args)
           ascp_args&.any?{|i|FILE_LIST_OPTIONS.include?(i)}
         end
-
-        # temp file list files are created here
-        def file_list_folder=(value)
-          @file_list_folder = value
-          return if @file_list_folder.nil?
-          FileUtils.mkdir_p(@file_list_folder)
-          TempFileManager.instance.cleanup_expired(@file_list_folder)
-        end
-
-        # static methods
-        attr_reader :file_list_folder
       end
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
