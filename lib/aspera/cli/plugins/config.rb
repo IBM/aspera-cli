@@ -124,8 +124,8 @@ module Aspera
           end
 
           # deep clone hash so that it does not get modified in case of display and secret hide
-          def protect_presets(val)
-            return JSON.parse(JSON.generate(val))
+          def deep_clone(val)
+            return Marshal.load(Marshal.dump(val))
           end
 
           # return product family folder (~/.aspera)
@@ -519,7 +519,7 @@ module Aspera
             current = current[name]
             raise Cli::Error, "No such config preset: #{include_path}" if current.nil?
           end
-          current = self.class.protect_presets(current) unless current.is_a?(String)
+          current = self.class.deep_clone(current) unless current.is_a?(String)
           return ExtendedValue.instance.evaluate(current)
         end
 
@@ -764,9 +764,9 @@ module Aspera
             return {type: :value_list, data: @config_presets.keys, name: 'name'}
           when :overview
             # display process modifies the value (hide secrets): we do not want to save removed secrets
-            return {type: :config_over, data: self.class.protect_presets(@config_presets)}
+            return {type: :config_over, data: self.class.deep_clone(@config_presets)}
           when :show
-            return {type: :single_object, data: self.class.protect_presets(@config_presets[name])}
+            return {type: :single_object, data: self.class.deep_clone(@config_presets[name])}
           when :delete
             @config_presets.delete(name)
             return Main.result_status("Deleted: #{name}")
@@ -1298,7 +1298,7 @@ module Aspera
           @config_presets.each_value do |v|
             next unless v.is_a?(Hash)
             conf_url = v['url'].is_a?(String) ? canonical_url(v['url']) : nil
-            return self.class.protect_presets(v) if conf_url.eql?(url) && v['username'].eql?(username)
+            return self.class.deep_clone(v) if conf_url.eql?(url) && v['username'].eql?(username)
           end
           nil
         end
