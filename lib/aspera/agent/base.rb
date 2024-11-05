@@ -14,22 +14,6 @@ module Aspera
           Aspera::Agent.const_get(agent.to_s.capitalize).new(**options)
         end
 
-        # compute options from user provided and default options
-        def to_move_options(default:, options:)
-          result = options.symbolize_keys
-          available = default.map{|k, v|"#{k}(#{v})"}.join(', ')
-          result.each_key do |k|
-            Aspera.assert_values(k, default.keys){"transfer agent parameter: #{k}"}
-            # check it is the expected type: too limiting, as we can have an Integer or Float, or symbol and string
-            # raise "Invalid value for transfer agent parameter: #{k}, expect #{default[k].class.name}" unless default[k].nil? || v.is_a?(default[k].class)
-          end
-          default.each do |k, v|
-            raise "Missing required agent parameter: #{k}. Parameters: #{available}" if v.eql?(:required) && !result.key?(k)
-            result[k] = v unless result.key?(k)
-          end
-          return result
-        end
-
         # discover available agents
         def agent_list
           base_class = File.basename(__FILE__)
