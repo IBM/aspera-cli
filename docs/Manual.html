@@ -9188,17 +9188,25 @@ option <code>notify_template</code>.</p>
 <p>The environment provided contains the following additional
 variables:</p>
 <ul>
-<li><code>subject</code></li>
-<li><code>body</code></li>
-<li><code>global_transfer_status</code></li>
-<li><code>ts</code></li>
+<li><code>subject</code> : a default subject including transfer
+status</li>
+<li><code>status</code> : global status of transfer</li>
+<li><code>ts</code> : the <a
+href="#transfer-specification"><strong>transfer-spec</strong></a> used
+for the transfer</li>
+<li><code>from_email</code> : email of sender (from <code>smtp</code>
+configuration)</li>
+<li><code>from_name</code> : name of sender (from <code>smtp</code>
+configuration)</li>
+<li><code>to</code> : recipient of the email (from
+<code>notify_to</code>)</li>
 </ul>
 <p>Example of template:</p>
 <pre class="text"><code>From: &lt;%=from_name%&gt; &lt;&lt;%=from_email%&gt;&gt;
 To: &lt;&lt;%=to%&gt;&gt;
 Subject: &lt;%=subject%&gt;
 
-Transfer is: &lt;%=global_transfer_status%&gt;</code></pre>
+Transfer is: &lt;%=status%&gt;</code></pre>
 <h1 data-number="23" id="tool-asession"><span
 class="header-section-number">23</span> Tool: <code>asession</code></h1>
 <p>This gem comes with a second executable tool providing a simplified
@@ -9364,24 +9372,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb513-1"><a href
 <span id="cb513-2"><a href="#cb513-2" aria-hidden="true" tabindex="-1"></a><span class="ex">USAGE</span></span>
 <span id="cb513-3"><a href="#cb513-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span></span>
 <span id="cb513-4"><a href="#cb513-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="at">-h</span><span class="kw">|</span><span class="ex">--help</span></span>
-<span id="cb513-5"><a href="#cb513-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> <span class="op">&lt;</span>session spec extended value<span class="op">&gt;</span></span>
+<span id="cb513-5"><a href="#cb513-5" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> [<span class="op">&lt;</span>session spec extended value<span class="op">&gt;</span>]</span>
 <span id="cb513-6"><a href="#cb513-6" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb513-7"><a href="#cb513-7" aria-hidden="true" tabindex="-1"></a>    <span class="ex">If</span> no argument is provided, default will be used: @json:@stdin</span>
 <span id="cb513-8"><a href="#cb513-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">-h,</span> <span class="at">--help</span> display this message</span>
-<span id="cb513-9"><a href="#cb513-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>session <span class="ex">spec</span> extended value<span class="op">&gt;</span> a dictionary value <span class="er">(</span><span class="ex">Hash</span><span class="kw">)</span></span>
+<span id="cb513-9"><a href="#cb513-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;</span>session <span class="ex">spec</span> extended value<span class="op">&gt;</span> a dictionary <span class="er">(</span><span class="ex">Hash</span><span class="kw">)</span></span>
 <span id="cb513-10"><a href="#cb513-10" aria-hidden="true" tabindex="-1"></a>    <span class="ex">The</span> value can be either:</span>
 <span id="cb513-11"><a href="#cb513-11" aria-hidden="true" tabindex="-1"></a>       <span class="ex">the</span> JSON description itself, e.g. @json:<span class="st">&#39;{&quot;xx&quot;:&quot;yy&quot;,...}&#39;</span></span>
 <span id="cb513-12"><a href="#cb513-12" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@stdin,</span> if the JSON is provided from stdin</span>
 <span id="cb513-13"><a href="#cb513-13" aria-hidden="true" tabindex="-1"></a>       <span class="ex">@json:@file:</span><span class="op">&lt;</span>path<span class="op">&gt;</span>, if the JSON is provided from a file</span>
-<span id="cb513-14"><a href="#cb513-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Parameter</span> spec is mandatory, it contains the transfer spec</span>
-<span id="cb513-15"><a href="#cb513-15" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Asynchronous</span> commands can be provided on STDIN, examples:</span>
-<span id="cb513-16"><a href="#cb513-16" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="dt">}</span></span>
-<span id="cb513-17"><a href="#cb513-17" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;xx&quot;</span><span class="op">,</span><span class="st">&quot;destination&quot;</span><span class="dt">:</span><span class="st">&quot;yy&quot;</span><span class="dt">}</span></span>
-<span id="cb513-18"><a href="#cb513-18" aria-hidden="true" tabindex="-1"></a>       <span class="ex">{</span><span class="st">&quot;type&quot;</span><span class="ex">:</span><span class="st">&quot;DONE&quot;</span><span class="ex">}</span></span>
-<span id="cb513-19"><a href="#cb513-19" aria-hidden="true" tabindex="-1"></a><span class="ex">Note:</span> debug information can be placed on STDERR, using the <span class="st">&quot;loglevel&quot;</span> parameter in session spec <span class="er">(</span><span class="va">debug</span><span class="op">=</span>0<span class="kw">)</span></span>
-<span id="cb513-20"><a href="#cb513-20" aria-hidden="true" tabindex="-1"></a><span class="ex">EXAMPLES</span></span>
-<span id="cb513-21"><a href="#cb513-21" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> @json:<span class="st">&#39;{&quot;spec&quot;:{&quot;remote_host&quot;:&quot;demo.asperasoft.com&quot;,&quot;remote_user&quot;:&quot;asperaweb&quot;,&quot;ssh_port&quot;:33001,&quot;remote_password&quot;:&quot;demoaspera&quot;,&quot;direction&quot;:&quot;receive&quot;,&quot;destination_root&quot;:&quot;./test.dir&quot;,&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-tiny/200KB.1&quot;}]}}&#39;</span></span>
-<span id="cb513-22"><a href="#cb513-22" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&#39;{&quot;spec&quot;:{&quot;remote_host&quot;:...}}&#39;</span><span class="kw">|</span><span class="ex">asession</span> @json:@stdin</span></code></pre></div>
+<span id="cb513-14"><a href="#cb513-14" aria-hidden="true" tabindex="-1"></a>    <span class="ex">The</span> following keys are recognized in session spec:</span>
+<span id="cb513-15"><a href="#cb513-15" aria-hidden="true" tabindex="-1"></a>       <span class="ex">spec</span> : mandatory, contains the transfer spec</span>
+<span id="cb513-16"><a href="#cb513-16" aria-hidden="true" tabindex="-1"></a>       <span class="ex">loglevel</span> : modify log level <span class="er">(</span><span class="ex">to</span> stderr<span class="kw">)</span></span>
+<span id="cb513-17"><a href="#cb513-17" aria-hidden="true" tabindex="-1"></a>       <span class="ex">agent</span> : modify transfer agent parameters, e.g. ascp_args</span>
+<span id="cb513-18"><a href="#cb513-18" aria-hidden="true" tabindex="-1"></a>       <span class="ex">file_list_folder</span> : location of temporary files</span>
+<span id="cb513-19"><a href="#cb513-19" aria-hidden="true" tabindex="-1"></a>       <span class="ex">sdk</span> : location of SDK <span class="er">(</span><span class="ex">ascp</span><span class="kw">)</span></span>
+<span id="cb513-20"><a href="#cb513-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Asynchronous</span> commands can be provided on STDIN, examples:</span>
+<span id="cb513-21"><a href="#cb513-21" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;/aspera-test-dir-tiny/200KB.2&quot;</span><span class="dt">}</span></span>
+<span id="cb513-22"><a href="#cb513-22" aria-hidden="true" tabindex="-1"></a>       <span class="dt">{</span><span class="st">&quot;type&quot;</span><span class="dt">:</span><span class="st">&quot;START&quot;</span><span class="op">,</span><span class="st">&quot;source&quot;</span><span class="dt">:</span><span class="st">&quot;xx&quot;</span><span class="op">,</span><span class="st">&quot;destination&quot;</span><span class="dt">:</span><span class="st">&quot;yy&quot;</span><span class="dt">}</span></span>
+<span id="cb513-23"><a href="#cb513-23" aria-hidden="true" tabindex="-1"></a>       <span class="ex">{</span><span class="st">&quot;type&quot;</span><span class="ex">:</span><span class="st">&quot;DONE&quot;</span><span class="ex">}</span></span>
+<span id="cb513-24"><a href="#cb513-24" aria-hidden="true" tabindex="-1"></a><span class="ex">EXAMPLES</span></span>
+<span id="cb513-25"><a href="#cb513-25" aria-hidden="true" tabindex="-1"></a>    <span class="ex">asession</span> @json:<span class="st">&#39;{&quot;spec&quot;:{&quot;remote_host&quot;:&quot;demo.asperasoft.com&quot;,&quot;remote_user&quot;:&quot;asperaweb&quot;,&quot;ssh_port&quot;:33001,&quot;remote_password&quot;:&quot;demoaspera&quot;,&quot;direction&quot;:&quot;receive&quot;,&quot;destination_root&quot;:&quot;./test.dir&quot;,&quot;paths&quot;:[{&quot;source&quot;:&quot;/aspera-test-dir-tiny/200KB.1&quot;}]}}&#39;</span></span>
+<span id="cb513-26"><a href="#cb513-26" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&#39;{&quot;spec&quot;:{&quot;remote_host&quot;:...}}&#39;</span><span class="kw">|</span><span class="ex">asession</span> @json:@stdin</span></code></pre></div>
 <h1 data-number="24" id="ruby-module-aspera"><span
 class="header-section-number">24</span> Ruby Module:
 <code>Aspera</code></h1>

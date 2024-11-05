@@ -1138,6 +1138,8 @@ module Aspera
         end
 
         # send email using ERB template
+        # @param email_template_default [String] default template, can be overriden by option
+        # @param values [Hash] values to be used in template, keys with default: to, from_name, from_email
         def send_email_template(email_template_default: nil, values: {})
           values[:to] ||= options.get_option(:notify_to, mandatory: true)
           notify_template = options.get_option(:notify_template, mandatory: email_template_default.nil?) || email_template_default

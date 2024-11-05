@@ -6520,10 +6520,12 @@ A default e-mail template is used, but it can be overridden with option `notify_
 
 The environment provided contains the following additional variables:
 
-- `subject`
-- `body`
-- `global_transfer_status`
-- `ts`
+- `subject` : a default subject including transfer status
+- `status` : global status of transfer
+- `ts` : the [**transfer-spec**](#transfer-specification) used for the transfer
+- `from_email` : email of sender (from `smtp` configuration)
+- `from_name` : name of sender (from `smtp` configuration)
+- `to` : recipient of the email (from `notify_to`)
 
 Example of template:
 
@@ -6532,7 +6534,7 @@ From: <%='<'%>%=from_name%> <<%='<'%>%=from_email%>>
 To: <<%='<'%>%=to%>>
 Subject: <%='<'%>%=subject%>
 
-Transfer is: <%='<'%>%=global_transfer_status%>
+Transfer is: <%='<'%>%=status%>
 ```
 
 ## Tool: `asession`

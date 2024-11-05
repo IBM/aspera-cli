@@ -7457,10 +7457,12 @@ A default e-mail template is used, but it can be overridden with option `notify_
 
 The environment provided contains the following additional variables:
 
-- `subject`
-- `body`
-- `global_transfer_status`
-- `ts`
+- `subject` : a default subject including transfer status
+- `status` : global status of transfer
+- `ts` : the [**transfer-spec**](#transfer-specification) used for the transfer
+- `from_email` : email of sender (from `smtp` configuration)
+- `from_name` : name of sender (from `smtp` configuration)
+- `to` : recipient of the email (from `notify_to`)
 
 Example of template:
 
@@ -7469,7 +7471,7 @@ From: <%=from_name%> <<%=from_email%>>
 To: <<%=to%>>
 Subject: <%=subject%>
 
-Transfer is: <%=global_transfer_status%>
+Transfer is: <%=status%>
 ```
 
 ## Tool: `asession`
@@ -7553,21 +7555,25 @@ asession -h
 USAGE
     asession
     asession -h|--help
-    asession <session spec extended value>
+    asession [<session spec extended value>]
     
     If no argument is provided, default will be used: @json:@stdin
     -h, --help display this message
-    <session spec extended value> a dictionary value (Hash)
+    <session spec extended value> a dictionary (Hash)
     The value can be either:
        the JSON description itself, e.g. @json:'{"xx":"yy",...}'
        @json:@stdin, if the JSON is provided from stdin
        @json:@file:<path>, if the JSON is provided from a file
-    Parameter spec is mandatory, it contains the transfer spec
+    The following keys are recognized in session spec:
+       spec : mandatory, contains the transfer spec
+       loglevel : modify log level (to stderr)
+       agent : modify transfer agent parameters, e.g. ascp_args
+       file_list_folder : location of temporary files
+       sdk : location of SDK (ascp)
     Asynchronous commands can be provided on STDIN, examples:
        {"type":"START","source":"/aspera-test-dir-tiny/200KB.2"}
        {"type":"START","source":"xx","destination":"yy"}
        {"type":"DONE"}
-Note: debug information can be placed on STDERR, using the "loglevel" parameter in session spec (debug=0)
 EXAMPLES
     asession @json:'{"spec":{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
     echo '{"spec":{"remote_host":...}}'|asession @json:@stdin

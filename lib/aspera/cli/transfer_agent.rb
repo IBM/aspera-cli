@@ -22,7 +22,7 @@ module Aspera
         To: <<%=to%>>
         Subject: <%=subject%>
 
-        Transfer is: <%=global_transfer_status%>
+        Transfer is: <%=status%>
 
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
@@ -65,6 +65,16 @@ module Aspera
         @opt_mgr.declare(:transfer, 'Type of transfer agent', values: TRANSFER_AGENTS, default: :direct)
         @opt_mgr.declare(:transfer_info, 'Parameters for transfer agent', types: Hash, handler: {o: self, m: :transfer_info})
         @opt_mgr.parse_options!
+        @notification_cb = nil
+        if !@opt_mgr.get_option(:notify_to).nil?
+          @notification_cb = ->(transfer_spec, global_status) do
+            @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
+              subject: "#{PROGRAM_NAME} transfer: #{global_status}",
+              status:  global_status,
+              ts:      transfer_spec
+            })
+          end
+        end
       end
 
       def option_transfer_spec; @transfer_spec_command_line; end
@@ -251,20 +261,8 @@ module Aspera
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # list of: :success or "error message string"
         result = agent_instance.wait_for_completion
-        send_email_transfer_notification(transfer_spec, result)
+        @notification_cb&.call(transfer_spec, self.class.session_status(result))
         return result
-      end
-
-      def send_email_transfer_notification(transfer_spec, statuses)
-        return if @opt_mgr.get_option(:notify_to).nil?
-        global_status = self.class.session_status(statuses)
-        email_vars = {
-          global_transfer_status: global_status,
-          subject:                "#{PROGRAM_NAME} transfer: #{global_status}",
-          body:                   "Transfer is: #{global_status}",
-          ts:                     transfer_spec
-        }
-        @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: email_vars)
       end
 
       # shut down if agent requires it
