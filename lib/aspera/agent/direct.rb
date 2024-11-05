@@ -197,24 +197,23 @@ module Aspera
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
           Log.log.debug('management io closed')
-          last_event = processor.last_event
           # check that last status was received before process exit
-          if last_event.is_a?(Hash)
-            case last_event['Type']
-            when 'ERROR'
-              if /bearer token/i.match?(last_event['Description']) &&
-                  session[:token_regenerator].respond_to?(:refreshed_transfer_token)
-                # regenerate token here, expired, or error on it
-                # Note: in multi-session, each session will have a different one.
-                Log.log.warn('Regenerating token for transfer')
-                env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
-              end
-              raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
-            when 'DONE'
-              nil
-            else
-              raise "unexpected last event type: #{last_event['Type']}"
+          last_event = processor.last_event
+          raise Transfer::Error, "internal: no management event (#{last_event.class})" unless last_event.is_a?(Hash)
+          case last_event['Type']
+          when 'ERROR'
+            if /bearer token/i.match?(last_event['Description']) &&
+                session[:token_regenerator].respond_to?(:refreshed_transfer_token)
+              # regenerate token here, expired, or error on it
+              # Note: in multi-session, each session will have a different one.
+              Log.log.warn('Regenerating token for transfer')
+              env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
+            raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
+          when 'DONE'
+            nil
+          else
+            raise Transfer::Error, "unexpected last event type: #{last_event['Type']}, #{last_event['Description']}"
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
