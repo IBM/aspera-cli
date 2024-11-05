@@ -24,6 +24,7 @@ module Aspera
 
     class AoC < Aspera::Rest
       PRODUCT_NAME = 'Aspera on Cloud'
+      # use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
       SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
@@ -267,9 +268,10 @@ module Aspera
             Log.log.debug('Using workspace of private link')
             private_link[:workspace_id]
           elsif @workspace_name.eql?(DEFAULT_WORKSPACE)
-            Log.log.debug('Using default workspace'.green)
-            raise 'User does not have default workspace, please specify workspace' if current_user_info['default_workspace_id'].nil?
-            current_user_info['default_workspace_id']
+            if !current_user_info['default_workspace_id'].nil?
+              Log.log.debug('Using default workspace'.green)
+              current_user_info['default_workspace_id']
+            end
           elsif @workspace_name.nil?
             nil
           else
