@@ -40,7 +40,15 @@ endef
 T=$(DIR_TMP)t/
 
 # test group: principal
-all:: $(DIR_TOP).gems_checked
+all:: $(DIR_TOP).gems_checked $(T).ssh_ok
+
+# ensure ssh is enabled on macos only
+$(T).ssh_ok: $(T).exists
+	uname -s | grep -q Darwin && sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
+	sudo systemsetup -getremotelogin
+	touch $@
+clean::
+	rm -f $(T).ssh_ok
 
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
