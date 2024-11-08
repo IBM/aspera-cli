@@ -5,6 +5,7 @@ require 'aspera/environment'
 require 'aspera/data_repository'
 require 'aspera/ascp/products'
 require 'aspera/log'
+require 'aspera/rest'
 require 'aspera/assert'
 require 'aspera/web_server_simple'
 require 'English'
@@ -27,7 +28,7 @@ module Aspera
       include Singleton
       # protobuf generated files from sdk
       EXT_RUBY_PROTOBUF = '_pb.rb'
-      RB_SDK_FOLDER = 'lib'
+      RB_SDK_SUBFOLDER = 'lib'
       DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
         <?xml version='1.0' encoding='UTF-8'?>
         <CONF version="2">
@@ -46,7 +47,7 @@ module Aspera
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
       SDK_ARCHIVE_FOLDERS = ['/bin/', '/aspera/'].freeze
-      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_FOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_ARCHIVE_URL, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
+      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_ARCHIVE_URL, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -57,12 +58,6 @@ module Aspera
 
       def ascp_path
         path(:ascp)
-      end
-
-      def sdk_ruby_folder
-        ruby_pb_folder = File.join(sdk_folder, RB_SDK_FOLDER)
-        FileUtils.mkdir_p(ruby_pb_folder)
-        return ruby_pb_folder
       end
 
       # location of SDK files
@@ -257,81 +252,85 @@ module Aspera
         return info.first['url']
       end
 
-      # Archive extrators call this to manage files
-      def extract_select_files(entry_name, entry_stream)
-        dest_folder = nil
-        # binaries
-        dest_folder = sdk_folder if SDK_ARCHIVE_FOLDERS.any?{|i|entry_name.include?(i)}
-        # ruby adapters
-        dest_folder = sdk_ruby_folder if entry_name.end_with?(EXT_RUBY_PROTOBUF)
-        return if dest_folder.nil?
-        File.open(File.join(dest_folder, File.basename(entry_name)), 'wb') do |output_stream|
-          IO.copy_stream(entry_stream, output_stream)
-        end
-      end
-
-      # Windows and Mac use zip
-      def extract_sdk_zip(sdk_archive_path)
-        require 'zip'
-        # extract files from archive
-        Zip::File.open(sdk_archive_path) do |zip_file|
-          zip_file.each do |entry|
-            next if entry.name.end_with?('/')
-            extract_select_files(entry.name, entry.get_input_stream)
-          end
-        end
-      end
-
-      # Other Unixes use tar.gz
-      def extract_sdk_tar_gz(sdk_archive_path)
-        require 'zlib'
-        require 'rubygems/package'
-        Zlib::GzipReader.open(sdk_archive_path) do |gzip|
-          Gem::Package::TarReader.new(gzip) do |tar|
-            tar.each do |entry|
-              next if entry.directory?
-              extract_select_files(entry.full_name, entry)
+      def extract_archive_files(sdk_archive_path)
+        raise 'missing block' unless block_given?
+        case sdk_archive_path
+        # Windows and Mac use zip
+        when /\.zip$/
+          require 'zip'
+          # extract files from archive
+          Zip::File.open(sdk_archive_path) do |zip_file|
+            zip_file.each do |entry|
+              next if entry.name.end_with?('/')
+              yield(entry.name, entry.get_input_stream)
             end
           end
+        # Other Unixes use tar.gz
+        when /\.tar\.gz/
+          require 'zlib'
+          require 'rubygems/package'
+          Zlib::GzipReader.open(sdk_archive_path) do |gzip|
+            Gem::Package::TarReader.new(gzip) do |tar|
+              tar.each do |entry|
+                next if entry.directory?
+                yield(entry.full_name, entry)
+              end
+            end
+          end
+        else
+          raise "unknown archive extension: #{sdk_archive_path}"
         end
       end
 
       # download aspera SDK or use local file
       # extracts ascp binary for current system architecture
-      # @param sdk_url [String] URL to SDK archive, or SpecialValues::DEF
+      # @param url [String] URL to SDK archive, or SpecialValues::DEF
       # @return ascp version (from execution)
-      def install_sdk(sdk_url)
-        sdk_url = sdk_url_for_platform if sdk_url.eql?('DEF')
-        if sdk_url.start_with?('file:')
+      def install_sdk(url: nil, folder: nil, backup: true, with_exe: true, &block)
+        url = sdk_url_for_platform if url.nil? || url.eql?('DEF')
+        folder = sdk_folder if folder.nil?
+        subfolder_lambda = block
+        if subfolder_lambda.nil?
+          subfolder_lambda = ->(name) do
+            if SDK_ARCHIVE_FOLDERS.any?{|i|name.include?(i)}
+              '/'
+            elsif name.end_with?(EXT_RUBY_PROTOBUF)
+              RB_SDK_SUBFOLDER
+            end
+          end
+        end
+        if url.start_with?('file:')
           # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
-          raise 'use format: file:///<path>' unless sdk_url.start_with?(FILE_SCHEME_PREFIX)
-          sdk_archive_path = sdk_url[FILE_SCHEME_PREFIX.length..-1]
+          raise 'use format: file:///<path>' unless url.start_with?(FILE_SCHEME_PREFIX)
+          sdk_archive_path = url[FILE_SCHEME_PREFIX.length..-1]
           delete_archive = false
         else
-          sdk_archive_path = File.join(Dir.tmpdir, File.basename(sdk_url))
-          Aspera::Rest.new(base_url: sdk_url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_archive_path)
+          sdk_archive_path = File.join(Dir.tmpdir, File.basename(url))
+          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_archive_path)
           delete_archive = true
         end
         # rename old install
-        if !Dir.empty?(sdk_folder)
+        if backup && !Dir.empty?(folder)
           Log.log.warn('Previous install exists, renaming folder.')
-          File.rename(sdk_folder, "#{sdk_folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
+          File.rename(folder, "#{folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
-        case sdk_archive_path
-        when /\.zip$/
-          extract_sdk_zip(sdk_archive_path)
-        when /\.tar\.gz/
-          extract_sdk_tar_gz(sdk_archive_path)
-        else
-          raise "unknown archive extension: #{sdk_archive_path}"
+        extract_archive_files(sdk_archive_path) do |entry_name, entry_stream|
+          subfolder = subfolder_lambda.call(entry_name)
+          next if subfolder.nil?
+          dest_folder = File.join(folder, subfolder)
+          FileUtils.mkdir_p(dest_folder)
+          File.open(File.join(dest_folder, File.basename(entry_name)), 'wb') do |output_stream|
+            IO.copy_stream(entry_stream, output_stream)
+          end
         end
         File.unlink(sdk_archive_path) rescue nil if delete_archive # Windows may give error
+        return unless with_exe
         # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)
         path(:aspera_conf)
         sdk_ascp_file = Products.ascp_filename
-        sdk_ascp_path = File.join(sdk_folder, sdk_ascp_file)
+        sdk_ascp_path = File.join(folder, sdk_ascp_file)
         raise "No #{sdk_ascp_file} found in SDK archive" unless File.exist?(sdk_ascp_path)
         EXE_FILES.each do |exe_sym|
           exe_path = sdk_ascp_path.gsub('ascp', exe_sym.to_s)
@@ -344,7 +343,7 @@ module Aspera
         transferd_version = get_exe_version(sdk_daemon_path, 'version')
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
-        File.write(File.join(sdk_folder, Products::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        File.write(File.join(folder, Products::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
         return sdk_name, sdk_version
       end
 

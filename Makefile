@@ -163,3 +163,11 @@ reek:
 semgrep:
 	semgrep scan --config auto
 # cspell:ignore pubkey gemdir oneline demoaspera firstword noout pubout semgrep
+##################################
+# transfer SDK stub generate
+PROTOS=$(DIR_TMP)protos/
+GRPC_DEST=$(DIR_LIB)
+grpc:
+	mkdir -p $(PROTOS)
+	$(DIR_TOP)examples/get_proto_file.rb $(PROTOS)
+	grpc_tools_ruby_protoc -I $(PROTOS) --ruby_out=$(GRPC_DEST) --grpc_out=$(GRPC_DEST) $(PROTOS)transfer.proto

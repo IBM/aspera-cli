@@ -226,6 +226,14 @@ Then procedure is as follows:
   SIGNING_KEY=/path/to/vault/gem-private_key.pem make check-cert-key
   ```
 
+### gRPC stubs for transfer SDK
+
+Update with:
+
+```bash
+make grpc
+```
+
 ## Docker image build
 
 The `Dockerfile.tmpl.erb` template allows customization of the optional copying of the `aspera-cli.gem` file, as opposed to installing from rubygems.org. It also supports customizing the retrieval of the SDK.

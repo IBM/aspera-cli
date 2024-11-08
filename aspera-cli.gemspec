@@ -67,6 +67,7 @@ Gem::Specification.new do |spec|
   # development gems
   # spec.add_development_dependency('bundler', '~> 2.4')
   # spec.add_development_dependency('bundler', '>= 2.4.0')
+  spec.add_development_dependency('grpc-tools', '~> 1.67.0')
   spec.add_development_dependency('rake', '~> 13.0')
   spec.add_development_dependency('reek', '~> 6.1.0')
   spec.add_development_dependency('rspec', '~> 3.0')

@@ -7,6 +7,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'json'
 require 'uri'
+require 'transfer_services_pb'
 
 module Aspera
   module Agent
@@ -48,14 +49,12 @@ module Aspera
         **base_options
       )
         super(**base_options)
-        is_local_auto_port = @url.eql?(AUTO_LOCAL_TCP_PORT)
-        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@keep || @external)
-        # load SDK stub class on demand, as it's an optional gem
-        $LOAD_PATH.unshift(Ascp::Installation.instance.sdk_ruby_folder)
-        require 'transfer_services_pb'
+        @keep = keep
+        is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
+        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@keep || external)
         # keep PID for optional shutdown
         @daemon_pid = nil
-        daemon_endpoint = @url
+        daemon_endpoint = url
         Log.log.debug{Log.dump(:daemon_endpoint, daemon_endpoint)}
         # retry loop
         begin
@@ -66,16 +65,14 @@ module Aspera
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
           Log.log.debug{"Daemon info: #{get_info_response}"}
-          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || @external || @keep
+          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || external || @keep
           at_exit{shutdown}
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
-          raise if @external || !e.message.include?('failed to connect')
+          raise if external || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
           Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
-          Log.log.warn('no daemon present, starting daemon...') if @external
-          # location of daemon binary
-          sdk_folder = File.realpath(File.join(Ascp::Installation.instance.sdk_ruby_folder, '..'))
+          Log.log.warn('no daemon present, starting daemon...') if external
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
           Aspera.assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
@@ -86,8 +83,8 @@ module Aspera
             fasp_runtime: {
               use_embedded: false,
               user_defined: {
-                bin: sdk_folder,
-                etc: sdk_folder
+                bin: Ascp::Installation.instance.sdk_folder,
+                etc: Ascp::Installation.instance.sdk_folder
               }
             }
           }
