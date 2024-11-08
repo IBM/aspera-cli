@@ -322,6 +322,7 @@ module Aspera
         Log.log.trace1{Log.dump(:req_body, req.body)}
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
+        bss_tries ||= 5
         # initialize with number of initial retries allowed, nil gives zero
         tries_remain_redirect = @redirect_max.to_i if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
@@ -379,6 +380,8 @@ module Aspera
         RestErrorAnalyzer.instance.raise_on_error(req, result)
         File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
+        # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
+        retry if e.response.code.eql?('422') && e.response.body.include?('failed: connect timed out') && (bss_tries -= 1).nonzero?
         # not authorized: oauth token expired
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
