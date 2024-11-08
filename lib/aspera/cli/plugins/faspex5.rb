@@ -613,8 +613,7 @@ module Aspera
             list_key = res_command.to_s
             list_key = 'groups' if res_command.eql?(:saml_groups)
             sub_command = options.get_next_command(%i[create list modify delete])
-            if sub_command.eql?(:create) && options.get_option(:value).nil?
-              raise "use option 'value' to provide saml group_id and access (refer to API)" unless res_command.eql?(:members)
+            if sub_command.eql?(:create) && res_command.eql?(:members)
               # first arg is one user name or list of users
               users = options.get_next_argument('user id, %name:, or Array')
               users = [users] unless users.is_a?(Array)
@@ -631,8 +630,7 @@ module Aspera
                 end
               end
               access = options.get_next_argument('level', mandatory: false, accept_list: %i[submit_only standard shared_inbox_admin], default: :standard)
-              # TODO: unshift to command line parameters instead of using deprecated option "value"
-              options.set_option(:value, {user: users.map{|u|{id: u, access: access}}})
+              options.unshift_next_argument({user: users.map{|u|{id: u, access: access}}})
             end
             return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
                      lookup_entity_by_field(

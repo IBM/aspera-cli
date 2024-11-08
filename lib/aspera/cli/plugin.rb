@@ -25,9 +25,6 @@ module Aspera
       class << self
         def declare_generic_options(options)
           options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
-          options.declare(
-            :value, 'Value for create, update, list filter', types: Hash,
-            deprecation: '(4.14) Use positional value for create/modify or option: query for list/delete')
           options.declare(:property, 'Name of property to set (modify operation)')
           options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
           options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)
@@ -234,13 +231,10 @@ module Aspera
       # @param type [Class] expected type of value, either a Class, an Array of Class
       # @param bulk [Boolean] if true, value must be an Array of <type>
       # @param default [Object] default value if not provided
-      # TODO: when deprecation of `value` is completed: remove line with :value
       def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
-        value = options.get_option(:value)
-        Log.log.warn("option `value` is deprecated. Use positional parameter for #{command}") unless value.nil?
         value = options.get_next_argument(
           "parameters for #{command}#{description.nil? ? '' : " (#{description})"}", mandatory: default.nil?,
-          validation: bulk ? Array : type) if value.nil?
+          validation: bulk ? Array : type)
         value = default if value.nil?
         unless type.nil?
           type = [type] unless type.is_a?(Array)

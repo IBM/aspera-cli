@@ -386,6 +386,11 @@ module Aspera
         end
       end
 
+      # allows a plugin to add an argument as next argument to process
+      def unshift_next_argument(argument)
+        @unprocessed_cmd_line_arguments.unshift(argument)
+      end
+
       # check if there were unprocessed values to generate error
       def command_or_arg_empty?
         return @unprocessed_cmd_line_arguments.empty?
