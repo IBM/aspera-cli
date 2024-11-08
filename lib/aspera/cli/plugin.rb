@@ -229,18 +229,6 @@ module Aspera
         return query
       end
 
-      # TODO: when deprecation of `value` is completed: remove this method, replace with options.get_option(:query)
-      # deprecation: 4.14
-      def query_option(mandatory: false, default: nil)
-        option = :value
-        value = options.get_option(option, mandatory: false)
-        if value.nil?
-          option = :query
-          value = options.get_option(option, mandatory: mandatory, default: default)
-        end
-        return value
-      end
-
       # Retrieves an extended value from command line, used for creation or modification of entities
       # @param command [Symbol] command name for error message
       # @param type [Class] expected type of value, either a Class, an Array of Class

@@ -248,7 +248,7 @@ module Aspera
           when :search
             search_root = get_one_argument_with_prefix(prefix_path, 'search root')
             parameters = {'path' => search_root}
-            other_options = query_option
+            other_options = options.get_option(:query)
             parameters.merge!(other_options) unless other_options.nil?
             resp = @api_node.create('files/search', parameters)
             result = { type: :object_list, data: resp['items']}
@@ -669,7 +669,7 @@ module Aspera
             # filename str
             # skip int
             # status int
-            filter = query_option
+            filter = options.get_option(:query)
             post_data.merge!(filter) unless filter.nil?
             resp = @api_node.create('async/files', post_data)
             data = resp['sync_files']
@@ -748,7 +748,7 @@ module Aspera
                 return Main.result_status('Done')
               end
               parameters = nil
-              parameters = query_option(default: {}) if %i[bandwidth counters files].include?(sync_command)
+              parameters = options.get_option(:query, default: {}) if %i[bandwidth counters files].include?(sync_command)
               return { type: :single_object, data: @api_node.read("asyncs/#{asyncs_id}/#{sync_command}", parameters) }
             end
           when :stream
@@ -894,7 +894,7 @@ module Aspera
             when :show
               return { type: :single_object, data: @api_node.read(one_res_path)}
             when :modify
-              @api_node.update(one_res_path, query_option(mandatory: true))
+              @api_node.update(one_res_path, options.get_option(:query, mandatory: true))
               return Main.result_status("#{one_res_id} updated")
             when :delete
               @api_node.delete(one_res_path)
@@ -906,7 +906,7 @@ module Aspera
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
             validation = {'validator_id' => validator_id} unless validator_id.nil?
-            request_data = query_option(default: {})
+            request_data = options.get_option(:query, default: {})
             case command
             when :session
               command = options.get_next_command([:list])
