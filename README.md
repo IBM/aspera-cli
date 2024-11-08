@@ -1523,11 +1523,11 @@ When in flatten mode, it is possible to filter fields using the option `fields` 
 Object lists are displayed one per line, with attributes as columns.
 Single objects (or tables with a single result) are transposed: one attribute per line.
 If transposition of single object is not desired, use option: `transpose_single` set to `no`.
+If option `multi_table` is `yes`, then elements of a table are displayed individually in a table.
 
 The style of output can be set using the `format` option, supporting:
 
 - `table` : Text table (default)
-- `multi` : List of elements are displayed as a list of tables
 - `text` : Value as String
 - `ruby` : Ruby code
 - `json` : JSON code
@@ -3627,14 +3627,15 @@ OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
         --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], multi, csv, image
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style (Hash)
-        --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
-        --transpose-single=ENUM      Single object fields output vertically: no, [yes]
+        --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
+        --transpose-single=ENUM      (Table) Single object fields output vertically: no, [yes]
+        --multi-table=ENUM           (Table) Each element of a table are displayed as a table: [no], yes
         --show-secrets=ENUM          Show secrets on command output: [no], yes
         --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
@@ -5646,8 +5647,8 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 
 The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
 
-```bash
-ascli node central file list --validator=ascli --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+```json
+ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
 ```output
@@ -5660,8 +5661,8 @@ ascli node central file list --validator=ascli --data=@json:'{"file_transfer_fil
 
 To update the status of the file, use the following command:
 
-```bash
-ascli node central file update --validator=ascli --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+```json
+ascli node central file update --validator=ascli @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
 ```output
@@ -5888,7 +5889,7 @@ basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
 browse / --log-level=trace2
 central file list
-central file modify --validator=1 --query=@json:'{"files":[]}'
+central file modify --validator=1 @json:'{"files":[]}'
 central session list
 delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 delete my_upload_folder/test_file.bin
@@ -6691,12 +6692,12 @@ To figure out the entities payload, for example for creation, refer to the API d
 admin group all list
 admin node list
 admin share list --fields=DEF,-status,status_message
-admin share user_permissions 1 list
+admin share user_permissions 3 list
 admin user all app_authorizations 1 modify @json:'{"app_login":true}'
 admin user all app_authorizations 1 show
 admin user all list
 admin user all share_permissions 1 list
-admin user all share_permissions 1 show 1
+admin user all share_permissions 1 show 3
 admin user ldap add the_name
 admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'

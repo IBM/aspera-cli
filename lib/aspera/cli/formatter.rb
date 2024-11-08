@@ -98,7 +98,7 @@ module Aspera
       CSV_RECORD_SEPARATOR = "\n"
       CSV_FIELD_SEPARATOR = ','
       # supported output formats
-      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table multi csv image].freeze
+      DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
       FIELD_VALUE_HEADINGS = %i[key value].freeze
@@ -197,7 +197,6 @@ module Aspera
         else
           {}
         end
-
         options.declare(:format, 'Output format', values: DISPLAY_FORMATS, handler: {o: self, m: :option_handler}, default: :table)
         options.declare(:output, 'Destination for results', types: String, handler: {o: self, m: :option_handler})
         options.declare(:display, 'Output only some information', values: DISPLAY_LEVELS, handler: {o: self, m: :option_handler}, default: :info)
@@ -207,8 +206,9 @@ module Aspera
           default: SpecialValues::DEF)
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
         options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
-        options.declare(:flat_hash, 'Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
-        options.declare(:transpose_single, 'Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:transpose_single, '(Table) Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
+        options.declare(:multi_table, '(Table) Each element of a table are displayed as a table', values: :bool, handler: {o: self, m: :option_handler}, default: false)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
         options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
@@ -325,8 +325,9 @@ module Aspera
           display_message(:data, object_array.first[fields.first])
           return
         end
+        single_transposed = @options[:transpose_single] && object_array.length == 1
         # Special case if only one row (it could be object_list or single_object)
-        if @options[:transpose_single] && object_array.length == 1
+        if single_transposed
           single = object_array.first
           object_array = fields.map { |i| FIELD_VALUE_HEADINGS.zip([i, single[i]]).to_h }
           fields = FIELD_VALUE_HEADINGS
@@ -337,17 +338,19 @@ module Aspera
         # here : fields : list of column names
         case @options[:format]
         when :table
-          # display the table !
-          display_message(:data, Terminal::Table.new(
-            headings:  fields,
-            rows:      final_table_rows,
-            style:     @options[:table_style]&.symbolize_keys))
-        when :multi
-          final_table_rows.each do |row|
-            Log.log.debug{Log.dump(:row, row)}
+          if @options[:multi_table] && !single_transposed
+            final_table_rows.each do |row|
+              Log.log.debug{Log.dump(:row, row)}
+              display_message(:data, Terminal::Table.new(
+                headings:  FIELD_VALUE_HEADINGS,
+                rows:      fields.zip(row),
+                style:     @options[:table_style]&.symbolize_keys))
+            end
+          else
+            # display the table !
             display_message(:data, Terminal::Table.new(
-              headings:  FIELD_VALUE_HEADINGS,
-              rows:      fields.zip(row),
+              headings:  fields,
+              rows:      final_table_rows,
               style:     @options[:table_style]&.symbolize_keys))
           end
         when :csv
@@ -424,7 +427,7 @@ module Aspera
           end
           raise "not url: #{url.class} #{url}" unless url.is_a?(String)
           display_message(:data, status_image(url))
-        when :table, :csv, :multi
+        when :table, :csv
           case type
           when :config_over
             display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)

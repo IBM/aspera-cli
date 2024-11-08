@@ -1517,11 +1517,11 @@ When in flatten mode, it is possible to filter fields using the option `fields` 
 Object lists are displayed one per line, with attributes as columns.
 Single objects (or tables with a single result) are transposed: one attribute per line.
 If transposition of single object is not desired, use option: `transpose_single` set to `no`.
+If option `multi_table` is `yes`, then elements of a table are displayed individually in a table.
 
 The style of output can be set using the `format` option, supporting:
 
 - `table` : Text table (default)
-- `multi` : List of elements are displayed as a list of tables
 - `text` : Value as String
 - `ruby` : Ruby code
 - `json` : JSON code

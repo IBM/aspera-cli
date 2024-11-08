@@ -1567,13 +1567,13 @@ flatten mode, it is possible to filter fields using the option
 <p>Object lists are displayed one per line, with attributes as columns.
 Single objects (or tables with a single result) are transposed: one
 attribute per line. If transposition of single object is not desired,
-use option: <code>transpose_single</code> set to <code>no</code>.</p>
+use option: <code>transpose_single</code> set to <code>no</code>. If
+option <code>multi_table</code> is <code>yes</code>, then elements of a
+table are displayed individually in a table.</p>
 <p>The style of output can be set using the <code>format</code> option,
 supporting:</p>
 <ul>
 <li><code>table</code> : Text table (default)</li>
-<li><code>multi</code> : List of elements are displayed as a list of
-tables</li>
 <li><code>text</code> : Value as String</li>
 <li><code>ruby</code> : Ruby code</li>
 <li><code>json</code> : JSON code</li>
@@ -5043,14 +5043,15 @@ OPTIONS: global
         --interactive=ENUM           Use interactive input of missing params: [no], yes
         --ask-options=ENUM           Ask even optional options: [no], yes
         --struct-parser=ENUM         Default parser when expected value is a struct: json, ruby
-        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], multi, csv, image
+        --format=ENUM                Output format: text, nagios, ruby, json, jsonpp, yaml, [table], csv, image
         --output=VALUE               Destination for results (String)
         --display=ENUM               Output only some information: [info], data, error
         --fields=VALUE               Comma separated list of: fields, or ALL, or DEF (String, Array, Regexp, Proc)
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style (Hash)
-        --flat-hash=ENUM             Display deep values as additional keys: no, [yes]
-        --transpose-single=ENUM      Single object fields output vertically: no, [yes]
+        --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
+        --transpose-single=ENUM      (Table) Single object fields output vertically: no, [yes]
+        --multi-table=ENUM           (Table) Each element of a table are displayed as a table: [no], yes
         --show-secrets=ENUM          Show secrets on command output: [no], yes
         --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
@@ -7047,7 +7048,7 @@ feature.</p>
 <p>The following command lists one file that requires validation, and
 assign it to the unique validator identifier provided:</p>
 <div class="sourceCode" id="cb406"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb406-1"><a href="#cb406-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file list <span class="at">--validator</span><span class="op">=</span>ascli <span class="at">--data</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;file_transfer_filter&quot;:{&quot;max_result&quot;:1}}&#39;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb406-1"><a href="#cb406-1" aria-hidden="true" tabindex="-1"></a><span class="er">ascli</span> <span class="er">node</span> <span class="er">central</span> <span class="er">file</span> <span class="er">list</span> <span class="er">--validator=ascli</span> <span class="er">@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;file_transfer_filter&quot;</span><span class="fu">:{</span><span class="dt">&quot;max_result&quot;</span><span class="fu">:</span><span class="dv">1</span><span class="fu">}}</span><span class="er">&#39;</span></span></code></pre></div>
 <pre class="output"><code>+--------------+--------------+------------+--------------------------------------+
 | session_uuid |    file_id   |   status   |              path                    |
 +--------------+--------------+------------+--------------------------------------+
@@ -7055,7 +7056,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb406-1"><a href
 +--------------+--------------+------------+--------------------------------------+</code></pre>
 <p>To update the status of the file, use the following command:</p>
 <div class="sourceCode" id="cb408"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb408-1"><a href="#cb408-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file update <span class="at">--validator</span><span class="op">=</span>ascli <span class="at">--data</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;files&quot;:[{&quot;session_uuid&quot;: &quot;1a74444c-...&quot;,&quot;file_id&quot;: &quot;084fb181-...&quot;,&quot;status&quot;: &quot;completed&quot;}]}&#39;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb408-1"><a href="#cb408-1" aria-hidden="true" tabindex="-1"></a><span class="er">ascli</span> <span class="er">node</span> <span class="er">central</span> <span class="er">file</span> <span class="er">update</span> <span class="er">--validator=ascli</span> <span class="er">@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;files&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;session_uuid&quot;</span><span class="fu">:</span> <span class="st">&quot;1a74444c-...&quot;</span><span class="fu">,</span><span class="dt">&quot;file_id&quot;</span><span class="fu">:</span> <span class="st">&quot;084fb181-...&quot;</span><span class="fu">,</span><span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;completed&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
 <pre class="output"><code>updated</code></pre>
 <h2 data-number="8.8" id="example-shod-to-ats"><span
 class="header-section-number">8.8</span> Example: SHOD to ATS</h2>
@@ -7345,7 +7346,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb425-1"><a href
 <span id="cb425-31"><a href="#cb425-31" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
 <span id="cb425-32"><a href="#cb425-32" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
 <span id="cb425-33"><a href="#cb425-33" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
-<span id="cb425-34"><a href="#cb425-34" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
+<span id="cb425-34"><a href="#cb425-34" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
 <span id="cb425-35"><a href="#cb425-35" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
 <span id="cb425-36"><a href="#cb425-36" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
 <span id="cb425-37"><a href="#cb425-37" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
@@ -8293,12 +8294,12 @@ commands:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb469-1"><a href="#cb469-1" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> group all list</span>
 <span id="cb469-2"><a href="#cb469-2" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
 <span id="cb469-3"><a href="#cb469-3" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share list <span class="at">--fields</span><span class="op">=</span>DEF,-status,status_message</span>
-<span id="cb469-4"><a href="#cb469-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions 1 list</span>
+<span id="cb469-4"><a href="#cb469-4" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> share user_permissions 3 list</span>
 <span id="cb469-5"><a href="#cb469-5" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 modify @json:<span class="st">&#39;{&quot;app_login&quot;:true}&#39;</span></span>
 <span id="cb469-6"><a href="#cb469-6" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all app_authorizations 1 show</span>
 <span id="cb469-7"><a href="#cb469-7" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all list</span>
 <span id="cb469-8"><a href="#cb469-8" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 list</span>
-<span id="cb469-9"><a href="#cb469-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 show 1</span>
+<span id="cb469-9"><a href="#cb469-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user all share_permissions 1 show 3</span>
 <span id="cb469-10"><a href="#cb469-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user ldap add the_name</span>
 <span id="cb469-11"><a href="#cb469-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user local list</span>
 <span id="cb469-12"><a href="#cb469-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> user saml import @json:<span class="st">&#39;{&quot;id&quot;:&quot;the_id&quot;,&quot;name_id&quot;:&quot;the_name&quot;}&#39;</span></span>
