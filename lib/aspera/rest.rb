@@ -381,7 +381,7 @@ module Aspera
         File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
-        retry if e.response.code.eql?('422') && e.response.body.include?('failed: connect timed out') && (bss_tries -= 1).nonzero?
+        retry if e.response.body.include?('failed: connect timed out') && (bss_tries -= 1).nonzero?
         # not authorized: oauth token expired
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
