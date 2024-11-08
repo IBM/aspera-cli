@@ -912,6 +912,7 @@ module Aspera
               command = options.get_next_command([:list])
               case command
               when :list
+                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
                 return {
@@ -924,12 +925,14 @@ module Aspera
               command = options.get_next_command(%i[list modify])
               case command
               when :list
+                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!({'validation' => validation}) unless validation.nil?
                 resp = @api_node.create('services/rest/transfers/v1/files', request_data)
                 resp = JSON.parse(resp) if resp.is_a?(String)
                 Log.log.debug{Log.dump(:resp, resp)}
                 return { type: :object_list, data: resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path]}
               when :modify
+                request_data = options.get_next_argument('request data', mandatory: false, validation: Hash, default: {})
                 request_data.deep_merge!(validation) unless validation.nil?
                 @api_node.update('services/rest/transfers/v1/files', request_data)
                 return Main.result_status('updated')

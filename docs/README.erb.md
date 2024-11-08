@@ -4988,8 +4988,8 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 
 The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
 
-```bash
-<%=cmd%> node central file list --validator=<%=cmd%> --data=@json:'{"file_transfer_filter":{"max_result":1}}'
+```json
+<%=cmd%> node central file list --validator=<%=cmd%> @json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
 ```output
@@ -5002,8 +5002,8 @@ The following command lists one file that requires validation, and assign it to 
 
 To update the status of the file, use the following command:
 
-```bash
-<%=cmd%> node central file update --validator=<%=cmd%> --data=@json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+```json
+<%=cmd%> node central file update --validator=<%=cmd%> @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
 ```output

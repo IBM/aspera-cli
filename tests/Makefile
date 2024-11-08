@@ -580,7 +580,7 @@ $(T)nd_central_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node central session list
 	$(EXE_MAN) node central file list
-	$(EXE_MAN) node central file modify --validator=1 --query=@json:'{"files":[]}'
+	$(EXE_MAN) node central file modify --validator=1 @json:'{"files":[]}'
 	@$(STOP_TEST) $@
 $(T)nd_watch_1: $(T).exists
 	@$(START_TEST) $@
