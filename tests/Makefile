@@ -201,7 +201,7 @@ $(T)shares_admin_7: $(T).exists
 	@$(STOP_TEST) $@
 $(T)shares_admin_8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin user all share_permissions 1 show 1
+	$(EXE_MAN) shares admin user all share_permissions 1 show 3
 	@$(STOP_TEST) $@
 $(T)shares_admin_9: $(T).exists
 	@$(START_TEST) $@
@@ -217,7 +217,7 @@ $(T)shares_admin_11: $(T).exists
 	@$(STOP_TEST) $@
 $(T)shares_admin_12: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) shares admin share user_permissions 1 list
+	$(EXE_MAN) shares admin share user_permissions 3 list
 	@$(STOP_TEST) $@
 $(T)shares_1: $(T).exists
 	@$(START_TEST) $@
