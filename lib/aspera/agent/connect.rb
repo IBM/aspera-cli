@@ -89,29 +89,29 @@ module Aspera
               # TODO: get session id
               case transfer['status']
               when 'initiating', 'queued'
-                notify_progress(session_id: nil, type: :pre_start, info: transfer['status'])
+                notify_progress(:pre_start, session_id: nil, info: transfer['status'])
               when 'running'
                 if !started
-                  notify_progress(session_id: session_id, type: :session_start)
+                  notify_progress(:session_start, session_id: session_id)
                   started = true
                 end
                 if !pre_calc && (transfer['bytes_expected'] != 0)
-                  notify_progress(type: :session_size, session_id: session_id, info: transfer['bytes_expected'])
+                  notify_progress(:session_size, session_id: session_id, info: transfer['bytes_expected'])
                   pre_calc = true
                 else
-                  notify_progress(type: :transfer, session_id: session_id, info: transfer['bytes_written'])
+                  notify_progress(:transfer, session_id: session_id, info: transfer['bytes_written'])
                 end
               when 'completed'
-                notify_progress(type: :end, session_id: session_id)
+                notify_progress(:end, session_id: session_id)
                 break
               when 'failed'
-                notify_progress(type: :end, session_id: session_id)
+                notify_progress(:end, session_id: session_id)
                 raise Transfer::Error, transfer['error_desc']
               when 'cancelled'
-                notify_progress(type: :end, session_id: session_id)
+                notify_progress(:end, session_id: session_id)
                 raise Transfer::Error, 'Transfer cancelled by user'
               else
-                notify_progress(type: :end, session_id: session_id)
+                notify_progress(:end, session_id: session_id)
                 raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end

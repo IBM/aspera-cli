@@ -12,6 +12,7 @@ require 'json'
 require 'base64'
 require 'cgi'
 require 'singleton'
+require 'securerandom'
 
 # Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
@@ -351,16 +352,17 @@ module Aspera
             target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
             Log.log.debug{"saving to: #{target_file}"}
             written_size = 0
-            RestParameters.instance.progress_bar&.event(session_id: 1, type: :session_start)
-            RestParameters.instance.progress_bar&.event(session_id: 1, type: :session_size, info: total_size)
+            session_id = SecureRandom.uuid.freeze
+            RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)
+            RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size)
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 written_size += fragment.length
-                RestParameters.instance.progress_bar&.event(session_id: 1, type: :transfer, info: written_size)
+                RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size)
               end
             end
-            RestParameters.instance.progress_bar&.event(session_id: 1, type: :end)
+            RestParameters.instance.progress_bar&.event(:end, session_id: session_id)
             # rename at the end
             File.rename(target_file_tmp, target_file)
             file_saved = true

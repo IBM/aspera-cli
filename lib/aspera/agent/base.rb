@@ -42,8 +42,8 @@ module Aspera
         @progress = progress
       end
 
-      def notify_progress(**parameters)
-        @progress&.event(**parameters)
+      def notify_progress(*pos_args, **kw_args)
+        @progress&.event(*pos_args, **kw_args)
       end
     end
   end

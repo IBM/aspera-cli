@@ -151,7 +151,7 @@ module Aspera
         args:
       )
         Aspera.assert_type(session, Hash)
-        notify_progress(session_id: nil, type: :pre_start, info: 'starting')
+        notify_progress(:pre_start, session_id: nil, info: 'starting')
         begin
           command_pid = nil
           # we use Socket directly, instead of TCPServer, as it gives access to lower level options
@@ -169,7 +169,7 @@ module Aspera
           # get location of command executable (ascp, async)
           command_path = Ascp::Installation.instance.path(name)
           command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments)
-          notify_progress(session_id: nil, type: :pre_start, info: "waiting for #{name} to start")
+          notify_progress(:pre_start, session_id: nil, info: "waiting for #{name} to start")
           mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
@@ -252,24 +252,24 @@ module Aspera
         when 'INIT'
           @pre_calc_sent = false
           @pre_calc_last_size = nil
-          notify_progress(session_id: session_id, type: :session_start)
+          notify_progress(:session_start, session_id: session_id)
         when 'NOTIFICATION' # sent from remote
           if event.key?('PreTransferBytes')
             @pre_calc_sent = true
-            notify_progress(session_id: session_id, type: :session_size, info: event['PreTransferBytes'])
+            notify_progress(:session_size, session_id: session_id, info: event['PreTransferBytes'])
           end
         when 'STATS' # during transfer
           @pre_calc_last_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          notify_progress(session_id: session_id, type: :transfer, info: @pre_calc_last_size)
+          notify_progress(:transfer, session_id: session_id, info: @pre_calc_last_size)
         when 'DONE', 'ERROR' # end of session
           total_size = event['TransferBytes'].to_i + event['StartByte'].to_i
           if !@pre_calc_sent && !total_size.zero?
-            notify_progress(session_id: session_id, type: :session_size, info: total_size)
+            notify_progress(:session_size, session_id: session_id, info: total_size)
           end
           if @pre_calc_last_size != total_size
-            notify_progress(session_id: session_id, type: :transfer, info: total_size)
+            notify_progress(:transfer, session_id: session_id, info: total_size)
           end
-          notify_progress(session_id: session_id, type: :end)
+          notify_progress(:end, session_id: session_id)
           # cspell:disable
         when 'SESSION'
         when 'ARGSTOP'

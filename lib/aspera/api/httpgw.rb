@@ -138,7 +138,7 @@ module Aspera
       def upload(transfer_spec)
         # identify this session uniquely
         session_id = SecureRandom.uuid
-        @notify_cb&.call(session_id: nil, type: :pre_start, info: 'starting')
+        @notify_cb&.call(:pre_start, session_id: nil, info: 'starting')
         # process files to send, modify `paths` in transfer_spec
         files_to_send = process_upload_list(transfer_spec)
         # total size of all files is last element
@@ -147,7 +147,7 @@ module Aspera
         Log.log.trace1{Log.dump(:files_to_send, files_to_send)}
         # TODO: check that this is available in endpoints: @api_info['endpoints']
         upload_url = File.join(@gw_root_url, @upload_version, 'upload')
-        @notify_cb&.call(session_id: nil, type: :pre_start, info: 'connecting wss')
+        @notify_cb&.call(:pre_start, session_id: nil, info: 'connecting wss')
         # open web socket to end point (equivalent to Net::HTTP.start)
         http_session = Rest.start_http_session(upload_url)
         # get the underlying socket i/o
@@ -172,11 +172,11 @@ module Aspera
         }
         # start read thread after handshake
         @ws_read_thread = Thread.new {process_read_thread}
-        @notify_cb&.call(session_id: session_id, type: :session_start)
-        @notify_cb&.call(session_id: session_id, type: :session_size, info: total_bytes_to_transfer)
+        @notify_cb&.call(:session_start, session_id: session_id)
+        @notify_cb&.call(:session_size, session_id: session_id, info: total_bytes_to_transfer)
         sleep(1)
         # notify progress bar
-        @notify_cb&.call(type: :session_size, session_id: session_id, info: total_bytes_to_transfer)
+        @notify_cb&.call(:session_size, session_id: session_id, info: total_bytes_to_transfer)
         # first step send transfer spec
         ws_snd_json(MSG_SEND_TRANSFER_SPEC, transfer_spec)
         # current file index
@@ -223,7 +223,7 @@ module Aspera
                 raise e
               end
               session_sent_bytes += slice_bin_data.length
-              @notify_cb&.call(type: :transfer, session_id: session_id, info: session_sent_bytes)
+              @notify_cb&.call(:transfer, session_id: session_id, info: session_sent_bytes)
               slice_info[:slice] += 1
             end
           ensure
@@ -232,8 +232,8 @@ module Aspera
           file_index += 1
         end
         # throttling may have skipped last one
-        @notify_cb&.call(type: :transfer, session_id: session_id, info: session_sent_bytes)
-        @notify_cb&.call(type: :end, session_id: session_id)
+        @notify_cb&.call(:transfer, session_id: session_id, info: session_sent_bytes)
+        @notify_cb&.call(:end, session_id: session_id)
         ws_send(ws_type: :close, data: nil)
         Log.log.debug("Finished upload, waiting for end of #{THR_RECV} thread.")
         @ws_read_thread.join

@@ -82,29 +82,29 @@ module Aspera
             transfer = @client_app_api.get_transfer(app_id: @application_id, transfer_id: @xfer_id)
             case transfer['status']
             when 'initiating', 'queued'
-              notify_progress(session_id: nil, type: :pre_start, info: transfer['status'])
+              notify_progress(:pre_start, session_id: nil, info: transfer['status'])
             when 'running'
               if !started
-                notify_progress(session_id: @xfer_id, type: :session_start)
+                notify_progress(:session_start, session_id: @xfer_id)
                 started = true
               end
               if !pre_calc && (transfer['bytes_expected'] != 0)
-                notify_progress(type: :session_size, session_id: @xfer_id, info: transfer['bytes_expected'])
+                notify_progress(:session_size, session_id: @xfer_id, info: transfer['bytes_expected'])
                 pre_calc = true
               else
-                notify_progress(type: :transfer, session_id: @xfer_id, info: transfer['bytes_written'])
+                notify_progress(:transfer, session_id: @xfer_id, info: transfer['bytes_written'])
               end
             when 'completed'
-              notify_progress(type: :end, session_id: @xfer_id)
+              notify_progress(:end, session_id: @xfer_id)
               break
             when 'failed'
-              notify_progress(type: :end, session_id: @xfer_id)
+              notify_progress(:end, session_id: @xfer_id)
               raise Transfer::Error, transfer['error_desc']
             when 'cancelled'
-              notify_progress(type: :end, session_id: @xfer_id)
+              notify_progress(:end, session_id: @xfer_id)
               raise Transfer::Error, 'Transfer cancelled by user'
             else
-              notify_progress(type: :end, session_id: @xfer_id)
+              notify_progress(:end, session_id: @xfer_id)
               raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
             end
             sleep(1)

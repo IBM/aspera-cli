@@ -140,24 +140,24 @@ module Aspera
           case response.status
           when :RUNNING
             if !session_started
-              notify_progress(session_id: @transfer_id, type: :session_start)
+              notify_progress(:session_start, session_id: @transfer_id)
               session_started = true
             end
             if bytes_expected.nil? &&
                 !response.sessionInfo.preTransferBytes.eql?(0)
               bytes_expected = response.sessionInfo.preTransferBytes
-              notify_progress(type: :session_size, session_id: @transfer_id, info: bytes_expected)
+              notify_progress(:session_size, session_id: @transfer_id, info: bytes_expected)
             end
-            notify_progress(type: :transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
+            notify_progress(:transfer, session_id: @transfer_id, info: response.transferInfo.bytesTransferred)
           when :COMPLETED
-            notify_progress(type: :transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
-            notify_progress(type: :end, session_id: @transfer_id)
+            notify_progress(:transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
+            notify_progress(:end, session_id: @transfer_id)
             break
           when :FAILED, :CANCELED
-            notify_progress(type: :end, session_id: @transfer_id)
+            notify_progress(:end, session_id: @transfer_id)
             raise Transfer::Error, JSON.parse(response.message)['Description']
           when :QUEUED, :UNKNOWN_STATUS, :PAUSED, :ORPHANED
-            notify_progress(session_id: nil, type: :pre_start, info: response.status.to_s.downcase)
+            notify_progress(:pre_start, session_id: nil, info: response.status.to_s.downcase)
           else
             Log.log.error{"unknown status#{response.status}"}
           end

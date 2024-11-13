@@ -219,17 +219,17 @@ module Aspera
             # user asked to not follow
             return status if status_list.nil?
             if status['upload_status'].eql?('submitted')
-              config.progress_bar&.event(session_id: nil, type: :pre_start, info: status['upload_status'])
+              config.progress_bar&.event(:pre_start, session_id: nil, info: status['upload_status'])
             elsif !total_sent
-              config.progress_bar&.event(session_id: id, type: :session_start)
-              config.progress_bar&.event(session_id: id, type: :session_size, info: status['bytes_total'].to_i)
+              config.progress_bar&.event(:session_start, session_id: id)
+              config.progress_bar&.event(:session_size, session_id: id, info: status['bytes_total'].to_i)
               total_sent = true
             else
-              config.progress_bar&.event(session_id: id, type: :transfer, info: status['bytes_written'].to_i)
+              config.progress_bar&.event(:transfer, session_id: id, info: status['bytes_written'].to_i)
             end
             if status_list.include?(status['upload_status'])
               # if status['upload_status'].eql?('completed')
-              config.progress_bar&.event(session_id: id, type: :end)
+              config.progress_bar&.event(:end, session_id: id)
               return status
               # end
             end
