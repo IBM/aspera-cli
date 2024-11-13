@@ -1,4 +1,5 @@
 #!/bin/bash
+# Glibc for various OS: https://gist.github.com/wagenet/35adca1a032cec2999d47b6c40aa45b1
 
 set -e
 

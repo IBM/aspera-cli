@@ -4717,11 +4717,18 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 ## Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
 The `server` plugin is used for operations on Aspera HSTS using SSH authentication.
-It is the legacy way of accessing an Aspera Server, often used for server to server transfers.
+It is the original way of accessing an Aspera Server, often used for server to server transfers.
 An SSH session is established, authenticated with either a password or an SSH private key,
 then commands `ascp` (for transfers) and `ascmd` (for file operations) are executed.
 
-> **Note:** The URL to be provided is usually: `ssh://_server_address_:33001`
+The URL to be provided with option `url` shall be like `ssh://_server_address_:33001`, then option `username` is used to specify the transfer user, and finally either option `password` or `ssh_keys` (with one or several paths) for the authentication.
+
+Typically:
+
+```console
+$ <%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+$ <%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
+```
 
 <%=include_commands_for_plugin('server')%>
 
@@ -4734,7 +4741,8 @@ If SSH is the session protocol (by default i.e. not WSS), then following session
 
 If `username` is not provided then the default transfer user `xfer` is used.
 
-If no SSH password or key is provided and a transfer token is provided in transfer spec (option `ts`), then standard SSH bypass keys are used.
+If neither SSH password nor key is provided and a transfer token is provided in transfer spec (option `ts`), then standard SSH bypass key(s) is used.
+
 Example:
 
 ```bash
