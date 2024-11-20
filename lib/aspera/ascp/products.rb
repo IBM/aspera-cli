@@ -57,6 +57,18 @@ module Aspera
               run_root: File.join(Dir.home, 'Library', 'Application Support', 'Aspera', 'Aspera Connect'),
               sub_bin:  File.join('Contents', 'Resources')
             }, {
+              expected: CONNECT,
+              app_root: File.join(Dir.home, 'Applications', 'IBM Aspera Connect.app'),
+              log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Connect'),
+              run_root: File.join(Dir.home, 'Library', 'Application Support', 'Aspera', 'Aspera Connect'),
+              sub_bin:  File.join('Contents', 'Resources')
+            }, {
+              expected: CONNECT,
+              app_root: File.join('', 'Applications', 'IBM Aspera Connect.app'),
+              log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Connect'),
+              run_root: File.join(Dir.home, 'Library', 'Application Support', 'Aspera', 'Aspera Connect'),
+              sub_bin:  File.join('Contents', 'Resources')
+            }, {
               expected: CLI_V1,
               app_root: File.join(Dir.home, 'Applications', 'Aspera CLI'),
               log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera')
