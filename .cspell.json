@@ -4,6 +4,8 @@
     "*.dict",
     ".cspell.json",
     "lib/aspera/data",
+    "lib/transfer_pb.rb",
+    "lib/transfer_services_pb.rb",
     "**/*.tex",
     "**/*.html",
     "**/*.pptx"

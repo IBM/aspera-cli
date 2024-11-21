@@ -36,10 +36,10 @@ module Aspera
             title:       '',
             total:       nil)
         end
-        need_increment = true
+        progress_provided = false
         case type
         when :pre_start
-          # give opportunity to show progress of initialisation with multiple status
+          # give opportunity to show progress of initialization with multiple status
           Aspera.assert(session_id.nil?)
           Aspera.assert_type(info, String)
           # initialization of progress bar
@@ -62,9 +62,8 @@ module Aspera
           @progress_bar.total = current_total unless current_total.eql?(@progress_bar.total) || current_total < @progress_bar.progress
         when :transfer
           Aspera.assert_type(session_id, String)
-          Aspera.assert(!info.nil?)
-          if !@progress_bar.total.nil?
-            need_increment = false
+          if !@progress_bar.total.nil? && !info.nil?
+            progress_provided = true
             @sessions[session_id][:current] = info.to_i
             current_total = total(:current)
             @progress_bar.progress = current_total unless @progress_bar.progress.eql?(current_total)
@@ -80,7 +79,7 @@ module Aspera
         end
         new_title = @sessions.length < 2 ? @title.to_s : "[#{@sessions.length}] #{@title}"
         @progress_bar.title = new_title unless @progress_bar.title.eql?(new_title)
-        @progress_bar.increment if need_increment && !@completed
+        @progress_bar.increment if !progress_provided && !@completed
       end
 
       private

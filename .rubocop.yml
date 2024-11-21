@@ -11,6 +11,7 @@ AllCops:
   Exclude:
     - local/**/*
     - tmp/**/*
+    - "**/*_pb.rb"
 Naming/MethodName:
   Enabled: false
 Naming/FileName:

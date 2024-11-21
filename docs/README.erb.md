@@ -4726,8 +4726,8 @@ The URL to be provided with option `url` shall be like `ssh://_server_address_:3
 Typically:
 
 ```console
-$ <%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
-$ <%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
+<%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+<%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
 <%=include_commands_for_plugin('server')%>
@@ -5668,7 +5668,30 @@ Then, the postprocessing script executed will be `script1.sh`.
 
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
 
-### Faspex 5: Missing commands
+### Faspex 5: Faspex 4 Gateway
+
+> **Note:** This is not a feature for production. It's provided for testing only.
+
+For legacy faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
+
+It takes a single argument which is the url at which the gateway will be located (locally):
+
+```bash
+<%=cmd%> faspex5 gateway https://localhost:12345/aspera/faspex
+```
+
+There are many limitations:
+
+- It's only to emulate the Faspex 4 `send` API (send package)
+- No support for remote sources, only for an actual file transfer by the client
+- The client must use the transfer spec returned by the API (not faspe: URL)
+- tags returned in transfer spec must be used in transfer
+- only a single authentication is possible (per gateway) on Faspex5
+- no authentication of F4 side (ignored)
+
+Behavior: The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client. The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
+
+### Faspex 5: Get Bearer token to use API
 
 If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
 

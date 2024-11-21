@@ -29,6 +29,7 @@ module Aspera
           Log.log.info('Connect was reached') if method_index > 0
           Log.log.debug{Log.dump(:connect_version, connect_info)}
         rescue StandardError => e # Errno::ECONNREFUSED
+          Log.log.debug{"Exception: #{e}"}
           start_url = CONNECT_START_URIS[method_index]
           method_index += 1
           raise StandardError, "Unable to start connect #{method_index} times" if start_url.nil?

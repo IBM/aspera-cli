@@ -5347,8 +5347,8 @@ The URL to be provided with option `url` shall be like `ssh://_server_address_:3
 Typically:
 
 ```console
-$ `ascli` server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
-$ `ascli` server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
+`ascli` server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+`ascli` server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
 ### Server sample commands
@@ -5867,18 +5867,18 @@ ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_fold
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
 access_key do my_ak_name browse /
-access_key do my_ak_name delete /folder2
-access_key do my_ak_name delete testfile1
-access_key do my_ak_name download testfile1 --to-folder=.
+access_key do my_ak_name delete /test_nd_ak2
+access_key do my_ak_name delete test_nd_ak3
+access_key do my_ak_name download test_nd_ak3 --to-folder=.
 access_key do my_ak_name find my_test_folder
 access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
 access_key do my_ak_name find my_test_folder exec:'f["name"].end_with?(".jpg")'
-access_key do my_ak_name mkdir /folder1
+access_key do my_ak_name mkdir /tst_nd_ak
 access_key do my_ak_name node_info /
-access_key do my_ak_name rename /folder1 folder2
+access_key do my_ak_name rename /tst_nd_ak test_nd_ak2
 access_key do my_ak_name show %id:1
-access_key do my_ak_name show /testfile1
-access_key do my_ak_name upload 'faux:///testfile1?1k' --default-ports=no
+access_key do my_ak_name show /test_nd_ak3
+access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no
 access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self show / --fields=id --output=root_id
 access_key list
@@ -6465,7 +6465,30 @@ Then, the postprocessing script executed will be `script1.sh`.
 
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
 
-### Faspex 5: Missing commands
+### Faspex 5: Faspex 4 Gateway
+
+> **Note:** This is not a feature for production. It's provided for testing only.
+
+For legacy faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
+
+It takes a single argument which is the url at which the gateway will be located (locally):
+
+```bash
+ascli faspex5 gateway https://localhost:12345/aspera/faspex
+```
+
+There are many limitations:
+
+- It's only to emulate the Faspex 4 `send` API (send package)
+- No support for remote sources, only for an actual file transfer by the client
+- The client must use the transfer spec returned by the API (not faspe: URL)
+- tags returned in transfer spec must be used in transfer
+- only a single authentication is possible (per gateway) on Faspex5
+- no authentication of F4 side (ignored)
+
+Behavior: The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client. The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
+
+### Faspex 5: Get Bearer token to use API
 
 If a command is missing, then it is still possible to execute command by calling directly the API on the command line using `curl`:
 

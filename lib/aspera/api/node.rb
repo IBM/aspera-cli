@@ -207,6 +207,12 @@ module Aspera
             end
           Log.log.debug{Log.dump(:folder_contents, folder_contents)}
           folder_contents.each do |entry|
+            if entry.has_key?('error')
+              if entry['error'].is_a?(Hash) && entry['error'].has_key?('user_message')
+                Log.log.error(entry['error']['user_message'])
+              end
+              next
+            end
             relative_path = File.join(current_item[:path], entry['name'])
             Log.log.debug{"process_folder_tree: checking #{relative_path}"}
             # call block, continue only if method returns true

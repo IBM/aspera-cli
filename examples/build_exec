@@ -1,6 +1,15 @@
 #!/bin/bash
 # Glibc for various OS: https://gist.github.com/wagenet/35adca1a032cec2999d47b6c40aa45b1
-
+# https://distrowatch.com/table.php?distribution=redhat
+# RHEL 8 : glibc 2.28
+# RHEL 9 : glibc 2.34
+# https://distrowatch.com/table.php?distribution=ubuntu
+# Ubuntu 18.10 cosmic : glibc 2.28
+# Ubuntu 21.10 impish : gblic 2.34
+# https://www.ibm.com/docs/en/ahts/4.4.x?topic=release-notes
+# ascp 4.4.5 : gblic 2.28
+# dwarfs requires boost >= 1.65
+# boost requires cmake >= 3.30
 set -e
 
 if test $# -ne 5; then

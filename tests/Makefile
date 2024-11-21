@@ -45,10 +45,11 @@ all:: $(DIR_TOP).gems_checked $(T).ssh_ok
 # ensure ssh is enabled on macos only
 $(T).ssh_ok: $(T).exists
 	uname -s | grep -q Darwin && sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
-	sudo systemsetup -getremotelogin
+	uname -s | grep -q Darwin && sudo systemsetup -getremotelogin
 	touch $@
-clean::
+ssh:
 	rm -f $(T).ssh_ok
+clean:: ssh
 
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
@@ -96,7 +97,7 @@ EXE_END_ERR=>/dev/null 2>&1$(EXE_SHW_ERR)
 EXE_BEG_FAI=if $(EXE_COMMON)
 EXE_END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else echo "Test known to fail";fi
 # enclose tests whose status is ignored, mainly optional cleanups, for restarts
-EXE_BEG_IGN=$(EXE_COMMON)
+EXE_IGN=$(EXE_COMMON)
 EXE_END_IGN=>/dev/null 2>&1 || true
 # simple command line to percent-encode
 URL_ENCODER=ruby -r uri -e 'puts URI.encode_www_form_component(ARGV.first)'
@@ -111,6 +112,7 @@ TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 TST_MED_FILENAME=$(TST_UTF_FILENAME)
 # needs to be quoted, as there is shell special character: "?"
 TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
+TEMPORIZE_CREATE=sleep 5
 
 # sync dir must be an absolute path
 TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/test_sync123
@@ -253,10 +255,14 @@ $(T)shares_8: $(T)shares_7
 	@$(STOP_TEST) $@
 $(T)shares_9: $(T).exists
 	@$(START_TEST) $@
+	$(EXE_IGN) shares files delete @extend:@preset:shares.share1@/new_folder$(EXE_END_IGN)
 	$(EXE_MAN) shares files mkdir @extend:@preset:shares.share1@/new_folder
+	@$(STOP_TEST) $@
+$(T)shares_10: $(T)shares_9
+	@$(START_TEST) $@
 	$(EXE_MAN) shares files delete @extend:@preset:shares.share1@/new_folder
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_7 $(T)shares_8 $(T)shares_9))
+$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
 #######################################################################################################################
 $(T)serv_browse: $(T).exists
 	@$(START_TEST) $@
@@ -286,7 +292,7 @@ $(T)serv_upload2: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) server delete @extend:@preset:server.inside_folder@/other_name_3$(EXE_END_IGN)
+	$(EXE_IGN) server delete @extend:@preset:server.inside_folder@/other_name_3$(EXE_END_IGN)
 	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
@@ -339,7 +345,7 @@ $(T)serv_delete: $(T)serv_mv
 	@$(START_TEST) $@
 	$(EXE_MAN) server delete @extend:@preset:server.upload_folder@/to.delete
 	@$(STOP_TEST) $@
-$(T)serv_cleanup1: $(T).exists
+$(T)serv_cleanup1: $(T)serv_cp $(T)serv_down_from_node $(T)serv_down_lcl $(T)serv_md5
 	@$(START_TEST) $@
 	$(EXE_MAN) server delete @preset:server.inside_folder
 	@$(STOP_TEST) $@
@@ -517,7 +523,7 @@ $(T)nd1: $(T).exists
 	$(EXE_MAN) node browse / --log-level=trace2
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
 	$(EXE_MAN) node space /
-	$(EXE_BEG_IGN) node delete /a_folder $(EXE_END_IGN)
+	$(EXE_IGN) node delete /a_folder $(EXE_END_IGN)
 	$(EXE_MAN) node mkdir @extend:@preset:server.upload_folder@/a_folder
 	$(EXE_MAN) node mklink @extend:@preset:server.upload_folder@/a_folder @extend:@preset:server.upload_folder@/tdlink
 	$(EXE_MAN) node mkfile @extend:@preset:server.upload_folder@/a_file1 "hello world"
@@ -543,20 +549,20 @@ $(T)nd2_http: $(T).exists
 $(T)nd_2_nd_xfer: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node upload --to-folder=@preset:server.upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer=node --transfer-info=@json:@extend:'{"url":"@preset:node_user.url@","username":"@preset:node_user.username@","password":"@preset:node_user.password@"}'
-	$(EXE_BEG_IGN) node delete @extend:@preset:server.upload_folder@/10MB.2$(EXE_END_IGN)
+	$(EXE_IGN) node delete @extend:@preset:server.upload_folder@/10MB.2$(EXE_END_IGN)
 	@$(STOP_TEST) $@
 $(T)nd4: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) node --preset=node_ak_adm service delete service1$(EXE_END_IGN)
-	@echo "waiting a little...";sleep 5
+	$(EXE_IGN) node --preset=node_ak_adm service delete service1$(EXE_END_IGN)
+	@echo "waiting a little...";$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node --preset=node_ak_adm service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 	$(EXE_MAN) node --preset=node_ak_adm service list
-	@echo "waiting a little...";sleep 2
+	@echo "waiting a little...";$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node --preset=node_ak_adm service delete service1
 	$(EXE_MAN) node --preset=node_ak_adm service list
-	@echo "waiting a little...";sleep 5
+	@echo "waiting a little...";$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node --preset=node_ak_adm service list
-	@echo "waiting a little...";sleep 5
+	@echo "waiting a little...";$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node --preset=node_ak_adm service list
 	@$(STOP_TEST) $@
 $(T)nd6: $(T).exists
@@ -608,19 +614,27 @@ $(T)nd_ak1: $(T).exists
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder
 	@$(STOP_TEST) $@
-$(T)nd_ak2: $(T).exists
+$(T)nd_ak_mkdir: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mkdir /folder1
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name rename /folder1 folder2
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /folder2
+	$(EXE_IGN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /tst_nd_ak$(EXE_END_IGN)
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mkdir /tst_nd_ak
+	$(TEMPORIZE_CREATE)
+	@$(STOP_TEST) $@
+$(T)nd_ak_mvdir: $(T)nd_ak_mkdir
+	@$(START_TEST) $@
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name rename /tst_nd_ak test_nd_ak2
+	@$(STOP_TEST) $@
+$(T)nd_ak_deldir: $(T)nd_ak_mvdir
+	@$(START_TEST) $@
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /test_nd_ak2
 	@$(STOP_TEST) $@
 $(T)nd_ak3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name upload 'faux:///testfile1?1k' --default-ports=no
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name download testfile1 --to-folder=$(DIR_TMP).
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name show /testfile1
-	$(EXE_BEG_ERR) node --preset=node_ak_adm access_key do @preset:aoc.ak_name thumbnail /testfile1$(EXE_END_ERR)
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete testfile1
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name download test_nd_ak3 --to-folder=$(DIR_TMP).
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name show /test_nd_ak3
+	$(EXE_BEG_ERR) node --preset=node_ak_adm access_key do @preset:aoc.ak_name thumbnail /test_nd_ak3$(EXE_END_ERR)
+	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete test_nd_ak3
 	@$(STOP_TEST) $@
 $(T)nd_ak4: $(T).exists
 	@$(START_TEST) $@
@@ -628,9 +642,9 @@ $(T)nd_ak4: $(T).exists
 	@$(STOP_TEST) $@
 $(T)nd_ak_bearer: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username$(EXE_END_IGN)
+	$(EXE_IGN) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username$(EXE_END_IGN)
 	$(EXE_MAN) node -N --preset=tst_node_preview access_key create @json:@extend:'{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
-	sleep 2
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key show %id:self
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key set_bearer_key self @file:@preset:file.private_key
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key do self show / --fields=id --output=$(DIR_TMP)root_id
@@ -639,7 +653,7 @@ $(T)nd_ak_bearer: $(T).exists
 	$(EXE_MAN) node -N --url=@preset:tst_node_preview.url --password="Bearer $$(cat $(DIR_TMP)bearer_666)" --root-id=$$(cat $(DIR_TMP)root_id) access_key do self br /
 	$(EXE_MAN) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tndak,$(T)nd_ak $(T)nd_ak1 $(T)nd_ak2 $(T)nd_ak3 $(T)nd_ak4 $(T)nd_ak_bearer))
+$(eval $(call test_suite_all,tndak,$(T)nd_ak $(T)nd_ak1 $(T)nd_ak_mkdir $(T)nd_ak_mvdir $(T)nd_ak_deldir $(T)nd_ak3 $(T)nd_ak4 $(T)nd_ak_bearer))
 #######################################################################################################################
 $(T)aocfxgw: $(T).exists
 	@$(START_TEST) $@
@@ -720,14 +734,14 @@ $(T)aocffin: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_tstsrc: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) aoc files delete /testsrc$(EXE_END_IGN)
+	$(EXE_IGN) aoc files delete /testsrc$(EXE_END_IGN)
 	$(EXE_MAN) aoc files mkdir /testsrc
 	@$(STOP_TEST) $@
 $(T)aoc_tstdst: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) aoc files delete /testdst$(EXE_END_IGN)
-	$(EXE_BEG_IGN) aoc files delete /some_folder$(EXE_END_IGN)
+	$(EXE_IGN) aoc files delete /some_folder$(EXE_END_IGN)
 	$(EXE_NO_MAN) aoc files mkdir /some_folder
+	$(EXE_IGN) aoc files delete /testdst$(EXE_END_IGN)
 	$(EXE_MAN) aoc files rename /some_folder testdst
 	@$(STOP_TEST) $@
 $(T)aocfupl: $(T)aoc_tstsrc
@@ -806,7 +820,7 @@ $(T)aoc_file_id_4: $(T)aocftr
 	@$(STOP_TEST) $@
 $(T)aoc_file_id_5: $(T)aocftr
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
+	$(EXE_IGN) aoc files mkdir @preset:aoc.test_folder$(EXE_END_IGN)
 	@$(STOP_TEST) $@
 $(T)aoc_file_id_6: $(T)aoc_file_id_5
 	@$(START_TEST) $@
@@ -924,40 +938,42 @@ $(T)aocp_list_shbx: $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocp,$(T)aoc_pack_send1 $(T)aoc_pack_send2 $(T)aocp2 $(T)aocp3 $(T)aocp4 $(T)aocp5 $(T)aocp5 $(T)aocp_send_pub_sh $(T)aocp_send_pub_usr $(T)aocp_send_shbx $(T)aocp_send_sh_meta_long $(T)aocp_send_sh_meta_short $(T)aocp_recv_shbx $(T)aocp_list_shbx))
 #######################################################################################################################
-$(T)aocadm1: $(T).exists
+$(T)aoc_adm_authp_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin auth_providers list
 	$(EXE_BEG_FAI) aoc admin subscription$(EXE_END_FAI)
 	@$(STOP_TEST) $@
-$(T)aoc8: $(T).exists
+$(T)aoc_adm_ws_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin workspace list
 	@$(STOP_TEST) $@
-$(T)aoc9: $(T).exists
+$(T)aoc_adm_nd_events: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 events
 	@$(STOP_TEST) $@
-$(T)aoc11: $(T).exists
+$(T)aoc_adm_ak_create: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
 	@$(STOP_TEST) $@
-$(T)aoc12: $(T).exists
+$(T)aoc_adm_ak_del: $(T)aoc_adm_ak_create
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
 	@$(STOP_TEST) $@
-$(T)aoc9b: $(T).exists
+$(T)aoc_adm_nd_br: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret browse /
 	@$(STOP_TEST) $@
-$(T)aoc10: $(T).exists
+$(T)aoc_adm_nd_mkdir: $(T).exists
 	@$(START_TEST) $@
+	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1$(EXE_END_IGN)
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret mkdir /folder1
+	$(TEMPORIZE_CREATE)
 	@$(STOP_TEST) $@
-$(T)aoc13: $(T).exists
+$(T)aoc_adm_nd_rmdir: $(T)aoc_adm_nd_mkdir
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1
 	@$(STOP_TEST) $@
-$(T)aoc14: $(T).exists
+$(T)aoc_adm_wsm_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 	@$(STOP_TEST) $@
@@ -1012,7 +1028,7 @@ $(T)aoccltreg: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocadmndcr: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder$(EXE_END_IGN)
+	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder$(EXE_END_IGN)
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name mkdir test_shared_folder
 	@$(STOP_TEST) $@
 $(T)aocadmndsh1: $(T)aocadmndcr
@@ -1031,7 +1047,7 @@ $(T)aocadmndsh4: $(T)aocadmndsh2 $(T)aocadmndsh3
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocadm,$(T)aocadm1 $(T)aoc8 $(T)aoc9 $(T)aoc9b $(T)aoc10 $(T)aoc11 $(T)aoc12 $(T)aoc13 $(T)aoc14 $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg $(T)aocadmndsh4))
+$(eval $(call test_suite_all,taocadm,$(T)aoc_adm_authp_lst $(T)aoc_adm_ws_lst $(T)aoc_adm_nd_events $(T)aoc_adm_nd_br $(T)aoc_adm_nd_mkdir $(T)aoc_adm_ak_create $(T)aoc_adm_ak_del $(T)aoc_adm_nd_rmdir $(T)aoc_adm_wsm_lst $(T)aoc15 $(T)aoc16 $(T)aoc_adm_res_01 $(T)aoc_adm_res_02 $(T)aoc_adm_res_03 $(T)aoc_adm_res_04 $(T)aoc_adm_res_05 $(T)aoccltreg $(T)aocadmndsh4))
 #######################################################################################################################
 $(T)aocat4: $(T).exists
 	@$(START_TEST) $@
@@ -1052,7 +1068,7 @@ $(T)aocat7: $(T).exists
 # see https://developer.ibm.com/api/view/aspera-prod:ibm-aspera:title-IBM_Aspera#113433
 $(T)aocat8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
+	$(EXE_IGN) --preset=aoc_admin aoc admin ats access_key delete ak1ibmcloud$(EXE_END_IGN)
 	$(EXE_MAN) --preset=aoc_admin aoc admin ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak1ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	@$(STOP_TEST) $@
 $(T)aocat9: $(T).exists
@@ -1184,9 +1200,9 @@ $(T)at3: $(T).exists
 	@$(STOP_TEST) $@
 $(T)at8: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_IGN) ats access_key delete ak2ibmcloud$(EXE_END_IGN)
+	$(EXE_IGN) ats access_key delete ak2ibmcloud$(EXE_END_IGN)
 	$(EXE_BEG_FAI) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'$(EXE_END_FAI)
-	sleep 5
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) ats access_key show ak2ibmcloud
 	$(EXE_MAN) ats access_key entitlement ak2ibmcloud
 	@$(STOP_TEST) $@
@@ -1273,7 +1289,7 @@ $(T)sync_other: $(T)sync_create
 	$(EXE_MAN) node ssync stop %name:my_node_sync
 	$(EXE_MAN) node ssync summary %name:my_node_sync
 	$(EXE_MAN) node ssync delete %name:my_node_sync
-	$(EXE_BEG_ERR) node ssync delete notexist $(EXE_END_ERR)
+	$(EXE_BEG_ERR) node ssync delete not_exist $(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsyncs,$(T)sync_create $(T)sync_other))
 #######################################################################################################################
@@ -1572,7 +1588,7 @@ $(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)
 thot:
 	rm -fr source_hot
 	mkdir source_hot
-	$(EXE_BEG_IGN) server delete @extend:@preset:server.upload_folder@/target_hot$(EXE_END_IGN)
+	$(EXE_IGN) server delete @extend:@preset:server.upload_folder@/target_hot$(EXE_END_IGN)
 	$(EXE_MAN) server mkdir @extend:@preset:server.upload_folder@/target_hot
 	echo hello > source_hot/new_file
 	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
@@ -1672,7 +1688,7 @@ $(T)f5_pack_user_public: $(T).exists
 $(T)f5_pack_wrkgrp: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(TST_ASC_LCL_PATH)
-	sleep 20
+	$(TEMPORIZE_CREATE)0
 	$(EXE_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups
 	$(EXE_NO_MAN) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"status":"completed","limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(DIR_TMP)workgroup_package_id1
 	$(EXE_MAN) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(DIR_TMP)workgroup_package_id1)
