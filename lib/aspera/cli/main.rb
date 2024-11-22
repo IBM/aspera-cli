@@ -106,12 +106,14 @@ module Aspera
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @plug_init[:config] = Plugins::Config.new(**@plug_init, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
+        @plug_init[:config] = Plugins::Config.new(**@plug_init, man_header: false, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
         @plug_init[:persistency] = @plug_init[:config].persistency
         # data persistency
         Aspera.assert(@plug_init[:persistency]){'missing persistency object'}
         # the TransferAgent plugin may use the @preset parser
         @plug_init[:config].transfer = @plug_init[:transfer] = TransferAgent.new(options, config)
+        # add commands for config plugin after all options have been added
+        @plug_init[:config].add_manual_header(false)
         nil_keys = @plug_init.select{|_, value|value.nil?}.keys
         Aspera.assert(nil_keys.empty?){"nil : #{nil_keys}"}
         Log.log.debug('plugin env created'.red)
@@ -199,11 +201,12 @@ module Aspera
 
       def exit_with_usage(include_all_plugins)
         Log.log.debug{"exit_with_usage(#{include_all_plugins})".bg_red}
-        # display main plugin options
+        # display main plugin options (+config)
         formatter.display_message(:error, options.parser)
         if include_all_plugins
           # list plugins that have a "require" field, i.e. all but main plugin
           PluginFactory.instance.plugin_list.each do |plugin_name_sym|
+            # config was already included in the global options
             next if plugin_name_sym.eql?(COMMAND_CONFIG)
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @plug_init.clone

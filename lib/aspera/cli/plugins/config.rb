@@ -232,7 +232,7 @@ module Aspera
           options.declare(:http_proxy, 'URL for HTTP proxy with optional credentials', types: String, handler: {o: self, m: :option_http_proxy})
           options.declare(:cache_tokens, 'Save and reuse OAuth tokens', values: :bool, handler: {o: self, m: :option_cache_tokens})
           options.declare(:fpac, 'Proxy auto configuration script')
-          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac. Array: user,password', types: Array)
+          options.declare(:proxy_credentials, 'HTTP proxy credentials for fpac: user, password', types: Array)
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places

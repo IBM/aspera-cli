@@ -33,21 +33,25 @@ module Aspera
 
       attr_accessor(*INIT_PARAMS)
 
-      def initialize(options:, transfer:, config:, formatter:, persistency:, only_manual:)
+      def initialize(options:, transfer:, config:, formatter:, persistency:, only_manual:, man_header: true)
+        # check presence in descendant of mandatory method and constant
+        Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
+        Aspera.assert(self.class.constants.include?(:ACTIONS)){"Missing constant 'ACTIONS' in #{self.class}"}
         @options = options
         @transfer = transfer
         @config = config
         @formatter = formatter
         @persistency = persistency
         @only_manual = only_manual
-        # check presence in descendant of mandatory method and constant
-        Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
-        Aspera.assert(self.class.constants.include?(:ACTIONS)){'ACTIONS shall be redefined by subclass'}
+        add_manual_header if man_header
+      end
+
+      def add_manual_header(has_options = true)
         # manual header for all plugins
         options.parser.separator('')
         options.parser.separator("COMMAND: #{self.class.name.split('::').last.downcase}")
         options.parser.separator("SUBCOMMANDS: #{self.class.const_get(:ACTIONS).map(&:to_s).sort.join(' ')}")
-        options.parser.separator('OPTIONS:')
+        options.parser.separator('OPTIONS:') if has_options
       end
 
       # @return a hash of instance variables
