@@ -335,6 +335,8 @@ module Aspera
         Log.log.debug{Log.dump(:object_array, object_array)}
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
+        # remove empty rows
+        final_table_rows.select!{|i| !(i.is_a?(Hash) && i.empty?)}
         # here : fields : list of column names
         case @options[:format]
         when :table
@@ -363,7 +365,7 @@ module Aspera
       # @return text suitable to display an image from url
       def status_image(blob)
         begin
-          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::DEFAULT_PARSER.make_regexp}\z/)
+          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::RFC2396_PARSER.make_regexp}\z/)
           # it's a url
           url = blob
           unless Environment.instance.url_method.eql?(:text)
