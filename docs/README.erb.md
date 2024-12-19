@@ -1081,6 +1081,8 @@ Hello World
 2
 ```
 
+> **Note:** Use `pp` instead of `puts` to display as ruby Array.
+
 Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
 (Unlike Unix-like systems where the command line is split into arguments by the shell.)
 
@@ -4465,17 +4467,17 @@ If a single file or folder is to be downloaded, then a single argument can be pr
 
 #### Shared folders
 
-Shared folder created by users are managed through **permissions** on node.
-In addition, when a permission is created, an event is sent to AoC to create a **link** file in the user's home folder.
+Like in AoC web UI, "Shared Folders" can be created and shared with either **Private** or **Public** links.
+**Private** links require the collaborator to log-in to access the shared folder.
+**Public** links include a passcode that enables the user to access the shared folder without login-in.
 
 Shared folders can be created either:
 
-- by normal users in a workspace: they can share a folder with other users in the same workspace: `aoc files perm`
+- by users in a workspace: they can share personal folders with other users in the same workspace: `aoc files perm`
 - by administrators: they can share a folder with users in any workspace: `aoc admin node do [node id] perm`
 
+Technically (API), shared folder are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
 In both cases, it is necessary to specify a workspace.
-
-Shared folders, and so "permissions" are created using the node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction).
 
 The basic payload (last argument at creation usually specified with `@json:`) is:
 
@@ -4528,9 +4530,9 @@ The following optional additional helper keys are supported by <%=tool%>:
 Public and Private short links can be managed with command:
 
 ```bash
-<%=cmd%> aoc files short_link private create _path_here_
-<%=cmd%> aoc files short_link private list _path_here_
-<%=cmd%> aoc files short_link public list _path_here_
+<%=cmd%> aoc files short_link _path_here_ private create
+<%=cmd%> aoc files short_link _path_here_ private list
+<%=cmd%> aoc files short_link _path_here_ public list
 <%=cmd%> aoc files short_link public delete _id_
 ```
 
@@ -5917,7 +5919,7 @@ For example, let us create a default configuration:
 <%=cmd%> config preset set default cos mycos
 ```
 
-Then, jump to the transfer example.
+Then, jump to the [transfer example](#operations-transfers).
 
 ### Using service credential file
 
@@ -5992,7 +5994,7 @@ A subset of `node` plugin operations are supported, basically node API:
 <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file instead.
+> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file path instead.
 
 <%=include_commands_for_plugin('cos')%>
 

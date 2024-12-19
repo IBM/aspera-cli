@@ -1087,6 +1087,8 @@ Hello World
 2
 ```
 
+> **Note:** Use `pp` instead of `puts` to display as ruby Array.
+
 Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
 (Unlike Unix-like systems where the command line is split into arguments by the shell.)
 
@@ -3650,10 +3652,6 @@ OPTIONS: global
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
-
-COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
-OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
         --secret=VALUE               Secret for access keys
@@ -3687,13 +3685,16 @@ OPTIONS:
         --http-proxy=VALUE           URL for HTTP proxy with optional credentials (String)
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials for fpac. Array: user,password (Array)
+        --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
         --transfer=ENUM              Type of transfer agent: node, [direct], alpha, httpgw, connect, trsdk
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
+
+COMMAND: config
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
 
 
 COMMAND: shares
@@ -4938,17 +4939,17 @@ ascli aoc files download <single file path>
 
 #### Shared folders
 
-Shared folder created by users are managed through **permissions** on node.
-In addition, when a permission is created, an event is sent to AoC to create a **link** file in the user's home folder.
+Like in AoC web UI, "Shared Folders" can be created and shared with either **Private** or **Public** links.
+**Private** links require the collaborator to log-in to access the shared folder.
+**Public** links include a passcode that enables the user to access the shared folder without login-in.
 
 Shared folders can be created either:
 
-- by normal users in a workspace: they can share a folder with other users in the same workspace: `aoc files perm`
+- by users in a workspace: they can share personal folders with other users in the same workspace: `aoc files perm`
 - by administrators: they can share a folder with users in any workspace: `aoc admin node do [node id] perm`
 
+Technically (API), shared folder are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
 In both cases, it is necessary to specify a workspace.
-
-Shared folders, and so "permissions" are created using the node API [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction).
 
 The basic payload (last argument at creation usually specified with `@json:`) is:
 
@@ -5001,9 +5002,9 @@ ascli aoc files perm /shared_folder_test1 delete 6161
 Public and Private short links can be managed with command:
 
 ```bash
-ascli aoc files short_link private create _path_here_
-ascli aoc files short_link private list _path_here_
-ascli aoc files short_link public list _path_here_
+ascli aoc files short_link _path_here_ private create
+ascli aoc files short_link _path_here_ private list
+ascli aoc files short_link _path_here_ public list
 ascli aoc files short_link public delete _id_
 ```
 
@@ -5141,9 +5142,9 @@ files mkdir /testsrc
 files modify my_test_folder
 files permission my_test_folder list
 files rename /some_folder testdst
-files short_link private create /testdst
-files short_link private list /testdst
-files short_link public create testdst
+files short_link /testdst private create
+files short_link /testdst private list
+files short_link /testdst public create
 files show %id:aoc_file_id
 files show /
 files show testdst/test_file.bin
@@ -5180,6 +5181,7 @@ packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["
 packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
 packages send @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE"}' test_file.bin --url=my_public_link_send_shared_inbox
 packages shared_inboxes list
+packages shared_inboxes show %name:my_shared_inbox_name
 remind --username=my_user_email
 servers
 user pref modify @json:'{"default_language":"en-us"}'
@@ -6803,7 +6805,7 @@ ascli config preset update mycos --bucket=mybucket --endpoint=https://s3.us-east
 ascli config preset set default cos mycos
 ```
 
-Then, jump to the transfer example.
+Then, jump to the [transfer example](#operations-transfers).
 
 ### Using service credential file
 
@@ -6878,14 +6880,13 @@ ascli cos node info
 ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file instead.
+> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file path instead.
 
 ### Cos sample commands
 
 > **Note:** Add `ascli cos` in front of the commands:
 
 ```bash
-node access_key show self
 node download test_file.bin --to-folder=.
 node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
 node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred

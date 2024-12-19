@@ -1075,6 +1075,10 @@ command:</p>
 Hello World
 1
 2</code></pre>
+<blockquote>
+<p><strong>Note:</strong> Use <code>pp</code> instead of
+<code>puts</code> to display as ruby Array.</p>
+</blockquote>
 <p>Once the shell has dealt with the command line “special” characters
 for it, the shell calls Windows’ <code>CreateProcess</code> with just
 the whole command line as a single string. (Unlike Unix-like systems
@@ -5066,10 +5070,6 @@ OPTIONS: global
         --log-secrets=ENUM           Show passwords in logs: [no], yes
         --clean-temp=ENUM            Cleanup temporary files on exit: no, [yes]
         --pid-file=VALUE             Write process identifier to file, delete on exit (String)
-
-COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
-OPTIONS:
         --home=VALUE                 Home folder for tool (String)
         --config-file=VALUE          Path to YAML file with preset configuration
         --secret=VALUE               Secret for access keys
@@ -5103,13 +5103,16 @@ OPTIONS:
         --http-proxy=VALUE           URL for HTTP proxy with optional credentials (String)
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
-        --proxy-credentials=VALUE    HTTP proxy credentials for fpac. Array: user,password (Array)
+        --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
         --ts=VALUE                   Override transfer spec values (Hash)
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
         --transfer=ENUM              Type of transfer agent: node, [direct], alpha, httpgw, connect, trsdk
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
+
+COMMAND: config
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
 
 
 COMMAND: shares
@@ -6303,21 +6306,24 @@ argument can be provided.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb361-1"><a href="#cb361-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files download <span class="op">&lt;</span>single file path<span class="op">&gt;</span></span></code></pre></div>
 <h3 data-number="5.7.2" id="shared-folders"><span
 class="header-section-number">5.7.2</span> Shared folders</h3>
-<p>Shared folder created by users are managed through
-<strong>permissions</strong> on node. In addition, when a permission is
-created, an event is sent to AoC to create a <strong>link</strong> file
-in the user’s home folder.</p>
+<p>Like in AoC web UI, “Shared Folders” can be created and shared with
+either <strong>Private</strong> or <strong>Public</strong> links.
+<strong>Private</strong> links require the collaborator to log-in to
+access the shared folder. <strong>Public</strong> links include a
+passcode that enables the user to access the shared folder without
+login-in.</p>
 <p>Shared folders can be created either:</p>
 <ul>
-<li>by normal users in a workspace: they can share a folder with other
+<li>by users in a workspace: they can share personal folders with other
 users in the same workspace: <code>aoc files perm</code></li>
 <li>by administrators: they can share a folder with users in any
 workspace: <code>aoc admin node do [node id] perm</code></li>
 </ul>
-<p>In both cases, it is necessary to specify a workspace.</p>
-<p>Shared folders, and so “permissions” are created using the node API
-<a
-href="https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction">permissions</a>.</p>
+<p>Technically (API), shared folder are managed through <a
+href="https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction">permissions</a>
+on node and an event is sent to AoC to create a <strong>link</strong> in
+the user’s home folder to the shared folder. In both cases, it is
+necessary to specify a workspace.</p>
 <p>The basic payload (last argument at creation usually specified with
 <code>@json:</code>) is:</p>
 <div class="sourceCode" id="cb362"><pre
@@ -6377,9 +6383,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb364-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb365-1"><a href="#cb365-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files perm /shared_folder_test1 delete 6161</span></code></pre></div>
 <p>Public and Private short links can be managed with command:</p>
 <div class="sourceCode" id="cb366"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb366-1"><a href="#cb366-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link private create _path_here_</span>
-<span id="cb366-2"><a href="#cb366-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link private list _path_here_</span>
-<span id="cb366-3"><a href="#cb366-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link public list _path_here_</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb366-1"><a href="#cb366-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link _path_here_ private create</span>
+<span id="cb366-2"><a href="#cb366-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link _path_here_ private list</span>
+<span id="cb366-3"><a href="#cb366-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link _path_here_ public list</span>
 <span id="cb366-4"><a href="#cb366-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link public delete _id_</span></code></pre></div>
 <ul>
 <li>Create an admin shared folder and shared with a user or group or
@@ -6535,9 +6541,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb370-1"><a href
 <span id="cb370-73"><a href="#cb370-73" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> modify my_test_folder</span>
 <span id="cb370-74"><a href="#cb370-74" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> permission my_test_folder list</span>
 <span id="cb370-75"><a href="#cb370-75" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> rename /some_folder testdst</span>
-<span id="cb370-76"><a href="#cb370-76" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link private create /testdst</span>
-<span id="cb370-77"><a href="#cb370-77" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link private list /testdst</span>
-<span id="cb370-78"><a href="#cb370-78" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link public create testdst</span>
+<span id="cb370-76"><a href="#cb370-76" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link /testdst private create</span>
+<span id="cb370-77"><a href="#cb370-77" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link /testdst private list</span>
+<span id="cb370-78"><a href="#cb370-78" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> short_link /testdst public create</span>
 <span id="cb370-79"><a href="#cb370-79" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show %id:aoc_file_id</span>
 <span id="cb370-80"><a href="#cb370-80" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show /</span>
 <span id="cb370-81"><a href="#cb370-81" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show testdst/test_file.bin</span>
@@ -6574,14 +6580,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb370-1"><a href
 <span id="cb370-112"><a href="#cb370-112" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_public_link_send_use_pass</span>
 <span id="cb370-113"><a href="#cb370-113" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_shared_inbox</span>
 <span id="cb370-114"><a href="#cb370-114" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes list</span>
-<span id="cb370-115"><a href="#cb370-115" aria-hidden="true" tabindex="-1"></a><span class="ex">remind</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb370-116"><a href="#cb370-116" aria-hidden="true" tabindex="-1"></a><span class="ex">servers</span></span>
-<span id="cb370-117"><a href="#cb370-117" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
-<span id="cb370-118"><a href="#cb370-118" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
-<span id="cb370-119"><a href="#cb370-119" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb370-120"><a href="#cb370-120" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
-<span id="cb370-121"><a href="#cb370-121" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
-<span id="cb370-122"><a href="#cb370-122" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
+<span id="cb370-115"><a href="#cb370-115" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes show %name:my_shared_inbox_name</span>
+<span id="cb370-116"><a href="#cb370-116" aria-hidden="true" tabindex="-1"></a><span class="ex">remind</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb370-117"><a href="#cb370-117" aria-hidden="true" tabindex="-1"></a><span class="ex">servers</span></span>
+<span id="cb370-118"><a href="#cb370-118" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
+<span id="cb370-119"><a href="#cb370-119" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
+<span id="cb370-120"><a href="#cb370-120" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb370-121"><a href="#cb370-121" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
+<span id="cb370-122"><a href="#cb370-122" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
+<span id="cb370-123"><a href="#cb370-123" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> Plugin: <code>ats</code>: IBM
 Aspera Transfer Service</h1>
@@ -8416,7 +8423,8 @@ e.g. <code>https://s3.hkg02.cloud-object-storage.appdomain.cloud</code></li>
 <div class="sourceCode" id="cb474"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href="#cb474-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset update mycos <span class="at">--bucket</span><span class="op">=</span>mybucket <span class="at">--endpoint</span><span class="op">=</span>https://s3.us-east.cloud-object-storage.appdomain.cloud <span class="at">--apikey</span><span class="op">=</span>abcdefgh <span class="at">--crn</span><span class="op">=</span>crn:v1:bluemix:public:iam-identity::a/xxxxxxx</span>
 <span id="cb474-2"><a href="#cb474-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default cos mycos</span></code></pre></div>
-<p>Then, jump to the transfer example.</p>
+<p>Then, jump to the <a href="#operations-transfers">transfer
+example</a>.</p>
 <h2 data-number="14.2" id="using-service-credential-file"><span
 class="header-section-number">14.2</span> Using service credential
 file</h2>
@@ -8487,7 +8495,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb478-1"><a href
 <p><strong>Note:</strong> A dummy file <code>sample1G</code> of size 2GB
 is generated using the <code>faux</code> PVCL (man <code>ascp</code> and
 section above), but you can, of course, send a real file by specifying a
-real file instead.</p>
+real file path instead.</p>
 </blockquote>
 <h2 data-number="14.4" id="cos-sample-commands"><span
 class="header-section-number">14.4</span> Cos sample commands</h2>
@@ -8496,12 +8504,11 @@ class="header-section-number">14.4</span> Cos sample commands</h2>
 commands:</p>
 </blockquote>
 <div class="sourceCode" id="cb479"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb479-1"><a href="#cb479-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> access_key show self</span>
-<span id="cb479-2"><a href="#cb479-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb479-3"><a href="#cb479-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--endpoint</span><span class="op">=</span>my_endpoint <span class="at">--apikey</span><span class="op">=</span>my_api_key <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id</span>
-<span id="cb479-4"><a href="#cb479-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:my_cos_svc_cred</span>
-<span id="cb479-5"><a href="#cb479-5" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
-<span id="cb479-6"><a href="#cb479-6" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload test_file.bin</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb479-1"><a href="#cb479-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb479-2"><a href="#cb479-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--endpoint</span><span class="op">=</span>my_endpoint <span class="at">--apikey</span><span class="op">=</span>my_api_key <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id</span>
+<span id="cb479-3"><a href="#cb479-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:my_cos_svc_cred</span>
+<span id="cb479-4"><a href="#cb479-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--log-level</span><span class="op">=</span>trace2</span>
+<span id="cb479-5"><a href="#cb479-5" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> upload test_file.bin</span></code></pre></div>
 <h1 data-number="15" id="plugin-httpgw-http-gateway"><span
 class="header-section-number">15</span> Plugin: <code>httpgw</code>:
 HTTP Gateway</h1>
