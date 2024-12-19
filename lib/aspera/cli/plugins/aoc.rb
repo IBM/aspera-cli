@@ -223,7 +223,8 @@ module Aspera
           return @cache_api_aoc
         end
 
-        # get identifier or name from command line
+        # Get resource identifier from command line, either directly or from name.
+        # @param resource_class_path url path for resource
         # @return identifier
         def get_resource_id_from_args(resource_class_path)
           return instance_identifier do |field, value|
@@ -232,6 +233,7 @@ module Aspera
           end
         end
 
+        # Get resource path from command line
         def get_resource_path_from_args(resource_class_path)
           return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
         end
@@ -466,58 +468,60 @@ module Aspera
             end
           when :subscription
             org = aoc_api.read('organization')
-            bss_api = api_from_options('bss/platform')
+            bss_graphql = api_from_options('bss/platform/graphql')
             # cspell:disable
-            graphql_query = "
-    query ($organization_id: ID!) {
-      aoc (organization_id: $organization_id) {
-        bssSubscription {
-          endDate
-          startDate
-          termMonths
-          plan
-          trial
-          termType
-          instances {
-            id
-            entitlements {
-              maxUsageMb
-            }
-          }
-          additionalStorageVolumeGb
-          additionalEgressVolumeGb
-          additionalUsers
-          term {
-            startDate
+            graphql_query = <<-GRAPHQL
+      query ($organization_id: ID!) {
+        aoc (organization_id: $organization_id) {
+          bssSubscription {
+            aocVersion
             endDate
-            transferVolumeGb
-            egressVolumeGb
-            storageVolumeGb
-          }
-          paygoRate {
-            rate
-            currency
-          }
-          aocPlanData {
-            tier
+            startDate
+            termMonths
+            plan
             trial
-            workspaces { max }
-            users {
-              planAmount
-              max
+            termType
+            aocOrganizations {
+              id
             }
-            samlIntegration
-            activity
-            sharedInboxes
-            uniqueUrls
-            support
+            additionalStorageVolumeGb
+            additionalEgressVolumeGb
+            term {
+              startDate
+              endDate
+              transferVolumeGb
+              egressVolumeGb
+              storageVolumeGb
+              transferVolumeOffsetGb
+            }
+            paygoRate {
+              transferRate
+              storageRate
+              currency
+            }
+            aocPlanData {
+              tier
+              trial
+              workspaces { max }
+              users {
+                planAmount
+                max
+              }
+              samlIntegration
+              activity
+              sharedInboxes
+              uniqueUrls
+              support
+              watermarking
+              byok
+              automation { planAmount, max }
+            }
           }
         }
       }
-    }
-  "
+            GRAPHQL
             # cspell:enable
-            result = bss_api.create('graphql', {'variables' => {'organization_id' => org['id']}, 'query' => graphql_query})['data']
+            result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
             return {type: :single_object, data: result['aoc']['bssSubscription']}
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
@@ -584,6 +588,81 @@ module Aspera
           end
         end
 
+        # Create a shared link for the given entity
+        # @param shared_data [Hash] information for shared data
+        # @param block [Proc] Optional: called on creation
+        def short_link_command(shared_data, purpose_public:)
+          link_type = options.get_next_argument('link type', accept_list: %i[public private])
+          purpose_local = case link_type
+          when :public
+            case purpose_public
+            when /package/ then 'send_package_to_dropbox'
+            when /shared/ then 'token_auth_redirection'
+            else raise 'error'
+            end
+          when :private then 'shared_folder_auth_link'
+          else Aspera.error_unreachable_line
+          end
+          case options.get_next_command(%i[create delete list])
+          when :create
+            creation_params = {
+              purpose:            purpose_local,
+              user_selected_name: nil
+            }
+            case link_type
+            when :private
+              creation_params[:data] = shared_data
+            when :public
+              creation_params[:expires_at]       = nil
+              creation_params[:password_enabled] = false
+              shared_data[:name] = ''
+              creation_params[:data] = {
+                aoc:            true,
+                url_token_data: {
+                  data:    shared_data,
+                  purpose: purpose_public
+                }
+              }
+            end
+            result_create_short_link = aoc_api.create('short_links', creation_params)
+            # public: Creation: permission on node
+            yield(result_create_short_link['resource_id']) if block_given? && link_type.eql?(:public)
+            return {type: :single_object, data: result_create_short_link}
+          when :list
+            query = if link_type.eql?(:private)
+              shared_data
+            else
+              {
+                url_token_data: {
+                  data:    shared_data,
+                  purpose: purpose_public
+                }
+              }
+            end
+            list_params = {
+              json_query:  query.to_json,
+              purpose:     purpose_local,
+              edit_access: true,
+              # embed: 'updated_by_user',
+              sort:        '-created_at'
+            }
+            return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
+          when :delete
+            one_id = instance_identifier
+            shared_data.delete(:workspace_id)
+            delete_params = {
+              edit_access: true,
+              json_query:  shared_data.to_json
+            }
+            aoc_api.delete("short_links/#{one_id}", delete_params)
+            if link_type.eql?(:public)
+              # TODO: get permission id..
+              # shared_apfid[:api].delete('permissions', {ids: })
+            end
+            return Main.result_status('deleted')
+          end
+        end
+
         # must be public
         ACTIONS = %i[reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway].freeze
 
@@ -646,13 +725,21 @@ module Aspera
             package_command = options.get_next_command(%i[shared_inboxes send receive list show delete].concat(Node::NODE4_READ_ACTIONS), aliases: {recv: :receive})
             case package_command
             when :shared_inboxes
-              case options.get_next_command(%i[list show])
+              case options.get_next_command(%i[list show short_link])
               when :list
                 default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
                 default_query['workspace_id'] = aoc_api.workspace[:id] unless aoc_api.workspace[:id].eql?(:undefined)
                 return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
               when :show
-                return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'), query)}
+                return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'))}
+              when :short_link
+                return short_link_command(
+                  {
+                    workspace_id: aoc_api.workspace[:id],
+                    dropbox_id:   get_resource_id_from_args('dropboxes'),
+                    name:         ''
+                  },
+                  purpose_public: 'send_package_to_dropbox')
               end
             when :send
               package_data = value_create_modify(command: package_command)
@@ -765,109 +852,42 @@ module Aspera
             when *NODE4_EXT_COMMANDS
               return execute_nodegen4_command(command_repo, aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::SCOPE_USER)
             when :short_link
-              link_type = options.get_next_argument('link type', accept_list: %i[public private])
-              short_link_command = options.get_next_command(%i[create delete list])
               folder_dest = options.get_next_argument('path', validation: String)
               home_node_api = aoc_api.node_api_from(
                 node_id:        aoc_api.home[:node_id],
                 workspace_id:   aoc_api.workspace[:id],
                 workspace_name: aoc_api.workspace[:name])
               shared_apfid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
-              folder_info = {
-                node_id:      shared_apfid[:api].app_info[:node_info]['id'],
-                file_id:      shared_apfid[:file_id],
-                workspace_id: aoc_api.workspace[:id]
-              }
-              purpose = case link_type
-              when :public  then 'token_auth_redirection'
-              when :private then 'shared_folder_auth_link'
-              else Aspera.error_unreachable_line
-              end
-              case short_link_command
-              when :delete
-                one_id = instance_identifier
-                folder_info.delete(:workspace_id)
-                delete_params = {
-                  edit_access: true,
-                  json_query:  folder_info.to_json
-                }
-                aoc_api.delete("short_links/#{one_id}", delete_params)
-                if link_type.eql?(:public)
-                  # TODO: get permission id..
-                  # shared_apfid[:api].delete('permissions', {ids: })
-                end
-                return Main.result_status('deleted')
-              when :list
-                query = if link_type.eql?(:private)
-                  folder_info
-                else
-                  {
-                    url_token_data: {
-                      data:    folder_info,
-                      purpose: 'view_shared_file'
-                    }
-                  }
-                end
-                list_params = {
-                  json_query:  query.to_json,
-                  purpose:     purpose,
-                  edit_access: true,
-                  # embed: 'updated_by_user',
-                  sort:        '-created_at'
-                }
-                return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
-              when :create
-                creation_params = {
-                  purpose:            purpose,
-                  user_selected_name: nil
-                }
-                case link_type
-                when :private
-                  creation_params[:data] = folder_info
-                when :public
-                  creation_params[:expires_at]       = nil
-                  creation_params[:password_enabled] = false
-                  folder_info[:name] = ''
-                  creation_params[:data] = {
-                    aoc:            true,
-                    url_token_data: {
-                      data:    folder_info,
-                      purpose: 'view_shared_file'
-                    }
-                  }
-                end
-                result_create_short_link = aoc_api.create('short_links', creation_params)
-                # public: Creation: permission on node
-                if link_type.eql?(:public)
-                  # TODO: merge with node permissions ?
-                  # TODO: access level as arg
-                  access_levels = Api::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
-                  folder_name = File.basename(folder_dest)
-                  perm_data = {
-                    'file_id'       => shared_apfid[:file_id],
-                    'access_id'     => result_create_short_link['resource_id'],
-                    'access_type'   => 'user',
-                    'access_levels' => access_levels,
-                    'tags'          => {
-                      # TODO: really just here ? not in tags.aspera.files.workspace ?
-                      'url_token'        => true,
-                      'workspace_id'     => aoc_api.workspace[:id],
-                      'workspace_name'   => aoc_api.workspace[:name],
-                      'folder_name'      => folder_name,
-                      'created_by_name'  => aoc_api.current_user_info['name'],
-                      'created_by_email' => aoc_api.current_user_info['email'],
-                      'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
-                      'node'             => shared_apfid[:api].app_info[:node_info]['host']
-                    }
-                  }
-                  created_data = shared_apfid[:api].create('permissions', perm_data)
-                  aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apfid[:api].app_info)
-                  # TODO: event ?
-                end
-                return {type: :single_object, data: result_create_short_link}
-              end
+              return short_link_command(
+                {
+                  workspace_id: aoc_api.workspace[:id],
+                  node_id:      shared_apfid[:api].app_info[:node_info]['id'],
+                  file_id:      shared_apfid[:file_id]
+                }, purpose_public: 'view_shared_file') do |resource_id|
+                       # TODO: merge with node permissions ?
+                       # TODO: access level as arg
+                       access_levels = Api::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
+                       perm_data = {
+                         'file_id'       => shared_apfid[:file_id],
+                         'access_id'     => resource_id,
+                         'access_type'   => 'user',
+                         'access_levels' => access_levels,
+                         'tags'          => {
+                           # TODO: really just here ? not in tags.aspera.files.workspace ?
+                           'url_token'        => true,
+                           'workspace_id'     => aoc_api.workspace[:id],
+                           'workspace_name'   => aoc_api.workspace[:name],
+                           'folder_name'      => File.basename(folder_dest),
+                           'created_by_name'  => aoc_api.current_user_info['name'],
+                           'created_by_email' => aoc_api.current_user_info['email'],
+                           'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
+                           'node'             => shared_apfid[:api].app_info[:node_info]['host']
+                         }
+                       }
+                       created_data = shared_apfid[:api].create('permissions', perm_data)
+                       aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apfid[:api].app_info)
+                     end
             end
-            raise 'Error: shall not reach this line'
           when :automation
             Log.log.warn('BETA: work under progress')
             # automation api is not in the same place
