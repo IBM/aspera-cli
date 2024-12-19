@@ -40,16 +40,7 @@ endef
 T=$(DIR_TMP)t/
 
 # test group: principal
-all:: $(DIR_TOP).gems_checked $(T).ssh_ok
-
-# ensure ssh is enabled on macos only
-$(T).ssh_ok: $(T).exists
-	uname -s | grep -q Darwin && sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
-	uname -s | grep -q Darwin && sudo systemsetup -getremotelogin
-	touch $@
-ssh:
-	rm -f $(T).ssh_ok
-clean:: ssh
+all:: $(DIR_TOP).gems_checked
 
 # test group: require user interaction
 interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
@@ -113,11 +104,27 @@ TST_MED_FILENAME=$(TST_UTF_FILENAME)
 # needs to be quoted, as there is shell special character: "?"
 TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
 TEMPORIZE_CREATE=sleep 5
+TEMPORIZE_FILE=sleep 30
 
 # sync dir must be an absolute path
 TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/test_sync123
 ifeq ($(TST_SYNC_LCL_DIR),)
 $(error "TST_SYNC_LCL_DIR is empty, see error above")
+endif
+
+ifdef ASPERA_CLI_TEST_LOCAL_HSTS_MACOS
+all:: $(T).ssh_ok
+# ensure SSH is enabled on macos only
+$(T).ssh_ok: $(T).exists
+	sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
+	sudo systemsetup -getremotelogin
+	sudo launchctl start com.aspera.asperanoded
+	sudo launchctl start com.aspera.asperaredisd
+	while ! $(EXE_NO_MAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
+	touch $@
+clean_local:
+	rm -f $(T).ssh_ok
+clean:: clean_local
 endif
 
 START_TEST=$(DIR_TOP)tests/mark begin
@@ -701,6 +708,7 @@ $(T)aocuprefmod: $(T).exists
 $(T)aocg7: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages shared_inboxes list
+	$(EXE_MAN) aoc packages shared_inboxes show %name:@preset:aoc.shared_inbox_name
 	@$(STOP_TEST) $@
 $(T)aocg8: $(T).exists
 	@$(START_TEST) $@
@@ -737,10 +745,15 @@ $(T)aoc_tstsrc: $(T).exists
 	$(EXE_IGN) aoc files delete /testsrc$(EXE_END_IGN)
 	$(EXE_MAN) aoc files mkdir /testsrc
 	@$(STOP_TEST) $@
-$(T)aoc_tstdst: $(T).exists
+$(T)aoc_some_folder: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) aoc files delete /some_folder$(EXE_END_IGN)
+	sleep 10
 	$(EXE_NO_MAN) aoc files mkdir /some_folder
+	sleep 10
+	@$(STOP_TEST) $@
+$(T)aoc_tstdst: $(T)aoc_some_folder
+	@$(START_TEST) $@
 	$(EXE_IGN) aoc files delete /testdst$(EXE_END_IGN)
 	$(EXE_MAN) aoc files rename /some_folder testdst
 	@$(STOP_TEST) $@
@@ -865,15 +878,15 @@ $(T)aoc_lnk_priv: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocshlk2: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link private create /testdst
+	$(EXE_MAN) aoc files short_link /testdst private create
 	@$(STOP_TEST) $@
 $(T)aocshlk3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link public create testdst
+	$(EXE_MAN) aoc files short_link /testdst public create
 	@$(STOP_TEST) $@
 $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files short_link private list /testdst
+	$(EXE_MAN) aoc files short_link /testdst private list
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbr1 $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
 #######################################################################################################################
@@ -1615,7 +1628,7 @@ $(T)tcos_info3: $(T).exists
 	@$(STOP_TEST) $@
 $(T)tcos_show: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node access_key show self
+	$(EXE_IGN) cos node access_key show self$(EXE_END_IGN)
 	@$(STOP_TEST) $@
 $(T)tcos_upload: $(T).exists
 	@$(START_TEST) $@
