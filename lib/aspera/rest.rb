@@ -258,9 +258,10 @@ module Aspera
       return_error: false,
       headers: nil
     )
-      Log.log.debug{Log.dump(:req_data, body)}
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
+      Log.log.debug{"#{operation} [#{subpath}]".red.bold.bg_green}
+      Log.log.debug{Log.dump(:body, body)}
       Aspera.assert_type(subpath, String)
       if headers.nil?
         headers = @headers.clone
@@ -270,7 +271,6 @@ module Aspera
         headers.merge!(h)
       end
       Aspera.assert_type(headers, Hash)
-      Log.log.debug{"#{operation} [#{subpath}]".red.bold.bg_green}
       case @auth_params[:type]
       when :none
         # no auth
