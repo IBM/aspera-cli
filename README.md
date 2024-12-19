@@ -3657,7 +3657,7 @@ OPTIONS: global
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
-        --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
+        --query=VALUE                Additional filter for for some commands (list/delete) (Hash, Array)
         --property=VALUE             Name of property to set (modify operation)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
@@ -3903,6 +3903,22 @@ OPTIONS:
 Bulk creation and deletion of resources are possible using option `bulk` (`yes`,`no`(default)).
 In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value Syntax](#extended-value-syntax).
 This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
+
+### Option: `query`
+
+The `query` option can generally be used to add URL parameters to commands that list ressources.
+It takes either a `Hash` or an `Array`, corresponding to key/value pairs that appear in the query part of request.
+
+For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
+
+If the same parameter needs to be provided several times, then it's possible as well to provide an Array or 2-element Array: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
+
+If PHP's style array is used, then one can use either:
+
+- `--query=@json:'{"a":["[]","v1","v2"]}'`
+- `--query=@json:'[["a[]","v1"],["a[]","v2"]]'`
+
+Both result in: `?a[]=v1&a[]=v2`.
 
 ### Plugins
 
@@ -6106,7 +6122,7 @@ admin event web
 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
 admin metadata_profiles list
 admin node list
-admin oauth_clients list
+admin oauth_clients list --query=@json:'[["client_types[]","public"]]'
 admin registrations list
 admin saml_configs list
 admin shared_inboxes invite %name:my_shared_box_name johnny@example.com

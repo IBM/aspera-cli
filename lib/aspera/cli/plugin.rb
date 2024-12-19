@@ -24,7 +24,7 @@ module Aspera
 
       class << self
         def declare_generic_options(options)
-          options.declare(:query, 'Additional filter for for some commands (list/delete)', types: Hash)
+          options.declare(:query, 'Additional filter for for some commands (list/delete)', types: [Hash, Array])
           options.declare(:property, 'Name of property to set (modify operation)')
           options.declare(:bulk, 'Bulk operation (only some)', values: :bool, default: :no)
           options.declare(:bfail, 'Bulk operation error handling', values: :bool, default: :yes)

@@ -3432,6 +3432,22 @@ Bulk creation and deletion of resources are possible using option `bulk` (`yes`,
 In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value Syntax](#extended-value-syntax).
 This option is available only for some of the resources: if you need it: try and see if the entities you try to create or delete support this option.
 
+### Option: `query`
+
+The `query` option can generally be used to add URL parameters to commands that list ressources.
+It takes either a `Hash` or an `Array`, corresponding to key/value pairs that appear in the query part of request.
+
+For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
+
+If the same parameter needs to be provided several times, then it's possible as well to provide an Array or 2-element Array: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
+
+If PHP's style array is used, then one can use either:
+
+- `--query=@json:'{"a":["[]","v1","v2"]}'`
+- `--query=@json:'[["a[]","v1"],["a[]","v2"]]'`
+
+Both result in: `?a[]=v1&a[]=v2`.
+
 ### Plugins
 
 <%=tool%> uses a plugin mechanism.

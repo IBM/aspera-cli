@@ -5075,7 +5075,7 @@ OPTIONS: global
         --secret=VALUE               Secret for access keys
         --vault=VALUE                Vault for secrets (Hash)
         --vault-password=VALUE       Vault password
-        --query=VALUE                Additional filter for for some commands (list/delete) (Hash)
+        --query=VALUE                Additional filter for for some commands (list/delete) (Hash, Array)
         --property=VALUE             Name of property to set (modify operation)
         --bulk=ENUM                  Bulk operation (only some): [no], yes
         --bfail=ENUM                 Bulk operation error handling: no, [yes]
@@ -5327,8 +5327,27 @@ instead of a simple <code>Hash</code> using the <a
 href="#extended-value-syntax">Extended Value Syntax</a>. This option is
 available only for some of the resources: if you need it: try and see if
 the entities you try to create or delete support this option.</p>
-<h2 data-number="4.30" id="plugins"><span
-class="header-section-number">4.30</span> Plugins</h2>
+<h2 data-number="4.30" id="option-query"><span
+class="header-section-number">4.30</span> Option:
+<code>query</code></h2>
+<p>The <code>query</code> option can generally be used to add URL
+parameters to commands that list ressources. It takes either a
+<code>Hash</code> or an <code>Array</code>, corresponding to key/value
+pairs that appear in the query part of request.</p>
+<p>For example: <code>--query=@json:'{"p1":"v1","p2":"v2"}'</code> leads
+to query: <code>?p1=v1&amp;p2=v2</code>.</p>
+<p>If the same parameter needs to be provided several times, then it’s
+possible as well to provide an Array or 2-element Array:
+<code>--query=@json:'[["p1":,"v1"],["p2":"v2"]]'</code> leads to the
+same result as previously.</p>
+<p>If PHP’s style array is used, then one can use either:</p>
+<ul>
+<li><code>--query=@json:'{"a":["[]","v1","v2"]}'</code></li>
+<li><code>--query=@json:'[["a[]","v1"],["a[]","v2"]]'</code></li>
+</ul>
+<p>Both result in: <code>?a[]=v1&amp;a[]=v2</code>.</p>
+<h2 data-number="4.31" id="plugins"><span
+class="header-section-number">4.31</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
 (just after <code>ascli</code> on the command line) is the name of the
 concerned plugin which will execute the command. Each plugin usually
@@ -7593,7 +7612,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb433-1"><a href
 <span id="cb433-9"><a href="#cb433-9" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> jobs list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;job_type&quot;:&quot;email&quot;,&quot;status&quot;:&quot;failed&quot;}&#39;</span> <span class="at">--fields</span><span class="op">=</span>id,error_desc</span>
 <span id="cb433-10"><a href="#cb433-10" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> metadata_profiles list</span>
 <span id="cb433-11"><a href="#cb433-11" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> node list</span>
-<span id="cb433-12"><a href="#cb433-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> oauth_clients list</span>
+<span id="cb433-12"><a href="#cb433-12" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> oauth_clients list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;[[&quot;client_types[]&quot;,&quot;public&quot;]]&#39;</span></span>
 <span id="cb433-13"><a href="#cb433-13" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> registrations list</span>
 <span id="cb433-14"><a href="#cb433-14" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> saml_configs list</span>
 <span id="cb433-15"><a href="#cb433-15" aria-hidden="true" tabindex="-1"></a><span class="ex">admin</span> shared_inboxes invite %name:my_shared_box_name johnny@example.com</span>
@@ -8124,7 +8143,7 @@ class="header-section-number">10.1.2</span> Option
 <code>recipient</code> set with value
 <code>*&lt;name of dropbox/workgroup&gt;</code></li>
 </ul>
-<h3 data-number="10.1.3" id="option-query"><span
+<h3 data-number="10.1.3" id="option-query-1"><span
 class="header-section-number">10.1.3</span> Option
 <code>query</code></h3>
 <p>As inboxes may be large, it is possible to use the following query

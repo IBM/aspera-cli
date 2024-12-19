@@ -1729,18 +1729,48 @@ $(T)f5_dist_list: $(T).exists
 	sleep 10
 	$(EXE_MAN) faspex5 admin distribution_lists delete %name:test4
 	@$(STOP_TEST) $@
-$(T)f5_adm: $(T).exists
+$(T)f5_adm_acc_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin accounts list
+	@$(STOP_TEST) $@
+$(T)f5_adm_job_lst: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
+	@$(STOP_TEST) $@
+$(T)f5_adm_nod_lst: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin node list 
-	$(EXE_MAN) --preset=f5_admin faspex5 admin oauth_clients list
+	@$(STOP_TEST) $@
+$(T)f5_adm_api_lst: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) --preset=f5_admin faspex5 admin oauth_clients list --query=@json:'[["client_types[]","public"]]'
+	@$(STOP_TEST) $@
+$(T)f5_adm_reg_lst: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin registrations list
+	@$(STOP_TEST) $@
+$(T)f5_adm_sbx_lst: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes list --query=@json:'{"all":true}'
+	@$(STOP_TEST) $@
+$(T)f5_adm_sbx_mem: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ list
+	@$(STOP_TEST) $@
+$(T)f5_adm_sbx_cr: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ create %name:john@example.com
+	@$(STOP_TEST) $@
+$(T)f5_adm_sbx_del: $(T)f5_adm_sbx_cr
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:john@example.com
+	@$(STOP_TEST) $@
+$(T)f5_adm_evt_app: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin event app
+	@$(STOP_TEST) $@
+$(T)f5_adm_evt_web: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin event web
 	-$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes invite @extend:%name:@preset:faspex5.shared_box_name@ johnny@example.com
 	-$(EXE_MAN) --preset=f5_admin faspex5 admin shared_inboxes members @extend:%name:@preset:faspex5.shared_box_name@ delete %name:johnny@example.com
@@ -1804,7 +1834,7 @@ $(T)f5_postproc: $(T).exists
 	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
+$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm_acc_lst $(T)f5_adm_job_lst $(T)f5_adm_nod_lst $(T)f5_adm_api_lst $(T)f5_adm_reg_lst $(T)f5_adm_sbx_lst $(T)f5_adm_sbx_mem $(T)f5_adm_sbx_cr $(T)f5_adm_sbx_del $(T)f5_adm_evt_app $(T)f5_adm_evt_web $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
 #######################################################################################################################
 $(T)httpgw_nagios: $(T).exists
 	@$(START_TEST) $@

@@ -71,29 +71,37 @@ module Aspera
         return values.first.eql?(ARRAY_PARAMS)
       end
 
-      # Build URI from URL and parameters and check it is http or https, encode array [] parameters
-      def build_uri(url, query_hash=nil)
+      # Build URI from URL and parameters and check it is http or https
+      # encode array [] parameters
+      # @param query [Hash,Array]
+      def build_uri(url, query=nil)
         uri = URI.parse(url)
         Aspera.assert(%w[http https].include?(uri.scheme)){"REST endpoint shall be http/s not #{uri.scheme}"}
-        return uri if query_hash.nil?
-        Log.log.debug{Log.dump('query', query_hash)}
-        Aspera.assert_type(query_hash, Hash)
-        return uri if query_hash.empty?
-        query = []
-        query_hash.each do |k, v|
-          case v
-          when Array
-            # support array for query parameter, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
-            suffix = array_params?(v) ? v.shift : ''
-            v.each do |e|
-              query.push(["#{k}#{suffix}", e])
+        return uri if query.nil? || query.respond_to?(:empty?) && query.empty?
+        Log.log.debug{Log.dump('query', query)}
+        query_array = []
+        case query
+        when Hash
+          query.each do |k, v|
+            case v
+            when Array
+              # support array for query parameter, there is no standard. Either p[]=1&p[]=2, or p=1&p=2
+              suffix = array_params?(v) ? v.shift : ''
+              v.each do |e|
+                query_array.push(["#{k}#{suffix}", e])
+              end
+            else
+              query_array.push([k, v])
             end
-          else
-            query.push([k, v])
           end
+        when Array
+          Aspera.assert(query.all?{|i| i.is_a?(Array) && i.length.eql?(2)}) {'Query must be array of arrays or 2 elements'}
+          query_array = query
+        else
+          raise "Query must be Hash or Array, not #{query.class}"
         end
         # [] is allowed in url parameters
-        uri.query = URI.encode_www_form(query).gsub('%5B%5D=', '[]=')
+        uri.query = URI.encode_www_form(query_array).gsub('%5B%5D=', '[]=')
         return uri
       end
 
