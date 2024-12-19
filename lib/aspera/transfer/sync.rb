@@ -266,11 +266,7 @@ module Aspera
           else
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
-          Environment.secure_spawn(env: {}, exec: ASYNC_ADMIN_EXECUTABLE, args: arguments, log_only: true)
-          stdout, stderr, status = Open3.capture3(*[ASYNC_ADMIN_EXECUTABLE].concat(arguments))
-          Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-          Log.log.trace1{"stdout=#{stdout}"}
-          raise "Sync failed: #{status.exitstatus} : #{stderr}" unless status.success?
+          stdout = Environment.secure_capture(exec: ASYNC_ADMIN_EXECUTABLE, args: arguments)
           return parse_status(stdout)
         end
       end

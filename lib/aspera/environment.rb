@@ -96,22 +96,32 @@ module Aspera
         Kernel.send('lave'.reverse, code, empty_binding, file, line)
       end
 
+      def log_spawn(env:, exec:, args:)
+        [
+          'execute:'.red,
+          env.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
+          Shellwords.shellescape(exec),
+          args.map{|a|Shellwords.shellescape(a)}
+        ].flatten.join(' ')
+      end
+
       # start process in background, or raise exception
       # caller can call Process.wait on returned value
-      def secure_spawn(env:, exec:, args:, log_only: false)
-        Log.log.debug do
-          [
-            'execute:'.red,
-            env.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
-            Shellwords.shellescape(exec),
-            args.map{|a|Shellwords.shellescape(a)}
-          ].flatten.join(' ')
-        end
-        return if log_only
+      def secure_spawn(env:, exec:, args:)
+        Log.log.debug {log_spawn(env: env, exec: exec, args: args)}
         # start ascp in separate process
         ascp_pid = Process.spawn(env, [exec, exec], *args, close_others: true)
         Log.log.debug{"pid: #{ascp_pid}"}
         return ascp_pid
+      end
+
+      def secure_capture(exec:, args:)
+        Log.log.debug {log_spawn(env: {}, exec: exec, args: args)}
+        stdout, stderr, status = Open3.capture3(*[exec].concat(args))
+        Log.log.debug{"status=#{status}, stderr=#{stderr}"}
+        Log.log.trace1{"stdout=#{stdout}"}
+        raise "process failed: #{status.exitstatus} : #{stderr}" unless status.success?
+        return stdout
       end
 
       # Write content to a file, with restricted access
