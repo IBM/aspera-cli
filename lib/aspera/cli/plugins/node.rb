@@ -501,7 +501,14 @@ module Aspera
             return Main.result_status("renamed to #{newname}")
           when :delete
             return do_bulk_operation(command: command_repo, descr: 'path', values: String, id_result: 'path') do |l_path|
-              apifid = @api_node.resolve_api_fid(top_file_id, l_path)
+              apifid = if (m = l_path.match(REGEX_LOOKUP_ID_BY_FIELD))
+                {
+                  api:     @api_node,
+                  file_id: m[2]
+                }
+              else
+                @api_node.resolve_api_fid(top_file_id, l_path)
+              end
               result = apifid[:api].delete("files/#{apifid[:file_id]}")
               {'path' => l_path}
             end
