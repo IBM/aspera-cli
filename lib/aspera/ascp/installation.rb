@@ -43,11 +43,10 @@ module Aspera
       # all ascp files (in SDK)
       EXE_FILES = %i[ascp ascp4 async].freeze
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
-      TRANSFER_SDK_ARCHIVE_URL = 'https://ibm.biz/aspera_transfer_sdk'
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
       SDK_ARCHIVE_FOLDERS = ['/bin/', '/aspera/'].freeze
-      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_ARCHIVE_URL, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
+      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -228,9 +227,13 @@ module Aspera
         return data
       end
 
+      # information for `ascp info`
       def ascp_info
-        files = file_paths
-        return files.merge(ascp_pvcl_info).merge(ascp_ssl_info)
+        ascp_data = file_paths
+        ascp_data.merge!(ascp_pvcl_info)
+        ascp_data['sdk_locations'] = TRANSFER_SDK_LOCATION_URL
+        ascp_data.merge!(ascp_ssl_info)
+        return ascp_data
       end
 
       # Loads YAML from cloud with locations of SDK archives for all platforms
