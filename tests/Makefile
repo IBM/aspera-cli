@@ -118,13 +118,21 @@ all:: $(T).ssh_ok
 $(T).ssh_ok: $(T).exists
 	sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
 	sudo systemsetup -getremotelogin
-	sudo launchctl start com.aspera.asperanoded
-	sudo launchctl start com.aspera.asperaredisd
+	make restart_noded
 	while ! $(EXE_NO_MAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 	touch $@
 clean_local:
 	rm -f $(T).ssh_ok
 clean:: clean_local
+restart_noded:
+	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist
+	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist
+	sleep 5
+	-ps -ef|grep aspera|grep -v grep
+	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist
+	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist
+	sleep 5
+	-ps -ef|grep aspera|grep -v grep
 endif
 
 START_TEST=$(DIR_TOP)tests/mark begin

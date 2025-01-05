@@ -12,7 +12,7 @@
 
 Version : 4.20.0.pre
 
-Laurent/2016-2024
+Laurent/2016-2025
 
 This gem provides the `ascli` CLI (Command Line Interface) to IBM Aspera software.
 

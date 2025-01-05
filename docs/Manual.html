@@ -11,7 +11,7 @@ alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
 <p>Version : 4.20.0.pre</p>
-<p>Laurent/2016-2024</p>
+<p>Laurent/2016-2025</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
 <p><code>ascli</code> is a also great tool to learn Aspera APIs.</p>
@@ -1185,7 +1185,7 @@ two arguments are not processed by the <code>echo</code> command.</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo 1 2 3</span></code></pre></div>
 <div class="sourceCode" id="cb96"><pre
 class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;1&quot;</span></span>
-<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a><span class="cn">ERROR</span>: <span class="dt">Argument</span>: unprocessed <span class="wa">values: </span><span class="kw">[</span><span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span><span class="kw">]</span></span></code></pre></div>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a><span class="wa">ERROR:</span> <span class="wa">Argument:</span> unprocessed <span class="wa">values:</span> <span class="kw">[</span><span class="st">&quot;2&quot;</span>, <span class="st">&quot;3&quot;</span><span class="kw">]</span></span></code></pre></div>
 <p><code>config echo</code> displays the value of the
 <strong>first</strong> argument using Ruby syntax: it surrounds a string
 with <code>"</code> and add <code>\</code> before special
@@ -1269,8 +1269,8 @@ JSON:</p></li>
 class="sourceCode json"><code class="sourceCode json"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;title&quot;</span><span class="fu">:</span><span class="st">&quot;Test </span><span class="ch">\&quot;</span><span class="st"> &#39; &amp; </span><span class="ch">\\</span><span class="st">&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p>or using Ruby:</p>
 <div class="sourceCode" id="cb106"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="kw">{</span><span class="st">&quot;title&quot;</span><span class="kw">=&gt;</span><span class="st">&quot;Test \&quot; &#39; &amp; \\&quot;</span><span class="kw">}</span></span>
-<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a><span class="kw">{</span><span class="vs">&#39;title&#39;</span><span class="kw">=&gt;</span><span class="ot">%q{</span><span class="vs">Test &quot; &#39; &amp; \\</span><span class="ot">}</span><span class="kw">}</span></span></code></pre></div>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span><span class="st">&quot;title&quot;</span><span class="op">=&gt;</span><span class="st">&quot;Test </span><span class="sc">\&quot;</span><span class="st"> &#39; &amp; </span><span class="sc">\\</span><span class="st">&quot;</span><span class="op">}</span></span>
+<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span><span class="vs">&#39;title&#39;</span><span class="op">=&gt;</span><span class="ot">%q{</span><span class="vs">Test &quot; &#39; &amp; </span><span class="sc">\\</span><span class="ot">}</span><span class="op">}</span></span></code></pre></div>
 <p>Both <code>"</code> and <code>\</code> are special characters for
 JSON and Ruby and can be protected with <code>\</code> (unless Ruby’s
 extended single quote notation <code>%q</code> is used).</p>
@@ -4457,7 +4457,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb239-1"><a href
 <span id="cb239-2"><a href="#cb239-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> secondfile <span class="op">&gt;&gt;</span> myfilelist.txt</span></code></pre></div>
 <p>Use the file list: one path per line:</p>
 <div class="sourceCode" id="cb240"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb240-1"><a href="#cb240-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@lines</span><span class="wa">:@file:myfilelist</span><span class="at">.txt</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb240-1"><a href="#cb240-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@lines</span><span class="op">:</span><span class="ot">@file</span><span class="op">:</span>myfilelist<span class="at">.txt</span></span></code></pre></div></li>
 <li><p>Using JSON array</p>
 <div class="sourceCode" id="cb241"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb241-1"><a href="#cb241-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@json:</span><span class="st">&#39;[&quot;file1&quot;,&quot;file2&quot;]&#39;</span></span></code></pre></div></li>
@@ -4466,7 +4466,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb241-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb242-1"><a href="#cb242-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--sources=@lines:@stdin:</span></span></code></pre></div></li>
 <li><p>Using Ruby code (one path per line in file)</p>
 <div class="sourceCode" id="cb243"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--</span>sources<span class="kw">=</span><span class="ot">@ruby</span>:<span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb243-1"><a href="#cb243-1" aria-hidden="true" tabindex="-1"></a><span class="op">--</span>sources<span class="op">=</span><span class="ot">@ruby</span><span class="op">:</span><span class="vs">&#39;File.read(&quot;myfilelist.txt&quot;).split(&quot;\n&quot;)&#39;</span></span></code></pre></div></li>
 </ul></li>
 <li><p><code>@ts</code> : the user provides the list of files directly
 in the <code>paths</code> field of transfer spec (option
@@ -5602,7 +5602,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb281-1"><a href
 | 109951 | LAURENT MARTIN |
 +--------+----------------+</code></pre>
 <div class="sourceCode" id="cb283"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a>ascli aoc user profile modify <span class="ot">@ruby</span>:<span class="vs">&#39;{&quot;public_key&quot;=&gt;File.read(File.expand_path(&quot;~/.aspera/ascli/my_private_key.pub&quot;))}&#39;</span></span></code></pre></div>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a>ascli aoc user profile modify <span class="ot">@ruby</span><span class="op">:</span><span class="vs">&#39;{&quot;public_key&quot;=&gt;File.read(File.expand_path(&quot;~/.aspera/ascli/my_private_key.pub&quot;))}&#39;</span></span></code></pre></div>
 <pre class="output"><code>modified</code></pre>
 <blockquote>
 <p><strong>Note:</strong> The <code>aspera user info show</code> command
@@ -5922,7 +5922,7 @@ id="example-find-deactivated-users-since-more-than-2-years"><span
 class="header-section-number">5.4.11</span> Example: Find deactivated
 users since more than 2 years</h3>
 <div class="sourceCode" id="cb311"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a>ascli aoc admin user list <span class="kw">--</span>query<span class="kw">=</span><span class="ot">@ruby</span>:<span class="vs">&#39;{&quot;deactivated&quot;=&gt;true,&quot;q&quot;=&gt;&quot;last_login_at:&lt;#{(DateTime.now.to_time.utc-2*365*86400).iso8601}&quot;}&#39;</span></span></code></pre></div>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb311-1"><a href="#cb311-1" aria-hidden="true" tabindex="-1"></a>ascli aoc admin user list <span class="op">--</span>query<span class="op">=</span><span class="ot">@ruby</span><span class="op">:</span><span class="vs">&#39;{&quot;deactivated&quot;=&gt;true,&quot;q&quot;=&gt;&quot;last_login_at:&lt;#{(DateTime.now.to_time.utc-2*365*86400).iso8601}&quot;}&#39;</span></span></code></pre></div>
 <p>To delete them use the same method as before</p>
 <h3 data-number="5.4.12"
 id="example-display-current-users-workspaces"><span
@@ -6996,22 +6996,22 @@ not mix with the shell.</p>
 <ul>
 <li><p>Find files more recent than 100 days</p>
 <div class="sourceCode" id="cb398"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb398-1"><a href="#cb398-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-&gt;</span>(f)<span class="kw">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> (<span class="dt">DateTime</span><span class="at">.now</span><span class="kw">-</span><span class="dt">DateTime</span><span class="at">.parse</span>(f<span class="kw">[</span><span class="st">&quot;modified_time&quot;</span><span class="kw">]</span>))<span class="kw">&lt;</span><span class="dv">100</span><span class="kw">}</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb398-1"><a href="#cb398-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(f)<span class="op">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> (<span class="dt">DateTime</span><span class="at">.now</span><span class="op">-</span><span class="dt">DateTime</span><span class="at">.parse</span>(f<span class="kw">[</span><span class="st">&quot;modified_time&quot;</span><span class="kw">]</span>))<span class="op">&lt;</span><span class="dv">100</span><span class="op">}</span></span></code></pre></div></li>
 <li><p>Find files older than 1 year</p>
 <div class="sourceCode" id="cb399"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb399-1"><a href="#cb399-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-&gt;</span>(f)<span class="kw">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> (<span class="dt">DateTime</span><span class="at">.now</span><span class="kw">-</span><span class="dt">DateTime</span><span class="at">.parse</span>(f<span class="kw">[</span><span class="st">&quot;modified_time&quot;</span><span class="kw">]</span>))<span class="kw">&gt;</span><span class="dv">365</span><span class="kw">}</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb399-1"><a href="#cb399-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(f)<span class="op">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> (<span class="dt">DateTime</span><span class="at">.now</span><span class="op">-</span><span class="dt">DateTime</span><span class="at">.parse</span>(f<span class="kw">[</span><span class="st">&quot;modified_time&quot;</span><span class="kw">]</span>))<span class="op">&gt;</span><span class="dv">365</span><span class="op">}</span></span></code></pre></div></li>
 <li><p>Find files larger than 1MB</p>
 <div class="sourceCode" id="cb400"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb400-1"><a href="#cb400-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-&gt;</span>(f)<span class="kw">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> f<span class="kw">[</span><span class="st">&quot;size&quot;</span><span class="kw">]</span><span class="at">.to_i</span><span class="kw">&gt;</span><span class="dv">1000000</span><span class="kw">}</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb400-1"><a href="#cb400-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(f)<span class="op">{</span>f<span class="kw">[</span><span class="st">&quot;type&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;file&quot;</span>) <span class="cf">and</span> f<span class="kw">[</span><span class="st">&quot;size&quot;</span><span class="kw">]</span><span class="at">.to_i</span><span class="op">&gt;</span><span class="dv">1000000</span><span class="op">}</span></span></code></pre></div></li>
 <li><p>Filter out files beginning with <code>._</code> or named
 <code>.DS_Store</code>:</p>
 <div class="sourceCode" id="cb401"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb401-1"><a href="#cb401-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-&gt;</span>(f)<span class="kw">{</span>!(f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.start_with?</span>(<span class="st">&quot;._&quot;</span>) <span class="cf">or</span> f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;.DS_Store&quot;</span>))<span class="kw">}</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb401-1"><a href="#cb401-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(f)<span class="op">{!</span>(f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.start_with?</span>(<span class="st">&quot;._&quot;</span>) <span class="cf">or</span> f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.eql?</span>(<span class="st">&quot;.DS_Store&quot;</span>))<span class="op">}</span></span></code></pre></div></li>
 <li><p>Match files using a <a
 href="https://ruby-doc.org/core/Regexp.html">Ruby Regex</a> :
 <code>\.gif$</code></p>
 <div class="sourceCode" id="cb402"><pre
-class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb402-1"><a href="#cb402-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-&gt;</span>(f)<span class="kw">{</span>f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.match?</span>(<span class="ss">/\.gif$/</span>)<span class="kw">}</span></span></code></pre></div></li>
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb402-1"><a href="#cb402-1" aria-hidden="true" tabindex="-1"></a><span class="op">-&gt;</span>(f)<span class="op">{</span>f<span class="kw">[</span><span class="st">&quot;name&quot;</span><span class="kw">]</span><span class="at">.match?</span>(<span class="ss">/</span><span class="sc">\.</span><span class="ss">gif$/</span>)<span class="op">}</span></span></code></pre></div></li>
 </ul>
 <p><code>ascli</code> commands can be piped in order to combine
 operations, such as <strong>find and delete</strong>:</p>
