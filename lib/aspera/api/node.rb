@@ -33,6 +33,8 @@ module Aspera
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       HEADER_X_TOTAL_COUNT = 'X-Total-Count'
+      HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
+      HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
       SCOPE_USER = 'user:all'
       SCOPE_ADMIN = 'admin:all'
       PATH_SEPARATOR = '/'
@@ -42,9 +44,17 @@ module Aspera
 
       # class instance variable, access with accessors on class
       @use_standard_ports = true
+      @use_node_cache = true
 
       class << self
         attr_accessor :use_standard_ports
+        attr_accessor :use_node_cache
+
+        def cache_control_headers
+          h = {'Accept' => 'application/json'}
+          h[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
+          h
+        end
 
         # For access keys: provide expression to match entry in folder
         def file_matcher(match_expression)
@@ -144,6 +154,11 @@ module Aspera
             Aspera.assert(@app_info[:api].respond_to?(method)){"#{@app_info[:api].class} lacks method #{method}"}
           end
         end
+      end
+
+      # Call node API, possibly adding cache control header, as globally specified
+      def read_with_cache(subpath, query=nil)
+        return call(operation: 'GET', subpath: subpath, headers: self.class.cache_control_headers, query: query)[:data]
       end
 
       # update transfer spec with special additional tags
@@ -329,7 +344,7 @@ module Aspera
           # get settings from name.value array to hash key.value
           settings = info['settings']&.each_with_object({}){|i, h|h[i['name']] = i['value']}
           # check WSS ports
-          %w[wss_enabled wss_port].each do |i|
+          Transfer::Spec::WSS_FIELDS.each do |i|
             transfer_spec[i] = settings[i] if settings.key?(i)
           end if settings.is_a?(Hash)
         else
