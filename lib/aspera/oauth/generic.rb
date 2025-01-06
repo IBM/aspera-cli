@@ -13,17 +13,13 @@ module Aspera
         receiver_client_ids: nil,
         **base_params
       )
-        super(**base_params)
+        super(**base_params, cache_ids: [grant_type&.split(':')&.last, apikey, response_type])
         @create_params = {
           grant_type: grant_type
         }
-        @create_params[:response_type] = response_type if response_type
-        @create_params[:apikey] = apikey if apikey
-        @create_params[:receiver_client_ids] = receiver_client_ids if receiver_client_ids
-        @identifiers.push(
-          @create_params[:grant_type]&.split(':')&.last,
-          @create_params[:apikey],
-          @create_params[:response_type])
+        @create_params[:response_type] = response_type unless response_type.nil?
+        @create_params[:apikey] = apikey unless apikey.nil?
+        @create_params[:receiver_client_ids] = receiver_client_ids unless receiver_client_ids.nil?
       end
 
       def create_token

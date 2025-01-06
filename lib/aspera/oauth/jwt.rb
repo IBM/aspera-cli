@@ -13,6 +13,7 @@ module Aspera
     # https://tools.ietf.org/html/rfc7523
     # https://tools.ietf.org/html/rfc7519
     class Jwt < Base
+      GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:jwt-bearer'
       # @param private_key_obj private key object
       # @param payload payload to be included in the JWT
       # @param headers headers to be included in the JWT
@@ -25,11 +26,10 @@ module Aspera
         Aspera.assert_type(private_key_obj, OpenSSL::PKey::RSA){'private_key_obj'}
         Aspera.assert_type(payload, Hash){'payload'}
         Aspera.assert_type(headers, Hash){'headers'}
-        super(**base_params)
+        super(**base_params, cache_ids: [payload[:sub]])
         @private_key_obj = private_key_obj
         @additional_payload = payload
         @headers = headers
-        @identifiers.push(@additional_payload[:sub])
       end
 
       def create_token
@@ -46,7 +46,7 @@ module Aspera
         Log.log.debug{"private=[#{@private_key_obj}]"}
         assertion = JWT.encode(jwt_payload, @private_key_obj, 'RS256', @headers)
         Log.log.debug{"assertion=[#{assertion}]"}
-        return create_token_call(optional_scope_client_id.merge(grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: assertion))
+        return create_token_call(optional_scope_client_id.merge(grant_type: GRANT_TYPE, assertion: assertion))
       end
     end
     Factory.instance.register_token_creator(Jwt)

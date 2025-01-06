@@ -13,10 +13,9 @@ module Aspera
         json:,
         **generic_params
       )
-        super(**generic_params)
+        super(**generic_params, cache_ids: [json[:url_token]])
         @body = json
         @query = url
-        @identifiers.push(@body[:url_token])
       end
 
       def create_token

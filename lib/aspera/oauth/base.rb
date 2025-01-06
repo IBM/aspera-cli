@@ -3,64 +3,66 @@
 require 'aspera/oauth/factory'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/id_generator'
 require 'date'
 
 module Aspera
   module OAuth
-    # Implement OAuth 2 for the REST client and generate a bearer token
-    # bearer tokens are cached in memory and in a file cache for later re-use
+    # OAuth 2 client for the REST client
+    # Generate bearer token
+    # Bearer tokens are cached in memory and in a file cache for later re-use
     # https://tools.ietf.org/html/rfc6749
     class Base
-      # scope can be modified after creation
-      attr_writer :scope
-
-      # [M]=mandatory [D]=has default value [O]=Optional/nil
-      # @param base_url            [M] URL of authentication API
-      # @param auth                [O] basic auth parameters
-      # @param client_id           [O]
-      # @param client_secret       [O]
-      # @param scope               [O]
-      # @param path_token          [D] API end point to create a token
-      # @param token_field         [D] field in result that contains the token
+      # @param **             Parameters for REST
+      # @param client_id      [String, nil]
+      # @param client_secret  [String, nil]
+      # @param scope          [String, nil]
+      # @param use_query      [bool]        Provide parameters in query instead of body
+      # @param path_token     [String]      API end point to create a token
+      # @param token_field    [String]      Field in result that contains the token
+      # @param cache_ids      [Array, nil]  List of unique identifiers for cache id generation
       def initialize(
-        base_url:,
-        auth: nil,
         client_id: nil,
         client_secret: nil,
         scope: nil,
         use_query: false,
-        path_token:  'token',       # default endpoint for /token to generate token
-        token_field: 'access_token' # field with token in result of call to path_token
+        path_token:  'token',
+        token_field: 'access_token',
+        cache_ids: nil,
+        **rest_params
       )
-        Aspera.assert_type(base_url, String)
         Aspera.assert(respond_to?(:create_token), 'create_token method must be defined', exception_class: InternalError)
-        @base_url = base_url
+        # this is the OAuth API
+        @api = Rest.new(**rest_params)
         @path_token = path_token
         @token_field = token_field
         @client_id = client_id
         @client_secret = client_secret
-        @scope = scope
         @use_query = use_query
-        @identifiers = []
-        @identifiers.push(auth[:username]) if auth.is_a?(Hash) && auth.key?(:username)
-        # this is the OAuth API
-        @api = Rest.new(
-          base_url:     @base_url,
-          redirect_max: 2,
-          auth:         auth)
+        @base_cache_ids = cache_ids.clone
+        @base_cache_ids = [] if @base_cache_ids.nil?
+        Aspera.assert_type(@base_cache_ids, Array)
+        if @api.auth_params.key?(:username)
+          cache_ids.push(@api.auth_params[:username])
+        end
+        @base_cache_ids.freeze
+        self.scope = scope
+      end
+
+      # Scope can be modified after creation, then update identifier for cache
+      def scope=(scope)
+        @scope = scope
+        # generate token unique identifier for persistency (memory/disk cache)
+        @token_cache_id = Factory.cache_id(@api.base_url, self.class, @base_cache_ids, @scope)
       end
 
       # helper method to create token as per RFC
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
-        payload = {
-          body:      creation_params,
-          body_type: :www
-        }
+        payload = { body_type: :www }
         if @use_query
           payload[:query] = creation_params
-          payload[:body] = {}
+        else
+          payload[:body] = creation_params
         end
         return @api.call(
           operation: 'POST',
@@ -85,16 +87,8 @@ module Aspera
       # @param cache set to false to disable cache
       # @param refresh set to true to force refresh or re-generation (if previous failed)
       def token(cache: true, refresh: false)
-        # generate token unique identifier for persistency (memory/disk cache)
-        token_id = IdGenerator.from_list(Factory.id(
-          @base_url,
-          Factory.class_to_id(self.class),
-          @identifiers,
-          @scope
-        ))
-
         # get token_data from cache (or nil), token_data is what is returned by /token
-        token_data = Factory.instance.persist_mgr.get(token_id) if cache
+        token_data = Factory.instance.persist_mgr.get(@token_cache_id) if cache
         token_data = JSON.parse(token_data) unless token_data.nil?
         # Optional optimization: check if node token is expired based on decoded content then force refresh if close enough
         # might help in case the transfer agent cannot refresh himself
@@ -120,7 +114,7 @@ module Aspera
             refresh_token = token_data['refresh_token']
           end
           # delete cache
-          Factory.instance.persist_mgr.delete(token_id)
+          Factory.instance.persist_mgr.delete(@token_cache_id)
           token_data = nil
           # lets try the existing refresh token
           if !refresh_token.nil?
@@ -132,7 +126,7 @@ module Aspera
               # save only if success
               json_data = resp[:http].body
               token_data = JSON.parse(json_data)
-              Factory.instance.persist_mgr.put(token_id, json_data)
+              Factory.instance.persist_mgr.put(@token_cache_id, json_data)
             else
               Log.log.debug{"refresh failed: #{resp[:http].body}".bg_red}
             end
@@ -144,7 +138,7 @@ module Aspera
           resp = create_token
           json_data = resp[:http].body
           token_data = JSON.parse(json_data)
-          Factory.instance.persist_mgr.put(token_id, json_data)
+          Factory.instance.persist_mgr.put(@token_cache_id, json_data)
         end
         Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"}
         # ok we shall have a token here

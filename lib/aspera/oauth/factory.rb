@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require 'singleton'
+require 'aspera/id_generator'
 require 'aspera/assert'
+require 'singleton'
 require 'base64'
 module Aspera
   module OAuth
@@ -29,11 +30,17 @@ module Aspera
           return token[BEARER_PREFIX.length..-1]
         end
 
-        def id(*params)
-          return [PERSIST_CATEGORY_TOKEN, *params].flatten
+        # @return a cache identifier
+        def cache_id(url, creator_class, *params)
+          return IdGenerator.from_list([
+            PERSIST_CATEGORY_TOKEN,
+            url,
+            Factory.class_to_id(creator_class),
+            *params
+          ].flatten)
         end
 
-        # snake version of class name is the identifier
+        # @return snake version of class name
         def class_to_id(creator_class)
           return creator_class.name.split('::').last.capital_to_snake.to_sym
         end

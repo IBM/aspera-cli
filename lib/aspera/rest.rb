@@ -184,8 +184,8 @@ module Aspera
 
     public
 
-    attr_reader :auth_params
     attr_reader :base_url
+    attr_reader :auth_params
 
     def params
       return {
