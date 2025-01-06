@@ -10,34 +10,30 @@ module Aspera
     class Spec
       # default transfer username for access key based transfers
       ACCESS_KEY_TRANSFER_USER = 'xfer'
+      # default ports for SSH and UDP
       SSH_PORT = 33_001
       UDP_PORT = 33_001
+      # base transfer spec for access keys
       AK_TSPEC_BASE = {
         'remote_user' => ACCESS_KEY_TRANSFER_USER,
         'ssh_port'    => SSH_PORT,
         'fasp_port'   => UDP_PORT
       }.freeze
-      # fields for transport
-      TRANSPORT_FIELDS = %w[remote_host remote_user ssh_port fasp_port wss_enabled wss_port].freeze
+      # fields for WSS
+      WSS_FIELDS = %w[wss_enabled wss_port].freeze
+      # all fields for transport
+      TRANSPORT_FIELDS = %w[remote_host remote_user ssh_port fasp_port].concat(WSS_FIELDS).freeze
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       class << self
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)
-          case transfer_type.to_sym
-          when :upload then DIRECTION_SEND
-          when :download then DIRECTION_RECEIVE
-          else Aspera.error_unexpected_value(transfer_type.to_sym)
-          end
+          XFER_TYPE_TO_DIR.fetch(transfer_type)
         end
 
         # translate send/receive to upload/download
         def direction_to_transfer_type(direction)
-          case direction
-          when DIRECTION_SEND then :upload
-          when DIRECTION_RECEIVE then :download
-          else Aspera.error_unexpected_value(direction)
-          end
+          XFER_DIR_TO_TYPE.fetch(direction)
         end
       end
       DESCRIPTION = CommandLineBuilder.normalize_description(YAML.load_file("#{__FILE__[0..-3]}yaml"))
@@ -49,6 +45,10 @@ module Aspera
           const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end
+      # DIRECTION_* are read from yaml
+      XFER_TYPE_TO_DIR = {upload: DIRECTION_SEND, download: DIRECTION_RECEIVE}.freeze
+      XFER_DIR_TO_TYPE = XFER_TYPE_TO_DIR.invert.freeze
+      private_constant :XFER_TYPE_TO_DIR, :XFER_DIR_TO_TYPE
     end
   end
 end
