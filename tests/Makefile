@@ -103,7 +103,7 @@ TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 TST_MED_FILENAME=$(TST_UTF_FILENAME)
 # needs to be quoted, as there is shell special character: "?"
 TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
-TEMPORIZE_CREATE=sleep 5
+TEMPORIZE_CREATE=sleep 10
 TEMPORIZE_FILE=sleep 30
 
 # sync dir must be an absolute path
@@ -632,6 +632,7 @@ $(T)nd_ak1: $(T).exists
 $(T)nd_ak_mkdir: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete /tst_nd_ak$(EXE_END_IGN)
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name mkdir /tst_nd_ak
 	$(TEMPORIZE_CREATE)
 	@$(STOP_TEST) $@
@@ -751,14 +752,15 @@ $(T)aocffin: $(T).exists
 $(T)aoc_tstsrc: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) aoc files delete /testsrc$(EXE_END_IGN)
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) aoc files mkdir /testsrc
 	@$(STOP_TEST) $@
 $(T)aoc_some_folder: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) aoc files delete /some_folder$(EXE_END_IGN)
-	sleep 10
+	$(TEMPORIZE_CREATE)
 	$(EXE_NO_MAN) aoc files mkdir /some_folder
-	sleep 10
+	$(TEMPORIZE_CREATE)
 	@$(STOP_TEST) $@
 $(T)aoc_tstdst: $(T)aoc_some_folder
 	@$(START_TEST) $@
@@ -1615,7 +1617,7 @@ thot:
 	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
-	sleep 10
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) server upload --to-folder=@extend:@preset:server.upload_folder@/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 	$(EXE_MAN) server browse @extend:@preset:server.upload_folder@/target_hot
 	ls -al source_hot
@@ -1734,7 +1736,7 @@ $(T)f5_dist_list: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 admin distribution_lists list --query=@json:'{"type":"global"}'
 	$(EXE_MAN) faspex5 admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
-	sleep 10
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) faspex5 admin distribution_lists delete %name:test4
 	@$(STOP_TEST) $@
 $(T)f5_adm_acc_lst: $(T).exists
@@ -1848,11 +1850,15 @@ $(T)httpgw_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) httpgw health
 	@$(STOP_TEST) $@
+$(T)httpgw_info: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) httpgw info
+	@$(STOP_TEST) $@
 $(T)httpgw_detect: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config detect @preset:tst_httpgw.url httpgw
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_detect))
+$(eval $(call test_suite_all,thgw,$(T)httpgw_nagios $(T)httpgw_info $(T)httpgw_detect))
 #######################################################################################################################
 $(T)faspio_detect: $(T).exists
 	@$(START_TEST) $@

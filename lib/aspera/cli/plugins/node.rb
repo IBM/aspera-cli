@@ -469,12 +469,17 @@ module Aspera
             return Main.result_status(result[:password])
           when :browse
             apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
-            file_info = apifid[:api].read("files/#{apifid[:file_id]}")
+            # file_info = apifid[:api].read("files/#{apifid[:file_id]}")
+            file_info =  apifid[:api].call(
+              operation: 'GET',
+              subpath:   "files/#{apifid[:file_id]}",
+              headers:   {'Accept' => 'application/json', 'X-Aspera-Cache-Control' => 'no-cache'}
+            )[:data]
             if file_info['type'].eql?('folder')
               result = apifid[:api].call(
                 operation: 'GET',
                 subpath:   "files/#{apifid[:file_id]}/files",
-                headers:   {'Accept' => 'application/json'},
+                headers:   {'Accept' => 'application/json', 'X-Aspera-Cache-Control' => 'no-cache'},
                 query:     query_read_delete)
               items = result[:data]
               formatter.display_item_count(result[:data].length, result[:http]['X-Total-Count'])
