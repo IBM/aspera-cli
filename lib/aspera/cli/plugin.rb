@@ -215,7 +215,7 @@ module Aspera
         return entity_command(command, rest_api, res_class_path, **opts, &block)
       end
 
-      # query parameters in URL suitable for REST list/GET and delete/DELETE
+      # query parameters in URL suitable for REST: list/GET and delete/DELETE
       def query_read_delete(default: nil)
         query = options.get_option(:query)
         # dup default, as it could be frozen
