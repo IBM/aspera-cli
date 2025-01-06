@@ -187,13 +187,14 @@ module Aspera
     attr_reader :base_url
     attr_reader :auth_params
 
+    # @return creation parameters
     def params
       return {
-        base_url:       @base_url,
-        auth:           @auth_params,
-        not_auth_codes: @not_auth_codes,
-        redirect_max:   @redirect_max,
-        headers:        @headers
+        base_url:       @base_url,       # String
+        auth:           @auth_params,    # Hash
+        not_auth_codes: @not_auth_codes, # Array
+        redirect_max:   @redirect_max,   # Integer
+        headers:        @headers         # Hash
       }
     end
 
@@ -231,6 +232,7 @@ module Aspera
       # OAuth object (created on demand)
       @oauth = nil
       @redirect_max = redirect_max
+      Aspera.assert_type(@redirect_max, Integer)
       @headers = headers.nil? ? {} : headers
       Aspera.assert_type(@headers, Hash)
       @headers['User-Agent'] ||= RestParameters.instance.user_agent
@@ -333,7 +335,7 @@ module Aspera
         oauth_tries ||= 2
         bss_tries ||= 5
         # initialize with number of initial retries allowed, nil gives zero
-        tries_remain_redirect = @redirect_max.to_i if tries_remain_redirect.nil?
+        tries_remain_redirect = @redirect_max if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
         result_mime = nil
         file_saved = false
