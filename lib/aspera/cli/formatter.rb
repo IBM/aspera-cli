@@ -167,6 +167,11 @@ module Aspera
         @spinner.spin
       end
 
+      def long_operation_terminated
+        @spinner&.stop
+        @spinner = nil
+      end
+
       # options are: format, output, display, fields, select, table_style, flat_hash, transpose_single
       def option_handler(option_symbol, operation, value=nil)
         Aspera.assert_values(operation, %i[set get])

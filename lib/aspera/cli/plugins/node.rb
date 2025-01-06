@@ -239,6 +239,7 @@ module Aspera
             query.delete('skip')
           end
           result ||= {type: :object_list, data: all_items}
+          formatter.long_operation_terminated
           return c_result_remove_prefix_path(result, 'path', prefix_path)
         end
 

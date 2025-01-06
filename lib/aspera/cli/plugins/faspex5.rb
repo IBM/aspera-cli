@@ -244,6 +244,7 @@ module Aspera
             formatter.long_operation_running(status['status'])
             sleep(0.5)
           end
+          formatter.long_operation_terminated
           Aspera.error_unreachable_line
         end
 
@@ -281,6 +282,7 @@ module Aspera
             offset += page_result[item_list_key].length
             formatter.long_operation_running
           end
+          formatter.long_operation_terminated
           return result
         end
 
@@ -440,6 +442,7 @@ module Aspera
             end
             query.delete('iteration_token')
           end
+          formatter.long_operation_terminated
           return {type: :object_list, data: all_items}
         end
 
