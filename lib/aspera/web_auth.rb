@@ -24,7 +24,37 @@ module Aspera
       end
       response.status = 200
       response.content_type = 'text/html'
-      response.body = '<html><head><title>Ok</title></head><body><h1>Thank you !</h1><p>You can close this window.</p></body></html>'
+      response.body = <<~HTML
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Ok</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 2rem;
+              margin: 0;
+              background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+              color: #333;
+            }
+            h1 {
+              font-size: 2.5rem;
+              color: #0078d4;
+            }
+            p {
+              font-size: 1.2rem;
+              margin-top: 1rem;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Thank You!</h1>
+          <p>You can close this window.</p>
+        </body>
+        </html>
+      HTML
+
       return nil
     end
   end
