@@ -76,9 +76,9 @@ module Aspera
           end
           if !session_info.key?('name')
             # if no name is specified, generate one from simple arguments
-            session_info['name'] = SYNC_SIMPLE_ARGS.map do |arg_name|
+            session_info['name'] = SYNC_SIMPLE_ARGS.filter_map do |arg_name|
               arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
-            end.compact.reject(&:empty?).join('_')
+            end.reject(&:empty?).join('_')
           end
         end
       end

@@ -207,8 +207,8 @@ module Aspera
             end
           Log.log.debug{Log.dump(:folder_contents, folder_contents)}
           folder_contents.each do |entry|
-            if entry.has_key?('error')
-              if entry['error'].is_a?(Hash) && entry['error'].has_key?('user_message')
+            if entry.key?('error')
+              if entry['error'].is_a?(Hash) && entry['error'].key?('user_message')
                 Log.log.error(entry['error']['user_message'])
               end
               next
