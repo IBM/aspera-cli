@@ -28,7 +28,7 @@ module Aspera
         # generate secure state to check later
         random_state = SecureRandom.uuid
         login_page_url = Rest.build_uri(
-          "#{@base_url}/#{@path_authorize}",
+          "#{@api.base_url}/#{@path_authorize}",
           optional_scope_client_id.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state))
         # here, we need a human to authorize on a web page
         Log.log.info{"login_page_url=#{login_page_url}".bg_red.gray}
