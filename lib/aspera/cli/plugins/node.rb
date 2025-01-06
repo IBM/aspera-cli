@@ -22,6 +22,10 @@ module Aspera
       class Node < Cli::BasicAuthPlugin
         include SyncActions
         class << self
+          # directory: node, container: shares
+          FOLDER_TYPES = %w[directory container].freeze
+          private_constant :FOLDER_TYPES
+
           def application_name
             'HSTS Node API'
           end
@@ -78,6 +82,10 @@ module Aspera
             options.declare(:root_id, 'File id of top folder if using bearer tokens')
             SyncActions.declare_options(options)
             options.parse_options!
+          end
+
+          def gen3_entry_folder?(entry)
+            FOLDER_TYPES.include?(entry['type'])
           end
         end
 
@@ -180,9 +188,6 @@ module Aspera
           return c_result_remove_prefix_path(final_result, type, path_prefix)
         end
 
-        # directory: node, container: shares
-        FOLDER_TYPE = %w[directory container].freeze
-
         def browse_gen3(prefix_path)
           folders_to_process = [get_one_argument_with_prefix(prefix_path, 'path')]
           query = options.get_option(:query, default: {})
@@ -208,7 +213,7 @@ module Aspera
               # example: send_result={'items'=>[{'file'=>"filename1","permissions"=>[{'name'=>'read'},{'name'=>'write'}]}]}
               response = @api_node.create('files/browse', query)
               # 'file','symbolic_link'
-              if only_path || !FOLDER_TYPE.include?(response['self']['type'])
+              if !Node.gen3_entry_folder?(response['self']) || only_path
                 result = { type: :single_object, data: response['self']}
                 break
               end
@@ -220,7 +225,7 @@ module Aspera
                 break
               end
               if recursive
-                folders_to_process.concat(items.select{|i|FOLDER_TYPE.include?(i['type'])}.map{|i|i['path']})
+                folders_to_process.concat(items.select{|i|Node.gen3_entry_folder?(i)}.map{|i|i['path']})
               end
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
