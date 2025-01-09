@@ -4879,11 +4879,13 @@ Native API parameters can be placed in option `query`.
 
 Special parameters can be placed in option `query` for "gen3" browse:
 
-| Parameter | Description |
-|-----------|-------------|
+| Parameter   | Description |
+|-------------|-------------|
 | `recursive` | Recursively list files |
-| `max` | Maximum number of files to list |
-| `self` | Offset in the list |
+| `max`       | Maximum number of files to list |
+| `self`      | Offset in the list |
+
+Option `node_cache` can be set to `no` to avoid use of folder cache (Redis) and force actual read of file system.
 
 ### Operation `find` on **gen4/access key**
 

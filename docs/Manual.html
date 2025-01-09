@@ -5133,6 +5133,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder if using bearer tokens
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
@@ -5286,6 +5287,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder if using bearer tokens
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
@@ -6953,6 +6955,8 @@ class="header-section-number">8.1.1</span> Browse</h3>
 </tr>
 </tbody>
 </table>
+<p>Option <code>node_cache</code> can be set to <code>no</code> to avoid
+use of folder cache (Redis) and force actual read of file system.</p>
 <h2 data-number="8.2" id="operation-find-on-gen4access-key"><span
 class="header-section-number">8.2</span> Operation <code>find</code> on
 <strong>gen4/access key</strong></h2>
@@ -8538,7 +8542,8 @@ class="header-section-number">15.1</span> Httpgw sample commands</h2>
 commands:</p>
 </blockquote>
 <div class="sourceCode" id="cb480"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb480-1"><a href="#cb480-1" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb480-1"><a href="#cb480-1" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
+<span id="cb480-2"><a href="#cb480-2" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span></span></code></pre></div>
 <h1 data-number="16" id="plugin-faspio-faspio-gateway"><span
 class="header-section-number">16</span> Plugin: <code>faspio</code>:
 Faspio Gateway</h1>

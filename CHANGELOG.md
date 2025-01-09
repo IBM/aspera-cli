@@ -3,6 +3,7 @@
 * 4.20.0.pre
   * New Features:
     * `aoc`: Improved usability for creation of Admin shared folders.
+    * `node`: New option `node_cache` (bool) for gen4 operations.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
     * `aoc`: #165 aoc mkdir now follows the last link of containing folder

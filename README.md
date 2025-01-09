@@ -3715,6 +3715,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder if using bearer tokens
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
@@ -3868,6 +3869,7 @@ OPTIONS:
         --asperabrowserurl=VALUE     URL for simple aspera web ui
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
+        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder if using bearer tokens
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
@@ -5537,11 +5539,13 @@ Native API parameters can be placed in option `query`.
 
 Special parameters can be placed in option `query` for "gen3" browse:
 
-| Parameter | Description |
-|-----------|-------------|
+| Parameter   | Description |
+|-------------|-------------|
 | `recursive` | Recursively list files |
-| `max` | Maximum number of files to list |
-| `self` | Offset in the list |
+| `max`       | Maximum number of files to list |
+| `self`      | Offset in the list |
+
+Option `node_cache` can be set to `no` to avoid use of folder cache (Redis) and force actual read of file system.
 
 ### Operation `find` on **gen4/access key**
 
@@ -6918,6 +6922,7 @@ node upload test_file.bin
 
 ```bash
 health
+info
 ```
 
 ## Plugin: `faspio`: Faspio Gateway
