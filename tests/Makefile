@@ -493,7 +493,8 @@ $(T)f4_db1: $(T).exists
 	$(EXE_MAN) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(DIR_TMP)f4_db_id2
 	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tfaspex,$(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1 $(T)f4_prl))
+NOT_TESTED=$(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1 $(T)f4_prl
+$(eval $(call test_suite_all,tfaspex,))
 #######################################################################################################################
 $(T)cons_nagios: $(T).exists
 	@$(START_TEST) $@
@@ -659,6 +660,7 @@ $(T)nd_ak4: $(T).exists
 $(T)nd_ak_bearer: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) node -N --preset=tst_node_preview access_key delete @preset:ak_creds.username$(EXE_END_IGN)
+	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node -N --preset=tst_node_preview access_key create @json:@extend:'{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
 	$(TEMPORIZE_CREATE)
 	$(EXE_MAN) node -N --preset=tst_node_preview --preset=ak_creds access_key show %id:self

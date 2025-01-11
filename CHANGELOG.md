@@ -1,9 +1,13 @@
 # Changes (Release notes)
 
 * 4.20.0.pre
+
+  ATTENTIION: Due to the fact that Faspex version 4 is end of support, the `faspex` command will be deprecated. Use Faspex 5 from now.
+
   * New Features:
     * `aoc`: Improved usability for creation of Admin shared folders.
     * `node`: New option `node_cache` (bool) for gen4 operations.
+    * `node`: Option `root_id` now works always for node gen4, as well as `%id:` for file selection in addition to path.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
     * `aoc`: #165 aoc mkdir now follows the last link of containing folder
@@ -14,6 +18,7 @@
     * `faspex5`: removed deprecated option `value` replaced with positional parameter.
   
 * 4.19.0
+
   * New Features:
     * `server`: add support for `async` (Aspera Sync) from Transfer SDK
     * **global**: #156 support sending folders with httpgw
