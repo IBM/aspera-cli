@@ -371,14 +371,18 @@ module Aspera
                      end
             when :do
               access_key_id = options.get_next_argument('access key id')
-              ak_info = @api_node.read("access_keys/#{access_key_id}")
-              # change API credentials if different access key
-              if !access_key_id.eql?('self')
-                @api_node.auth_params[:username] = ak_info['id']
-                @api_node.auth_params[:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
+              root_file_id = options.get_option(:root_id)
+              if root_file_id.nil?
+                ak_info = @api_node.read("access_keys/#{access_key_id}")
+                # change API credentials if different access key
+                if !access_key_id.eql?('self')
+                  @api_node.auth_params[:username] = ak_info['id']
+                  @api_node.auth_params[:password] = config.lookup_secret(url: @api_node.base_url, username: ak_info['id'], mandatory: true)
+                end
+                root_file_id = ak_info['root_file_id']
               end
               command_repo = options.get_next_command(COMMANDS_GEN4)
-              return execute_command_gen4(command_repo, ak_info['root_file_id'])
+              return execute_command_gen4(command_repo, root_file_id)
             when :set_bearer_key
               access_key_id = options.get_next_argument('access key id')
               access_key_id = @api_node.read('access_keys/self')['id'] if access_key_id.eql?('self')
@@ -432,8 +436,8 @@ module Aspera
           end
         end
 
-        # Allows to specify a file by its path or by its id on the node
-        # @return [Hash] api and main file id for given path or id
+        # Allows to specify a file by its path or by its id on the node in command line
+        # @return [Hash] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
           file_path = instance_identifier(description: 'path or %id:<id>') do |attribute, value|
             raise 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
@@ -447,6 +451,7 @@ module Aspera
         def execute_command_gen4(command_repo, top_file_id)
           override_file_id = options.get_option(:root_id)
           top_file_id = override_file_id unless override_file_id.nil?
+          raise 'Specify root file id with option root_id' if top_file_id.nil?
           case command_repo
           when :v3
             # NOTE: other common actions are unauthorized with user scope
@@ -455,7 +460,7 @@ module Aspera
             apifid = @api_node.resolve_api_fid(top_file_id, '')
             return Node.new(**init_params, api: apifid[:api]).execute_action(command_legacy)
           when :node_info, :bearer_token_node
-            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
+            apifid = apifid_from_next_arg(top_file_id)
             result = {
               url:     apifid[:api].base_url,
               root_id: apifid[:file_id]
@@ -475,7 +480,7 @@ module Aspera
             OAuth::Factory.bearer_extract(result[:password])
             return Main.result_status(result[:password])
           when :browse
-            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
+            apifid = apifid_from_next_arg(top_file_id)
             file_info = apifid[:api].read_with_cache("files/#{apifid[:file_id]}")
             if file_info['type'].eql?('folder')
               result = apifid[:api].call(
@@ -490,7 +495,7 @@ module Aspera
             end
             return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
           when :find
-            apifid = @api_node.resolve_api_fid(top_file_id, options.get_next_argument('path'))
+            apifid = apifid_from_next_arg(top_file_id)
             test_block = Api::Node.file_matcher_from_argument(options)
             return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
           when :mkdir
