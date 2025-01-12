@@ -1478,7 +1478,6 @@ $(T)conf_wizard_gen: $(T).exists
 $(T)conf_detect: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config detect @preset:aoc.org aoc
-	$(EXE_MAN) config detect @preset:faspex4_user.url
 	$(EXE_MAN) config detect @preset:node_user.url
 	@$(STOP_TEST) $@
 $(T)conf_genkey: $(T).exists
