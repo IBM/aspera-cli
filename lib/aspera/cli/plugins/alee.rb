@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/api/aoc'
+require 'aspera/api/alee'
 require 'aspera/nagios'
 
 module Aspera

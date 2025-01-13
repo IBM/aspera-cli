@@ -5,6 +5,7 @@
 require 'aspera/cli/plugins/node'
 require 'aspera/api/ats'
 require 'aspera/api/aoc'
+require 'aspera/api/alee'
 require 'aspera/assert'
 
 module Aspera

@@ -332,6 +332,7 @@ $(T)serv_upload_ex: $(T)serv_mkdir
 	@$(START_TEST) $@
 	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)filelist.txt
 	echo $(TST_ASC_LCL_PATH) > $(DIR_TMP)file_pair_list.txt
+	touch -t 197001010000 ../tmp/ascli_home/filelists/to_be_collected
 	$(EXE_NO_MAN) config echo @extend:@preset:server.inside_folder@/other_name --format=text >> $(DIR_TMP)file_pair_list.txt
 	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-list","'"$(DIR_TMP)filelist.txt"'"]}' --to-folder=@preset:server.inside_folder 
 	$(EXE_MAN) server upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","'"$(DIR_TMP)file_pair_list.txt"'"]}'
@@ -639,6 +640,7 @@ $(T)nd_ak_mkdir: $(T).exists
 	@$(STOP_TEST) $@
 $(T)nd_ak_mvdir: $(T)nd_ak_mkdir
 	@$(START_TEST) $@
+	$(EXE_NO_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name browse / --node-cache=no
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name rename /tst_nd_ak test_nd_ak2
 	@$(STOP_TEST) $@
 $(T)nd_ak_deldir: $(T)nd_ak_mvdir
@@ -1889,6 +1891,10 @@ $(eval $(call test_suite_all,tfio,$(T)faspio_detect $(T)faspio_nagios $(T)faspio
 #######################################################################################################################
 $(T)alee_nagios: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) alee health
+	$(EXE_MAN) alee health -N
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,alee,$(T)alee_nagios))
+$(T)alee_entitlement: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) alee entitlement
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,alee,$(T)alee_nagios $(T)alee_entitlement))

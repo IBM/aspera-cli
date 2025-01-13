@@ -12,16 +12,6 @@ require 'cgi'
 
 module Aspera
   module Api
-    SAAS_DOMAIN_PROD = 'ibmaspera.com'
-    class Alee < Aspera::Rest
-      def initialize(entitlement_id, customer_id, api_domain: SAAS_DOMAIN_PROD, version: 'v1')
-        super(
-          base_url: "https://api.#{api_domain}/metering/#{version}",
-          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
-        )
-      end
-    end
-
     class AoC < Aspera::Rest
       PRODUCT_NAME = 'Aspera on Cloud'
       # use default workspace if it is set, else none
