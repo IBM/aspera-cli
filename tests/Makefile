@@ -767,6 +767,8 @@ $(T)aoc_some_folder: $(T).exists
 $(T)aoc_tstdst: $(T)aoc_some_folder
 	@$(START_TEST) $@
 	$(EXE_IGN) aoc files delete /testdst$(EXE_END_IGN)
+	$(TEMPORIZE_FILE)
+	$(EXE_NO_MAN) aoc files browse / --node-cache=no
 	$(EXE_MAN) aoc files rename /some_folder testdst
 	@$(STOP_TEST) $@
 $(T)aocfupl: $(T)aoc_tstsrc

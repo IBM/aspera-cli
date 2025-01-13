@@ -268,6 +268,7 @@ module Aspera
           RestParameters.instance.progress_bar = @progress_bar
           RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
+          OAuth::Web.additionnal_info = "#{@name} v#{@version}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
