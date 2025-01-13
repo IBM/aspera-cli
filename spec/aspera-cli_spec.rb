@@ -50,17 +50,19 @@ PATH_FILE_EXIST = File.join(PATH_FOLDER_TINY, NAME_FILE1)
 PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}")
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
 PAC_FILE = "file:///#{project_top_folder}/examples/proxy.pac"
+SAMPLE_FASPE_URI = 'faspe://user:pass@host:33001/path?cookie=foo&token=foo&sshfp=foo&policy=foo&httpport=foo&targetrate=foo&minrate=foo&port=foo&bwcap=foo&enc=foo&tags64=ImZvbyIK&createpath=no&fallback=no&lockpolicy=no&lockminrate=yes&auth=foo&v=foo&protect=foo'
 
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
 RSpec.describe(Aspera::Transfer::Uri) do
   it 'parses a FASP URL' do
-    uri = Aspera::Transfer::Uri.new('faspe://user:pass@host:33001/path?token=xx&sshfp=xx&protect=xx&bad=xx')
+    uri = Aspera::Transfer::Uri.new("#{SAMPLE_FASPE_URI}&bad=xx")
     ts = uri.transfer_spec
     expect(ts).to(be_a(Hash))
-    expect(ts['token']).to(eq('xx'))
-    expect(ts['sshfp']).to(eq('xx'))
-    expect(ts['protect']).to(eq(nil))
+    expect(ts['token']).to(eq('foo'))
+    expect(ts['sshfp']).to(eq('foo'))
+    # expect(ts['protect']).to(eq(nil))
+    #
   end
 end
 

@@ -14,7 +14,7 @@ module Aspera
     OPTIONS_KEYS = %i[desc accepted_types default enum agents required cli ts deprecation].freeze
     CLI_KEYS = %i[type switch convert variable].freeze
 
-    private_constant :CLI_OPTION_TYPE_SWITCH, :OPTIONS_KEYS, :CLI_KEYS
+    private_constant :CLI_OPTION_TYPE_SWITCH, :CLI_OPTION_TYPES, :OPTIONS_KEYS, :CLI_KEYS
 
     class << self
       # transform yes/no to true/false
@@ -22,8 +22,8 @@ module Aspera
         case value
         when 'yes' then return true
         when 'no' then return false
+        else Aspera.error_unexpected_value(value){'only: yes or no: '}
         end
-        raise "unsupported value: #{value}"
       end
 
       # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
@@ -177,8 +177,7 @@ module Aspera
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
         parameter_value.each{|v|add_command_line_options([options[:cli][:switch], v])}
-      else
-        raise "ERROR: unknown option processing type: #{processing_type}/#{processing_type.class}"
+      else Aspera.error_unexpected_value(processing_type){processing_type.class.name}
       end
     end
   end

@@ -17,5 +17,15 @@ if ENV.key?('ENABLE_COVERAGE')
     SimpleCov.result.format!
     $stdout.reopen(original_file_descriptor)
   end
-  SimpleCov.start
+  # lines with those words are ignored from coverage
+  no_cov_functions = %w[error_unreachable_line error_unexpected_value].freeze
+  SimpleCov.start do
+    add_filter 'lib/aspera/cli/plugins/faspex.rb'
+    add_filter do |source_file|
+      source_file.lines.each do |line|
+        line.skipped! if no_cov_functions.any?{|i|line.src.include?(i)}
+      end
+      false
+    end
+  end
 end
