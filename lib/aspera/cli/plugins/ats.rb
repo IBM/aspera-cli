@@ -24,6 +24,7 @@ module Aspera
           options.declare(:cloud, 'Cloud provider')
           options.declare(:region, 'Cloud region')
           options.parse_options!
+          Node.declare_options(options)
         end
 
         def server_by_cloud_region
@@ -118,7 +119,6 @@ module Aspera
                 password: config.lookup_secret(url: node_url, username: access_key_id)
               })
             command = options.get_next_command(Node::COMMANDS_GEN4)
-            Node.declare_options(options)
             return Node.new(**init_params, api: api_node).execute_command_gen4(command, ak_data['root_file_id'])
           when :cluster
             ats_url = ats_api_pub_v1.base_url

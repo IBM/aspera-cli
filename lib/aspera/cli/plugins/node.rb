@@ -73,6 +73,8 @@ module Aspera
           end
 
           def declare_options(options)
+            return if @options_declared
+            @options_declared = true
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(:sync_name, 'Sync name')

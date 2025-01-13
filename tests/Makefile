@@ -1055,6 +1055,7 @@ $(T)aocadmndcr: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder$(EXE_END_IGN)
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name mkdir test_shared_folder
+	$(TEMPORIZE_CREATE)
 	@$(STOP_TEST) $@
 $(T)aocadmndsh1: $(T)aocadmndcr
 	@$(START_TEST) $@
