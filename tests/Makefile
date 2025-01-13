@@ -1531,6 +1531,7 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @list:,1,2,3
 	$(EXE_MAN) config echo @env:USER
 	$(EXE_MAN) config echo -- --special-string
+	$(EXE_MAN) config echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
 	$(EXE_BEG_ERR) config echo @val:@file:no_such_file$(EXE_END_ERR)
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
