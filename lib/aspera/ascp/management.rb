@@ -239,7 +239,7 @@ module Aspera
           @last_event = @event_build
           @event_build = nil
           return @last_event
-        else Aspera.error_unexpected_value(line){'mgt port:'}
+        else Aspera.error_unexpected_value(line){'mgt port'}
         end
         return nil
       end

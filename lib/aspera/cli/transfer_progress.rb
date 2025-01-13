@@ -74,8 +74,7 @@ module Aspera
           @title = nil
           @completed = true
           @progress_bar.finish
-        else
-          raise "Unknown event type #{type}"
+        else Aspera.error_unexpected_value(type){'event type'}
         end
         new_title = @sessions.length < 2 ? @title.to_s : "[#{@sessions.length}] #{@title}"
         @progress_bar.title = new_title unless @progress_bar.title.eql?(new_title)

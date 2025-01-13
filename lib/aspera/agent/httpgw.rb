@@ -23,8 +23,7 @@ module Aspera
           @gw_api.upload(transfer_spec)
         when Transfer::Spec::DIRECTION_RECEIVE
           @gw_api.download(transfer_spec)
-        else
-          raise "unexpected direction: [#{transfer_spec['direction']}]"
+        else Aspera.error_unexpected_value(transfer_spec['direction']){'direction'}
         end
       end
 
