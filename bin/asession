@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Laurent Martin/2017
-$LOAD_PATH.unshift("#{File.dirname(__FILE__)}/../lib")
+gem_lib_folder = File.join(File.dirname(File.dirname(File.realpath(__FILE__))), 'lib')
+Kernel.load(File.join(gem_lib_folder, 'aspera/coverage.rb'))
+$LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/agent/direct'
 require 'aspera/cli/extended_value'
 require 'aspera/ascp/installation'

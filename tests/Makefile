@@ -395,7 +395,7 @@ $(T)asession: $(T).exists
 	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NO_MAN) config preset get server_user username)&&\
 	remote_pass=$$($(EXE_NO_MAN) config preset get server_user password)&&\
-	$(DIR_BIN)asession @json:@extend:'{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","paths":[{"source":"/aspera-test-dir-small/10MB.1"}]}}'
+	$(DIR_BIN)asession @json:@extend:'{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}'
 	@$(STOP_TEST) $@
 $(T)serv_pr1: $(T).exists
 	@$(START_TEST) $@
@@ -995,6 +995,7 @@ $(T)aoc_adm_nd_mkdir: $(T).exists
 	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1$(EXE_END_IGN)
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret mkdir /folder1
 	$(TEMPORIZE_CREATE)
+	$(EXE_NO_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret browse / --node-cache=no
 	@$(STOP_TEST) $@
 $(T)aoc_adm_nd_rmdir: $(T)aoc_adm_nd_mkdir
 	@$(START_TEST) $@

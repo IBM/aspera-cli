@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
+
 module Aspera
   module Ascp
     # processing of ascp management port events
@@ -237,8 +239,7 @@ module Aspera
           @last_event = @event_build
           @event_build = nil
           return @last_event
-        else
-          raise "mgt port: unexpected line: [#{line}]"
+        else Aspera.error_unexpected_value(line){'mgt port:'}
         end
         return nil
       end
