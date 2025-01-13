@@ -703,6 +703,7 @@ $(T)aocg2: $(T).exists
 $(T)aocg3: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc organization
+	$(EXE_MAN) aoc tier_restrictions
 	@$(STOP_TEST) $@
 $(T)aocg4: $(T).exists
 	@$(START_TEST) $@
