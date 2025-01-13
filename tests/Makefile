@@ -260,9 +260,15 @@ $(T)shares_6: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 'faux:///testfile?1m' --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 	@$(STOP_TEST) $@
+$(T)shares_6bis: $(T).exists
+	@$(START_TEST) $@
+	mkdir -p $(DIR_TMP)sendfolder/sub
+	touch $(DIR_TMP)sendfolder/{1,2,3,sub/1,sub/2}
+	$(EXE_MAN) shares files upload --to-folder=@preset:shares.share1 $(DIR_TMP)sendfolder --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+	@$(STOP_TEST) $@
 $(T)shares_7: $(T)shares_5
 	@$(START_TEST) $@
-	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
+	$(EXE_MAN) shares files download --to-folder=$(DIR_TMP). @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) @extend:@preset:shares.share1@/$(TST_ASC_FILENAME) --transfer=httpgw --preset=no_wss --transfer-info=@json:@extend:'{"url":"@preset:tst_httpgw.url@"}'
 	@$(STOP_TEST) $@
 $(T)shares_8: $(T)shares_7
 	@$(START_TEST) $@
@@ -277,7 +283,7 @@ $(T)shares_10: $(T)shares_9
 	@$(START_TEST) $@
 	$(EXE_MAN) shares files delete @extend:@preset:shares.share1@/new_folder
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
+$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
 #######################################################################################################################
 $(T)serv_browse: $(T).exists
 	@$(START_TEST) $@

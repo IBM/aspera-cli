@@ -378,19 +378,19 @@ module Aspera
             file_saved = true
           end
         end
+        Log.log.debug{"result: code=#{result[:http].code} mime=#{result_mime}"}
         # sometimes there is a UTF8 char (e.g. (c) ), TODO : related to mime type encoding ?
         # result[:http].body.force_encoding('UTF-8') if result[:http].body.is_a?(String)
         # Log.log.debug{"result: body=#{result[:http].body}"}
-        result[:data] = case result_mime
+        case result_mime
         when *JSON_DECODE
-          JSON.parse(result[:http].body) rescue result[:http].body
+          result[:data] = JSON.parse(result[:http].body) rescue result[:http].body
+          Log.log.debug{Log.dump('result_data', result[:data])}
         else # when 'text/plain'
-          result[:http].body
+          result[:data] = result[:http].body
         end
-        Log.log.debug{"result: code=#{result[:http].code} mime=#{result_mime}"}
-        Log.log.debug{Log.dump('result_data', result[:data])}
         RestErrorAnalyzer.instance.raise_on_error(req, result)
-        File.write(save_to_file, result[:http].body) unless file_saved || save_to_file.nil?
+        File.write(save_to_file, result[:http].body, binmode: true) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
         retry if e.response.body.include?('failed: connect timed out') && (bss_tries -= 1).nonzero?
