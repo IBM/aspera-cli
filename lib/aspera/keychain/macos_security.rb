@@ -78,7 +78,7 @@ module Aspera
 
           def list(options={})
             Aspera.assert_values(options[:domain], DOMAINS, exception_class: ArgumentError){'domain'} unless options[:domain].nil?
-            key_chains(execute('list-key_chains', options, LIST_OPTIONS))
+            key_chains(execute('list-keychains', options, LIST_OPTIONS))
           end
 
           def by_name(name)

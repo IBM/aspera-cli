@@ -43,7 +43,7 @@ T=$(DIR_TMP)t/
 all:: $(DIR_TOP).gems_checked
 
 # test group: require user interaction
-interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive
+interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive $(T)conf_vault_macos
 
 use_rmagick: optional_gems $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3 $(T)conf_image
 use_grpc: optional_gems $(T)serv_upload4
@@ -1421,8 +1421,17 @@ $(T)conf_gem: $(T).exists
 	$(EXE_MAN) config gem version
 	$(EXE_MAN) config gem name
 	$(EXE_MAN) config folder
+	$(EXE_MAN) config file
+	$(EXE_MAN) config smtp_settings
 	$(EXE_MAN) $(TMP_CONF) config initdemo
 	$(EXE_NO_MAN) $(TMP_CONF) config initdemo
+	@$(STOP_TEST) $@
+$(T)conf_vault_macos: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_NO_MAN) -N config vault info --vault=@json:'{"type":"system"}'
+	$(EXE_IGN) -N config vault create foo @json:'{}' --vault=@json:'{"type":"system"}'$(EXE_END_IGN)
+	$(EXE_NO_MAN) -N config vault show foo --vault=@json:'{"type":"system"}'
+	$(EXE_IGN) -N config vault delete foo --vault=@json:'{"type":"system"}'$(EXE_END_IGN)
 	@$(STOP_TEST) $@
 $(T)conf_vault: $(T).exists
 	@$(START_TEST) $@
@@ -1431,6 +1440,7 @@ $(T)conf_vault: $(T).exists
 	$(EXE_NO_MAN) $(TMP_CONF) config preset set GLOBAL vault @json:'{"type":"file","name":"'"$$(cat $(DIR_TMP)vault_file)"'"}'
 	$(EXE_NO_MAN) $(TMP_CONF) config preset set GLOBAL vault_password _simple_one_
 	$(EXE_MAN) $(TMP_CONF) config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
+	$(EXE_MAN) $(TMP_CONF) config vault info
 	$(EXE_MAN) $(TMP_CONF) config vault list
 	$(EXE_MAN) $(TMP_CONF) config vault show my_label
 	$(EXE_NO_MAN) $(TMP_CONF) config preset ask my_preset <<< $$'username\npassword\n\nthe_user\nthe_pass\n'
