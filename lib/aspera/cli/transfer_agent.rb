@@ -69,7 +69,7 @@ module Aspera
         if !@opt_mgr.get_option(:notify_to).nil?
           @notification_cb = ->(transfer_spec, global_status) do
             @config.send_email_template(email_template_default: DEFAULT_TRANSFER_NOTIFY_TEMPLATE, values: {
-              subject: "#{PROGRAM_NAME} transfer: #{global_status}",
+              subject: "#{Info::PROGRAM_NAME} transfer: #{global_status}",
               status:  global_status,
               ts:      transfer_spec
             })

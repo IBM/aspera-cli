@@ -94,7 +94,7 @@ module Aspera
         # create formatter, in case there is an exception, it is used to display.
         @plug_init[:formatter] = Formatter.new
         # create command line manager with arguments
-        @plug_init[:options] = Manager.new(PROGRAM_NAME, @argv)
+        @plug_init[:options] = Manager.new(Info::PROGRAM_NAME, @argv)
         # formatter adds options
         @plug_init[:formatter].declare_options(options)
         ExtendedValue.instance.default_decoder = options.get_option(:struct_parser)
@@ -102,11 +102,11 @@ module Aspera
         current_prog_name = File.basename($PROGRAM_NAME)
         formatter.display_message(
           :error,
-          "#{Formatter::WARNING_FLASH} Please use '#{PROGRAM_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(PROGRAM_NAME)
+          "#{Formatter::WARNING_FLASH} Please use '#{Info::PROGRAM_NAME}' instead of '#{current_prog_name}'") unless current_prog_name.eql?(Info::PROGRAM_NAME)
         # declare and parse global options
         declare_global_options
         # the Config plugin adds the @preset parser, so declare before TransferAgent which may use it
-        @plug_init[:config] = Plugins::Config.new(**@plug_init, man_header: false, gem: GEM_NAME, name: PROGRAM_NAME, help: DOC_URL, version: Cli::VERSION)
+        @plug_init[:config] = Plugins::Config.new(**@plug_init, man_header: false)
         @plug_init[:persistency] = @plug_init[:config].persistency
         # data persistency
         Aspera.assert(@plug_init[:persistency]){'missing persistency object'}
@@ -125,23 +125,23 @@ module Aspera
         t = ' ' * 8
         return <<~END_OF_BANNER
           NAME
-          #{t}#{PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Cli::VERSION})
+          #{t}#{Info::PROGRAM_NAME} -- a command line tool for Aspera Applications (v#{Cli::VERSION})
 
           SYNOPSIS
-          #{t}#{PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
+          #{t}#{Info::PROGRAM_NAME} COMMANDS [OPTIONS] [ARGS]
 
           DESCRIPTION
           #{t}Use Aspera application to perform operations on command line.
-          #{t}Documentation and examples: #{GEM_URL}
-          #{t}execute: #{PROGRAM_NAME} conf doc
-          #{t}or visit: #{DOC_URL}
-          #{t}source repo: #{SRC_URL}
+          #{t}Documentation and examples: #{Info::GEM_URL}
+          #{t}execute: #{Info::PROGRAM_NAME} conf doc
+          #{t}or visit: #{Info::DOC_URL}
+          #{t}source repo: #{Info::SRC_URL}
 
           ENVIRONMENT VARIABLES
           #{t}Any option can be set as an environment variable, refer to the manual
 
           COMMANDS
-          #{t}To list first level commands, execute: #{PROGRAM_NAME}
+          #{t}To list first level commands, execute: #{Info::PROGRAM_NAME}
           #{t}Note that commands can be written shortened (provided it is unique).
 
           OPTIONS
@@ -211,7 +211,7 @@ module Aspera
             # override main option parser with a brand new, to avoid having global options
             plugin_env = @plug_init.clone
             plugin_env[:only_manual] = true # force declaration of all options
-            plugin_env[:options] = Manager.new(PROGRAM_NAME)
+            plugin_env[:options] = Manager.new(Info::PROGRAM_NAME)
             plugin_env[:options].parser.banner = '' # remove default banner
             get_plugin_instance_with_options(plugin_name_sym, plugin_env)
             # display generated help for plugin options
@@ -226,7 +226,7 @@ module Aspera
       # early debug for parser
       # Note: does not accept shortcuts
       def early_debug_setup
-        Log.instance.program_name = PROGRAM_NAME
+        Log.instance.program_name = Info::PROGRAM_NAME
         @argv.each do |arg|
           case arg
           when '--' then break

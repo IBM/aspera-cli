@@ -4,6 +4,7 @@ require 'aspera/transfer/error'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/cli/info'
 require 'net/ssh'
 require 'openssl'
 
@@ -18,7 +19,7 @@ module Aspera
           match:       'Remote host is not who we expected',
           remediation: [
             'For this specific error, refer to:',
-            "#{SRC_URL}#error-remote-host-is-not-who-we-expected",
+            "#{Info::SRC_URL}#error-remote-host-is-not-who-we-expected",
             'Add this to arguments:',
             %q{--ts=@json:'{"sshfp":null}'"}
           ]

@@ -62,9 +62,9 @@ module Aspera
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
-          Subject: #{GEM_NAME} email test
+          Subject: #{Info::GEM_NAME} email test
 
-          This email was sent to test #{PROGRAM_NAME}.
+          This email was sent to test #{Info::PROGRAM_NAME}.
         END_OF_TEMPLATE
         # special extended values
         EXTEND_PRESET = :preset
@@ -143,13 +143,9 @@ module Aspera
           end
         end
 
-        def initialize(gem:, name:, help:, version:, **env)
+        def initialize(**env)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super(**env)
-          @gem = gem
-          @name = name
-          @help = help
-          @version = version
           @use_plugin_defaults = true
           @config_presets = nil
           @config_checksum_on_disk = nil
@@ -175,9 +171,9 @@ module Aspera
             :home, 'Home folder for tool',
             handler: {o: self, m: :main_folder},
             types: String,
-            default: self.class.default_app_main_folder(app_name: @name))
+            default: self.class.default_app_main_folder(app_name: Info::PROGRAM_NAME))
           options.parse_options!
-          Log.log.debug{"#{@name} folder: #{@main_folder}"}
+          Log.log.debug{"#{Info::PROGRAM_NAME} folder: #{@main_folder}"}
           # data persistency manager, created by config plugin
           @persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folders for plugin lookup
@@ -246,7 +242,7 @@ module Aspera
             if !Dir.exist?(sdk_folder)
               Log.log.debug{"not exists: #{sdk_folder}"}
               # former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: @name), APP_NAME_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::PROGRAM_NAME), APP_NAME_SDK)
               Log.log.debug{"checking: #{former_sdk_folder}"}
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
@@ -264,11 +260,11 @@ module Aspera
               @pac_exec.proxy_pass = proxy_user_pass[1]
             end
           end
-          RestParameters.instance.user_agent = PROGRAM_NAME
+          RestParameters.instance.user_agent = Info::PROGRAM_NAME
           RestParameters.instance.progress_bar = @progress_bar
           RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          OAuth::Web.additionnal_info = "#{@name} v#{@version}"
+          OAuth::Web.additionnal_info = "#{Info::PROGRAM_NAME} v#{Cli::VERSION}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
@@ -392,19 +388,19 @@ module Aspera
         def check_gem_version
           latest_version =
             begin
-              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{@gem}/latest.json")['version']
+              Rest.new(base_url: 'https://rubygems.org/api/v1').read("versions/#{Info::GEM_NAME}/latest.json")['version']
             rescue StandardError
               Log.log.warn('Could not retrieve latest gem version on rubygems.')
               '0'
             end
-          if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(RUBY_FUTURE_MINIMUM_VERSION)
+          if Gem::Version.new(Environment.ruby_version) < Gem::Version.new(Info::RUBY_FUTURE_MINIMUM_VERSION)
             Log.log.warn do
-              "Note that a future version will require Ruby version #{RUBY_FUTURE_MINIMUM_VERSION} at minimum, " \
+              "Note that a future version will require Ruby version #{Info::RUBY_FUTURE_MINIMUM_VERSION} at minimum, " \
                 "you are using #{Environment.ruby_version}"
             end
           end
           return {
-            name:        @gem,
+            name:        Info::GEM_NAME,
             current:     Cli::VERSION,
             latest:      latest_version,
             need_update: Gem::Version.new(Cli::VERSION) < Gem::Version.new(latest_version)
@@ -590,7 +586,7 @@ module Aspera
           @config_presets[CONF_PRESET_DEFAULTS].delete(true) if @config_presets[CONF_PRESET_DEFAULTS].is_a?(Hash)
           # ^^^ Place new compatibility code before this line
           # set version to current
-          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = @version
+          @config_presets[CONF_PRESET_CONFIG][CONF_PRESET_VERSION] = Cli::VERSION
           unless files_to_copy.empty?
             Log.log.warn('Copying referenced files')
             files_to_copy.each do |file|
@@ -605,7 +601,7 @@ module Aspera
           Log.log.debug{"-> #{e.class.name} : #{e}"}
           if File.exist?(@option_config_file)
             # then there is a problem with that file.
-            new_name = "#{@option_config_file}.pre#{@version}.manual_conversion_needed"
+            new_name = "#{@option_config_file}.pre#{Cli::VERSION}.manual_conversion_needed"
             File.rename(@option_config_file, new_name)
             Log.log.warn{"Renamed config file to #{new_name}."}
             Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
@@ -886,7 +882,7 @@ module Aspera
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
             section = "##{section}" unless section.nil?
-            Environment.instance.open_uri("#{@help}#{section}")
+            Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
             return Main.result_nothing
           when :genkey # generate new rsa key
             private_key_path = options.get_next_argument('private key file path')
@@ -968,7 +964,7 @@ module Aspera
             case options.get_next_command(%i[path version name])
             when :path then return Main.result_status(self.class.gem_src_root)
             when :version then return Main.result_status(Cli::VERSION)
-            when :name then return Main.result_status(@gem)
+            when :name then return Main.result_status(Info::GEM_NAME)
             end
           when :folder
             return Main.result_status(@main_folder)
@@ -1110,7 +1106,7 @@ module Aspera
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
           # TODO: actually test the command
-          return Main.result_status("You can test with:\n#{@name} #{identification[:product]} #{test_args}")
+          return Main.result_status("You can test with:\n#{Info::PROGRAM_NAME} #{identification[:product]} #{test_args}")
         end
 
         # @return [Hash] email server setting with defaults if not defined
@@ -1202,7 +1198,7 @@ module Aspera
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
                   'Please fix the issue: either create preset with one parameter: ' \
-                  "(#{@name} config id #{default_config_name} init @json:'{}') or remove default (#{@name} config id default remove #{plugin_name_sym})."
+                  "(#{Info::PROGRAM_NAME} config id #{default_config_name} init @json:'{}') or remove default (#{Info::PROGRAM_NAME} config id default remove #{plugin_name_sym})."
               end
             end
             raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
@@ -1257,7 +1253,7 @@ module Aspera
           info = options.get_option(:vault) || {}
           info = info.symbolize_keys
           info[:type] ||= 'file'
-          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : PROGRAM_NAME)
+          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : Info::PROGRAM_NAME)
           Aspera.assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
           Aspera.assert(info.values.all?(String)){'vault info shall have only string values'}
           info[:password] = options.get_option(:vault_password, mandatory: true)
