@@ -1959,7 +1959,6 @@ coffee
 coffee --ui=text
 coffee --ui=text --image=@json:'{"text":true,"double":false}'
 coffee --ui=text --image=@json:'{"text":true}'
-detect https://faspex4.example.com/path
 detect https://faspex5.example.com/path
 detect https://node.example.com/path
 detect https://shares.example.com/path shares
@@ -1968,6 +1967,7 @@ detect https://tst.example.com/path httpgw
 detect my_org aoc
 doc
 doc transfer-parameters
+echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
 echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
 echo @csvt:@stdin:
@@ -1983,6 +1983,8 @@ echo @vault:my_preset.password
 echo @zlib:@stdin:
 echo hello
 email_test --notify-to=my_email_external
+file
+file --logger=syslog --log-level=debug
 flush_tokens
 folder
 gem name
@@ -2009,8 +2011,10 @@ pubkey @file:my_key
 remote_certificate chain https://node.example.com/path
 remote_certificate name https://node.example.com/path
 remote_certificate only https://node.example.com/path
+smtp_settings
 vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
 vault delete my_label
+vault info
 vault list
 vault show my_label
 wizard https://console.example.com/path console
@@ -3694,7 +3698,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings throw vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file flush_tokens folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test vault wizard
 
 
 COMMAND: shares
@@ -3716,7 +3720,7 @@ OPTIONS:
         --sync-name=VALUE            Sync name
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
-        --root-id=VALUE              File id of top folder if using bearer tokens
+        --root-id=VALUE              File id of top folder when using access key (override AK root id)
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
@@ -3865,13 +3869,6 @@ OPTIONS:
         --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --validator=VALUE            Identifier of validator (optional for central)
-        --asperabrowserurl=VALUE     URL for simple aspera web ui
-        --sync-name=VALUE            Sync name
-        --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
-        --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
-        --root-id=VALUE              File id of top folder if using bearer tokens
-        --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
 COMMAND: server
@@ -5202,6 +5199,7 @@ packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
 remind --username=my_user_email
 servers
+tier_restrictions
 user pref modify @json:'{"default_language":"en-us"}'
 user pref show
 user profile modify @json:'{"name":"dummy change"}'
@@ -6757,9 +6755,10 @@ files browse /
 files delete my_share1/new_folder
 files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
-files download --to-folder=. my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
+files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files mkdir my_share1/new_folder
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
+files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
 files upload --to-folder=my_share1 test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 health
@@ -6947,7 +6946,8 @@ Retrieve information on subscription.
 > **Note:** Add `ascli alee` in front of the commands:
 
 ```bash
-health
+entitlement
+health -N
 ```
 
 ## Plugin: `preview`: Preview generator for AoC

@@ -4,7 +4,7 @@ module Aspera
   module Cli
     module Info
       # name of command line tool, also used as foldername where config is stored
-      PROGRAM_NAME = 'ascli'
+      CMD_NAME = 'ascli'
       # name of the containing gem, same as in <gem name>.gemspec
       GEM_NAME = 'aspera-cli'
       DOC_URL  = "https://www.rubydoc.info/gems/#{GEM_NAME}"

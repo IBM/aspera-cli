@@ -64,7 +64,7 @@ module Aspera
           To: <<%=to%>>
           Subject: #{Info::GEM_NAME} email test
 
-          This email was sent to test #{Info::PROGRAM_NAME}.
+          This email was sent to test #{Info::CMD_NAME}.
         END_OF_TEMPLATE
         # special extended values
         EXTEND_PRESET = :preset
@@ -171,9 +171,9 @@ module Aspera
             :home, 'Home folder for tool',
             handler: {o: self, m: :main_folder},
             types: String,
-            default: self.class.default_app_main_folder(app_name: Info::PROGRAM_NAME))
+            default: self.class.default_app_main_folder(app_name: Info::CMD_NAME))
           options.parse_options!
-          Log.log.debug{"#{Info::PROGRAM_NAME} folder: #{@main_folder}"}
+          Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
           # data persistency manager, created by config plugin
           @persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folders for plugin lookup
@@ -242,7 +242,7 @@ module Aspera
             if !Dir.exist?(sdk_folder)
               Log.log.debug{"not exists: #{sdk_folder}"}
               # former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::PROGRAM_NAME), APP_NAME_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), APP_NAME_SDK)
               Log.log.debug{"checking: #{former_sdk_folder}"}
               sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
@@ -260,11 +260,11 @@ module Aspera
               @pac_exec.proxy_pass = proxy_user_pass[1]
             end
           end
-          RestParameters.instance.user_agent = Info::PROGRAM_NAME
+          RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
           RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
-          OAuth::Web.additionnal_info = "#{Info::PROGRAM_NAME} v#{Cli::VERSION}"
+          OAuth::Web.additionnal_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
           RestErrorAnalyzer.instance.log_file = File.join(@main_folder, 'rest_exceptions.log')
           # register aspera REST call error handlers
@@ -866,7 +866,7 @@ module Aspera
           check_update
           initdemo
           vault
-          throw
+          test
           platform
         ].freeze
 
@@ -1004,14 +1004,7 @@ module Aspera
             end
             return Main.result_status('Done')
           when :vault then execute_vault
-          when :throw
-            # :type [String]
-            options
-            exception_class_name = options.get_next_argument('exception class name', mandatory: true)
-            exception_text = options.get_next_argument('exception text', mandatory: true)
-            exception_class = Object.const_get(exception_class_name)
-            Aspera.assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
-            raise exception_class, exception_text
+          when :test then return execute_test
           when :platform
             return Main.result_status(Environment.architecture)
           else Aspera.error_unreachable_line
@@ -1106,7 +1099,7 @@ module Aspera
             test_args = "-P#{wiz_preset_name} #{test_args}"
           end
           # TODO: actually test the command
-          return Main.result_status("You can test with:\n#{Info::PROGRAM_NAME} #{identification[:product]} #{test_args}")
+          return Main.result_status("You can test with:\n#{Info::CMD_NAME} #{identification[:product]} #{test_args}")
         end
 
         # @return [Hash] email server setting with defaults if not defined
@@ -1198,7 +1191,7 @@ module Aspera
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
                   'Please fix the issue: either create preset with one parameter: ' \
-                  "(#{Info::PROGRAM_NAME} config id #{default_config_name} init @json:'{}') or remove default (#{Info::PROGRAM_NAME} config id default remove #{plugin_name_sym})."
+                  "(#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}') or remove default (#{Info::CMD_NAME} config id default remove #{plugin_name_sym})."
               end
             end
             raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)
@@ -1253,7 +1246,7 @@ module Aspera
           info = options.get_option(:vault) || {}
           info = info.symbolize_keys
           info[:type] ||= 'file'
-          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : Info::PROGRAM_NAME)
+          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : Info::CMD_NAME)
           Aspera.assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
           Aspera.assert(info.values.all?(String)){'vault info shall have only string values'}
           info[:password] = options.get_option(:vault_password, mandatory: true)
@@ -1283,6 +1276,20 @@ module Aspera
           end
           raise 'No vault defined' if @vault.nil?
           @vault
+        end
+
+        def execute_test
+          case options.get_next_command(%i[throw web])
+          when :throw
+            # :type [String]
+            # options
+            exception_class_name = options.get_next_argument('exception class name', mandatory: true)
+            exception_text = options.get_next_argument('exception text', mandatory: true)
+            exception_class = Object.const_get(exception_class_name)
+            Aspera.assert(exception_class <= Exception){"#{exception_class} is not an exception: #{exception_class.class}"}
+            raise exception_class, exception_text
+          when :web
+          end
         end
 
         # version of URL without trailing "/" and removing default port

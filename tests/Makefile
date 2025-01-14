@@ -1564,11 +1564,11 @@ $(T)conf_interactive: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_hint: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) config throw Aspera::Transfer::Error 'Remote host is not who we expected'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config test throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config test throw Aspera::Transfer::Error 'Remote host is not who we expected'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config test throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config test throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
+	$(EXE_BEG_ERR) config test throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_logger: $(T).exists
 	@$(START_TEST) $@
@@ -1873,7 +1873,25 @@ $(T)f5_postproc: $(T).exists
 	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm_acc_lst $(T)f5_adm_job_lst $(T)f5_adm_nod_lst $(T)f5_adm_api_lst $(T)f5_adm_reg_lst $(T)f5_adm_sbx_lst $(T)f5_adm_sbx_mem $(T)f5_adm_sbx_cr $(T)f5_adm_sbx_del $(T)f5_adm_evt_app $(T)f5_adm_evt_web $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc))
+PKCS_P=YourExportPassword
+$(T)f5_cert_test: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_NO_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"http://localhost:18080/domain","processing":{"script_folder":"$(DIR_TST)"}}' &
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
+	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
+	$(EXE_NO_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
+	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
+	openssl req -newkey rsa:2048 -x509 -days 365 -nodes -keyout $(DIR_TMP)private_key.pem -out $(DIR_TMP)certificate.pem -subj "/CN=MyCert"
+	$(EXE_NO_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"cert":"$(DIR_TMP)certificate.pem","chain":"$(DIR_TMP)certificate.pem","key":"$(DIR_TMP)private_key.pem"},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
+	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
+	openssl pkcs12 -export -out $(DIR_TMP)certificate.p12 -inkey $(DIR_TMP)private_key.pem -in $(DIR_TMP)certificate.pem -name "MyCertAlias" -passout pass:$(PKCS_P)
+	$(EXE_NO_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(DIR_TMP)certificate.p12","key":"$(PKCS_P)"},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
+	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
+	@$(STOP_TEST) $@
+$(eval $(call test_suite_all,tf5,$(T)f5_nagios $(T)f5_nag_err $(T)f5_p0 $(T)f5_p1 $(T)f5_p2 $(T)f5_p3 $(T)f5_sh_folder_list $(T)f5_sh_folder_br $(T)f5_sh_folder_send $(T)f5_pack_shbox $(T)f5_pack_shbox_public $(T)f5_pack_user_public $(T)f5_pack_wrkgrp $(T)f5_user_res $(T)f5_dist_list $(T)f5_adm_acc_lst $(T)f5_adm_job_lst $(T)f5_adm_nod_lst $(T)f5_adm_api_lst $(T)f5_adm_reg_lst $(T)f5_adm_sbx_lst $(T)f5_adm_sbx_mem $(T)f5_adm_sbx_cr $(T)f5_adm_sbx_del $(T)f5_adm_evt_app $(T)f5_adm_evt_web $(T)f5_clean_del $(T)f5_smtp $(T)f5_user $(T)f5_invite $(T)f5_error $(T)f5_wizard $(T)f5_fxgw $(T)f5_sh_fold $(T)f5_postproc $(T)f5_cert_test))
 #######################################################################################################################
 $(T)httpgw_nagios: $(T).exists
 	@$(START_TEST) $@

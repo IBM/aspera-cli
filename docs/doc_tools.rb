@@ -23,7 +23,7 @@ end
 
 # set values used in ERB
 # just command name
-def cmd; Aspera::Cli::PROGRAM_NAME; end
+def cmd; Aspera::Cli::Info::CMD_NAME; end
 
 # (Markdown) used in text with formatting of command
 def tool; "`#{cmd}`"; end
@@ -73,8 +73,8 @@ end
 
 def ruby_version
   message = "version: #{gemspec.required_ruby_version}"
-  unless ruby_minimum_version.eql?(Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION)
-    message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
+  unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
+    message += ".\n\n> **Deprecation notice**: the minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version"
   end
   return message
 end
