@@ -17,7 +17,7 @@ module Aspera
     private_constant :CERT_PARAMETERS, :GENERIC_ISSUER, :ONE_YEAR_SECONDS
 
     class << self
-      # generates and adds self signed cert to provided webrick options
+      # Fill and self sign provided certificate
       def fill_self_signed_cert(cert, key, digest = 'SHA256')
         cert.subject = cert.issuer = OpenSSL::X509::Name.parse(GENERIC_ISSUER)
         cert.not_before = cert.not_after = Time.now
@@ -61,7 +61,7 @@ module Aspera
           raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|key|!CERT_PARAMETERS.include?(key)}
           if certificate.key?(:pkcs12)
             Log.log.debug('Using PKCS12 certificate')
-            raise 'pkcs12 requires a password' unless certificate.key?(:key)
+            raise 'pkcs12 requires a key (password)' unless certificate.key?(:key)
             pkcs12 = OpenSSL::PKCS12.new(File.read(certificate[:pkcs12]), certificate[:key])
             webrick_options[:SSLCertificate] = pkcs12.certificate
             webrick_options[:SSLPrivateKey] = pkcs12.key
@@ -86,7 +86,8 @@ module Aspera
         end
       end
       # call constructor of parent class, but capture STDERR
-      # self signed certificate generates characters on STDERR, see create_self_signed_cert in webrick/ssl.rb
+      # self signed certificate generates characters on STDERR
+      # see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { super(webrick_options) }
     end
 

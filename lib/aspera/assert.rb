@@ -26,9 +26,14 @@ module Aspera
     end
 
     # assert that value is one of the given values
+    # @param value value to check
+    # @param values accepted values
+    # @param exception_class exception in case of no match
     def assert_values(value, values, exception_class: AssertError)
       assert(values.include?(value), exception_class: exception_class) do
-        "#{block_given? ? "#{yield}: " : nil}expecting one of #{values.inspect}, but have #{value.inspect}"
+        val_list = values.inspect
+        val_list = "one of #{val_list}" if values.is_a?(Array)
+        "#{block_given? ? "#{yield}: " : nil}expecting #{val_list}, but have #{value.inspect}"
       end
     end
 
