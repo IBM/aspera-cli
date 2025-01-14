@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
 require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'logger'
@@ -73,8 +74,7 @@ module Aspera
             JSON.pretty_generate(object) rescue PP.pp(object, +'')
           when :ruby
             PP.pp(object, +'')
-          else
-            raise 'wrong parameter, expect ruby or json'
+          else error_unexpected_value(@@format){'dump format'}
           end
         "#{name.to_s.green} (#{@@format})=\n#{result}"
       end
@@ -127,8 +127,7 @@ module Aspera
           Syslog::Logger.make_methods(severity.downcase)
         end
         @logger = Syslog::Logger.new(@program_name, Syslog::LOG_LOCAL2)
-      else
-        raise "unknown log type: #{new_log_type}, use one of: #{LOG_TYPES.join(', ')}"
+      else error_unexpected_value(new_log_type){"log type (#{LOG_TYPES.join(', ')})"}
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
