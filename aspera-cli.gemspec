@@ -9,17 +9,17 @@ Gem::Specification.new do |spec|
   # get location of this file (shall be in project root)
   gemspec_file = File.expand_path(__FILE__)
   raise "Error: this file extension must be '#{GEMSPEC_EXT}'" unless gemspec_file.end_with?(GEMSPEC_EXT)
-  raise "This file shall be named: #{Aspera::Cli::GEM_NAME}#{GEMSPEC_EXT}" unless
-    Aspera::Cli::GEM_NAME.eql?(File.basename(gemspec_file, GEMSPEC_EXT).downcase)
+  raise "This file shall be named: #{Aspera::Cli::Info::GEM_NAME}#{GEMSPEC_EXT}" unless
+    Aspera::Cli::Info::GEM_NAME.eql?(File.basename(gemspec_file, GEMSPEC_EXT).downcase)
   # the base name of this file shall be the gem name
-  spec.name          = Aspera::Cli::GEM_NAME
+  spec.name          = Aspera::Cli::Info::GEM_NAME
   spec.version       = ENV.fetch('GEM_VERSION', Aspera::Cli::VERSION)
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'Execute actions using command line on IBM Aspera Server products: ' \
     'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, High Speed Transfer Server'
   spec.description   = 'Command line interface for IBM Aspera products'
-  spec.homepage      = Aspera::Cli::SRC_URL
+  spec.homepage      = Aspera::Cli::Info::SRC_URL
   spec.license       = 'Apache-2.0'
   spec.requirements << 'Read the manual for any requirement'
   raise 'RubyGems 2.0 or newer is required' unless spec.respond_to?(:metadata)
@@ -27,8 +27,8 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri']      = spec.homepage
   spec.metadata['source_code_uri']   = File.join(spec.homepage, 'tree/main/lib/aspera')
   spec.metadata['changelog_uri']     = File.join(spec.homepage, 'CHANGELOG.md')
-  spec.metadata['rubygems_uri']      = Aspera::Cli::GEM_URL
-  spec.metadata['documentation_uri'] = Aspera::Cli::DOC_URL
+  spec.metadata['rubygems_uri']      = Aspera::Cli::Info::GEM_URL
+  spec.metadata['documentation_uri'] = Aspera::Cli::Info::DOC_URL
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(/^#{spec.bindir}/){|f|File.basename(f)}
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
-  # see also Aspera::Cli::RUBY_CURRENT_MINIMUM_VERSION
+  # see also Aspera::Cli::Info::RUBY_CURRENT_MINIMUM_VERSION
   spec.required_ruby_version = '>= 2.6'
   # dependency gems for runtime
   # if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('3.0.0')
