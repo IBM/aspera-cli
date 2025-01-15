@@ -25,6 +25,7 @@ module Aspera
         <html lang="en">
         <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIiBmaWxsPSJub25lIiBzdHJva2U9IiMyMjIiIHN0cm9rZS13aWR0aD0iMyI+CiAgPGxpbmUgeDE9IjMiIHkxPSIzIiB4Mj0iMjkiIHkyPSIyOSIgIHN0cm9rZT0icmVkIi8+CiAgPGxpbmUgeDE9IjI5IiB5MT0iMyIgeDI9IjMiIHkyPSIyOSIgc3Ryb2tlPSJyZWQiIC8+Cjwvc3ZnPg==" type="image/svg+xml">
         <title>Close Now</title>
         <style>
         body {
