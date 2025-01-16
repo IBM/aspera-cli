@@ -69,7 +69,7 @@ Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
-So, which is Aspera's CLI ? `<%=tool%>` or `ascp`
+So, which is Aspera's CLI ? <%=tool%> or `ascp`
 
 `ascp` is the low level Aspera command line for **transfers**.
 It is in fact the implementation of the FASP protocol.
@@ -77,7 +77,7 @@ So, ANY Aspera transfer leads to one ascp process running on client side and ano
 `ascp` can be used as a command line, but it is very low level, and practically it can be used on command line only if there is no Aspera web ap (AoC, Faspex, etc..) and ONLY to do a transfer (send/receive), not for any operation on Aspera apps (e.g. listing remote files).
 `ascp` does not provide a configuration file to store credentials or options, it does not resume automatically on transfer error.
 
-In fact, `<%=tool%>` can do everything that `ascp` does, and much more, and in an easier way.
+In fact, <%=tool%> can do everything that `ascp` does, and much more, and in an easier way.
 
 ### Notations, Shell, Examples
 
@@ -990,7 +990,7 @@ Then, use this file as certificate store (e.g. here, Node API):
 
 ## Command Line Interface
 
-The command line tool is: `<%=tool%>`
+The command line tool is: <%=tool%>
 
 The `<%=gemspec.name%>` gem provides a command line interface (CLI) which interacts with Aspera Products (mostly using REST APIs):
 
@@ -3595,7 +3595,7 @@ Let's start by a registration with web based authentication (auth=web):
   - leave the JWT part for now
 - **Save**
 
-> **Note:** For web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For `<%=tool%>, HTTP is required, and 12345 is the default port.
+> **Note:** For web based authentication, <%=tool%> listens on a local port (e.g. specified by the redirect_uri, in this example: 12345), and the browser will provide the OAuth code there. For <%=tool%>, HTTP is required, and 12345 is the default port.
 
 Once the client is registered, a **Client ID** and **Secret** are created, these values will be used in the next step.
 
