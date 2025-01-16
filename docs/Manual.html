@@ -2669,30 +2669,55 @@ adjusted using option <code>http_options</code>:</p>
 <tr>
 <th>Parameter</th>
 <th>Default</th>
+<th>Where</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>read_timeout</code></td>
 <td>60</td>
+<td>ruby</td>
 </tr>
 <tr>
 <td><code>write_timeout</code></td>
 <td>60</td>
+<td>ruby</td>
 </tr>
 <tr>
 <td><code>open_timeout</code></td>
 <td>60</td>
+<td>ruby</td>
 </tr>
 <tr>
 <td><code>keep_alive_timeout</code></td>
 <td>2</td>
+<td>ruby</td>
+</tr>
+<tr>
+<td><code>user_agent</code></td>
+<td><code>ascli</code></td>
+<td><code>ascli</code></td>
+</tr>
+<tr>
+<td><code>download_partial_suffix</code></td>
+<td>.http_partial</td>
+<td><code>ascli</code></td>
+</tr>
+<tr>
+<td><code>retry_on_error</code></td>
+<td>0</td>
+<td><code>ascli</code></td>
+</tr>
+<tr>
+<td><code>retry_sleep</code></td>
+<td>nil</td>
+<td><code>ascli</code></td>
 </tr>
 </tbody>
 </table>
-<p>Values are in set <strong>seconds</strong> and can be of type either
-integer or float. Default values are the ones of Ruby: For a full list,
-refer to the Ruby library: <a
+<p>Time values are in set <strong>seconds</strong> and can be of type
+either integer or float. Default values are the ones of Ruby: For a full
+list, refer to the Ruby library: <a
 href="https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html"><code>Net::HTTP</code></a>.</p>
 <p>Like any other option, those can be set either on command line, or in
 configuration file, either in a global preset or server-specific

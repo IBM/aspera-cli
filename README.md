@@ -2475,14 +2475,18 @@ To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
 
-| Parameter            | Default |
-|----------------------|---------|
-| `read_timeout`       | 60      |
-| `write_timeout`      | 60      |
-| `open_timeout`       | 60      |
-| `keep_alive_timeout` | 2       |
+| Parameter                 | Default       | Where     |
+|---------------------------|---------------|-----------|
+| `read_timeout`            | 60            | ruby      |
+| `write_timeout`           | 60            | ruby      |
+| `open_timeout`            | 60            | ruby      |
+| `keep_alive_timeout`      | 2             | ruby      |
+| `user_agent`              | `ascli`     | `ascli` |
+| `download_partial_suffix` | .http_partial | `ascli` |
+| `retry_on_error`          | 0             | `ascli` |
+| `retry_sleep`             | nil           | `ascli` |
 
-Values are in set **seconds** and can be of type either integer or float.
+Time values are in set **seconds** and can be of type either integer or float.
 Default values are the ones of Ruby:
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 

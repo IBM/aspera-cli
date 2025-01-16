@@ -30,13 +30,15 @@ module Aspera
   class RestParameters
     include Singleton
 
-    attr_accessor :user_agent, :download_partial_suffix, :session_cb, :progress_bar
+    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_sleep, :session_cb, :progress_bar
 
     private
 
     def initialize
       @user_agent = 'RubyAsperaRest'
       @download_partial_suffix = '.http_partial'
+      @retry_on_error = 0
+      @retry_sleep = nil
       @session_cb = nil
       @progress_bar = nil
     end
@@ -333,7 +335,8 @@ module Aspera
         Log.log.trace1{Log.dump(:req_body, req.body)}
         # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
         oauth_tries ||= 2
-        bss_tries ||= 5
+        timeout_tries ||= 5
+        general_tries ||= 1 + RestParameters.instance.retry_on_error
         # initialize with number of initial retries allowed, nil gives zero
         tries_remain_redirect = @redirect_max if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
@@ -392,8 +395,11 @@ module Aspera
         RestErrorAnalyzer.instance.raise_on_error(req, result)
         File.write(save_to_file, result[:http].body, binmode: true) unless file_saved || save_to_file.nil?
       rescue RestCallError => e
+        do_retry = false
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
-        retry if e.response.body.include?('failed: connect timed out') && (bss_tries -= 1).nonzero?
+        do_retry = true if e.response.body.include?('failed: connect timed out') && (timeout_tries -= 1).positive?
+        # possibility to retry anything if it fails
+        do_retry = true if (general_tries -= 1).positive?
         # not authorized: oauth token expired
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
@@ -406,7 +412,11 @@ module Aspera
             req['Authorization'] = oauth.token(refresh: true)
           end
           Log.log.debug{"using new token=#{headers['Authorization']}"}
-          retry if (oauth_tries -= 1).nonzero?
+          do_retry = true if (oauth_tries -= 1).positive?
+        end
+        if do_retry
+          sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.nil?
+          retry
         end
         # redirect ? (any code beginning with 3)
         if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?

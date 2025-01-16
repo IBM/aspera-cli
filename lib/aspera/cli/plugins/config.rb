@@ -263,6 +263,11 @@ module Aspera
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
           RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
+          @option_http_options.keys.select{|i|RestParameters.instance.respond_to?(i)}.each do |k|
+            method = "#{k}=".to_sym
+            RestParameters.instance.send(method, @option_http_options[k])
+            @option_http_options.delete(k)
+          end
           OAuth::Factory.instance.persist_mgr = persistency if @option_cache_tokens
           OAuth::Web.additionnal_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
           Transfer::Parameters.file_list_folder = File.join(@main_folder, 'filelists')
