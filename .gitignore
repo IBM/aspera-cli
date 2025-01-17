@@ -12,3 +12,4 @@
 .vscode
 /Dockerfile
 .bundle
+*.pandoc_meta

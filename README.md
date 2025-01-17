@@ -1,8 +1,13 @@
 # Command Line Interface for IBM Aspera products
-<!-- markdownlint-disable MD033 MD003 MD053 -->
-<!-- cspell:ignore Serban Antipolis -->
+<!--
+Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md
 
-[comment1]: # (Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md)
+markdownlint-disable MD033 MD003 MD053
+cspell:ignore Serban Antipolis
+PANDOC_META_BEGIN
+subtitle: "ascli 4.20.0.pre"
+PANDOC_META_END
+-->
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
