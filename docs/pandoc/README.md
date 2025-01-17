@@ -6,14 +6,20 @@
 1. create a Makefile like this:
 
 ```makefile
-DIR_PANDOC=$(HOME)/path_to_this_folder/
-include $(DIR_PANDOC)pandoc.mak
-PANDOC_SUBTITLE=My Subtitle
+include $(HOME)/path_to_this_folder/pandoc.mak
 all: README.pdf
 clean:
     rm -f README.pdf
 ```
 
-> **Note:** The variable `DIR_PANDOC` should indicate the folder where the file `pandoc.mak` is located and end with a `/`.
-
 1. Run `make` to generate the PDF file.
+
+The markdownfile can include a section like this with pandoc metadata:
+
+```xml
+<!--
+PANDOC_META_BEGIN
+subtitle: "subtitle here"
+PANDOC_META_END
+-->
+```

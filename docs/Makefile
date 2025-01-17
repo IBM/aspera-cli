@@ -6,8 +6,7 @@ DIR_TOP=../
 include $(DIR_TOP)common.mak
 # "make" shall be executed inside the folder containing this makefile
 DIR_DOC=
-DIR_PANDOC=$(DIR_DOC)pandoc/
-include $(DIR_PANDOC)pandoc.mak
+include $(DIR_DOC)pandoc/pandoc.mak
 
 MANUAL_BASE=$(DIR_DOC)Manual
 MANUAL_PDF=$(MANUAL_BASE).pdf
