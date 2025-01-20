@@ -152,7 +152,8 @@ module Aspera
             Log.log.debug{"SSH keys=#{ssh_key_list}"}
             if !ssh_key_list.empty?
               @ssh_opts[:keys] = ssh_key_list
-              server_transfer_spec['ssh_private_key'] = File.read(ssh_key_list.first)
+              # PEM as per RFC 7468
+              server_transfer_spec['ssh_private_key'] = File.read(ssh_key_list.first).strip
               Log.log.warn{'Using only first SSH key for transfers'} unless ssh_key_list.length.eql?(1)
               cred_set = true
             end
