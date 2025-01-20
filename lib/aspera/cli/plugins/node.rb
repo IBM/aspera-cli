@@ -802,7 +802,43 @@ module Aspera
             end
             case command
             when :list
-              transfers_data = @api_node.read(res_class_path, query_read_delete)
+              iteration_persistency = nil
+              iteration_data = []
+              if options.get_option(:once_only, mandatory: true)
+                iteration_persistency = PersistencyActionOnce.new(
+                  manager: persistency,
+                  data:    iteration_data,
+                  id:      IdGenerator.from_list([
+                    'node_transfers',
+                    options.get_option(:url, mandatory: true),
+                    options.get_option(:username, mandatory: true)
+                  ]))
+              end
+              transfer_filter = query_read_delete(default: {})
+              if transfer_filter.delete('reset')
+                iteration_data.clear
+                iteration_persistency&.save
+                return Main.result_status('Persistency reset')
+              end
+              max_items = transfer_filter.delete(MAX_ITEMS)
+              transfer_filter['iteration_token'] = iteration_persistency.data[0] unless iteration_data.empty?
+              transfers_data = []
+              loop do
+                result = @api_node.call(operation: 'GET', subpath: res_class_path, query: transfer_filter)
+                data = result[:data]
+                transfers_data.concat(data)
+                if !max_items.nil? && (transfers_data.length >= max_items)
+                  transfers_data = transfers_data.slice(0, max_items)
+                  break
+                end
+                link_info = result[:http]['Link']
+                break if iteration_persistency.nil? || data.empty? || link_info.nil?
+                m = link_info.match(/<([^>]+)>/)
+                raise "Problem with iteration: #{link_info}" if m.nil?
+                iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
+                iteration_data[0] = transfer_filter['iteration_token'] = iteration_token
+              end
+              iteration_persistency&.save
               return {
                 type:   :object_list,
                 data:   transfers_data,

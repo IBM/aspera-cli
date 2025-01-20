@@ -591,6 +591,9 @@ $(T)nd4: $(T).exists
 $(T)nd6: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node transfer list --query=@json:'{"active_only":true}'
+	$(EXE_MAN) node transfer list --query=@json:'{"reset":true}' --once-only=yes
+	$(EXE_MAN) node transfer list --once-only=yes
+	$(EXE_NO_MAN) node transfer list --once-only=yes
 	$(EXE_MAN) node transfer sessions
 	@$(STOP_TEST) $@
 $(T)nd7: $(T).exists

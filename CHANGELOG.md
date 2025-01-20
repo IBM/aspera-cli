@@ -8,6 +8,7 @@
     * `aoc`: Improved usability for creation of Admin shared folders.
     * `node`: New option `node_cache` (bool) for gen4 operations.
     * `node`: Option `root_id` now works always for node gen4, as well as `%id:` for file selection in addition to path.
+    * `node`: `transfer list` now uses the `iteratin_token` to retrieve all values. Option `once_only` is now supported.
     * `global` : option `http_options` now include retry options.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
