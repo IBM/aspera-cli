@@ -12,9 +12,17 @@ clean:
     rm -f README.pdf
 ```
 
+There is a default target for `Foo.pdf` from `Foo.md`.
+
+If the source and destination have different basenames, then it is possible to do:
+
+```makefile
+$(eval $(call markdown_to_pdf,source.md,target.pdf))
+```
+
 1. Run `make` to generate the PDF file.
 
-The markdownfile can include a section like this with pandoc metadata:
+The markdown file can include a section like this with `pandoc` metadata:
 
 ```xml
 <!--

@@ -4097,7 +4097,7 @@ Examples of query:
 | member_type | manager |           member.email           |
 +-------------+---------+----------------------------------+
 | user        | true    | john.curtis@email.com            |
-| user        | false   | someuser@example.com |
+| user        | false   | someuser@example.com             |
 | user        | false   | jean.dupont@me.com               |
 | user        | false   | another.user@example.com         |
 | group       | false   |                                  |
