@@ -107,7 +107,7 @@ module Aspera
 
       # start process in background, or raise exception
       # caller can call Process.wait on returned value
-      def secure_spawn(env:, exec:, args:)
+      def secure_spawn(exec:, args: [], env: [])
         Log.log.debug {log_spawn(env: env, exec: exec, args: args)}
         # start ascp in separate process
         ascp_pid = Process.spawn(env, [exec, exec], *args, close_others: true)
@@ -115,9 +115,16 @@ module Aspera
         return ascp_pid
       end
 
-      def secure_capture(exec:, args:)
+      # @param exec [String] path to executable
+      # @param args [Array] arguments to executable
+      # @param opts [Hash] options to capture3
+      # @return stdout of executable or raise expcetion
+      def secure_capture(exec:, args: [], **opts)
+        Aspera.assert_type(exec, String)
+        Aspera.assert_type(args, Array)
+        Aspera.assert_type(opts, Hash)
         Log.log.debug {log_spawn(env: {}, exec: exec, args: args)}
-        stdout, stderr, status = Open3.capture3(*[exec].concat(args))
+        stdout, stderr, status = Open3.capture3(exec, *args, **opts)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         Log.log.trace1{"stdout=#{stdout}"}
         raise "process failed: #{status.exitstatus} : #{stderr}" unless status.success?

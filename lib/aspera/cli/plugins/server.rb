@@ -9,6 +9,7 @@ require 'aspera/ssh'
 require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/environment'
 require 'tempfile'
 require 'open3'
 
@@ -32,14 +33,8 @@ module Aspera
         private_constant :SSH_SCHEME, :URI_SCHEMES, :ASCMD_ALIASES, :TRANSFER_COMMANDS
 
         class LocalExecutor
-          def execute(cmd, line)
-            # concatenate arguments, enclose in double quotes
-            cmd = cmd.map{|v|%Q("#{v}")}.join(' ') if cmd.is_a?(Array)
-            Log.log.debug{"Executing: #{cmd} with '#{line}'"}
-            stdout_str, stderr_str, status = Open3.capture3(cmd, stdin_data: line, binmode: true)
-            Log.log.debug{"exec status: #{status} -> #{stderr_str}"}
-            raise "command #{cmd} failed with code #{status.exitstatus} #{stderr_str}" unless status.success?
-            return stdout_str
+          def execute(ascmd_path, line)
+            return Environment.secure_capture(exec: ascmd_path, stdin_data: line, binmode: true)
           end
         end
 

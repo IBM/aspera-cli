@@ -4,7 +4,7 @@
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
-require 'open3'
+require 'aspera/environment'
 
 # enhance the gem to support other key chains
 module Aspera
@@ -48,20 +48,15 @@ module Aspera
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
               options[:port] = uri.port unless uri.port.eql?(443) && !url.include?(':443/')
             end
-            command_line = [SECURITY_UTILITY, command]
+            command_args = [command]
             options&.each do |k, v|
               Aspera.assert(supported.key?(k)){"unknown option: #{k}"}
               next if v.nil?
-              command_line.push("-#{supported[k]}")
-              command_line.push(v.shellescape) unless v.empty?
+              command_args.push("-#{supported[k]}")
+              command_args.push(v.shellescape) unless v.empty?
             end
-            command_line.push(last_opt) unless last_opt.nil?
-            Log.log.debug{"executing>>#{command_line.join(' ')}"}
-            stdout, stderr, status = Open3.capture3(*command_line)
-            Log.log.debug{"status=#{status}, stderr=#{stderr}"}
-            Log.log.trace1{"stdout=#{stdout}"}
-            raise "#{SECURITY_UTILITY} failed: #{status.exitstatus} : #{stderr}" unless status.success?
-            return stdout
+            command_args.push(last_opt) unless last_opt.nil?
+            return Environment.secure_capture(exec: SECURITY_UTILITY, args: command_args)
           end
 
           def key_chains(output)

@@ -32,7 +32,7 @@ module Aspera
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
           tools_to_check.each do |command_sym|
-            external_command(command_sym, ['-h'], check_code: false)
+            external_command(command_sym, ['-h'])
           rescue Errno::ENOENT => e
             raise "missing #{command_sym} binary: #{e}"
           rescue
@@ -43,19 +43,9 @@ module Aspera
         # execute external command
         # one could use "system", but we would need to redirect stdout/err
         # @return true if su
-        def external_command(command_sym, command_args, check_code: true)
+        def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          # build command line, and quote special characters
-          command_line = command_args.clone.unshift(command_sym).map{|i| shell_quote(i.to_s)}.join(' ')
-          Log.log.debug{"cmd=#{command_line}".blue}
-          stdout, stderr, status = Open3.capture3(command_line)
-          if check_code && !status.success?
-            Log.log.error{"status: #{status}"}
-            Log.log.error{"stdout: #{stdout}"}
-            Log.log.error{"stderr: #{stderr}"}
-            raise "#{command_sym} error #{status}"
-          end
-          return {status: status, stdout: stdout}
+          return Environment.secure_capture(command_sym.to_s, *command_args)
         end
 
         def ffmpeg(a)
@@ -73,12 +63,11 @@ module Aspera
 
         # @return Float in seconds
         def video_get_duration(input_file)
-          result = external_command(:ffprobe, [
+          return external_command(:ffprobe, [
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
             '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
-            input_file])
-          return result[:stdout].to_f
+            input_file]).to_f
         end
 
         def ffmpeg_fmt(temp_folder)
