@@ -17,7 +17,7 @@ module Aspera
             api = Api::Httpgw.new(url: base_url)
             api_info = api.info
             return {
-              url:     base_url,
+              url:     api.base_url,
               version: api_info['version']
             } if api_info.is_a?(Hash) && api_info.key?('download_endpoint')
             return nil

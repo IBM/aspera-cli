@@ -133,7 +133,6 @@ module Aspera
             subpath:   "files/#{file_id}/files",
             headers:   headers,
             query:     request_args)[:data]
-          # return @api_node.read("files/#{file_id}/files",request_args)
         end
 
         # old version based on folders

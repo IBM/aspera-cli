@@ -47,9 +47,9 @@ module Aspera
               test_endpoint = 'ping'
               result = api.call(operation: 'GET', subpath: test_endpoint)
               next unless result[:http].body.eql?('')
-              url_length = -2 - test_endpoint.length
+              url_end = -2 - test_endpoint.length
               return {
-                url:     result[:http].uri.to_s[0..url_length],
+                url:     result[:http].uri.to_s[0..url_end],
                 version: 'requires authentication'
               }
             rescue StandardError => e

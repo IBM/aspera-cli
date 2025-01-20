@@ -274,6 +274,11 @@ module Aspera
         return @api_info
       end
 
+      # @return the base url of the gateway
+      def base_url
+        return @gw_root_url
+      end
+
       # @param url [String] URL of the HTTP Gateway, without version
       def initialize(
         url:,
