@@ -1,8 +1,12 @@
 # Changes (Release notes)
 
 * 4.21.0.pre
-  *
-   
+
+  * New Features:
+  * Issues Fixed:
+    * `config`: soft links in transfer SDK are correctly extracted
+  * Breaking Changes:
+
 * 4.20.0
 
   ATTENTIION: Due to the fact that Faspex version 4 is end of support, the `faspex` command will be deprecated. Use Faspex 5 from now.
