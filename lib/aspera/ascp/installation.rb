@@ -255,6 +255,7 @@ module Aspera
         return info.first['url']
       end
 
+      # @param &block called with entry information
       def extract_archive_files(sdk_archive_path)
         raise 'missing block' unless block_given?
         case sdk_archive_path
@@ -265,7 +266,7 @@ module Aspera
           Zip::File.open(sdk_archive_path) do |zip_file|
             zip_file.each do |entry|
               next if entry.name.end_with?('/')
-              yield(entry.name, entry.get_input_stream)
+              yield(entry.name, entry.get_input_stream, nil)
             end
           end
         # Other Unixes use tar.gz
@@ -276,7 +277,7 @@ module Aspera
             Gem::Package::TarReader.new(gzip) do |tar|
               tar.each do |entry|
                 next if entry.directory?
-                yield(entry.full_name, entry)
+                yield(entry.full_name, entry, entry.symlink? ? entry.header.linkname : nil)
               end
             end
           end
@@ -287,7 +288,11 @@ module Aspera
 
       # download aspera SDK or use local file
       # extracts ascp binary for current system architecture
-      # @param url [String] URL to SDK archive, or SpecialValues::DEF
+      # @param url      [String] URL to SDK archive, or SpecialValues::DEF
+      # @param folder   [String] destination
+      # @param backup   [Bool]
+      # @param with_exe [Bool]
+      # @param &block   [Proc] a lambda that receives a file path from archive and tells detination sub folder, or nil to not extract
       # @return ascp version (from execution)
       def install_sdk(url: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform if url.nil? || url.eql?('DEF')
@@ -318,13 +323,16 @@ module Aspera
           File.rename(folder, "#{folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
-        extract_archive_files(sdk_archive_path) do |entry_name, entry_stream|
+        extract_archive_files(sdk_archive_path) do |entry_name, entry_stream, link_target|
           subfolder = subfolder_lambda.call(entry_name)
           next if subfolder.nil?
           dest_folder = File.join(folder, subfolder)
           FileUtils.mkdir_p(dest_folder)
-          File.open(File.join(dest_folder, File.basename(entry_name)), 'wb') do |output_stream|
-            IO.copy_stream(entry_stream, output_stream)
+          new_file = File.join(dest_folder, File.basename(entry_name))
+          if link_target.nil?
+            File.open(new_file, 'wb') { |output_stream|IO.copy_stream(entry_stream, output_stream)}
+          else
+            File.symlink(link_target, new_file)
           end
         end
         File.unlink(sdk_archive_path) rescue nil if delete_archive # Windows may give error
