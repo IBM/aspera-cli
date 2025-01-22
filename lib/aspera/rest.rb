@@ -207,14 +207,15 @@ module Aspera
     #     :password   [:basic]
     #     :url_query  [:url]    a hash
     #     :*          [:oauth2] see OAuth::Factory class
-    # @param not_auth_codes [Array] codes that trigger a refresh/regeneration of bearer token
-    # @param redirect_max [int] max redirection allowed
+    # @param not_auth_codes [Array]   codes that trigger a refresh/regeneration of bearer token
+    # @param redirect_max   [Integer] max redirection allowed
+    # @param headers        [Hash]    default headers to include in all calls
     def initialize(
       base_url:,
-      auth: nil,
-      not_auth_codes: nil,
+      auth: {type: :none},
+      not_auth_codes: ['401'],
       redirect_max: 0,
-      headers: nil
+      headers: {}
     )
       Aspera.assert_type(base_url, String)
       # base url with no trailing slashes (note: string may be frozen)
@@ -224,20 +225,20 @@ module Aspera
       @base_url = @base_url.gsub(/:80$/, '') if @base_url.start_with?('http://')
       Log.log.debug{"Rest.new(#{@base_url})"}
       # default is no auth
-      @auth_params = auth.nil? ? {type: :none} : auth
+      @auth_params = auth
       Aspera.assert_type(@auth_params, Hash)
       Aspera.assert(@auth_params.key?(:type)){'no auth type defined'}
-      @not_auth_codes = not_auth_codes.nil? ? ['401'] : not_auth_codes
+      @not_auth_codes = not_auth_codes
       Aspera.assert_type(@not_auth_codes, Array)
       # persistent session
       @http_session = nil
-      # OAuth object (created on demand)
-      @oauth = nil
       @redirect_max = redirect_max
       Aspera.assert_type(@redirect_max, Integer)
-      @headers = headers.nil? ? {} : headers
+      @headers = headers
       Aspera.assert_type(@headers, Hash)
       @headers['User-Agent'] ||= RestParameters.instance.user_agent
+      # OAuth object (created on demand)
+      @oauth = nil
     end
 
     # @return the OAuth object (create, or cached if already created)
