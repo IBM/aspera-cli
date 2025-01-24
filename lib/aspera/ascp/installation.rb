@@ -8,6 +8,8 @@ require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/assert'
 require 'aspera/web_server_simple'
+require 'aspera/cli/info'
+require 'aspera/cli/version'
 require 'English'
 require 'singleton'
 require 'xmlsimple'
@@ -239,7 +241,14 @@ module Aspera
       # Loads YAML from cloud with locations of SDK archives for all platforms
       # @return location structure
       def sdk_locations
-        yaml_text = Aspera::Rest.new(base_url: TRANSFER_SDK_LOCATION_URL, redirect_max: 3).call(operation: 'GET')[:data]
+        yaml_text = Aspera::Rest.new(
+          base_url: TRANSFER_SDK_LOCATION_URL,
+          redirect_max: 3).call(
+            operation: 'GET',
+            headers: {
+              'Referer' => "http://version.#{Cli::VERSION}"
+            }
+          )[:data]
         YAML.load(yaml_text)
       end
 
