@@ -54,6 +54,9 @@ module Aspera
 
       # set ascp executable path
       def ascp_path=(v)
+        Aspera.assert_type(v, String)
+        Aspera.assert(!v.empty?) {'ascp path cannot be empty: check your config file'}
+        Aspera.assert(File.exist?(v)) {"No such file: [#{v}]"}
         @path_to_ascp = v
       end
 
@@ -83,7 +86,7 @@ module Aspera
       def use_ascp_from_product(product_name)
         if product_name.eql?(FIRST_FOUND)
           pl = Products.installed_products.first
-          raise "ascp found: no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
+          raise "no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
         else
           pl = Products.installed_products.find{|i|i[:name].eql?(product_name)}
           raise "no such product installed: #{product_name}" if pl.nil?
@@ -145,7 +148,7 @@ module Aspera
         else Aspera.error_unexpected_value(k)
         end
         return nil if file_is_optional && !File.exist?(file)
-        Aspera.assert(File.exist?(file)){"no such file: #{file}"}
+        Aspera.assert(File.exist?(file)){"no such file for #{k}: [#{file}]"}
         return file
       end
 
