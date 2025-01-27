@@ -1019,7 +1019,7 @@ module Aspera
             raise 'Missing key: url' unless parameters.key?(:url)
             uri = URI.parse(parameters[:url])
             server = WebServerSimple.new(uri, certificate: parameters[:certificate])
-            server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], transfer)
+            server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], NodeSimulator.new)
             server.start
             return Main.result_status('Simulator terminated')
           end

@@ -72,7 +72,7 @@ module Aspera
         session = {
           id:                nil, # SessionId from INIT message in mgt port
           job_id:            SecureRandom.uuid, # job id (regroup sessions)
-          ts:                transfer_spec,     # transfer spec
+          ts:                transfer_spec,     # global transfer spec
           thread:            nil,               # Thread object monitoring management port, not nil when pushed to :sessions
           error:             nil,               # exception if failed
           io:                nil,               # management port server socket
@@ -84,7 +84,7 @@ module Aspera
         if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
-          session[:thread] = Thread.new(session) {|session_info|transfer_thread_entry(session_info)}
+          session[:thread] = Thread.new {transfer_thread_entry(session)}
           @sessions.push(session)
         else
           Log.log.debug('Starting multi session threads')
@@ -101,7 +101,7 @@ module Aspera
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
-            this_session[:thread] = Thread.new(this_session) {|session_info|transfer_thread_entry(session_info)}
+            this_session[:thread] = Thread.new {transfer_thread_entry(this_session)}
             @sessions.push(this_session)
           end
         end
@@ -132,18 +132,18 @@ module Aspera
 
       # @return [Array] list of sessions for a job
       def sessions_by_job(job_id)
-        @sessions.select{|session_info| session_info[:job_id].eql?(job_id)}
+        @sessions.select{|session| session[:job_id].eql?(job_id)}
       end
 
-      # This is the low level method to start the transfer process
+      # This is the low level method to start the transfer process.
+      # Typically started in a thread.
       # Start process with management port.
-      # returns
-      # raises FaspError on error
       # @param session this session information, keys :io and :token_regenerator
-      # @param env  [Hash]   environment variables
-      # @param name [Symbol] name of executable: :ascp, :ascp4 or :async
-      # @param args [Array]  command line arguments
+      # @param env  [Hash]   environment variables (comes from ascp_args)
+      # @param name [Symbol] name of executable: :ascp, :ascp4 or :async (comes from ascp_args)
+      # @param args [Array]  command line arguments (comes from ascp_args)
       # @return [nil] when process has exited
+      # @throw FaspError on error
       def start_and_monitor_process(
         session:,
         env:,
@@ -192,6 +192,8 @@ module Aspera
             next unless event
             # event is ready
             Log.log.trace1{Log.dump(:management_port, event)}
+            # store latest event by type
+            session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
             process_progress(event)
             Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
@@ -242,10 +244,13 @@ module Aspera
         nil
       end
 
+      attr_reader :sessions
+
       private
 
       # notify progress to callback
       # @param event management port event
+      # @param session sessin object
       def process_progress(event)
         session_id = event['SessionId']
         case event['Type']
@@ -282,14 +287,6 @@ module Aspera
         end
       end
 
-      # @return [Hash] session information
-      def session_by_id(id)
-        matches = @sessions.select{|session_info| session_info[:id].eql?(id)}
-        raise 'no such session' if matches.empty?
-        raise 'more than one session' if matches.length > 1
-        return matches.first
-      end
-
       # send command to management port of command (used in `asession)
       # @param job_id identified transfer process
       # @param session_index index of session (for multi session)
@@ -297,7 +294,7 @@ module Aspera
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
       def send_command(job_id, data)
-        session = session_by_id(job_id)
+        session = @sessions.find{|session| session[:job_id].eql?(job_id)}
         Log.log.debug{"command: #{data}"}
         # build command
         command = data
@@ -308,7 +305,6 @@ module Aspera
           .join("\n")
         session[:io].puts(command)
       end
-      attr_reader :sessions
 
       # options for initialize (same as values in option transfer_info)
       # @param ascp_args [Array] additional arguments to ascp

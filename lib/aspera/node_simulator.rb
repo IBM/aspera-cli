@@ -7,28 +7,105 @@ require 'webrick'
 require 'json'
 
 module Aspera
+  class NodeSimulator
+    attr_reader :agent
+
+    def initialize
+      @agent = Agent::Direct.new(management_cb: ->(event){process_event(event)})
+    end
+
+    def process_event(event)
+      Log.log.debug{">>> #{event}"}
+    end
+  end
+
   # this class answers the Faspex /send API and creates a package on Aspera on Cloud
+  # a new instance is created for each request
   class NodeSimulatorServlet < WEBrick::HTTPServlet::AbstractServlet
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
+    PATH_BROWSE = '/files/browse'
     # @param app_api [Api::AoC]
     # @param app_context [String]
-    def initialize(server, credentials, transfer)
+    def initialize(server, credentials, simulator)
       super(server)
       @credentials = credentials
-      @xfer_manager = Agent::Direct.new
+      @simulator = simulator
+    end
+
+    require 'json'
+    require 'time'
+
+    def folder_to_structure(folder_path)
+      raise "Path does not exist or is not a directory: #{folder_path}" unless Dir.exist?(folder_path)
+
+      # Build self structure
+      folder_stat = File.stat(folder_path)
+      structure = {
+        'self'  => {
+          'path'        => folder_path,
+          'basename'    => File.basename(folder_path),
+          'type'        => 'directory',
+          'size'        => folder_stat.size,
+          'mtime'       => folder_stat.mtime.utc.iso8601,
+          'permissions' => [
+            { 'name' => 'view' },
+            { 'name' => 'edit' },
+            { 'name' => 'delete' }
+          ]
+        },
+        'items' => []
+      }
+
+      # Iterate over folder contents
+      Dir.foreach(folder_path) do |entry|
+        next if entry == '.' || entry == '..' # Skip current and parent directory
+
+        item_path = File.join(folder_path, entry)
+        item_type = File.ftype(item_path) rescue 'unknown' # Get the type of file
+        item_stat = File.lstat(item_path) # Use lstat to handle symbolic links correctly
+
+        item = {
+          'path'        => item_path,
+          'basename'    => entry,
+          'type'        => item_type,
+          'size'        => item_stat.size,
+          'mtime'       => item_stat.mtime.utc.iso8601,
+          'permissions' => [
+            { 'name' => 'view' },
+            { 'name' => 'edit' },
+            { 'name' => 'delete' }
+          ]
+        }
+
+        # Add additional details for specific types
+        case item_type
+        when 'file'
+          item['partial_file'] = false
+        when 'link'
+          item['target'] = File.readlink(item_path) rescue nil # Add the target of the symlink
+        when 'unknown'
+          item['note'] = 'File type could not be determined'
+        end
+
+        structure['items'] << item
+      end
+
+      structure
     end
 
     def do_POST(request, response)
       case request.path
       when PATH_TRANSFERS
-        job_id = @xfer_manager.start_transfer(JSON.parse(request.body))
-        session = @xfer_manager.sessions_by_job(job_id).first
-        result = session[:ts].clone
-        result['id'] = job_id
-        set_json_response(response, result)
+        job_id = @simulator.agent.start_transfer(JSON.parse(request.body))
+        sleep(0.5)
+        set_json_response(request, response, job_to_transfer(job_id))
+      when PATH_BROWSE
+        req = JSON.parse(request.body)
+        # req['count']
+        set_json_response(request, response, folder_to_structure(req['path']))
       else
-        set_json_response(response, [{error: 'Bad request'}], code: 400)
+        set_json_response(request, response, [{error: 'Bad request'}], code: 400)
       end
     end
 
@@ -36,7 +113,7 @@ module Aspera
       case request.path
       when '/info'
         info = Ascp::Installation.instance.ascp_info
-        set_json_response(response, {
+        set_json_response(request, response, {
           application:                           'node',
           current_time:                          Time.now.utc.iso8601(0),
           version:                               info['sdk_ascp_version'].gsub(/ .*$/, ''),
@@ -44,13 +121,13 @@ module Aspera
           license_max_rate:                      info['maximum_bandwidth'],
           os:                                    %x(uname -srv).chomp,
           aej_status:                            'disconnected',
-          async_reporting:                       'yes',
-          transfer_activity_reporting:           'yes',
+          async_reporting:                       'no',
+          transfer_activity_reporting:           'no',
           transfer_user:                         'xfer',
           docroot:                               'file:////data/aoc/eudemo-sedemo',
           node_id:                               '2bbdcc39-f789-4d47-8163-6767fc14f421',
           cluster_id:                            '6dae2844-d1a9-47a5-916d-9b3eac3ea466',
-          acls:                                  [],
+          acls:                                  ['impersonation'],
           access_key_configuration_capabilities: {
             transfer: %w[
               cipher
@@ -99,78 +176,84 @@ module Aspera
             {name:  'wss_port', value: 443}
           ]})
       when PATH_TRANSFERS
-        result = @xfer_manager.sessions.map { |session| job_to_transfer(session) }
-        set_json_response(response, result)
+        result = @simulator.agent.sessions.map { |session| session[:job_id] }.uniq.each.map{|job_id|job_to_transfer(job_id)}
+        set_json_response(request, response, result)
       when PATH_ONE_TRANSFER
         job_id = request.path.match(PATH_ONE_TRANSFER)[1]
-        set_json_response(response, job_to_transfer(@xfer_manager.sessions_by_job(job_id).first))
+        set_json_response(request, response, job_to_transfer(job_id))
       else
-        set_json_response(response, [{error: 'Unknown request'}], code: 400)
+        set_json_response(request, response, [{error: 'Unknown request'}], code: 400)
       end
     end
 
-    def set_json_response(response, json, code: 200)
+    def set_json_response(request, response, json, code: 200)
       response.status = code
       response['Content-Type'] = 'application/json'
       response.body = json.to_json
-      Log.log.trace1{Log.dump('response', json)}
+      Log.log.trace1{Log.dump("response for #{request.request_method} #{request.path}", json)}
     end
 
-    def job_to_transfer(job)
-      session = {
-        id:                    'bafc72b8-366c-4501-8095-47208183d6b8',
-        client_node_id:        '',
-        server_node_id:        '2bbdcc39-f789-4d47-8163-6767fc14f421',
-        client_ip_address:     '192.168.0.100',
-        server_ip_address:     '5.10.114.4',
+    def job_to_transfer(job_id)
+      jobs = @simulator.agent.sessions_by_job(job_id)
+      ts = nil
+      sessions = jobs.map do |j|
+        ts ||= j[:ts]
+        {
+          id:                    j[:id],
+          client_node_id:        '',
+          server_node_id:        '2bbdcc39-f789-4d47-8163-6767fc14f421',
+          client_ip_address:     '192.168.0.100',
+          server_ip_address:     '5.10.114.4',
+          status:                'running',
+          retry_timeout:         3600,
+          retry_count:           0,
+          start_time_usec:       1701094040000000,
+          end_time_usec:         nil,
+          elapsed_usec:          405312,
+          bytes_transferred:     26,
+          bytes_written:         26,
+          bytes_lost:            0,
+          files_completed:       1,
+          directories_completed: 0,
+          target_rate_kbps:      500000,
+          min_rate_kbps:         0,
+          calc_rate_kbps:        9900,
+          network_delay_usec:    40000,
+          avg_rate_kbps:         0.51,
+          error_code:            0,
+          error_desc:            '',
+          source_statistics:     {
+            args_scan_attempted:  1,
+            args_scan_completed:  1,
+            paths_scan_attempted: 1,
+            paths_scan_failed:    0,
+            paths_scan_skipped:   0,
+            paths_scan_excluded:  0,
+            dirs_scan_completed:  0,
+            files_scan_completed: 1,
+            dirs_xfer_attempted:  0,
+            dirs_xfer_fail:       0,
+            files_xfer_attempted: 1,
+            files_xfer_fail:      0,
+            files_xfer_noxfer:    0
+          },
+          precalc:               {
+            enabled:              true,
+            status:               'ready',
+            bytes_expected:       0,
+            directories_expected: 0,
+            files_expected:       0,
+            files_excluded:       0,
+            files_special:        0,
+            files_failed:         1
+          }}
+      end
+      ts ||= {}
+      result = {
+        id:                    job_id,
         status:                'running',
-        retry_timeout:         3600,
-        retry_count:           0,
-        start_time_usec:       1701094040000000,
-        end_time_usec:         nil,
-        elapsed_usec:          405312,
-        bytes_transferred:     26,
-        bytes_written:         26,
-        bytes_lost:            0,
-        files_completed:       1,
-        directories_completed: 0,
-        target_rate_kbps:      500000,
-        min_rate_kbps:         0,
-        calc_rate_kbps:        9900,
-        network_delay_usec:    40000,
-        avg_rate_kbps:         0.51,
-        error_code:            0,
-        error_desc:            '',
-        source_statistics:     {
-          args_scan_attempted:  1,
-          args_scan_completed:  1,
-          paths_scan_attempted: 1,
-          paths_scan_failed:    0,
-          paths_scan_skipped:   0,
-          paths_scan_excluded:  0,
-          dirs_scan_completed:  0,
-          files_scan_completed: 1,
-          dirs_xfer_attempted:  0,
-          dirs_xfer_fail:       0,
-          files_xfer_attempted: 1,
-          files_xfer_fail:      0,
-          files_xfer_noxfer:    0
-        },
-        precalc:               {
-          enabled:              true,
-          status:               'ready',
-          bytes_expected:       0,
-          directories_expected: 0,
-          files_expected:       0,
-          files_excluded:       0,
-          files_special:        0,
-          files_failed:         1
-        }}
-      return {
-        id:                    '609a667d-642e-4290-9312-b4d20d3c0159',
-        status:                'running',
-        start_spec:            job[:ts],
-        sessions:              [session],
+        start_spec:            ts,
+        sessions:              sessions,
         bytes_transferred:     26,
         bytes_written:         26,
         bytes_lost:            0,
@@ -208,6 +291,8 @@ module Aspera
           bytes_written:   26,
           session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
       }
+      Log.log.trace2{Log.dump(:job, result)}
+      return result
     end
   end
 end
