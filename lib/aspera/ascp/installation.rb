@@ -76,7 +76,7 @@ module Aspera
 
       # @return the path to folder where SDK is installed
       def sdk_folder
-        raise 'SDK path was ot initialized' if @sdk_dir.nil?
+        Aspera.assert(!@sdk_dir.nil?){'SDK path was not initialized'}
         FileUtils.mkdir_p(@sdk_dir)
         @sdk_dir
       end
