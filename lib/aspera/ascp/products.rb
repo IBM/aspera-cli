@@ -9,7 +9,7 @@ module Aspera
     class Products
       # known product names
       CONNECT = 'IBM Aspera Connect'
-      ASPERA = 'IBM Aspera (Client)'
+      CLIENT_FOR_DESKTOP = 'IBM Aspera for Desktop'
       CLI_V1 = 'Aspera CLI (deprecated)'
       DRIVE = 'Aspera Drive (deprecated)'
       HSTS = 'IBM Aspera High-Speed Transfer Server'
@@ -18,6 +18,8 @@ module Aspera
       BIN_SUBFOLDER = 'bin'
       ETC_SUBFOLDER = 'etc'
       VAR_RUN_SUBFOLDER = File.join('var', 'run')
+
+      private_constant :CONNECT, :CLIENT_FOR_DESKTOP, :CLI_V1, :DRIVE, :HSTS, :INFO_META_FILE, :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VAR_RUN_SUBFOLDER
 
       @@found_products = nil # rubocop:disable Style/ClassVars
       class << self
@@ -82,10 +84,10 @@ module Aspera
               log_root: File.join(Dir.home, 'Library', 'Logs', 'Aspera_Drive'),
               sub_bin:  File.join('Contents', 'Resources')
             }, {
-              expected: ASPERA,
+              expected: CLIENT_FOR_DESKTOP,
               app_root: File.join('', 'Applications', 'IBM Aspera.app'),
               log_root: File.join(Dir.home, 'Library', 'Logs', 'IBM Aspera'),
-              sub_bin:  File.join('Contents', 'Resources', 'sdk', 'aspera', 'bin')
+              sub_bin:  File.join('Contents', 'Resources', 'transferd', 'bin')
             }]
             else [{ # other: Linux and Unix family
               expected: CONNECT,
@@ -113,10 +115,11 @@ module Aspera
               sub_bin:  ''
             })
             # search installed products: with ascp
-            @@found_products = scan_locations.select! do |item| # rubocop:disable Style/ClassVars
+            @@found_products = scan_locations.select do |item| # rubocop:disable Style/ClassVars
               # skip if not main folder
+              Log.log.trace1{"Checking #{item[:app_root]}"}
               next false unless Dir.exist?(item[:app_root])
-              Log.log.debug{"Found #{item[:app_root]}"}
+              Log.log.debug{"Found #{item[:expected]}"}
               sub_bin = item[:sub_bin] || BIN_SUBFOLDER
               item[:ascp_path] = File.join(item[:app_root], sub_bin, ascp_filename)
               # skip if no ascp
