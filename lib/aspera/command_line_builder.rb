@@ -77,7 +77,7 @@ module Aspera
       @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
       # set result
       env_args[:env].merge!(@result[:env])
-      env_args[:args].push(*@result[:args])
+      env_args[:args].concat(@result[:args])
       return nil
     end
 

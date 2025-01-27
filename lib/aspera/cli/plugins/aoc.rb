@@ -415,8 +415,8 @@ module Aspera
             when :operation then default_fields = nil
             when :short_link then default_fields.push('short_url', 'data.url_token_data.purpose')
             when :user then default_fields.push('name', 'email')
-            when :group_membership then default_fields.push(*%w[group_id member_type member_id])
-            when :workspace_membership then default_fields.push(*%w[workspace_id member_type member_id])
+            when :group_membership then default_fields.push('group_id', 'member_type', 'member_id')
+            when :workspace_membership then default_fields.push('workspace_id', 'member_type', 'member_id')
             end
             return result_list(resource_class_path, fields: default_fields, default_query: default_query)
           when :show

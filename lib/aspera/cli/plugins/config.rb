@@ -713,7 +713,7 @@ module Aspera
             # add keys
             DataRepository::ELEMENTS.each_with_object(data){|i, h|h[i.to_s] = DataRepository.instance.item(i)}
             # declare those as secrets
-            SecretHider::ADDITIONAL_KEYS_TO_HIDE.push(*DataRepository::ELEMENTS.map(&:to_s))
+            SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
             return {type: :single_object, data: data}
           when :products
             command = options.get_next_command(%i[list use])

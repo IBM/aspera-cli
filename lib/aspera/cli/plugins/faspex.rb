@@ -305,7 +305,7 @@ module Aspera
                 # authenticated user
                 delivery_info['sources'] ||= [{'paths' => []}]
                 first_source = delivery_info['sources'].first
-                first_source['paths'].push(*transfer.source_list)
+                first_source['paths'].concat(transfer.source_list)
                 source_id = instance_identifier(as_option: :remote_source) do |field, value|
                   Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
                   source_list = api_v3.read('source_shares')['items']
