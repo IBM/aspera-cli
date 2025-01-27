@@ -282,13 +282,17 @@ module Aspera
         end
 
         # list all entities, given additional, default and user's queries
+        # @param resource_class_path path to query on API
+        # @param fields fields to display
+        # @param base_query a query applied always
+        # @param default_query default query unless overriden by user
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
           user_query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks
           yield(user_query) if block_given?
-          return {type: :object_list, fields: fields}.merge(api_read_all(resource_class_path, base_query.merge(user_query)))
+          return {type: :object_list, fields: fields}.merge(api_read_all(resource_class_path, base_query.merge(user_query).compact))
         end
 
         def resolve_dropbox_name_default_ws_id(query)
@@ -837,7 +841,7 @@ module Aspera
                        resolve_dropbox_name_default_ws_id(query)
                      end
             when :delete
-              return do_bulk_operation(command: package_command, descr: 'identifier', values: identifier) do |id|
+              return do_bulk_operation(command: package_command, descr: 'identifier', values: instance_identifier) do |id|
                 Aspera.assert_values(id.class, [String, Integer]){'identifier'}
                 aoc_api.delete("packages/#{id}")
               end

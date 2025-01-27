@@ -5,6 +5,7 @@
   * New Features:
   * Issues Fixed:
     * `config`: soft links in transfer SDK are correctly extracted
+    * `aoc`: fix `packages delete` not working.
   * Breaking Changes:
 
 * 4.20.0

@@ -4374,6 +4374,20 @@ If a user recipient (email) is not already registered and the workspace allows e
 - if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
+#### List packages
+
+By default, when using `aoc packages list`, the following `query` is performed:
+
+| query parameter            | value |
+|----------------------------|-------|
+| `archived`                 | `false` |
+| `has_content`              | `true`  |
+| `received`                 | `true`  |
+| `completed`                | `true`  |
+| `workspace_id`             | based on current workspace |
+| `exclude_dropbox_packages` | `true` or `false` depending if watching a dropbox|
+| `dropbox_id`               | set accoring to `dropbox_name` |
+
 #### Example: Send a package with one file to two users, using their email
 
 ```bash
