@@ -2,6 +2,7 @@
 
 # cspell:ignore LOCALAPPDATA
 require 'aspera/environment'
+require 'aspera/ascp/installation'
 
 module Aspera
   module Ascp
@@ -13,13 +14,11 @@ module Aspera
       CLI_V1 = 'Aspera CLI (deprecated)'
       DRIVE = 'Aspera Drive (deprecated)'
       HSTS = 'IBM Aspera High-Speed Transfer Server'
-      # product information manifest: XML (part of aspera product)
-      INFO_META_FILE = 'product-info.mf'
       BIN_SUBFOLDER = 'bin'
       ETC_SUBFOLDER = 'etc'
       VAR_RUN_SUBFOLDER = File.join('var', 'run')
 
-      private_constant :CONNECT, :CLIENT_FOR_DESKTOP, :CLI_V1, :DRIVE, :HSTS, :INFO_META_FILE, :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VAR_RUN_SUBFOLDER
+      private_constant :CONNECT, :CLIENT_FOR_DESKTOP, :CLI_V1, :DRIVE, :HSTS, :BIN_SUBFOLDER, :ETC_SUBFOLDER, :VAR_RUN_SUBFOLDER
 
       @@found_products = nil # rubocop:disable Style/ClassVars
       class << self
@@ -125,7 +124,7 @@ module Aspera
               # skip if no ascp
               next false unless File.exist?(item[:ascp_path])
               # read info from product info file if present
-              product_info_file = "#{item[:app_root]}/#{INFO_META_FILE}"
+              product_info_file = "#{item[:app_root]}/#{Installation::INFO_META_FILE}"
               if File.exist?(product_info_file)
                 res_s = XmlSimple.xml_in(File.read(product_info_file), {'ForceArray' => false})
                 item[:name] = res_s['name']

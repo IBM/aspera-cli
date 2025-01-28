@@ -3,7 +3,6 @@
 # cspell:ignore protobuf ckpt
 require 'aspera/environment'
 require 'aspera/data_repository'
-require 'aspera/ascp/products'
 require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/assert'
@@ -51,6 +50,8 @@ module Aspera
       private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
+      # product information manifest: XML (part of aspera product)
+      INFO_META_FILE = 'product-info.mf'
 
       # set ascp executable path
       def ascp_path=(v)
@@ -366,7 +367,7 @@ module Aspera
         transferd_version = get_exe_version(sdk_daemon_path, 'version')
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
-        File.write(File.join(folder, Products::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        File.write(File.join(folder, INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
         return sdk_name, sdk_version
       end
 
