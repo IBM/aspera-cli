@@ -1,13 +1,13 @@
-# desc           : description
-# accepted_types : accepted types for non-enum
-# default        : default value if not specified
-# enum           : set with list of values for enum types accepted in transfer spec
-# agents         : supported agents (for doc only), if not specified: all
-# required       : optional, default: false
-# cli.type       : ascp: type of parameter, one of CLI_OPTION_TYPES
-# cli.switch     : ascp: switch for ascp command line
-# cli.convert    : ascp: transform value: either a Hash with conversion values, or name of class
-# cli.variable   : ascp: name of env var
+# desc           [String] description
+# accepted_types [Symbol, Array(Symbol)] accepted types for non-enum
+# default        [String] default value if not specified
+# enum           [Array]  set with list of values for enum types accepted in transfer spec
+# agents         [Array]  supported agents (for doc only), if not specified: all
+# required       [bool]   optional, default: false
+# cli.type       [Symbol] ascp: type of parameter, one of CLI_OPTION_TYPES (opt_without_arg opt_with_arg special ignore envvar)
+# cli.switch     [String] ascp: switch for ascp command line
+# cli.convert    [String] ascp: transform value: either a Hash with conversion values, or name of class
+# cli.variable   [String] ascp: name of env var
 # cspell:words dgram dnat dnats faspmgr asperanoded xattrs keepalive datagram
 ---
 cipher:
@@ -213,7 +213,6 @@ password:
     Windows only, node api only.
 
 
-  :required: false
   :accepted_types: :string
   :agents:
   - :node
@@ -419,7 +418,7 @@ symlink_policy:
     :type: :opt_with_arg
     :switch: "--symbolic-links"
 tags:
-  :desc: Metadata for transfer as JSON
+  :desc: Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specified a retry timeout for node api initiated transfers.
   :accepted_types: :hash
   :cli:
     :type: :opt_with_arg
@@ -712,5 +711,12 @@ write_threads:
   :accepted_types: :int
   :agents:
   - :unknown
+  :cli:
+    :type: :ignore
+xfer_max_retries:
+  :desc: maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).
+  :accepted_types: :int
+  :agents:
+  - :node
   :cli:
     :type: :ignore
