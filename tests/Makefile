@@ -1349,7 +1349,7 @@ $(T)conf_ascp_2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config ascp products list
 	$(EXE_MAN) $(TMP_CONF) config ascp products use 'IBM Aspera Connect'
-	$(EXE_MAN) $(TMP_CONF) config ascp use $$(which ascp)
+	$(EXE_NO_MAN) $(TMP_CONF) config ascp use $$(which ascp)
 	@$(STOP_TEST) $@
 $(T)conf_ascp_3: $(T).exists
 	@$(START_TEST) $@

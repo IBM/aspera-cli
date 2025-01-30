@@ -1958,7 +1958,6 @@ ascp products list
 ascp products use 'IBM Aspera Connect'
 ascp show
 ascp spec
-ascp use /usr/bin/ascp
 check_update
 coffee
 coffee --ui=text
@@ -4845,6 +4844,20 @@ If a user recipient (email) is not already registered and the workspace allows e
 - if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
+#### List packages
+
+By default, when using `aoc packages list`, the following `query` is performed:
+
+| query parameter            | value |
+|----------------------------|-------|
+| `archived`                 | `false` |
+| `has_content`              | `true`  |
+| `received`                 | `true`  |
+| `completed`                | `true`  |
+| `workspace_id`             | based on current workspace |
+| `exclude_dropbox_packages` | `true` or `false` depending if watching a dropbox|
+| `dropbox_id`               | set accoring to `dropbox_name` |
+
 #### Example: Send a package with one file to two users, using their email
 
 ```bash
@@ -5523,6 +5536,8 @@ This plugin gives access to capabilities provided by the HSTS node API.
 The authentication is `username` and `password` or `access_key` and `secret` through options: `username` and `password`.
 
 > **Note:** Capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`, `ats`, `shares`.
+>
+> **Note:** This plugin can be used with any type of **Aspera Node**, either on-prem or ATS, provided that you have node api credentials. Those credentials can be either Node API user or Access Key (e.g. on ATS).
 
 ### File Operations
 

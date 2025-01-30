@@ -4879,6 +4879,8 @@ This plugin gives access to capabilities provided by the HSTS node API.
 The authentication is `username` and `password` or `access_key` and `secret` through options: `username` and `password`.
 
 > **Note:** Capabilities of this plugin are used in other plugins which access to the node API, such as `aoc`, `ats`, `shares`.
+>
+> **Note:** This plugin can be used with any type of **Aspera Node**, either on-prem or ATS, provided that you have node api credentials. Those credentials can be either Node API user or Access Key (e.g. on ATS).
 
 ### File Operations
 
@@ -6458,7 +6460,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 > **Note:** <%=tool%> takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
 >
-> **Note:** Most, but not all, native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters.
+> **Note:** Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
 >
 > **Note:** Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 
