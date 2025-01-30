@@ -8,14 +8,148 @@ require 'json'
 
 module Aspera
   class NodeSimulator
-    attr_reader :agent
-
     def initialize
       @agent = Agent::Direct.new(management_cb: ->(event){process_event(event)})
+      @sessions = {}
     end
 
+    def start(ts)
+      @agent.start_transfer(ts)
+    end
+
+    def all_sessions
+      @agent.sessions.map { |session| session[:job_id] }.uniq.each.map{|job_id|job_to_transfer(job_id)}
+    end
+
+    # status: ('waiting', 'partially_completed', 'unknown', 'waiting(read error)',] 'running', 'completed', 'failed'
+    def job_to_transfer(job_id)
+      jobs = @agent.sessions_by_job(job_id)
+      ts = nil
+      sessions = jobs.map do |j|
+        ts ||= j[:ts]
+        {
+          id:                    j[:id],
+          client_node_id:        '',
+          server_node_id:        '2bbdcc39-f789-4d47-8163-6767fc14f421',
+          client_ip_address:     '192.168.0.100',
+          server_ip_address:     '5.10.114.4',
+          status:                'running',
+          retry_timeout:         3600,
+          retry_count:           0,
+          start_time_usec:       1701094040000000,
+          end_time_usec:         nil,
+          elapsed_usec:          405312,
+          bytes_transferred:     26,
+          bytes_written:         26,
+          bytes_lost:            0,
+          files_completed:       1,
+          directories_completed: 0,
+          target_rate_kbps:      500000,
+          min_rate_kbps:         0,
+          calc_rate_kbps:        9900,
+          network_delay_usec:    40000,
+          avg_rate_kbps:         0.51,
+          error_code:            0,
+          error_desc:            '',
+          source_statistics:     {
+            args_scan_attempted:  1,
+            args_scan_completed:  1,
+            paths_scan_attempted: 1,
+            paths_scan_failed:    0,
+            paths_scan_skipped:   0,
+            paths_scan_excluded:  0,
+            dirs_scan_completed:  0,
+            files_scan_completed: 1,
+            dirs_xfer_attempted:  0,
+            dirs_xfer_fail:       0,
+            files_xfer_attempted: 1,
+            files_xfer_fail:      0,
+            files_xfer_noxfer:    0
+          },
+          precalc:               {
+            enabled:              true,
+            status:               'ready',
+            bytes_expected:       0,
+            directories_expected: 0,
+            files_expected:       0,
+            files_excluded:       0,
+            files_special:        0,
+            files_failed:         1
+          }
+        }
+      end
+      ts ||= {}
+      result = {
+        id:                    job_id,
+        status:                'running',
+        start_spec:            ts,
+        sessions:              sessions,
+        bytes_transferred:     26,
+        bytes_written:         26,
+        bytes_lost:            0,
+        avg_rate_kbps:         0.51,
+        files_completed:       1,
+        files_skipped:         0,
+        directories_completed: 0,
+        start_time_usec:       1701094040000000,
+        end_time_usec:         1701094040405312,
+        elapsed_usec:          405312,
+        error_code:            0,
+        error_desc:            '',
+        precalc:               {
+          status:               'ready',
+          bytes_expected:       0,
+          files_expected:       0,
+          directories_expected: 0,
+          files_special:        0,
+          files_failed:         1
+        },
+        files:                 [{
+          id:              'd1b5c112-82b75425-860745fc-93851671-64541bdd',
+          path:            '/workspaces/45071/packages/bYA_ilq73g.asp-package/contents/data_file.bin',
+          start_time_usec: 1701094040000000,
+          elapsed_usec:    105616,
+          end_time_usec:   1701094040001355,
+          status:          'completed',
+          error_code:      0,
+          error_desc:      '',
+          size:            26,
+          type:            'file',
+          checksum_type:   'none',
+          checksum:        nil,
+          start_byte:      0,
+          bytes_written:   26,
+          session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
+      }
+      Log.log.trace2{Log.dump(:job, result)}
+      return result
+    end
+
+    # Process event from manegemtn port
     def process_event(event)
-      Log.log.debug{">>> #{event}"}
+      case event['Type']
+      when 'NOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'START' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'QUERY' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'QUERYRSP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'STATS' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'STOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'ERROR' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'CANCEL' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'DONE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'RATE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'FILEERROR' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'SESSION' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'NOTIFICATION' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'INIT' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'VLINK' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'PUT' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'WRITE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'CLOSE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'SKIP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      when 'ARGSTOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      else Aspera.error_unreachable_line
+      end
     end
   end
 
@@ -97,9 +231,9 @@ module Aspera
     def do_POST(request, response)
       case request.path
       when PATH_TRANSFERS
-        job_id = @simulator.agent.start_transfer(JSON.parse(request.body))
+        job_id = @simulator.start(JSON.parse(request.body))
         sleep(0.5)
-        set_json_response(request, response, job_to_transfer(job_id))
+        set_json_response(request, response, @simulator.job_to_transfer(job_id))
       when PATH_BROWSE
         req = JSON.parse(request.body)
         # req['count']
@@ -176,11 +310,10 @@ module Aspera
             {name:  'wss_port', value: 443}
           ]})
       when PATH_TRANSFERS
-        result = @simulator.agent.sessions.map { |session| session[:job_id] }.uniq.each.map{|job_id|job_to_transfer(job_id)}
-        set_json_response(request, response, result)
+        set_json_response(request, response, @simulator.all_sessions)
       when PATH_ONE_TRANSFER
         job_id = request.path.match(PATH_ONE_TRANSFER)[1]
-        set_json_response(request, response, job_to_transfer(job_id))
+        set_json_response(request, response, @simulator.job_to_transfer(job_id))
       else
         set_json_response(request, response, [{error: 'Unknown request'}], code: 400)
       end
@@ -191,108 +324,6 @@ module Aspera
       response['Content-Type'] = 'application/json'
       response.body = json.to_json
       Log.log.trace1{Log.dump("response for #{request.request_method} #{request.path}", json)}
-    end
-
-    def job_to_transfer(job_id)
-      jobs = @simulator.agent.sessions_by_job(job_id)
-      ts = nil
-      sessions = jobs.map do |j|
-        ts ||= j[:ts]
-        {
-          id:                    j[:id],
-          client_node_id:        '',
-          server_node_id:        '2bbdcc39-f789-4d47-8163-6767fc14f421',
-          client_ip_address:     '192.168.0.100',
-          server_ip_address:     '5.10.114.4',
-          status:                'running',
-          retry_timeout:         3600,
-          retry_count:           0,
-          start_time_usec:       1701094040000000,
-          end_time_usec:         nil,
-          elapsed_usec:          405312,
-          bytes_transferred:     26,
-          bytes_written:         26,
-          bytes_lost:            0,
-          files_completed:       1,
-          directories_completed: 0,
-          target_rate_kbps:      500000,
-          min_rate_kbps:         0,
-          calc_rate_kbps:        9900,
-          network_delay_usec:    40000,
-          avg_rate_kbps:         0.51,
-          error_code:            0,
-          error_desc:            '',
-          source_statistics:     {
-            args_scan_attempted:  1,
-            args_scan_completed:  1,
-            paths_scan_attempted: 1,
-            paths_scan_failed:    0,
-            paths_scan_skipped:   0,
-            paths_scan_excluded:  0,
-            dirs_scan_completed:  0,
-            files_scan_completed: 1,
-            dirs_xfer_attempted:  0,
-            dirs_xfer_fail:       0,
-            files_xfer_attempted: 1,
-            files_xfer_fail:      0,
-            files_xfer_noxfer:    0
-          },
-          precalc:               {
-            enabled:              true,
-            status:               'ready',
-            bytes_expected:       0,
-            directories_expected: 0,
-            files_expected:       0,
-            files_excluded:       0,
-            files_special:        0,
-            files_failed:         1
-          }}
-      end
-      ts ||= {}
-      result = {
-        id:                    job_id,
-        status:                'running',
-        start_spec:            ts,
-        sessions:              sessions,
-        bytes_transferred:     26,
-        bytes_written:         26,
-        bytes_lost:            0,
-        avg_rate_kbps:         0.51,
-        files_completed:       1,
-        files_skipped:         0,
-        directories_completed: 0,
-        start_time_usec:       1701094040000000,
-        end_time_usec:         1701094040405312,
-        elapsed_usec:          405312,
-        error_code:            0,
-        error_desc:            '',
-        precalc:               {
-          status:               'ready',
-          bytes_expected:       0,
-          files_expected:       0,
-          directories_expected: 0,
-          files_special:        0,
-          files_failed:         1
-        },
-        files:                 [{
-          id:              'd1b5c112-82b75425-860745fc-93851671-64541bdd',
-          path:            '/workspaces/45071/packages/bYA_ilq73g.asp-package/contents/data_file.bin',
-          start_time_usec: 1701094040000000,
-          elapsed_usec:    105616,
-          end_time_usec:   1701094040001355,
-          status:          'completed',
-          error_code:      0,
-          error_desc:      '',
-          size:            26,
-          type:            'file',
-          checksum_type:   'none',
-          checksum:        nil,
-          start_byte:      0,
-          bytes_written:   26,
-          session_id:      'bafc72b8-366c-4501-8095-47208183d6b8'}]
-      }
-      Log.log.trace2{Log.dump(:job, result)}
-      return result
     end
   end
 end
