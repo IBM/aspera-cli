@@ -608,12 +608,11 @@ module Aspera
             command_perm = options.get_next_command(%i[list create delete])
             case command_perm
             when :list
-              # generic options : TODO: as arg ? query_read_delete
-              list_options ||= {'include' => Rest.array_params(%w[access_level permission_count])}
-              # add which one to get
-              list_options['file_id'] = apifid[:file_id]
-              list_options['inherited'] ||= false
-              items = apifid[:api].read('permissions', list_options)
+              list_query = query_read_delete(default: {'include' => Rest.array_params(%w[access_level permission_count])})
+              # specify file to get permissions for unless not specified
+              list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
+              list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
+              items = apifid[:api].read('permissions', list_query)
               return {type: :object_list, data: items}
             when :delete
               return do_bulk_operation(command: command_perm, descr: 'identifier', values: :identifier) do |one_id|
