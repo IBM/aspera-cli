@@ -612,6 +612,7 @@ module Aspera
               # specify file to get permissions for unless not specified
               list_query['file_id'] = apifid[:file_id] unless apifid[:file_id].to_s.empty?
               list_query['inherited'] = false if list_query.key?('file_id') && !list_query.key?('inherited')
+              # NOTE: supports per_page and page and header X-Total-Count
               items = apifid[:api].read('permissions', list_query)
               return {type: :object_list, data: items}
             when :delete
