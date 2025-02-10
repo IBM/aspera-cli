@@ -57,6 +57,8 @@ module Aspera
         end
 
         # For access keys: provide expression to match entry in folder
+        # @param match_expression one of supported types
+        # @return lambda function
         def file_matcher(match_expression)
           case match_expression
           when Proc then return match_expression
@@ -67,7 +69,7 @@ module Aspera
               Log.log.warn{"Use of prefix #{MATCH_EXEC_PREFIX} is deprecated (4.15), instead use: @ruby:'#{code}'"}
               return Environment.secure_eval(code, __FILE__, __LINE__)
             end
-            return lambda{|f|File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
+            return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
           when NilClass then return ->(_){true}
           else Aspera.error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
           end
@@ -198,10 +200,10 @@ module Aspera
       # Recursively browse in a folder (with non-recursive method)
       # sub folders are processed if the processing method returns true
       # links are processed on the respective node
+      # @param method_sym [Symbol] processing method, arguments: entry, path, state
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
-      # @param block [Proc] processing method, arguments: entry, path, state
       def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/')
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
@@ -268,9 +270,9 @@ module Aspera
         return resolve_state[:result]
       end
 
-      def find_files(top_file_id, test_block)
+      def find_files(top_file_id, test_lambda)
         Log.log.debug{"find_files: file id=#{top_file_id}"}
-        find_state = {found: [], test_block: test_block}
+        find_state = {found: [], test_lambda: test_lambda}
         process_folder_tree(method_sym: :process_find_files, state: find_state, top_file_id: top_file_id)
         return find_state[:found]
       end
@@ -401,8 +403,9 @@ module Aspera
         return true
       end
 
+      # method called in loop for each entry for "find"
       def process_find_files(entry, path, state)
-        state[:found].push(entry.merge({'path' => path})) if state[:test_block].call(entry)
+        state[:found].push(entry.merge({'path' => path})) if state[:test_lambda].call(entry)
         # test all files deeply
         return true
       end
