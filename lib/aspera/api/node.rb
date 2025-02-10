@@ -47,14 +47,10 @@ module Aspera
       @use_node_cache = true
 
       class << self
+        # set to false to read transfer parameters from download_setup
         attr_accessor :use_standard_ports
+        # set to false to bypass cache in redis
         attr_accessor :use_node_cache
-
-        def cache_control_headers
-          h = {'Accept' => 'application/json'}
-          h[HEADER_X_CACHE_CONTROL] = 'no-cache' unless use_node_cache
-          h
-        end
 
         # For access keys: provide expression to match entry in folder
         # @param match_expression one of supported types
@@ -160,7 +156,13 @@ module Aspera
 
       # Call node API, possibly adding cache control header, as globally specified
       def read_with_cache(subpath, query=nil)
-        return call(operation: 'GET', subpath: subpath, headers: self.class.cache_control_headers, query: query)[:data]
+        headers = {'Accept' => 'application/json'}
+        headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless self.class.use_node_cache
+        return call(
+          operation: 'GET',
+          subpath:   subpath,
+          headers:   headers,
+          query:     query)[:data]
       end
 
       # update transfer spec with special additional tags
@@ -204,7 +206,7 @@ module Aspera
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
-      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/')
+      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # start at top folder
@@ -217,7 +219,7 @@ module Aspera
           # get folder content
           folder_contents =
             begin
-              read("files/#{current_item[:id]}/files")
+              read_with_cache("files/#{current_item[:id]}/files")
             rescue StandardError => e
               Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
               []
@@ -230,21 +232,21 @@ module Aspera
               end
               next
             end
-            relative_path = File.join(current_item[:path], entry['name'])
-            Log.log.debug{"process_folder_tree: checking #{relative_path}"}
+            current_path = File.join(current_item[:path], entry['name'])
+            Log.log.debug{"process_folder_tree: checking #{current_path}"}
             # call block, continue only if method returns true
-            next unless send(method_sym, entry, relative_path, state)
+            next unless send(method_sym, entry, current_path, state)
             # entry type is file, folder or link
             case entry['type']
             when 'folder'
-              folders_to_explore.push({id: entry['id'], path: relative_path})
+              folders_to_explore.push({id: entry['id'], path: current_path})
             when 'link'
               if entry_has_link_information(entry)
                 node_id_to_node(entry['target_node_id'])&.process_folder_tree(
                   method_sym:    method_sym,
                   state:         state,
                   top_file_id:   entry['target_id'],
-                  top_file_path: relative_path)
+                  top_file_path: current_path)
               end
             end
           end
@@ -274,6 +276,12 @@ module Aspera
         Log.log.debug{"find_files: file id=#{top_file_id}"}
         find_state = {found: [], test_lambda: test_lambda}
         process_folder_tree(method_sym: :process_find_files, state: find_state, top_file_id: top_file_id)
+        return find_state[:found]
+      end
+
+      def list_files(top_file_id)
+        find_state = {found: []}
+        process_folder_tree(method_sym: :process_list_files, state: find_state, top_file_id: top_file_id)
         return find_state[:found]
       end
 
@@ -359,8 +367,8 @@ module Aspera
 
       private
 
+      # method called in loop for each entry for `resolve_api_fid`
       def process_api_fid(entry, path, state)
-        # this block is called recursively for each entry in folder
         # stop digging here if not in right path
         return false unless entry['name'].eql?(state[:path].first)
         # ok it matches, so we remove the match, and continue digging
@@ -403,11 +411,17 @@ module Aspera
         return true
       end
 
-      # method called in loop for each entry for "find"
+      # method called in loop for each entry for `find_files`
       def process_find_files(entry, path, state)
         state[:found].push(entry.merge({'path' => path})) if state[:test_lambda].call(entry)
         # test all files deeply
         return true
+      end
+
+      # method called in loop for each entry for `list_files`
+      def process_list_files(entry, path, state)
+        state[:found].push(entry.merge({'path' => path}))
+        return false
       end
     end
   end

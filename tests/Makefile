@@ -930,7 +930,10 @@ $(T)aocp2: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aocp3: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)package_id3
+	:>$(DIR_TMP)package_id3;while test -z "$$(cat $(DIR_TMP)package_id3)";do \
+	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)package_id3;\
+	sleep 3;\
+	done
 	$(EXE_MAN) aoc packages receive $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /contents
 	@$(STOP_TEST) $@
@@ -1019,7 +1022,7 @@ $(T)aoc_adm_wsm_lst: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc15: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=@preset:misc.email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=@preset:misc.email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@$(STOP_TEST) $@
 $(T)aoc16: $(T).exists
 	@$(START_TEST) $@
@@ -1428,6 +1431,7 @@ $(T)conf_gem: $(T).exists
 	$(EXE_MAN) config smtp_settings
 	$(EXE_MAN) $(TMP_CONF) config initdemo
 	$(EXE_NO_MAN) $(TMP_CONF) config initdemo
+	$(EXE_NO_MAN) config gem path --http-proxy=http://test1 --http-options=@json:'{"user_agent":"test1"}'
 	@$(STOP_TEST) $@
 $(T)conf_vault_macos: $(T).exists
 	@$(START_TEST) $@

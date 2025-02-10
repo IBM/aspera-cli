@@ -131,6 +131,8 @@ module Aspera
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 
+        GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
+
         def initialize(api: nil, **env)
           super(**env, basic_options: api.nil?)
           Node.declare_options(options) if api.nil?
@@ -484,22 +486,15 @@ module Aspera
           when :browse
             apifid = apifid_from_next_arg(top_file_id)
             file_info = apifid[:api].read_with_cache("files/#{apifid[:file_id]}")
-            if file_info['type'].eql?('folder')
-              result = apifid[:api].call(
-                operation: 'GET',
-                subpath:   "files/#{apifid[:file_id]}/files",
-                headers:   Api::Node.cache_control_headers,
-                query:     query_read_delete)
-              items = result[:data]
-              formatter.display_item_count(result[:data].length, result[:http]['X-Total-Count'])
-            else
-              items = [file_info]
+            unless file_info['type'].eql?('folder')
+              # a single file
+              return {type: :object_list, data: [file_info], fields: GEN4_LS_FIELDS}
             end
-            return {type: :object_list, data: items, fields: %w[name type recursive_size size modified_time access_level]}
+            return {type: :object_list, data: apifid[:api].list_files(apifid[:file_id]), fields: GEN4_LS_FIELDS}
           when :find
             apifid = apifid_from_next_arg(top_file_id)
-            test_block = Api::Node.file_matcher_from_argument(options)
-            return {type: :object_list, data: @api_node.find_files(apifid[:file_id], test_block), fields: ['path']}
+            find_lambda = Api::Node.file_matcher_from_argument(options)
+            return {type: :object_list, data: @api_node.find_files(apifid[:file_id], find_lambda), fields: ['path']}
           when :mkdir
             containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
             new_folder = containing_folder_path.pop
