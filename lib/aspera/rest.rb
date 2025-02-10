@@ -10,7 +10,6 @@ require 'net/http'
 require 'net/https'
 require 'json'
 require 'base64'
-require 'cgi'
 require 'singleton'
 require 'securerandom'
 
@@ -22,11 +21,13 @@ class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModul
 end
 
 module Aspera
-  # Global settings
+  # Global settings for Rest object
+  # For example to remove certificate verification globally:
+  # `RestParameters.instance.session_cb = lambda{|http|http.verify_mode=OpenSSL::SSL::VERIFY_NONE}`
   # @param user_agent [String] HTTP request header: 'User-Agent'
   # @param download_partial_suffix [String] suffix for partial download
   # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
-  # @param progress_bar [Object] progress bar object
+  # @param progress_bar [Object] progress bar object called for file transfer
   class RestParameters
     include Singleton
 
@@ -200,6 +201,9 @@ module Aspera
       }
     end
 
+    # Create a REST object for API calls
+    # HTTP sessions parameters can be modified using global parameters in RestParameters
+    # For example, TLS verification can be skipped.
     # @param base_url [String] base URL of REST API
     # @param auth [Hash] authentication parameters:
     #     :type (:none, :basic, :url, :oauth2)
