@@ -159,6 +159,8 @@ module Aspera
           mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
           # open any available (0) local TCP port for use as management port
           mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
+          # make port ready to accept connections, before starting ascp
+          mgt_server_socket.listen(1)
           # build arguments and add mgt port
           command_arguments = if name.eql?(:async)
             ["--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
@@ -170,8 +172,8 @@ module Aspera
           command_path = Ascp::Installation.instance.path(name)
           command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments)
           notify_progress(:pre_start, session_id: nil, info: "waiting for #{name} to start")
-          mgt_server_socket.listen(1)
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
+          # So we use select to detect that anything happens on the socket (connection)
           Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
           readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
           Log.log.debug('after select, before accept')
