@@ -1421,6 +1421,10 @@ $(T)conf_over: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) $(TMP_CONF) config preset overview
 	@$(STOP_TEST) $@
+$(T)conf_vers_check: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) $(TMP_CONF) config preset set GLOBAL version_check_days 0
+	@$(STOP_TEST) $@
 $(T)conf_gem: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config gem path
@@ -1581,7 +1585,7 @@ $(T)conf_logger: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config file --logger=syslog --log-level=debug
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint $(T)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint $(T)conf_logger))
 #######################################################################################################################
 $(T)prev_check: $(T).exists
 	@$(START_TEST) $@
