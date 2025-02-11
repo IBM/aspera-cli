@@ -219,6 +219,7 @@ module Aspera
           # get folder content
           folder_contents =
             begin
+              # TODO: use header
               read_with_cache("files/#{current_item[:id]}/files")
             rescue StandardError => e
               Log.log.warn{"#{current_item[:path]}: #{e.class} #{e.message}"}
@@ -306,6 +307,9 @@ module Aspera
       end
 
       # Create transfer spec for gen4
+      # @param file_id destination or source folder (id)
+      # @param direction one of Transfer::Spec::DIRECTION_SEND, Transfer::Spec::DIRECTION_RECEIVE
+      # @param ts_merge additional transfer spec to merge
       def transfer_spec_gen4(file_id, direction, ts_merge=nil)
         ak_name = nil
         ak_token = nil
