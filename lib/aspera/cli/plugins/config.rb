@@ -414,7 +414,7 @@ module Aspera
 
         def periodic_check_newer_gem_version
           # get verification period
-          delay_days = options.get_option(:version_check_days, mandatory: true)
+          delay_days = options.get_option(:version_check_days, mandatory: true).to_i
           # check only if not zero day
           return if delay_days.eql?(0)
           # get last date from persistency
