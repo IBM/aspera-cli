@@ -112,9 +112,7 @@ module Aspera
             # Bug in HSTS ? transfer is marked failed, but there is no reason
             break if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
-          else
-            Log.log.warn{"transfer_data -> #{transfer_data}"}
-            raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
+          else Aspera.error_unexpected_value(transfer_data['status']){"transfer_data -> #{transfer_data}"}
           end
           sleep(1.0)
         end

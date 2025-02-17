@@ -1613,7 +1613,7 @@ table per object with option <code>multi_single</code> set to
 supporting:</p>
 <ul>
 <li><code>table</code> : Text table (default)</li>
-<li><code>text</code> : Value as String</li>
+<li><code>text</code> : Value as <code>String</code></li>
 <li><code>ruby</code> : Ruby code</li>
 <li><code>json</code> : JSON code</li>
 <li><code>jsonpp</code> : JSON pretty printed</li>
@@ -1756,47 +1756,47 @@ and are recognized by the prefix: <code>@</code> and suffix
 <tbody>
 <tr>
 <td><code>base64</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Decode a base64 encoded string</td>
 </tr>
 <tr>
 <td><code>csvt</code></td>
-<td>String</td>
-<td>Array</td>
+<td><code>String</code></td>
+<td><code>Array</code></td>
 <td>Decode a titled CSV value</td>
 </tr>
 <tr>
 <td><code>env</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Read from a named env var name,
 e.g. <code>--password=@env:MYPASSVAR</code></td>
 </tr>
 <tr>
 <td><code>file</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Read value from specified file (prefix <code>~/</code> is replaced
 with the users home folder),
 e.g. <code>--key=@file:~/.ssh/mykey</code></td>
 </tr>
 <tr>
 <td><code>json</code></td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Any</td>
 <td>Decode JSON values (convenient to provide complex structures)</td>
 </tr>
 <tr>
 <td><code>lines</code></td>
-<td>String</td>
-<td>Array</td>
+<td><code>String</code></td>
+<td><code>Array</code></td>
 <td>Split a string in multiple lines and return an array</td>
 </tr>
 <tr>
 <td><code>list</code></td>
-<td>String</td>
-<td>Array</td>
+<td><code>String</code></td>
+<td><code>Array</code></td>
 <td>Split a string in multiple items taking first character as separator
 and return an array</td>
 </tr>
@@ -1808,81 +1808,81 @@ and return an array</td>
 </tr>
 <tr>
 <td><code>path</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Performs path expansion on specified path (prefix <code>~/</code> is
 replaced with the users home folder),
 e.g. <code>--config-file=@path:~/sample_config.yml</code></td>
 </tr>
 <tr>
 <td><code>preset</code></td>
-<td>String</td>
-<td>Hash</td>
+<td><code>String</code></td>
+<td><code>Hash</code></td>
 <td>Get whole option preset value by name. Sub-values can also be used
 using <code>.</code> as separator. e.g. <code>foo.bar</code> is
 <code>conf[foo][bar]</code></td>
 </tr>
 <tr>
 <td><code>extend</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Evaluates embedded extended value syntax in string</td>
 </tr>
 <tr>
 <td><code>re</code></td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Regexp</td>
 <td>Ruby Regular Expression (short for <code>@ruby:/.../</code>)</td>
 </tr>
 <tr>
 <td><code>ruby</code></td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Any</td>
 <td>Execute specified Ruby code</td>
 </tr>
 <tr>
 <td><code>secret</code></td>
 <td>None</td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Ask password interactively (hides input)</td>
 </tr>
 <tr>
 <td><code>stdin</code></td>
 <td>None</td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Read from stdin in text mode (no value on right)</td>
 </tr>
 <tr>
 <td><code>stdbin</code></td>
 <td>None</td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Read from stdin in binary mode (no value on right)</td>
 </tr>
 <tr>
 <td><code>uri</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Read value from specified URL,
 e.g. <code>--fpac=@uri:http://serv/f.pac</code></td>
 </tr>
 <tr>
 <td><code>val</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Prevent decoders on the right to be decoded.
 e.g. <code>--key=@val:@file:foo</code> sets the option <code>key</code>
 to value <code>@file:foo</code>.</td>
 </tr>
 <tr>
 <td><code>yaml</code></td>
-<td>String</td>
+<td><code>String</code></td>
 <td>Any</td>
 <td>Decode YAML</td>
 </tr>
 <tr>
 <td><code>zlib</code></td>
-<td>String</td>
-<td>String</td>
+<td><code>String</code></td>
+<td><code>String</code></td>
 <td>Un-compress zlib data</td>
 </tr>
 </tbody>
@@ -2593,22 +2593,22 @@ option <code>format</code> set to <code>image</code></li>
 <tbody>
 <tr>
 <td>reserve</td>
-<td>Integer</td>
+<td><code>Integer</code></td>
 <td>Lines reserved to display a status</td>
 </tr>
 <tr>
 <td>text</td>
-<td>Bool</td>
+<td><code>Bool</code></td>
 <td>Display text instead of image</td>
 </tr>
 <tr>
 <td>double</td>
-<td>Bool</td>
+<td><code>Bool</code></td>
 <td>Display double text resolution (half characters)</td>
 </tr>
 <tr>
 <td>font_ratio</td>
-<td>Float</td>
+<td><code>Float</code></td>
 <td>Font height/width ratio in terminal</td>
 </tr>
 </tbody>
@@ -2753,8 +2753,8 @@ adjusted using option <code>http_options</code>:</p>
 </tbody>
 </table>
 <p>Time values are in set <strong>seconds</strong> and can be of type
-either integer or float. Default values are the ones of Ruby: For a full
-list, refer to the Ruby library: <a
+either <code>Integer</code> or <code>Float</code>. Default values are
+the ones of Ruby: For a full list, refer to the Ruby library: <a
 href="https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html"><code>Net::HTTP</code></a>.</p>
 <p>Like any other option, those can be set either on command line, or in
 configuration file, either in a global preset or server-specific
@@ -3034,49 +3034,49 @@ and add any argument to <code>ascp</code>:</p>
 <tbody>
 <tr>
 <td><code>wss</code></td>
-<td>Bool</td>
+<td><code>Bool</code></td>
 <td>Web Socket Session<br/>Enable use of web socket session in case it
 is available<br/>Default: true</td>
 </tr>
 <tr>
 <td><code>quiet</code></td>
-<td>Bool</td>
+<td><code>Bool</code></td>
 <td>If <code>true</code>, then <code>ascp</code> progress bar is not
 shown.<br/>Default: <code>false</code></td>
 </tr>
 <tr>
 <td><code>trusted_certs</code></td>
-<td>Array</td>
+<td><code>Array</code></td>
 <td>List of repositories for trusted certificates.</td>
 </tr>
 <tr>
 <td><code>client_ssh_key</code></td>
-<td>String</td>
+<td><code>String</code></td>
 <td>SSH Keys to use for token-based transfers. One of:
 <code>dsa_rsa</code>, <code>rsa</code>, <code>per_client</code>.
 Default: <code>rsa</code></td>
 </tr>
 <tr>
 <td><code>ascp_args</code></td>
-<td>Array</td>
+<td><code>Array</code></td>
 <td>Array of strings with native <code>ascp</code>
 arguments.<br/>Default: <code>[]</code></td>
 </tr>
 <tr>
 <td><code>spawn_timeout_sec</code></td>
-<td>Float</td>
+<td><code>Float</code></td>
 <td>Multi session<br/>Verification time that <code>ascp</code> is
 running<br/>Default: <code>3</code></td>
 </tr>
 <tr>
 <td><code>spawn_delay_sec</code></td>
-<td>Float</td>
+<td><code>Float</code></td>
 <td>Multi session<br/>Delay between startup of sessions<br/>Default:
 <code>2</code></td>
 </tr>
 <tr>
 <td><code>multi_incr_udp</code></td>
-<td>Bool</td>
+<td><code>Bool</code></td>
 <td>Multi Session<br/>Increment UDP port on multi-session<br/>If
 <code>true</code>, each session will have a different UDP port starting
 at <code>fasp_port</code> (or default 33001)<br/>Else, each session will
@@ -3085,28 +3085,28 @@ use <code>fasp_port</code> (or <code>ascp</code> default)<br/>Default:
 </tr>
 <tr>
 <td><code>resume</code></td>
-<td>Hash</td>
+<td><code>Hash</code></td>
 <td>Resume parameters. See below</td>
 </tr>
 <tr>
 <td><code>resume.iter_max</code></td>
-<td>Integer</td>
+<td><code>Integer</code></td>
 <td>Max number of retry on error<br/>Default: <code>7</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_initial</code></td>
-<td>Integer</td>
+<td><code>Integer</code></td>
 <td>First Sleep before retry<br/>Default: <code>2</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_factor</code></td>
-<td>Integer</td>
+<td><code>Integer</code></td>
 <td>Multiplier of sleep period between attempts<br/>Default:
 <code>2</code></td>
 </tr>
 <tr>
 <td><code>resume.sleep_max</code></td>
-<td>Integer</td>
+<td><code>Integer</code></td>
 <td>Default: <code>60</code></td>
 </tr>
 </tbody>
@@ -3251,32 +3251,37 @@ the Node API, either on a local or remote node. This is especially
 useful for direct node-to-node transfers.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
 <table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 11%" />
+<col style="width: 71%" />
+</colgroup>
 <thead>
 <tr>
-<th>Name</th>
+<th>Nam e</th>
 <th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>url</td>
-<td>string</td>
+<td><code>url</code></td>
+<td><code>String</code></td>
 <td>URL of the node API</br>Mandatory</td>
 </tr>
 <tr>
-<td>username</td>
-<td>string</td>
+<td><code>username</code></td>
+<td><code>String</code></td>
 <td>Node api user or access key</br>Mandatory</td>
 </tr>
 <tr>
-<td>password</td>
-<td>string</td>
+<td><code>password</code></td>
+<td><code>String</code></td>
 <td>Password, secret or bearer token</br>Mandatory</td>
 </tr>
 <tr>
-<td>root_id</td>
-<td>string</td>
+<td><code>root_id</code></td>
+<td><code>String</code></td>
 <td>Root file id</br>Mandatory only for bearer token</td>
 </tr>
 </tbody>
@@ -3321,24 +3326,24 @@ Gateway.</p>
 <tbody>
 <tr>
 <td>url</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>URL of the HTTP GW</br>Mandatory</td>
 </tr>
 <tr>
 <td>upload_chunk_size</td>
-<td>int</td>
+<td><code>Integer</code></td>
 <td>Size in bytes of chunks for upload<br/>Default:
 <code>64000</code></td>
 </tr>
 <tr>
 <td>api_version</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>Force use of version (<code>v1</code>, <code>v2</code>)<br/>Default:
 <code>v2</code></td>
 </tr>
 <tr>
 <td>synchronous</td>
-<td>bool</td>
+<td><code>Bool</code></td>
 <td>Wait for each message acknowledgment<br/>Default:
 <code>false</code></td>
 </tr>
@@ -3377,19 +3382,19 @@ class="header-section-number">4.20.6</span> Agent: Transfer SDK</h3>
 <tbody>
 <tr>
 <td><code>url</code></td>
-<td>string</td>
+<td><code>String</code></td>
 <td>IP address and port listened by the
 daemon</br>Mandatory<br/>Default: <code>:0</code></td>
 </tr>
 <tr>
 <td><code>external</code></td>
-<td>bool</td>
+<td><code>Bool</code></td>
 <td>Use external daemon, do not start one.<br/>Default:
 <code>false</code></td>
 </tr>
 <tr>
 <td><code>keep</code></td>
-<td>bool</td>
+<td><code>Bool</code></td>
 <td>Keep the daemon running after exiting
 <code>ascli</code><br/>Default: <code>false</code></td>
 </tr>
@@ -6881,7 +6886,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb390-1"><a href
 <span id="cb390-7"><a href="#cb390-7" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/to.delete</span>
 <span id="cb390-8"><a href="#cb390-8" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span></span>
 <span id="cb390-9"><a href="#cb390-9" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_inside_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;wss&quot;:false,&quot;resume&quot;:{&quot;iter_max&quot;:1}}&#39;</span></span>
-<span id="cb390-10"><a href="#cb390-10" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_inside_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--transfer</span><span class="op">=</span>node</span>
+<span id="cb390-10"><a href="#cb390-10" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_large_file <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;none&quot;}&#39;</span></span>
 <span id="cb390-11"><a href="#cb390-11" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> /</span>
 <span id="cb390-12"><a href="#cb390-12" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span> transfer <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder <span class="at">--format</span><span class="op">=</span>nagios</span>
 <span id="cb390-13"><a href="#cb390-13" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span></span>
@@ -7299,8 +7304,8 @@ token</h2>
 It follows the model of OAuth 2. For example, they are used in Aspera on
 Cloud. This is also available for developers for any application
 integrating Aspera. In this API, files, users and groups are identified
-by an id (a String, e.g. <code>"125"</code>, not necessarily
-numerical).</p>
+by an id (a <code>String</code>, e.g. <code>"125"</code>, not
+necessarily numerical).</p>
 <p>Bearer tokens are typically generated by the authentication
 application and then recognized by the node API. A bearer token is
 authorized on the node by creating <code>permissions</code> on a
@@ -8150,55 +8155,55 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb462-1"><a href
 <tbody>
 <tr>
 <td>url</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>http://localhost:8080</td>
 <td>Base url on which requests are listened</td>
 </tr>
 <tr>
 <td>certificate</td>
-<td>hash</td>
+<td><code>Hash</code></td>
 <td>nil</td>
 <td>Certificate information (if HTTPS)</td>
 </tr>
 <tr>
 <td>certificate.key</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>nil</td>
 <td>Path to private key file</td>
 </tr>
 <tr>
 <td>certificate.cert</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>nil</td>
 <td>Path to certificate</td>
 </tr>
 <tr>
 <td>certificate.chain</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>nil</td>
 <td>Path to intermediary certificates</td>
 </tr>
 <tr>
 <td>processing</td>
-<td>hash</td>
+<td><code>Hash</code></td>
 <td>nil</td>
 <td>Behavior of post processing</td>
 </tr>
 <tr>
 <td>processing.script_folder</td>
-<td>string</td>
+<td><code>String</code></td>
 <td>.</td>
 <td>Prefix added to script path</td>
 </tr>
 <tr>
 <td>processing.fail_on_error</td>
-<td>bool</td>
+<td><code>Bool</code></td>
 <td>false</td>
 <td>Fail if true and process exit with non zero</td>
 </tr>
 <tr>
 <td>processing.timeout_seconds</td>
-<td>integer</td>
+<td><code>Integer</code></td>
 <td>60</td>
 <td>Max. execution time before script is killed</td>
 </tr>

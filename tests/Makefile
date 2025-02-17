@@ -351,9 +351,9 @@ $(T)serv_down_lcl: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP). --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
 	@$(STOP_TEST) $@
-$(T)serv_down_from_node: $(T)serv_upload1
+$(T)serv_down_from_node: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) --to-folder=@preset:server.upload_folder --transfer=node
+	$(EXE_MAN) server download @preset:server.large_file --to-folder=@preset:server.upload_folder --transfer=node --ts=@json:'{"resume_policy":"none"}'
 	@$(STOP_TEST) $@
 $(T)serv_down_from_node_fail: $(T).exists
 	@$(START_TEST) $@

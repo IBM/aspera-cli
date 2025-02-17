@@ -1569,7 +1569,7 @@ $ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --
 The style of output can be set using the `format` option, supporting:
 
 - `table` : Text table (default)
-- `text` : Value as String
+- `text` : Value as `String`
 - `ruby` : Ruby code
 - `json` : JSON code
 - `jsonpp` : JSON pretty printed
@@ -1680,26 +1680,26 @@ The following decoders are supported:
 
 | Decoder  | Parameter| Returns | Description |
 |----------|----------|---------|-------------|
-| `base64` | String   | String  | Decode a base64 encoded string |
-| `csvt`   | String   | Array   | Decode a titled CSV value |
-| `env`    | String   | String  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
-| `file`   | String   | String  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| `json`   | String   | Any     | Decode JSON values (convenient to provide complex structures) |
-| `lines`  | String   | Array   | Split a string in multiple lines and return an array |
-| `list`   | String   | Array   | Split a string in multiple items taking first character as separator and return an array |
+| `base64` | `String`   | `String`  | Decode a base64 encoded string |
+| `csvt`   | `String`   | `Array`   | Decode a titled CSV value |
+| `env`    | `String`   | `String`  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
+| `file`   | `String`   | `String`  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| `json`   | `String`   | Any     | Decode JSON values (convenient to provide complex structures) |
+| `lines`  | `String`   | `Array`   | Split a string in multiple lines and return an array |
+| `list`   | `String`   | `Array`   | Split a string in multiple items taking first character as separator and return an array |
 | `none`   | None     | Nil     | A null value |
-| `path`   | String   | String  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
-| `preset` | String   | Hash    | Get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
-| `extend` | String   | String  | Evaluates embedded extended value syntax in string |
-| `re`     | String   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
-| `ruby`   | String   | Any     | Execute specified Ruby code |
-| `secret` | None     | String  | Ask password interactively (hides input) |
-| `stdin`  | None     | String  | Read from stdin in text mode (no value on right) |
-| `stdbin` | None     | String  | Read from stdin in binary mode (no value on right) |
-| `uri`    | String   | String  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
-| `val`    | String   | String  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| `yaml`   | String   | Any     | Decode YAML |
-| `zlib`   | String   | String  | Un-compress zlib data |
+| `path`   | `String`   | `String`  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| `preset` | `String`   | `Hash`    | Get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
+| `extend` | `String`   | `String`  | Evaluates embedded extended value syntax in string |
+| `re`     | `String`   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
+| `ruby`   | `String`   | Any     | Execute specified Ruby code |
+| `secret` | None     | `String`  | Ask password interactively (hides input) |
+| `stdin`  | None     | `String`  | Read from stdin in text mode (no value on right) |
+| `stdbin` | None     | `String`  | Read from stdin in binary mode (no value on right) |
+| `uri`    | `String`   | `String`  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| `val`    | `String`   | `String`  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| `yaml`   | `String`   | Any     | Decode YAML |
+| `zlib`   | `String`   | `String`  | Un-compress zlib data |
 
 > **Note:** A few commands support a value of type `Proc` (lambda expression).
 For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value of attribute `attr` of the `Hash` `i`.
@@ -2433,10 +2433,10 @@ The following options can be specified in the option `image`:
 
 | Option     | Type    | Description |
 |------------|---------|-------------|
-| reserve    | Integer | Lines reserved to display a status |
-| text       | Bool    | Display text instead of image|
-| double     | Bool    | Display double text resolution (half characters) |
-| font_ratio | Float   | Font height/width ratio in terminal |
+| reserve    | `Integer` | Lines reserved to display a status |
+| text       | `Bool`    | Display text instead of image|
+| double     | `Bool`    | Display double text resolution (half characters) |
+| font_ratio | `Float`   | Font height/width ratio in terminal |
 
 ```bash
 ascli config image https://eudemo.asperademo.com/wallpaper.jpg --ui=text --image=@json:'{"text":true}'
@@ -2527,7 +2527,7 @@ HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_o
 | `retry_on_error`          | 0             | `ascli` |
 | `retry_sleep`             | nil           | `ascli` |
 
-Time values are in set **seconds** and can be of type either integer or float.
+Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
 
@@ -2830,19 +2830,19 @@ The `transfer_info` option accepts the following optional parameters to control 
 
 | Name                   | Type    | Description |
 |------------------------|---------|-------------|
-| `wss`                  | Bool    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `quiet`                | Bool    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
-| `trusted_certs`        | Array   | List of repositories for trusted certificates. |
-| `client_ssh_key`       | String  | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
-| `ascp_args`            | Array   | Array of strings with native `ascp` arguments.<br/>Default: `[]` |
-| `spawn_timeout_sec`    | Float   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
-| `spawn_delay_sec`      | Float   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
-| `multi_incr_udp`       | Bool    | Multi Session<br/>Increment UDP port on multi-session<br/>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: `true` on Windows, else `false` |
-| `resume`               | Hash    | Resume parameters. See below |
-| `resume.iter_max`      | Integer | Max number of retry on error<br/>Default: `7` |
-| `resume.sleep_initial` | Integer | First Sleep before retry<br/>Default: `2` |
-| `resume.sleep_factor`  | Integer | Multiplier of sleep period between attempts<br/>Default: `2` |
-| `resume.sleep_max`     | Integer | Default: `60` |
+| `wss`                  | `Bool`    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
+| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
+| `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
+| `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
+| `ascp_args`            | `Array`   | Array of strings with native `ascp` arguments.<br/>Default: `[]` |
+| `spawn_timeout_sec`    | `Float`   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
+| `spawn_delay_sec`      | `Float`   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
+| `multi_incr_udp`       | `Bool`    | Multi Session<br/>Increment UDP port on multi-session<br/>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: `true` on Windows, else `false` |
+| `resume`               | `Hash`    | Resume parameters. See below |
+| `resume.iter_max`      | `Integer` | Max number of retry on error<br/>Default: `7` |
+| `resume.sleep_initial` | `Integer` | First Sleep before retry<br/>Default: `2` |
+| `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<br/>Default: `2` |
+| `resume.sleep_max`     | `Integer` | Default: `60` |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -2974,12 +2974,12 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer_info` are:
 
-| Name     | Type   | Description |
-|----------|--------|-------------|
-| url      | string | URL of the node API</br>Mandatory |
-| username | string | Node api user or access key</br>Mandatory |
-| password | string | Password, secret or bearer token</br>Mandatory |
-| root_id  | string | Root file id</br>Mandatory only for bearer token |
+| Nam  e     | Type   | Description                                      |
+|------------|--------|--------------------------------------------------|
+| `url`      | `String` | URL of the node API</br>Mandatory                |
+| `username` | `String` | Node api user or access key</br>Mandatory        |
+| `password` | `String` | Password, secret or bearer token</br>Mandatory   |
+| `root_id`  | `String` | Root file id</br>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
 
@@ -3008,10 +3008,10 @@ Parameters provided in option `transfer_info` are:
 
 | Name                   | Type   | Description                           |
 |------------------------|--------|---------------------------------------|
-| url                    | string | URL of the HTTP GW</br>Mandatory      |
-| upload_chunk_size      | int    | Size in bytes of chunks for upload<br/>Default: `64000`    |
-| api_version            | string | Force use of version (`v1`, `v2`)<br/>Default: `v2`       |
-| synchronous            | bool   | Wait for each message acknowledgment<br/>Default: `false`  |
+| url                    | `String` | URL of the HTTP GW</br>Mandatory      |
+| upload_chunk_size      | `Integer`    | Size in bytes of chunks for upload<br/>Default: `64000`    |
+| api_version            | `String` | Force use of version (`v1`, `v2`)<br/>Default: `v2`       |
+| synchronous            | `Bool`   | Wait for each message acknowledgment<br/>Default: `false`  |
 
 Example:
 
@@ -3032,9 +3032,9 @@ Options for `transfer_info` are:
 
 | Name     | Type   | Description |
 |----------|--------|-------------|
-| `url`      | string | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
-| `external` | bool   | Use external daemon, do not start one.<br/>Default: `false` |
-| `keep`     | bool   | Keep the daemon running after exiting `ascli`<br/>Default: `false` |
+| `url`      | `String` | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
+| `external` | `Bool`   | Use external daemon, do not start one.<br/>Default: `false` |
+| `keep`     | `Bool`   | Keep the daemon running after exiting `ascli`<br/>Default: `false` |
 
 > **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
 
@@ -5442,7 +5442,7 @@ delete my_inside_folder
 delete my_upload_folder/to.delete
 df
 download my_inside_folder/test_file.bin --to-folder=. --transfer-info=@json:'{"wss":false,"resume":{"iter_max":1}}'
-download my_inside_folder/test_file.bin --to-folder=my_upload_folder --transfer=node
+download my_large_file --to-folder=my_upload_folder --transfer=node --ts=@json:'{"resume_policy":"none"}'
 du /
 health transfer --to-folder=my_upload_folder --format=nagios
 info
@@ -5844,7 +5844,7 @@ Bearer tokens are part of the **gen4/access key** API.
 It follows the model of OAuth 2.
 For example, they are used in Aspera on Cloud.
 This is also available for developers for any application integrating Aspera.
-In this API, files, users and groups are identified by an id (a String, e.g. `"125"`, not necessarily numerical).
+In this API, files, users and groups are identified by an id (a `String`, e.g. `"125"`, not necessarily numerical).
 
 Bearer tokens are typically generated by the authentication application and then recognized by the node API.
 A bearer token is authorized on the node by creating `permissions` on a **folder**.
@@ -6538,15 +6538,15 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | string  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
-| certificate                | hash    | nil                    | Certificate information (if HTTPS)                  |
-| certificate.key            | string  | nil                    | Path to private key file                            |
-| certificate.cert           | string  | nil                    | Path to certificate                                 |
-| certificate.chain          | string  | nil                    | Path to intermediary certificates                   |
-| processing                 | hash    | nil                    | Behavior of post processing                         |
-| processing.script_folder   | string  | .                      | Prefix added to script path                         |
-| processing.fail_on_error   | bool    | false                  | Fail if true and process exit with non zero         |
-| processing.timeout_seconds | integer | 60                     | Max. execution time before script is killed         |
+| url                        | `String`  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
+| certificate                | `Hash`    | nil                    | Certificate information (if HTTPS)                  |
+| certificate.key            | `String`  | nil                    | Path to private key file                            |
+| certificate.cert           | `String`  | nil                    | Path to certificate                                 |
+| certificate.chain          | `String`  | nil                    | Path to intermediary certificates                   |
+| processing                 | `Hash`    | nil                    | Behavior of post processing                         |
+| processing.script_folder   | `String`  | .                      | Prefix added to script path                         |
+| processing.fail_on_error   | `Bool`    | false                  | Fail if true and process exit with non zero         |
+| processing.timeout_seconds | `Integer` | 60                     | Max. execution time before script is killed         |
 
 Parameter `url` defines:
 
