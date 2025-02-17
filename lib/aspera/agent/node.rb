@@ -50,14 +50,6 @@ module Aspera
         return @node_api
       end
 
-      # use this to set the node_api end point before using the class.
-      def node_api=(new_value)
-        if !@node_api.nil? && !new_value.nil?
-          Log.log.warn('overriding existing node api value')
-        end
-        @node_api = new_value
-      end
-
       # generic method
       def start_transfer(transfer_spec, token_regenerator: nil)
         # add root id if access key
