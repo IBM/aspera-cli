@@ -105,6 +105,7 @@ module Aspera
         # @param descr [String] description for help
         # @param to_check [Object] value to check
         # @param type_list [NilClass, Class, Array[Class]] accepted value type(s)
+        # @param check_array [bool] set to true if it is a list of values to check
         def validate_type(what, descr, to_check, type_list, check_array: false)
           return nil if type_list.nil?
           Aspera.assert(type_list.is_a?(Array) && type_list.all?(Class)){'types must be a Class Array'}
