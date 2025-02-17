@@ -1510,7 +1510,7 @@ Depending on action, the output will contain:
 
 #### Format of output
 
-By default, result of type single_object and object_list are displayed using format `table`.
+By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
 The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
 
@@ -1522,15 +1522,49 @@ ascli config preset over --table-style=@ruby:'{border: :unicode_thick_edge}'
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash`).
-For example, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
-Setting option `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
-When in flatten mode, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash` defaults to `yes`).
 
-Object lists are displayed one per line, with attributes as columns.
-Single objects (or tables with a single result) are transposed: one attribute per line.
-If transposition of single object is not desired, use option: `transpose_single` set to `no`.
-If option `multi_table` is `yes`, then elements of a table are displayed individually in a table.
+Example: Result of command is a list of objects with a single object:
+
+```console
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
+╭─────────┬───────────┬─────────╮
+│ user.id │ user.name │ project │
+╞═════════╪═══════════╪═════════╡
+│ 1       │ toto      │ blah    │
+╰─────────┴───────────┴─────────╯
+
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
+╭───────────────────────────┬─────────╮
+│ user                      │ project │
+╞═══════════════════════════╪═════════╡
+│ {"id"=>1, "name"=>"toto"} │ blah    │
+╰───────────────────────────┴─────────╯
+```
+
+When `flat_hash` is `yes`, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+
+By default, object lists are displayed with one object per line, with attributes as columns (see above), default for option `multi_single` is `no`.
+By default, single objects are displayed with one field per line (and columns are: `field`, `value`).
+If a single object in a list is returned, it is possible to have `ascli` display the object as a single object (one attribute per line instead of columns) with option: `multi_single` set to `single`.
+This parameter can be set as a global default with:
+
+```bash
+ascli config preset set GLOBAL multi_single single
+```
+
+In case multiple objects are returned, it is possible to display one table per object with option `multi_single` set to `yes`.
+
+```console
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
+╭───────────┬───────╮
+│ field     │ value │
+╞═══════════╪═══════╡
+│ user.id   │ 1     │
+│ user.name │ toto  │
+│ project   │ blash │
+╰───────────┴───────╯
+```
 
 The style of output can be set using the `format` option, supporting:
 
@@ -1726,7 +1760,7 @@ ascli config echo @json:@extend:'{"hello":true,"version":"@preset:config.version
 
 ```output
 +---------+-----------+
-| key     | value     |
+| field   | value     |
 +---------+-----------+
 | hello   | true      |
 | version | 4.14.0    |
@@ -2005,6 +2039,7 @@ preset delete conf_name
 preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
+preset set GLOBAL version_check_days 0
 preset set conf_name param value
 preset set default shares conf_name
 preset show conf_name
@@ -2644,7 +2679,7 @@ ascli config ascp info
 
 ```output
 +--------------------+-----------------------------------------------------------+
-| key                | value                                                     |
+| field              | value                                                     |
 +--------------------+-----------------------------------------------------------+
 | ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
 ...
@@ -3154,7 +3189,7 @@ Columns:
 | ssh_private_key_passphrase | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS) |
 | sshfp | string | Y | Y | Y | Y | Y | Check it against server SSH host key fingerprint<br/>(--check-sshfp {string}) |
 | symlink_policy | string | Y | Y | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links {enum}) |
-| tags | hash | Y | Y | Y | Y | Y | Metadata for transfer as JSON<br/>(--tags64 (conversion){hash}) |
+| tags | hash | Y | Y | Y | Y | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specified a retry timeout for node api initiated transfers.<br/>(--tags64 (conversion){hash}) |
 | target_rate_cap_kbps | int | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | Returned by upload/download_setup node API.<br/>(&lt;ignored&gt;) |
 | target_rate_kbps | int | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {int}) |
 | target_rate_percentage | string | Y | Y | Y | Y | Y | TODO: remove ?<br/>(&lt;ignored&gt;) |
@@ -3165,6 +3200,7 @@ Columns:
 | write_threads | int | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(&lt;ignored&gt;) |
 | wss_enabled | bool | Y | Y | Y | Y | Y | Server has Web Socket service enabled<br/>(&lt;special&gt;) |
 | wss_port | int | Y | Y | Y | Y | Y | TCP port used for websocket service feed<br/>(&lt;special&gt;) |
+| xfer_max_retries | int | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(&lt;ignored&gt;) |
 
 #### Destination folder for transfers
 
@@ -3648,8 +3684,7 @@ OPTIONS: global
         --select=VALUE               Select only some items in lists: column, value (Hash, Proc)
         --table-style=VALUE          Table display style (Hash)
         --flat-hash=ENUM             (Table) Display deep values as additional keys: no, [yes]
-        --transpose-single=ENUM      (Table) Single object fields output vertically: no, [yes]
-        --multi-table=ENUM           (Table) Each element of a table are displayed as a table: [no], yes
+        --multi-single=ENUM          (Table) Control how object list is displayed as single table, or multiple objects: no, yes, single
         --show-secrets=ENUM          Show secrets on command output: [no], yes
         --image=VALUE                Options for image display (Hash)
     -h, --help                       Show this message
@@ -4780,7 +4815,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
   First, Retrieve the ATS node address
 
   ```bash
-  ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv --transpose-single=no
+  ascli aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
   ```
 
   Then use the returned address for the `url` key to actually create the AoC Node entity:
@@ -4899,7 +4934,7 @@ ascli aoc packages list --query=@json:'{"dropbox_name":"My Shared Inbox","archiv
 Using shared inbox identifier: first retrieve the id of the shared inbox, and then list packages with the appropriate filter.
 
 ```bash
-shared_box_id=$(ascli aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
+shared_box_id=$(ascli aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id)
 ```
 
 ```bash
@@ -5105,7 +5140,7 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```bash
 admin analytics transfers nodes
-admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive"}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
+admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application list
 admin ats access_key create --cloud=aws --region=my_region --params=@json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
@@ -5303,7 +5338,7 @@ ascli ats api_key create
 
 ```output
 +--------+----------------------------------------------+
-| key    | value                                        |
+| field  | value                                        |
 +--------+----------------------------------------------+
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
@@ -6408,15 +6443,15 @@ ascli faspex5 admin shared create @json:'{"name":"the shared inbox","metadata_pr
 ### Faspex 5: List content in Shared folder and send package from remote source
 
 ```bash
-ascli faspex5 shared_folders list
+ascli faspex5 shared_folders list --fields=id,name
 ```
 
 ```markdown
-+----+----------+---------+-----+
-| id | name     | node_id | ... |
-+----+----------+---------+-----+
-| 3  | partages | 2       | ... |
-+----+----------+---------+-----+
++----+----------+
+| id | name     |
++----+----------+
+| 3  | partages |
++----+----------+
 ```
 
 ```bash
@@ -6566,6 +6601,8 @@ curl -H "Authorization: $(ascli ascli bearer)" https://faspex5.example.com/asper
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
+> **Note:** Faspex v4 is end of support since Sept. 30th, 2024. So this plugin for faspex v4 is deprecated. If you still need to use Faspex4, then use `ascli` version 4.19.0 or earlier.
+>
 > **Note:** For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
 This plugin uses APIs versions 3 Faspex v4.
@@ -7400,7 +7437,7 @@ Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
 > **Note:** `ascli` takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
 >
-> **Note:** Most, but not all, native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters.
+> **Note:** Usual native `ascp` arguments are available as standard [**transfer-spec**](#transfer-specification) parameters, but not special or advanced options.
 >
 > **Note:** Only for the [`direct`](#agent-direct) transfer agent (not others, like connect or node), native `ascp` arguments can be provided with parameter `ascp_args` of option `transfer_info` .
 

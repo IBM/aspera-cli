@@ -1504,7 +1504,7 @@ Depending on action, the output will contain:
 
 #### Format of output
 
-By default, result of type single_object and object_list are displayed using format `table`.
+By default, result of type `single_object` and `object_list` are displayed using format `table`.
 
 The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
 
@@ -1516,15 +1516,49 @@ For example, to display a table with thick unicode borders:
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash`).
-For example, object `{"user":{"id":1,"name":"toto"}}` will have attributes: `user.id` and `user.name`.
-Setting option `flat_hash` to `false` will only display one field: `user` and value is the sub `Hash`.
-When in flatten mode, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash` defaults to `yes`).
 
-Object lists are displayed one per line, with attributes as columns.
-Single objects (or tables with a single result) are transposed: one attribute per line.
-If transposition of single object is not desired, use option: `transpose_single` set to `no`.
-If option `multi_table` is `yes`, then elements of a table are displayed individually in a table.
+Example: Result of command is a list of objects with a single object:
+
+```console
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
+╭─────────┬───────────┬─────────╮
+│ user.id │ user.name │ project │
+╞═════════╪═══════════╪═════════╡
+│ 1       │ toto      │ blah    │
+╰─────────┴───────────┴─────────╯
+
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
+╭───────────────────────────┬─────────╮
+│ user                      │ project │
+╞═══════════════════════════╪═════════╡
+│ {"id"=>1, "name"=>"toto"} │ blah    │
+╰───────────────────────────┴─────────╯
+```
+
+When `flat_hash` is `yes`, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+
+By default, object lists are displayed with one object per line, with attributes as columns (see above), default for option `multi_single` is `no`.
+By default, single objects are displayed with one field per line (and columns are: `field`, `value`).
+If a single object in a list is returned, it is possible to have <%=tool%> display the object as a single object (one attribute per line instead of columns) with option: `multi_single` set to `single`.
+This parameter can be set as a global default with:
+
+```bash
+<%=cmd%> config preset set GLOBAL multi_single single
+```
+
+In case multiple objects are returned, it is possible to display one table per object with option `multi_single` set to `yes`.
+
+```console
+$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
+╭───────────┬───────╮
+│ field     │ value │
+╞═══════════╪═══════╡
+│ user.id   │ 1     │
+│ user.name │ toto  │
+│ project   │ blash │
+╰───────────┴───────╯
+```
 
 The style of output can be set using the `format` option, supporting:
 
@@ -1720,7 +1754,7 @@ Example: create a `Hash` with values coming from a preset named `config`
 
 ```output
 +---------+-----------+
-| key     | value     |
+| field   | value     |
 +---------+-----------+
 | hello   | true      |
 | version | 4.14.0    |
@@ -2549,7 +2583,7 @@ It provides the following commands for `ascp` subcommand:
 
 ```output
 +--------------------+-----------------------------------------------------------+
-| key                | value                                                     |
+| field              | value                                                     |
 +--------------------+-----------------------------------------------------------+
 | ascp               | /Users/laurent/.aspera/<%=cmd%>/sdk/ascp                     |
 ...
@@ -4310,7 +4344,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
   First, Retrieve the ATS node address
 
   ```bash
-  <%=cmd%> aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv --transpose-single=no
+  <%=cmd%> aoc admin ats cluster show --cloud=softlayer --region=eu-de --fields=transfer_setup_url --format=csv
   ```
 
   Then use the returned address for the `url` key to actually create the AoC Node entity:
@@ -4429,7 +4463,7 @@ Using shared inbox name:
 Using shared inbox identifier: first retrieve the id of the shared inbox, and then list packages with the appropriate filter.
 
 ```bash
-shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id --transpose-single=no)
+shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbox' --format=csv --display=data --fields=id)
 ```
 
 ```bash
@@ -4704,7 +4738,7 @@ Then, to register the key by default for the ats plugin, create a preset. Execut
 
 ```output
 +--------+----------------------------------------------+
-| key    | value                                        |
+| field  | value                                        |
 +--------+----------------------------------------------+
 | id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
 | secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
@@ -5610,15 +5644,15 @@ Other payload parameters are possible for `invite` in this last `Hash` **Command
 ### Faspex 5: List content in Shared folder and send package from remote source
 
 ```bash
-<%=cmd%> faspex5 shared_folders list
+<%=cmd%> faspex5 shared_folders list --fields=id,name
 ```
 
 ```markdown
-+----+----------+---------+-----+
-| id | name     | node_id | ... |
-+----+----------+---------+-----+
-| 3  | partages | 2       | ... |
-+----+----------+---------+-----+
++----+----------+
+| id | name     |
++----+----------+
+| 3  | partages |
++----+----------+
 ```
 
 ```bash
@@ -5768,6 +5802,8 @@ curl -H "Authorization: $(<%=cmd%> <%=cmd%> bearer)" https://faspex5.example.com
 
 ## Plugin: `faspex`: IBM Aspera Faspex v4
 
+> **Note:** Faspex v4 is end of support since Sept. 30th, 2024. So this plugin for faspex v4 is deprecated. If you still need to use Faspex4, then use <%=tool%> version 4.19.0 or earlier.
+>
 > **Note:** For full details on Faspex API, refer to: [Reference on Developer Site](https://developer.ibm.com/apis/catalog/?search=faspex)
 
 This plugin uses APIs versions 3 Faspex v4.

@@ -101,9 +101,10 @@ module Aspera
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
       # user output levels
       DISPLAY_LEVELS = %i[info data error].freeze
-      FIELD_VALUE_HEADINGS = %i[key value].freeze
+      # column names for single object display in table
+      SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
 
-      private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :FIELD_VALUE_HEADINGS
+      private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :SINGLE_OBJECT_COLUMN_NAMES
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
@@ -172,12 +173,13 @@ module Aspera
         @spinner = nil
       end
 
-      # options are: format, output, display, fields, select, table_style, flat_hash, transpose_single
+      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
       def option_handler(option_symbol, operation, value=nil)
         Aspera.assert_values(operation, %i[set get])
         case operation
         when :set
           @options[option_symbol] = value
+          # special handling of some options
           case option_symbol
           when :output
             $stdout = if value.eql?('-')
@@ -186,7 +188,9 @@ module Aspera
               File.open(value, 'w')
             end
           when :image
+            # get list if key arguments of method
             allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+            # check that only supported options are given
             unknown_options = value.keys.map(&:to_sym) - allowed_options
             raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
           end
@@ -212,8 +216,9 @@ module Aspera
         options.declare(:select, 'Select only some items in lists: column, value', types: [Hash, Proc], handler: {o: self, m: :option_handler})
         options.declare(:table_style, 'Table display style', types: [Hash], handler: {o: self, m: :option_handler}, default: default_table_style)
         options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
-        options.declare(:transpose_single, '(Table) Single object fields output vertically', values: :bool, handler: {o: self, m: :option_handler}, default: true)
-        options.declare(:multi_table, '(Table) Each element of a table are displayed as a table', values: :bool, handler: {o: self, m: :option_handler}, default: false)
+        options.declare(
+          :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', values: %i[no yes single],
+          handler: {o: self, m: :option_handler}, default: false)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
         options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
@@ -330,13 +335,6 @@ module Aspera
           display_message(:data, object_array.first[fields.first])
           return
         end
-        single_transposed = @options[:transpose_single] && object_array.length == 1
-        # Special case if only one row (it could be object_list or single_object)
-        if single_transposed
-          single = object_array.first
-          object_array = fields.map { |i| FIELD_VALUE_HEADINGS.zip([i, single[i]]).to_h }
-          fields = FIELD_VALUE_HEADINGS
-        end
         Log.log.debug{Log.dump(:object_array, object_array)}
         # convert data to string, and keep only display fields
         final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
@@ -345,11 +343,12 @@ module Aspera
         # here : fields : list of column names
         case @options[:format]
         when :table
-          if @options[:multi_table] && !single_transposed
+          if @options[:multi_single].eql?(:yes) ||
+              (@options[:multi_single].eql?(:single) && final_table_rows.length.eql?(1))
             final_table_rows.each do |row|
               Log.log.debug{Log.dump(:row, row)}
               display_message(:data, Terminal::Table.new(
-                headings:  FIELD_VALUE_HEADINGS,
+                headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
                 style:     @options[:table_style]&.symbolize_keys))
             end

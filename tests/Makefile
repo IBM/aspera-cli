@@ -97,7 +97,7 @@ TST_ASC_FILENAME=data_file.bin
 TST_ASC_LCL_PATH=$(DIR_TMP)$(TST_ASC_FILENAME)
 # This file name contains special characters, it must be quoted when used in shell
 # cspell:disable-next-line
-TST_UTF_FILENAME=𒐫spécial{\#😀بツ
+TST_UTF_FILENAME=𒐫spécial{\#😀تツ
 TST_UTF_LCL_PATH=$(DIR_TMP)$(TST_UTF_FILENAME)
 # a medium sized file for testing
 TST_MED_FILENAME=$(TST_UTF_FILENAME)
@@ -537,16 +537,40 @@ $(T)nd_wizard: $(T).exists
 	$(EXE_MAN) config detect @preset:node_user.url
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:node_user.url node --username=test --password=test
 	@$(STOP_TEST) $@
-$(T)nd1: $(T).exists
+$(T)nd_info: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
+	@$(STOP_TEST) $@
+$(T)nd_lic: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node license
+	@$(STOP_TEST) $@
+$(T)nd_det: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node api_details
+	@$(STOP_TEST) $@
+$(T)nd_tra: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node transport
+	@$(STOP_TEST) $@
+$(T)nd_bro: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node browse / --log-level=trace2
+	@$(STOP_TEST) $@
+$(T)nd_sea: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node search / --query=@json:'{"sort":"mtime"}'
+	@$(STOP_TEST) $@
+$(T)nd_spa: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node space /
+	@$(STOP_TEST) $@
+$(T)nd_del_err: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_IGN) node delete /a_folder $(EXE_END_IGN)
+	@$(STOP_TEST) $@
+$(T)nd_folder: $(T).exists
+	@$(START_TEST) $@
 	$(EXE_MAN) node mkdir @extend:@preset:server.upload_folder@/a_folder
 	$(EXE_MAN) node mklink @extend:@preset:server.upload_folder@/a_folder @extend:@preset:server.upload_folder@/tdlink
 	$(EXE_MAN) node mkfile @extend:@preset:server.upload_folder@/a_file1 "hello world"
@@ -623,7 +647,7 @@ $(T)nd_stream_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node stream list --preset=node_ak_adm
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tnodegen3,$(T)nd_wizard $(T)nd_nagios $(T)nd1 $(T)nd_slash $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd_browser $(T)nd8 $(T)nd_central_1 $(T)nd_watch_1 $(T)nd_stream_1))
+$(eval $(call test_suite_all,tnodegen3,$(T)nd_wizard $(T)nd_nagios $(T)nd_info $(T)nd_lic $(T)nd_det $(T)nd_tra $(T)nd_bro $(T)nd_sea $(T)nd_spa $(T)nd_del_err $(T)nd_folder $(T)nd_slash $(T)nd2 $(T)nd_2_nd_xfer $(T)nd4 $(T)nd6 $(T)nd7 $(T)nd_browser $(T)nd8 $(T)nd_central_1 $(T)nd_watch_1 $(T)nd_stream_1))
 #######################################################################################################################
 tnode: tnodegen3 tndak
 #######################################################################################################################
@@ -1559,6 +1583,8 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @list:,1,2,3
 	$(EXE_MAN) config echo @env:USER
 	$(EXE_MAN) config echo -- --special-string
+	$(EXE_MAN) config echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
+	$(EXE_MAN) config echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=single
 	$(EXE_MAN) config echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
 	$(EXE_BEG_ERR) config echo @val:@file:no_such_file$(EXE_END_ERR)
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:

@@ -4,20 +4,23 @@
 
   * New Features:
   * Issues Fixed:
-    * `config`: soft links in transfer SDK are correctly extracted
-    * `aoc`: fix `packages delete` not working.
+    * `config`: Soft links in transfer SDK archive are correctly extracted
+    * `aoc`: Fix `packages delete` not working.
+    * `direct` agent: #174 Race condition fix with `ascp`: timeout waiting mgt port connect (select not readable)
   * Breaking Changes:
+    * **global** : Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
+    * **global** : Column name for single object is now `field` instead of `key`.
 
 * 4.20.0
 
-  ATTENTIION: Due to the fact that Faspex version 4 is end of support, the `faspex` command will be deprecated. Use Faspex 5 from now.
+  ATTENTION: [Faspex version 4 is now end of support](https://www.ibm.com/support/pages/lifecycle/search?q=faspex): the `faspex` plugin will be deprecated. Servers shall be upgraded to Faspex 5, and users use plugin `faspex5`.
 
   * New Features:
     * `aoc`: Improved usability for creation of Admin shared folders.
     * `node`: New option `node_cache` (bool) for gen4 operations.
     * `node`: Option `root_id` now works always for node gen4, as well as `%id:` for file selection in addition to path.
     * `node`: `transfer list` now uses the `iteratin_token` to retrieve all values. Option `once_only` is now supported.
-    * `global` : option `http_options` now include retry options.
+    * **global** : option `http_options` now include retry options.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
     * `aoc`: #165 aoc mkdir now follows the last link of containing folder
