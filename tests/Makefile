@@ -357,7 +357,7 @@ $(T)serv_down_from_node: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_down_from_node_fail: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) server download file_does_not_exist.random --to-folder=@preset:server.upload_folder --transfer=node
+	$(EXE_BEG_ERR) server download file_does_not_exist.random --to-folder=@preset:server.upload_folder --transfer=node$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)serv_cp: $(T)serv_upload1
 	@$(START_TEST) $@
