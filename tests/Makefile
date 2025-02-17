@@ -355,6 +355,10 @@ $(T)serv_down_from_node: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server download @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) --to-folder=@preset:server.upload_folder --transfer=node
 	@$(STOP_TEST) $@
+$(T)serv_down_from_node_fail: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_NO_MAN) server download file_does_not_exist.random --to-folder=@preset:server.upload_folder --transfer=node
+	@$(STOP_TEST) $@
 $(T)serv_cp: $(T)serv_upload1
 	@$(START_TEST) $@
 	$(EXE_MAN) server cp @extend:@preset:server.inside_folder@/$(TST_ASC_FILENAME) @extend:@preset:server.upload_folder@/200KB.2
@@ -412,7 +416,7 @@ $(T)serv_pr2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tserver,$(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5 $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key))
+$(eval $(call test_suite_all,tserver,$(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5 $(T)serv_sync $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_down_from_node_fail $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key))
 #######################################################################################################################
 $(T)f4_nagios: $(T).exists
 	@$(START_TEST) $@
