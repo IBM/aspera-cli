@@ -8,7 +8,7 @@
     * `aoc`: Fix `packages delete` not working.
     * `direct` agent: #174 Race condition fix with `ascp`: timeout waiting mgt port connect (select not readable)
     * `config`: #175 `ascli config preset set GLOBAL version_check_days 0` causes a bad `config.yaml` to be written
-    * `preview`: #176 fix bug that prevents preview generation to work.
+    * `preview`: #177 fix bug that prevents preview generation to work.
   * Breaking Changes:
     * **global** : Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
     * **global** : Column name for single object is now `field` instead of `key`.
