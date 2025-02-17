@@ -2010,6 +2010,8 @@ echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
 echo @csvt:@stdin:
 echo @env:USER
+echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=single
+echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
 echo @secret:

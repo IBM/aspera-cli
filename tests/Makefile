@@ -1629,6 +1629,10 @@ $(T)prev_jpg_unk_mm: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview test --mimemagic=yes --base=$(DIR_TMP)$$(basename $@) @preset:file.jpg_unk
 	@$(STOP_TEST) $@
+$(T)prev_mxf_blend: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_MAN) preview test --base=$(DIR_TMP)$$(basename $@) @preset:file.mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
+	@$(STOP_TEST) $@
 $(T)prev_pdf: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.pdf
@@ -1636,10 +1640,6 @@ $(T)prev_pdf: $(T).exists
 $(T)prev_docx: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.docx
-	@$(STOP_TEST) $@
-$(T)prev_mxf_blend: $(T).exists
-	@$(START_TEST) $@
-	$(EXE_MAN) preview test --base=$(DIR_TMP)$$(basename $@) @preset:file.mxf mp4 --video-conversion=blend --query=@json:'{"text":true,"double":true}'
 	@$(STOP_TEST) $@
 $(T)prev_mpg_png_fix: $(T).exists
 	@$(START_TEST) $@

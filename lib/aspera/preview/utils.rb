@@ -45,7 +45,7 @@ module Aspera
         # @return true if su
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          return Environment.secure_capture(command_sym.to_s, *command_args)
+          return Environment.secure_capture(exec: command_sym.to_s, args: command_args.map(&:to_s))
         end
 
         def ffmpeg(a)

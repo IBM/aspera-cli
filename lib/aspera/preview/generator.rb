@@ -66,7 +66,7 @@ module Aspera
           result_size = File.size(@destination_file_path)
           Log.log.warn{"preview size exceeds maximum allowed #{result_size} > #{@options.max_size}"} if result_size > @options.max_size
         rescue StandardError => e
-          Log.log.error{"Ignoring: #{e.message}"}
+          Log.log.error{"Ignoring: #{e.class} #{e.message}"}
           Log.log.debug(e.backtrace.join("\n").red)
           FileUtils.cp(File.expand_path(@preview_format_sym.eql?(:mp4) ? 'video_error.png' : 'image_error.png', File.dirname(__FILE__)), @destination_file_path)
         ensure
