@@ -5722,6 +5722,22 @@ To delete all packages, one can use the following command:
 > **Note:** Above command will mark all packages for deletion, and will be permanently removed after the configured period (`clean_deleted` command).
 > It is possible to add a filter to the list command to only delete packages matching some criteria, e.g. using `--select=@ruby:`.
 
+### Faspex 5: Admin: Unlock user
+
+To unlock a user, you can de-activate and then re-activate the user:
+
+```bash
+<%=cmd%> faspex5 admin accounts modify %name:some.user@example.com @json:'{"account_activated":false}'
+```
+
+```bash
+<%=cmd%> faspex5 admin accounts modify %name:some.user@example.com @json:'{"account_activated":true}'
+```
+
+> **Note:** here we use the convenient percent selector, but the numerical if can be used as well.
+
+To send a password reset link to a user, use command `reset_password` on the `account`.
+
 ### Faspex 5: Faspex 4-style postprocessing
 
 <%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
