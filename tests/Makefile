@@ -961,6 +961,7 @@ $(T)aocp3: $(T).exists
 	:>$(DIR_TMP)package_id3;while test -z "$$(cat $(DIR_TMP)package_id3)";do \
 	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)package_id3;\
 	sleep 3;\
+	date;\
 	done
 	$(EXE_MAN) aoc packages receive $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
 	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /contents
@@ -1847,7 +1848,7 @@ $(T)f5_adm_sbx_del: $(T)f5_adm_sbx_cr
 	@$(STOP_TEST) $@
 $(T)f5_adm_evt_app: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=f5_admin faspex5 admin event app
+	$(EXE_MAN) --preset=f5_admin faspex5 admin event app --query=@json:'{"max":20}'
 	@$(STOP_TEST) $@
 $(T)f5_adm_evt_web: $(T).exists
 	@$(START_TEST) $@
