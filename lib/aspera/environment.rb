@@ -46,8 +46,7 @@ module Aspera
           return OS_LINUX
         when /aix/
           return OS_AIX
-        else
-          raise "Unknown OS: #{RbConfig::CONFIG['host_os']}"
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_os']){'host_os'}
         end
       end
 
@@ -62,8 +61,8 @@ module Aspera
           return CPU_S390
         when /arm/, /aarch64/
           return CPU_ARM64
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']){'host_cpu'}
         end
-        raise "Unknown CPU: #{RbConfig::CONFIG['host_cpu']}"
       end
 
       # normalized architecture name
