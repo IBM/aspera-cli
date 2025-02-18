@@ -8,6 +8,7 @@ gem_lib_folder = File.join(project_top_folder, 'lib')
 $LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/coverage'
 require 'aspera/environment'
+require 'aspera/ascp/management'
 
 describe 'environment' do
   it 'works for OSes' do
@@ -34,5 +35,18 @@ describe 'environment' do
     expect(Aspera::Environment.cpu).to(eq(Aspera::Environment::CPU_S390))
     RbConfig::CONFIG['host_cpu'] = 'arm'
     expect(Aspera::Environment.cpu).to(eq(Aspera::Environment::CPU_ARM64))
+  end
+  it 'works for event' do
+    event = {
+      'Bytescont'         => '1',
+      'Encryption'        => 'Yes',
+      'ExtraCreatePolicy' => 'none'
+    }
+    newevent = Aspera::Ascp::Management.enhanced_event_format(event)
+    expect(newevent).to(eq({
+      'bytescont'           => 1,
+      'encryption'          => true,
+      'extra_create_policy' => 'none'
+    }))
   end
 end
