@@ -797,42 +797,53 @@ module Aspera
             end
             case command
             when :list
+              transfer_filter = query_read_delete(default: {})
+              last_iteration_token = nil
               iteration_persistency = nil
-              iteration_data = []
               if options.get_option(:once_only, mandatory: true)
                 iteration_persistency = PersistencyActionOnce.new(
                   manager: persistency,
-                  data:    iteration_data,
+                  data:    [],
                   id:      IdGenerator.from_list([
                     'node_transfers',
                     options.get_option(:url, mandatory: true),
                     options.get_option(:username, mandatory: true)
                   ]))
+                if transfer_filter.delete('reset')
+                  iteration_persistency.data.clear
+                  iteration_persistency.save
+                  return Main.result_status('Persistency reset')
+                end
+                last_iteration_token = iteration_persistency.data.first
               end
-              transfer_filter = query_read_delete(default: {})
-              if transfer_filter.delete('reset')
-                iteration_data.clear
-                iteration_persistency&.save
-                return Main.result_status('Persistency reset')
-              end
+              raise 'reset only with once_only' if transfer_filter.key?('reset') && iteration_persistency.nil?
               max_items = transfer_filter.delete(MAX_ITEMS)
-              transfer_filter['iteration_token'] = iteration_persistency.data[0] unless iteration_data.empty?
               transfers_data = []
               loop do
+                transfer_filter['iteration_token'] = last_iteration_token unless last_iteration_token.nil?
                 result = @api_node.call(operation: 'GET', subpath: res_class_path, query: transfer_filter)
-                data = result[:data]
-                transfers_data.concat(data)
-                if !max_items.nil? && (transfers_data.length >= max_items)
+                # no data
+                break if result[:data].empty?
+                # get next iteration token from link
+                next_iteration_token = nil
+                link_info = result[:http]['Link']
+                unless link_info.nil?
+                  m = link_info.match(/<([^>]+)>/)
+                  raise "Cannot parse iteration in Link: #{link_info}" if m.nil?
+                  next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
+                end
+                # same as last iteration: stop
+                break if next_iteration_token&.eql?(last_iteration_token)
+                last_iteration_token = next_iteration_token
+                transfers_data.concat(result[:data])
+                if max_items&.<=(transfers_data.length)
+                  # if !max_items.nil? && (transfers_data.length >= max_items)
                   transfers_data = transfers_data.slice(0, max_items)
                   break
                 end
-                link_info = result[:http]['Link']
-                break if iteration_persistency.nil? || data.empty? || link_info.nil?
-                m = link_info.match(/<([^>]+)>/)
-                raise "Problem with iteration: #{link_info}" if m.nil?
-                iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
-                iteration_data[0] = transfer_filter['iteration_token'] = iteration_token
+                break if last_iteration_token.nil?
               end
+              iteration_persistency&.data&.[]=(0, last_iteration_token)
               iteration_persistency&.save
               return {
                 type:   :object_list,
