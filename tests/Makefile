@@ -956,7 +956,7 @@ $(T)aocp2: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) aoc packages list
 	@$(STOP_TEST) $@
-$(T)aocp3: $(T).exists
+$(T)aocp3: $(T)aoc_pack_send1
 	@$(START_TEST) $@
 	:>$(DIR_TMP)package_id3;while test -z "$$(cat $(DIR_TMP)package_id3)";do \
 	$(EXE_NO_MAN) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(DIR_TMP)package_id3;\
