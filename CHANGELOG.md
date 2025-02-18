@@ -3,6 +3,7 @@
 * 4.21.0.pre
 
   * New Features:
+    * `faspex5`: New command: `admin contact reset_password`
   * Issues Fixed:
     * `config`: Soft links in transfer SDK archive are correctly extracted
     * `aoc`: Fix `packages delete` not working.

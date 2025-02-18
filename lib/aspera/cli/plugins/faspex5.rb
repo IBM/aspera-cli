@@ -253,9 +253,10 @@ module Aspera
         # @param query [Hash,nil] additional query parameters
         # @param real_path [String] real path if it's n ot just the type
         # @param item_list_key [String] key in the result to get the list of items
-        def list_entities(type:, real_path: nil, item_list_key: nil, query: {})
+        def list_entities(type:, real_path: nil, item_list_key: nil, query: nil)
           Log.log.trace1{"list_entities t=#{type} p=#{real_path} k=#{item_list_key} q=#{query}"}
           type = type.to_s if type.is_a?(Symbol)
+          query = {} if query.nil?
           Aspera.assert_type(type, String)
           Aspera.assert_type(query, Hash)
           item_list_key = type if item_list_key.nil?
@@ -555,6 +556,7 @@ module Aspera
             id_as_arg = 'type'
           when :accounts
             display_fields = Formatter.all_but('user_profile_data_attributes')
+            available_commands.push(:reset_password)
           when :oauth_clients
             display_fields = Formatter.all_but('public_key')
             adm_api = Rest.new(**@api_v5.params.merge(base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}"))
@@ -642,7 +644,12 @@ module Aspera
                        value: value,
                        query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
                    end
+          when :reset_password
+            contact_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            adm_api.create("#{res_type}/#{contact_id}/reset_password", {})
+            return Main.result_status('password reset, user shall check email')
           end
+          Aspera.error_unreachable_line
         end
 
         def execute_admin
@@ -662,9 +669,10 @@ module Aspera
             event_type = options.get_next_command(%i[application webhook])
             case event_type
             when :application
-              return {type: :object_list, data: list_entities(type: 'application_events'), fields: %w[event_type created_at application user.name]}
+              return {type: :object_list, data: list_entities(type: 'application_events', query: query_read_delete),
+fields: %w[event_type created_at application user.name]}
             when :webhook
-              return {type: :object_list, data: list_entities(type: 'all_webhooks_events', item_list_key: 'events')}
+              return {type: :object_list, data: list_entities(type: 'all_webhooks_events', query: query_read_delete, item_list_key: 'events')}
             end
           when :configuration
             conf_path = 'configuration'
