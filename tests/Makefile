@@ -1662,11 +1662,17 @@ $(T)prev_mpg_clips: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.mpg mp4 --video-conversion=clips
 	@$(STOP_TEST) $@
-$(T)prev_events: $(T).exists
+$(T)prev_trevents: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_NO_MAN) --preset=preview_ak node upload @preset:file.mxf @preset:file.docx --ts=@json:'{"target_rate_kbps":1000000}'
+	$(EXE_NO_MAN) --preset=preview_ak node upload @preset:file.mxf @preset:file.docx --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none"}'
 	sleep 4
 	$(EXE_MAN) preview trevents --once-only=yes --skip-types=office --log-level=info
+	@$(STOP_TEST) $@
+$(T)prev_events: $(T).exists
+	@$(START_TEST) $@
+	$(EXE_NO_MAN) --preset=preview_ak node upload @preset:file.mxf @preset:file.docx --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none"}'
+	sleep 4
+	$(EXE_MAN) preview events --once-only=yes --skip-types=office --log-level=info
 	@$(STOP_TEST) $@
 $(T)prev_scan: $(T).exists
 	@$(START_TEST) $@
@@ -1676,7 +1682,7 @@ $(T)prev_folder: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_events $(T)prev_scan $(T)prev_folder))
+$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_trevents $(T)prev_events $(T)prev_scan $(T)prev_folder))
 #######################################################################################################################
 # TODO : finalize
 thot:
