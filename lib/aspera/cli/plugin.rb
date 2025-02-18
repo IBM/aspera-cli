@@ -220,12 +220,12 @@ module Aspera
         query = options.get_option(:query)
         # dup default, as it could be frozen
         query = default.dup if query.nil?
-        Log.log.debug{"Query=#{query}".bg_red}
+        Log.log.debug{"query_read_delete=#{query}".bg_red}
         begin
           # check it is suitable
           URI.encode_www_form(query) unless query.nil?
         rescue StandardError => e
-          raise Cli::BadArgument, "Query must be an extended value which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
+          raise Cli::BadArgument, "Query must be an extended value (Hash, Array) which can be encoded with URI.encode_www_form. Refer to manual. (#{e.message})"
         end
         return query
       end
