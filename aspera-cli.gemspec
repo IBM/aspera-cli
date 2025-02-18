@@ -38,12 +38,13 @@ Gem::Specification.new do |spec|
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
   # see also Aspera::Cli::Info::RUBY_CURRENT_MINIMUM_VERSION
-  spec.required_ruby_version = '>= 2.6'
+  spec.required_ruby_version = '>= 2.7'
   # dependency gems for runtime
   # if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('3.0.0')
   # spec.add_runtime_dependency('base64', '~> 0.2.0')
   # spec.add_runtime_dependency('bigdecimal', '~> 3.1', '>= 3.1.6')
   # end
+  spec.add_runtime_dependency('bigdecimal', '~> 3.1.0') if RUBY_VERSION >= '3.4'
   spec.add_runtime_dependency('blankslate', '~> 3.1')
   spec.add_runtime_dependency('csv', '~> 3.0')
   spec.add_runtime_dependency('execjs', '~> 2.0')

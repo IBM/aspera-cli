@@ -26,10 +26,10 @@ to IBM Aspera software.</p>
 href="https://rubygems.org/gems/aspera-cli">https://rubygems.org/gems/aspera-cli</a></p>
 <p>Ruby Doc: <a
 href="https://www.rubydoc.info/gems/aspera-cli">https://www.rubydoc.info/gems/aspera-cli</a></p>
-<p>Minimum required Ruby version: &gt;= 2.6.</p>
+<p>Minimum required Ruby version: &gt;= 2.7.</p>
 <blockquote>
 <p><strong>Deprecation notice</strong>: the minimum Ruby version will be
-3.0 in a future version.</p>
+3.1 in a future version.</p>
 </blockquote>
 <p><a
 href="https://developer.ibm.com/?size=30&amp;q=aspera&amp;DWContentType%5B0%5D=APIs&amp;sort=title_asc">Aspera
@@ -214,10 +214,10 @@ installing:</p>
 <li><a href="#fasp-protocol-ascp">Aspera SDK
 (<code>ascp</code>)</a></li>
 </ul>
-<p>Ruby version: &gt;= 2.6.</p>
+<p>Ruby version: &gt;= 2.7.</p>
 <blockquote>
 <p><strong>Deprecation notice</strong>: the minimum Ruby version will be
-3.0 in a future version.</p>
+3.1 in a future version.</p>
 </blockquote>
 <p>The following sections provide information on the various
 installation methods.</p>
@@ -232,10 +232,10 @@ class="header-section-number">3.1</span> Ruby</h2>
 <p>Use this method to install on the native host (e.g. your Windows,
 macOS or Linux system).</p>
 <p>A Ruby interpreter is required to run <code>ascli</code>.</p>
-<p>Required Ruby version: &gt;= 2.6.</p>
+<p>Required Ruby version: &gt;= 2.7.</p>
 <blockquote>
 <p><strong>Deprecation notice</strong>: the minimum Ruby version will be
-3.0 in a future version.</p>
+3.1 in a future version.</p>
 </blockquote>
 <p><strong>Ruby can be installed using any method</strong> : rpm, yum,
 dnf, rvm, brew, Windows installer, … .</p>
@@ -9078,19 +9078,20 @@ commands:</p>
 </blockquote>
 <div class="sourceCode" id="cb504"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb504-1"><a href="#cb504-1" aria-hidden="true" tabindex="-1"></a><span class="ex">check</span> <span class="at">--skip-types</span><span class="op">=</span>office</span>
-<span id="cb504-2"><a href="#cb504-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
-<span id="cb504-3"><a href="#cb504-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
-<span id="cb504-4"><a href="#cb504-4" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_docx</span>
-<span id="cb504-5"><a href="#cb504-5" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
-<span id="cb504-6"><a href="#cb504-6" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
-<span id="cb504-7"><a href="#cb504-7" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
-<span id="cb504-8"><a href="#cb504-8" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
-<span id="cb504-9"><a href="#cb504-9" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
-<span id="cb504-10"><a href="#cb504-10" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
-<span id="cb504-11"><a href="#cb504-11" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb504-12"><a href="#cb504-12" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
-<span id="cb504-13"><a href="#cb504-13" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_jpg_unk</span>
-<span id="cb504-14"><a href="#cb504-14" aria-hidden="true" tabindex="-1"></a><span class="ex">trevents</span> <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
+<span id="cb504-2"><a href="#cb504-2" aria-hidden="true" tabindex="-1"></a><span class="ex">events</span> <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
+<span id="cb504-3"><a href="#cb504-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--scan-id</span><span class="op">=</span>1 <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info <span class="at">--file-access</span><span class="op">=</span>remote <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000}&#39;</span></span>
+<span id="cb504-4"><a href="#cb504-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scan</span> <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span>
+<span id="cb504-5"><a href="#cb504-5" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_docx</span>
+<span id="cb504-6"><a href="#cb504-6" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>animated</span>
+<span id="cb504-7"><a href="#cb504-7" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg <span class="at">--video-png-conv</span><span class="op">=</span>fixed</span>
+<span id="cb504-8"><a href="#cb504-8" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>clips</span>
+<span id="cb504-9"><a href="#cb504-9" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_mpg mp4 <span class="at">--video-conversion</span><span class="op">=</span>reencode</span>
+<span id="cb504-10"><a href="#cb504-10" aria-hidden="true" tabindex="-1"></a><span class="ex">show</span> <span class="at">--base</span><span class="op">=</span>test my_pdf</span>
+<span id="cb504-11"><a href="#cb504-11" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb504-12"><a href="#cb504-12" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--base</span><span class="op">=</span>test my_mxf mp4 <span class="at">--video-conversion</span><span class="op">=</span>blend <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
+<span id="cb504-13"><a href="#cb504-13" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_dcm</span>
+<span id="cb504-14"><a href="#cb504-14" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">--mimemagic</span><span class="op">=</span>yes <span class="at">--base</span><span class="op">=</span>test my_jpg_unk</span>
+<span id="cb504-15"><a href="#cb504-15" aria-hidden="true" tabindex="-1"></a><span class="ex">trevents</span> <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--skip-types</span><span class="op">=</span>office <span class="at">--log-level</span><span class="op">=</span>info</span></code></pre></div>
 <h1 data-number="19" id="ibm-aspera-sync"><span
 class="header-section-number">19</span> IBM Aspera Sync</h1>
 <p>An interface for the <code>async</code> utility is provided in the

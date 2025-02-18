@@ -27,9 +27,9 @@ Ruby Gem: [https://rubygems.org/gems/aspera-cli](https://rubygems.org/gems/asper
 
 Ruby Doc: [https://www.rubydoc.info/gems/aspera-cli](https://www.rubydoc.info/gems/aspera-cli)
 
-Minimum required Ruby version: >= 2.6.
+Minimum required Ruby version: >= 2.7.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.1 in a future version.
 
 [Aspera APIs on IBM developer](https://developer.ibm.com/?size=30&q=aspera&DWContentType[0]=APIs&sort=title_asc)
 [Link 2](https://developer.ibm.com/apis/catalog/?search=aspera)
@@ -211,9 +211,9 @@ The direct installation is recommended and consists in installing:
 - [aspera-cli](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
 - [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
 
-Ruby version: >= 2.6.
+Ruby version: >= 2.7.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.1 in a future version.
 
 The following sections provide information on the various installation methods.
 
@@ -228,9 +228,9 @@ Use this method to install on the native host (e.g. your Windows, macOS or Linux
 
 A Ruby interpreter is required to run `ascli`.
 
-Required Ruby version: >= 2.6.
+Required Ruby version: >= 2.7.
 
-> **Deprecation notice**: the minimum Ruby version will be 3.0 in a future version.
+> **Deprecation notice**: the minimum Ruby version will be 3.1 in a future version.
 
 **Ruby can be installed using any method** : rpm, yum, dnf, rvm, brew, Windows installer, ... .
 
@@ -7351,6 +7351,7 @@ If the preview generator does not have access to files on the file system (it is
 
 ```bash
 check --skip-types=office
+events --once-only=yes --skip-types=office --log-level=info
 scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 scan --skip-types=office --log-level=info
 show --base=test my_docx
