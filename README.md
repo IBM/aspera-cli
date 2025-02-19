@@ -322,14 +322,16 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 
 #### macOS: `brew`
 
-**macOS** come with Ruby.
-Nevertheless, [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future, so better not to rely on it.
+**macOS** comes with Ruby.
+Nevertheless, it is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future, so better not to rely on it.
 
-The recommended way is to either user `RVM` or use [Homebrew](https://brew.sh/).
+The recommended way is to either use [Homebrew](https://brew.sh/) or [RVM](https://rvm.io/).
 
 ```bash
 brew install ruby
 ```
+
+This installs a recent ruby suitable for `ascli`.
 
 #### Linux: Package
 

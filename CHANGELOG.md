@@ -13,7 +13,7 @@
   * Breaking Changes:
     * **global** : Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
     * **global** : Column name for single object is now `field` instead of `key`.
-    * **global** : Ruby minimum versions is now 2.7 instead of 2.6 (that removes macOS default ruby support)
+    * **global** : Ruby minimum versions is now 2.7 (2.6 previously, that removes macOS default ruby support, but newer ruby version can be installed on macOS)
 
 * 4.20.0
 

@@ -323,14 +323,17 @@ install:</p>
 class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>rubyinstaller-devkit-3.2.2-1-x64.exe <span class="at">/silent</span> <span class="at">/currentuser</span> <span class="at">/noicons</span> <span class="at">/dir</span>=C:\aspera-cli</span></code></pre></div>
 <h3 data-number="3.1.3" id="macos-brew"><span
 class="header-section-number">3.1.3</span> macOS: <code>brew</code></h3>
-<p><strong>macOS</strong> come with Ruby. Nevertheless, <a
+<p><strong>macOS</strong> comes with Ruby. Nevertheless, it is an old
+unsupported version and <a
 href="https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes">Apple
 has deprecated it</a>, and it will be removed in the future, so better
 not to rely on it.</p>
-<p>The recommended way is to either user <code>RVM</code> or use <a
-href="https://brew.sh/">Homebrew</a>.</p>
+<p>The recommended way is to either use <a
+href="https://brew.sh/">Homebrew</a> or <a
+href="https://rvm.io/">RVM</a>.</p>
 <div class="sourceCode" id="cb22"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install ruby</span></code></pre></div>
+<p>This installs a recent ruby suitable for <code>ascli</code>.</p>
 <h3 data-number="3.1.4" id="linux-package"><span
 class="header-section-number">3.1.4</span> Linux: Package</h3>
 <p>If your Linux distribution provides a standard Ruby package, you can
