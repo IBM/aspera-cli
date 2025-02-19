@@ -218,7 +218,7 @@ module Aspera
         options.declare(:flat_hash, '(Table) Display deep values as additional keys', values: :bool, handler: {o: self, m: :option_handler}, default: true)
         options.declare(
           :multi_single, '(Table) Control how object list is displayed as single table, or multiple objects', values: %i[no yes single],
-          handler: {o: self, m: :option_handler}, default: false)
+          handler: {o: self, m: :option_handler}, default: :no)
         options.declare(:show_secrets, 'Show secrets on command output', values: :bool, handler: {o: self, m: :option_handler}, default: false)
         options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
@@ -439,7 +439,10 @@ module Aspera
             display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)
           when :object_list, :single_object
             obj_list = data
-            obj_list = [obj_list] if type.eql?(:single_object)
+            if type.eql?(:single_object)
+              obj_list = [obj_list]
+              @options[:multi_single] = :yes
+            end
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name

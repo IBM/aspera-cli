@@ -9,6 +9,10 @@ require 'aspera/assert'
 require 'aspera/web_server_simple'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
+require 'aspera/products/alpha'
+require 'aspera/products/connect'
+require 'aspera/products/trsdk'
+require 'aspera/products/other'
 require 'English'
 require 'singleton'
 require 'xmlsimple'
@@ -21,7 +25,7 @@ module Aspera
     # Singleton that tells where to find ascp and other local resources (keys..) , using the "path(:name)" method.
     # It is used by object : AgentDirect to find necessary resources
     # By default it takes the first Aspera product found
-    # but the user can specify ascp location by calling:
+    # The user can specify ascp location by calling:
     # Installation.instance.use_ascp_from_product(product_name)
     # or
     # Installation.instance.ascp_path=""
@@ -47,11 +51,10 @@ module Aspera
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
       SDK_ARCHIVE_FOLDERS = ['/bin/', '/aspera/'].freeze
+      # filename for ascp with optional extension (Windows)
       private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
-      # product information manifest: XML (part of aspera product)
-      INFO_META_FILE = 'product-info.mf'
 
       # set ascp executable path
       def ascp_path=(v)
@@ -65,31 +68,19 @@ module Aspera
         path(:ascp)
       end
 
-      # location of SDK files
+      # Compatibility
       def sdk_folder=(v)
-        Log.log.debug{"sdk_folder=#{v}"}
-        @sdk_dir = v
-        sdk_folder
-      end
-
-      # backward compatibility in sample program
-      alias_method :folder=, :sdk_folder=
-
-      # @return the path to folder where SDK is installed
-      def sdk_folder
-        Aspera.assert(!@sdk_dir.nil?){'SDK path was not initialized'}
-        FileUtils.mkdir_p(@sdk_dir)
-        @sdk_dir
+        Products::Trsdk.sdk_directory = v
       end
 
       # find ascp in named product (use value : FIRST_FOUND='FIRST' to just use first one)
-      # or select one from Products.installed_products()
+      # or select one from installed_products()
       def use_ascp_from_product(product_name)
         if product_name.eql?(FIRST_FOUND)
-          pl = Products.installed_products.first
+          pl = installed_products.first
           raise "no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
         else
-          pl = Products.installed_products.find{|i|i[:name].eql?(product_name)}
+          pl = installed_products.find{|i|i[:name].eql?(product_name)}
           raise "no such product installed: #{product_name}" if pl.nil?
         end
         self.ascp_path = pl[:ascp_path]
@@ -109,7 +100,7 @@ module Aspera
       end
 
       def check_or_create_sdk_file(filename, force: false, &block)
-        return Environment.write_file_restricted(File.join(sdk_folder, filename), force: force, mode: 0o644, &block)
+        return Environment.write_file_restricted(File.join(Products::Trsdk.sdk_directory, filename), force: force, mode: 0o644, &block)
       end
 
       # get path of one resource file of currently activated product
@@ -124,7 +115,7 @@ module Aspera
           file = @path_to_ascp.gsub('ascp', k.to_s)
         when :transferd
           file_is_optional = true
-          file = transferd_filepath
+          file = Products::Trsdk.transferd_path
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
@@ -134,8 +125,8 @@ module Aspera
         when :aspera_conf
           file = check_or_create_sdk_file('aspera.conf') {DEFAULT_ASPERA_CONF}
         when :fallback_certificate, :fallback_private_key
-          file_key = File.join(sdk_folder, 'aspera_fallback_cert_private_key.pem')
-          file_cert = File.join(sdk_folder, 'aspera_fallback_cert.pem')
+          file_key = File.join(Products::Trsdk.sdk_directory, 'aspera_fallback_cert_private_key.pem')
+          file_cert = File.join(Products::Trsdk.sdk_directory, 'aspera_fallback_cert.pem')
           if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -309,7 +300,7 @@ module Aspera
       # @return ascp version (from execution)
       def install_sdk(url: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform if url.nil? || url.eql?('DEF')
-        folder = sdk_folder if folder.nil?
+        folder = Products::Trsdk.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?
           subfolder_lambda = ->(name) do
@@ -353,7 +344,7 @@ module Aspera
         # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)
         path(:aspera_conf)
-        sdk_ascp_file = Products.ascp_filename
+        sdk_ascp_file = Environment.exe_file('ascp')
         sdk_ascp_path = File.join(folder, sdk_ascp_file)
         raise "No #{sdk_ascp_file} found in SDK archive" unless File.exist?(sdk_ascp_path)
         EXE_FILES.each do |exe_sym|
@@ -361,13 +352,13 @@ module Aspera
           Environment.restrict_file_access(exe_path, mode: 0o755) if File.exist?(exe_path)
         end
         sdk_ascp_version = get_ascp_version(sdk_ascp_path)
-        sdk_daemon_path = transferd_filepath
+        sdk_daemon_path = Products::Trsdk.transferd_path
         Log.log.warn{"No #{sdk_daemon_path} in SDK archive"} unless File.exist?(sdk_daemon_path)
         Environment.restrict_file_access(sdk_daemon_path, mode: 0o755) if File.exist?(sdk_daemon_path)
         transferd_version = get_exe_version(sdk_daemon_path, 'version')
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
-        File.write(File.join(folder, INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
+        File.write(File.join(folder, Products::Other::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
         return sdk_name, sdk_version
       end
 
@@ -379,10 +370,29 @@ module Aspera
       def initialize
         @path_to_ascp = nil
         @sdk_dir = nil
+        @found_products = nil
       end
 
-      def transferd_filepath
-        return File.join(sdk_folder, 'asperatransferd' + Environment.exe_extension) # cspell:disable-line
+      public
+
+      # @return the list of installed products in format of product_locations_on_current_os
+      def installed_products
+        if @found_products.nil?
+          # :expected  M app name is taken from the manifest if present, else defaults to this value
+          # :app_root  M main folder for the application
+          # :log_root  O location of log files (Linux uses syslog)
+          # :run_root  O only for Connect Client, location of http port file
+          # :sub_bin   O subfolder with executables, default : bin
+          scan_locations = Products::Trsdk.locations.concat(
+            Products::Alpha.locations,
+            Products::Connect.locations,
+            Products::Other::LOCATION_ON_THIS_OS
+          )
+          # .each {|item| item.deep_do {|h, _k, _v, _m|h.freeze}}.freeze
+          # search installed products: with ascp
+          @found_products = Products::Other.find(scan_locations)
+        end
+        return @found_products
       end
     end
   end

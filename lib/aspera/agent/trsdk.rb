@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/ascp/installation'
+require 'aspera/products/trsdk'
 require 'aspera/temp_file_manager'
-require 'aspera/log'
-require 'aspera/assert'
 require 'json'
 require 'uri'
 require 'transfer_services_pb'
@@ -18,25 +16,6 @@ module Aspera
       PORT_SEP = ':'
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
-      class << self
-        # Well, the port number is only in log file
-        def daemon_port_from_log(log_file)
-          result = nil
-          # if port is zero, a dynamic port was created, get it
-          File.open(log_file, 'r') do |file|
-            file.each_line do |line|
-              # Well, it's tricky to depend on log
-              if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
-                result = m[2].to_i
-                # no "break" , need to read last matching log line
-              end
-            end
-          end
-          raise 'Port not found in daemon logs' if result.nil?
-          Log.log.debug{"Got port #{result} from log"}
-          return result
-        end
-      end
 
       # @param url [String] URL of the transfer manager daemon
       # @param external [Boolean] if true, expect that an external daemon is already running
@@ -83,8 +62,8 @@ module Aspera
             fasp_runtime: {
               use_embedded: false,
               user_defined: {
-                bin: Ascp::Installation.instance.sdk_folder,
-                etc: Ascp::Installation.instance.sdk_folder
+                bin: Products::Trsdk.sdk_directory,
+                etc: Products::Trsdk.sdk_directory
               }
             }
           }
@@ -110,7 +89,7 @@ module Aspera
           Process.detach(@daemon_pid) if @keep
           at_exit {shutdown}
           # update port for next connection attempt (if auto high port was requested)
-          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{self.class.daemon_port_from_log(log_stdout)}" if is_local_auto_port
+          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Trsdk.daemon_port_from_log(log_stdout)}" if is_local_auto_port
           # local daemon started, try again
           retry
         end

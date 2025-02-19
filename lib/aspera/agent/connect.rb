@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
+require 'aspera/products/connect'
+require 'aspera/products/other'
 require 'aspera/rest'
+require 'aspera/environment'
 require 'securerandom'
 
 module Aspera
@@ -20,7 +23,7 @@ module Aspera
         raise 'Using connect requires a graphical environment' if !Environment.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin
-          connect_url = Ascp::Products.connect_uri
+          connect_url = connect_api_url
           Log.log.debug{"found: #{connect_url}"}
           @connect_api = Rest.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
@@ -41,6 +44,21 @@ module Aspera
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
         end
+      end
+
+      # @return the file path of local connect where API's URI can be read
+      def connect_api_url
+        connect_locations = Products::Other.find(Products::Connect.locations).first
+        raise "Product: #{name} not found, please install." if connect_locations.nil?
+        folder = File.join(connect_locations[:run_root], 'var', 'run')
+        ['', 's'].each do |ext|
+          uri_file = File.join(folder, "http#{ext}.uri")
+          Log.log.debug{"checking connect port file: #{uri_file}"}
+          if File.exist?(uri_file)
+            return File.open(uri_file, &:gets).strip
+          end
+        end
+        raise "no connect uri file found in #{folder}"
       end
 
       def start_transfer(transfer_spec, token_regenerator: nil)

@@ -9,7 +9,7 @@ require 'aspera/cli/formatter'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/ascp/installation'
-require 'aspera/ascp/products'
+require 'aspera/products/trsdk'
 require 'aspera/transfer/error_info'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
@@ -54,7 +54,7 @@ module Aspera
         PERSISTENCY_FOLDER = 'persist_store'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
-        APP_NAME_SDK = 'sdk'
+        DIR_SDK = 'sdk'
         CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
         CONNECT_VERSIONS = 'connectversions.js' # cspell: disable-line
         DEMO_SERVER = 'demo'
@@ -213,7 +213,7 @@ module Aspera
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Ascp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
           options.declare(:sdk_url, 'URL to get SDK', default: SpecialValues::DEF)
-          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Ascp::Installation.instance, m: :sdk_folder})
+          options.declare(:sdk_folder, 'SDK folder path', handler: {o: Products::Trsdk, m: :sdk_directory})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # email options
           options.declare(:smtp, 'SMTP configuration', types: Hash)
@@ -232,22 +232,22 @@ module Aspera
           options.parse_options!
           @progress_bar = TransferProgress.new if options.get_option(:progress_bar)
           # Check SDK folder is set or not, for compatibility, we check in two places
-          sdk_folder = Ascp::Installation.instance.sdk_folder rescue nil
-          if sdk_folder.nil?
+          sdk_dir = Products::Trsdk.sdk_directory rescue nil
+          if sdk_dir.nil?
             @sdk_default_location = true
             Log.log.debug('SDK folder is not set, checking default')
             # new location
-            sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK)
-            Log.log.debug{"checking: #{sdk_folder}"}
-            if !Dir.exist?(sdk_folder)
-              Log.log.debug{"not exists: #{sdk_folder}"}
+            sdk_dir = self.class.default_app_main_folder(app_name: DIR_SDK)
+            Log.log.debug{"checking: #{sdk_dir}"}
+            if !Dir.exist?(sdk_dir)
+              Log.log.debug{"not exists: #{sdk_dir}"}
               # former location
-              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), APP_NAME_SDK)
+              former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), DIR_SDK)
               Log.log.debug{"checking: #{former_sdk_folder}"}
-              sdk_folder = former_sdk_folder if Dir.exist?(former_sdk_folder)
+              sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
             end
-            Log.log.debug{"using: #{sdk_folder}"}
-            Ascp::Installation.instance.sdk_folder = sdk_folder
+            Log.log.debug{"using: #{sdk_dir}"}
+            Products::Trsdk.sdk_directory = sdk_dir
           end
           pac_script = options.get_option(:fpac)
           # create PAC executor
@@ -720,7 +720,7 @@ module Aspera
             command = options.get_next_command(%i[list use])
             case command
             when :list
-              return {type: :object_list, data: Ascp::Products.installed_products, fields: %w[name app_root]}
+              return {type: :object_list, data: Ascp::Installation.instance.installed_products, fields: %w[name app_root]}
             when :use
               default_product = options.get_next_argument('product name')
               Ascp::Installation.instance.use_ascp_from_product(default_product)
@@ -729,7 +729,7 @@ module Aspera
             end
           when :install
             # reset to default location, if older default was used
-            Ascp::Installation.instance.sdk_folder = self.class.default_app_main_folder(app_name: APP_NAME_SDK) if @sdk_default_location
+            Products::Trsdk.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true))
             return Main.result_status("Installed #{n} version #{v}")
           when :spec

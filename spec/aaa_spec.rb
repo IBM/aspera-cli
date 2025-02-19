@@ -14,12 +14,12 @@ describe 'environment' do
   it 'works for OSes' do
     RbConfig::CONFIG['host_os'] = 'mswin'
     expect(Aspera::Environment.os).to(eq(Aspera::Environment::OS_WINDOWS))
-    expect(Aspera::Environment.exe_extension).to(eq('.exe'))
+    expect(Aspera::Environment.exe_file).to(eq('.exe'))
     RbConfig::CONFIG['host_os'] = 'darwin'
     expect(Aspera::Environment.os).to(eq(Aspera::Environment::OS_MACOS))
     RbConfig::CONFIG['host_os'] = 'linux'
     expect(Aspera::Environment.os).to(eq(Aspera::Environment::OS_LINUX))
-    expect(Aspera::Environment.exe_extension).to(eq(''))
+    expect(Aspera::Environment.exe_file).to(eq(''))
     RbConfig::CONFIG['host_os'] = 'aix'
     expect(Aspera::Environment.os).to(eq(Aspera::Environment::OS_AIX))
   end

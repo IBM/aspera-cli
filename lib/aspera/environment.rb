@@ -72,9 +72,9 @@ module Aspera
       end
 
       # executable file extension for current OS
-      def exe_extension
-        return '.exe' if os.eql?(OS_WINDOWS)
-        return ''
+      def exe_file(name='')
+        return "#{name}.exe" if os.eql?(OS_WINDOWS)
+        return name
       end
 
       # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
