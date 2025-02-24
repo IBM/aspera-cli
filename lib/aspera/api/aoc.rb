@@ -70,6 +70,7 @@ module Aspera
 
         # split host of http://myorg.asperafiles.com in org and domain
         def split_org_domain(uri)
+          Aspera.assert_type(uri, URI)
           raise "No host found in URL.Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" if uri.host.nil?
           parts = uri.host.split('.', 2)
           Aspera.assert(parts.length == 2){"expecting a public FQDN for #{PRODUCT_NAME}"}
