@@ -73,7 +73,7 @@ module Aspera
             return nil unless redirect_uri.path.end_with?("oauth2/#{od[:organization]}/login")
             # either in standard domain, or product name in page
             return {
-              version: base_url.include?(Api::AoC::SAAS_DOMAIN_PROD) ? 'SaaS' : 'Self-managed',
+              version: Api::AoC.saas_url?(base_url) ? 'SaaS' : 'Self-managed',
               url:     base_url
             }
           end
@@ -92,8 +92,6 @@ module Aspera
             # set vars to look like object
             options = object.options
             formatter = object.formatter
-            options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: true)
-            options.parse_options!
             instance_url = options.get_option(:url, mandatory: true)
             pub_link_info = Api::AoC.link_info(instance_url)
             if !pub_link_info[:token].nil?
@@ -108,6 +106,8 @@ module Aspera
                 test_args:    'organization'
               }
             end
+            options.declare(:use_generic_client, 'Wizard: AoC: use global or org specific jwt client id', values: :bool, default: Api::AoC.saas_url?(instance_url))
+            options.parse_options!
             # make username mandatory for jwt, this triggers interactive input
             wiz_username = options.get_option(:username, mandatory: true)
             raise "Username shall be an email in AoC: #{wiz_username}" if !(wiz_username =~ /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i)
@@ -133,15 +133,15 @@ module Aspera
                 formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
                 formatter.display_status('Navigate to: 𓃑  → Admin → Integrations → API Clients')
                 formatter.display_status('Check or create in integration:')
-                formatter.display_status("- name: #{@info[:name]}")
+                formatter.display_status('- name: cli')
                 formatter.display_status("- redirect uri: #{REDIRECT_LOCALHOST}")
                 formatter.display_status('- origin: localhost')
                 formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
               end
-              Environment.instance.open_uri("#{instance_url}/admin/api-clients")
+              Environment.instance.open_uri("#{instance_url}/admin/integrations/api-clients")
               options.get_option(:client_id, mandatory: true)
               options.get_option(:client_secret, mandatory: true)
-              use_browser_authentication = true
+              # use_browser_authentication = true
             end
             if use_browser_authentication
               formatter.display_status('We will use web authentication to bootstrap.')

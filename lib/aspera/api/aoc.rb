@@ -78,6 +78,10 @@ module Aspera
           return %i{organization domain}.zip(parts).to_h
         end
 
+        def saas_url?(url)
+          url.include?(SAAS_DOMAIN_PROD)
+        end
+
         # @param url [String] URL of AoC public link
         # @return [Hash] information about public link, or nil if not a public link
         def link_info(url)
