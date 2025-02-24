@@ -80,8 +80,9 @@ EXE_COMMON=$(RUBY_WARN) $(CLI_PATH) --home=$(CLI_HOME) --config-file=$(ASPERA_CL
 EXE_MAN=$(EXE_COMMON)
 # "EXE_NO_MAN" when the command is not needed in documentation
 EXE_NO_MAN=$(EXE_COMMON)
-# enclose tests that shall result in error
-EXE_BEG_ERR=if $(EXE_COMMON)
+# exec begin error: enclose tests that shall result in error
+EXE_BGE=if $(EXE_COMMON)
+# expect error, show error
 EXE_SHW_ERR=;then echo "No error: problem";exit 1;else echo "Test ok";fi
 EXE_END_ERR=>/dev/null 2>&1$(EXE_SHW_ERR)
 # enclose tests that fail, but should not
@@ -295,11 +296,11 @@ $(T)serv_mkdir: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_error: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) server -Pserver2_user --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
-	$(EXE_BEG_ERR) server -Pserver2_user --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
-	$(EXE_BEG_ERR) server -N --url=foo:// ls .$(EXE_END_ERR)
-	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
-	$(EXE_BEG_ERR) server -N --url=@preset:node_user.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BGE) server -Pserver2_user --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BGE) server -Pserver2_user --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
+	$(EXE_BGE) server -N --url=foo:// ls .$(EXE_END_ERR)
+	$(EXE_BGE) server -N --url=@preset:node_user.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BGE) server -N --url=@preset:node_user.url upload wrong --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_NO_MAN) server -N --url=local:// ls .
 	@$(STOP_TEST) $@
 $(T)serv_upload1: $(T)serv_mkdir 
@@ -357,7 +358,7 @@ $(T)serv_down_from_node: $(T).exists
 	@$(STOP_TEST) $@
 $(T)serv_down_from_node_fail: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) server download file_does_not_exist.random --to-folder=@preset:server.upload_folder --transfer=node$(EXE_END_ERR)
+	$(EXE_BGE) server download file_does_not_exist.random --to-folder=@preset:server.upload_folder --transfer=node$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)serv_cp: $(T)serv_upload1
 	@$(START_TEST) $@
@@ -390,7 +391,7 @@ $(T)serv_df: $(T).exists
 $(T)serv_nagios_transfer: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) server health transfer --to-folder=@preset:server.upload_folder --format=nagios 
-	$(EXE_BEG_ERR) server health transfer --to-folder=/wrong --format=nagios$(EXE_END_ERR)
+	$(EXE_BGE) server health transfer --to-folder=/wrong --format=nagios$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)serv_key: $(T).exists
 	@$(START_TEST) $@
@@ -645,7 +646,7 @@ $(T)nd_central_1: $(T).exists
 $(T)nd_watch_1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node watch_folder list --preset=node_ak_adm
-	$(EXE_BEG_ERR) node watch_folder create @json:'{"source":{"path":"/src1"},"target":{"path":"/dst1"}}' --preset=node_ak_adm$(EXE_END_ERR)
+	$(EXE_BGE) node watch_folder create @json:'{"source":{"path":"/src1"},"target":{"path":"/dst1"}}' --preset=node_ak_adm$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)nd_stream_1: $(T).exists
 	@$(START_TEST) $@
@@ -663,8 +664,7 @@ $(T)nd_ak1: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name node_info /
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name browse /
-	$(EXE_BEG_ERR)node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @json:'{}'$(EXE_END_ERR)
-	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder exec:'f["name"].end_with?(".jpg")'
+	$(EXE_BGE)node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @json:'{}'$(EXE_END_ERR)
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name find @preset:aoc.test_folder
 	@$(STOP_TEST) $@
@@ -689,10 +689,10 @@ $(T)nd_ak3: $(T).exists
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name download test_nd_ak3 --to-folder=$(DIR_TMP).
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name show /test_nd_ak3
-	$(EXE_BEG_ERR) node --preset=node_ak_adm access_key do @preset:aoc.ak_name thumbnail /test_nd_ak3$(EXE_END_ERR)
+	$(EXE_BGE) node --preset=node_ak_adm access_key do @preset:aoc.ak_name thumbnail /test_nd_ak3$(EXE_END_ERR)
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name delete test_nd_ak3
 	@$(STOP_TEST) $@
-$(T)nd_ak4: $(T).exists
+$(T)nd_ak4: $(T)nd_ak3
 	@$(START_TEST) $@
 	$(EXE_MAN) node --preset=node_ak_adm access_key do @preset:aoc.ak_name show %id:1
 	@$(STOP_TEST) $@
@@ -1024,11 +1024,13 @@ $(T)aoc_adm_nd_events: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_adm_ak_create: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder1"}}'
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret mkdir /folder_sub
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder_sub"}}'
 	@$(STOP_TEST) $@
 $(T)aoc_adm_ak_del: $(T)aoc_adm_ak_create
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret v3 access_key delete testsub1
+	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder_sub
 	@$(STOP_TEST) $@
 $(T)aoc_adm_nd_br: $(T).exists
 	@$(START_TEST) $@
@@ -1198,7 +1200,7 @@ $(T)orch_wizard: $(T).exists
 $(T)orch_nagios: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) orchestrator health
-	$(EXE_BEG_ERR) orchestrator health --url=https://wrong.url --format=nagios$(EXE_END_ERR)
+	$(EXE_BGE) orchestrator health --url=https://wrong.url --format=nagios$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)orch_info: $(T).exists
 	@$(START_TEST) $@
@@ -1362,7 +1364,7 @@ $(T)sync_other: $(T)sync_create
 	$(EXE_MAN) node ssync stop %name:my_node_sync
 	$(EXE_MAN) node ssync summary %name:my_node_sync
 	$(EXE_MAN) node ssync delete %name:my_node_sync
-	$(EXE_BEG_ERR) node ssync delete not_exist $(EXE_END_ERR)
+	$(EXE_BGE) node ssync delete not_exist $(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsyncs,$(T)sync_create $(T)sync_other))
 #######################################################################################################################
@@ -1491,9 +1493,9 @@ $(T)conf_vault: $(T).exists
 	$(EXE_MAN) $(TMP_CONF) config vault list
 	$(EXE_MAN) $(TMP_CONF) config vault delete my_label
 	$(EXE_MAN) $(TMP_CONF) config echo @vault:my_preset.password
-	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad$(EXE_END_ERR)
-	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:bad.password$(EXE_END_ERR)
-	$(EXE_BEG_ERR)$(TMP_CONF) config echo @vault:my_preset.bad$(EXE_END_ERR)
+	$(EXE_BGE)$(TMP_CONF) config echo @vault:bad$(EXE_END_ERR)
+	$(EXE_BGE)$(TMP_CONF) config echo @vault:bad.password$(EXE_END_ERR)
+	$(EXE_BGE)$(TMP_CONF) config echo @vault:my_preset.bad$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_help_1: $(T).exists
 	@$(START_TEST) $@
@@ -1530,12 +1532,12 @@ $(T)conf_plugins: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_wizard_org: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config flush_tokens
+	$(EXE_MAN) config tokens flush
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email --use-generic-client=yes
 	@$(STOP_TEST) $@
 $(T)conf_wizard_gen: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_MAN) config flush_tokens
+	$(EXE_MAN) config tokens flush
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:aoc.org aoc --key-path=@preset:file.private_key --username=@preset:aoc.user_email
 	@$(STOP_TEST) $@
 $(T)conf_detect: $(T).exists
@@ -1550,7 +1552,7 @@ $(T)conf_genkey: $(T).exists
 	rm -f $(DIR_TMP)my_key $(DIR_TMP)my_key.pub
 	$(EXE_MAN) config genkey $(DIR_TMP)my_key 4096
 	$(EXE_MAN) config pubkey @file:$(DIR_TMP)my_key
-	$(EXE_BEG_ERR) config genkey $(DIR_TMP)my_key not_int$(EXE_END_ERR)
+	$(EXE_BGE) config genkey $(DIR_TMP)my_key not_int$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_cert: $(T).exists
 	@$(START_TEST) $@
@@ -1591,7 +1593,7 @@ $(T)conf_echo: $(T).exists
 	$(EXE_MAN) config echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=yes
 	$(EXE_MAN) config echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --multi-single=single
 	$(EXE_MAN) config echo '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#006699"/></svg>' --format=image
-	$(EXE_BEG_ERR) config echo @val:@file:no_such_file$(EXE_END_ERR)
+	$(EXE_BGE) config echo @val:@file:no_such_file$(EXE_END_ERR)
 	echo $$'1\n2\n3'|$(EXE_MAN) config echo @lines:@stdin:
 	echo $$'t1,t2,t3\na,b,d\nd,e,f'|$(EXE_MAN) config echo @csvt:@stdin:
 	ruby -rzlib -e'puts Zlib::Deflate.deflate("Hello World")'|$(EXE_MAN) config echo @zlib:@stdin:
@@ -1606,11 +1608,11 @@ $(T)conf_interactive: $(T).exists
 	@$(STOP_TEST) $@
 $(T)conf_hint: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) config test throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config test throw Aspera::Transfer::Error 'Remote host is not who we expected'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config test throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config test throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
-	$(EXE_BEG_ERR) config test throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
+	$(EXE_BGE) config test throw Aspera::RestCallError   'Signature has expired'$(EXE_SHW_ERR)
+	$(EXE_BGE) config test throw Aspera::Transfer::Error 'Remote host is not who we expected'$(EXE_SHW_ERR)
+	$(EXE_BGE) config test throw OpenSSL::SSL::SSLError  'does not match the server certificate'$(EXE_SHW_ERR)
+	$(EXE_BGE) config test throw OpenSSL::SSL::SSLError  'certificate verify failed'$(EXE_SHW_ERR)
+	$(EXE_BGE) config test throw OpenSSL::PKey::RSAError 'Neither PUB key nor PRIV key'$(EXE_SHW_ERR)
 	@$(STOP_TEST) $@
 $(T)conf_logger: $(T).exists
 	@$(START_TEST) $@
@@ -1733,7 +1735,7 @@ $(T)f5_nagios: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_nag_err: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_BEG_ERR) faspex5 health --url=https://wrong.example --format=nagios$(EXE_END_ERR)
+	$(EXE_BGE) faspex5 health --url=https://wrong.example --format=nagios$(EXE_END_ERR)
 	@$(STOP_TEST) $@
 $(T)f5_p0: $(T).exists
 	@$(START_TEST) $@
@@ -1893,7 +1895,7 @@ $(T)f5_webauth: $(T).exists
 $(T)f5_wizard: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config wizard $(WIZ_TEST) @preset:faspex5_user.url faspex5 --key-path=@preset:file.private_key --preset=faspex5_user
-	$(EXE_BEG_ERR) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_END_ERR)
+	$(EXE_BGE) config detect https://eudemo.asperademo.com:22 faspex5$(EXE_END_ERR)
 	$(EXE_MAN) -N config detect @preset:faspex5_user.url
 	$(EXE_NO_MAN) config detect @preset:faspex5_user.url
 	@$(STOP_TEST) $@

@@ -1497,16 +1497,33 @@ To redirect results to a file, use option `output`.
 
 Depending on action, the output will contain:
 
-- `single_object` : displayed as a 2 dimensional table: one line per attribute, first column is attribute name, and second is attribute value. Nested hashes are collapsed.
-- `object_list` : displayed as a 2 dimensional table: one line per item, one column per attribute.
-- `value_list` : a table with one column.
-- `empty` : nothing
-- `status` : a message
-- `other_struct` : a complex structure that cannot be displayed as an array
+| Result Type     | Description |
+|-----------------|-------------------|
+| `single_object` | displayed as a 2 dimensional table: one line per field, first column is field name, and second is field value. Nested hashes are collapsed. |
+| `object_list`   | displayed as a 2 dimensional table: one line per item, one column per field. |
+| `value_list`    | a table with one column. |
+| `empty`         | nothing |
+| `status`        | a message |
+| `other_struct`  | a complex structure that cannot be displayed as an array |
 
-#### Format of output
+#### Option: `format`
+
+The style of output can be set using the `format` option:
+
+| `format` | Output formatting |
+|----------|-------------------|
+| `table`  | Text table (default) |
+| `text`   | Value as `String` |
+| `ruby`   | Ruby code |
+| `json`   | JSON code |
+| `jsonpp` | JSON pretty printed |
+| `yaml`   | YAML |
+| `csv`    | Comma Separated Values |
+| `image`  | Image URL or Image data |
 
 By default, result of type `single_object` and `object_list` are displayed using format `table`.
+
+#### Option: `table_style`
 
 The table style can be customized with option: `table_style` which expects a `Hash`, options are the ones described in gem [`terminal-table`](https://github.com/tj/terminal-table).
 
@@ -1518,7 +1535,16 @@ For example, to display a table with thick unicode borders:
 
 > **Note:** Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-In a table format, when displaying **Objects** (single, or list), by default, sub object are flattened (option `flat_hash` defaults to `yes`).
+#### Option: `flat_hash`: `.`-join keys
+
+This optin controls how object fields are displayed for complex objects.
+
+Effective only when `format` is `table` to display `single_object` or `object_list`.
+
+If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
+
+If value is `yes` (default), then object are flattened, i.e. deep `Hash` are transformed into 1-level Hash, where keys are `.`-junction of deep keys.
+In this case, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
 
 Example: Result of command is a list of objects with a single object:
 
@@ -1538,11 +1564,15 @@ $ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --f
 ╰───────────────────────────┴─────────╯
 ```
 
-When `flat_hash` is `yes`, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
+#### Option: `multi_single`
 
-By default, object lists are displayed with one object per line, with attributes as columns (see above), default for option `multi_single` is `no`.
-By default, single objects are displayed with one field per line (and columns are: `field`, `value`).
-If a single object in a list is returned, it is possible to have <%=tool%> display the object as a single object (one attribute per line instead of columns) with option: `multi_single` set to `single`.
+This option controls if object fields are displayed as columns or lines.
+
+If value is `no` (default), `object_list` are displayed with one object per line, with fields as columns (see above).
+`single_object` are displayed with one field per line (and columns are: `field`, `value`).
+
+If an `object_list` has a single element, it is possible to have <%=tool%> display the object as a single object (one field per line instead of columns) with option: `multi_single` set to `single`.
+
 This parameter can be set as a global default with:
 
 ```bash
@@ -1562,18 +1592,7 @@ $ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --
 ╰───────────┴───────╯
 ```
 
-The style of output can be set using the `format` option, supporting:
-
-- `table` : Text table (default)
-- `text` : Value as `String`
-- `ruby` : Ruby code
-- `json` : JSON code
-- `jsonpp` : JSON pretty printed
-- `yaml` : YAML
-- `csv` : Comma Separated Values
-- `image` : Image URL or Image data
-
-#### Verbosity of output
+#### Option: `display`: Verbosity of output
 
 Output messages are categorized in 3 types:
 
@@ -1587,13 +1606,17 @@ The option `display` controls the level of output:
 - `data` display `data` and `error` messages
 - `error` display only error messages.
 
-By default, secrets are removed from output: option `show_secrets` defaults to `no`, unless `display` is `data`, to allows piping results.
-To hide secrets from output, set option `show_secrets` to `no`.
+#### Option: `show_secrets`: Hide or show secrets in results
 
-#### Option: `fields`: Selection of output object properties
+If value is `no` (default), then secrets are redacted from command results.
 
-By default, a `table` output format will display one line per entry, and columns for each fields (attributes, properties).
-Depending on the command, columns may include by default all fields, or only some selected fields.
+If value is `yes`, then secrets shown in clear in results.
+
+If `display` is `data`, secrets are included to allows piping results.
+
+#### Option: `fields`: Selection of output object fields
+
+Depending on the command, results may include by default all fields, or only some selected fields.
 It is possible to define specific columns to be displayed, by setting the `fields` option.
 
 The `fields` option is a list that can be either a comma separated list or an extended value `Array`.
@@ -1602,8 +1625,8 @@ Individual elements of the list can be:
 
 - **property** : add property to the current list
 - `-`**property** : remove property from the current list
-- `DEF` : default list of properties (that's the default, when not set)
-- `ALL` : all properties
+- `DEF` : default list of fields (that's the default, when not set)
+- `ALL` : all fields
 - A Ruby `RegEx` : using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
 Examples:
@@ -1611,13 +1634,13 @@ Examples:
 - `a,b,c` : the list of attributes specified as a comma separated list (overrides the all default)
 - `@json:'["a","b","c"]'` : `Array` extended value: same as above
 - `b,DEF,-a` : default property list, remove `a` and add `b` in first position
-- `@ruby:'/^server/'` : Display all properties whose name begin with `server`
+- `@ruby:'/^server/'` : Display all fields whose name begin with `server`
 
 #### Option: `select`
 
 Table output (`object_list`) can be filtered using option `select`.
 This option is either a `Hash` or `Proc`.
-The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda expression that returns `true` or `false`.
+The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda expression that shall returns `true` to select or `false` to remove an entry.
 
 Example:
 
@@ -1646,19 +1669,26 @@ In above example, the same result is obtained with option:
 
 The percent selector allows identification of an entity by another unique identifier other than the native identifier.
 
-When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command:
-e.g. `<%=cmd%> aoc admin user show 1234` where `1234` is the user's identifier.
-
-Some commands provide the following capability:
-If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**: `<%=cmd%> aoc admin user show %name:john` where `john` is the user name.
-
 Syntax: `%<field>:<value>`
 
-> **Note:** The legacy option `id` is deprecated: `--id=1234` (options have a single value and thus do not provide the possibility to identify sub-entities)
+When a command is executed on a single entity, the entity is identified by a unique identifier that follows the command.
+For example, in the following command, `1234` is the user's identifier:
+
+```bash
+<%=cmd%> aoc admin user show 1234
+```
+
+Some commands provide the following capability:
+If the entity can also be uniquely identified by a name, then the name can be used instead of the identifier, using the **percent selector**.
+For example, if the name of the user is `john` and a field for this entity named `name` has a value `john`:
+
+```bash
+<%=cmd%> aoc admin user show %name:john
+```
 
 ### Extended Value Syntax
 
-Most options and arguments are specified by a simple string (e.g. username or url).
+Most options and arguments are specified by a simple string (e.g. `username` or `url`).
 Sometime it is convenient to read a value from a file: for example read the PEM value of a private key, or a list of files.
 Some options expect a more complex value such as `Hash` or `Array`.
 
@@ -1674,31 +1704,31 @@ Decoders act like a function with its parameter on right hand side and are recog
 
 The following decoders are supported:
 
-| Decoder  | Parameter| Returns | Description |
-|----------|----------|---------|-------------|
-| `base64` | `String`   | `String`  | Decode a base64 encoded string |
-| `csvt`   | `String`   | `Array`   | Decode a titled CSV value |
-| `env`    | `String`   | `String`  | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
-| `file`   | `String`   | `String`  | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
-| `json`   | `String`   | Any     | Decode JSON values (convenient to provide complex structures) |
-| `lines`  | `String`   | `Array`   | Split a string in multiple lines and return an array |
-| `list`   | `String`   | `Array`   | Split a string in multiple items taking first character as separator and return an array |
-| `none`   | None     | Nil     | A null value |
-| `path`   | `String`   | `String`  | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
-| `preset` | `String`   | `Hash`    | Get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
-| `extend` | `String`   | `String`  | Evaluates embedded extended value syntax in string |
-| `re`     | `String`   | Regexp  | Ruby Regular Expression (short for `@ruby:/.../`) |
-| `ruby`   | `String`   | Any     | Execute specified Ruby code |
-| `secret` | None     | `String`  | Ask password interactively (hides input) |
-| `stdin`  | None     | `String`  | Read from stdin in text mode (no value on right) |
-| `stdbin` | None     | `String`  | Read from stdin in binary mode (no value on right) |
-| `uri`    | `String`   | `String`  | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
-| `val`    | `String`   | `String`  | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| `yaml`   | `String`   | Any     | Decode YAML |
-| `zlib`   | `String`   | `String`  | Un-compress zlib data |
+| Decoder  | Parameter| Returns  | Description |
+|----------|----------|----------|-------------|
+| `base64` | `String` | `String` | Decode a base64 encoded string |
+| `csvt`   | `String` | `Array`  | Decode a titled CSV value |
+| `env`    | `String` | `String` | Read from a named env var name, e.g. `--password=@env:MYPASSVAR` |
+| `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the users home folder), e.g. `--key=@file:~/.ssh/mykey` |
+| `json`   | `String` | Any      | Decode JSON values (convenient to provide complex structures) |
+| `lines`  | `String` | `Array`  | Split a string in multiple lines and return an array |
+| `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an array |
+| `none`   | None     | Nil      | A null value |
+| `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the users home folder), e.g. `--config-file=@path:~/sample_config.yml` |
+| `preset` | `String` | `Hash`   | Get whole option preset value by name. Sub-values can also be used using `.` as separator. e.g. `foo.bar` is `conf[foo][bar]` |
+| `extend` | `String` | `String` | Evaluates embedded extended value syntax in string |
+| `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
+| `ruby`   | `String` | Any      | Execute specified Ruby code |
+| `secret` | None     | `String` | Ask password interactively (hides input) |
+| `stdin`  | None     | `String` | Read from stdin in text mode (no value on right) |
+| `stdbin` | None     | `String` | Read from stdin in binary mode (no value on right) |
+| `uri`    | `String` | `String` | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
+| `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| `yaml`   | `String` | Any      | Decode YAML |
+| `zlib`   | `String` | `String` | Un-compress zlib data |
 
 > **Note:** A few commands support a value of type `Proc` (lambda expression).
-For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value of attribute `attr` of the `Hash` `i`.
+For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` `i`.
 
 To display the result of an extended value, use the `config echo` command.
 
@@ -1763,7 +1793,7 @@ Example: create a `Hash` with values coming from a preset named `config`
 +---------+-----------+
 ```
 
-Example: Create a `Hash` from YAML provided as **heredoc**:
+Example: Create a `Hash` from YAML provided as shell **heredoc**:
 
 ```bash
 <%=cmd%> config echo @yaml:@stdin: --format=json<<EOF
@@ -1783,7 +1813,7 @@ EOF
 
 ### Configuration and Persistency Folder
 
-<%=tool%> configuration and other runtime files (token cache, file lists, persistency files, SDK) are stored by default in `[User's home folder]/.aspera/<%=cmd%>`.
+<%=tool%> configuration and persistency files (token cache, file lists, persistency files) are stored by default in `[User's home folder]/.aspera/<%=cmd%>`.
 
 > **Note:** `[User's home folder]` is found using Ruby's `Dir.home` (`rb_w32_home_dir`).
 It uses the `HOME` env var primarily, and on MS Windows it also looks at `%HOMEDRIVE%%HOMEPATH%` and `%USERPROFILE%`.
@@ -1812,9 +1842,9 @@ set <%=opt_env(%Q`home`)%>=C:\Users\Kenji\.aspera\<%=cmd%>
 C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
-When OAuth is used (AoC, Faspex4 api v4, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
+When OAuth is used (AoC, Faspex5) <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` in configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows to control if Oauth tokens are cached on file system, or generated for each request.
-The command `config flush_tokens` clears that cache.
+The command `config tokens flush` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
 When a token has expired, then a new token is generated, either using a refresh_token if it is available, or by the default method.
 
@@ -2373,12 +2403,12 @@ The gem is equipped with traces, mainly for debugging and learning APIs.
 By default logging level is `warn` and the output channel is `stderr`.
 To increase debug level, use option `log_level` (e.g. using command line `--log-level=xx`, env var `<%=opt_env(%Q`log_level`)%>`, or an [Option Preset](#option-preset)).
 
-By default passwords and secrets are removed from logs.
-Use option `log_secrets` set to `yes` to reveal secrets in logs.
+By default passwords and secrets are redacted from logs.
+Set option `log_secrets` to `yes` to include secrets in logs.
 
-Available loggers: `stdout`, `stderr`, `syslog`.
+Option `logger`: `stdout`, `stderr`, `syslog`.
 
-Available levels: `debug`, `info`, `warn`, `error`.
+Option `log_level`: `debug`, `info`, `warn`, `error`.
 
 > **Note:** When using the `direct` agent (`ascp`), additional transfer logs can be activated using `ascp` options and `ascp_args`, see [`direct`](#agent-direct).
 
@@ -2737,7 +2767,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | `wss`                  | `Bool`    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
 | `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
 | `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
-| `client_ssh_key`       | `String`  | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
+| `client_ssh_key`       | `String` | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
 | `ascp_args`            | `Array`   | Array of strings with native `ascp` arguments.<br/>Default: `[]` |
 | `spawn_timeout_sec`    | `Float`   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
 | `spawn_delay_sec`      | `Float`   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
@@ -5755,13 +5785,13 @@ The following parameters are supported:
 
 | parameter                  | type    | default                | description                                         |
 |----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | `String`  | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
+| url                        | `String` | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
 | certificate                | `Hash`    | nil                    | Certificate information (if HTTPS)                  |
-| certificate.key            | `String`  | nil                    | Path to private key file                            |
-| certificate.cert           | `String`  | nil                    | Path to certificate                                 |
-| certificate.chain          | `String`  | nil                    | Path to intermediary certificates                   |
+| certificate.key            | `String` | nil                    | Path to private key file                            |
+| certificate.cert           | `String` | nil                    | Path to certificate                                 |
+| certificate.chain          | `String` | nil                    | Path to intermediary certificates                   |
 | processing                 | `Hash`    | nil                    | Behavior of post processing                         |
-| processing.script_folder   | `String`  | .                      | Prefix added to script path                         |
+| processing.script_folder   | `String` | .                      | Prefix added to script path                         |
 | processing.fail_on_error   | `Bool`    | false                  | Fail if true and process exit with non zero         |
 | processing.timeout_seconds | `Integer` | 60                     | Max. execution time before script is killed         |
 

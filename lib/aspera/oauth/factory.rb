@@ -13,6 +13,7 @@ module Aspera
       PERSIST_CATEGORY_TOKEN = 'token'
       # prefix for bearer token when in header
       BEARER_PREFIX = 'Bearer '
+      TOKEN_FIELD = 'access_token'
 
       private_constant :PERSIST_CATEGORY_TOKEN, :BEARER_PREFIX
 
@@ -87,7 +88,45 @@ module Aspera
 
       # delete all existing tokens
       def flush_tokens
-        persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN, nil)
+        persist_mgr.garbage_collect(PERSIST_CATEGORY_TOKEN)
+      end
+
+      def persisted_tokens
+        data = persist_mgr.current_items(PERSIST_CATEGORY_TOKEN)
+        data.each.map do |k, v|
+          info = {id: k}
+          info.merge!(JSON.parse(v)) rescue nil
+          d = decode_token(info.delete(TOKEN_FIELD))
+          info.merge(d) if d
+          info
+        end
+      end
+
+      # get token information from cache
+      # @param id [String] identifier of token
+      # @return [Hash] token internal information , including Date object for `expiration_date`
+      def get_token_info(id)
+        token_raw_string = persist_mgr.get(id)
+        return nil if token_raw_string.nil?
+        token_data = JSON.parse(token_raw_string)
+        Aspera.assert_type(token_data, Hash)
+        decoded_token = decode_token(token_data[TOKEN_FIELD])
+        info = { data: token_data }
+        Log.log.debug{Log.dump('decoded_token', decoded_token)}
+        if decoded_token.is_a?(Hash)
+          info[:decoded] = decoded_token
+          # TODO: move date decoding to token decoder ?
+          expiration_date =
+            if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
+            elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
+            end
+          unless expiration_date.nil?
+            info[:expiration] = expiration_date
+            info[:ttl_sec] = expiration_date - Time.now
+            info[:expired] = info[:ttl_sec] < @parameters[:token_expiration_guard_sec]
+          end
+        end
+        return info
       end
 
       # register a bearer token decoder, mainly to inspect expiry date
@@ -125,6 +164,6 @@ module Aspera
       end
     end
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    Factory.instance.register_decoder(lambda { |token| parts = token.split('.'); Aspera.assert(parts.length.eql?(3)){'not aoc token'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon, Layout/LineLength
+    Factory.instance.register_decoder(lambda { |token| parts = token.split('.'); Aspera.assert(parts.length.eql?(3)){'not JWS token'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon, Layout/LineLength
   end
 end

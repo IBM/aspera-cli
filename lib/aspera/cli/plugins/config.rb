@@ -857,7 +857,7 @@ module Aspera
           remote_certificate
           gem
           plugins
-          flush_tokens
+          tokens
           echo
           wizard
           detect
@@ -913,9 +913,18 @@ module Aspera
             end
           when :echo # display the content of a value given on command line
             return Formatter.auto_type(options.get_next_argument('value', validation: nil))
-          when :flush_tokens
-            deleted_files = OAuth::Factory.instance.flush_tokens
-            return {type: :value_list, data: deleted_files, name: 'file'}
+          when :tokens
+            require 'aspera/api/node'
+            case options.get_next_command(%i{flush list show})
+            when :flush
+              return {type: :value_list, data: OAuth::Factory.instance.flush_tokens, name: 'file'}
+            when :list
+              return {type: :object_list, data: OAuth::Factory.instance.persisted_tokens}
+            when :show
+              data = OAuth::Factory.instance.get_token_info(instance_identifier)
+              raise Cli::Error, 'No such identifier' if data.nil?
+              return {type: :single_object, data: data}
+            end
           when :plugins
             case options.get_next_command(%i[list create])
             when :list

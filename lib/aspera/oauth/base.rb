@@ -26,7 +26,7 @@ module Aspera
         scope: nil,
         use_query: false,
         path_token:  'token',
-        token_field: 'access_token',
+        token_field: Factory::TOKEN_FIELD,
         cache_ids: nil,
         **rest_params
       )
@@ -87,48 +87,37 @@ module Aspera
       # @param cache set to false to disable cache
       # @param refresh set to true to force refresh or re-generation (if previous failed)
       def token(cache: true, refresh: false)
-        # get token_data from cache (or nil), token_data is what is returned by /token
-        token_data = Factory.instance.persist_mgr.get(@token_cache_id) if cache
-        token_data = JSON.parse(token_data) unless token_data.nil?
-        # Optional optimization: check if node token is expired based on decoded content then force refresh if close enough
-        # might help in case the transfer agent cannot refresh himself
-        # `direct` agent is equipped with refresh code
-        if !refresh && !token_data.nil?
-          decoded_token = OAuth::Factory.instance.decode_token(token_data[@token_field])
-          Log.log.debug{Log.dump('decoded_token', decoded_token)} unless decoded_token.nil?
-          if decoded_token.is_a?(Hash)
-            expires_at_sec =
-              if    decoded_token['expires_at'].is_a?(String) then DateTime.parse(decoded_token['expires_at']).to_time
-              elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
+        # get token info from cache (or nil), decoded with date and expiration status
+        token_info = Factory.instance.get_token_info(@token_cache_id) if cache
+        token_data = nil
+        unless token_info.nil?
+          token_data = token_info[:data]
+          # Optional optimization:
+          # check if node token is expired based on decoded content then force refresh if close enough
+          # might help in case the transfer agent cannot refresh himself
+          # `direct` agent is equipped with refresh code
+          # an API was already called, but failed, we need to regenerate or refresh
+          if refresh || token_info[:expired]
+            if token_data.key?('refresh_token') && token_data['refresh_token'].eql?('not_supported')
+              # save possible refresh token, before deleting the cache
+              refresh_token = token_data['refresh_token']
+            end
+            # delete cache
+            Factory.instance.persist_mgr.delete(@token_cache_id)
+            token_data = nil
+            # lets try the existing refresh token
+            if !refresh_token.nil?
+              Log.log.info{"refresh=[#{refresh_token}]".bg_green}
+              # NOTE: AoC admin token has no refresh, and lives by default 1800secs
+              resp = create_token_call(optional_scope_client_id.merge(grant_type: 'refresh_token', refresh_token: refresh_token))
+              if resp[:http].code.start_with?('2')
+                # save only if success
+                json_data = resp[:http].body
+                token_data = JSON.parse(json_data)
+                Factory.instance.persist_mgr.put(@token_cache_id, json_data)
+              else
+                Log.log.debug{"refresh failed: #{resp[:http].body}".bg_red}
               end
-            # force refresh if we see a token too close from expiration
-            refresh = true if expires_at_sec.is_a?(Time) && (expires_at_sec - Time.now) < OAuth::Factory.instance.parameters[:token_expiration_guard_sec]
-            Log.log.debug{"Expiration: #{expires_at_sec} / #{refresh}"}
-          end
-        end
-
-        # an API was already called, but failed, we need to regenerate or refresh
-        if refresh
-          if token_data.is_a?(Hash) && token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
-            # save possible refresh token, before deleting the cache
-            refresh_token = token_data['refresh_token']
-          end
-          # delete cache
-          Factory.instance.persist_mgr.delete(@token_cache_id)
-          token_data = nil
-          # lets try the existing refresh token
-          if !refresh_token.nil?
-            Log.log.info{"refresh=[#{refresh_token}]".bg_green}
-            # try to refresh
-            # note: AoC admin token has no refresh, and lives by default 1800secs
-            resp = create_token_call(optional_scope_client_id.merge(grant_type: 'refresh_token', refresh_token: refresh_token))
-            if resp[:http].code.start_with?('2')
-              # save only if success
-              json_data = resp[:http].body
-              token_data = JSON.parse(json_data)
-              Factory.instance.persist_mgr.put(@token_cache_id, json_data)
-            else
-              Log.log.debug{"refresh failed: #{resp[:http].body}".bg_red}
             end
           end
         end
