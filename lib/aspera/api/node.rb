@@ -16,8 +16,6 @@ module Aspera
     class Node < Aspera::Rest
       SCOPE_SEPARATOR = ':'
       SCOPE_NODE_PREFIX = 'node.'
-      # prefix for ruby code for filter (deprecated)
-      MATCH_EXEC_PREFIX = 'exec:'
       MATCH_TYPES = [String, Proc, Regexp, NilClass].freeze
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
@@ -25,7 +23,7 @@ module Aspera
       REQUIRED_APP_INFO_FIELDS = %i[api app node_info workspace_id workspace_name].freeze
       # methods of @app_info[:api]
       REQUIRED_APP_API_METHODS = %i[node_api_from add_ts_tags].freeze
-      private_constant :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX, :MATCH_EXEC_PREFIX, :MATCH_TYPES,
+      private_constant :SCOPE_SEPARATOR, :SCOPE_NODE_PREFIX, :MATCH_TYPES,
         :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
         :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
@@ -60,11 +58,6 @@ module Aspera
           when Proc then return match_expression
           when Regexp then return ->(f){f['name'].match?(match_expression)}
           when String
-            if match_expression.start_with?(MATCH_EXEC_PREFIX)
-              code = "->(f){#{match_expression[MATCH_EXEC_PREFIX.length..-1]}}"
-              Log.log.warn{"Use of prefix #{MATCH_EXEC_PREFIX} is deprecated (4.15), instead use: @ruby:'#{code}'"}
-              return Environment.secure_eval(code, __FILE__, __LINE__)
-            end
             return ->(f){File.fnmatch(match_expression, f['name'], File::FNM_DOTMATCH)}
           when NilClass then return ->(_){true}
           else Aspera.error_unexpected_value(match_expression.class.name, exception_class: Cli::BadArgument)
