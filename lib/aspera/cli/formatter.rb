@@ -104,7 +104,7 @@ module Aspera
       # column names for single object display in table
       SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
 
-      private_constant :DISPLAY_FORMATS, :DISPLAY_LEVELS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :SINGLE_OBJECT_COLUMN_NAMES
+      private_constant :FIELDS_LESS, :CSV_RECORD_SEPARATOR, :CSV_FIELD_SEPARATOR, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES
       # prefix to display error messages in user messages (terminal)
       ERROR_FLASH = 'ERROR:'.bg_red.gray.blink.freeze
       WARNING_FLASH = 'WARNING:'.bg_brown.black.blink.freeze
@@ -173,33 +173,6 @@ module Aspera
         @spinner = nil
       end
 
-      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
-      def option_handler(option_symbol, operation, value=nil)
-        Aspera.assert_values(operation, %i[set get])
-        case operation
-        when :set
-          @options[option_symbol] = value
-          # special handling of some options
-          case option_symbol
-          when :output
-            $stdout = if value.eql?('-')
-              STDOUT # rubocop:disable Style/GlobalStdStream
-            else
-              File.open(value, 'w')
-            end
-          when :image
-            # get list if key arguments of method
-            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
-            # check that only supported options are given
-            unknown_options = value.keys.map(&:to_sym) - allowed_options
-            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
-          end
-        when :get then return @options[option_symbol]
-        else Aspera.error_unreachable_line
-        end
-        nil
-      end
-
       def declare_options(options)
         default_table_style = if Environment.instance.terminal_supports_unicode?
           {border: :unicode_round}
@@ -249,8 +222,147 @@ module Aspera
         display_status(count_msg)
       end
 
+      # this method displays the results, especially the table format
+      # @param type [Symbol] type of data
+      # @param data [Object] data to display
+      # @param total [Integer] total number of items
+      # @param fields [Array<String>] list of fields to display
+      # @param name [String] name of the column to display
+      def display_results(type:, data: nil, total: nil, fields: nil, name: nil)
+        Log.log.debug{"display_results: #{type} class=#{data.class}"}
+        Log.log.trace1{"display_results:data=#{data}"}
+        Aspera.assert_type(type, Symbol){'result must have type'}
+        Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
+        display_item_count(data.length, total) unless total.nil?
+        SecretHider.deep_remove_secret(data) unless @options[:show_secrets] || @options[:display].eql?(:data)
+        case @options[:format]
+        when :text
+          display_message(:data, data.to_s)
+        when :nagios
+          Nagios.process(data)
+        when :ruby
+          display_message(:data, PP.pp(filter_list_on_fields(data), +''))
+        when :json
+          display_message(:data, JSON.generate(filter_list_on_fields(data)))
+        when :jsonpp
+          display_message(:data, JSON.pretty_generate(filter_list_on_fields(data)))
+        when :yaml
+          display_message(:data, YAML.dump(filter_list_on_fields(data)))
+        when :image
+          # assume it is an url
+          url = data
+          case type
+          when :single_object, :object_list
+            url = [url] if type.eql?(:single_object)
+            raise 'image display requires a single result' unless url.length == 1
+            fields = compute_fields(url, fields)
+            raise 'select a field to display' unless fields.length == 1
+            url = url.first
+            raise 'no such field' unless url.key?(fields.first)
+            url = url[fields.first]
+          end
+          raise "not url: #{url.class} #{url}" unless url.is_a?(String)
+          display_message(:data, status_image(url))
+        when :table, :csv
+          case type
+          when :config_over
+            display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)
+          when :object_list, :single_object
+            obj_list = data
+            if type.eql?(:single_object)
+              obj_list = [obj_list]
+              @options[:multi_single] = :yes
+            end
+            Aspera.assert_type(obj_list, Array)
+            Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
+            # :object_list is an array of hash tables, where key=colum name
+            obj_list = obj_list.map{|obj|Flattener.new(self).flatten(obj)} if @options[:flat_hash]
+            display_table(obj_list, compute_fields(obj_list, fields))
+          when :value_list
+            # :value_list is a simple array of values, name of column provided in the :name
+            display_table(data.map { |i| { name => i } }, [name])
+          when :empty # no table
+            display_message(:info, special_format('empty'))
+            return
+          when :nothing # no result expected
+            Log.log.debug('no result expected')
+          when :status # no table
+            # :status displays a simple message
+            display_message(:info, data)
+          when :text # no table
+            # :status displays a simple message
+            display_message(:data, data)
+          when :other_struct # no table
+            # :other_struct is any other type of structure
+            display_message(:data, PP.pp(data, +''))
+          else
+            raise "unknown data type: #{type}"
+          end
+        else
+          raise "not expected: #{@options[:format]}"
+        end
+      end
+
+      # method accessed by option manager
+      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
+      def option_handler(option_symbol, operation, value=nil)
+        Aspera.assert_values(operation, %i[set get])
+        case operation
+        when :set
+          @options[option_symbol] = value
+          # special handling of some options
+          case option_symbol
+          when :output
+            $stdout = if value.eql?('-')
+              STDOUT # rubocop:disable Style/GlobalStdStream
+            else
+              File.open(value, 'w')
+            end
+          when :image
+            # get list if key arguments of method
+            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+            # check that only supported options are given
+            unknown_options = value.keys.map(&:to_sym) - allowed_options
+            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
+          end
+        when :get then return @options[option_symbol]
+        else Aspera.error_unreachable_line
+        end
+        nil
+      end
+      #==========================================================================================
+
+      private
+
       def all_fields(data)
         data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
+      end
+
+      # @return text suitable to display an image from url
+      def status_image(blob)
+        begin
+          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::RFC2396_PARSER.make_regexp}\z/)
+          # it's a url
+          url = blob
+          unless Environment.instance.url_method.eql?(:text)
+            Environment.instance.open_uri(url)
+            return ''
+          end
+          # remote_image = Rest.new(base_url: url).read('')
+          # mime = remote_image[:http]['content-type']
+          # blob = remote_image[:http].body
+          # Log.log.warn("Image ? #{remote_image[:http]['content-type']}") unless mime.include?('image/')
+          blob = UriReader.read(url)
+        rescue URI::InvalidURIError
+          nil
+        end
+        # try base64
+        begin
+          blob = Base64.strict_decode64(blob)
+        rescue
+          nil
+        end
+        return Preview::Terminal.build(blob, **@options[:image].symbolize_keys)
       end
 
       # @return the list of fields to display
@@ -319,9 +431,9 @@ module Aspera
         end
       end
 
-      # this method displays a table
-      # object_array: array of hash
-      # fields: list of column names
+      # displays a list of objects
+      # @param object_array  [Array] array of hash
+      # @param fields        [Array] list of column names
       def display_table(object_array, fields)
         Aspera.assert(!fields.nil?){'missing fields parameter'}
         filter_columns_on_select(object_array)
@@ -361,113 +473,6 @@ module Aspera
           end
         when :csv
           display_message(:data, final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
-        else
-          raise "not expected: #{@options[:format]}"
-        end
-      end
-
-      # @return text suitable to display an image from url
-      def status_image(blob)
-        begin
-          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::RFC2396_PARSER.make_regexp}\z/)
-          # it's a url
-          url = blob
-          unless Environment.instance.url_method.eql?(:text)
-            Environment.instance.open_uri(url)
-            return ''
-          end
-          # remote_image = Rest.new(base_url: url).read('')
-          # mime = remote_image[:http]['content-type']
-          # blob = remote_image[:http].body
-          # Log.log.warn("Image ? #{remote_image[:http]['content-type']}") unless mime.include?('image/')
-          blob = UriReader.read(url)
-        rescue URI::InvalidURIError
-          nil
-        end
-        # try base64
-        begin
-          blob = Base64.strict_decode64(blob)
-        rescue
-          nil
-        end
-        return Preview::Terminal.build(blob, **@options[:image].symbolize_keys)
-      end
-
-      # this method displays the results, especially the table format
-      # @param type [Symbol] type of data
-      # @param data [Object] data to display
-      # @param total [Integer] total number of items
-      # @param fields [Array<String>] list of fields to display
-      # @param name [String] name of the column to display
-      def display_results(type:, data: nil, total: nil, fields: nil, name: nil)
-        Log.log.debug{"display_results: #{type} class=#{data.class} data=#{data}"}
-        Aspera.assert_type(type, Symbol){'result must have type'}
-        Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
-        display_item_count(data.length, total) unless total.nil?
-        SecretHider.deep_remove_secret(data) unless @options[:show_secrets] || @options[:display].eql?(:data)
-        case @options[:format]
-        when :text
-          display_message(:data, data.to_s)
-        when :nagios
-          Nagios.process(data)
-        when :ruby
-          display_message(:data, PP.pp(filter_list_on_fields(data), +''))
-        when :json
-          display_message(:data, JSON.generate(filter_list_on_fields(data)))
-        when :jsonpp
-          display_message(:data, JSON.pretty_generate(filter_list_on_fields(data)))
-        when :yaml
-          display_message(:data, YAML.dump(filter_list_on_fields(data)))
-        when :image
-          # assume it is an url
-          url = data
-          case type
-          when :single_object, :object_list
-            url = [url] if type.eql?(:single_object)
-            raise 'image display requires a single result' unless url.length == 1
-            fields = compute_fields(url, fields)
-            raise 'select a field to display' unless fields.length == 1
-            url = url.first
-            raise 'no such field' unless url.key?(fields.first)
-            url = url[fields.first]
-          end
-          raise "not url: #{url.class} #{url}" unless url.is_a?(String)
-          display_message(:data, status_image(url))
-        when :table, :csv
-          case type
-          when :config_over
-            display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)
-          when :object_list, :single_object
-            obj_list = data
-            if type.eql?(:single_object)
-              obj_list = [obj_list]
-              @options[:multi_single] = :yes
-            end
-            Aspera.assert_type(obj_list, Array)
-            Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
-            # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{|obj|Flattener.new(self).flatten(obj)} if @options[:flat_hash]
-            display_table(obj_list, compute_fields(obj_list, fields))
-          when :value_list
-            # :value_list is a simple array of values, name of column provided in the :name
-            display_table(data.map { |i| { name => i } }, [name])
-          when :empty # no table
-            display_message(:info, special_format('empty'))
-            return
-          when :nothing # no result expected
-            Log.log.debug('no result expected')
-          when :status # no table
-            # :status displays a simple message
-            display_message(:info, data)
-          when :text # no table
-            # :status displays a simple message
-            display_message(:data, data)
-          when :other_struct # no table
-            # :other_struct is any other type of structure
-            display_message(:data, PP.pp(data, +''))
-          else
-            raise "unknown data type: #{type}"
-          end
         else
           raise "not expected: #{@options[:format]}"
         end
