@@ -4547,6 +4547,26 @@ It is possible to automatically download new packages, like using Aspera Cargo:
 
 Typically, one would execute this command on a regular basis, using the method of your choice: see [Scheduler](#scheduler).
 
+### Example: Content of a received Package
+
+Some `node` operations are available for a package, such as `browse` and `find`.
+
+To list the content of a package, use command `packages browse <package id> <folder>`:
+
+```bash
+<%=cmd%> aoc package browse my5CnbeWng /
+```
+
+To list recursively, use command `find`.
+
+To download only some of the files listed in the package, just add the path of the files on the command line.
+
+For advanced users, it's also possible to pipe node information for the package and use node operations:
+
+```bash
+<%=cmd%> aoc package node_info <package id here> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
+```
+
 ### Files
 
 The Files application presents a **Home** folder to users in a given workspace.
@@ -5603,7 +5623,7 @@ To list the content of a package, use command `faspex5 packages browse /`.
 
 Option `query` is available.
 
-To list recursively add option `--query=@json:{"recursive":true}`.
+To list recursively add option `--query=@json:'{"recursive":true}'`.
 
 > **Note:** Option `recursive` makes recursive API calls, so it can take a long time on large packages.
 

@@ -316,6 +316,9 @@ module Aspera
           # TODO: token_generation_lambda = lambda{|do_refresh|oauth.token(refresh: do_refresh)}
           # get bearer token, possibly use cache
           ak_token = oauth.token
+        when :none
+          ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
+          ak_token = params[:headers]['Authorization']
         else Aspera.error_unexpected_value(auth_params[:type])
         end
         transfer_spec = {

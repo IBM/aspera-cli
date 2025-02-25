@@ -805,6 +805,12 @@ module Aspera
               else
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end
+              file_list =
+                begin
+                  transfer.source_list.map{|i|{'source'=>i}}
+                rescue Cli::BadArgument
+                  [{'source' => '.'}]
+                end
               # list here
               result_transfer = []
               formatter.display_status("found #{ids_to_download.length} package(s).")
@@ -820,7 +826,7 @@ module Aspera
                   package_node_api.transfer_spec_gen4(
                     package_info['contents_file_id'],
                     Transfer::Spec::DIRECTION_RECEIVE,
-                    {'paths'=> [{'source' => '.'}]}),
+                    {'paths'=> file_list}),
                   rest_token: package_node_api)
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
@@ -848,7 +854,7 @@ module Aspera
             when *Node::NODE4_READ_ACTIONS
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
-              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['file_id'], scope: Api::Node::SCOPE_USER)
+              return execute_nodegen4_command(package_command, package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::SCOPE_USER)
             end
           when :files
             command_repo = options.get_next_command([:short_link].concat(NODE4_EXT_COMMANDS))

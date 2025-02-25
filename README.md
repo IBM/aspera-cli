@@ -3166,8 +3166,8 @@ Columns:
 | destination_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(&lt;ignored&gt;) |
 | dgram_size | int | Y | Y | Y | Y | Y | UDP datagram size in bytes<br/>(-Z {int}) |
 | direction | string | Y | Y | Y | Y | Y | Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode (conversion){enum}) |
-| exclude_newer_than | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | skip src files with mtime > arg<br/>(--exclude-newer-than {int}) |
-| exclude_older_than | int | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | skip src files with mtime < arg<br/>(--exclude-older-than {int}) |
+| exclude_newer_than | string | Y | Y | Y | Y | Y | Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch. e.g. "-86400" for newer than a day back.<br/>(--exclude-newer-than {string}) |
+| exclude_older_than | string | Y | Y | Y | Y | Y | Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch. e.g. "-86400" for older than a day back.<br/>(--exclude-older-than {string}) |
 | fasp_port | int | Y | Y | Y | Y | Y | Specifies fasp (UDP) port.<br/>(-O {int}) |
 | fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex.<br/>(&lt;ignored&gt;) |
 | file_checksum | string | Y | Y | &nbsp; | &nbsp; | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(&lt;ignored&gt;) |
@@ -5020,6 +5020,26 @@ ascli aoc packages recv ALL --once-only=yes --lock-port=12345
 
 Typically, one would execute this command on a regular basis, using the method of your choice: see [Scheduler](#scheduler).
 
+### Example: Content of a received Package
+
+Some `node` operations are available for a package, such as `browse` and `find`.
+
+To list the content of a package, use command `packages browse <package id> <folder>`:
+
+```bash
+ascli aoc package browse my5CnbeWng /
+```
+
+To list recursively, use command `find`.
+
+To download only some of the files listed in the package, just add the path of the files on the command line.
+
+For advanced users, it's also possible to pipe node information for the package and use node operations:
+
+```bash
+ascli aoc package node_info <package id here> / --format=json --show-secrets=yes --display=data | ascli node -N --preset=@json:@stdin: access_key do self browse /
+```
+
 ### Files
 
 The Files application presents a **Home** folder to users in a given workspace.
@@ -5273,13 +5293,14 @@ files v3 info
 gateway --pid-file=pid_aocfxgw https://localhost:12345/aspera/faspex &
 org --url=my_public_link_recv_from_aoc_user
 organization
-packages browse package_id3 /contents
+packages browse package_id3 /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
 packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
 packages receive package_id3 --to-folder=.
+packages receive package_id3 --to-folder=. /
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
@@ -6405,7 +6426,7 @@ To list the content of a package, use command `faspex5 packages browse /`.
 
 Option `query` is available.
 
-To list recursively add option `--query=@json:{"recursive":true}`.
+To list recursively add option `--query=@json:'{"recursive":true}'`.
 
 > **Note:** Option `recursive` makes recursive API calls, so it can take a long time on large packages.
 

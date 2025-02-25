@@ -964,7 +964,8 @@ $(T)aocp3: $(T)aoc_pack_send1
 	date;\
 	done
 	$(EXE_MAN) aoc packages receive $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP).
-	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /contents
+	$(EXE_MAN) aoc packages receive $$(cat $(DIR_TMP)package_id3) --to-folder=$(DIR_TMP). /
+	$(EXE_MAN) aoc packages browse $$(cat $(DIR_TMP)package_id3) /
 	@$(STOP_TEST) $@
 $(T)aocp4: $(T).exists
 	@$(START_TEST) $@

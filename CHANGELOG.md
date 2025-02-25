@@ -5,6 +5,7 @@
   * New Features:
     * `faspex5`: New command: `admin contact reset_password`
     * `config`: New command: `tokens` with `list`, `show`, `flush` (replace `flush_tokens`)
+    * `aoc`: #178 packages can be browsed, and individual files can be downloaded now.
   * Issues Fixed:
     * `config`: Soft links in transfer SDK archive are correctly extracted
     * `aoc`: Fix `packages delete` not working.
