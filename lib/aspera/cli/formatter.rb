@@ -196,6 +196,34 @@ module Aspera
         options.declare(:image, 'Options for image display', types: Hash, handler: {o: self, m: :option_handler}, default: {})
       end
 
+      # method accessed by option manager
+      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
+      def option_handler(option_symbol, operation, value=nil)
+        Aspera.assert_values(operation, %i[set get])
+        case operation
+        when :set
+          @options[option_symbol] = value
+          # special handling of some options
+          case option_symbol
+          when :output
+            $stdout = if value.eql?('-')
+              STDOUT # rubocop:disable Style/GlobalStdStream
+            else
+              File.open(value, 'w')
+            end
+          when :image
+            # get list if key arguments of method
+            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+            # check that only supported options are given
+            unknown_options = value.keys.map(&:to_sym) - allowed_options
+            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
+          end
+        when :get then return @options[option_symbol]
+        else Aspera.error_unreachable_line
+        end
+        nil
+      end
+
       # main output method
       # data: for requested data, not displayed if level==error
       # info: additional info, displayed if level==info
@@ -303,42 +331,8 @@ module Aspera
         end
       end
 
-      # method accessed by option manager
-      # options are: format, output, display, fields, select, table_style, flat_hash, multi_single
-      def option_handler(option_symbol, operation, value=nil)
-        Aspera.assert_values(operation, %i[set get])
-        case operation
-        when :set
-          @options[option_symbol] = value
-          # special handling of some options
-          case option_symbol
-          when :output
-            $stdout = if value.eql?('-')
-              STDOUT # rubocop:disable Style/GlobalStdStream
-            else
-              File.open(value, 'w')
-            end
-          when :image
-            # get list if key arguments of method
-            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
-            # check that only supported options are given
-            unknown_options = value.keys.map(&:to_sym) - allowed_options
-            raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
-          end
-        when :get then return @options[option_symbol]
-        else Aspera.error_unreachable_line
-        end
-        nil
-      end
-      #==========================================================================================
-
-      private
-
-      def all_fields(data)
-        data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
-      end
-
       # @return text suitable to display an image from url
+      # # can be used in
       def status_image(blob)
         begin
           raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::RFC2396_PARSER.make_regexp}\z/)
@@ -363,6 +357,13 @@ module Aspera
           nil
         end
         return Preview::Terminal.build(blob, **@options[:image].symbolize_keys)
+      end
+      #==========================================================================================
+
+      private
+
+      def all_fields(data)
+        data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
       end
 
       # @return the list of fields to display
