@@ -1038,7 +1038,8 @@ $(T)aoc_adm_nd_br: $(T).exists
 	@$(STOP_TEST) $@
 $(T)aoc_adm_nd_mkdir: $(T).exists
 	@$(START_TEST) $@
-	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1$(EXE_END_IGN)
+	$(EXE_IGN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret delete /folder1 --node-cache=no$(EXE_END_IGN)
+	sleep 4
 	$(EXE_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret mkdir /folder1
 	$(TEMPORIZE_CREATE)
 	$(EXE_NO_MAN) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name --secret=@preset:aoc.ak_secret browse / --node-cache=no
