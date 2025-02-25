@@ -102,17 +102,13 @@ direction:
       receive: recv
       send: send
 exclude_newer_than:
-  :desc: skip src files with mtime > arg
-  :accepted_types: :int
-  :agents:
-  - :direct
+  :desc: Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch. e.g. "-86400" for newer than a day back.
+  :accepted_types: :string
   :cli:
     :type: :opt_with_arg
 exclude_older_than:
-  :desc: skip src files with mtime < arg
-  :accepted_types: :int
-  :agents:
-  - :direct
+  :desc: Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch. e.g. "-86400" for older than a day back.
+  :accepted_types: :string
   :cli:
     :type: :opt_with_arg
 fasp_port:
