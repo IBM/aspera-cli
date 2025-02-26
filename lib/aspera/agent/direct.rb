@@ -298,14 +298,7 @@ module Aspera
       def send_command(job_id, data)
         session = @sessions.find{|session| session[:job_id].eql?(job_id)}
         Log.log.debug{"command: #{data}"}
-        # build command
-        command = data
-          .keys
-          .map{|k|"#{k.capitalize}: #{data[k]}"}
-          .unshift(MGT_HEADER)
-          .push('', '')
-          .join("\n")
-        session[:io].puts(command)
+        session[:io].puts(Ascp::Management.command_to_stream(data))
       end
 
       # options for initialize (same as values in option transfer_info)

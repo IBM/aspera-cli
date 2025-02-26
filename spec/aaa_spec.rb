@@ -39,12 +39,14 @@ describe 'environment' do
   it 'works for event' do
     event = {
       'Bytescont'         => '1',
+      'Elapsedusec'       => '10',
       'Encryption'        => 'Yes',
       'ExtraCreatePolicy' => 'none'
     }
     newevent = Aspera::Ascp::Management.enhanced_event_format(event)
     expect(newevent).to(eq({
-      'bytescont'           => 1,
+      'bytes_cont'          => 1,
+      'elapsed_usec'        => 10,
       'encryption'          => true,
       'extra_create_policy' => 'none'
     }))

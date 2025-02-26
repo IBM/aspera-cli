@@ -198,18 +198,39 @@ module Aspera
       BOOLEAN_FIELDS = %w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled
                           MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect].freeze
       BOOLEAN_TRUE = 'Yes'
+
+      private_constant :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE
       # cspell: enable
 
       class << self
         # translates mgt port event into (enhanced) typed event
         def enhanced_event_format(event)
           return event.keys.each_with_object({}) do |e, h|
-            new_name = e.capital_to_snake.gsub(/(usec)$/, '_\1').downcase
-            value = event[e]
-            value = value.to_i if INTEGER_FIELDS.include?(e)
-            value = value.eql?(BOOLEAN_TRUE) if BOOLEAN_FIELDS.include?(e)
-            h[new_name] = value
-          end
+                   new_name =
+                     case e
+                     when 'Elapsedusec' then 'elapsed_usec'
+                     when 'Bytescont' then 'bytes_cont'
+                     else e.capital_to_snake
+                     end
+                   h[new_name] =
+                     if INTEGER_FIELDS.include?(e) then event[e].to_i
+                     elsif BOOLEAN_FIELDS.include?(e) then event[e].eql?(BOOLEAN_TRUE)
+                     else
+                       event[e]
+                     end
+                 end
+        end
+
+        # build command to send on management port
+        # @param data [Hash] {'type'=>'START','source'=>_path_,'destination'=>_path_}
+        def command_to_stream(data)
+          # TODO: translate enhanced to capitalized ?
+          data
+            .keys
+            .map{|k|"#{k.capitalize}: #{data[k]}"}
+            .unshift(MGT_HEADER)
+            .push('', '')
+            .join("\n")
         end
       end
 
