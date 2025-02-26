@@ -5,7 +5,7 @@ Do not edit this README.md, edit docs/README.erb.md, for details, read docs/READ
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
-subtitle: "ascli 4.21.0"
+subtitle: "ascli 4.22.0.pre"
 PANDOC_META_END
 -->
 
@@ -15,7 +15,7 @@ PANDOC_META_END
 
 ## Introduction
 
-Version : 4.21.0
+Version : 4.22.0.pre
 
 Laurent/2016-2025
 
@@ -112,7 +112,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```console
 $ ascli --version
-4.21.0
+4.22.0.pre
 ```
 
 ### First use
@@ -486,7 +486,7 @@ gem install rmagick grpc mimemagic
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```bash
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -740,7 +740,7 @@ ascli -v
 ```
 
 ```text
-4.21.0
+4.22.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -3679,7 +3679,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.21.0)
+        ascli -- a command line tool for Aspera Applications (v4.22.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
