@@ -11,8 +11,6 @@ require 'aspera/transfer/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/assert'
-# set JRuby to test ssh warning remover
-JRUBY_VERSION = true
 require 'aspera/ssh'
 require 'aspera/log'
 require 'uri'
@@ -216,6 +214,9 @@ RSpec.describe(Aspera::AsCmd) do
 end
 RSpec.describe(Aspera::Ssh) do
   it 'catches error' do
-    demo_executor.execute('exit 1')
+    Aspera::Ssh.disable_ecd_sha2_algorithms
+    demo_executor.execute('foo')
+  rescue RuntimeError => e
+    expect(e.message).to(eq('foo: [Command not accepted: foo]'))
   end
 end

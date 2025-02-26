@@ -3,27 +3,28 @@
 require 'net/ssh'
 require 'aspera/assert'
 
-if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
-  # HACK: deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
-  old_verbose = $VERBOSE
-  $VERBOSE = nil
-  begin
-    module Net; module SSH; module Authentication; class Session; private; def default_keys; %w[~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa]; end; end; end; end; end # rubocop:disable Layout/AccessModifierIndentation, Layout/EmptyLinesAroundAccessModifier, Layout/LineLength, Style/Semicolon
-  rescue StandardError
-    # ignore errors
-  end
-  $VERBOSE = old_verbose
-end
-
-if defined?(JRUBY_VERSION) && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')
-  Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
-  Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
-end
-
 module Aspera
   # A simple wrapper around Net::SSH
   # executes one command and get its result from stdout
   class Ssh
+    class << self
+      def disable_ed25519_keys
+        old_verbose = $VERBOSE
+        $VERBOSE = nil
+        Net::SSH::Authentication::Session.class_eval do
+          define_method(:default_keys) do
+            %w[~/.ssh/id_dsa ~/.ssh/id_rsa ~/.ssh2/id_dsa ~/.ssh2/id_rsa].freeze
+          end
+          private(:default_keys)
+        end rescue nil
+        $VERBOSE = old_verbose
+      end
+
+      def disable_ecd_sha2_algorithms
+        Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
+        Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
+      end
+    end
     # ssh_options: same as Net::SSH.start
     # see: https://net-ssh.github.io/net-ssh/classes/Net/SSH.html#method-c-start
     def initialize(host, username, ssh_options)
@@ -66,3 +67,7 @@ module Aspera
     end
   end
 end
+
+# HACK: deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
+Aspera::Ssh.disable_ed25519_keys if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
+Aspera::Ssh.disable_ecd_sha2_algorithms if defined?(JRUBY_VERSION) && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')
