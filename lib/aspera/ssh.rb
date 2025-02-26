@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'net/ssh'
+require 'aspera/assert'
 
 if ENV.fetch('ASCLI_ENABLE_ED25519', 'false').eql?('false')
   # HACK: deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
@@ -28,6 +29,9 @@ module Aspera
     def initialize(host, username, ssh_options)
       Log.log.debug{"ssh:#{username}@#{host}"}
       Log.log.debug{"ssh_options:#{ssh_options}"}
+      Aspera.assert_type(host, String)
+      Aspera.assert_type(username, String)
+      Aspera.assert_type(ssh_options, Hash)
       @host = host
       @username = username
       @ssh_options = ssh_options
@@ -35,10 +39,7 @@ module Aspera
     end
 
     def execute(cmd, input=nil)
-      if cmd.is_a?(Array)
-        # concatenate arguments, enclose in double quotes
-        cmd = cmd.map{|v|%Q("#{v}")}.join(' ')
-      end
+      Aspera.assert_type(cmd, String)
       Log.log.debug{"cmd=#{cmd}"}
       response = []
       Net::SSH.start(@host, @username, @ssh_options) do |session|
@@ -49,9 +50,7 @@ module Aspera
           channel.on_extended_data do |_chan, _type, data|
             error_message = "#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
-            if data.include?('Could not chdir to home directory')
-              error_message += "\nHint: home not created in Windows?"
-            end
+            error_message += "\nHint: home not created in Windows?" if data.include?('Could not chdir to home directory')
             raise error_message
           end
           # send command to SSH channel (execute) cspell: disable-next-line

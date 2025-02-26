@@ -11,6 +11,8 @@ require 'aspera/transfer/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/assert'
+# set JRuby to test ssh warning remover
+JRUBY_VERSION = true
 require 'aspera/ssh'
 require 'aspera/log'
 require 'uri'
@@ -210,5 +212,10 @@ RSpec.describe(Aspera::AsCmd) do
         expect(e.message).to(eq('ascmd: No such file or directory (2)'))
       end
     end
+  end
+end
+RSpec.describe(Aspera::Ssh) do
+  it 'catches error' do
+    demo_executor.execute('exit 1')
   end
 end
