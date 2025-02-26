@@ -5,7 +5,7 @@ Do not edit this README.md, edit docs/README.erb.md, for details, read docs/READ
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
-subtitle: "ascli 4.21.0.pre"
+subtitle: "ascli 4.21.0"
 PANDOC_META_END
 -->
 
@@ -15,7 +15,7 @@ PANDOC_META_END
 
 ## Introduction
 
-Version : 4.21.0.pre
+Version : 4.21.0
 
 Laurent/2016-2025
 
@@ -112,7 +112,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```console
 $ ascli --version
-4.21.0.pre
+4.21.0
 ```
 
 ### First use
@@ -486,7 +486,7 @@ gem install rmagick grpc mimemagic
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```bash
-gem install aspera-cli --pre
+gem install aspera-cli
 ```
 
 To upgrade to the latest version:
@@ -740,7 +740,7 @@ ascli -v
 ```
 
 ```text
-4.21.0.pre
+4.21.0
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -3679,7 +3679,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=seque
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.21.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.21.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -5518,7 +5518,7 @@ upload --sources=@ts --transfer-info=@json:'{"ascp_args":["--file-pair-list","fi
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer=trsdk
 upload --src-type=pair 'test_file.bin' my_inside_folder/other_name_2 --notify-to=my_email_external --transfer-info=@json:'{"ascp_args":["-l","100m"]}'
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
-upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":1,"exclude_older_than":10000,"fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
+upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=12345 --transfer-info=@json:'{"ascp_args":["--remove-after-transfer","--remove-empty-directories","--exclude-newer-than=-8","--src-base","source_hot"]}' source_hot
 ```
 

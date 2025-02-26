@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.21.0.pre
+* 4.21.0
 
   * New Features:
     * `faspex5`: New command: `admin contact reset_password`

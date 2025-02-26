@@ -4,7 +4,7 @@ Do not edit this README.md, edit docs/README.erb.md, for details, read docs/READ
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
-subtitle: "ascli 4.21.0.pre"
+subtitle: "ascli 4.21.0"
 PANDOC_META_END
 -->
 <p><a href="https://badge.fury.io/rb/aspera-cli"><img
@@ -17,7 +17,7 @@ src="https://bestpractices.coreinfrastructure.org/projects/5861/badge"
 alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
-<p>Version : 4.21.0.pre</p>
+<p>Version : 4.21.0</p>
 <p>Laurent/2016-2025</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
@@ -136,7 +136,7 @@ use.</p>
 <p>Once the gem is installed, <code>ascli</code> shall be
 accessible:</p>
 <pre class="console"><code>$ ascli --version
-4.21.0.pre</code></pre>
+4.21.0</code></pre>
 <h2 data-number="2.1" id="first-use"><span
 class="header-section-number">2.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
@@ -462,7 +462,7 @@ class="header-section-number">3.2</span> Ruby Gem:
 <p>Once you have Ruby and rights to install gems, install the
 <code>aspera-cli</code> gem and its dependencies:</p>
 <div class="sourceCode" id="cb38"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli <span class="at">--pre</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install aspera-cli</span></code></pre></div>
 <p>To upgrade to the latest version:</p>
 <div class="sourceCode" id="cb39"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> update aspera-cli</span></code></pre></div>
@@ -700,7 +700,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a href=
 <p>Then, you can execute the container like a local command:</p>
 <div class="sourceCode" id="cb61"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
-<pre class="text"><code>4.21.0.pre</code></pre>
+<pre class="text"><code>4.21.0</code></pre>
 <p>In order to keep persistency of configuration on the host, you should
 specify your user’s configuration folder as a volume for the container.
 To enable write access, a possibility is to run as <code>root</code> in
@@ -5190,7 +5190,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb270-1"><a href
 class="header-section-number">4.28</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.21.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.21.0)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -7016,7 +7016,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb394-1"><a href
 <span id="cb394-28"><a href="#cb394-28" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>trsdk</span>
 <span id="cb394-29"><a href="#cb394-29" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;test_file.bin&#39;</span> my_inside_folder/other_name_2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
 <span id="cb394-30"><a href="#cb394-30" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;test_file.bin&quot;,&quot;my_inside_folder/other_name_3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;use_ascp4&quot;:true}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
-<span id="cb394-31"><a href="#cb394-31" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:1,&quot;exclude_older_than&quot;:10000,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
+<span id="cb394-31"><a href="#cb394-31" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:&quot;-1&quot;,&quot;exclude_older_than&quot;:&quot;-10000&quot;,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
 <span id="cb394-32"><a href="#cb394-32" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--remove-after-transfer&quot;,&quot;--remove-empty-directories&quot;,&quot;--exclude-newer-than=-8&quot;,&quot;--src-base&quot;,&quot;source_hot&quot;]}&#39;</span> source_hot</span></code></pre></div>
 <h2 data-number="7.2"
 id="authentication-on-server-with-ssh-session"><span
