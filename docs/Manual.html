@@ -3060,13 +3060,9 @@ Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg</code></pre>
 <h2 data-number="4.20" id="transfer-clients-agents"><span
 class="header-section-number">4.20</span> Transfer Clients: Agents</h2>
 <p>Some of the actions on Aspera Applications lead to file transfers
-(upload and download) using the FASP protocol (<code>ascp</code>).</p>
-<p>When a transfer needs to be started, a <a
-href="#transfer-specification"><strong>transfer-spec</strong></a> has
-been internally prepared. This <a
-href="#transfer-specification"><strong>transfer-spec</strong></a> will
-be executed by a transfer client, here called <strong>Transfer
-Agent</strong>.</p>
+(upload and download) using the FASP protocol (<code>ascp</code>).
+Transfers will be executed by a transfer client, here called
+<strong>Transfer Agent</strong>.</p>
 <p>The following agents are supported and selected with option
 <code>transfer</code>:</p>
 <ul>
@@ -3085,25 +3081,31 @@ Aspera HTTP Gateway (<strong>remote</strong>)</li>
 </ul>
 <blockquote>
 <p><strong>Note:</strong> All transfer operations are seen from the
-point of view of the agent. For example, a node agent executing an
+point of view of the agent. For example, an agent executing an
 <strong>upload</strong>, or <strong>package send</strong> operation will
-effectively push files to the related server from the agent node.</p>
+effectively push files to the related server from the system where the
+agent runs.</p>
 </blockquote>
-<p><code>ascli</code> standardizes on the use of a <a
-href="#transfer-specification"><strong>transfer-spec</strong></a>
-instead of <strong>native</strong> <code>ascp</code> options to provide
-parameters for a transfer session, as a common method for those three
-Transfer Agents.</p>
-<p>Specific options for agents are provided with option
-<code>transfer_info</code>, cumulatively.</p>
+<p>All of above agents (including <code>direct</code>) receive transfer
+parameters as a <a
+href="#transfer-specification"><strong>transfer-spec</strong></a>.
+Parameters in transfer-spec can be modified with option
+<code>ts</code>.</p>
+<p><strong>Specific</strong> options for agents are provided with option
+<code>transfer_info</code>.</p>
+<blockquote>
+<p><strong>Note:</strong> Parameters in <code>transfer_info</code> are
+specific for each agent type and are described in the agents respective
+sections.</p>
+</blockquote>
 <h3 data-number="4.20.1" id="agent-direct"><span
 class="header-section-number">4.20.1</span> Agent: Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
-<code>ascp</code>. This is the default agent for <code>ascli</code>
-(option <code>--transfer=direct</code>). <code>ascli</code> will search
-locally installed Aspera products, including SDK, and use
-<code>ascp</code> from that component. Refer to section <a
-href="#fasp-configuration">FASP</a>.</p>
+<code>ascp</code> in <code>ascli</code>. This is the default agent for
+<code>ascli</code> (option <code>--transfer=direct</code>).
+<code>ascli</code> will locally search installed Aspera products,
+including SDK, and use <code>ascp</code> from that component. Refer to
+section <a href="#fasp-configuration">FASP</a>.</p>
 <p>The <code>transfer_info</code> option accepts the following optional
 parameters to control multi-session, Web Socket Session, Resume policy
 and add any argument to <code>ascp</code>:</p>

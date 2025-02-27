@@ -2832,9 +2832,7 @@ Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg
 ### Transfer Clients: Agents
 
 Some of the actions on Aspera Applications lead to file transfers (upload and download) using the FASP protocol (`ascp`).
-
-When a transfer needs to be started, a [**transfer-spec**](#transfer-specification) has been internally prepared.
-This [**transfer-spec**](#transfer-specification) will be executed by a transfer client, here called **Transfer Agent**.
+Transfers will be executed by a transfer client, here called **Transfer Agent**.
 
 The following agents are supported and selected with option `transfer`:
 
@@ -2846,18 +2844,20 @@ The following agents are supported and selected with option `transfer`:
 - [`httpgw`](#agent-http-gateway) : use an Aspera HTTP Gateway (**remote**)
 
 > **Note:** All transfer operations are seen from the point of view of the agent.
-For example, a node agent executing an **upload**, or **package send** operation
-will effectively push files to the related server from the agent node.
+For example, an agent executing an **upload**, or **package send** operation will effectively push files to the related server from the system where the agent runs.
 
-`ascli` standardizes on the use of a [**transfer-spec**](#transfer-specification) instead of **native** `ascp` options to provide parameters for a transfer session, as a common method for those three Transfer Agents.
+All of above agents (including `direct`) receive transfer parameters as a [**transfer-spec**](#transfer-specification).
+Parameters in transfer-spec can be modified with option `ts`.
 
-Specific options for agents are provided with option `transfer_info`, cumulatively.
+**Specific** options for agents are provided with option `transfer_info`.
+
+> **Note:** Parameters in `transfer_info` are specific for each agent type and are described in the agents respective sections.
 
 #### Agent: Direct
 
-The `direct` agent directly executes a local `ascp`.
+The `direct` agent directly executes a local `ascp` in `ascli`.
 This is the default agent for `ascli` (option `--transfer=direct`).
-`ascli` will search locally installed Aspera products, including SDK, and use `ascp` from that component.
+`ascli` will locally search installed Aspera products, including SDK, and use `ascp` from that component.
 Refer to section [FASP](#fasp-configuration).
 
 The `transfer_info` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
