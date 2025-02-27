@@ -79,6 +79,8 @@ module Aspera
         new_title = @sessions.length < 2 ? @title.to_s : "[#{@sessions.length}] #{@title}"
         @progress_bar.title = new_title unless @progress_bar.title.eql?(new_title)
         @progress_bar.increment if !progress_provided && !@completed
+      rescue ProgressBar::InvalidProgressError => e
+        Log.log.error{"Progress error: #{e}"}
       end
 
       private

@@ -22,6 +22,7 @@
     * **global** : Column name for single object is now `field` instead of `key`.
     * **global** : Ruby minimum versions is now 2.7 (2.6 previously, that removes macOS default ruby support, but newer ruby version can be installed on macOS)
     * `node`: Removed deprecated command prefix `exec:`, use `@ruby:` instead.
+    * **global** : Now uses openssl 3.
 
 * 4.20.0
 

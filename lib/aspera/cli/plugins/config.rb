@@ -13,7 +13,6 @@ require 'aspera/products/trsdk'
 require 'aspera/transfer/error_info'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
-require 'aspera/keychain/encrypted_hash'
 require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
 require 'aspera/environment'
@@ -1274,6 +1273,8 @@ module Aspera
             info = vault_info
             case info[:type]
             when 'file'
+              # this module requires comilation, so it is optinal
+              require 'aspera/keychain/encrypted_hash'
               # absolute_path? introduced in ruby 2.7
               @vault = Keychain::EncryptedHash.new(
                 info[:name].eql?(File.absolute_path(info[:name])) ? info[:name] : File.join(@main_folder, info[:name]),
