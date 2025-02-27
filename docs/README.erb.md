@@ -461,11 +461,13 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 
 #### Optional gems
 
-Some additional gems can be installed to provide additional features:
+Some additional gems are required for some specific features, see [Gemfile.optional](Gemfile.optional):
 
 - `rmagick` : to generate thumbnails of images
 - `grpc` : to use the transfer SDK (gRPC)
 - `mimemagic` : to detect MIME type of files for `preview` command
+- `symmetric-encryption` for file-based vault
+- `bigdecimal` if RUBY_VERSION >= 3.4, for symmetric-encryption
 
 Install like this:
 

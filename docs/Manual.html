@@ -441,13 +441,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href=
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="va">JRUBY_OPTS</span><span class="op">=</span>--dev <span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
 <h3 data-number="3.1.8" id="optional-gems"><span
 class="header-section-number">3.1.8</span> Optional gems</h3>
-<p>Some additional gems can be installed to provide additional
-features:</p>
+<p>Some additional gems are required for some specific features, see <a
+href="Gemfile.optional">Gemfile.optional</a>:</p>
 <ul>
 <li><code>rmagick</code> : to generate thumbnails of images</li>
 <li><code>grpc</code> : to use the transfer SDK (gRPC)</li>
 <li><code>mimemagic</code> : to detect MIME type of files for
 <code>preview</code> command</li>
+<li><code>symmetric-encryption</code> for file-based vault</li>
+<li><code>bigdecimal</code> if RUBY_VERSION &gt;= 3.4, for
+symmetric-encryption</li>
 </ul>
 <p>Install like this:</p>
 <div class="sourceCode" id="cb37"><pre
