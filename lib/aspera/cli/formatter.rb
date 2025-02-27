@@ -335,7 +335,7 @@ module Aspera
       # # can be used in
       def status_image(blob)
         begin
-          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::RFC2396_PARSER.make_regexp}\z/)
+          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::DEFAULT_PARSER.make_regexp}\z/)
           # it's a url
           url = blob
           unless Environment.instance.url_method.eql?(:text)
