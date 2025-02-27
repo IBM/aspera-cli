@@ -322,8 +322,9 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 
 #### macOS: `brew`
 
-**macOS** comes with Ruby.
-Nevertheless, it is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future, so better not to rely on it.
+**macOS** comes with Ruby 2.6.
+It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future.
+Do not use it.
 
 The recommended way is to either use [Homebrew](https://brew.sh/) or [RVM](https://rvm.io/).
 
@@ -332,6 +333,12 @@ brew install ruby
 ```
 
 This installs a recent ruby suitable for `ascli`.
+
+If using `rvm`, one way to force use of openssl 3.0 is:
+
+```bash
+RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
+```
 
 #### Linux: Package
 
@@ -394,7 +401,7 @@ If you don't have root access, you can install Ruby in your home directory using
 curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 ```
 
-Then open a new terminal, or "source" the shell initialization script:
+Then open a new terminal, or `source` the shell initialization script:
 
 ```bash
 source ~/.bashrc
@@ -413,8 +420,7 @@ For example for AIX, one can look at:
 
 <https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#R>
 
-If your Unix does not provide a pre-built Ruby, you can get it using one of those
-[methods](https://www.ruby-lang.org/en/documentation/installation/).
+If your Unix does not provide a pre-built Ruby, you can get it using one of those [methods](https://www.ruby-lang.org/en/documentation/installation/).
 
 For instance to build from source and install in `/opt/ruby` :
 
