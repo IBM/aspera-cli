@@ -40,7 +40,7 @@ jobs:
           ASCLI_PASSWORD: "${{ secrets.CF_HSTS_SSH_PASS }}"
 
       - name: Run ascli install ascp
-        run: bundle exec ascli conf ascp install --log-level=debug
+        run: bundle exec ascli conf ascp install
 
       - name: Run ascli test transfer
         run: bundle exec ascli server upload --to-folder=/Upload 'faux:///test.${{ matrix.ruby }}?1k'
