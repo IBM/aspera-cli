@@ -1404,14 +1404,14 @@ $(T)conf_ascp_6: $(T).exists
 	$(EXE_MAN) config ascp connect version 'Aspera Connect for Windows' download 'Windows Installer' --to-folder=$(DIR_TMP).
 	$(EXE_MAN) config ascp connect version 'Aspera Connect for Windows' open documentation
 	@$(STOP_TEST) $@
-$(T)conf_ascp_7: $(T).exists
+$(T)conf_ascp_install: $(T).exists
 	@$(START_TEST) $@
 	rm -fr "$$($(EXE_NO_MAN) --show-config --fields=sdk_folder)"
 	$(EXE_MAN) config ascp install
 	rm -fr $(DIR_TMP)sdk_test_dir
 	$(EXE_MAN) config ascp install --sdk-folder=$(DIR_TMP)sdk_test_dir
 	@$(STOP_TEST) $@
-$(T)conf_ascp_8: $(T)conf_ascp_7
+$(T)conf_ascp_8: $(T)conf_ascp_install
 	@$(START_TEST) $@
 	$(EXE_MAN) config ascp info --sdk-folder=$(DIR_TMP)sdk_test_dir
 	@$(STOP_TEST) $@
@@ -1620,7 +1620,7 @@ $(T)conf_logger: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config file --logger=syslog --log-level=debug
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_7 $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint $(T)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_install $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_vault $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint $(T)conf_logger))
 #######################################################################################################################
 $(T)prev_check: $(T).exists
 	@$(START_TEST) $@

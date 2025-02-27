@@ -5,6 +5,7 @@ require 'aspera/environment'
 require 'aspera/data_repository'
 require 'aspera/log'
 require 'aspera/rest'
+require 'aspera/uri_reader'
 require 'aspera/assert'
 require 'aspera/web_server_simple'
 require 'aspera/cli/info'
@@ -55,6 +56,12 @@ module Aspera
       private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
+
+      class << self
+        def transfer_sdk_location_url
+          ENV.fetch('ASCLI_TRANSFER_SDK_LOCATION_URL', TRANSFER_SDK_LOCATION_URL)
+        end
+      end
 
       # set ascp executable path
       def ascp_path=(v)
@@ -228,7 +235,7 @@ module Aspera
       def ascp_info
         ascp_data = file_paths
         ascp_data.merge!(ascp_pvcl_info)
-        ascp_data['sdk_locations'] = TRANSFER_SDK_LOCATION_URL
+        ascp_data['sdk_locations'] = self.class.transfer_sdk_location_url
         ascp_data.merge!(ascp_ssl_info)
         return ascp_data
       end
@@ -236,15 +243,14 @@ module Aspera
       # Loads YAML from cloud with locations of SDK archives for all platforms
       # @return location structure
       def sdk_locations
-        yaml_text = Aspera::Rest.new(
-          base_url: TRANSFER_SDK_LOCATION_URL,
-          redirect_max: 3).call(
-            operation: 'GET',
-            headers: {
-              'Referer' => "http://version.#{Cli::VERSION}"
-            }
-          )[:data]
-        YAML.load(yaml_text)
+        location_url = self.class.transfer_sdk_location_url
+        transferd_locations = UriReader.read(location_url)
+        Log.log.debug{"Retrieving SDK locations from #{location_url}"}
+        begin
+          return YAML.load(transferd_locations)
+        rescue Psych::SyntaxError
+          raise "Error when parsing yaml data from: #{location_url}"
+        end
       end
 
       # @return the url for download of SDK archive for the given platform and version

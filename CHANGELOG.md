@@ -1,7 +1,9 @@
 # Changes (Release notes)
 
 * 4.22.0.pre
-  * 
+
+  * Issues Fixed:
+    * `config`: #180 problem in `ascp install`
   
 * 4.21.0
 
