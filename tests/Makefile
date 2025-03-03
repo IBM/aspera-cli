@@ -503,11 +503,12 @@ $(T)f4_db1: $(T).exists
 	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_db_id1) --recipient=@extend:"*@preset:faspex4.dbx@" --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex dropbox list --recipient=@extend:"*@preset:faspex4.dbx@"
 	$(EXE_MAN) faspex package send --delivery-info=@json:@extend:'{"title":"$(notdir $@) $(PACKAGE_TITLE_BASE)","recipients":["*@preset:faspex4.wkg@"]}' $(TST_ASC_LCL_PATH)
+	sleep 10
 	$(EXE_MAN) faspex package list --recipient=@extend:"*@preset:faspex4.wkg@" --format=csv --fields=package_id --query=@json:'{"max":1}' --output=$(DIR_TMP)f4_db_id2
 	$(EXE_MAN) faspex package receive $$(cat $(DIR_TMP)f4_db_id2) --recipient=@extend:"*@preset:faspex4.wkg@" --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 NOT_TESTED=$(T)f4_nagios $(T)f4_nagios_fail $(T)f4_detect $(T)f4_wizard $(T)f4_pack_list $(T)f4_pack_send $(T)f4_prs $(T)f4_pri $(T)f4_pslu $(T)f4_psld $(T)f4_remote_src $(T)f4_prall $(T)f4_misc $(T)f4_v4 $(T)f4_db1 $(T)f4_prl
-$(eval $(call test_suite_all,tfaspex,))
+$(eval $(call test_suite_all,tfaspex4,$(NOT_TESTED)))
 #######################################################################################################################
 $(T)cons_nagios: $(T).exists
 	@$(START_TEST) $@

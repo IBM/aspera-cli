@@ -6,18 +6,17 @@ require 'spec_helper'
 project_top_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
 gem_lib_folder = File.join(project_top_folder, 'lib')
 $LOAD_PATH.unshift(gem_lib_folder)
+require 'aspera/log'
+# Aspera::Log.instance.level = :debug
+# Aspera::Log.instance.logger_type = :stderr
 require 'aspera/coverage'
 require 'aspera/transfer/uri'
 require 'aspera/cli/main'
 require 'aspera/ascmd'
 require 'aspera/assert'
 require 'aspera/ssh'
-require 'aspera/log'
 require 'uri'
 require 'openssl'
-
-# Aspera::Log.instance.level=:debug
-# Aspera::Log.instance.logger_type=:stderr
 
 class LocalExecutor
   def execute(cmd, line)

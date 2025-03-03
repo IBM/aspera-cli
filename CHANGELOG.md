@@ -4,7 +4,9 @@
 
   * Issues Fixed:
     * `config`: #180 problem in `ascp install`
-  
+  * Breaking Changes:
+    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Recommended is 3.4, and future minimum is 3.2.
+
 * 4.21.0
 
   * New Features:

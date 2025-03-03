@@ -220,8 +220,6 @@ A package with pre-installed Ruby, gem and ascp may also be provided.
 
 ### Ruby
 
-Use this method to install on the native host (e.g. your Windows, macOS or Linux system).
-
 A Ruby interpreter is required to run <%=tool%>.
 
 Required Ruby <%=ruby_version%>.
@@ -235,64 +233,8 @@ Required Ruby <%=ruby_version%>.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-#### Unix-like: RVM: Single user installation (not root)
-
-Install `rvm`.
-Follow [https://rvm.io/](https://rvm.io/).
-
-Execute the shell/curl command.
-As regular user, it installs in the user's home: `~/.rvm` .
-
-```bash
-\curl -sSL https://get.rvm.io | bash -s stable
-```
-
-Follow on-screen instructions to install keys, and then re-execute the command.
-
-Upon RVM installation, open a new terminal or initialize with:
-
-```bash
-source ~/.rvm/scripts/rvm
-```
-
-It is advised to get one of the pre-compiled Ruby version, you can list with:
-
-```bash
-rvm list --remote
-```
-
-Install the chosen pre-compiled Ruby version:
-
-```bash
-rvm install 3.2.2
-```
-
-Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli). <!-- markdownlint-disable-line -->
-
-Alternatively RVM can be installed system-wide, for this execute as `root`.
-It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
-One can install in another location with:
-
-```bash
-curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
-```
-
-As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
-If so, one can rename the environment script so that it is not loaded by default:
-
-```bash
-mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
-```
-
-To activate Ruby (and <%=cmd%>) later, source it:
-
-```bash
-source /etc/profile.d/rvm.sh.ok
-```
-
-```bash
-rvm version
-```
+Latest version of <%=tool%> requires a ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+If an older Ruby version is needed, then use an older version of <%=tool%> that supports it.
 
 #### Windows: Installer
 
@@ -385,6 +327,65 @@ One can remove all installed gems, for example to start fresh:
 
 ```bash
 gem uninstall -axI $(ls $(gem env gemdir)/gems/|sed -e 's/-[^-]*$//'|sort -u)
+```
+
+#### Unix-like: RVM: Single user installation (not root)
+
+Install `rvm`.
+Follow [https://rvm.io/](https://rvm.io/).
+
+Execute the shell/curl command.
+As regular user, it installs in the user's home: `~/.rvm` .
+
+```bash
+\curl -sSL https://get.rvm.io | bash -s stable
+```
+
+Follow on-screen instructions to install keys, and then re-execute the command.
+
+Upon RVM installation, open a new terminal or initialize with:
+
+```bash
+source ~/.rvm/scripts/rvm
+```
+
+It is advised to get one of the pre-compiled Ruby version, you can list with:
+
+```bash
+rvm list --remote
+```
+
+Install the chosen pre-compiled Ruby version:
+
+```bash
+rvm install 3.2.2
+```
+
+Ruby is now installed for the user, go to [Gem installation](#ruby-gem-aspera-cli). <!-- markdownlint-disable-line -->
+
+Alternatively RVM can be installed system-wide, for this execute as `root`.
+It then installs by default in `/usr/local/rvm` for all users and creates `/etc/profile.d/rvm.sh`.
+One can install in another location with:
+
+```bash
+curl -sSL https://get.rvm.io | bash -s -- --path /usr/local
+```
+
+As root, make sure this will not collide with other application using Ruby (e.g. Faspex).
+If so, one can rename the environment script so that it is not loaded by default:
+
+```bash
+mv /etc/profile.d/rvm.sh /etc/profile.d/rvm.sh.ok
+```
+
+To activate Ruby (and <%=cmd%>) later, source it:
+
+```bash
+source /etc/profile.d/rvm.sh.ok
+```
+
+```bash
+rvm version
 ```
 
 #### Linux as simple user
@@ -5755,13 +5756,13 @@ Private invitations are for internal users, provide the user or shared inbox ide
 
 > **Note:** Operation requires admin level.
 
-Automated cleanup period can be displayed with:
+The default automated cleanup period can be displayed with:
 
 ```bash
 <%=cmd%> faspex5 admin configuration show --fields=days_before_deleting_package_records
 ```
 
-This parameter can also be modified, for example:
+This parameter can be modified with:
 
 ```bash
 <%=cmd%> faspex5 admin configuration modify @json:'{"days_before_deleting_package_records":30}'
@@ -5773,6 +5774,8 @@ To start package purge, i.e. permanently remove packages marked for deletion old
 <%=cmd%> faspex5 admin clean_deleted
 ```
 
+> **Note:** The expiration perid taken by default is the one from `admin configuration show`. To use a different period than the default, specify it on command line with: `@json:'{"days_before_deleting_package_records":15}'`
+
 To delete all packages, one can use the following command:
 
 ```bash
@@ -5780,7 +5783,7 @@ To delete all packages, one can use the following command:
 ```
 
 > **Note:** Above command will mark all packages for deletion, and will be permanently removed after the configured period (`clean_deleted` command).
-> It is possible to add a filter to the list command to only delete packages matching some criteria, e.g. using `--select=@ruby:`.
+> It is possible to add a filter to the list command to only delete packages matching some criteria, e.g. using `--select=@ruby:'->(p){...}'` on `packages list`.
 
 ### Faspex 5: Admin: Unlock user
 
