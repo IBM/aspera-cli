@@ -662,7 +662,8 @@ module Aspera
           when *ADMIN_RESOURCES
             return execute_resource(command)
           when :clean_deleted
-            delete_data = value_create_modify(command: command, default: {days_before_deleting_package_records: 365})
+            delete_data = value_create_modify(command: command, default: {})
+            delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
             res = @api_v5.create('internal/packages/clean_deleted', delete_data)
             return {type: :single_object, data: res}
           when :events
