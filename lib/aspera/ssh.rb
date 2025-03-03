@@ -2,6 +2,7 @@
 
 require 'net/ssh'
 require 'aspera/assert'
+require 'aspera/log'
 
 module Aspera
   # A simple wrapper around Net::SSH
@@ -9,6 +10,7 @@ module Aspera
   class Ssh
     class << self
       def disable_ed25519_keys
+        Log.log.debug('Disabling SSH ed25519 user keys')
         old_verbose = $VERBOSE
         $VERBOSE = nil
         Net::SSH::Authentication::Session.class_eval do
@@ -21,6 +23,7 @@ module Aspera
       end
 
       def disable_ecd_sha2_algorithms
+        Log.log.debug('Disabling SSH ecdsa')
         Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
         Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
       end
