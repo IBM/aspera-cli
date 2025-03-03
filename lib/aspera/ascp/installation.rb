@@ -304,8 +304,8 @@ module Aspera
       # @param with_exe [Bool]
       # @param &block   [Proc] a lambda that receives a file path from archive and tells detination sub folder, or nil to not extract
       # @return ascp version (from execution)
-      def install_sdk(url: nil, folder: nil, backup: true, with_exe: true, &block)
-        url = sdk_url_for_platform if url.nil? || url.eql?('DEF')
+      def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
+        url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')
         folder = Products::Trsdk.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?

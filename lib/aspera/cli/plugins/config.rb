@@ -729,7 +729,8 @@ module Aspera
           when :install
             # reset to default location, if older default was used
             Products::Trsdk.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
-            n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true))
+            version = options.get_next_argument("transferd version", mandatory: false)
+            n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
             return {
