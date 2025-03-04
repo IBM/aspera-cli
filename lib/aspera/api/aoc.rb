@@ -447,13 +447,12 @@ module Aspera
         case pkg_data['metadata']
         when Array, NilClass # no action
         when Hash
-          api_meta = []
-          pkg_data['metadata'].each do |k, v|
-            api_meta.push({
+          api_meta = pkg_data['metadata'].map do |k, v|
+            {
               # 'input_type' => 'single-dropdown',
               'name'   => k,
               'values' => v.is_a?(Array) ? v : [v]
-            })
+            }
           end
           pkg_data['metadata'] = api_meta
         else Aspera.error_unexpected_value(pkg_meta.class)

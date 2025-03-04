@@ -414,7 +414,7 @@ module Aspera
         return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])
         return data.map{|i|i[selected_fields.first]} if selected_fields.length == 1
-        return data.map{|i|i.select{|k, _|selected_fields.include?(k)}}
+        return data.map{|i|i.slice(*selected_fields)}
       end
 
       # filter the list of items on the select option

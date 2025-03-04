@@ -7,7 +7,7 @@ require 'aspera/assert'
 module Aspera
   # Persist data on file system
   class PersistencyActionOnce
-    DELETE_DEFAULT = lambda{|d|d.empty?}
+    DELETE_DEFAULT = lambda(&:empty?)
     PARSE_DEFAULT = lambda {|t| JSON.parse(t)}
     FORMAT_DEFAULT = lambda {|h| JSON.generate(h)}
     MERGE_DEFAULT = lambda {|current, file| current.concat(file).uniq rescue current}
