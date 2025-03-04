@@ -44,8 +44,8 @@ module Aspera
           when 'lockpolicy'  then result_ts['lock_rate_policy'] = CommandLineBuilder.yes_to_true(value)
           when 'lockminrate' then result_ts['lock_min_rate'] = CommandLineBuilder.yes_to_true(value)
           when 'auth'        then Log.log.debug{"ignoring #{name}=#{value}"} # Not used (yes/no)
-          when 'v'           then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch Not used (shall be 2)
-          when 'protect'     then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch TODO: what is this ?
+          when 'v'           then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch -- Not used (shall be 2)
+          when 'protect'     then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch -- TODO: what is this ?
           else                    Log.log.warn{"URI parameter ignored: #{name} = #{value}"}
           end
         end
