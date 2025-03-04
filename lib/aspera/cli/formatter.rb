@@ -332,20 +332,16 @@ module Aspera
       end
 
       # @return text suitable to display an image from url
-      # # can be used in
+      # @param blob [String] either a URL or image data
       def status_image(blob)
+        # check if URL
         begin
-          raise URI::InvalidURIError, 'not uri' if !(blob =~ /\A#{URI::DEFAULT_PARSER.make_regexp}\z/)
-          # it's a url
+          URI.parse(blob)
           url = blob
           unless Environment.instance.url_method.eql?(:text)
             Environment.instance.open_uri(url)
             return ''
           end
-          # remote_image = Rest.new(base_url: url).read('')
-          # mime = remote_image[:http]['content-type']
-          # blob = remote_image[:http].body
-          # Log.log.warn("Image ? #{remote_image[:http]['content-type']}") unless mime.include?('image/')
           blob = UriReader.read(url)
         rescue URI::InvalidURIError
           nil
