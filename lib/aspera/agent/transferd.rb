@@ -40,9 +40,9 @@ module Aspera
           # no address: local bind
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
           # Create stub (without credentials)
-          @transfer_client = Transfersdk::TransferService::Stub.new(daemon_endpoint, :this_channel_is_insecure)
+          @transfer_client = ::Transferd::Api::TransferService::Stub.new(daemon_endpoint, :this_channel_is_insecure)
           # Initiate actual connection
-          get_info_response = @transfer_client.get_info(Transfersdk::InstanceInfoRequest.new)
+          get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
           Log.log.debug{"Daemon info: #{get_info_response}"}
           Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || external || @keep
           at_exit{shutdown}
@@ -97,9 +97,9 @@ module Aspera
 
       def start_transfer(transfer_spec, token_regenerator: nil)
         # create a transfer request
-        transfer_request = Transfersdk::TransferRequest.new(
-          transferType: Transfersdk::TransferType::FILE_REGULAR, # transfer type (file/stream)
-          config: Transfersdk::TransferConfig.new, # transfer configuration
+        transfer_request = ::Transferd::Api::TransferRequest.new(
+          transferType: ::Transferd::Api::TransferType::FILE_REGULAR, # transfer type (file/stream)
+          config: ::Transferd::Api::TransferConfig.new, # transfer configuration
           transferSpec: transfer_spec.to_json) # transfer definition
         # send start transfer request to the transfer manager daemon
         start_transfer_response = @transfer_client.start_transfer(transfer_request)
@@ -113,7 +113,7 @@ module Aspera
         session_started = false
         bytes_expected = nil
         # monitor transfer status
-        @transfer_client.monitor_transfers(Transfersdk::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
+        @transfer_client.monitor_transfers(::Transferd::Api::RegistrationRequest.new(transferId: [@transfer_id])) do |response|
           Log.log.debug{Log.dump(:response, response.to_h)}
           # Log.log.debug{"#{response.sessionInfo.preTransferBytes} #{response.transferInfo.bytesTransferred}"}
           case response.status

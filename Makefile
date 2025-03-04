@@ -170,4 +170,8 @@ GRPC_DEST=$(DIR_LIB)
 grpc:
 	mkdir -p $(PROTOS)
 	$(DIR_TOP)examples/get_proto_file.rb $(PROTOS)
-	grpc_tools_ruby_protoc -I $(PROTOS) --ruby_out=$(GRPC_DEST) --grpc_out=$(GRPC_DEST) $(PROTOS)transfer.proto
+	grpc_tools_ruby_protoc\
+	  --proto_path=$(PROTOS)\
+	  --ruby_out=$(GRPC_DEST)\
+	  --grpc_out=$(GRPC_DEST)\
+	  $(PROTOS)transferd.proto
