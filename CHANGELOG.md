@@ -6,6 +6,7 @@
     * `config`: #180 problem in `ascp install`
   * Breaking Changes:
     * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Recommended is 3.4, and future minimum is 3.2.
+    * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. `trsdk` renamed `transferd`
 
 * 4.21.0
 

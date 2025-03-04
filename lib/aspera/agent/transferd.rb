@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/base'
-require 'aspera/products/trsdk'
+require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
 require 'json'
 require 'uri'
-require 'transfer_services_pb'
+require 'transferd-api'
 
 module Aspera
   module Agent
-    class Trsdk < Base
+    class Transferd < Base
       # see https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'
@@ -62,8 +62,8 @@ module Aspera
             fasp_runtime: {
               use_embedded: false,
               user_defined: {
-                bin: Products::Trsdk.sdk_directory,
-                etc: Products::Trsdk.sdk_directory
+                bin: Products::Transferd.sdk_directory,
+                etc: Products::Transferd.sdk_directory
               }
             }
           }
@@ -89,7 +89,7 @@ module Aspera
           Process.detach(@daemon_pid) if @keep
           at_exit {shutdown}
           # update port for next connection attempt (if auto high port was requested)
-          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Trsdk.daemon_port_from_log(log_stdout)}" if is_local_auto_port
+          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
           # local daemon started, try again
           retry
         end

@@ -6,7 +6,7 @@ Kernel.load(File.join(gem_lib_folder, 'aspera/coverage.rb'))
 $LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/agent/direct'
 require 'aspera/cli/extended_value'
-require 'aspera/products/trsdk'
+require 'aspera/products/transferd'
 require 'aspera/log'
 require 'json'
 # extended transfer spec parameter (only used in asession)
@@ -77,7 +77,7 @@ if session_spec.key?(PARAM_TMP_FILE_LIST_FOLDER)
   Aspera::Transfer::Parameters.file_list_folder = session_spec[PARAM_TMP_FILE_LIST_FOLDER]
 end
 session_spec[PARAM_SDK] = File.join(Dir.home, '.aspera', 'sdk') unless session_spec.key?(PARAM_SDK)
-Aspera::Products::Trsdk.sdk_directory = session_spec[PARAM_SDK]
+Aspera::Products::Transferd.sdk_directory = session_spec[PARAM_SDK]
 session_spec[PARAM_AGENT] = {} unless session_spec.key?(PARAM_AGENT)
 agent_params = session_spec[PARAM_AGENT]
 agent_params['quiet'] = true

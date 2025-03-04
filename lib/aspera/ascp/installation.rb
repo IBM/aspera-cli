@@ -12,7 +12,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/version'
 require 'aspera/products/alpha'
 require 'aspera/products/connect'
-require 'aspera/products/trsdk'
+require 'aspera/products/transferd'
 require 'aspera/products/other'
 require 'English'
 require 'singleton'
@@ -77,7 +77,7 @@ module Aspera
 
       # Compatibility
       def sdk_folder=(v)
-        Products::Trsdk.sdk_directory = v
+        Products::Transferd.sdk_directory = v
       end
 
       # find ascp in named product (use value : FIRST_FOUND='FIRST' to just use first one)
@@ -109,7 +109,7 @@ module Aspera
       end
 
       def check_or_create_sdk_file(filename, force: false, &block)
-        return Environment.write_file_restricted(File.join(Products::Trsdk.sdk_directory, filename), force: force, mode: 0o644, &block)
+        return Environment.write_file_restricted(File.join(Products::Transferd.sdk_directory, filename), force: force, mode: 0o644, &block)
       end
 
       # get path of one resource file of currently activated product
@@ -124,7 +124,7 @@ module Aspera
           file = @path_to_ascp.gsub('ascp', k.to_s)
         when :transferd
           file_is_optional = true
-          file = Products::Trsdk.transferd_path
+          file = Products::Transferd.transferd_path
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
@@ -134,8 +134,8 @@ module Aspera
         when :aspera_conf
           file = check_or_create_sdk_file('aspera.conf') {DEFAULT_ASPERA_CONF}
         when :fallback_certificate, :fallback_private_key
-          file_key = File.join(Products::Trsdk.sdk_directory, 'aspera_fallback_cert_private_key.pem')
-          file_cert = File.join(Products::Trsdk.sdk_directory, 'aspera_fallback_cert.pem')
+          file_key = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert_private_key.pem')
+          file_cert = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert.pem')
           if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
@@ -308,7 +308,7 @@ module Aspera
       # @return ascp version (from execution)
       def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')
-        folder = Products::Trsdk.sdk_directory if folder.nil?
+        folder = Products::Transferd.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?
           subfolder_lambda = ->(name) do
@@ -360,7 +360,7 @@ module Aspera
           Environment.restrict_file_access(exe_path, mode: 0o755) if File.exist?(exe_path)
         end
         sdk_ascp_version = get_ascp_version(sdk_ascp_path)
-        sdk_daemon_path = Products::Trsdk.transferd_path
+        sdk_daemon_path = Products::Transferd.transferd_path
         Log.log.warn{"No #{sdk_daemon_path} in SDK archive"} unless File.exist?(sdk_daemon_path)
         Environment.restrict_file_access(sdk_daemon_path, mode: 0o755) if File.exist?(sdk_daemon_path)
         transferd_version = get_exe_version(sdk_daemon_path, 'version')
@@ -391,7 +391,7 @@ module Aspera
           # :log_root  O location of log files (Linux uses syslog)
           # :run_root  O only for Connect Client, location of http port file
           # :sub_bin   O subfolder with executables, default : bin
-          scan_locations = Products::Trsdk.locations.concat(
+          scan_locations = Products::Transferd.locations.concat(
             Products::Alpha.locations,
             Products::Connect.locations,
             Products::Other::LOCATION_ON_THIS_OS

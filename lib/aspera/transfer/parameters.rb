@@ -8,6 +8,7 @@ require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
 require 'aspera/ascp/installation'
 require 'aspera/cli/formatter'
+require 'aspera/agent/base'
 require 'aspera/rest'
 require 'securerandom'
 require 'base64'
@@ -20,7 +21,7 @@ module Aspera
     # translate transfer specification to ascp parameter list
     class Parameters
       # Agents shown in manual for parameters (sub list)
-      SUPPORTED_AGENTS = %i[direct node connect trsdk httpgw].freeze
+      SUPPORTED_AGENTS = Agent::Base.agent_list.freeze
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|agent_sym|agent_sym.to_s[0].to_sym}

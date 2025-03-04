@@ -2745,12 +2745,14 @@ Transfers will be executed by a transfer client, here called **Transfer Agent**.
 
 The following agents are supported and selected with option `transfer`:
 
-- [`direct`](#agent-direct) : direct execution of `ascp` (local)
-- [`trsdk`](#agent-transfer-sdk) : use of Aspera Transfer SDK (local)
-- [`connect`](#agent-connect-client) : use Connect Client (local)
-- [`alpha`](#agent-desktop-client) : use the new Desktop Client (local)
-- [`node`](#agent-node-api) : use an Aspera Transfer Node (**remote**).
-- [`httpgw`](#agent-http-gateway) : use an Aspera HTTP Gateway (**remote**)
+| `transfer`                         | location | Description of agent          |
+|------------------------------------|----------|-------------------------------|
+| [`direct`](#agent-direct)          | local    | direct execution of `ascp`    |
+| [`transferd`](#agent-transfer-sdk) | local    | Aspera Transfer Daemon        |
+| [`connect`](#agent-connect-client) | local    | Aspera Connect Client         |
+| [`alpha`](#agent-desktop-client)   | local    | Aspera for Desktop            |
+| [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
+| [`httpgw`](#agent-http-gateway)    | remote   | Aspera HTTP Gateway           |
 
 > **Note:** All transfer operations are seen from the point of view of the agent.
 For example, an agent executing an **upload**, or **package send** operation will effectively push files to the related server from the system where the agent runs.
@@ -2969,7 +2971,7 @@ If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway,
 #### Agent: Transfer SDK
 
 Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
-Set option `transfer` to `trsdk`.
+Set option `transfer` to `transferd`.
 
 Options for `transfer_info` are:
 

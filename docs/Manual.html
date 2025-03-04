@@ -3071,20 +3071,52 @@ Transfers will be executed by a transfer client, here called
 <strong>Transfer Agent</strong>.</p>
 <p>The following agents are supported and selected with option
 <code>transfer</code>:</p>
-<ul>
-<li><a href="#agent-direct"><code>direct</code></a> : direct execution
-of <code>ascp</code> (local)</li>
-<li><a href="#agent-transfer-sdk"><code>trsdk</code></a> : use of Aspera
-Transfer SDK (local)</li>
-<li><a href="#agent-connect-client"><code>connect</code></a> : use
-Connect Client (local)</li>
-<li><a href="#agent-desktop-client"><code>alpha</code></a> : use the new
-Desktop Client (local)</li>
-<li><a href="#agent-node-api"><code>node</code></a> : use an Aspera
-Transfer Node (<strong>remote</strong>).</li>
-<li><a href="#agent-http-gateway"><code>httpgw</code></a> : use an
-Aspera HTTP Gateway (<strong>remote</strong>)</li>
-</ul>
+<table>
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 12%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th><code>transfer</code></th>
+<th>location</th>
+<th>Description of agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#agent-direct"><code>direct</code></a></td>
+<td>local</td>
+<td>direct execution of <code>ascp</code></td>
+</tr>
+<tr>
+<td><a href="#agent-transfer-sdk"><code>transferd</code></a></td>
+<td>local</td>
+<td>Aspera Transfer Daemon</td>
+</tr>
+<tr>
+<td><a href="#agent-connect-client"><code>connect</code></a></td>
+<td>local</td>
+<td>Aspera Connect Client</td>
+</tr>
+<tr>
+<td><a href="#agent-desktop-client"><code>alpha</code></a></td>
+<td>local</td>
+<td>Aspera for Desktop</td>
+</tr>
+<tr>
+<td><a href="#agent-node-api"><code>node</code></a></td>
+<td>remote</td>
+<td>Aspera Transfer Node</td>
+</tr>
+<tr>
+<td><a href="#agent-http-gateway"><code>httpgw</code></a></td>
+<td>remote</td>
+<td>Aspera HTTP Gateway</td>
+</tr>
+</tbody>
+</table>
 <blockquote>
 <p><strong>Note:</strong> All transfer operations are seen from the
 point of view of the agent. For example, an agent executing an
@@ -3461,7 +3493,7 @@ URL if <code>--transfer=httpgw</code> is specified, so
 class="header-section-number">4.20.6</span> Agent: Transfer SDK</h3>
 <p>Another possibility is to use the Transfer SDK daemon
 (<code>asperatransferd</code>). Set option <code>transfer</code> to
-<code>trsdk</code>.</p>
+<code>transferd</code>.</p>
 <p>Options for <code>transfer_info</code> are:</p>
 <table>
 <colgroup>
@@ -3606,26 +3638,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb242-1"><a href
 </ul>
 <p><code>ascp</code> argument or environment variable is provided in
 description.</p>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 16%" />
-<col style="width: 4%" />
-<col style="width: 4%" />
-<col style="width: 4%" />
-<col style="width: 4%" />
-<col style="width: 4%" />
-<col style="width: 44%" />
+<col style="width: 19%" />
+<col style="width: 15%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 42%" />
 </colgroup>
 <thead>
 <tr>
 <th>Field</th>
 <th>Type</th>
-<th>D</th>
 <th>N</th>
-<th>C</th>
+<th>D</th>
+<th>A</th>
 <th>T</th>
 <th>H</th>
+<th>C</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -3633,6 +3667,7 @@ description.</p>
 <tr>
 <td>apply_local_docroot</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -3645,15 +3680,17 @@ description.</p>
 <td>string</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>value=token for SSH bypass keys, else password asked if not
 provided.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>cipher</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3671,6 +3708,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>returned by node API. Valid literals include “aes-128” and
 “none”.<br/>(&lt;ignored&gt;)</td>
 </tr>
@@ -3682,11 +3720,13 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>ascp4 only, 0 / 1?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>content_protection</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3704,12 +3744,14 @@ protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Specifies CSEAR password. (content
 protection)<br/>(env:ASPERA_SCP_FILEPASS)</td>
 </tr>
 <tr>
 <td>cookie</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3726,11 +3768,13 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Specifies whether to create new directories.<br/>(-d)</td>
 </tr>
 <tr>
 <td>delete_before_transfer</td>
 <td>bool</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3750,6 +3794,7 @@ source are not deleted.<br/>(–delete-before-transfer)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Remove SRC files after transfer
 success<br/>(–remove-after-transfer)</td>
 </tr>
@@ -3761,11 +3806,13 @@ success<br/>(–remove-after-transfer)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Destination root directory.<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>destination_root_id</td>
 <td>string</td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -3783,11 +3830,13 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>UDP datagram size in bytes<br/>(-Z {int})</td>
 </tr>
 <tr>
 <td>direction</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3799,6 +3848,7 @@ receive<br/>(–mode (conversion){enum})</td>
 <tr>
 <td>exclude_newer_than</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3817,6 +3867,7 @@ back.<br/>(–exclude-newer-than {string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Exclude files, but not directories, from the transfer if they are
 older than the specified number of seconds added to the source
 computer’s epoch. e.g. “-86400” for older than a day
@@ -3825,6 +3876,7 @@ back.<br/>(–exclude-older-than {string})</td>
 <tr>
 <td>fasp_port</td>
 <td>int</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3840,6 +3892,7 @@ back.<br/>(–exclude-older-than {string})</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Only used in Faspex.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
@@ -3847,6 +3900,7 @@ back.<br/>(–exclude-older-than {string})</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -3862,12 +3916,14 @@ none<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
 transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 </tr>
 <tr>
 <td>http_fallback_port</td>
 <td>int</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -3883,11 +3939,13 @@ transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Specifies https port when cipher is used<br/>(-t {int})</td>
 </tr>
 <tr>
 <td>keepalive</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -3904,6 +3962,7 @@ mode.<br/>(–keepalive)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
@@ -3911,9 +3970,10 @@ mode.<br/>(–keepalive)</td>
 <td>bool</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>If true, lock the minimum transfer rate to the value set for
 min_rate_kbps.<br/>If false, users can adjust the transfer rate up to
 the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
@@ -3923,15 +3983,17 @@ the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 <td>bool</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>If true, lock the rate policy to the default
 value.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>lock_target_rate</td>
 <td>bool</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3947,6 +4009,7 @@ value.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>If true, lock the target transfer rate to the default value set for
 target_rate_kbps.<br/>If false, users can adjust the transfer rate up to
 the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
@@ -3954,6 +4017,7 @@ the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 <tr>
 <td>min_rate_cap_kbps</td>
 <td>int</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -3972,6 +4036,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Set the minimum transfer rate in kilobits per second.<br/>(-m
 {int})</td>
 </tr>
@@ -3983,6 +4048,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>The relative path to which the files will be moved after the
 transfer at the source side. Available as of
 3.8.0.<br/>(–move-after-transfer {string})</td>
@@ -3990,6 +4056,7 @@ transfer at the source side. Available as of
 <tr>
 <td>multi_session</td>
 <td>int</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4008,6 +4075,7 @@ resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Split files across multiple ascp sessions if their size in bytes is
 greater than or equal to the specified value.<br/>(0=no file is
 split)<br/>(–multi-session-threshold {int})</td>
@@ -4020,12 +4088,14 @@ split)<br/>(–multi-session-threshold {int})</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
+<td> </td>
 <td>HTTP Gateway obfuscates file names when set to
 true.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>overwrite</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4038,8 +4108,9 @@ diff+older<br/>(–overwrite {enum})</td>
 <tr>
 <td>password</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
+<td> </td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4057,12 +4128,14 @@ only.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Array of path to the source (required) and a path to the destination
 (optional).<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>precalculate_job_size</td>
 <td>bool</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4079,6 +4152,7 @@ size.<br/>(–precalculate-job-size)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Preserve the source-file access timestamps at the
 destination.<br/>Because source access times are updated by the transfer
 operation,<br/>the timestamp that is preserved is the one just before to
@@ -4087,6 +4161,7 @@ the transfer.<br/>(–preserve-access-time)</td>
 <tr>
 <td>preserve_acls</td>
 <td>string</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4098,6 +4173,7 @@ metafile<br/>(–preserve-acls {enum})</td>
 <tr>
 <td>preserve_creation_time</td>
 <td>bool</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4116,12 +4192,14 @@ ignored.<br/>(–preserve-creation-time)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Preserve the extended attributes.<br/>Allowed values: none, native,
 metafile<br/>(–preserve-xattrs {enum})</td>
 </tr>
 <tr>
 <td>preserve_file_owner_gid</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4133,6 +4211,7 @@ owner<br/>(–preserve-file-owner-gid)</td>
 <tr>
 <td>preserve_file_owner_uid</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4149,6 +4228,7 @@ owner<br/>(–preserve-file-owner-uid)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Set the modification time, the last time a file or directory was
 modified (written), of a transferred file<br/>to the modification of the
 source file or directory.<br/>Preserve source-file modification
@@ -4157,6 +4237,7 @@ timestamps at the destination.<br/>(–preserve-modification-time)</td>
 <tr>
 <td>preserve_remote_acls</td>
 <td>string</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4168,6 +4249,7 @@ native, metafile<br/>(–remote-preserve-acls {enum})</td>
 <tr>
 <td>preserve_source_access_time</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4179,8 +4261,9 @@ accessed<br/>(–preserve-source-access-time)</td>
 <tr>
 <td>preserve_times</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
+<td> </td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4189,6 +4272,7 @@ accessed<br/>(–preserve-source-access-time)</td>
 <tr>
 <td>proxy</td>
 <td>string</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4208,6 +4292,7 @@ ASPERA_PROXY_PASS.<br/>(–proxy {string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed
 values: low, fair, high, fixed<br/>(–policy {enum})</td>
 </tr>
@@ -4216,9 +4301,10 @@ values: low, fair, high, fixed<br/>(–policy {enum})</td>
 <td>string</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>Specifies most aggressive rate policy that is allowed.<br/>Returned
 by node API.<br/>Allowed values: low, fair, high,
 fixed<br/>(&lt;ignored&gt;)</td>
@@ -4231,11 +4317,13 @@ fixed<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>remote_access_key</td>
 <td>string</td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4253,6 +4341,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>IP or fully qualified domain name of the remote server<br/>(–host
 {string})</td>
 </tr>
@@ -4264,11 +4353,13 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>SSH session password<br/>(env:ASPERA_SCP_PASS)</td>
 </tr>
 <tr>
 <td>remote_user</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4285,6 +4376,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Remove SRC files after transfer
 success<br/>(–remove-after-transfer)</td>
 </tr>
@@ -4296,12 +4388,14 @@ success<br/>(–remove-after-transfer)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Specifies whether to remove empty
 directories.<br/>(–remove-empty-directories)</td>
 </tr>
 <tr>
 <td>remove_empty_source_directory</td>
 <td>bool</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4315,9 +4409,10 @@ itself, if empty<br/>(–remove-empty-source-directory)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>Must also have remove_after_transfer set to true, Defaults to false,
 if true, skipped files will be removed as
 well.<br/>(–remove-skipped)</td>
@@ -4330,6 +4425,7 @@ well.<br/>(–remove-skipped)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>If a transfer is interrupted or fails to finish, resume without
 re-transferring the whole files.<br/>Allowed values: none, attrs,
 sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
@@ -4337,17 +4433,19 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 <tr>
 <td>retry_duration</td>
 <td>string<br/>int</td>
-<td> </td>
-<td>Y</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td>Y</td>
 <td>Specifies how long to wait before retrying transfer.
 (e.g. “5min”)<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>source_root</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4360,8 +4458,9 @@ defined.<br/>(–source-prefix64 (conversion){string})</td>
 <tr>
 <td>source_root_id</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
+<td> </td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4373,6 +4472,7 @@ token auth for the source node.<br/>(&lt;ignored&gt;)</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4389,6 +4489,7 @@ storage.<br/>(–src-base64 (conversion){string})</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>Array of arguments to pass to SSH. Use with
 caution.<br/>(&lt;ignored&gt;)</td>
 </tr>
@@ -4400,12 +4501,14 @@ caution.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P
 {int})</td>
 </tr>
 <tr>
 <td>ssh_private_key</td>
 <td>string</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4418,6 +4521,7 @@ newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 <tr>
 <td>ssh_private_key_passphrase</td>
 <td>string</td>
+<td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
@@ -4434,12 +4538,14 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Check it against server SSH host key fingerprint<br/>(–check-sshfp
 {string})</td>
 </tr>
 <tr>
 <td>symlink_policy</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4456,6 +4562,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
 Key <code>aspera.xfer_retry</code> specified a retry timeout for node
 api initiated transfers.<br/>(–tags64 (conversion){hash})</td>
@@ -4465,15 +4572,17 @@ api initiated transfers.<br/>(–tags64 (conversion){hash})</td>
 <td>int</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Y</td>
-<td> </td>
-<td> </td>
 <td>Returned by upload/download_setup node
 API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>target_rate_kbps</td>
 <td>int</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4489,21 +4598,24 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>TODO: remove ?<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>title</td>
 <td>string</td>
-<td> </td>
-<td>Y</td>
 <td>Y</td>
 <td> </td>
 <td> </td>
+<td> </td>
+<td> </td>
+<td>Y</td>
 <td>Title of the transfer<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>token</td>
 <td>string</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4520,11 +4632,13 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>specify version of protocol<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>use_system_ssh</td>
 <td>string</td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4540,11 +4654,13 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td> </td>
 <td> </td>
+<td> </td>
 <td>ascp4 only<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>wss_enabled</td>
 <td>bool</td>
+<td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4560,13 +4676,15 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
+<td>Y</td>
 <td>TCP port used for websocket service feed<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>xfer_max_retries</td>
 <td>int</td>
-<td> </td>
 <td>Y</td>
+<td> </td>
+<td> </td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -5293,7 +5411,7 @@ OPTIONS: global
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: node, [direct], alpha, httpgw, connect, trsdk
+        --transfer=ENUM              Type of transfer agent: node, [direct], alpha, transferd, httpgw, connect
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
@@ -7024,7 +7142,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb395-1"><a href
 <span id="cb395-25"><a href="#cb395-25" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;test_file.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress-bar</span><span class="op">=</span>yes</span>
 <span id="cb395-26"><a href="#cb395-26" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;filelist.txt&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder</span>
 <span id="cb395-27"><a href="#cb395-27" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-pair-list&quot;,&quot;file_pair_list.txt&quot;]}&#39;</span></span>
-<span id="cb395-28"><a href="#cb395-28" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>trsdk</span>
+<span id="cb395-28"><a href="#cb395-28" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>transferd</span>
 <span id="cb395-29"><a href="#cb395-29" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;test_file.bin&#39;</span> my_inside_folder/other_name_2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
 <span id="cb395-30"><a href="#cb395-30" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;test_file.bin&quot;,&quot;my_inside_folder/other_name_3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
 <span id="cb395-31"><a href="#cb395-31" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:&quot;-1&quot;,&quot;exclude_older_than&quot;:&quot;-10000&quot;,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>

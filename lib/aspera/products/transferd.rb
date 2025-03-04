@@ -2,7 +2,7 @@
 
 module Aspera
   module Products
-    class Trsdk
+    class Transferd
       APP_NAME = 'IBM Aspera Transfer Daemon'
       class << self
         # standard folder locations

@@ -320,7 +320,7 @@ $(T)serv_upload3: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
 	@$(START_TEST) $@
-	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}' --transfer=trsdk
+	$(EXE_MAN) server upload --sources=@ts --ts=@json:@extend:'{"paths":[{"source":"$(TST_ASC_LCL_PATH)","destination":"@preset:server.inside_folder@/other_name_4"}]}' --transfer=transferd
 	@$(STOP_TEST) $@
 $(T)serv_upload5: $(T)serv_mkdir 
 	@$(START_TEST) $@
