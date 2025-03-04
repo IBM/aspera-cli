@@ -316,7 +316,7 @@ $(T)serv_upload2: $(T)serv_mkdir
 $(T)serv_upload3: $(T)serv_mkdir 
 	@$(START_TEST) $@
 	$(EXE_IGN) server delete @extend:@preset:server.inside_folder@/other_name_3$(EXE_END_IGN)
-	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --ts=@json:'{"use_ascp4":true}' --progress=no
+	$(EXE_MAN) server upload --src-type=pair --sources=@json:@extend:'["$(TST_ASC_LCL_PATH)","@preset:server.inside_folder@/other_name_3"]' --transfer-info=@json:'{"quiet":false}' --progress=no
 	@$(STOP_TEST) $@
 $(T)serv_upload4: $(T)serv_mkdir 
 	@$(START_TEST) $@
