@@ -20,7 +20,7 @@ module Aspera
       def initialize(**base_options)
         @application_id = SecureRandom.uuid
         @xfer_id = nil
-        super(**base_options)
+        super
         raise 'Using client requires a graphical environment' if !Environment.default_gui_mode.eql?(:graphical)
         method_index = 0
         begin

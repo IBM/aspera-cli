@@ -144,7 +144,7 @@ module Aspera
 
         def initialize(**env)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
-          super(**env)
+          super
           @use_plugin_defaults = true
           @config_presets = nil
           @config_checksum_on_disk = nil
@@ -729,7 +729,7 @@ module Aspera
           when :install
             # reset to default location, if older default was used
             Products::Trsdk.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
-            version = options.get_next_argument("transferd version", mandatory: false)
+            version = options.get_next_argument('transferd version', mandatory: false)
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :spec

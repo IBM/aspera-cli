@@ -198,7 +198,7 @@ module Aspera
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
             process_progress(event)
-            Log.log.error((event['Description']).to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
+            Log.log.error(event['Description'].to_s) if event['Type'].eql?('FILEERROR') # cspell:disable-line
           end
           Log.log.debug('management io closed')
           # check that last status was received before process exit

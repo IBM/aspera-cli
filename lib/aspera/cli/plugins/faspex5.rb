@@ -559,7 +559,7 @@ module Aspera
             available_commands.push(:reset_password)
           when :oauth_clients
             display_fields = Formatter.all_but('public_key')
-            adm_api = Rest.new(**@api_v5.params.merge(base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}"))
+            adm_api = Rest.new(**@api_v5.params, base_url: "#{@faspex5_api_base_url}/#{PATH_AUTH}")
           when :shared_inboxes, :workgroups
             available_commands.push(:members, :saml_groups, :invite_external_collaborator)
             res_id_query = {'all': true}

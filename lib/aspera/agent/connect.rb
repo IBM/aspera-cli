@@ -16,7 +16,7 @@ module Aspera
       SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(**base_options)
-        super(**base_options)
+        super
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }

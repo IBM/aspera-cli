@@ -112,7 +112,7 @@ module Aspera
           value_list = check_array ? to_check : [to_check]
           value_list.each do |value|
             raise Cli::BadArgument,
-              "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless \
+              "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of ' : ''}#{type_list.map(&:name).join(',')}" unless
               type_list.any?{|t|value.is_a?(t)}
           end
         end
@@ -501,7 +501,6 @@ module Aspera
             self.class.multi_choice_assert(false, message, accept_list)
           end
         end
-        result = nil
         sensitive = option && @declared_options[descr.to_sym].is_a?(Hash) && @declared_options[descr.to_sym][:sensitive]
         default_prompt = "#{what}: #{descr}"
         # ask interactively

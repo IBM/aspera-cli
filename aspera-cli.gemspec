@@ -39,22 +39,22 @@ Gem::Specification.new do |spec|
   spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
   # see also Aspera::Cli::Info::RUBY_CURRENT_MINIMUM_VERSION
   spec.required_ruby_version = '>= 3.1'
-  spec.add_runtime_dependency('blankslate', '~> 3.1')
-  spec.add_runtime_dependency('csv', '~> 3.0')
-  spec.add_runtime_dependency('execjs', '~> 2.0')
-  spec.add_runtime_dependency('jwt', '~> 2.0')
+  spec.add_dependency('blankslate', '~> 3.1')
+  spec.add_dependency('csv', '~> 3.0')
+  spec.add_dependency('execjs', '~> 2.0')
+  spec.add_dependency('jwt', '~> 2.0')
   # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
-  spec.add_runtime_dependency('mime-types', '~> 3.5')
-  spec.add_runtime_dependency('net-ssh', '~> 7.3')
-  spec.add_runtime_dependency('openssl', '~> 3.3.0')
-  spec.add_runtime_dependency('rainbow', '~> 3.0')
-  spec.add_runtime_dependency('ruby-progressbar', '~> 1.0')
-  spec.add_runtime_dependency('rubyzip', '~> 2.0')
-  spec.add_runtime_dependency('terminal-table', '~> 3.0.2')
-  spec.add_runtime_dependency('tty-spinner', '~> 0.9')
-  spec.add_runtime_dependency('webrick', '~> 1.7')
-  spec.add_runtime_dependency('websocket', '~> 1.2')
-  spec.add_runtime_dependency('xml-simple', '~> 1.0')
+  spec.add_dependency('mime-types', '~> 3.5')
+  spec.add_dependency('net-ssh', '~> 7.3')
+  spec.add_dependency('openssl', '~> 3.3.0')
+  spec.add_dependency('rainbow', '~> 3.0')
+  spec.add_dependency('ruby-progressbar', '~> 1.0')
+  spec.add_dependency('rubyzip', '~> 2.0')
+  spec.add_dependency('terminal-table', '~> 3.0.2')
+  spec.add_dependency('tty-spinner', '~> 0.9')
+  spec.add_dependency('webrick', '~> 1.7')
+  spec.add_dependency('websocket', '~> 1.2')
+  spec.add_dependency('xml-simple', '~> 1.0')
   # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
   # spec.add_runtime_dependency('grpc', '~> 1.0') # for transferSDK
   # spec.add_runtime_dependency('mimemagic', '~> 0.3') # for preview
@@ -72,6 +72,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('rubocop-ast', '~> 1.4')
   spec.add_development_dependency('rubocop-performance', '~> 1.10') unless defined?(JRUBY_VERSION)
   spec.add_development_dependency('rubocop-shopify', '~> 2.0')
+  spec.add_development_dependency('ruby-lsp', '~> 0.23')
   spec.add_development_dependency('simplecov', '~> 0.22')
   spec.add_development_dependency('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
 end
