@@ -54,7 +54,7 @@ install: $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 # gems that require native build are made optional
-OPTIONAL_GEMS=grpc mimemagic rmagick
+OPTIONAL_GEMS=$(shell ruby -e 'def source _;end;def gem n,_;puts n;end;load "$(DIR_TOP)Gemfile.optional"')
 clean_optional_gems:
 	gem uninstall $(OPTIONAL_GEMS)
 install_gems: $(DIR_TOP).gems_checked
