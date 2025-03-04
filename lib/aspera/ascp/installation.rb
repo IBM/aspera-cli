@@ -100,6 +100,8 @@ module Aspera
           m[v.to_s] =
             begin
               path(v)
+            rescue Errno::ENOENT => e
+              e.message.gsub(/.*assertion failed: /, '').gsub(/\): .*/, ')')
             rescue => e
               e.message
             end
@@ -147,7 +149,7 @@ module Aspera
         else Aspera.error_unexpected_value(k)
         end
         return nil if file_is_optional && !File.exist?(file)
-        Aspera.assert(File.exist?(file)){"no such file for #{k}: [#{file}]"}
+        Aspera.assert(File.exist?(file), exception_class: Errno::ENOENT){"#{k} not found (#{file})"}
         return file
       end
 
