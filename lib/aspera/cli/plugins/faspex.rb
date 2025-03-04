@@ -441,7 +441,9 @@ module Aspera
                 Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
-              source_name = source_list.find{|i|i['id'].eql?(source_id)}['name']
+              selected_source = source_list.find{|i|i['id'].eql?(source_id)}
+              raise 'No such source' if selected_source.nil?
+              source_name = selected_source['name']
               source_hash = options.get_option(:storage, mandatory: true)
               # check value of option
               Aspera.assert_type(source_hash, Hash, exception_class: Cli::Error){'storage option'}
