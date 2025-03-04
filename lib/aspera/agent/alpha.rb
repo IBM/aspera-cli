@@ -46,7 +46,7 @@ module Aspera
 
       def aspera_client_api_url
         log_file = Products::Alpha.log_file
-        url = nil
+        url = 'http://127.0.0.1:33024'
         File.open(log_file, 'r') do |file|
           file.each_line do |line|
             line = line.chomp
@@ -55,8 +55,7 @@ module Aspera
             end
           end
         end
-        url = 'http://127.0.0.1:33024' if url.nil?
-        raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
+        # raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
         return url
       end
 
