@@ -199,7 +199,7 @@ complete
 
 Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
+Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
 
 ## Installation
 
