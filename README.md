@@ -540,7 +540,13 @@ Only two additional files are required to perform an Aspera Transfer, which are 
 - `ascp`
 - `aspera-license` (in same folder, or ../etc)
 
-This can be installed either be installing an Aspera transfer software, or using an embedded command:
+This can be installed either be installing an Aspera transfer software or using an `ascli` command.
+
+#### Installation of `ascp` through `transferd`
+
+The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon.
+
+Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes)
 
 ```bash
 ascli config ascp install
@@ -549,7 +555,7 @@ ascli config ascp install
 This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then select the latest version for the current platform.
 In this case, the default value for option `sdk_url` is `DEF`.
 
-If a local SDK installation is preferred instead of fetching from internet: one can specify the location of the SDK file:
+If installation from a local file preferred instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 1. Locate the appropriate SDK archive for your platform, by visiting either:
 
@@ -569,6 +575,22 @@ If a local SDK installation is preferred instead of fetching from internet: one 
     ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+Available SDK versions can be listed with: `ascli config transferd list`
+
+To install a specific version, e.g. 1.1.3:
+
+```bash
+ascli config ascp install 1.1.3
+```
+
+To get the download URL for a specific platform and version:
+
+```bash
+ascli conf transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+```
+
+#### Installation of `ascp` through other component
 
 If the embedded method is not used, the following packages are also suitable:
 
@@ -2029,6 +2051,7 @@ ascp errors
 ascp info --sdk-folder=sdk_test_dir
 ascp install
 ascp install --sdk-folder=sdk_test_dir
+ascp install 1.1.3
 ascp products list
 ascp products use 'IBM Aspera Connect'
 ascp show
@@ -2094,6 +2117,8 @@ remote_certificate name https://node.example.com/path
 remote_certificate only https://node.example.com/path
 smtp_settings
 tokens flush
+transferd install
+transferd list
 vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
 vault delete my_label
 vault info
@@ -3786,7 +3811,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test tokens vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test tokens transferd vault wizard
 
 
 COMMAND: shares

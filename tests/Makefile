@@ -1409,9 +1409,12 @@ $(T)conf_ascp_6: $(T).exists
 $(T)conf_ascp_install: $(T).exists
 	@$(START_TEST) $@
 	rm -fr "$$($(EXE_NO_MAN) --show-config --fields=sdk_folder)"
+	$(EXE_MAN) config ascp install 1.1.3
 	$(EXE_MAN) config ascp install
 	rm -fr $(DIR_TMP)sdk_test_dir
 	$(EXE_MAN) config ascp install --sdk-folder=$(DIR_TMP)sdk_test_dir
+	$(EXE_MAN) config transferd list
+	$(EXE_MAN) config transferd install
 	@$(STOP_TEST) $@
 $(T)conf_ascp_8: $(T)conf_ascp_install
 	@$(START_TEST) $@

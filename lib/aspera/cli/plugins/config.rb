@@ -744,8 +744,30 @@ module Aspera
               error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
             return {type: :object_list, data: error_data}
+          else Aspera.error_unexpected_value(command)
           end
-          raise "unexpected case: #{command}"
+          Aspera.error_unreachable_line
+        end
+
+        def execute_action_transferd
+          command = options.get_next_command(%i[list install])
+          case command
+          when :install
+            # reset to default location, if older default was used
+            Products::Transferd.sdk_directory = self.class.default_app_main_folder(app_name: DIR_SDK) if @sdk_default_location
+            version = options.get_next_argument('transferd version', mandatory: false)
+            n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
+            return Main.result_status("Installed #{n} version #{v}")
+          when :list
+            sdk_list = Ascp::Installation.sdk_locations
+            return {
+              type:   :object_list,
+              data:   sdk_list,
+              fields: sdk_list.first.keys - ['url']
+            }
+          else Aspera.error_unexpected_value(command)
+          end
+          Aspera.error_unreachable_line
         end
 
         # legacy actions available globally
@@ -864,6 +886,7 @@ module Aspera
           coffee
           image
           ascp
+          transferd
           email_test
           smtp_settings
           proxy_check
@@ -975,6 +998,8 @@ module Aspera
             return Main.result_image(options.get_next_argument('image uri or blob'), formatter: formatter)
           when :ascp
             execute_action_ascp
+          when :transferd
+            execute_action_transferd
           when :gem
             case options.get_next_command(%i[path version name])
             when :path then return Main.result_status(self.class.gem_src_root)
