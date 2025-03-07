@@ -39,6 +39,33 @@ def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@
 # if version contains other characters than digit and dot, it is pre-release
 def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
+def gem_opt_md_list
+  columns = %i[name version comment].freeze
+  data = gem_opt_list.map do |g|
+    columns.map {|c| g[c]}
+  end
+  data.unshift(columns)
+  markdown_table(data)
+end
+
+def gem_opt_cmd
+  gem_opt_list.map do |g|
+    "gem install #{g[:name]} -v '#{g[:version]}'"
+  end.join("\n")
+end
+
+def gem_opt_list
+  File.read(@env[:GEMOPT]).lines.map do |l|
+    m = l.match(/^gem\('([^']+)', '([^']+)'\)(.*)/)
+    next nil unless m
+    {
+      name:    m[1],
+      version: m[2],
+      comment: m[3].gsub('# ', '').strip
+    }
+  end.compact
+end
+
 # Generate markdown from the provided table
 def markdown_table(table)
   headings = table.shift
@@ -258,7 +285,7 @@ end
 def generate_doc
   # parameters
   @env = {}
-  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC].each do |var|
+  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC GEMOPT].each do |var|
     @env[var] = ARGV.shift
     raise "Missing arg: #{var}" if @env[var].nil?
   end

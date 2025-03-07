@@ -197,7 +197,7 @@ class="header-section-number">2.2</span> Going further</h2>
 <p>Get familiar with configuration, options, commands : <a
 href="#command-line-interface">Command Line Interface</a>.</p>
 <p>Then, follow the section relative to the product you want to interact
-with ( Aspera on Cloud, Faspex, …) : <a href="#plugins">Application
+with ( Aspera on Cloud, Faspex, …) : <a href="plugins">Application
 Plugins</a></p>
 <h1 data-number="3" id="installation"><span
 class="header-section-number">3</span> Installation</h1>
@@ -449,18 +449,54 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href=
 class="header-section-number">3.1.8</span> Optional gems</h3>
 <p>Some additional gems are required for some specific features, see <a
 href="Gemfile.optional">Gemfile.optional</a>:</p>
-<ul>
-<li><code>rmagick</code> : to generate thumbnails of images</li>
-<li><code>grpc</code> : to use the transfer SDK (gRPC)</li>
-<li><code>mimemagic</code> : to detect MIME type of files for
-<code>preview</code> command</li>
-<li><code>symmetric-encryption</code> for file-based vault</li>
-<li><code>bigdecimal</code> if RUBY_VERSION &gt;= 3.4, for
-symmetric-encryption</li>
-</ul>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 38%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>name</th>
+<th>version</th>
+<th>comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>grpc</td>
+<td>~&gt; 1.65</td>
+<td>for transferSDK</td>
+</tr>
+<tr>
+<td>mimemagic</td>
+<td>~&gt; 0.4</td>
+<td>for preview</td>
+</tr>
+<tr>
+<td>rmagick</td>
+<td>~&gt; 5.5</td>
+<td>for terminal view</td>
+</tr>
+<tr>
+<td>symmetric-encryption</td>
+<td>~&gt; 4.6</td>
+<td>for file vault</td>
+</tr>
+<tr>
+<td>bigdecimal</td>
+<td>~&gt; 3.1.9</td>
+<td>if RUBY_VERSION &gt;= ‘3.4’ for symmetric-encryption ?</td>
+</tr>
+</tbody>
+</table>
 <p>Install like this:</p>
 <div class="sourceCode" id="cb38"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install rmagick grpc mimemagic</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install grpc <span class="at">-v</span> <span class="st">&#39;~&gt; 1.65&#39;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install mimemagic <span class="at">-v</span> <span class="st">&#39;~&gt; 0.4&#39;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install rmagick <span class="at">-v</span> <span class="st">&#39;~&gt; 5.5&#39;</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install symmetric-encryption <span class="at">-v</span> <span class="st">&#39;~&gt; 4.6&#39;</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install bigdecimal <span class="at">-v</span> <span class="st">&#39;~&gt; 3.1.9&#39;</span></span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> Those are not installed as part of
 dependencies because they involve compilation of native code.</p>
@@ -774,7 +810,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb70-1"><a href=
 class="header-section-number">3.5.3</span> Container: Sample start
 script</h3>
 <p>A convenience sample script is also provided: download the script <a
-href="examples/dascli"><code>dascli</code></a> from <a
+href="../examples/dascli"><code>dascli</code></a> from <a
 href="https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli">the
 GIT repo</a> :</p>
 <blockquote>

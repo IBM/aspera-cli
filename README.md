@@ -199,7 +199,7 @@ complete
 
 Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
+Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
 
 ## Installation
 
@@ -476,16 +476,22 @@ JRUBY_OPTS=--dev ascli -v
 
 Some additional gems are required for some specific features, see [Gemfile.optional](Gemfile.optional):
 
-- `rmagick` : to generate thumbnails of images
-- `grpc` : to use the transfer SDK (gRPC)
-- `mimemagic` : to detect MIME type of files for `preview` command
-- `symmetric-encryption` for file-based vault
-- `bigdecimal` if RUBY_VERSION >= 3.4, for symmetric-encryption
+| name | version | comment |
+| ---- | ------- | ------- |
+| grpc | ~> 1.65 | for transferSDK |
+| mimemagic | ~> 0.4 | for preview |
+| rmagick | ~> 5.5 | for terminal view |
+| symmetric-encryption | ~> 4.6 | for file vault |
+| bigdecimal | ~> 3.1.9 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
 
 Install like this:
 
 ```bash
-gem install rmagick grpc mimemagic
+gem install grpc -v '~> 1.65'
+gem install mimemagic -v '~> 0.4'
+gem install rmagick -v '~> 5.5'
+gem install symmetric-encryption -v '~> 4.6'
+gem install bigdecimal -v '~> 3.1.9'
 ```
 
 > **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
@@ -816,7 +822,7 @@ asclish
 
 #### Container: Sample start script
 
-A convenience sample script is also provided: download the script [`dascli`](examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 > **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../examples/dascli ascli`
 
