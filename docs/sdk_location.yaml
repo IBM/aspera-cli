@@ -46,37 +46,37 @@
   os: windows
   arch: x86_64
   platform: windows-x86_64
-  comment: 4.4.4.1308 4d33cdf
+  comment: ascp 4.4.4.1308 4d33cdf
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.3/macos-amd64-1.1.3-c6c7a2a.zip
   version: 1.1.3
   os: osx
   arch: x86_64
   platform: osx-x86_64
-  comment: 4.4.4.1308 4d33cdf
+  comment: ascp 4.4.4.1308 4d33cdf
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.3/macos-arm64-1.1.3-c6c7a2a.zip
   version: 1.1.3
   os: osx
   arch: arm64
   platform: osx-arm64
-  comment: 4.4.4.1308 4d33cdf
+  comment: ascp 4.4.4.1308 4d33cdf
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.3/linux-amd64-1.1.3-c6c7a2a.tar.gz
   version: 1.1.3
   os: linux
   arch: x86_64
   platform: linux-x86_64
-  comment: 4.4.4.1308 4d33cdf GLIBC 2.17
+  comment: ascp 4.4.4.1308 4d33cdf GLIBC 2.17
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.3/linux-s390x-1.1.3-c6c7a2a.tar.gz
   version: 1.1.3
   os: linux
   arch: s390
   platform: linux-s390
-  comment: 4.4.4.1308 4d33cdf
+  comment: ascp 4.4.4.1308 4d33cdf
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.3/linux-ppc64le-1.1.3-c6c7a2a.tar.gz
   version: 1.1.3
   os: linux
   arch: ppc64le
   platform: linux-ppc64le
-  comment: 4.4.4.1308 4d33cdf
+  comment: ascp 4.4.4.1308 4d33cdf
 - url: https://eudemo.asperademo.com/download/linux-arm64-1.1.3-71a46b8.tar.gz
   version: 1.1.3
   os: linux
@@ -94,40 +94,40 @@
   os: linux
   arch: x86_64
   platform: linux-x86_64
-  comment: 4.4.5.1669 3771cbc GLIBC 2.17
+  comment: ascp 4.4.5.1669 3771cbc GLIBC 2.17
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-windows-amd64-1.1.4.zip
   version: 1.1.4
   os: windows
   arch: x86_64
   platform: windows-x86_64
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-macos-amd64-1.1.4.zip
   version: 1.1.4
   os: osx
   arch: x86_64
   platform: osx-x86_64
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-macos-arm64-1.1.4.zip
   version: 1.1.4
   os: osx
   arch: arm64
   platform: osx-arm64
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-macos-universal-1.1.4.zip
   version: 1.1.4
   os: osx
   arch: universal
   platform: osx-universal
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-linux-ppc64le-1.1.4.tar.gz
   version: 1.1.4
   os: linux
   arch: ppc64le
   platform: linux-ppc64le
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-linux-s390x-1.1.4.tar.gz
   version: 1.1.4
   os: linux
   arch: s390
   platform: linux-s390
-  comment: 4.4.5.1669 3771cbc
+  comment: ascp 4.4.5.1669 3771cbc
