@@ -199,7 +199,7 @@ complete
 
 Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
+Then, follow the section relative to the product you want to interact with ( Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
 
 ## Installation
 
@@ -816,7 +816,7 @@ asclish
 
 #### Container: Sample start script
 
-A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+A convenience sample script is also provided: download the script [`dascli`](examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
 
 > **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../examples/dascli ascli`
 
