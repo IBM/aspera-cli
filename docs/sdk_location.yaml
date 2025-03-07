@@ -117,7 +117,7 @@
   version: 1.1.4
   os: osx
   arch: universal
-  platform: osx-arm64
+  platform: osx-universal
   comment: 4.4.5.1669 3771cbc
 - url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.4/ibm-aspera-transfer-sdk-linux-ppc64le-1.1.4.tar.gz
   version: 1.1.4
