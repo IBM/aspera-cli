@@ -43,8 +43,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency('csv', '~> 3.0')
   spec.add_dependency('execjs', '~> 2.0')
   spec.add_dependency('jwt', '~> 2.0')
-  # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
   spec.add_dependency('mime-types', '~> 3.5')
+  # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
+  spec.add_dependency('net-smtp', '~> 0.3') if defined?(JRUBY_VERSION)
   spec.add_dependency('net-ssh', '~> 7.3')
   spec.add_dependency('openssl', '~> 3.3.0')
   spec.add_dependency('rainbow', '~> 3.0')
