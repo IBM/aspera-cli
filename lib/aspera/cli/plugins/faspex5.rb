@@ -237,15 +237,18 @@ module Aspera
           end
         end
 
+        # @param [Srting] job identifier
+        # @return [Hash] result of API call for job status
         def wait_for_job(job_id)
+          result = nil
           loop do
-            status = @api_v5.read("jobs/#{job_id}", {type: :formatted})
-            return status unless JOB_RUNNING.include?(status['status'])
-            formatter.long_operation_running(status['status'])
+            result = @api_v5.read("jobs/#{job_id}", {type: :formatted})
+            break unless JOB_RUNNING.include?(result['status'])
+            formatter.long_operation_running(result['status'])
             sleep(0.5)
           end
           formatter.long_operation_terminated
-          Aspera.error_unreachable_line
+          return result
         end
 
         # Get a (full or partial) list of all entities of a given type with query: offset/limit
