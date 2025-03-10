@@ -61,19 +61,19 @@ module Aspera
         def transfer_sdk_location_url
           ENV.fetch('ASCLI_TRANSFER_SDK_LOCATION_URL', TRANSFER_SDK_LOCATION_URL)
         end
-      # Loads YAML from cloud with locations of SDK archives for all platforms
-      # @return location structure
-      def sdk_locations
-        location_url = transfer_sdk_location_url
-        transferd_locations = UriReader.read(location_url)
-        Log.log.debug{"Retrieving SDK locations from #{location_url}"}
-        begin
-          return YAML.load(transferd_locations)
-        rescue Psych::SyntaxError
-          raise "Error when parsing yaml data from: #{location_url}"
-        end
-      end
 
+        # Loads YAML from cloud with locations of SDK archives for all platforms
+        # @return location structure
+        def sdk_locations
+          location_url = transfer_sdk_location_url
+          transferd_locations = UriReader.read(location_url)
+          Log.log.debug{"Retrieving SDK locations from #{location_url}"}
+          begin
+            return YAML.load(transferd_locations)
+          rescue Psych::SyntaxError
+            raise "Error when parsing yaml data from: #{location_url}"
+          end
+        end
       end
 
       # set ascp executable path
