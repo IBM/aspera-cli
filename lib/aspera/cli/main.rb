@@ -63,6 +63,18 @@ module Aspera
         def result_image(blob, formatter:)
           return Main.result_status(formatter.status_image(blob))
         end
+
+        def result_single_object(data)
+          return {type: :single_object, data: data}
+        end
+
+        def result_object_list(data, fields: nil, total: nil)
+          return {type: :object_list, data: data, fields: fields, total: nil}
+        end
+
+        def result_value_list(data, name)
+          return {type: :value_list, data: data, name: name}
+        end
       end
 
       private

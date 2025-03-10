@@ -216,7 +216,14 @@ The following sections provide information on the various installation methods.
 An internet connection is required for the installation.
 If you don't have internet for the installation, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
 
-A package with pre-installed Ruby, gem and ascp may also be provided.
+A package with pre-installed Ruby, gem and `ascp` may also be provided.
+
+### <%=tool%> executable
+
+**Note:** This is an Alpha feature. The binary depends on certain GLIBC version for Linux.
+
+It is planned to provide <%=tool%> as a single platform-dependent executable.
+[Alpha releases can be found here](https://ibm.biz/aspera-cli-exe).
 
 ### Ruby
 
@@ -388,7 +395,7 @@ source /etc/profile.d/rvm.sh.ok
 rvm version
 ```
 
-#### Linux as simple user
+#### Linux as non-root
 
 If you don't have root access, you can install Ruby in your home directory using `rbenv` see [rbenv-installer](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
@@ -577,7 +584,13 @@ To install a specific version, e.g. 1.1.3:
 To get the download URL for a specific platform and version:
 
 ```bash
-<%=cmd%> conf transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+<%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+```
+
+To download it, pipe to `config download`:
+
+```bash
+<%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
 ```
 
 #### Installation of `ascp` through other component
@@ -1576,14 +1589,14 @@ In this case, it is possible to filter fields using the option `fields` using th
 Example: Result of command is a list of objects with a single object:
 
 ```console
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
+$ <%=cmd%> config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
 ╭─────────┬───────────┬─────────╮
 │ user.id │ user.name │ project │
 ╞═════════╪═══════════╪═════════╡
 │ 1       │ toto      │ blah    │
 ╰─────────┴───────────┴─────────╯
 
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
+$ <%=cmd%> config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
 ╭───────────────────────────┬─────────╮
 │ user                      │ project │
 ╞═══════════════════════════╪═════════╡
@@ -1609,7 +1622,7 @@ This parameter can be set as a global default with:
 In case multiple objects are returned, it is possible to display one table per object with option `multi_single` set to `yes`.
 
 ```console
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
+$ <%=cmd%> config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
 ╭───────────┬───────╮
 │ field     │ value │
 ╞═══════════╪═══════╡
@@ -5458,7 +5471,7 @@ Activation is in two steps:
   This operation is generally done only once:
 
   - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
-  - Give a name, like `<%=cmd%>`
+  - Give a name, like <%=tool%>
   - Activate JWT
   - There is an option to set a general public key allowing the owner of the private key to impersonate any user. Unless you want to do this, leave this field empty.
   - Click on `Create` Button

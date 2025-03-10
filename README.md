@@ -220,7 +220,14 @@ The following sections provide information on the various installation methods.
 An internet connection is required for the installation.
 If you don't have internet for the installation, refer to section [Installation without internet access](#installation-in-air-gapped-environment).
 
-A package with pre-installed Ruby, gem and ascp may also be provided.
+A package with pre-installed Ruby, gem and `ascp` may also be provided.
+
+### `ascli` executable
+
+**Note:** This is an Alpha feature. The binary depends on certain GLIBC version for Linux.
+
+It is planned to provide `ascli` as a single platform-dependent executable.
+[Alpha releases can be found here](https://ibm.biz/aspera-cli-exe).
 
 ### Ruby
 
@@ -394,7 +401,7 @@ source /etc/profile.d/rvm.sh.ok
 rvm version
 ```
 
-#### Linux as simple user
+#### Linux as non-root
 
 If you don't have root access, you can install Ruby in your home directory using `rbenv` see [rbenv-installer](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
@@ -593,7 +600,13 @@ ascli config ascp install 1.1.3
 To get the download URL for a specific platform and version:
 
 ```bash
-ascli conf transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url
+```
+
+To download it, pipe to `config download`:
+
+```bash
+ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | ascli config download @stdin:
 ```
 
 #### Installation of `ascp` through other component
@@ -1592,14 +1605,14 @@ In this case, it is possible to filter fields using the option `fields` using th
 Example: Result of command is a list of objects with a single object:
 
 ```console
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
+$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]'
 ╭─────────┬───────────┬─────────╮
 │ user.id │ user.name │ project │
 ╞═════════╪═══════════╪═════════╡
 │ 1       │ toto      │ blah    │
 ╰─────────┴───────────┴─────────╯
 
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
+$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' --flat-hash=no
 ╭───────────────────────────┬─────────╮
 │ user                      │ project │
 ╞═══════════════════════════╪═════════╡
@@ -1625,7 +1638,7 @@ ascli config preset set GLOBAL multi_single single
 In case multiple objects are returned, it is possible to display one table per object with option `multi_single` set to `yes`.
 
 ```console
-$ ascli conf echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
+$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
 ╭───────────┬───────╮
 │ field     │ value │
 ╞═══════════╪═══════╡
@@ -3817,7 +3830,7 @@ OPTIONS: global
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
-SUBCOMMANDS: ascp check_update coffee detect documentation echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test tokens transferd vault wizard
+SUBCOMMANDS: ascp check_update coffee detect documentation download echo email_test file folder gem genkey image initdemo open platform plugins preset proxy_check pubkey remote_certificate smtp_settings test tokens transferd vault wizard
 
 
 COMMAND: shares
@@ -7107,7 +7120,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 > **Note:** Add `ascli cos` in front of the commands:
 
 ```bash
-node download test_file.bin --to-folder=.
+node download test_file.bin --to-folder=
 node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
 node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
 node info --log-level=trace2

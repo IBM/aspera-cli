@@ -14,7 +14,6 @@ require 'pp'
 
 module Aspera
   module Cli
-    CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
     # This class is used to transform a complex structure into a simple hash
     class Flattener
       def initialize(formatter)
@@ -27,17 +26,6 @@ module Aspera
         Aspera.assert_type(something, Hash)
         @result = {}
         flatten_any(something, '')
-        return @result
-      end
-
-      # Special method for configuration overview
-      def config_over(something)
-        @result = []
-        something.each do |config, preset|
-          preset.each do |parameter, value|
-            @result.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
-          end
-        end
         return @result
       end
 
@@ -250,6 +238,10 @@ module Aspera
         display_status(count_msg)
       end
 
+      def hide_secrets(data)
+        SecretHider.deep_remove_secret(data) unless @options[:show_secrets] || @options[:display].eql?(:data)
+      end
+
       # this method displays the results, especially the table format
       # @param type [Symbol] type of data
       # @param data [Object] data to display
@@ -262,7 +254,7 @@ module Aspera
         Aspera.assert_type(type, Symbol){'result must have type'}
         Aspera.assert(!data.nil? || %i[empty nothing].include?(type)){'result must have data'}
         display_item_count(data.length, total) unless total.nil?
-        SecretHider.deep_remove_secret(data) unless @options[:show_secrets] || @options[:display].eql?(:data)
+        hide_secrets(data)
         case @options[:format]
         when :text
           display_message(:data, data.to_s)
@@ -293,8 +285,6 @@ module Aspera
           display_message(:data, status_image(url))
         when :table, :csv
           case type
-          when :config_over
-            display_table(Flattener.new(self).config_over(data), CONF_OVERVIEW_KEYS)
           when :object_list, :single_object
             obj_list = data
             if type.eql?(:single_object)

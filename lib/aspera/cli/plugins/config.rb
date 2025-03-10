@@ -77,6 +77,7 @@ module Aspera
         GEM_CHECK_DATE_FMT = '%Y/%m/%d'
         # for testing only
         SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
+        CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -97,7 +98,8 @@ module Aspera
           :WIZARD_RESULT_KEYS,
           :SELF_SIGNED_CERT,
           :PERSISTENCY_FOLDER,
-          :DEFAULT_PRIV_KEY_LENGTH
+          :DEFAULT_PRIV_KEY_LENGTH,
+          :CONF_OVERVIEW_KEYS
 
         class << self
           def generate_rsa_private_key(path:, length: DEFAULT_PRIV_KEY_LENGTH)
@@ -662,10 +664,10 @@ module Aspera
           end
           case command
           when :list
-            return {type: :object_list, data: connect_versions, fields: %w[id title version]}
+            return Main.result_object_list(connect_versions, fields: %w[id title version])
           when :info
             one_res.delete('links')
-            return {type: :single_object, data: one_res}
+            return Main.result_single_object(one_res)
           when :version
             all_links = one_res['links']
             command = options.get_next_command(%i[list download open])
@@ -676,7 +678,7 @@ module Aspera
             end
             case command
             when :list
-              return {type: :object_list, data: all_links}
+              return Main.result_object_list(all_links)
             when :download
               folder_dest = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
@@ -703,7 +705,7 @@ module Aspera
             set_global_default(:ascp_path, ascp_path)
             return Main.result_nothing
           when :show
-            return {type: :status, data: Ascp::Installation.instance.path(:ascp)}
+            return Main.result_status(Ascp::Installation.instance.path(:ascp))
           when :info
             # collect info from ascp executable
             data = Ascp::Installation.instance.ascp_info
@@ -713,12 +715,12 @@ module Aspera
             DataRepository::ELEMENTS.each_with_object(data){|i, h|h[i.to_s] = DataRepository.instance.item(i)}
             # declare those as secrets
             SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
-            return {type: :single_object, data: data}
+            return Main.result_single_object(data)
           when :products
             command = options.get_next_command(%i[list use])
             case command
             when :list
-              return {type: :object_list, data: Ascp::Installation.instance.installed_products, fields: %w[name app_root]}
+              return Main.result_object_list(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
             when :use
               default_product = options.get_next_argument('product name')
               Ascp::Installation.instance.use_ascp_from_product(default_product)
@@ -732,17 +734,16 @@ module Aspera
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
-            return {
-              type:   :object_list,
-              data:   Transfer::Parameters.man_table(formatter),
+            return Main.result_object_list(
+              Transfer::Parameters.man_table(formatter),
               fields: [%w[name type], Transfer::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
-            }
+            )
           when :errors
             error_data = []
             Transfer::ERROR_INFO.each_pair do |code, prop|
               error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
             end
-            return {type: :object_list, data: error_data}
+            return Main.result_object_list(error_data)
           else Aspera.error_unexpected_value(command)
           end
           Aspera.error_unreachable_line
@@ -759,11 +760,10 @@ module Aspera
             return Main.result_status("Installed #{n} version #{v}")
           when :list
             sdk_list = Ascp::Installation.sdk_locations
-            return {
-              type:   :object_list,
-              data:   sdk_list,
+            return Main.result_object_list(
+              sdk_list,
               fields: sdk_list.first.keys - ['url']
-            }
+            )
           else Aspera.error_unexpected_value(command)
           end
           Aspera.error_unreachable_line
@@ -785,12 +785,20 @@ module Aspera
           raise "no such preset: #{name}" if PRESET_EXIST_ACTIONS.include?(action) && !@config_presets.key?(name)
           case action
           when :list
-            return {type: :value_list, data: @config_presets.keys, name: 'name'}
+            return Main.result_value_list(@config_presets.keys, 'name')
           when :overview
             # display process modifies the value (hide secrets): we do not want to save removed secrets
-            return {type: :config_over, data: self.class.deep_clone(@config_presets)}
+            data = self.class.deep_clone(@config_presets)
+            formatter.hide_secrets(data)
+            result = []
+            data.each do |config, preset|
+              preset.each do |parameter, value|
+                result.push(CONF_OVERVIEW_KEYS.zip([config, parameter, value]).to_h)
+              end
+            end
+            return Main.result_object_list(result, fields: CONF_OVERVIEW_KEYS)
           when :show
-            return {type: :single_object, data: self.class.deep_clone(@config_presets[name])}
+            return Main.result_single_object(self.class.deep_clone(@config_presets[name]))
           when :delete
             @config_presets.delete(name)
             return Main.result_status("Deleted: #{name}")
@@ -801,7 +809,7 @@ module Aspera
             case value
             when Numeric, String then return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
             end
-            return {type: :single_object, data: value}
+            return Main.result_single_object(value)
           when :unset
             param_name = options.get_next_argument('parameter name')
             @config_presets[name].delete(param_name)
@@ -840,7 +848,7 @@ module Aspera
             user = options.get_option(:username, mandatory: true)
             result = lookup_preset(url: url, username: user)
             raise 'no such config found' if result.nil?
-            return {type: :single_object, data: result}
+            return Main.result_single_object(result)
           when :secure
             identifier = options.get_next_argument('config name', mandatory: false)
             preset_names = identifier.nil? ? @config_presets.keys : [identifier]
@@ -949,13 +957,13 @@ module Aspera
             require 'aspera/api/node'
             case options.get_next_command(%i{flush list show})
             when :flush
-              return {type: :value_list, data: OAuth::Factory.instance.flush_tokens, name: 'file'}
+              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, name: 'file')
             when :list
-              return {type: :object_list, data: OAuth::Factory.instance.persisted_tokens}
+              return Main.result_object_list(OAuth::Factory.instance.persisted_tokens)
             when :show
               data = OAuth::Factory.instance.get_token_info(instance_identifier)
               raise Cli::Error, 'No such identifier' if data.nil?
-              return {type: :single_object, data: data}
+              return Main.result_single_object(data)
             end
           when :plugins
             case options.get_next_command(%i[list create])
@@ -970,7 +978,7 @@ module Aspera
                   path:   PluginFactory.instance.plugin_source(name)
                 })
               end
-              return {type: :object_list, data: result, fields: %w[plugin detect wizard path]}
+              return Main.result_object_list(result, fields: %w[plugin detect wizard path])
             when :create
               plugin_name = options.get_next_argument('name').downcase
               destination_folder = options.get_next_argument('folder', mandatory: false) || File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME)
@@ -996,10 +1004,7 @@ module Aspera
             options.ask_missing_mandatory = true
             # detect plugins by url and optional query
             apps = identify_plugins_for_url.freeze
-            return {
-              type: :object_list,
-              data: apps
-            } if action.eql?(:detect)
+            return Main.result_object_list(apps) if action.eql?(:detect)
             return wizard_find(apps)
           when :coffee
             return Main.result_image(COFFEE_IMAGE, formatter: formatter)
@@ -1023,14 +1028,14 @@ module Aspera
             send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
             return Main.result_nothing
           when :smtp_settings
-            return {type: :single_object, data: email_settings}
+            return Main.result_single_object(email_settings)
           when :proxy_check
             # ensure fpac was provided
             options.get_option(:fpac, mandatory: true)
             server_url = options.get_next_argument('server url')
             return Main.result_status(@pac_exec.find_proxy_for_url(server_url))
           when :check_update
-            return {type: :single_object, data: check_gem_version}
+            return Main.result_single_object(check_gem_version)
           when :initdemo
             if @config_presets.key?(DEMO_PRESET)
               Log.log.warn{"Demo server preset already present: #{DEMO_PRESET}"}
@@ -1129,7 +1134,7 @@ module Aspera
             wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
           end
           # test mode does not change conf file
-          return {type: :single_object, data: wizard_result} if options.get_option(:test_mode)
+          return Main.result_single_object(wizard_result) if options.get_option(:test_mode)
           # Write configuration file
           formatter.display_status("Preparing preset: #{wiz_preset_name}")
           # init defaults if necessary
@@ -1255,11 +1260,11 @@ module Aspera
           command = options.get_next_command(%i[info list show create delete password])
           case command
           when :info
-            return {type: :single_object, data: vault_info}
+            return Main.result_single_object(vault_info)
           when :list
-            return {type: :object_list, data: vault.list, fields: %w(label url username password description)}
+            return Main.result_object_list(vault.list, fields: %w(label url username password description))
           when :show
-            return {type: :single_object, data: vault.get(label: options.get_next_argument('label'))}
+            return Main.result_single_object(vault.get(label: options.get_next_argument('label')))
           when :create
             label = options.get_next_argument('label', validation: String)
             info = options.get_next_argument('info', validation: Hash)
