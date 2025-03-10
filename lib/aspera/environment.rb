@@ -95,21 +95,36 @@ module Aspera
         Kernel.send('lave'.reverse, code, empty_binding, file, line)
       end
 
+      # Generate log line for external program with arguments
+      # @param env [Hash, nil]   environment variables
+      # @param exec [String]     path to executable
+      # @param args [Array, nil] arguments
+      # @return [String] log line with environment, program and arguments
       def log_spawn(env:, exec:, args:)
         [
           'execute:'.red,
-          env.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
+          env&.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
           Shellwords.shellescape(exec),
-          args.map{|a|Shellwords.shellescape(a)}
-        ].flatten.join(' ')
+          args&.map{|a|Shellwords.shellescape(a)}
+        ].compact.flatten.join(' ')
       end
 
       # start process in background, or raise exception
       # caller can call Process.wait on returned value
-      def secure_spawn(exec:, args: [], env: [])
+      # @param env [Hash, nil]   environment variables
+      # @param exec [String]     path to executable
+      # @param args [Array, nil] arguments
+      # @return [String] PID of process
+      def secure_spawn(exec:, args: nil, env: nil)
+        Aspera.assert_type(args, Array) unless args.nil?
+        Aspera.assert_type(env, Hash) unless env.nil?
         Log.log.debug {log_spawn(env: env, exec: exec, args: args)}
         # start ascp in separate process
-        ascp_pid = Process.spawn(env, [exec, exec], *args, close_others: true)
+        spawn_args = []
+        spawn_args.push(env) unless env.nil?
+        spawn_args.push([exec, exec])
+        spawn_args.concat(args) unless args.nil?
+        ascp_pid = Process.spawn(*spawn_args, close_others: true)
         Log.log.debug{"pid: #{ascp_pid}"}
         return ascp_pid
       end

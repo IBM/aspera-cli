@@ -45,6 +45,12 @@ module Aspera
         # @return true if su
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
+          Process.wait(Environment.secure_spawn(exec: command_sym.to_s, args: command_args.map(&:to_s)))
+          nil
+        end
+
+        def external_capture(command_sym, command_args)
+          Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
           return Environment.secure_capture(exec: command_sym.to_s, args: command_args.map(&:to_s))
         end
 
@@ -63,7 +69,7 @@ module Aspera
 
         # @return Float in seconds
         def video_get_duration(input_file)
-          return external_command(:ffprobe, [
+          return external_capture(:ffprobe, [
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
             '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
