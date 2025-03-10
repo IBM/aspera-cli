@@ -127,7 +127,7 @@ module Aspera
         # commands for execute_command_gen4
         COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
 
-        COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
+        COMMANDS_COS = %i[upload download sync info access_keys api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         COMMANDS_FASPEX = COMMON_ACTIONS
 

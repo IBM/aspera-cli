@@ -19,6 +19,7 @@ module Aspera
           options.declare(:region, 'Storage region')
           options.declare(:identity, "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL)
           options.parse_options!
+          Node.declare_options(options)
         end
 
         ACTIONS = %i[node].freeze
