@@ -679,7 +679,6 @@ module Aspera
               return {type: :object_list, data: all_links}
             when :download
               folder_dest = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
-              # folder_dest=self.options.get_next_argument('destination folder')
               api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
               file_url = one_link['href']
               filename = file_url.gsub(%r{.*/}, '')
@@ -881,6 +880,7 @@ module Aspera
           plugins
           tokens
           echo
+          download
           wizard
           detect
           coffee
@@ -936,6 +936,15 @@ module Aspera
             end
           when :echo # display the content of a value given on command line
             return Formatter.auto_type(options.get_next_argument('value', validation: nil))
+          when :download
+            file_url = options.get_next_argument('source URL').chomp
+            file_dest = options.get_next_argument('file path', mandatory: false)
+            if file_dest.nil?
+              file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, ''))
+            end
+            formatter.display_status("Downloading: #{file_url}")
+            Rest.new(base_url: file_url).call(operation: 'GET', save_to_file: file_dest)
+            return Main.result_status("Saved to: #{file_dest}")
           when :tokens
             require 'aspera/api/node'
             case options.get_next_command(%i{flush list show})

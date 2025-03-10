@@ -1416,6 +1416,7 @@ $(T)conf_ascp_install: $(T).exists
 	$(EXE_MAN) config ascp install --sdk-folder=$(DIR_TMP)sdk_test_dir
 	$(EXE_MAN) config transferd list
 	$(EXE_MAN) config transferd install
+	$(EXE_NO_MAN) config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | $(EXE_NO_MAN) conf download @stdin: --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(T)conf_ascp_8: $(T)conf_ascp_install
 	@$(START_TEST) $@
@@ -1733,7 +1734,7 @@ $(T)tcos_upload: $(T).exists
 	@$(STOP_TEST) $@
 $(T)tcos_download: $(T)tcos_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node download $(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
+	$(EXE_MAN) cos node download $(TST_ASC_FILENAME) --to-folder=
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tcos,$(T)tcos_info1 $(T)tcos_info2 $(T)tcos_info3 $(T)tcos_show $(T)tcos_upload $(T)tcos_download))
 #######################################################################################################################
