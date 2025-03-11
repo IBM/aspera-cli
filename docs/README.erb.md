@@ -5477,15 +5477,16 @@ Activation is in two steps:
   - Click on `Create` Button
   - Take note of Client Id (and Client Secret, but not used in current version)
 
-- The user uses a private key and sets the public key in his faspex 5 profile
+- The user will authenticate with a private key and set the public key in his faspex 5 profile.
 
+  **Note:** If you don't have a private key refer to section [Private Key](#private-key) to generate one.
+  
   This operation is done by each user using the CLI.
 
   - As user, click on the user logo, left to the app switcher on top right.
   - Select `Account Settings`
   - on the bottom in the text field: `Public key in PEM format` paste the **public** key corresponding to the private key used by the user.
 
-  **Note:** If you don't have any refer to section [Private Key](#private-key)
 
 Then use these options:
 
@@ -5575,13 +5576,23 @@ To select another inbox, use option `box` with one of the following values:
 
 ### Faspex 5: Send a package
 
-The `Hash` creation **Command Parameter** provided to command `faspex5 packages send [extended value: Hash with package info ] [files...]` corresponds to the Faspex 5 API: `POST /packages`.
+A package can be sent with the command:
 
-The interface is the one of the API (Refer to Faspex5 API documentation, or look at request in browser).
+```bash
+<%=cmd%> faspex5 packages send [extended value: Hash with package info ] [files...]
+```
+
+The `Hash` creation **Command Parameter** provided to command corresponds to the Faspex 5 API: `POST /packages` (refer to the API reference for a full list of parameters, or look at request in browser).
 
 Required fields are `title` and `recipients`.
 
-Example using `@json:` format:
+Example (assuming a default preset is created for the connection information):
+
+```bash
+<%=cmd%> faspex5 packages send @json:'{"title":"some title","recipients":["user@example.com"]}' mybygfile1
+```
+
+Longer example for the ayload of `@json:`:
 
 ```json
 {"title":"some title","recipients":[{"recipient_type":"user","name":"user@example.com"}]}
