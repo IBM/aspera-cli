@@ -125,10 +125,11 @@ module Aspera
       return result
     end
 
-    # Process event from manegemtn port
+    # Process event from management port
     def process_event(event)
       case event['Type']
       when 'NOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      # rubocop:disable Lint/DuplicateBranch
       when 'START' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
       when 'QUERY' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
       when 'QUERYRSP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
@@ -148,6 +149,7 @@ module Aspera
       when 'CLOSE' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
       when 'SKIP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
       when 'ARGSTOP' then Aspera.Log.debug{"event not managed: #{event['Type']}"}
+      # rubocop:enable Lint/DuplicateBranch
       else Aspera.error_unreachable_line
       end
     end

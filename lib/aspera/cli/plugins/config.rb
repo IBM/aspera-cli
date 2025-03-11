@@ -1245,7 +1245,8 @@ module Aspera
               Log.log.error do
                 "Default config name [#{default_config_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
                   'Please fix the issue: either create preset with one parameter: ' \
-                  "(#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}') or remove default (#{Info::CMD_NAME} config id default remove #{plugin_name_sym})."
+                  "(#{Info::CMD_NAME} config id #{default_config_name} init @json:'{}') " \
+                  "or remove default (#{Info::CMD_NAME} config id default remove #{plugin_name_sym})."
               end
             end
             raise Cli::Error, "Config name [#{default_config_name}] must be a hash, check config file." if !@config_presets[default_config_name].is_a?(Hash)

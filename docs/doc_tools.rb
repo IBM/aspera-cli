@@ -55,7 +55,7 @@ def gem_opt_cmd
 end
 
 def gem_opt_list
-  File.read(@env[:GEMOPT]).lines.map do |l|
+  File.read(@env[:GEMOPT]).lines.filter_map do |l|
     m = l.match(/^gem\('([^']+)', '([^']+)'\)(.*)/)
     next nil unless m
     {
@@ -63,7 +63,7 @@ def gem_opt_list
       version: m[2],
       comment: m[3].gsub('# ', '').strip
     }
-  end.compact
+  end
 end
 
 # Generate markdown from the provided table

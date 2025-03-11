@@ -1,1 +1,0 @@
-require_relative 'transferd_services_pb'
