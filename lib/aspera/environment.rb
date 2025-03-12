@@ -100,7 +100,7 @@ module Aspera
       # @param exec [String]     path to executable
       # @param args [Array, nil] arguments
       # @return [String] log line with environment, program and arguments
-      def log_spawn(env:, exec:, args:)
+      def log_spawn(exec:, args: nil, env: nil)
         [
           'execute:'.red,
           env&.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
@@ -116,9 +116,10 @@ module Aspera
       # @param args [Array, nil] arguments
       # @return [String] PID of process
       def secure_spawn(exec:, args: nil, env: nil)
+        Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
-        Log.log.debug {log_spawn(env: env, exec: exec, args: args)}
+        Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
         # start ascp in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
@@ -129,6 +130,25 @@ module Aspera
         return ascp_pid
       end
 
+      # start process and wait for completion
+      # @param env [Hash, nil]   environment variables
+      # @param exec [String]     path to executable
+      # @param args [Array, nil] arguments
+      # @return [String] PID of process
+      def secure_execute(exec:, args: nil, env: nil)
+        Aspera.assert_type(exec, String)
+        Aspera.assert_type(args, Array) unless args.nil?
+        Aspera.assert_type(env, Hash) unless env.nil?
+        Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
+        # start ascp in separate process
+        spawn_args = []
+        spawn_args.push(env) unless env.nil?
+        spawn_args.push([exec, exec])
+        spawn_args.concat(args) unless args.nil?
+        Kernel.system(*spawn_args, exception: true)
+        nil
+      end
+
       # @param exec [String] path to executable
       # @param args [Array] arguments to executable
       # @param opts [Hash] options to capture3
@@ -137,7 +157,7 @@ module Aspera
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array)
         Aspera.assert_type(opts, Hash)
-        Log.log.debug {log_spawn(env: {}, exec: exec, args: args)}
+        Log.log.debug {log_spawn(exec: exec, args: args)}
         stdout, stderr, status = Open3.capture3(exec, *args, **opts)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         Log.log.trace1{"stdout=#{stdout}"}

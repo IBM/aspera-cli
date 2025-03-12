@@ -210,11 +210,7 @@ module Aspera
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end
-            async_exec = Ascp::Installation.instance.path(:async)
-            Process.wait(Environment.secure_spawn(env: env_args[:env], exec: async_exec, args: env_args[:args]))
-            if $CHILD_STATUS.exitstatus != 0
-              raise "Sync failed with exit: #{$CHILD_STATUS.exitstatus}"
-            end
+            Environment.secure_execute(exec: Ascp::Installation.instance.path(:async), **env_args)
           else
             raise 'At least one of `local` or `sessions` must be present in async parameters'
           end

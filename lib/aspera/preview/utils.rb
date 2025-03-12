@@ -42,11 +42,10 @@ module Aspera
 
         # execute external command
         # one could use "system", but we would need to redirect stdout/err
-        # @return true if su
+        # @return nil
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          Process.wait(Environment.secure_spawn(exec: command_sym.to_s, args: command_args.map(&:to_s)))
-          nil
+          Environment.secure_execute(exec: command_sym.to_s, args: command_args.map(&:to_s))
         end
 
         def external_capture(command_sym, command_args)
