@@ -11,7 +11,7 @@ t="$d"/../tmp/t
 mkdir -p "$t"
 case "$1" in
     "begin")
-        echo "Starting ${2##*/}"
+        echo "Starting ${2##*/} $(date)"
         ;;
     "end")
         echo "Ending ${2##*/}"
