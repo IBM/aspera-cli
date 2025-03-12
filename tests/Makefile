@@ -1734,7 +1734,7 @@ $(T)tcos_upload: $(T).exists
 	@$(STOP_TEST) $@
 $(T)tcos_download: $(T)tcos_upload
 	@$(START_TEST) $@
-	$(EXE_MAN) cos node download $(TST_ASC_FILENAME) --to-folder=
+	$(EXE_MAN) cos node download $(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tcos,$(T)tcos_info1 $(T)tcos_info2 $(T)tcos_info3 $(T)tcos_show $(T)tcos_upload $(T)tcos_download))
 #######################################################################################################################
