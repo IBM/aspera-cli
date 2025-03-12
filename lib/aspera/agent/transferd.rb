@@ -5,12 +5,12 @@ require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
 require 'json'
 require 'uri'
-require 'transferd-api'
+require 'transferd_services_pb'
 
 module Aspera
   module Agent
     class Transferd < Base
-      # see https://github.com/grpc/grpc/blob/master/doc/naming.md
+      # https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'
       PORT_SEP = ':'
