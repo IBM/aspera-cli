@@ -1,31 +1,25 @@
 # Changes (Release notes)
 
-* 4.22.0.pre
+* 4.21.1
 
   * New Features:
     * `config`: New command: `transferd` to list and install specific version of `asperatransferd` and `ascp`
     * `config`: New command: `token` to list and flush cached tokens.
-  * Issues Fixed:
-    * `config`: #180 problem in `ascp install`
-    * `aoc`: #184 token cache shall be different per aoc org.
-  * Breaking Changes:
-    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4.
-    * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.
-    * `ascp`: Default SDK version is now 1.1.4. Removes support for ascp4.
-
-* 4.21.0
-
-  * New Features:
     * `faspex5`: New command: `admin contact reset_password`
     * `config`: New command: `tokens` with `list`, `show`, `flush` (replace `flush_tokens`)
     * `aoc`: #178 packages can be browsed, and individual files can be downloaded now.
   * Issues Fixed:
+    * `config`: #180 problem in `ascp install`
+    * `aoc`: #184 token cache shall be different per aoc org.
     * `config`: Soft links in transfer SDK archive are correctly extracted
     * `aoc`: Fix `packages delete` not working.
     * `direct` agent: #174 Race condition fix with `ascp`: timeout waiting mgt port connect (select not readable)
     * `config`: #175 `ascli config preset set GLOBAL version_check_days 0` causes a bad `config.yaml` to be written
     * `preview`: #177 fix bug that prevents preview generation to work.
   * Breaking Changes:
+    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4.
+    * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.
+    * `ascp`: Default SDK version is now 1.1.4. Removes support for ascp4.
     * **global** : Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
     * **global** : Column name for single object is now `field` instead of `key`.
     * **global** : Ruby minimum versions is now 2.7 (2.6 previously, that removes macOS default ruby support, but newer ruby version can be installed on macOS)
