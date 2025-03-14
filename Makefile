@@ -54,9 +54,8 @@ install: $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 # gems that require native build are made optional
-OPTIONAL_GEMS=$(shell ruby -e 'def source _;end;def gem n,_;puts n;end;load "$(DIR_TOP)Gemfile.optional"')
 clean_optional_gems:
-	gem uninstall $(OPTIONAL_GEMS)
+	gem uninstall $$(ruby -e 'def source _;end;def gem n,_;puts n;end;load "$(DIR_TOP)Gemfile.optional"')
 install_gems: $(DIR_TOP).gems_checked
 # grpc is installed on the side , if needed
 install_optional_gems: install_gems
@@ -141,7 +140,7 @@ clean::
 	rm -f Dockerfile
 ##################################
 # Single executable : make single
-CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(shell $(CLI_PATH) conf platform)
+CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(CLI_ARCH)
 EXE_BUILDER=$(DIR_TOP)examples/build_exec
 single:$(CLI_EXECUTABLE)
 .PHONY: single

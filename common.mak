@@ -5,8 +5,8 @@ DIR_PRIV=$(ASPERA_CLI_PRIVATE)/
 
 # just the name of the command line tool as in bin folder
 # (used for documentation and execution)
-# must be same value as Aspera::Cli::PROGRAM_NAME
-CLI_NAME=ascli
+CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::CMD_NAME')
+CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";puts Aspera::Environment.architecture')
 
 # define common variables to be used in other Makefile
 # required: DIR_TOP (can be empty if cwd)
@@ -38,12 +38,10 @@ $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@
 # Ensure required ruby gems are installed
-# remove ascli and asession from rvm bin folder, so that the one from dev is used
+# remove ascli and asession from riby gem bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
-	cd $(DIR_TOP). && bundle config set --local with development
-	cd $(DIR_TOP). && bundle install
-	rm -f $$HOME/.rvm/*/*/bin/ascli
-	rm -f $$HOME/.rvm/*/*/bin/asession
+	cd $(DIR_TOP). && bundle config set --local with development && bundle install
+	rm -f $$(gem env gemdir)/bin/as{cli,ession}
 	touch $@
 clean:: clean_gems_installed
 clean_gems_installed:
