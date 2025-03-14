@@ -20,6 +20,8 @@ module Aspera
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
+      # private key values (place first)
+      /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)\n*/,
       # CLI manager get/set options
       /(?<begin>[sg]et (?:#{KEY_SECRETS.join('|')})=).*(?<end>)/,
       # env var ascp exec
@@ -28,8 +30,6 @@ module Aspera
       /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>?(?:=>|:) *")[^"]+(?<end>")/,
       # logged data
       /(?<begin>(?:#{ALL_SECRETS2.join('|')})[ =:]+).*(?<end>$)/,
-      # private key values
-      /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)/,
       # cred in http dump
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze
