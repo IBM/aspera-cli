@@ -2524,7 +2524,7 @@ id="example-of-configuration-for-a-plugin"><span
 class="header-section-number">4.10.4</span> Example of configuration for
 a plugin</h3>
 <p>For Faspex, Shares, Node (including ATS, Aspera Transfer Service),
-Console, only username/password and url are required (either on command
+Console, only username/password and URL are required (either on command
 line, or from configuration file). Those can usually be provided on the
 command line:</p>
 <div class="sourceCode" id="cb174"><pre
@@ -2740,7 +2740,7 @@ using <strong>gen4/access key</strong> API.</li>
 plugin.</li>
 <li><code>coffee</code> and <code>image</code> commands of
 <code>config</code> plugin.</li>
-<li>any displayed value which is an url to image can be displayed with
+<li>any displayed value which is a URL to image can be displayed with
 option <code>format</code> set to <code>image</code></li>
 </ul>
 <p>The following options can be specified in the option
@@ -5313,17 +5313,17 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb271-1"><a href
 <tr>
 <td>file</td>
 <td>string</td>
-<td>Basename for files<br>Default: <code>file</code></td>
+<td>Basename for files<br/>Default: <code>file</code></td>
 </tr>
 <tr>
 <td>size</td>
 <td>int</td>
-<td>Size of first file.<br>Default: 0</td>
+<td>Size of first file.<br/>Default: 0</td>
 </tr>
 <tr>
 <td>inc</td>
 <td>int</td>
-<td>Increment applied to determine next file size<br>Default: 0</td>
+<td>Increment applied to determine next file size<br/>Default: 0</td>
 </tr>
 <tr>
 <td>seq</td>
@@ -5793,7 +5793,7 @@ URL.</p>
 integration, i.e. client application identification. For this, specify
 the option: <code>--use-generic-client=no</code>.</p>
 <p>If you already know the application, and want to limit the detection
-to it, provide url and plugin name:</p>
+to it, provide URL and plugin name:</p>
 <div class="sourceCode" id="cb283"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard _your_instance_ aoc</span></code></pre></div>
 <blockquote>
@@ -5816,7 +5816,7 @@ class="header-section-number">5.2.1</span> Configuration details</h3>
 (recommended for <code>ascli</code>)</li>
 <li>Web based authentication : authentication is made by user using a
 browser</li>
-<li>URL Token : external users authentication with url tokens (public
+<li>URL Token : external users authentication with URL tokens (public
 links)</li>
 </ul>
 <p>The authentication method is controlled by option
@@ -7796,7 +7796,7 @@ class="header-section-number">8.12.4</span> Bearer token: User side</h3>
 <p>Now, let’s assume we are the user, the only information received
 are:</p>
 <ul>
-<li>The url of the node API</li>
+<li>The URL of the node API</li>
 <li>A Bearer token</li>
 <li>A file <code>id</code> for which we have access</li>
 </ul>
@@ -8116,7 +8116,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb445-1"><a href
 <span id="cb445-45"><a href="#cb445-45" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> show <span class="at">--box</span><span class="op">=</span>my_workgroup <span class="at">--group-type</span><span class="op">=</span>workgroups workgroup_package_id1</span>
 <span id="cb445-46"><a href="#cb445-46" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> show f5_p31</span>
 <span id="cb445-47"><a href="#cb445-47" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> status f5_p31</span>
-<span id="cb445-48"><a href="#cb445-48" aria-hidden="true" tabindex="-1"></a><span class="ex">postprocessing</span> <span class="at">--pid-file</span><span class="op">=</span>pid_f5_postproc @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:8443/domain&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;&quot;}}&#39;</span> <span class="kw">&amp;</span></span>
+<span id="cb445-48"><a href="#cb445-48" aria-hidden="true" tabindex="-1"></a><span class="ex">postprocessing</span> <span class="at">--pid-file</span><span class="op">=</span>pid_f5_postproc @json:<span class="st">&#39;{&quot;url&quot;:&quot;http://localhost:8088/asclihook&quot;,&quot;processing&quot;:{&quot;script_folder&quot;:&quot;&quot;}}&#39;</span> <span class="kw">&amp;</span></span>
 <span id="cb445-49"><a href="#cb445-49" aria-hidden="true" tabindex="-1"></a><span class="ex">shared</span> browse %name:my_src</span>
 <span id="cb445-50"><a href="#cb445-50" aria-hidden="true" tabindex="-1"></a><span class="ex">shared</span> list</span>
 <span id="cb445-51"><a href="#cb445-51" aria-hidden="true" tabindex="-1"></a><span class="ex">shared_folders</span> browse %name:my_shared_folder_name</span>
@@ -8466,20 +8466,27 @@ but the numerical if can be used as well.</p>
 <h2 data-number="9.19" id="faspex-5-faspex-4-style-postprocessing"><span
 class="header-section-number">9.19</span> Faspex 5: Faspex 4-style
 postprocessing</h2>
-<p><code>ascli</code> provides command <code>postprocessing</code> in
-plugin <code>faspex5</code> to emulate Faspex 4 postprocessing. It
-implements Faspex 5 web hooks, and calls a local script with the same
-environment as Faspex 4.</p>
+<p>The command command <code>ascli faspex5 postprocessing</code>
+emulates Faspex 4 postprocessing script execution in Faspex 5. It
+implements Faspex 5 web hooks and calls a script with the same
+environment variables as set by Faspex 4. Environment variables at set
+to the values provided by the web hook which are the same as Faspex 4
+postprocessing.</p>
+<p>It allows to quickly migrate workflows to Faspex 5 while preserving
+scripts. Nevertheless, on long term, a native approach shall be
+considered, such as using Aspera Orchestrator or other workflow
+engine.</p>
 <p>It is invoked like this:</p>
 <div class="sourceCode" id="cb474"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href="#cb474-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 postprocessing @json:<span class="st">&#39;{&quot;url&quot;:&quot;http://localhost:8080/processing&quot;}&#39;</span></span></code></pre></div>
-<p>The following parameters are supported:</p>
+<p>The following parameters are supported in the extended value
+<code>Hash</code>:</p>
 <table>
 <colgroup>
-<col style="width: 24%" />
-<col style="width: 7%" />
-<col style="width: 21%" />
-<col style="width: 46%" />
+<col style="width: 28%" />
+<col style="width: 10%" />
+<col style="width: 9%" />
+<col style="width: 53%" />
 </colgroup>
 <thead>
 <tr>
@@ -8493,14 +8500,15 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href
 <tr>
 <td>url</td>
 <td><code>String</code></td>
-<td>http://localhost:8080</td>
-<td>Base url on which requests are listened</td>
+<td><code>http://localhost:8080</code></td>
+<td>Base URL on which requests are listened, a path can be
+provided.</td>
 </tr>
 <tr>
 <td>certificate</td>
 <td><code>Hash</code></td>
 <td>nil</td>
-<td>Certificate information (if HTTPS)</td>
+<td>Certificate information (if URL is HTTPS)</td>
 </tr>
 <tr>
 <td>certificate.key</td>
@@ -8518,7 +8526,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href
 <td>certificate.chain</td>
 <td><code>String</code></td>
 <td>nil</td>
-<td>Path to intermediary certificates</td>
+<td>Path to certificate chain</td>
 </tr>
 <tr>
 <td>processing</td>
@@ -8536,7 +8544,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href
 <td>processing.fail_on_error</td>
 <td><code>Bool</code></td>
 <td>false</td>
-<td>Fail if true and process exit with non zero</td>
+<td>Fail if true and process exits with non zero code</td>
 </tr>
 <tr>
 <td>processing.timeout_seconds</td>
@@ -8546,28 +8554,35 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb474-1"><a href
 </tr>
 </tbody>
 </table>
-<p>Parameter <code>url</code> defines:</p>
+<p>Parameter <code>url</code> (base URL) defines:</p>
 <ul>
 <li>If <code>http</code> or <code>https</code> is used</li>
-<li>The local port number</li>
+<li>The local port number (default 443 for HTTPS, 80 for HTTP)</li>
 <li>The <strong>base path</strong>, i.e. the path under which requests
-are received.</li>
+are received, if a reverse proxy is used this can be used to route.</li>
 </ul>
 <p>When a request is received the following happens:</p>
 <ul>
-<li>The processor get the path of the url called</li>
-<li>It removes the <strong>base path</strong></li>
+<li><code>ascli</code> gets the path of the URL called</li>
+<li>It removes the <strong>base path</strong> of base URL.</li>
 <li>It prepends it with the value of <code>script_folder</code></li>
 <li>It executes the script</li>
 <li>Upon success, a success code is returned</li>
 </ul>
-<p>In Faspex 5, configure like this:</p>
+<p>For example:</p>
+<p>The base URL is defined as:
+<code>http://localhost:8080/processing</code>. The parameter
+<code>script_folder</code> is set to <code>/opt/scripts</code></p>
+<p>In Faspex 5, the URL of the webhook endpoint shall be reachable from
+within Faspex containers. For example, if <code>ascli</code> in running
+in the base host, the URL hostname shall not be localhost, as this
+refers to the local address inside Faspex container. Instead, one can
+specify the IP address of the host or
+<code>host.containers.internal</code>.</p>
 <p><strong>Webhook endpoint URI</strong> :
-<code>http://localhost:8080/processing/script1.sh</code></p>
-<p>Then, the postprocessing script executed will be
-<code>script1.sh</code>.</p>
-<p>Environment variables at set to the values provided by the web hook
-which are the same as Faspex 4 postprocessing.</p>
+<code>http://host.containers.internal:8080/processing/script1.sh</code></p>
+<p>Then the postprocessing script executed will be
+<code>/opt/scripts/script1.sh</code>.</p>
 <h2 data-number="9.20" id="faspex-5-faspex-4-gateway"><span
 class="header-section-number">9.20</span> Faspex 5: Faspex 4
 Gateway</h2>
@@ -8579,7 +8594,7 @@ provided for testing only.</p>
 API (only) of Faspex v4, the command <code>gateway</code> provides the
 capability to present an API compatible with Faspex 4, and it will call
 the Faspex 5 API.</p>
-<p>It takes a single argument which is the url at which the gateway will
+<p>It takes a single argument which is the URL at which the gateway will
 be located (locally):</p>
 <div class="sourceCode" id="cb475"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> faspex5 gateway https://localhost:12345/aspera/faspex</span></code></pre></div>
@@ -8932,7 +8947,7 @@ Resource Instance ID (CRN)</h2>
 provided:</p>
 <ul>
 <li><code>bucket</code> bucket name</li>
-<li><code>endpoint</code> storage endpoint url,
+<li><code>endpoint</code> storage endpoint URL,
 e.g. <code>https://s3.hkg02.cloud-object-storage.appdomain.cloud</code></li>
 <li><code>apikey</code> API Key</li>
 <li><code>crn</code> resource instance id</li>
@@ -9022,7 +9037,7 @@ class="header-section-number">14.4</span> Cos sample commands</h2>
 commands:</p>
 </blockquote>
 <div class="sourceCode" id="cb495"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb495-1"><a href="#cb495-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download test_file.bin <span class="at">--to-folder</span><span class="op">=</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb495-1"><a href="#cb495-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> download test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
 <span id="cb495-2"><a href="#cb495-2" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--endpoint</span><span class="op">=</span>my_endpoint <span class="at">--apikey</span><span class="op">=</span>my_api_key <span class="at">--crn</span><span class="op">=</span>my_resource_instance_id</span>
 <span id="cb495-3"><a href="#cb495-3" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--bucket</span><span class="op">=</span>my_bucket <span class="at">--region</span><span class="op">=</span>my_region <span class="at">--service-credentials</span><span class="op">=</span>@json:@file:my_cos_svc_cred</span>
 <span id="cb495-4"><a href="#cb495-4" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> info <span class="at">--log-level</span><span class="op">=</span>trace2</span>

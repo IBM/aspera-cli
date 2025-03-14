@@ -2155,7 +2155,7 @@ The simplest invocation is:
 #### Example of configuration for a plugin
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
-only username/password and url are required (either on command line, or from configuration file).
+only username/password and URL are required (either on command line, or from configuration file).
 Those can usually be provided on the command line:
 
 ```bash
@@ -2401,7 +2401,7 @@ This is available:
 - in the `thumbnail` command of `node` when using **gen4/access key** API.
 - when using the `show` command of `preview` plugin.
 - `coffee` and `image` commands of `config` plugin.
-- any displayed value which is an url to image can be displayed with option `format` set to `image`
+- any displayed value which is a URL to image can be displayed with option `format` set to `image`
 
 The following options can be specified in the option `image`:
 
@@ -2806,18 +2806,18 @@ The `transfer_info` option accepts the following optional parameters to control 
 
 | Name                   | Type    | Description |
 |------------------------|---------|-------------|
-| `wss`                  | `Bool`    | Web Socket Session<br/>Enable use of web socket session in case it is available<br/>Default: true |
-| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<br/>Default: `false` |
+| `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: true |
+| `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false` |
 | `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
 | `client_ssh_key`       | `String` | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
-| `ascp_args`            | `Array`   | Array of strings with native `ascp` arguments.<br/>Default: `[]` |
-| `spawn_timeout_sec`    | `Float`   | Multi session<br/>Verification time that `ascp` is running<br/>Default: `3` |
-| `spawn_delay_sec`      | `Float`   | Multi session<br/>Delay between startup of sessions<br/>Default: `2` |
-| `multi_incr_udp`       | `Bool`    | Multi Session<br/>Increment UDP port on multi-session<br/>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<br/>Else, each session will use `fasp_port` (or `ascp` default)<br/>Default: `true` on Windows, else `false` |
+| `ascp_args`            | `Array`   | Array of strings with native `ascp` arguments.<%=br%>Default: `[]` |
+| `spawn_timeout_sec`    | `Float`   | Multi session<%=br%>Verification time that `ascp` is running<%=br%>Default: `3` |
+| `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2` |
+| `multi_incr_udp`       | `Bool`    | Multi Session<%=br%>Increment UDP port on multi-session<%=br%>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<%=br%>Else, each session will use `fasp_port` (or `ascp` default)<%=br%>Default: `true` on Windows, else `false` |
 | `resume`               | `Hash`    | Resume parameters. See below |
-| `resume.iter_max`      | `Integer` | Max number of retry on error<br/>Default: `7` |
-| `resume.sleep_initial` | `Integer` | First Sleep before retry<br/>Default: `2` |
-| `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<br/>Default: `2` |
+| `resume.iter_max`      | `Integer` | Max number of retry on error<%=br%>Default: `7` |
+| `resume.sleep_initial` | `Integer` | First Sleep before retry<%=br%>Default: `2` |
+| `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<%=br%>Default: `2` |
 | `resume.sleep_max`     | `Integer` | Default: `60` |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
@@ -2985,9 +2985,9 @@ Parameters provided in option `transfer_info` are:
 | Name                   | Type   | Description                           |
 |------------------------|--------|---------------------------------------|
 | url                    | `String` | URL of the HTTP GW</br>Mandatory      |
-| upload_chunk_size      | `Integer`    | Size in bytes of chunks for upload<br/>Default: `64000`    |
-| api_version            | `String` | Force use of version (`v1`, `v2`)<br/>Default: `v2`       |
-| synchronous            | `Bool`   | Wait for each message acknowledgment<br/>Default: `false`  |
+| upload_chunk_size      | `Integer`    | Size in bytes of chunks for upload<%=br%>Default: `64000`    |
+| api_version            | `String` | Force use of version (`v1`, `v2`)<%=br%>Default: `v2`       |
+| synchronous            | `Bool`   | Wait for each message acknowledgment<%=br%>Default: `false`  |
 
 Example:
 
@@ -3008,9 +3008,9 @@ Options for `transfer_info` are:
 
 | Name     | Type   | Description |
 |----------|--------|-------------|
-| `url`      | `String` | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
-| `external` | `Bool`   | Use external daemon, do not start one.<br/>Default: `false` |
-| `keep`     | `Bool`   | Keep the daemon running after exiting <%=tool%><br/>Default: `false` |
+| `url`      | `String` | IP address and port listened by the daemon</br>Mandatory<%=br%>Default: `:0` |
+| `external` | `Bool`   | Use external daemon, do not start one.<%=br%>Default: `false` |
+| `keep`     | `Bool`   | Keep the daemon running after exiting <%=tool%><%=br%>Default: `false` |
 
 > **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
 
@@ -3473,7 +3473,7 @@ where:
 
 > **Note:** Characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
 
-For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<sup>20</sup>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<sup>60</sup>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
+For all sizes, a suffix can be added (case insensitive) to the size: k,m,g,t,p,e (values are power of 2, e.g. 1M is 2<%=pow 20%>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<%=pow 60%>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
@@ -3488,12 +3488,12 @@ where:
 
 | Name   | Type | Description |
 |--------|------|-------------|
-|count   |int   |Number of files<br/>Mandatory|
-|file    |string|Basename for files<br>Default: `file`|
-|size    |int   |Size of first file.<br>Default: 0|
-|inc     |int   |Increment applied to determine next file size<br>Default: 0|
-|seq     |enum  |Sequence in determining next file size<br/>Values: random, sequential<br/>Default: sequential|
-|buf_init|enum  |How source data is initialized<br/>Option 'none' is not allowed for downloads.<br/>Values:none, zero, random<br/>Default:zero|
+|count   |int   |Number of files<%=br%>Mandatory|
+|file    |string|Basename for files<%=br%>Default: `file`|
+|size    |int   |Size of first file.<%=br%>Default: 0|
+|inc     |int   |Increment applied to determine next file size<%=br%>Default: 0|
+|seq     |enum  |Sequence in determining next file size<%=br%>Values: random, sequential<%=br%>Default: sequential|
+|buf_init|enum  |How source data is initialized<%=br%>Option 'none' is not allowed for downloads.<%=br%>Values:none, zero, random<%=br%>Default:zero|
 
 The sequence parameter is applied as follows:
 
@@ -3502,14 +3502,14 @@ The sequence parameter is applied as follows:
   - size +/- (inc * rand())
   - Where rand is a random number between 0 and 1
   - Note that file size must not be negative, inc will be set to size if it is greater than size
-  - Similarly, overall file size must be less than 8*2<sup>60</sup>. If size + inc is greater, inc will be reduced to limit size + inc to 7*2<sup>60</sup>.
+  - Similarly, overall file size must be less than 8*2<%=pow 60%>. If size + inc is greater, inc will be reduced to limit size + inc to 7*2<%=pow 60%>.
 
 - If `seq` is `sequential` then each file size is:
 
   - `size + ((file_index - 1) * inc)`
   - Where first file is index 1
   - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
-  - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less then 8*2<sup>60</sup>.
+  - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less then 8*2<%=pow 60%>.
 
 Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
 
@@ -3655,7 +3655,7 @@ You can test with:
 Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-If you already know the application, and want to limit the detection to it, provide url and plugin name:
+If you already know the application, and want to limit the detection to it, provide URL and plugin name:
 
 ```bash
 <%=cmd%> config wizard _your_instance_ aoc
@@ -3673,7 +3673,7 @@ Several types of OAuth authentication are supported:
 
 - JSON Web Token (JWT) : authentication is secured by a private key (recommended for <%=tool%>)
 - Web based authentication : authentication is made by user using a browser
-- URL Token : external users authentication with url tokens (public links)
+- URL Token : external users authentication with URL tokens (public links)
 
 The authentication method is controlled by option `auth`.
 
@@ -5385,7 +5385,7 @@ Using <%=tool%>, an access key can be created using the `access_key create` on t
 
 Now, let's assume we are the user, the only information received are:
 
-- The url of the node API
+- The URL of the node API
 - A Bearer token
 - A file `id` for which we have access
 
@@ -5486,7 +5486,6 @@ Activation is in two steps:
   - As user, click on the user logo, left to the app switcher on top right.
   - Select `Account Settings`
   - on the bottom in the text field: `Public key in PEM format` paste the **public** key corresponding to the private key used by the user.
-
 
 Then use these options:
 
@@ -5847,8 +5846,12 @@ To send a password reset link to a user, use command `reset_password` on the `ac
 
 ### Faspex 5: Faspex 4-style postprocessing
 
-<%=tool%> provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
-It implements Faspex 5 web hooks, and calls a local script with the same environment as Faspex 4.
+The command command `<%=cmd%> faspex5 postprocessing` emulates Faspex 4 postprocessing script execution in Faspex 5.
+It implements Faspex 5 web hooks and calls a script with the same environment variables as set by Faspex 4.
+Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+
+It allows to quickly migrate workflows to Faspex 5 while preserving scripts.
+Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine.
 
 It is invoked like this:
 
@@ -5856,41 +5859,46 @@ It is invoked like this:
 <%=cmd%> faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing"}'
 ```
 
-The following parameters are supported:
+The following parameters are supported in the extended value `Hash`:
 
-| parameter                  | type    | default                | description                                         |
-|----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | `String` | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
-| certificate                | `Hash`    | nil                    | Certificate information (if HTTPS)                  |
-| certificate.key            | `String` | nil                    | Path to private key file                            |
-| certificate.cert           | `String` | nil                    | Path to certificate                                 |
-| certificate.chain          | `String` | nil                    | Path to intermediary certificates                   |
-| processing                 | `Hash`    | nil                    | Behavior of post processing                         |
-| processing.script_folder   | `String` | .                      | Prefix added to script path                         |
-| processing.fail_on_error   | `Bool`    | false                  | Fail if true and process exit with non zero         |
-| processing.timeout_seconds | `Integer` | 60                     | Max. execution time before script is killed         |
+| parameter                  | type     | default | description                                       |
+|----------------------------|----------|---------|-----------------------------------------------------|
+| url                        | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.             | <!-- markdownlint-disable-line -->
+| certificate                | `Hash`   | nil     | Certificate information (if URL is HTTPS)           |
+| certificate.key            | `String` | nil     | Path to private key file                            |
+| certificate.cert           | `String` | nil     | Path to certificate                                 |
+| certificate.chain          | `String` | nil     | Path to certificate chain                           |
+| processing                 | `Hash`   | nil     | Behavior of post processing                         |
+| processing.script_folder   | `String` | .       | Prefix added to script path                         |
+| processing.fail_on_error   | `Bool`   | false   | Fail if true and process exits with non zero code   |
+| processing.timeout_seconds | `Integer`| 60      | Max. execution time before script is killed         |
 
-Parameter `url` defines:
+Parameter `url` (base URL) defines:
 
 - If `http` or `https` is used
-- The local port number
-- The **base path**, i.e. the path under which requests are received.
+- The local port number (default 443 for HTTPS, 80 for HTTP)
+- The **base path**, i.e. the path under which requests are received, if a reverse proxy is used this can be used to route.
 
 When a request is received the following happens:
 
-- The processor get the path of the url called
-- It removes the **base path**
+- <%=tool%> gets the path of the URL called
+- It removes the **base path** of base URL.
 - It prepends it with the value of `script_folder`
 - It executes the script
 - Upon success, a success code is returned
 
-In Faspex 5, configure like this:
+For example:
 
-**Webhook endpoint URI** : `http://localhost:8080/processing/script1.sh`
+The base URL is defined as: `http://localhost:8080/processing`.
+The parameter `script_folder` is set to `/opt/scripts`
 
-Then, the postprocessing script executed will be `script1.sh`.
+In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
+For example, if <%=tool%> in running in the base host, the URL hostname shall not be localhost, as this refers to the local address inside Faspex container.
+Instead, one can specify the IP address of the host or `host.containers.internal`.
 
-Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+**Webhook endpoint URI** : `http://host.containers.internal:8080/processing/script1.sh`
+
+Then the postprocessing script executed will be `/opt/scripts/script1.sh`.
 
 ### Faspex 5: Faspex 4 Gateway
 
@@ -5898,7 +5906,7 @@ Environment variables at set to the values provided by the web hook which are th
 
 For legacy faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
 
-It takes a single argument which is the url at which the gateway will be located (locally):
+It takes a single argument which is the URL at which the gateway will be located (locally):
 
 ```bash
 <%=cmd%> faspex5 gateway https://localhost:12345/aspera/faspex
@@ -6132,7 +6140,7 @@ If you don't have credentials but have access to the IBM Cloud console, then use
 If you have those parameters already, then following options shall be provided:
 
 - `bucket` bucket name
-- `endpoint` storage endpoint url, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
+- `endpoint` storage endpoint URL, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
 - `apikey` API Key
 - `crn` resource instance id
 
@@ -6829,10 +6837,10 @@ Top level parameters supported by `asession`:
 
 | feature/tool          | Transfer SDK | FaspManager                      | `ascp` | `asession` |
 |-----------------------|--------------|---------------------------------|--------|------------|
-| language integration  | Many         | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | Any    | Any        |
-| required additional components to `ascp` | Daemon       | Library<br/>(+headers) | - | Ruby<br/>Aspera gem |
-| startup               | Daemon       | API | Command line arguments | JSON on stdin<br/>(standard APIs:<br/>JSON.generate<br/>Process.spawn) |
-| events                | Poll     | Callback | Possibility to open management port<br/>and proprietary text syntax | JSON on stdout |
+| language integration  | Many         | C/C++<%=br%>C#/.net<%=br%>Go<%=br%>Python<%=br%>java<%=br%> | Any    | Any        |
+| required additional components to `ascp` | Daemon       | Library<%=br%>(+headers) | - | Ruby<%=br%>Aspera gem |
+| startup               | Daemon       | API | Command line arguments | JSON on stdin<%=br%>(standard APIs:<%=br%>JSON.generate<%=br%>Process.spawn) |
+| events                | Poll     | Callback | Possibility to open management port<%=br%>and proprietary text syntax | JSON on stdout |
 | platforms             | Any with `ascp` and transfer daemon | Any with `ascp` (and SDK if compiled) | Any with `ascp` | Any with Ruby and `ascp` |
 
 ### Simple session

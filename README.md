@@ -2266,7 +2266,7 @@ ascli config wizard
 #### Example of configuration for a plugin
 
 For Faspex, Shares, Node (including ATS, Aspera Transfer Service), Console,
-only username/password and url are required (either on command line, or from configuration file).
+only username/password and URL are required (either on command line, or from configuration file).
 Those can usually be provided on the command line:
 
 ```bash
@@ -2512,7 +2512,7 @@ This is available:
 - in the `thumbnail` command of `node` when using **gen4/access key** API.
 - when using the `show` command of `preview` plugin.
 - `coffee` and `image` commands of `config` plugin.
-- any displayed value which is an url to image can be displayed with option `format` set to `image`
+- any displayed value which is a URL to image can be displayed with option `format` set to `image`
 
 The following options can be specified in the option `image`:
 
@@ -3685,9 +3685,9 @@ where:
 | Name   | Type | Description |
 |--------|------|-------------|
 |count   |int   |Number of files<br/>Mandatory|
-|file    |string|Basename for files<br>Default: `file`|
-|size    |int   |Size of first file.<br>Default: 0|
-|inc     |int   |Increment applied to determine next file size<br>Default: 0|
+|file    |string|Basename for files<br/>Default: `file`|
+|size    |int   |Size of first file.<br/>Default: 0|
+|inc     |int   |Increment applied to determine next file size<br/>Default: 0|
 |seq     |enum  |Sequence in determining next file size<br/>Values: random, sequential<br/>Default: sequential|
 |buf_init|enum  |How source data is initialized<br/>Option 'none' is not allowed for downloads.<br/>Values:none, zero, random<br/>Default:zero|
 
@@ -4141,7 +4141,7 @@ ascli aoc user profile show
 Optionally, it is possible to create a new organization-specific integration, i.e. client application identification.
 For this, specify the option: `--use-generic-client=no`.
 
-If you already know the application, and want to limit the detection to it, provide url and plugin name:
+If you already know the application, and want to limit the detection to it, provide URL and plugin name:
 
 ```bash
 ascli config wizard _your_instance_ aoc
@@ -4159,7 +4159,7 @@ Several types of OAuth authentication are supported:
 
 - JSON Web Token (JWT) : authentication is secured by a private key (recommended for `ascli`)
 - Web based authentication : authentication is made by user using a browser
-- URL Token : external users authentication with url tokens (public links)
+- URL Token : external users authentication with URL tokens (public links)
 
 The authentication method is controlled by option `auth`.
 
@@ -6061,7 +6061,7 @@ Using `ascli`, an access key can be created using the `access_key create` on the
 
 Now, let's assume we are the user, the only information received are:
 
-- The url of the node API
+- The URL of the node API
 - A Bearer token
 - A file `id` for which we have access
 
@@ -6244,7 +6244,6 @@ Activation is in two steps:
   - Select `Account Settings`
   - on the bottom in the text field: `Public key in PEM format` paste the **public** key corresponding to the private key used by the user.
 
-
 Then use these options:
 
 ```text
@@ -6355,7 +6354,7 @@ packages show --box=my_shared_box_name package_box_id1
 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 packages show f5_p31
 packages status f5_p31
-postprocessing --pid-file=pid_f5_postproc @json:'{"url":"https://localhost:8443/domain","processing":{"script_folder":""}}' &
+postprocessing --pid-file=pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","processing":{"script_folder":""}}' &
 shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
@@ -6663,8 +6662,12 @@ To send a password reset link to a user, use command `reset_password` on the `ac
 
 ### Faspex 5: Faspex 4-style postprocessing
 
-`ascli` provides command `postprocessing` in plugin `faspex5` to emulate Faspex 4 postprocessing.
-It implements Faspex 5 web hooks, and calls a local script with the same environment as Faspex 4.
+The command command `ascli faspex5 postprocessing` emulates Faspex 4 postprocessing script execution in Faspex 5.
+It implements Faspex 5 web hooks and calls a script with the same environment variables as set by Faspex 4.
+Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+
+It allows to quickly migrate workflows to Faspex 5 while preserving scripts.
+Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine.
 
 It is invoked like this:
 
@@ -6672,41 +6675,46 @@ It is invoked like this:
 ascli faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing"}'
 ```
 
-The following parameters are supported:
+The following parameters are supported in the extended value `Hash`:
 
-| parameter                  | type    | default                | description                                         |
-|----------------------------|---------|------------------------|-----------------------------------------------------|
-| url                        | `String` | http://localhost:8080  | Base url on which requests are listened             | <!-- markdownlint-disable-line -->
-| certificate                | `Hash`    | nil                    | Certificate information (if HTTPS)                  |
-| certificate.key            | `String` | nil                    | Path to private key file                            |
-| certificate.cert           | `String` | nil                    | Path to certificate                                 |
-| certificate.chain          | `String` | nil                    | Path to intermediary certificates                   |
-| processing                 | `Hash`    | nil                    | Behavior of post processing                         |
-| processing.script_folder   | `String` | .                      | Prefix added to script path                         |
-| processing.fail_on_error   | `Bool`    | false                  | Fail if true and process exit with non zero         |
-| processing.timeout_seconds | `Integer` | 60                     | Max. execution time before script is killed         |
+| parameter                  | type     | default | description                                       |
+|----------------------------|----------|---------|-----------------------------------------------------|
+| url                        | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.             | <!-- markdownlint-disable-line -->
+| certificate                | `Hash`   | nil     | Certificate information (if URL is HTTPS)           |
+| certificate.key            | `String` | nil     | Path to private key file                            |
+| certificate.cert           | `String` | nil     | Path to certificate                                 |
+| certificate.chain          | `String` | nil     | Path to certificate chain                           |
+| processing                 | `Hash`   | nil     | Behavior of post processing                         |
+| processing.script_folder   | `String` | .       | Prefix added to script path                         |
+| processing.fail_on_error   | `Bool`   | false   | Fail if true and process exits with non zero code   |
+| processing.timeout_seconds | `Integer`| 60      | Max. execution time before script is killed         |
 
-Parameter `url` defines:
+Parameter `url` (base URL) defines:
 
 - If `http` or `https` is used
-- The local port number
-- The **base path**, i.e. the path under which requests are received.
+- The local port number (default 443 for HTTPS, 80 for HTTP)
+- The **base path**, i.e. the path under which requests are received, if a reverse proxy is used this can be used to route.
 
 When a request is received the following happens:
 
-- The processor get the path of the url called
-- It removes the **base path**
+- `ascli` gets the path of the URL called
+- It removes the **base path** of base URL.
 - It prepends it with the value of `script_folder`
 - It executes the script
 - Upon success, a success code is returned
 
-In Faspex 5, configure like this:
+For example:
 
-**Webhook endpoint URI** : `http://localhost:8080/processing/script1.sh`
+The base URL is defined as: `http://localhost:8080/processing`.
+The parameter `script_folder` is set to `/opt/scripts`
 
-Then, the postprocessing script executed will be `script1.sh`.
+In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
+For example, if `ascli` in running in the base host, the URL hostname shall not be localhost, as this refers to the local address inside Faspex container.
+Instead, one can specify the IP address of the host or `host.containers.internal`.
 
-Environment variables at set to the values provided by the web hook which are the same as Faspex 4 postprocessing.
+**Webhook endpoint URI** : `http://host.containers.internal:8080/processing/script1.sh`
+
+Then the postprocessing script executed will be `/opt/scripts/script1.sh`.
 
 ### Faspex 5: Faspex 4 Gateway
 
@@ -6714,7 +6722,7 @@ Environment variables at set to the values provided by the web hook which are th
 
 For legacy faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
 
-It takes a single argument which is the url at which the gateway will be located (locally):
+It takes a single argument which is the URL at which the gateway will be located (locally):
 
 ```bash
 ascli faspex5 gateway https://localhost:12345/aspera/faspex
@@ -7038,7 +7046,7 @@ If you don't have credentials but have access to the IBM Cloud console, then use
 If you have those parameters already, then following options shall be provided:
 
 - `bucket` bucket name
-- `endpoint` storage endpoint url, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
+- `endpoint` storage endpoint URL, e.g. `https://s3.hkg02.cloud-object-storage.appdomain.cloud`
 - `apikey` API Key
 - `crn` resource instance id
 
@@ -7131,7 +7139,7 @@ ascli cos node upload 'faux:///sample1G?1g'
 > **Note:** Add `ascli cos` in front of the commands:
 
 ```bash
-node download test_file.bin --to-folder=
+node download test_file.bin --to-folder=.
 node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
 node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
 node info --log-level=trace2

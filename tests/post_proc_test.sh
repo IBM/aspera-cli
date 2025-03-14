@@ -1,5 +1,7 @@
 #!/bin/bash
-env
+echo ">>>>>>>>>>>>>>>>>POSTPROC SCRIPT BEGIN"
+pwd
+env|grep '^faspex'
 sleep 10
-echo ">>>>>>>>>>>>>>>>>AFTER SLEEP"
+echo ">>>>>>>>>>>>>>>>>POSTPROC SCRIPT END"
 exit 1

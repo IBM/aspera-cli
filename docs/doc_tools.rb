@@ -21,6 +21,12 @@ class HtmlFormatter
   end
 end
 
+# line break in tables
+def br; '<br/>'; end
+
+# to the power of
+def pow(x); "<sup>#{x}</sup>"; end
+
 # set values used in ERB
 # just command name
 def cmd; Aspera::Cli::Info::CMD_NAME; end
