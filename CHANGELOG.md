@@ -2,11 +2,14 @@
 
 * 4.22.0.pre
 
+  * New Features:
+    * `config`: New command: `transferd` to list and install specific version of `asperatransferd` and `ascp`
   * Issues Fixed:
     * `config`: #180 problem in `ascp install`
   * Breaking Changes:
-    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Recommended is 3.4, and future minimum is 3.2.
-    * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. `trsdk` renamed `transferd`
+    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4.
+    * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.
+    * `ascp`: Default SDK version is now 1.1.4. Removes support for ascp4.
 
 * 4.21.0
 
