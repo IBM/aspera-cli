@@ -63,12 +63,12 @@ module Aspera
           return client_key, DataRepository.instance.item(client_key)
         end
 
-        # base API url depends on domain, which could be "qa.xxx"
-        def api_base_url(organization: 'api', api_domain: SAAS_DOMAIN_PROD)
-          return "https://#{organization}.#{api_domain}"
+        # base API url depends on domain, which could be "qa.xxx" or self-managed domain
+        def api_base_url(api_domain: SAAS_DOMAIN_PROD)
+          return "https://api.#{api_domain}"
         end
 
-        # split host of http://myorg.asperafiles.com in org and domain
+        # split host of URL into organization and domain
         def split_org_domain(uri)
           Aspera.assert_type(uri, URI)
           raise "No host found in URL.Please check URL format: https://myorg.#{SAAS_DOMAIN_PROD}" if uri.host.nil?
@@ -192,6 +192,7 @@ module Aspera
           }
           # add jwt payload for global client id
           auth_params[:payload][:org] = url_info[:organization] if GLOBAL_CLIENT_APPS.include?(auth_params[:client_id])
+          auth_params[:cache_ids] = [url_info[:organization]]
         when :url_json
           auth_params[:url] = {grant_type: 'url_token'} # URL arguments
           auth_params[:json] = {url_token: url_info[:token]} # JSON body

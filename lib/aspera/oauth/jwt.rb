@@ -21,12 +21,15 @@ module Aspera
         private_key_obj:,
         payload:,
         headers: {},
+        cache_ids: [],
         **base_params
       )
         Aspera.assert_type(private_key_obj, OpenSSL::PKey::RSA){'private_key_obj'}
         Aspera.assert_type(payload, Hash){'payload'}
         Aspera.assert_type(headers, Hash){'headers'}
-        super(**base_params, cache_ids: [payload[:sub]])
+        Aspera.assert_type(cache_ids, Array){'cache ids'}
+        new_cache_ids = cache_ids.clone.push(payload[:sub])
+        super(**base_params, cache_ids: new_cache_ids)
         @private_key_obj = private_key_obj
         @additional_payload = payload
         @headers = headers

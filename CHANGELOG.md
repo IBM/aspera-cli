@@ -4,8 +4,10 @@
 
   * New Features:
     * `config`: New command: `transferd` to list and install specific version of `asperatransferd` and `ascp`
+    * `config`: New command: `token` to list and flush cached tokens.
   * Issues Fixed:
     * `config`: #180 problem in `ascp install`
+    * `aoc`: #184 token cache shall be different per aoc org.
   * Breaking Changes:
     * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4.
     * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.

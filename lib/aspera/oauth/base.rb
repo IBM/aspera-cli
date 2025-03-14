@@ -38,12 +38,10 @@ module Aspera
         @client_id = client_id
         @client_secret = client_secret
         @use_query = use_query
-        @base_cache_ids = cache_ids.clone
-        @base_cache_ids = [] if @base_cache_ids.nil?
+        @base_cache_ids = cache_ids.nil? ? [] : cache_ids.clone
         Aspera.assert_type(@base_cache_ids, Array)
-        if @api.auth_params.key?(:username)
-          cache_ids.push(@api.auth_params[:username])
-        end
+        @base_cache_ids.push(@api.auth_params[:username]) if @api.auth_params.key?(:username)
+        @base_cache_ids.compact!
         @base_cache_ids.freeze
         self.scope = scope
       end
