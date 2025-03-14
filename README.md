@@ -559,37 +559,24 @@ This can be installed either be installing an Aspera transfer software or using 
 
 The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon.
 
-Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes)
+Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
+
+Install with:
 
 ```bash
 ascli config ascp install
 ```
 
+or
+
+```bash
+ascli config transferd install
+```
+
 This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then select the latest version for the current platform.
 In this case, the default value for option `sdk_url` is `DEF`.
 
-If installation from a local file preferred instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
-
-1. Locate the appropriate SDK archive for your platform, by visiting either:
-
-    - [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20SDK%22)
-    - or looking at this file: <https://ibm.biz/sdk_location>
-
-2. Download the SDK archive using a browser, or `curl` or `wget`, etc...
-
-    ```bash
-    curl -Lso sdk.zip https://...
-    ```
-
-3. Install using the local archive
-
-    ```bash
-    ascli config ascp install --sdk-url=file:///sdk.zip
-    ```
-
-The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
-
-Available SDK versions can be listed with: `ascli config transferd list`
+Available Transfer Daemon versions can be listed with: `ascli config transferd list`
 
 To install a specific version, e.g. 1.1.3:
 
@@ -608,6 +595,14 @@ To download it, pipe to `config download`:
 ```bash
 ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | ascli config download @stdin:
 ```
+
+If installation from a local file preferred instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+
+```bash
+ascli config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+```
+
+The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
 
 #### Installation of `ascp` through other component
 
