@@ -6129,7 +6129,7 @@ slash
 space /
 ssync bandwidth %name:my_node_sync
 ssync counters %name:my_node_sync
-ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
+ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path_real"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
 ssync delete %name:my_node_sync
 ssync files %name:my_node_sync
 ssync list

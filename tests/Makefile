@@ -1351,17 +1351,23 @@ $(eval $(call test_suite_all,tnsync,$(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)
 #######################################################################################################################
 $(T)sync_create: $(T).exists
 	@$(START_TEST) $@
+	$(EXE_IGN) server -Pserver2_user delete @preset:sync.remote_path$(EXE_END_IGN)
+	$(EXE_NO_MAN) server -Pserver2_user mkdir @preset:sync.remote_path
+	$(EXE_IGN) node delete @preset:sync.local_path$(EXE_END_IGN)
+	$(EXE_NO_MAN) node mkdir @preset:sync.local_path
+	$(EXE_NO_MAN) node upload 'faux:///testfile1?1m' --to-folder=@preset:sync.local_path
 	set -x&&\
-	host_port=$$($(EXE_NO_MAN) config preset get server_user url|cut -f3 -d/)&&\
+	host_port=$$($(EXE_NO_MAN) config preset get server2_user url|cut -f3 -d/)&&\
 	host=$${host_port%:*}&&\
 	port=$${host_port#*:}&&\
-	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
+	$(EXE_MAN) node ssync create @json:@extend:'{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path_real@"},"remote":{"host":"'"$${host}"'","port":'"$${port}"',"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
 	$(EXE_MAN) node ssync list
 	@$(STOP_TEST) $@
 $(T)sync_other: $(T)sync_create
 	@$(START_TEST) $@
 	$(EXE_MAN) node ssync start %name:my_node_sync
 	$(EXE_MAN) node ssync show %name:my_node_sync
+	sleep 30
 	$(EXE_MAN) node ssync bandwidth %name:my_node_sync
 	$(EXE_MAN) node ssync counters %name:my_node_sync
 	$(EXE_MAN) node ssync files %name:my_node_sync
