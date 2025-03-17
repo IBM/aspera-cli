@@ -2,7 +2,10 @@
 
 * 4.22.0.pre
 
-  * **container**: Updated Ruby to 3.4.2
+  * New Features:
+    * **container**: Updated Ruby to 3.4.2
+  * Issues Fixed:
+    * **global**: #185 `@val:` shall stop processing extended values
 
 * 4.21.1
 

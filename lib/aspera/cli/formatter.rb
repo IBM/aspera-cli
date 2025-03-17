@@ -217,8 +217,7 @@ module Aspera
       # info: additional info, displayed if level==info
       # error: always displayed on stderr
       def display_message(message_level, message)
-        Aspera.assert_type(message, String)
-        message = SecretHider.hide_secrets_in_string(message) if hide_secrets?
+        message = SecretHider.hide_secrets_in_string(message) if message.is_a?(String) && hide_secrets?
         case message_level
         when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
         when :info then $stdout.puts(message) if @options[:display].eql?(:info)

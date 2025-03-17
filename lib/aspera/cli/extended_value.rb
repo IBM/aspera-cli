@@ -21,6 +21,13 @@ module Aspera
       MARKER_END = ':'
       MARKER_IN_END = '@'
 
+      # special handlers stop processing of handlers on right
+      # extend includes processing of other handlers in itself
+      # val keeps the value intact
+      SPECIAL_HANDLERS = %i[extend val].freeze
+
+      private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS
+
       class << self
         # decode comma separated table text
         def decode_csvt(value)
@@ -64,7 +71,7 @@ module Aspera
           ruby:   lambda{|v|Environment.secure_eval(v, __FILE__, __LINE__)},
           secret: lambda{|v|prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
           stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
-          stdbin: lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
+          stdbin: lambda{|v|ExtendedValue.assert_no_value(v, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
           yaml:   lambda{|v|YAML.load(v)},
           zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
           extend: lambda{|v|ExtendedValue.instance.evaluate_all(v)}
@@ -107,8 +114,7 @@ module Aspera
           handler = m[1].to_sym
           handlers_reversed.unshift(handler)
           value = m[2]
-          # stop processing if handler is extend (it will be processed later)
-          break if handler.eql?(:extend)
+          break if SPECIAL_HANDLERS.include?(handler)
         end
         Log.log.trace1{"evaluating: #{handlers_reversed}, value: #{value}"}
         handlers_reversed.each do |handler|
