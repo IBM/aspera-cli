@@ -38,6 +38,7 @@ module Aspera
     class << self
       attr_accessor :log_secrets
 
+      # @return new log formatter that hides secrets
       def log_formatter(original_formatter)
         original_formatter ||= Logger::Formatter.new
         # NOTE: that @log_secrets may be set AFTER this init is done, so it's done at runtime
@@ -51,6 +52,11 @@ module Aspera
         end
       end
 
+      def hide_secrets_in_string(value)
+        return value.gsub(REGEX_LOG_REPLACES.first){"#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}"}
+      end
+
+      # @return true if the key denotes a secret
       def secret?(keyword, value)
         keyword = keyword.to_s if keyword.is_a?(Symbol)
         # only Strings can be secrets, not booleans, or hash, arrays
@@ -62,6 +68,7 @@ module Aspera
         ALL_SECRETS.any?{|kw|keyword.include?(kw)}
       end
 
+      # Hides recursively secrets in Hash or Array of Hash
       def deep_remove_secret(obj)
         case obj
         when Array
