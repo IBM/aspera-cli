@@ -220,10 +220,19 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 
 ### <%=tool%> executable
 
-**Note:** This is an Alpha feature. The binary depends on certain GLIBC version for Linux.
-
 It is planned to provide <%=tool%> as a single platform-dependent executable.
-[Alpha releases can be found here](https://ibm.biz/aspera-cli-exe).
+[Releases can be found here](https://ibm.biz/aspera-cli-exe).
+
+**Note:** This is an Alpha feature. On Linux, the executable requires a minimum GLIBC version.
+
+On Linux, check your GLIBC version with `ldd`:
+
+```console
+$ ldd --version | head -n1
+ldd (GNU libc) 2.34
+# objdump -p /bin/false | grep 'GLIBC_' | cut -f2 -d_ | sort -V | head -n1
+
+```
 
 ### Ruby
 

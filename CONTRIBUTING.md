@@ -298,6 +298,12 @@ A modern version of this is now used: [`tebako`](https://github.com/tamatebako/t
 make single GEM_VERSION=4.11.0
 ```
 
+## Development check list for new release
+
+When preparing for a new release do the following:
+
+- TODO
+
 ## Long Term Implementation and delivery improvements
 
 - replace rest and oauth classes with ruby standard gems:

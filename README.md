@@ -224,10 +224,19 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 
 ### `ascli` executable
 
-**Note:** This is an Alpha feature. The binary depends on certain GLIBC version for Linux.
-
 It is planned to provide `ascli` as a single platform-dependent executable.
-[Alpha releases can be found here](https://ibm.biz/aspera-cli-exe).
+[Releases can be found here](https://ibm.biz/aspera-cli-exe).
+
+**Note:** This is an Alpha feature. On Linux, the executable requires a minimum GLIBC version.
+
+On Linux, check your GLIBC version with `ldd`:
+
+```console
+$ ldd --version | head -n1
+ldd (GNU libc) 2.34
+# objdump -p /bin/false | grep 'GLIBC_' | cut -f2 -d_ | sort -V | head -n1
+
+```
 
 ### Ruby
 
@@ -6087,6 +6096,7 @@ access_key do my_ak_name show %id:1
 access_key do my_ak_name show /test_nd_ak3
 access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --default-ports=no
 access_key do self permission %id:root_id create @json:'{"access_type":"user","access_id":"666"}'
+access_key do self permission / show 1
 access_key do self show / --fields=id --output=root_id
 access_key list
 access_key set_bearer_key self @file:my_private_key
