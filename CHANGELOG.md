@@ -11,27 +11,25 @@
 
   * New Features:
     * `config`: New command: `transferd` to list and install specific version of `asperatransferd` and `ascp`
-    * `config`: New command: `token` to list and flush cached tokens.
-    * `faspex5`: New command: `admin contact reset_password`
     * `config`: New command: `tokens` with `list`, `show`, `flush` (replace `flush_tokens`)
+    * `faspex5`: New command: `admin contact reset_password`
     * `aoc`: #178 packages can be browsed, and individual files can be downloaded now.
   * Issues Fixed:
+    * `config`: #175 `ascli config preset set GLOBAL version_check_days 0` causes a bad `config.yaml` to be written
     * `config`: #180 problem in `ascp install`
-    * `aoc`: #184 token cache shall be different per aoc org.
     * `config`: Soft links in transfer SDK archive are correctly extracted
+    * `aoc`: #184 token cache shall be different per aoc org.
     * `aoc`: Fix `packages delete` not working.
     * `direct` agent: #174 Race condition fix with `ascp`: timeout waiting mgt port connect (select not readable)
-    * `config`: #175 `ascli config preset set GLOBAL version_check_days 0` causes a bad `config.yaml` to be written
     * `preview`: #177 fix bug that prevents preview generation to work.
   * Breaking Changes:
-    * **global** : Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4.
     * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.
     * `ascp`: Default SDK version is now 1.1.4. Removes support for ascp4.
-    * **global** : Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
-    * **global** : Column name for single object is now `field` instead of `key`.
-    * **global** : Ruby minimum versions is now 2.7 (2.6 previously, that removes macOS default ruby support, but newer ruby version can be installed on macOS)
     * `node`: Removed deprecated command prefix `exec:`, use `@ruby:` instead.
-    * **global** : Now uses openssl 3.
+    * **global**: Now uses openssl 3.
+    * **global**: Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4. (that removes macOS default ruby support. Newer Ruby version shall be installed on macOS with `brew`)
+    * **global**: Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
+    * **global**: Column name for single object is now `field` instead of `key`.
 
 * 4.20.0
 
@@ -42,7 +40,7 @@
     * `node`: New option `node_cache` (bool) for gen4 operations.
     * `node`: Option `root_id` now works always for node gen4, as well as `%id:` for file selection in addition to path.
     * `node`: `transfer list` now uses the `iteration_token` to retrieve all values. Option `once_only` is now supported.
-    * **global** : option `http_options` now include retry options.
+    * **global**: option `http_options` now include retry options.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
     * `aoc`: #165 aoc mkdir now follows the last link of containing folder
