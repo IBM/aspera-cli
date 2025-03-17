@@ -1,42 +1,38 @@
 # Embedded Ruby template
 # lines beginning with "#erb:" are embedded ruby lines, processing is done in Makefile so there is no syntax error in Dockerfile
 # arg: arg_gem: specify a gemfile or a gem version
-# arg: arg_sdk: specify a sdk file or empty (download from default url)
+# arg: arg_opt: specify list of optional gems
 # cspell:ignore cliuser optipng
-# Review the version of ruby to be used periodically from : https://hub.docker.com/_/ruby
-FROM docker.io/ruby:3.2.2
+# Review the version of ruby to be used periodically from :
+# https://hub.docker.com/_/ruby
+FROM docker.io/ruby:3.4.2
 #erb: if arg_gem.end_with?('.gem')
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .
 # if a gem file was provided, once copied in container: use the basename only
 #erb: arg_gem=File.basename(arg_gem)
 #erb: end
-# Install globally, does not need to be in user's home, must be outside /home/cliuser/.aspera/ascli which will be a volume
-ARG sdk_install_dir=/aspera_sdk
+# Location of Aspera binaries (ascp, asperatransferd, license file)
+# Install globally, does not need to be in user's home
+# Must be outside /home/cliuser/.aspera/ascli which will be a volume
+ARG aspera_bin_dir=/ibm_aspera
 # set SDK location in container
-ENV ASCLI_SDK_FOLDER=$sdk_install_dir
-#erb: unless arg_sdk.empty?
-# SDK file is available locally, then copy it
-COPY <%=arg_sdk%> .
-# if a sdk file was provided, once copied in container: use the basename only with file url
-#erb: arg_sdk='--sdk-url=file:///'+File.basename(arg_sdk)
-#erb: end
+ENV ASCLI_SDK_FOLDER=$aspera_bin_dir
 # Install aspera-cli gem (beta or release), optional gems and other packages
 RUN \
   apt-get update && \
   apt-get install -y imagemagick optipng && \
   apt-get clean && \
   rm -fr /var/lib/apt/lists/* && \
-  gem install grpc mimemagic rmagick <%=arg_gem%> && \
+  gem install <%=arg_opt%> <%=arg_gem%> && \
+  rm -f <%=arg_gem%> && \
   useradd -m -u 1000 -s /bin/bash cliuser && \
   mkdir -p /home/cliuser/.aspera/ascli && \
   chown -R cliuser: /home/cliuser && \
-  rm -f <%=arg_gem%> && \
-  mkdir -p $sdk_install_dir && \
-  chmod 755 $sdk_install_dir && \
-  ascli conf ascp install <%=arg_sdk%> && \
-  ascli conf ascp info && \
-  rm -f sdk.zip
+  mkdir -p $aspera_bin_dir && \
+  chmod 755 $aspera_bin_dir && \
+  ascli conf transferd install && \
+  ascli conf ascp info
 # rootless execution
 USER cliuser
 # The default dir when starting the docker container.

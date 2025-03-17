@@ -2,7 +2,7 @@
 
 * 4.22.0.pre
 
-  * 
+  * **container**: Updated Ruby to 3.4.2
 
 * 4.21.1
 

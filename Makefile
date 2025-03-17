@@ -53,9 +53,12 @@ install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
+OPT_GEMS_FILE=$(DIR_TMP)gems_opt_list.txt
+$(OPT_GEMS_FILE): $(DIR_TOP)Gemfile.optional
+	ruby -w -e 'def source(_);end;def gem(n,_);puts n;end;load "$(DIR_TOP)Gemfile.optional"' > $@
 # gems that require native build are made optional
-clean_optional_gems:
-	gem uninstall $$(ruby -e 'def source _;end;def gem n,_;puts n;end;load "$(DIR_TOP)Gemfile.optional"')
+clean_optional_gems: $(OPT_GEMS_FILE)
+	gem uninstall $$(cat $(OPT_GEMS_FILE))
 install_gems: $(DIR_TOP).gems_checked
 # grpc is installed on the side , if needed
 install_optional_gems: install_gems
@@ -106,24 +109,24 @@ changes:
 
 ##################################
 # Docker image
-DOCKER_REPO=$(shell cat $(DIR_DOC)docker_repository.txt)
+$(DIR_TMP)repo.mak: $(DIR_DOC)docker_repository.txt
+	echo "DOCKER_REPO=$$(cat $(DIR_DOC)docker_repository.txt)" > $@
+include $(DIR_TMP)repo.mak
 DOCKER_IMG_VERSION=$(GEM_VERSION)
 DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
-LOCAL_SDK_FILE=$(DIR_TMP)sdk.zip
-PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/' < Dockerfile.tmpl.erb | erb -T 2
+PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
 DOCKER=podman
-$(LOCAL_SDK_FILE): $(DIR_TMP).exists
-	curl -Lo $(LOCAL_SDK_FILE) $$($(CLI_PATH) --show-config --fields=sdk_url --display=data)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
-dockerfile_release:
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
-docker: dockerfile_release $(LOCAL_SDK_FILE)
+# TODO: get optional gems from 
+dockerfile_release: $(OPT_GEMS_FILE)
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt=$$(cat $(OPT_GEMS_FILE)) > Dockerfile
+docker: dockerfile_release
 	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
-dockerfile_beta:
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_sdk=$(LOCAL_SDK_FILE) > Dockerfile
-docker_beta_build: dockerfile_beta $(LOCAL_SDK_FILE) $(PATH_GEMFILE)
+dockerfile_beta: $(OPT_GEMS_FILE)
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_opt=$$(cat $(OPT_GEMS_FILE)) > Dockerfile
+docker_beta_build: dockerfile_beta $(PATH_GEMFILE)
 	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) .
 docker_beta: $(BETA_VERSION_FILE)
 	$(MAKE_BETA) docker_beta_build
@@ -131,6 +134,7 @@ docker_push_beta: $(BETA_VERSION_FILE)
 	$(MAKE_BETA) docker_push_version
 docker_test:
 	$(DOCKER) run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
+# Push build version with both tags (version and latest)
 docker_push: docker_push_version docker_push_latest
 docker_push_version:
 	$(DOCKER) push $(DOCKER_TAG_VERSION)
