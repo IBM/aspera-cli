@@ -601,7 +601,7 @@ module Aspera
             return Main.result_image(result[:http].body, formatter: formatter)
           when :permission
             apifid = apifid_from_next_arg(top_file_id)
-            command_perm = options.get_next_command(%i[list create delete])
+            command_perm = options.get_next_command(%i[list show create delete])
             case command_perm
             when :list
               list_query = query_read_delete(default: {'include' => Rest.array_params(%w[access_level permission_count])})
@@ -611,6 +611,9 @@ module Aspera
               # NOTE: supports per_page and page and header X-Total-Count
               items = apifid[:api].read('permissions', list_query)
               return {type: :object_list, data: items}
+            when :show
+              perm_id = instance_identifier
+              return Main.result_single_object(apifid[:api].read("permissions/#{perm_id}"))
             when :delete
               return do_bulk_operation(command: command_perm, descr: 'identifier', values: :identifier) do |one_id|
                 apifid[:api].delete("permissions/#{one_id}")
