@@ -4,7 +4,6 @@
 # spellchecker:ignore pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
 # spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes
 
-require 'open3'
 require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
@@ -24,17 +23,18 @@ module Aspera
       # one of CONVERSION_TYPES
       attr_reader :conversion_type
 
-      # @param src source file path
-      # @param dst destination file path
-      # @param api_mime_type optional mime type as provided by node api (or nil)
       # node API mime types are from: http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
-      # supported preview type is one of Preview::PREVIEW_FORMATS
       # the resulting preview file type is taken from destination file extension.
       # conversion methods are provided by private methods: convert_<conversion_type>_to_<preview_format>
       #   -> conversion_type is one of FileTypes::CONVERSION_TYPES
       #   -> preview_format is one of Generator::PREVIEW_FORMATS
       # the conversion video->mp4 is implemented in methods: convert_video_to_mp4_using_<video_conversion>
       #  -> conversion method is one of Generator::VIDEO_CONVERSION_METHODS
+      # @param src           [String]  source file path
+      # @param dst           [String]  destination file path
+      # @param options       [Options] All conversion options
+      # @param main_temp_dir [String]  Main temp folder, sub folder will be created for generation
+      # @param api_mime_type [String,nil] Optional mime type as provided by node api (or nil)
       def initialize(src, dst, options, main_temp_dir, api_mime_type)
         @source_file_path = src
         @destination_file_path = dst
@@ -54,7 +54,7 @@ module Aspera
         end
         @processing_method = @processing_method.to_sym
         Log.log.debug{"method: #{@processing_method}"}
-        Aspera.assert(respond_to?(@processing_method, true)){"no processing know for #{conversion_type} -> #{@preview_format_sym}"}
+        Aspera.assert(respond_to?(@processing_method, true)){"no processing known for #{conversion_type} -> #{@preview_format_sym}"}
       end
 
       # create preview as specified in constructor
