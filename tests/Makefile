@@ -1618,6 +1618,15 @@ $(T)conf_echo: $(T).exists
 	  $(EXE_NO_MAN) config echo @json:'{"user1":"yes","user2":"no"}' --format=$$f;\
 	done
 	@$(STOP_TEST) $@
+$(T)conf_extended: $(T).exists
+	@$(START_TEST) $@
+	test $$($(EXE_NO_MAN) config echo @val:@file:foo --format=text) = @file:foo
+	test $$($(EXE_NO_MAN) config echo @base64:Zm9v --format=text) = foo
+	test "$$($(EXE_NO_MAN) config echo @lines:@json:'"1\n2\n"')" = '["1", "2"]'
+	test "$$($(EXE_NO_MAN) config echo @list:,1,2)" = '["1", "2"]'
+	test "$$($(EXE_NO_MAN) config echo @json:'["1","2"]')" = '["1", "2"]'
+	test "$$($(EXE_NO_MAN) config echo @yaml:@json:'"- 1\n- 2\n"')" = '[1, 2]'
+	@$(STOP_TEST) $@
 $(T)conf_interactive: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config echo @secret:
@@ -1634,7 +1643,7 @@ $(T)conf_logger: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) config file --logger=syslog --log-level=debug
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_install $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_hint $(T)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_install $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_extended $(T)conf_hint $(T)conf_logger))
 #######################################################################################################################
 $(T)prev_check: $(T).exists
 	@$(START_TEST) $@

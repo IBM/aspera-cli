@@ -6,6 +6,7 @@
     * **container**: Updated Ruby to 3.4.2
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
+    * `echo`: Display of list was showing only first element
 
 * 4.21.1
 

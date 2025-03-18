@@ -182,7 +182,7 @@ module Aspera
 
       # @param descr [String] description for help
       # @param mandatory [Boolean] if true, raise error if option not set
-      # @param multiple [Boolean] if true, return remaining arguments
+      # @param multiple [Boolean] if true, return remaining arguments (Array)
       # @param accept_list [Array] list of allowed values (Symbol)
       # @param validation [Class, Array] accepted value type(s) or list of Symbols
       # @param aliases [Hash] map of aliases: key = alias, value = real value
@@ -204,7 +204,7 @@ module Aspera
             values = @unprocessed_cmd_line_arguments.shift(how_many)
             values = values.map{|v|evaluate_extended_value(v, allowed_types)}
             # if expecting list and only one arg of type array : it is the list
-            values = values.first if values.length.eql?(1) && values.first.is_a?(Array)
+            values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
               allowed_values = [].concat(accept_list)
               allowed_values.concat(aliases.keys) unless aliases.nil?
