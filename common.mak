@@ -40,6 +40,7 @@ $(DIR_TMP).exists:
 # Ensure required ruby gems are installed
 # remove ascli and asession from riby gem bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
+	gem install bundler
 	cd $(DIR_TOP). && bundle config set --local with development && bundle install
 	rm -f $$(gem env gemdir)/bin/as{cli,ession}
 	touch $@

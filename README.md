@@ -5296,7 +5296,9 @@ admin package list --http-options=@json:'{"read_timeout":120.0}'
 admin saml_configuration list
 admin self show
 admin short_link list
-admin subscription
+admin subscription account
+admin subscription usage
+admin subscription usage MONTH
 admin user list
 admin user modify %name:my_user_email @json:'{"deactivated":false}'
 admin workspace list

@@ -473,60 +473,111 @@ module Aspera
           when :subscription
             org = aoc_api.read('organization')
             bss_graphql = api_from_options('bss/platform/graphql')
-            # cspell:disable
-            graphql_query = <<-GRAPHQL
-      query ($organization_id: ID!) {
-        aoc (organization_id: $organization_id) {
-          bssSubscription {
-            aocVersion
-            endDate
-            startDate
-            termMonths
-            plan
-            trial
-            termType
-            aocOrganizations {
-              id
-            }
-            additionalStorageVolumeGb
-            additionalEgressVolumeGb
-            term {
-              startDate
-              endDate
-              transferVolumeGb
-              egressVolumeGb
-              storageVolumeGb
-              transferVolumeOffsetGb
-            }
-            paygoRate {
-              transferRate
-              storageRate
-              currency
-            }
-            aocPlanData {
-              tier
-              trial
-              workspaces { max }
-              users {
-                planAmount
-                max
+            command_subscription = options.get_next_command(%i[account usage])
+            case command_subscription
+            when :account
+              # cspell:disable
+              graphql_query = <<-GRAPHQL
+              query ($organization_id: ID!) {
+                aoc (organization_id: $organization_id) {
+                  bssSubscription {
+                    aocVersion
+                    endDate
+                    startDate
+                    termMonths
+                    plan
+                    trial
+                    termType
+                    aocOrganizations {
+                      id
+                    }
+                    additionalStorageVolumeGb
+                    additionalEgressVolumeGb
+                    term {
+                      startDate
+                      endDate
+                      transferVolumeGb
+                      egressVolumeGb
+                      storageVolumeGb
+                      transferVolumeOffsetGb
+                    }
+                    paygoRate {
+                      transferRate
+                      storageRate
+                      currency
+                    }
+                    aocPlanData {
+                      tier
+                      trial
+                      workspaces { max }
+                      users {
+                        planAmount
+                        max
+                      }
+                      samlIntegration
+                      activity
+                      sharedInboxes
+                      uniqueUrls
+                      support
+                      watermarking
+                      byok
+                      automation { planAmount, max }
+                    }
+                  }
+                }
               }
-              samlIntegration
-              activity
-              sharedInboxes
-              uniqueUrls
-              support
-              watermarking
-              byok
-              automation { planAmount, max }
-            }
-          }
-        }
-      }
-            GRAPHQL
-            # cspell:enable
-            result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
-            return {type: :single_object, data: result['aoc']['bssSubscription']}
+              GRAPHQL
+              # cspell:enable
+              result = bss_graphql.create(nil, {query: graphql_query, variables: {organization_id: org['id']}})['data']
+              return {type: :single_object, data: result['aoc']['bssSubscription']}
+            when :usage
+              # cspell:disable
+              graphql_query = <<-GRAPHQL
+              query ($organization_id: ID!, $startDate: Date!, $endDate: Date!, $aggregate: TransferUsageAggregateOption!) {
+                aoc (organization_id: $organization_id) {
+                  bssSubscription {
+                    aocOrganizations { id }
+                    additionalStorageVolumeGb
+                    additionalEgressVolumeGb
+                    aocPlanData {
+                      tier
+                      trial
+                    }
+                    term {
+                      transferVolumeGb
+                      egressVolumeGb
+                      storageVolumeGb
+                      startDate
+                      endDate
+                      transferVolumeOffsetGb
+                    }
+                    termMonths
+                    transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+                    egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+                  }
+                  subscriptionEntitlements {
+                    id
+                    transferUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { mbTotal }
+                    egressUsages (startDate: $startDate, endDate: $endDate, aggregate: $aggregate) { usageMb }
+                  }
+                }
+              }
+              GRAPHQL
+              aggregate = options.get_next_argument('aggregation', accept_list: %i[ALL MONTHLY], default: :ALL)
+              today = Date.today
+              start_date = options.get_next_argument('start date', mandatory: false, default: today.prev_year.strftime('%Y-%m-%d'))
+              end_date = options.get_next_argument('end date', mandatory: false, default: today.strftime('%Y-%m-%d'))
+              # cspell:enable
+              result = bss_graphql.create(
+                nil,
+                {query:     graphql_query,
+                 variables: {
+                   organization_id: org['id'],
+                   aggregate:       aggregate,
+                   startDate:       start_date,
+                   endDate:         end_date}})['data']
+              return {type: :single_object, data: result['aoc']}
+            end
           when :ats
             ats_api = Rest.new(**aoc_api.params.deep_merge({
               base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",

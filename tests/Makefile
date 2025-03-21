@@ -1016,7 +1016,9 @@ $(eval $(call test_suite_all,taocp,$(T)aoc_pack_send1 $(T)aoc_pack_send2 $(T)aoc
 $(T)aoc_adm_authp_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=aoc_admin aoc admin auth_providers list
-	$(EXE_BEG_FAI) aoc admin subscription$(EXE_END_FAI)
+	$(EXE_MAN) --preset=aoc_admin aoc admin subscription account
+	$(EXE_MAN) --preset=aoc_admin aoc admin subscription usage
+	$(EXE_MAN) --preset=aoc_admin aoc admin subscription usage MONTH
 	@$(STOP_TEST) $@
 $(T)aoc_adm_ws_lst: $(T).exists
 	@$(START_TEST) $@
