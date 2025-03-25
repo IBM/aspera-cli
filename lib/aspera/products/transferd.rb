@@ -28,7 +28,7 @@ module Aspera
         end
 
         def transferd_path
-          return File.join(sdk_directory, Environment.exe_file('asperatransferd')) # cspell:disable-line
+          return File.join(sdk_directory, Environment.exe_file('transferd')) # cspell:disable-line
         end
 
         # Well, the port number is only in log file

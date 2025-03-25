@@ -34,7 +34,6 @@ module Aspera
       include Singleton
       # protobuf generated files from sdk
       EXT_RUBY_PROTOBUF = '_pb.rb'
-      RB_SDK_SUBFOLDER = 'lib'
       DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
         <?xml version='1.0' encoding='UTF-8'?>
         <CONF version="2">
@@ -51,9 +50,10 @@ module Aspera
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
-      SDK_ARCHIVE_FOLDERS = ['/bin/', '/aspera/'].freeze
+      # folders to extract from SDK archive
+      SDK_ARCHIVE_FOLDERS = ['/bin/', '/sbin/', '/aspera/'].freeze
       # filename for ascp with optional extension (Windows)
-      private_constant :EXT_RUBY_PROTOBUF, :RB_SDK_SUBFOLDER, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
+      private_constant :EXT_RUBY_PROTOBUF, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -300,21 +300,27 @@ module Aspera
 
       # Retrieves ascp binary for current system architecture from URL or file
       # @param url      [String] URL to SDK archive, or SpecialValues::DEF
-      # @param folder   [String] destination folder path
-      # @param backup   [Bool]   if destination folder exists, then rename
-      # @param with_exe [Bool]   if false, only retrieves files, but do not generate or restrict access
-      # @param &block   [Proc] a lambda that receives a file path from archive and tells detination sub folder, or nil to not extract
+      # @param folder   [String] Destination folder path
+      # @param backup   [Bool]   If destination folder exists, then rename
+      # @param with_exe [Bool]   If false, only retrieves files, but do not generate or restrict access
+      # @param &block   [Proc]   A lambda that receives a file path from archive and tells detination sub folder(end with /) or file, or nil to not extract
       # @return ascp version (from execution)
       def install_sdk(url: nil, version: nil, folder: nil, backup: true, with_exe: true, &block)
         url = sdk_url_for_platform(version: version) if url.nil? || url.eql?('DEF')
         folder = Products::Transferd.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?
+          # default lambda to tell where to extract files
           subfolder_lambda = ->(name) do
             if SDK_ARCHIVE_FOLDERS.any?{|i|name.include?(i)}
-              '/'
+              # pre-1.1.5 name was asperatransferd
+              if name.include?('/asperatransferd')
+                '/transferd'
+              else
+                '/'
+              end
             elsif name.end_with?(EXT_RUBY_PROTOBUF)
-              RB_SDK_SUBFOLDER
+              'lib/'
             end
           end
         end
@@ -335,15 +341,20 @@ module Aspera
           # TODO: delete old archives ?
         end
         extract_archive_files(sdk_archive_path) do |entry_name, entry_stream, link_target|
-          subfolder = subfolder_lambda.call(entry_name)
-          next if subfolder.nil?
-          dest_folder = File.join(folder, subfolder)
-          FileUtils.mkdir_p(dest_folder)
-          new_file = File.join(dest_folder, File.basename(entry_name))
-          if link_target.nil?
-            File.open(new_file, 'wb') { |output_stream|IO.copy_stream(entry_stream, output_stream)}
+          dest_folder = subfolder_lambda.call(entry_name)
+          next if dest_folder.nil?
+          dest_folder = File.join(folder, dest_folder)
+          if dest_folder.end_with?('/')
+            dest_file = File.join(dest_folder, File.basename(entry_name))
           else
-            File.symlink(link_target, new_file)
+            dest_file = dest_folder
+            dest_folder = File.dirname(dest_file)
+          end
+          FileUtils.mkdir_p(dest_folder)
+          if link_target.nil?
+            File.open(dest_file, 'wb') { |output_stream|IO.copy_stream(entry_stream, output_stream)}
+          else
+            File.symlink(link_target, dest_file)
           end
         end
         File.unlink(sdk_archive_path) rescue nil if delete_archive # Windows may give error
@@ -359,10 +370,10 @@ module Aspera
           Environment.restrict_file_access(exe_path, mode: 0o755) if File.exist?(exe_path)
         end
         sdk_ascp_version = get_ascp_version(sdk_ascp_path)
-        sdk_daemon_path = Products::Transferd.transferd_path
-        Log.log.warn{"No #{sdk_daemon_path} in SDK archive"} unless File.exist?(sdk_daemon_path)
-        Environment.restrict_file_access(sdk_daemon_path, mode: 0o755) if File.exist?(sdk_daemon_path)
-        transferd_version = get_exe_version(sdk_daemon_path, 'version')
+        transferd_exe_path = Products::Transferd.transferd_path
+        Log.log.warn{"No #{transferd_exe_path} in SDK archive"} unless File.exist?(transferd_exe_path)
+        Environment.restrict_file_access(transferd_exe_path, mode: 0o755) if File.exist?(transferd_exe_path)
+        transferd_version = get_exe_version(transferd_exe_path, 'version')
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
         File.write(File.join(folder, Products::Other::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")

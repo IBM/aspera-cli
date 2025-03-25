@@ -7,6 +7,7 @@
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
     * `echo`: Display of list was showing only first element
+    * `transferd`: support for version 1.1.5+
   * Breaking Changes:
     * `aoc`: `admin subscription` split into `admin subscription account` and `admin subscription usage`
 
