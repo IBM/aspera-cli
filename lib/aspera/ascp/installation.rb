@@ -50,8 +50,6 @@ module Aspera
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
-      # folders to extract from SDK archive
-      SDK_ARCHIVE_FOLDERS = ['/bin/', '/sbin/', '/aspera/'].freeze
       # filename for ascp with optional extension (Windows)
       private_constant :EXT_RUBY_PROTOBUF, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
@@ -310,18 +308,9 @@ module Aspera
         folder = Products::Transferd.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?
-          # default lambda to tell where to extract files
+          # by default extract only executables
           subfolder_lambda = ->(name) do
-            if SDK_ARCHIVE_FOLDERS.any?{|i|name.include?(i)}
-              # pre-1.1.5 name was asperatransferd
-              if name.include?('/asperatransferd')
-                '/transferd'
-              else
-                '/'
-              end
-            elsif name.end_with?(EXT_RUBY_PROTOBUF)
-              'lib/'
-            end
+            '/' if Products::Transferd::RUNTIME_FOLDERS.any?{|i|name.include?(i)}
           end
         end
         if url.start_with?('file:')

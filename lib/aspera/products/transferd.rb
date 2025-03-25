@@ -4,6 +4,11 @@ module Aspera
   module Products
     class Transferd
       APP_NAME = 'IBM Aspera Transfer Daemon'
+      V1_DAEMON_NAME = 'asperatransferd'
+      # from 1.1.5
+      V2_DAEMON_NAME = 'transferd'
+      # folders to extract from SDK archive
+      RUNTIME_FOLDERS = ['/bin/', '/lib/', '/sbin/', '/aspera/'].freeze
       class << self
         # standard folder locations
         def locations
@@ -28,7 +33,9 @@ module Aspera
         end
 
         def transferd_path
-          return File.join(sdk_directory, Environment.exe_file('transferd')) # cspell:disable-line
+          v1_path = File.join(sdk_directory, Environment.exe_file(V1_DAEMON_NAME))
+          return v1_path if File.exist?(v1_path)
+          return File.join(sdk_directory, Environment.exe_file(V2_DAEMON_NAME))
         end
 
         # Well, the port number is only in log file
