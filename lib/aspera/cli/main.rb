@@ -64,8 +64,8 @@ module Aspera
           return Main.result_status(formatter.status_image(blob))
         end
 
-        def result_single_object(data)
-          return {type: :single_object, data: data}
+        def result_single_object(data, fields: nil)
+          return {type: :single_object, data: data, fields: fields}
         end
 
         def result_object_list(data, fields: nil, total: nil)
