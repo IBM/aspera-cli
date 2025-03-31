@@ -130,14 +130,14 @@ To test with Aspera demo transfer server, setup the environment and then test:
 ```
 
 ```output
-+------------+--------+-----------+-------+---------------------------+-----------------------+
-| zmode      | zuid   | zgid      | size  | mtime                     | name                  |
-+------------+--------+-----------+-------+---------------------------+-----------------------+
-| drwxr-xr-x | aspera | asperaweb | 90112 | 2023-04-05 15:31:21 +0200 | Upload                |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:16 +0200 | aspera-test-dir-large |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-small |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
-+------------+--------+-----------+-------+---------------------------+-----------------------+
+╭────────────┬──────┬───────────┬───────┬───────────────────────────┬───────────────────────╮
+│ zmode      │ zuid │ zgid      │ size  │ mtime                     │ name                  │
+╞════════════╪══════╪═══════════╪═══════╪═══════════════════════════╪═══════════════════════╡
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-large │
+│ drwxrwxr-x │ xfer │ demousers │ 94208 │ 2025-03-31 11:27:33 +0200 │ Upload                │
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-small │
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-tiny  │
+╰────────────┴──────┴───────────┴───────┴───────────────────────────┴───────────────────────╯
 ```
 
 If you want to use <%=tool%> with another server, and in order to make further calls more convenient, it is advised to define a [Option Preset](#option-preset) for the server's authentication options.
@@ -171,17 +171,16 @@ Saving config file.
 ```
 
 ```output
-+------------+-----------+-----------+--------------+---------------------------+-------+
-| zmode      | zuid      | zgid      | size         | mtime                     | name  |
-+------------+-----------+-----------+--------------+---------------------------+-------+
-| -r-xr-x--- | asperaweb | asperaweb | 104857600    | 2022-10-27 16:06:38 +0200 | 100MB |
-| -r-xr-x--- | asperaweb | asperaweb | 10737418240  | 2022-10-27 16:08:12 +0200 | 10GB  |
-| -r-xr-x--- | asperaweb | asperaweb | 500000000000 | 2022-10-27 16:06:26 +0200 | 500GB |
-| -r-xr-x--- | asperaweb | asperaweb | 524288000    | 2022-10-27 14:53:00 +0200 | 500MB |
-| -r-xr-x--- | asperaweb | asperaweb | 1048576000   | 2022-10-27 16:06:37 +0200 | 1GB   |
-| -r-xr-x--- | asperaweb | asperaweb | 5368709120   | 2022-10-27 14:53:47 +0200 | 5GB   |
-| -r-xr-x--- | asperaweb | asperaweb | 209715200    | 2022-10-27 14:52:56 +0200 | 200MB |
-+------------+-----------+-----------+--------------+---------------------------+-------+
+╭────────────┬──────┬───────────┬─────────────┬───────────────────────────┬───────╮
+│ zmode      │ zuid │ zgid      │ size        │ mtime                     │ name  │
+╞════════════╪══════╪═══════════╪═════════════╪═══════════════════════════╪═══════╡
+│ -rw-r--r-- │ xfer │ demousers │ 5368709120  │ 2014-11-05 16:01:56 +0100 │ 5GB   │
+│ -rw-r--r-- │ xfer │ demousers │ 524288000   │ 2014-11-05 16:01:56 +0100 │ 500MB │
+│ -rw-r--r-- │ xfer │ demousers │ 209715200   │ 2014-11-05 16:01:56 +0100 │ 200MB │
+│ -rw-r--r-- │ xfer │ demousers │ 1048576000  │ 2014-11-05 16:01:56 +0100 │ 1GB   │
+│ -rw-r--r-- │ xfer │ demousers │ 104857600   │ 2014-11-05 16:01:56 +0100 │ 100MB │
+│ -rw-r--r-- │ xfer │ demousers │ 10737418240 │ 2014-11-05 16:01:56 +0100 │ 10GB  │
+╰────────────┴──────┴───────────┴─────────────┴───────────────────────────┴───────╯
 ```
 
 ```bash
@@ -1693,12 +1692,12 @@ Example:
 ```
 
 ```output
-+-------------------------------+----------------------------------+-----------+
-|             name              |              email               | ats_admin |
-+-------------------------------+----------------------------------+-----------+
-| John Curtis                   | john@example.com                 | true      |
-| Laurent Martin                | laurent@example.com              | true      |
-+-------------------------------+----------------------------------+-----------+
+╭────────────────┬─────────────────────┬───────────╮
+│ name           │ email               │ ats_admin │
+╞════════════════╪═════════════════════╪═══════════╡
+│ John Curtis    │ john@example.com    │ true      │
+│ Laurent Martin │ laurent@example.com │ true      │
+╰────────────────┴─────────────────────┴───────────╯
 ```
 
 > **Note:** Option `select` filters elements from the result of command, while the `query` option gives filtering parameters to the API when listing elements.
@@ -1829,12 +1828,12 @@ Example: create a `Hash` with values coming from a preset named `config`
 ```
 
 ```output
-+---------+-----------+
-| field   | value     |
-+---------+-----------+
-| hello   | true      |
-| version | 4.14.0    |
-+---------+-----------+
+╭─────────┬────────╮
+│ field   │ value  │
+╞═════════╪════════╡
+│ hello   │ true   │
+│ version │ 4.21.1 │
+╰─────────┴────────╯
 ```
 
 Example: Create a `Hash` from YAML provided as shell **heredoc**:
@@ -2486,13 +2485,13 @@ It will display the exact content of HTTP requests and responses.
 To ignore SSL certificate for **any** address/port, use option: `insecure`, i.e. `--insecure=yes`.
 To ignore SSL certificate for a list of specific address/port, use option `ignore_certificate`, set to an `Array` of URL for which certificate will be ignored (only the address and port are matched), e.g. `--ignore-certificate=@list:,https://127.0.0.1:9092`
 
-> **Note:** Ignoring certificate also applies to `ascp`'s wss.
+> **Note:** Ignoring certificate also applies to `ascp` WSS.
 
 Ignoring a certificate is not recommended, it is better to add the certificate to the trusted store.
 So, a warning is displayed when a certificate is ignored.
 To disable the warning, use option `silent_insecure` set to `no`.
 
-HTTP connection parameters (not `ascp` wss) can be adjusted using option `http_options`:
+HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
 | Parameter                 | Default       | Where     |
 |---------------------------|---------------|-----------|
@@ -2658,11 +2657,12 @@ It provides the following commands for `ascp` subcommand:
 ```
 
 ```output
-+--------------------+-----------------------------------------------------------+
-| field              | value                                                     |
-+--------------------+-----------------------------------------------------------+
-| ascp               | /Users/laurent/.aspera/<%=cmd%>/sdk/ascp                     |
+╭─────────┬──────────────────────────────────────────────────╮
+│ field   │ value                                            │
+╞═════════╪══════════════════════════════════════════════════╡
+│ ascp    │ /Users/john/.aspera/sdk/ascp                     │
 ...
+╰─────────┴──────────────────────────────────────────────────╯
 ```
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
@@ -2810,7 +2810,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 
 | Name                   | Type    | Description |
 |------------------------|---------|-------------|
-| `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: true |
+| `wss`                  | `Bool`    | Web Socket Session<%=br%>Enable use of web socket session in case it is available<%=br%>Default: `true` |
 | `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false` |
 | `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
 | `client_ssh_key`       | `String` | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
@@ -4530,7 +4530,7 @@ To list packages in a shared inbox, the query has to be specified with the the s
 Additional parameters can be specified, as supported by the API (to find out available filters, consult the API definition, or use the web interface in developer mode).
 The current workspace is added unless specified in the query.
 
-> **Note:** By default, `exclude_dropbox_packages` is set to true for user packages, and to false for shared inbox packages. This can be overridden in the query.
+> **Note:** By default, `exclude_dropbox_packages` is set to `true` for user packages, and to false for shared inbox packages. This can be overridden in the query.
 
 Using shared inbox name:
 
