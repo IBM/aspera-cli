@@ -845,7 +845,7 @@ $(T)aocfdownc: $(T)aoc_tstdst
 	@$(STOP_TEST) $@
 $(T)aocfdowna: $(T)aoc_tstdst
 	@$(START_TEST) $@
-	$(EXE_MAN) aoc files download --transfer=alpha testdst/$(TST_ASC_FILENAME)
+	$(EXE_MAN) aoc files download --transfer=desktop testdst/$(TST_ASC_FILENAME)
 	@rm -f $(DIR_CONNECT_DOWNLOAD)$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)aocfhttpd: $(T)aocftr
