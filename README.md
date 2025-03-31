@@ -5321,8 +5321,8 @@ files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
 files delete /testsrc
-files download --transfer=alpha testdst/test_file.bin
 files download --transfer=connect testdst/test_file.bin
+files download --transfer=desktop testdst/test_file.bin
 files find /
 files find / '\.partial$'
 files find / @ruby:'->(f){f["type"].eql?("file")}'

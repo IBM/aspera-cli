@@ -9,34 +9,34 @@ Before you go ahead please search existing issues for your problem.
 To make sure that we can help you quickly please include and check the following information:
 
 - Include the `ascli` version you are running in your report.
-- If you are not running the latest version (please check), update.
+- If you are not running the latest version (please check) then update.
 - Include your `ruby -e "puts RUBY_DESCRIPTION"`.
 
 Thanks!
 
 ## Making Contributions
 
-To fetch & test the gem for development, do:
+To fetch and test the gem for development, do:
 
 ```bash
 git clone https://github.com/IBM/aspera-cli.git
 cd aspera-cli
-bundle install
-make test
 ```
+
+Then see [Running Tests](#running-tests).
 
 If you want to contribute, please:
 
 - Fork the project.
 - Make your feature addition or bug fix.
 - Add tests for it. This is important so I don't break it in a future version unintentionally.
+- run `rubocop` to comply for coding standards
 - **Bonus Points** go out to anyone who also updates `CHANGELOG.md` :)
 - Send a pull request on GitHub.
-- run `rubocop` to comply for coding standards
 
 ## Architecture
 
-A list of classes are provided in <docs/ml.png>
+A list of classes are provided in <docs/uml.png>
 
 Architecture:
 
@@ -46,21 +46,34 @@ The entry point is: `lib/aspera/cli/main.rb`.
 
 Plugins are located in: `lib/aspera/cli/plugins`.
 
-Transfer agents, in: `lib/aspera/fasp`.
+Transfer agents, in: `lib/aspera/agent`.
 
 ## Ruby version
 
-Install ruby with [RVM](https://rvm.io).
+Install Ruby using your prefered method.
 
-Cleanup installed gems in `rvm` to start fresh:
+To cleanup installed gems to start fresh:
 
 ```bash
-make cleanup_gems
+make clean_gems
 ```
 
 ## Tool chain
 
 TODO: document installation of tool chain.
+
+Build system uses GNU Make.
+
+A few macros/envvars control some aspects:
+
+| macro                       | description                          |
+|-----------------------------|--------------------------------------|
+| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file for tests |
+| `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
+| `SIGNING_KEY`               | Path to signing key to build Gem.    |
+| `GEM_VERSION`               | Gem version to build container       |
+
+Those macros can be set either in an env var, or on the `make` command line.
 
 ### Documentation
 
@@ -83,7 +96,8 @@ tlmgr install fvextra selnolig lualatex-math
 
 ## Running Tests
 
-First, a testing configuration file must be created, from project top folder:
+First, a testing configuration file must be created.
+From project top folder, execute:
 
 ```bash
 mkdir ~/some_secure_folder
@@ -104,7 +118,7 @@ This project uses a `Makefile` for tests:
 make test
 ```
 
-When new commands are added to the CLI, new tests shall be added to the test suite.
+When new commands are added to the CLI, new tests shall be added to the test suite in `tests/Makefile`.
 
 ### Special tests
 
@@ -121,23 +135,20 @@ To run every test: `make full`
 
 For preparation of a release, do the following:
 
-1. Select a ruby version to test with: `rvm use 3.2.2`
+1. Select a ruby version to test with.
 2. Remove all gems: `make clean_gems`
-3. Starts tests: `make test`
-4. Install optional gems: `make install_optional_gems`
-5. Test remaining cases: `cd tests` and then `make optional` and `make interactive`
-
-This ensures that optional gems do not prevent `ascli` to run.
+3. `cd tests && make full`
 
 To test additional Ruby version, repeat the procedure with other Ruby versions.
 
 ## Coverage
 
 A coverage report can be generated in folder `coverage` using gem `SimpleCov`.
-Enable coverage monitoring using env var `ENABLE_COVERAGE`.
+Enable coverage monitoring using macro/envvar `ENABLE_COVERAGE`.
 
 ```bash
-ENABLE_COVERAGE=1 make test
+cd tests
+make ENABLE_COVERAGE=1
 ```
 
 Once tests are completed, or during test, consult the page: [coverage/index.html](coverage/index.html)
@@ -145,8 +156,9 @@ Once tests are completed, or during test, consult the page: [coverage/index.html
 ## Build
 
 By default the gem is built signed: `make`.
-The appropriate signing key is required, and its path must be set to env var `SIGNING_KEY`.
-It is also possible to build a non-signed version for development purpose: `make unsigned_gem`.
+A private key is required to generate a signed Gem.
+Its path must be set using macro/envvar `SIGNING_KEY`, see below.
+It is also possible to build a unsigned version for development purpose: `make unsigned_gem`.
 
 ### Gem Signature
 
@@ -181,7 +193,7 @@ Then procedure is as follows:
   To build the signed gem:
 
   ```bash
-  SIGNING_KEY=/path/to/vault/gem-private_key.pem make
+  make SIGNING_KEY=/path/to/vault/gem-private_key.pem
   ```
 
 - The user can activate gem signature verification on installation:
@@ -203,13 +215,13 @@ Then procedure is as follows:
   - The maintainer can renew the certificate when it is expired using the same private key:
 
   ```bash
-  SIGNING_KEY=/path/to/vault/gem-private_key.pem make update-cert
+  make update-cert SIGNING_KEY=/path/to/vault/gem-private_key.pem
   ```
 
   Alternatively, to generate a new certificate with the same key:
 
   ```bash
-  SIGNING_KEY=/path/to/vault/gem-private_key.pem make new-cert
+  make new-cert SIGNING_KEY=/path/to/vault/gem-private_key.pem
   ```
 
   - Show the current certificate contents
@@ -223,7 +235,7 @@ Then procedure is as follows:
   - Check that the signing key is the same as used to sign the certificate:
 
   ```bash
-  SIGNING_KEY=/path/to/vault/gem-private_key.pem make check-cert-key
+  make check-cert-key SIGNING_KEY=/path/to/vault/gem-private_key.pem
   ```
 
 ### gRPC stubs for transfer SDK
@@ -238,7 +250,7 @@ It downloads the latest proto file and then compiles it.
 
 ## Docker image build
 
-The `Dockerfile.tmpl.erb` template allows customization of the optional copying of the `aspera-cli.gem` file, as opposed to installing from rubygems.org. It also supports customizing the retrieval of the SDK.
+The template: `Dockerfile.tmpl.erb` allows customization of the optional copying of the `aspera-cli.gem` file, as opposed to installing from <rubygems.org>. It also supports customizing the retrieval of the SDK.
 
 ### Default image build
 

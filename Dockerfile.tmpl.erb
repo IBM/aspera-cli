@@ -12,7 +12,7 @@ COPY <%=arg_gem%> .
 # if a gem file was provided, once copied in container: use the basename only
 #erb: arg_gem=File.basename(arg_gem)
 #erb: end
-# Location of Aspera binaries (ascp, asperatransferd, license file)
+# Location of Aspera SDK files (binaries, license file)
 # Install globally, does not need to be in user's home
 # Must be outside /home/cliuser/.aspera/ascli which will be a volume
 ARG aspera_bin_dir=/ibm_aspera
