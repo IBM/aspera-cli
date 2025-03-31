@@ -36,3 +36,6 @@ $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
 clean:: clean_gems_installed
 clean_gems_installed:
 	rm -f $(DIR_TOP).gems_checked $(DIR_TOP)Gemfile.lock
+OPT_GEMS_FILE=$(DIR_TMP)gems_opt_list.txt
+$(OPT_GEMS_FILE): $(DIR_TOP)Gemfile.optional
+	ruby -w -e 'def source(_);end;def gem(n,_);print n," ";end;load "$(DIR_TOP)Gemfile.optional"' > $@

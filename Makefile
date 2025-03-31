@@ -50,9 +50,6 @@ install: $(PATH_GEMFILE)
 	gem install $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
-OPT_GEMS_FILE=$(DIR_TMP)gems_opt_list.txt
-$(OPT_GEMS_FILE): $(DIR_TOP)Gemfile.optional
-	ruby -w -e 'def source(_);end;def gem(n,_);print n," ";end;load "$(DIR_TOP)Gemfile.optional"' > $@
 # gems that require native build are made optional
 clean_optional_gems: $(OPT_GEMS_FILE)
 	gem uninstall $$(cat $(OPT_GEMS_FILE))
@@ -104,37 +101,6 @@ changes:
 	echo "Changes since [$$latest_tag]";\
 	PAGER= git log $$latest_tag..HEAD --oneline
 
-##################################
-# Docker image
-DOCKER_TAG_VERSION=$(DCK_REPO):$(GEM_VERSION)
-DOCKER_TAG_LATEST=$(DCK_REPO):latest
-PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
-DOCKER=podman
-# Refer to section "build" in CONTRIBUTING.md
-# no dependency: always re-generate
-# TODO: get optional gems from 
-dockerfile_release: $(OPT_GEMS_FILE)
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
-docker: dockerfile_release
-	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
-dockerfile_beta: $(OPT_GEMS_FILE)
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
-docker_beta_build: dockerfile_beta $(PATH_GEMFILE)
-	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) .
-docker_beta:
-	make GEM_VERSION=$(GEM_VERS_BETA) docker_beta_build
-docker_push_beta:
-	make GEM_VERSION=$(GEM_VERS_BETA) docker_push_version
-docker_test:
-	$(DOCKER) run --tty --interactive --rm $(DOCKER_TAG_VERSION) $(CLI_NAME) -h
-# Push build version with both tags (version and latest)
-docker_push: docker_push_version docker_push_latest
-docker_push_version:
-	$(DOCKER) push $(DOCKER_TAG_VERSION)
-docker_push_latest:
-	$(DOCKER) push $(DOCKER_TAG_LATEST)
-clean::
-	rm -f Dockerfile
 ##################################
 # Single executable : make single
 CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(CLI_ARCH)

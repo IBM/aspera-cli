@@ -1,5 +1,5 @@
 /Gemfile*.lock
-/aspera-cli-*.gem
+**/aspera-cli-*.gem
 /coverage/
 /simplecov.log
 /tmp/
@@ -10,6 +10,6 @@
 # to store things not to be in versioning:
 .idea
 .vscode
-/Dockerfile
+container/Dockerfile
 .bundle
 *.pandoc_meta
