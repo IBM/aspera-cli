@@ -315,7 +315,8 @@ Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) an
 A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
 
 ```bash
-make single GEM_VERSION=4.11.0
+cd binary
+make GEM_VERSION=4.11.0
 ```
 
 ## Development check list for new release

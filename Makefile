@@ -102,16 +102,6 @@ changes:
 	PAGER= git log $$latest_tag..HEAD --oneline
 
 ##################################
-# Single executable : make single
-CLI_EXECUTABLE=$(DIR_TMP)$(CLI_NAME).$(GEM_VERSION).$(CLI_ARCH)
-EXE_BUILDER=$(DIR_TOP)examples/build_exec
-single:$(CLI_EXECUTABLE)
-.PHONY: single
-$(CLI_EXECUTABLE):
-	$(EXE_BUILDER) $(CLI_EXECUTABLE) $(CLI_PATH) $(GEM_NAME) $(GEM_VERSION) $(DIR_TMP)
-clean::
-	rm -f $(CLI_EXECUTABLE)
-##################################
 # utils
 # https://github.com/Yelp/detect-secrets
 scan_init:
