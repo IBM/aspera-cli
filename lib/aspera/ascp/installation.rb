@@ -32,8 +32,6 @@ module Aspera
     # Installation.instance.ascp_path=""
     class Installation
       include Singleton
-      # protobuf generated files from sdk
-      EXT_RUBY_PROTOBUF = '_pb.rb'
       DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
         <?xml version='1.0' encoding='UTF-8'?>
         <CONF version="2">
@@ -51,7 +49,7 @@ module Aspera
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
       FILE_SCHEME_PREFIX = 'file:///'
       # filename for ascp with optional extension (Windows)
-      private_constant :EXT_RUBY_PROTOBUF, :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
+      private_constant :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -308,9 +306,9 @@ module Aspera
         folder = Products::Transferd.sdk_directory if folder.nil?
         subfolder_lambda = block
         if subfolder_lambda.nil?
-          # by default extract only executables
+          # default files to extract directly to main folder if in selected source folders
           subfolder_lambda = ->(name) do
-            '/' if Products::Transferd::RUNTIME_FOLDERS.any?{|i|name.include?(i)}
+            Products::Transferd::RUNTIME_FOLDERS.any?{|i|name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
           end
         end
         if url.start_with?('file:')

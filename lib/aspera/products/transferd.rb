@@ -8,7 +8,7 @@ module Aspera
       # from 1.1.5
       V2_DAEMON_NAME = 'transferd'
       # folders to extract from SDK archive
-      RUNTIME_FOLDERS = ['/bin/', '/lib/', '/sbin/', '/aspera/'].freeze
+      RUNTIME_FOLDERS = %w[bin lib sbin aspera].freeze
       class << self
         # standard folder locations
         def locations
