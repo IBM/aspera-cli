@@ -106,9 +106,8 @@ changes:
 
 ##################################
 # Docker image
-DOCKER_REPO=$(shell cat $(DIR_DOC)docker_repository.txt)
-DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEM_VERSION)
-DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
+DOCKER_TAG_VERSION=$(DCK_REPO):$(GEM_VERSION)
+DOCKER_TAG_LATEST=$(DCK_REPO):latest
 PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
 DOCKER=podman
 # Refer to section "build" in CONTRIBUTING.md

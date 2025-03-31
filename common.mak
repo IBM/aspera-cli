@@ -11,10 +11,11 @@ DIR_TMP=$(DIR_TOP)tmp/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
-GEM_VERSION=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/version";puts Aspera::Cli::VERSION')
-GEM_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::GEM_NAME')
-CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::CMD_NAME')
-CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";puts Aspera::Environment.architecture')
+GEM_VERSION=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/version";print Aspera::Cli::VERSION')
+GEM_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::GEM_NAME')
+DCK_REPO=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CONTAINER')
+CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";print Aspera::Cli::Info::CMD_NAME')
+CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";print Aspera::Environment.architecture')
 
 # path to CLI for execution (not using PATH)
 CLI_PATH=$(DIR_BIN)$(CLI_NAME)

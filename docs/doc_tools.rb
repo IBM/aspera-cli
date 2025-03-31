@@ -38,7 +38,7 @@ def tool; "`#{cmd}`"; end
 def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 
 # container image in docker hub
-def container_image; File.read('docker_repository.txt').strip; end
+def container_image; Aspera::Cli::Info::CONTAINER; end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
