@@ -7,6 +7,7 @@ module Aspera
     # Base class for transfer agents
     class Base
       RUBY_EXT = '.rb'
+      private_constant :RUBY_EXT
       class << self
         def factory_create(agent, options)
           # Aspera.assert_values(agent, agent_list)
@@ -15,6 +16,7 @@ module Aspera
         end
 
         # discover available agents
+        # @return [Array] list of symbols of agents
         def agent_list
           base_class = File.basename(__FILE__)
           Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|

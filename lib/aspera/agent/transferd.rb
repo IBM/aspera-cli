@@ -17,10 +17,12 @@ module Aspera
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
 
-      # @param url [String] URL of the transfer manager daemon
-      # @param external [Boolean] if true, expect that an external daemon is already running
-      # @param keep [Boolean] if true, do not shutdown daemon on exit
-      # @param base_options [Hash] base options
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
+
+      # @param url          [String] URL of the transfer manager daemon
+      # @param external     [Bool]   if true, expect that an external daemon is already running
+      # @param keep         [Bool]   if true, do not shutdown daemon on exit
+      # @param base_options [Hash]   base options
       def initialize(
         url: AUTO_LOCAL_TCP_PORT,
         external: false,
