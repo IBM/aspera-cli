@@ -3,11 +3,6 @@ all::
 
 DIR_PRIV=$(ASPERA_CLI_PRIVATE)/
 
-# just the name of the command line tool as in bin folder
-# (used for documentation and execution)
-CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::CMD_NAME')
-CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";puts Aspera::Environment.architecture')
-
 # define common variables to be used in other Makefile
 # required: DIR_TOP (can be empty if cwd)
 DIR_BIN=$(DIR_TOP)bin/
@@ -16,24 +11,17 @@ DIR_TMP=$(DIR_TOP)tmp/
 DIR_TST=$(DIR_TOP)tests/
 DIR_DOC=$(DIR_TOP)docs/
 
+GEM_VERSION=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/version";puts Aspera::Cli::VERSION')
+GEM_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::GEM_NAME')
+CLI_NAME=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/cli/info";puts Aspera::Cli::Info::CMD_NAME')
+CLI_ARCH=$(shell ruby -I $(DIR_LIB) -e 'require "aspera/environment";puts Aspera::Environment.architecture')
+
 # path to CLI for execution (not using PATH)
 CLI_PATH=$(DIR_BIN)$(CLI_NAME)
-# create Makefile file with macros GEM_NAME and GEM_VERSION
-NAME_VERSION=$(DIR_TMP)name_version.mak
-$(NAME_VERSION): $(DIR_TMP).exists $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb
-	sed -n "s/.*GEM_NAME = '\([^']*\)'.*/GEM_NAME=\1/p" $(DIR_LIB)aspera/cli/info.rb > $@
-	sed -n "s/.*'\([^']*\)'.*/GEM_VERSION=\1/p" $(DIR_LIB)aspera/cli/version.rb >> $@
-include $(NAME_VERSION)
 GEMSPEC=$(DIR_TOP)$(GEM_NAME).gemspec
-PATH_GEMFILE=$(DIR_TOP)$(GEM_NAME)-$(GEM_VERSION).gem
-# override GEM_VERSION with beta version
-BETA_VERSION_FILE=$(DIR_TMP)beta_version
-MAKE_BETA=GEM_VERSION=$$(cat $(BETA_VERSION_FILE)) make -e
-$(BETA_VERSION_FILE):
-	echo $(GEM_VERSION).$$(date +%Y%m%d%H%M) > $(BETA_VERSION_FILE)
 # gem file is generated in top folder
-clean::
-	rm -f $(NAME_VERSION)
+PATH_GEMFILE=$(DIR_TOP)$(GEM_NAME)-$(GEM_VERSION).gem
+GEM_VERS_BETA=$(GEM_VERSION).$(shell date +%Y%m%d%H%M)
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@

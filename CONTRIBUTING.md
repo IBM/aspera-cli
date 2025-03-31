@@ -250,7 +250,7 @@ It downloads the latest proto file and then compiles it.
 
 ## Docker image build
 
-The template: `Dockerfile.tmpl.erb` allows customization of the optional copying of the `aspera-cli.gem` file, as opposed to installing from <rubygems.org>. It also supports customizing the retrieval of the SDK.
+The template: `Dockerfile.tmpl.erb` allows building the container image either using a local gem file file or from <rubygems.org>.
 
 ### Default image build
 
@@ -262,12 +262,12 @@ make docker
 
 This does the following:
 
-- Install the official gem version directly from <rubygems.org>.
-- Build the image for the version number in the current repository
+- Install the gem version from local gem file or <rubygems.org>.
+- Build the image for the local version number in the current repository or the remote one
 - creates tags for both the version and `latest`
 
-> **Note:** This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template (Makefile target `dockerfile`).
-A template is used as it allows some level of customization to tell where to take the gem from, as as for the SDK file.
+> **Note:** This target creates the `Dockerfile` from an `ERB` (embedded Ruby) template.
+A template is used as it allows some level of customization to tell where to take the gem from.
 
 Then, to push to the image registry (both tags: version and `latest`):
 

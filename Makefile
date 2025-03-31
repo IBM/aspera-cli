@@ -26,7 +26,7 @@ clean_doc::
 	cd $(DIR_DOC) && make clean_doc
 ##################################
 # Gem build
-.PHONY: gem_check_signing_key signed_gem unsigned_gem beta_gem build_beta_gem clean_gem install clean_gems clean_optional_gems install_gems install_optional_gems clean_gems_installed
+.PHONY: gem_check_signing_key signed_gem unsigned_gem beta_gem clean_gem install clean_gems clean_optional_gems install_gems install_optional_gems clean_gems_installed
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
 	gem build $(GEMSPEC)
 	gem specification $(PATH_GEMFILE) version
@@ -42,10 +42,7 @@ signed_gem: clean_gem gem_check_signing_key $(PATH_GEMFILE)
 # build gem without signature for development and test
 unsigned_gem: $(PATH_GEMFILE)
 beta_gem:
-	rm -f $(BETA_VERSION_FILE)
-	make build_beta_gem
-build_beta_gem: $(BETA_VERSION_FILE)
-	$(MAKE_BETA) unsigned_gem
+	make GEM_VERSION=$(GEM_VERS_BETA) unsigned_gem
 clean_gem:
 	rm -f $(PATH_GEMFILE)
 	rm -f $(DIR_TOP)$(GEM_NAME)-*.gem
@@ -55,7 +52,7 @@ clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 OPT_GEMS_FILE=$(DIR_TMP)gems_opt_list.txt
 $(OPT_GEMS_FILE): $(DIR_TOP)Gemfile.optional
-	ruby -w -e 'def source(_);end;def gem(n,_);puts n;end;load "$(DIR_TOP)Gemfile.optional"' > $@
+	ruby -w -e 'def source(_);end;def gem(n,_);print n," ";end;load "$(DIR_TOP)Gemfile.optional"' > $@
 # gems that require native build are made optional
 clean_optional_gems: $(OPT_GEMS_FILE)
 	gem uninstall $$(cat $(OPT_GEMS_FILE))
@@ -109,11 +106,8 @@ changes:
 
 ##################################
 # Docker image
-$(DIR_TMP)repo.mak: $(DIR_DOC)docker_repository.txt
-	echo "DOCKER_REPO=$$(cat $(DIR_DOC)docker_repository.txt)" > $@
-include $(DIR_TMP)repo.mak
-DOCKER_IMG_VERSION=$(GEM_VERSION)
-DOCKER_TAG_VERSION=$(DOCKER_REPO):$(DOCKER_IMG_VERSION)
+DOCKER_REPO=$(shell cat $(DIR_DOC)docker_repository.txt)
+DOCKER_TAG_VERSION=$(DOCKER_REPO):$(GEM_VERSION)
 DOCKER_TAG_LATEST=$(DOCKER_REPO):latest
 PROCESS_DOCKER_FILE_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
 DOCKER=podman
@@ -121,19 +115,19 @@ DOCKER=podman
 # no dependency: always re-generate
 # TODO: get optional gems from 
 dockerfile_release: $(OPT_GEMS_FILE)
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt=$$(cat $(OPT_GEMS_FILE)) > Dockerfile
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
 docker: dockerfile_release
 	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) --tag $(DOCKER_TAG_LATEST) .
 dockerfile_beta: $(OPT_GEMS_FILE)
-	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_opt=$$(cat $(OPT_GEMS_FILE)) > Dockerfile
+	$(PROCESS_DOCKER_FILE_TEMPLATE) arg_gem=$(PATH_GEMFILE) arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
 docker_beta_build: dockerfile_beta $(PATH_GEMFILE)
 	$(DOCKER) build --squash --tag $(DOCKER_TAG_VERSION) .
-docker_beta: $(BETA_VERSION_FILE)
-	$(MAKE_BETA) docker_beta_build
-docker_push_beta: $(BETA_VERSION_FILE)
-	$(MAKE_BETA) docker_push_version
+docker_beta:
+	make GEM_VERSION=$(GEM_VERS_BETA) docker_beta_build
+docker_push_beta:
+	make GEM_VERSION=$(GEM_VERS_BETA) docker_push_version
 docker_test:
-	$(DOCKER) run --tty --interactive --rm $(DOCKER_TAG_VERSION) ascli -h
+	$(DOCKER) run --tty --interactive --rm $(DOCKER_TAG_VERSION) $(CLI_NAME) -h
 # Push build version with both tags (version and latest)
 docker_push: docker_push_version docker_push_latest
 docker_push_version:
