@@ -127,6 +127,7 @@ clean_local:
 	rm -f $(T).ssh_ok
 clean:: clean_local
 restart_noded:
+	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperalee.plist
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist
 	sleep 5
