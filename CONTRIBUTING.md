@@ -248,16 +248,22 @@ make grpc
 
 It downloads the latest proto file and then compiles it.
 
-## Docker image build
+## Container image build
 
-The template: `Dockerfile.tmpl.erb` allows building the container image either using a local gem file file or from <rubygems.org>.
+For operations, move to the folder:
+
+```bash
+cd container
+```
+
+The template: `Dockerfile.tmpl.erb` allows building the container image either using a local gem file or from <rubygems.org>.
 
 ### Default image build
 
 Build the image:
 
 ```bash
-make docker
+make
 ```
 
 This does the following:
@@ -272,7 +278,7 @@ A template is used as it allows some level of customization to tell where to tak
 Then, to push to the image registry (both tags: version and `latest`):
 
 ```bash
-make docker_push
+make push
 ```
 
 ### Specific version image build
@@ -280,13 +286,14 @@ make docker_push
 To build a specific version: override `make` macro `GEM_VERSION`:
 
 ```bash
-make docker GEM_VERSION=4.11.0
-make docker_push GEM_VERSION=4.11.0
+make GEM_VERSION=4.11.0
+make push GEM_VERSION=4.11.0
 ```
 
 > **Note:** This does not use the locally generated gem file.
-Only the local docker file is used.
-The gem is installed from rubygems.org. This also sets the `latest` tag.
+Only the local build file and Makefile versions are used.
+The gem is installed from rubygems.org.
+This also sets the `latest` tag.
 
 ### Development version image build
 
@@ -294,8 +301,9 @@ To build/push a beta/development container:
 it does not create the `latest` tag, it uses the gem file generated locally with a special version number.
 
 ```bash
-make docker_beta
-make docker_push_beta
+make beta_build
+make beta_test
+make beta_push
 ```
 
 ## Single executable build
