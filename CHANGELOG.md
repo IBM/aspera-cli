@@ -10,6 +10,7 @@
     * `transferd`: support for version 1.1.5+
   * Breaking Changes:
     * `aoc`: `admin subscription` split into `admin subscription account` and `admin subscription usage`
+    * **agent**: `alpha` renamed to `desktop`
 
 * 4.21.1
 

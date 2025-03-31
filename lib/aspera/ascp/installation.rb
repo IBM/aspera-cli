@@ -10,7 +10,7 @@ require 'aspera/assert'
 require 'aspera/web_server_simple'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
-require 'aspera/products/alpha'
+require 'aspera/products/desktop'
 require 'aspera/products/connect'
 require 'aspera/products/transferd'
 require 'aspera/products/other'
@@ -389,7 +389,7 @@ module Aspera
           # :run_root  O only for Connect Client, location of http port file
           # :sub_bin   O subfolder with executables, default : bin
           scan_locations = Products::Transferd.locations.concat(
-            Products::Alpha.locations,
+            Products::Desktop.locations,
             Products::Connect.locations,
             Products::Other::LOCATION_ON_THIS_OS
           )

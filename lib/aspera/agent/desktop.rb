@@ -4,13 +4,13 @@ require 'aspera/agent/base'
 require 'aspera/rest'
 require 'aspera/environment'
 require 'aspera/json_rpc'
-require 'aspera/products/alpha'
+require 'aspera/products/desktop'
 require 'securerandom'
 
 module Aspera
   module Agent
-    # Aspera Desktop Alpha Client
-    class Alpha < Base
+    # Client: Aspera for Desktop
+    class Desktop < Base
       # try twice the main init url in sequence
       START_URIS = ['aspera://', 'aspera://', 'aspera://']
       # delay between each try to start the app
@@ -33,11 +33,11 @@ module Aspera
         rescue Errno::ECONNREFUSED => e
           start_url = START_URIS[method_index]
           method_index += 1
-          raise StandardError, "Unable to start #{Products::Alpha::APP_NAME} #{method_index} times" if start_url.nil?
-          Log.log.warn{"#{Products::Alpha::APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..."}
+          raise StandardError, "Unable to start #{Products::Desktop::APP_NAME} #{method_index} times" if start_url.nil?
+          Log.log.warn{"#{Products::Desktop::APP_NAME} is not started (#{e}). Trying to start it ##{method_index}..."}
           if !Environment.open_uri_graphical(start_url)
             Environment.open_uri_graphical('https://www.ibm.com/aspera/connect/')
-            raise StandardError, "#{Products::Alpha::APP_NAME} is not installed"
+            raise StandardError, "#{Products::Desktop::APP_NAME} is not installed"
           end
           sleep(SLEEP_SEC_BETWEEN_RETRY)
           retry
@@ -45,7 +45,7 @@ module Aspera
       end
 
       def aspera_client_api_url
-        log_file = Products::Alpha.log_file
+        log_file = Products::Desktop.log_file
         url = 'http://127.0.0.1:33024'
         File.open(log_file, 'r') do |file|
           file.each_line do |line|

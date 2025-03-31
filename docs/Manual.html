@@ -149,14 +149,14 @@ then test:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config initdemo</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server browse /</span></code></pre></div>
-<pre class="output"><code>+------------+--------+-----------+-------+---------------------------+-----------------------+
-| zmode      | zuid   | zgid      | size  | mtime                     | name                  |
-+------------+--------+-----------+-------+---------------------------+-----------------------+
-| drwxr-xr-x | aspera | asperaweb | 90112 | 2023-04-05 15:31:21 +0200 | Upload                |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:16 +0200 | aspera-test-dir-large |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-small |
-| dr-xr-xr-x | aspera | asperaweb | 4096  | 2022-10-27 16:08:17 +0200 | aspera-test-dir-tiny  |
-+------------+--------+-----------+-------+---------------------------+-----------------------+</code></pre>
+<pre class="output"><code>╭────────────┬──────┬───────────┬───────┬───────────────────────────┬───────────────────────╮
+│ zmode      │ zuid │ zgid      │ size  │ mtime                     │ name                  │
+╞════════════╪══════╪═══════════╪═══════╪═══════════════════════════╪═══════════════════════╡
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-large │
+│ drwxrwxr-x │ xfer │ demousers │ 94208 │ 2025-03-31 11:27:33 +0200 │ Upload                │
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-small │
+│ dr-xr-xr-x │ xfer │ demousers │ 4096  │ 2014-11-05 16:01:56 +0100 │ aspera-test-dir-tiny  │
+╰────────────┴──────┴───────────┴───────┴───────────────────────────┴───────────────────────╯</code></pre>
 <p>If you want to use <code>ascli</code> with another server, and in
 order to make further calls more convenient, it is advised to define a
 <a href="#option-preset">Option Preset</a> for the server’s
@@ -177,17 +177,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="
 Saving config file.</code></pre>
 <div class="sourceCode" id="cb9"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server browse /aspera-test-dir-large</span></code></pre></div>
-<pre class="output"><code>+------------+-----------+-----------+--------------+---------------------------+-------+
-| zmode      | zuid      | zgid      | size         | mtime                     | name  |
-+------------+-----------+-----------+--------------+---------------------------+-------+
-| -r-xr-x--- | asperaweb | asperaweb | 104857600    | 2022-10-27 16:06:38 +0200 | 100MB |
-| -r-xr-x--- | asperaweb | asperaweb | 10737418240  | 2022-10-27 16:08:12 +0200 | 10GB  |
-| -r-xr-x--- | asperaweb | asperaweb | 500000000000 | 2022-10-27 16:06:26 +0200 | 500GB |
-| -r-xr-x--- | asperaweb | asperaweb | 524288000    | 2022-10-27 14:53:00 +0200 | 500MB |
-| -r-xr-x--- | asperaweb | asperaweb | 1048576000   | 2022-10-27 16:06:37 +0200 | 1GB   |
-| -r-xr-x--- | asperaweb | asperaweb | 5368709120   | 2022-10-27 14:53:47 +0200 | 5GB   |
-| -r-xr-x--- | asperaweb | asperaweb | 209715200    | 2022-10-27 14:52:56 +0200 | 200MB |
-+------------+-----------+-----------+--------------+---------------------------+-------+</code></pre>
+<pre class="output"><code>╭────────────┬──────┬───────────┬─────────────┬───────────────────────────┬───────╮
+│ zmode      │ zuid │ zgid      │ size        │ mtime                     │ name  │
+╞════════════╪══════╪═══════════╪═════════════╪═══════════════════════════╪═══════╡
+│ -rw-r--r-- │ xfer │ demousers │ 5368709120  │ 2014-11-05 16:01:56 +0100 │ 5GB   │
+│ -rw-r--r-- │ xfer │ demousers │ 524288000   │ 2014-11-05 16:01:56 +0100 │ 500MB │
+│ -rw-r--r-- │ xfer │ demousers │ 209715200   │ 2014-11-05 16:01:56 +0100 │ 200MB │
+│ -rw-r--r-- │ xfer │ demousers │ 1048576000  │ 2014-11-05 16:01:56 +0100 │ 1GB   │
+│ -rw-r--r-- │ xfer │ demousers │ 104857600   │ 2014-11-05 16:01:56 +0100 │ 100MB │
+│ -rw-r--r-- │ xfer │ demousers │ 10737418240 │ 2014-11-05 16:01:56 +0100 │ 10GB  │
+╰────────────┴──────┴───────────┴─────────────┴───────────────────────────┴───────╯</code></pre>
 <div class="sourceCode" id="cb11"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server download /aspera-test-dir-large/200MB</span></code></pre></div>
 <pre class="output"><code>Time: 00:00:02 ============================================= 100% 100 Mbps Time: 00:00:00
@@ -1848,12 +1847,12 @@ remove an entry.</p>
 <p>Example:</p>
 <div class="sourceCode" id="cb130"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin user list <span class="at">--fields</span><span class="op">=</span>name,email,ats_admin <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sort&quot;:&quot;name&quot;}&#39;</span> <span class="at">--select</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ats_admin&quot;:true}&#39;</span></span></code></pre></div>
-<pre class="output"><code>+-------------------------------+----------------------------------+-----------+
-|             name              |              email               | ats_admin |
-+-------------------------------+----------------------------------+-----------+
-| John Curtis                   | john@example.com                 | true      |
-| Laurent Martin                | laurent@example.com              | true      |
-+-------------------------------+----------------------------------+-----------+</code></pre>
+<pre class="output"><code>╭────────────────┬─────────────────────┬───────────╮
+│ name           │ email               │ ats_admin │
+╞════════════════╪═════════════════════╪═══════════╡
+│ John Curtis    │ john@example.com    │ true      │
+│ Laurent Martin │ laurent@example.com │ true      │
+╰────────────────┴─────────────────────┴───────────╯</code></pre>
 <blockquote>
 <p><strong>Note:</strong> Option <code>select</code> filters elements
 from the result of command, while the <code>query</code> option gives
@@ -2090,12 +2089,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb141-1"><a href
 named <code>config</code></p>
 <div class="sourceCode" id="cb143"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config echo @json:@extend:<span class="st">&#39;{&quot;hello&quot;:true,&quot;version&quot;:&quot;@preset:config.version@&quot;}&#39;</span></span></code></pre></div>
-<pre class="output"><code>+---------+-----------+
-| field   | value     |
-+---------+-----------+
-| hello   | true      |
-| version | 4.14.0    |
-+---------+-----------+</code></pre>
+<pre class="output"><code>╭─────────┬────────╮
+│ field   │ value  │
+╞═════════╪════════╡
+│ hello   │ true   │
+│ version │ 4.21.1 │
+╰─────────┴────────╯</code></pre>
 <p>Example: Create a <code>Hash</code> from YAML provided as shell
 <strong>heredoc</strong>:</p>
 <div class="sourceCode" id="cb145"><pre
@@ -2855,13 +2854,13 @@ matched),
 e.g. <code>--ignore-certificate=@list:,https://127.0.0.1:9092</code></p>
 <blockquote>
 <p><strong>Note:</strong> Ignoring certificate also applies to
-<code>ascp</code>’s wss.</p>
+<code>ascp</code> WSS.</p>
 </blockquote>
 <p>Ignoring a certificate is not recommended, it is better to add the
 certificate to the trusted store. So, a warning is displayed when a
 certificate is ignored. To disable the warning, use option
 <code>silent_insecure</code> set to <code>no</code>.</p>
-<p>HTTP connection parameters (not <code>ascp</code> wss) can be
+<p>HTTP connection parameters (not <code>ascp</code> WSS) can be
 adjusted using option <code>http_options</code>:</p>
 <table>
 <thead>
@@ -3048,11 +3047,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb217-1"><a href
 <pre class="output"><code>/Users/laurent/.aspera/ascli/sdk/ascp</code></pre>
 <div class="sourceCode" id="cb219"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp info</span></code></pre></div>
-<pre class="output"><code>+--------------------+-----------------------------------------------------------+
-| field              | value                                                     |
-+--------------------+-----------------------------------------------------------+
-| ascp               | /Users/laurent/.aspera/ascli/sdk/ascp                     |
-...</code></pre>
+<pre class="output"><code>╭─────────┬──────────────────────────────────────────────────╮
+│ field   │ value                                            │
+╞═════════╪══════════════════════════════════════════════════╡
+│ ascp    │ /Users/john/.aspera/sdk/ascp                     │
+...
+╰─────────┴──────────────────────────────────────────────────╯</code></pre>
 <h3 data-number="4.19.2"
 id="selection-of-ascp-location-for-direct-agent"><span
 class="header-section-number">4.19.2</span> Selection of
@@ -3168,7 +3168,7 @@ Transfers will be executed by a transfer client, here called
 <td>Aspera Connect Client</td>
 </tr>
 <tr>
-<td><a href="#agent-desktop-client"><code>alpha</code></a></td>
+<td><a href="#agent-desktop-client"><code>desktop</code></a></td>
 <td>local</td>
 <td>Aspera for Desktop</td>
 </tr>
@@ -3232,7 +3232,7 @@ and add any argument to <code>ascp</code>:</p>
 <td><code>wss</code></td>
 <td><code>Bool</code></td>
 <td>Web Socket Session<br/>Enable use of web socket session in case it
-is available<br/>Default: true</td>
+is available<br/>Default: <code>true</code></td>
 </tr>
 <tr>
 <td><code>quiet</code></td>
@@ -3435,7 +3435,7 @@ class="header-section-number">4.20.2</span> Agent: Connect Client</h3>
 <code>transfer_info</code>.</p>
 <h3 data-number="4.20.3" id="agent-desktop-client"><span
 class="header-section-number">4.20.3</span> Agent: Desktop Client</h3>
-<p>By specifying option: <code>--transfer=alpha</code>,
+<p>By specifying option: <code>--transfer=desktop</code>,
 <code>ascli</code> will start transfers using the locally installed
 <strong>IBM Aspera Desktop Client</strong>. There are no option for
 <code>transfer_info</code>.</p>
@@ -3721,9 +3721,9 @@ description.</p>
 <tr>
 <th>Field</th>
 <th>Type</th>
+<th>D</th>
 <th>N</th>
 <th>D</th>
-<th>A</th>
 <th>T</th>
 <th>H</th>
 <th>C</th>
@@ -3734,9 +3734,9 @@ description.</p>
 <tr>
 <td>apply_local_docroot</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -3858,7 +3858,7 @@ source are not deleted.<br/>(–delete-before-transfer)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -3967,7 +3967,7 @@ back.<br/>(–exclude-older-than {string})</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -3990,9 +3990,9 @@ transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 <tr>
 <td>http_fallback_port</td>
 <td>int</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4012,9 +4012,9 @@ transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 <tr>
 <td>keepalive</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4112,7 +4112,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4139,7 +4139,7 @@ resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 <td>int</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4175,8 +4175,8 @@ diff+older<br/>(–overwrite {enum})</td>
 <tr>
 <td>password</td>
 <td>string</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4228,9 +4228,9 @@ the transfer.<br/>(–preserve-access-time)</td>
 <tr>
 <td>preserve_acls</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4266,9 +4266,9 @@ metafile<br/>(–preserve-xattrs {enum})</td>
 <tr>
 <td>preserve_file_owner_gid</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4278,9 +4278,9 @@ owner<br/>(–preserve-file-owner-gid)</td>
 <tr>
 <td>preserve_file_owner_uid</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4304,9 +4304,9 @@ timestamps at the destination.<br/>(–preserve-modification-time)</td>
 <tr>
 <td>preserve_remote_acls</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4316,9 +4316,9 @@ native, metafile<br/>(–remote-preserve-acls {enum})</td>
 <tr>
 <td>preserve_source_access_time</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4328,8 +4328,8 @@ accessed<br/>(–preserve-source-access-time)</td>
 <tr>
 <td>preserve_times</td>
 <td>bool</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4339,9 +4339,9 @@ accessed<br/>(–preserve-source-access-time)</td>
 <tr>
 <td>proxy</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4440,7 +4440,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4452,7 +4452,7 @@ success<br/>(–remove-after-transfer)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4462,9 +4462,9 @@ directories.<br/>(–remove-empty-directories)</td>
 <tr>
 <td>remove_empty_source_directory</td>
 <td>bool</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4476,7 +4476,7 @@ itself, if empty<br/>(–remove-empty-source-directory)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td>Y</td>
@@ -4500,8 +4500,8 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 <tr>
 <td>retry_duration</td>
 <td>string<br/>int</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4525,8 +4525,8 @@ defined.<br/>(–source-prefix64 (conversion){string})</td>
 <tr>
 <td>source_root_id</td>
 <td>string</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4539,7 +4539,7 @@ token auth for the source node.<br/>(&lt;ignored&gt;)</td>
 <td>string</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4575,9 +4575,9 @@ caution.<br/>(&lt;ignored&gt;)</td>
 <tr>
 <td>ssh_private_key</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4588,9 +4588,9 @@ newlines.<br/>(env:ASPERA_SCP_KEY)</td>
 <tr>
 <td>ssh_private_key_passphrase</td>
 <td>string</td>
-<td> </td>
 <td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4671,8 +4671,8 @@ API.<br/>(&lt;ignored&gt;)</td>
 <tr>
 <td>title</td>
 <td>string</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4696,7 +4696,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>bool</td>
 <td>Y</td>
 <td>Y</td>
-<td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4749,8 +4749,8 @@ API.<br/>(&lt;ignored&gt;)</td>
 <tr>
 <td>xfer_max_retries</td>
 <td>int</td>
-<td>Y</td>
 <td> </td>
+<td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -5478,7 +5478,7 @@ OPTIONS: global
         --to-folder=VALUE            Destination folder for transferred files
         --sources=VALUE              How list of transferred files is provided (@args,@ts,Array)
         --src-type=ENUM              Type of file list: [list], pair
-        --transfer=ENUM              Type of transfer agent: node, [direct], alpha, transferd, httpgw, connect
+        --transfer=ENUM              Type of transfer agent: desktop, node, [direct], transferd, httpgw, connect
         --transfer-info=VALUE        Parameters for transfer agent (Hash)
 
 COMMAND: config
@@ -6659,9 +6659,9 @@ in developer mode). The current workspace is added unless specified in
 the query.</p>
 <blockquote>
 <p><strong>Note:</strong> By default,
-<code>exclude_dropbox_packages</code> is set to true for user packages,
-and to false for shared inbox packages. This can be overridden in the
-query.</p>
+<code>exclude_dropbox_packages</code> is set to <code>true</code> for
+user packages, and to false for shared inbox packages. This can be
+overridden in the query.</p>
 </blockquote>
 <p>Using shared inbox name:</p>
 <div class="sourceCode" id="cb362"><pre

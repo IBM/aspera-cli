@@ -4,8 +4,8 @@ require 'aspera/environment'
 
 module Aspera
   module Products
-    # Aspera Desktop Alpha Client
-    class Alpha
+    # Client Aspera for Desktop
+    class Desktop
       APP_NAME = 'IBM Aspera for Desktop'
       APP_IDENTIFIER = 'com.ibm.software.aspera.desktop'
       class << self

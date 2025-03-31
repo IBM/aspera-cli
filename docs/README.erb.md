@@ -2785,7 +2785,7 @@ The following agents are supported and selected with option `transfer`:
 | [`direct`](#agent-direct)          | local    | direct execution of `ascp`    |
 | [`transferd`](#agent-transfer-sdk) | local    | Aspera Transfer Daemon        |
 | [`connect`](#agent-connect-client) | local    | Aspera Connect Client         |
-| [`alpha`](#agent-desktop-client)   | local    | Aspera for Desktop            |
+| [`desktop`](#agent-desktop-client) | local    | Aspera for Desktop            |
 | [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
 | [`httpgw`](#agent-http-gateway)    | remote   | Aspera HTTP Gateway           |
 
@@ -2944,7 +2944,7 @@ There are no option for `transfer_info`.
 
 #### Agent: Desktop Client
 
-By specifying option: `--transfer=alpha`, <%=tool%> will start transfers using the locally installed **IBM Aspera Desktop Client**.
+By specifying option: `--transfer=desktop`, <%=tool%> will start transfers using the locally installed **IBM Aspera Desktop Client**.
 There are no option for `transfer_info`.
 
 #### Agent: Node API
