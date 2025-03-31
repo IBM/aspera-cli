@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require 'aspera/environment'
+require 'singleton'
 
 module Aspera
   module Products
     class Connect
+      include Singleton
       APP_NAME = 'IBM Aspera Connect'
+
       class << self
         # standard folder locations
         def locations
@@ -43,6 +46,37 @@ module Aspera
           end.map { |i| i.merge({ expected: APP_NAME }) }
         end
       end
+
+      def cdn_api
+        Rest.new(base_url: CDN_BASE_URL)
+      end
+
+      # retrieve structure from cloud (CDN) with all versions available
+      def versions
+        if @connect_versions.nil?
+          javascript = cdn_api.call(operation: 'GET', subpath: VERSION_INFO_FILE)
+          # get result on one line
+          connect_versions_javascript = javascript[:http].body.gsub(/\r?\n\s*/, '')
+          Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
+          # get javascript object only
+          found = connect_versions_javascript.match(/^.*? = (.*);/)
+          raise Cli::Error, 'Problem when getting connect versions from internet' if found.nil?
+          all_data = JSON.parse(found[1])
+          @connect_versions = all_data['entries']
+        end
+        return @connect_versions
+      end
+
+      private
+
+      def initialize
+        @connect_versions = nil
+      end
+
+      VERSION_INFO_FILE = 'connectversions.js' # cspell: disable-line
+      CDN_BASE_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
+
+      private_constant :VERSION_INFO_FILE, :CDN_BASE_URL
     end
   end
 end

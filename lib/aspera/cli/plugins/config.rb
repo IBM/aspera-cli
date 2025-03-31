@@ -54,8 +54,6 @@ module Aspera
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
         DIR_SDK = 'sdk'
-        CONNECT_WEB_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
-        CONNECT_VERSIONS = 'connectversions.js' # cspell: disable-line
         DEMO_SERVER = 'demo'
         DEMO_PRESET = 'demoserver' # cspell: disable-line
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
@@ -150,7 +148,6 @@ module Aspera
           @use_plugin_defaults = true
           @config_presets = nil
           @config_checksum_on_disk = nil
-          @connect_versions = nil
           @vault = nil
           @pac_exec = nil
           @sdk_default_location = false
@@ -439,23 +436,6 @@ module Aspera
           end if check_data[:need_update]
         end
 
-        # retrieve structure from cloud (CDN) with all versions available
-        def connect_versions
-          if @connect_versions.nil?
-            api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
-            javascript = api_connect_cdn.call(operation: 'GET', subpath: CONNECT_VERSIONS)
-            # get result on one line
-            connect_versions_javascript = javascript[:http].body.gsub(/\r?\n\s*/, '')
-            Log.log.debug{"javascript=[\n#{connect_versions_javascript}\n]"}
-            # get javascript object only
-            found = connect_versions_javascript.match(/^.*? = (.*);/)
-            raise Cli::Error, 'Problem when getting connect versions from internet' if found.nil?
-            all_data = JSON.parse(found[1])
-            @connect_versions = all_data['entries']
-          end
-          return @connect_versions
-        end
-
         # loads default parameters of plugin if no -P parameter
         # and if there is a section defined for the plugin in the "default" section
         # try to find: conf[conf["default"][plugin_str]]
@@ -659,12 +639,12 @@ module Aspera
           command = options.get_next_command(%i[list info version])
           if %i[info version].include?(command)
             connect_id = options.get_next_argument('id or title')
-            one_res = connect_versions.find{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
+            one_res = Products::Connect.instance.versions.find{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
             raise Cli::NoSuchIdentifier.new(:connect, connect_id) if one_res.nil?
           end
           case command
           when :list
-            return Main.result_object_list(connect_versions, fields: %w[id title version])
+            return Main.result_object_list(Products::Connect.instance.versions, fields: %w[id title version])
           when :info
             one_res.delete('links')
             return Main.result_single_object(one_res)
@@ -674,18 +654,16 @@ module Aspera
             if %i[download open].include?(command)
               link_title = options.get_next_argument('title or rel')
               one_link = all_links.find {|i| i['title'].eql?(link_title) || i['rel'].eql?(link_title)}
-              raise 'no such value' if one_link.nil?
+              raise "no such value: #{link_title}" if one_link.nil?
             end
             case command
             when :list
               return Main.result_object_list(all_links)
             when :download
-              folder_dest = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
-              api_connect_cdn = Rest.new(base_url: CONNECT_WEB_URL)
-              file_url = one_link['href']
-              filename = file_url.gsub(%r{.*/}, '')
-              api_connect_cdn.call(operation: 'GET', subpath: file_url, save_to_file: File.join(folder_dest, filename))
-              return Main.result_status("Downloaded: #{filename}")
+              archive_path = one_link['href']
+              save_to_path = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), archive_path.gsub(%r{.*/}, ''))
+              Products::Connect.instance.cdn_api.call(operation: 'GET', subpath: archive_path, save_to_file: save_to_path)
+              return Main.result_status("Downloaded: #{save_to_path}")
             when :open
               Environment.instance.open_uri(one_link['href'])
               return Main.result_status("Opened: #{one_link['href']}")
