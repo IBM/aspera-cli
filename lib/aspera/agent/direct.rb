@@ -168,9 +168,12 @@ module Aspera
             ['-M', mgt_server_socket.local_address.ip_port.to_s]
           end
           command_arguments.concat(args)
+          # capture process stderr
+          stderr_r, stderr_w = IO.pipe
           # get location of command executable (ascp, async)
           command_path = Ascp::Installation.instance.path(name)
-          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments)
+          command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, err: stderr_w)
+          stderr_w.close
           notify_progress(:pre_start, session_id: nil, info: "waiting for #{name} to start")
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           # So we use select to detect that anything happens on the socket (connection)
@@ -203,6 +206,10 @@ module Aspera
           Log.log.debug('management io closed')
           # check that last status was received before process exit
           last_event = processor.last_event
+          # process stderr of ascp
+          stderr_r&.each_line do |line|
+            Log.log.error(line.chomp)
+          end
           raise Transfer::Error, "internal: no management event (#{last_event.class})" unless last_event.is_a?(Hash)
           case last_event['Type']
           when 'ERROR'
@@ -226,6 +233,7 @@ module Aspera
           raise Transfer::Error, 'transfer interrupted by user'
         ensure
           mgt_server_socket.close
+          stderr_r&.close
           # if command was successfully started, check its status
           unless command_pid.nil?
             # "wait" for process to avoid zombie

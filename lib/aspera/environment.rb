@@ -109,23 +109,28 @@ module Aspera
         ].compact.flatten.join(' ')
       end
 
-      # start process in background, or raise exception
+      # Start process in background
       # caller can call Process.wait on returned value
-      # @param env [Hash, nil]   environment variables
-      # @param exec [String]     path to executable
-      # @param args [Array, nil] arguments
-      # @return [String] PID of process
-      def secure_spawn(exec:, args: nil, env: nil)
+      # @param exec    [String]     path to executable
+      # @param args    [Array, nil] arguments for executable
+      # @param env     [Hash, nil]  environment variables
+      # @param options [Hash, nil]  spawn options
+      # @return [String]            PID of process
+      # @raise  [Exception]         if problem
+      def secure_spawn(exec:, args: nil, env: nil, **options)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
+        Aspera.assert_type(options, Hash) unless options.nil?
         Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
         # start ascp in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
-        ascp_pid = Process.spawn(*spawn_args, close_others: true)
+        opts = {close_others: true}
+        opts.merge!(options) unless options.nil?
+        ascp_pid = Process.spawn(*spawn_args, **opts)
         Log.log.debug{"pid: #{ascp_pid}"}
         return ascp_pid
       end
@@ -140,19 +145,21 @@ module Aspera
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
         Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
-        # start ascp in separate process
+        # start in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
+        # ensure no shell expansion
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
         Kernel.system(*spawn_args, exception: true)
         nil
       end
 
+      # Execute process and capture stdout
       # @param exec [String] path to executable
       # @param args [Array] arguments to executable
       # @param opts [Hash] options to capture3
-      # @return stdout of executable or raise expcetion
+      # @return stdout of executable or raise exception
       def secure_capture(exec:, args: [], **opts)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array)
