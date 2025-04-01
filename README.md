@@ -233,9 +233,16 @@ On Linux, check your GLIBC version with `ldd`:
 ```console
 $ ldd --version | head -n1
 ldd (GNU libc) 2.34
-# objdump -p /bin/false | grep 'GLIBC_' | cut -f2 -d_ | sort -V | head -n1
-
 ```
+
+Check an executable's min required version:
+
+```console
+$ objdump -p /bin/false | grep 'GLIBC_' | cut -f2 -d_ | sort -V | tail -n1
+2.34
+```
+
+`ascli` does not include `ascp`: it must be installed separately.
 
 ### Ruby
 
