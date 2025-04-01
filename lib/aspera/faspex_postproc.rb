@@ -39,7 +39,7 @@ module Aspera
           response.body = {status: 'error', message: 'Empty request'}.to_json
           return
         end
-        # build script path by removing domain, and adding script folder
+        # build script path by removing domain and adding script folder
         script_file = request.path[@parameters[:root].size..]
         Log.log.debug{"script file=#{script_file}"}
         script_path = File.join(@parameters[:script_folder], script_file)
@@ -48,11 +48,9 @@ module Aspera
         Log.log.debug{Log.dump(:webhook_parameters, webhook_parameters)}
         # env expects only strings
         environment = webhook_parameters.each_with_object({}) { |(k, v), h| h[k] = v.to_s }
-        post_proc_pid = Process.spawn(environment, [script_path, script_path])
-        Log.log.debug{"pid=#{post_proc_pid}"}
-        raise 'no pid' if post_proc_pid.nil?
-        # "wait" for process to avoid zombie
+        post_proc_pid = Environment.secure_spawn(env: environment, exec: script_path)
         Timeout.timeout(@parameters[:timeout_seconds]) do
+          # "wait" for process to avoid zombie
           Process.wait(post_proc_pid)
           post_proc_pid = nil
         end
