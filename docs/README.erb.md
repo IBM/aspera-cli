@@ -234,9 +234,11 @@ ldd (GNU libc) 2.34
 Check an executable's min required version:
 
 ```console
-$ objdump -p /bin/false | grep 'GLIBC_' | cut -f2 -d_ | sort -V | tail -n1
+$ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 2.34
 ```
+
+> **Note:** if `objdump` is not available use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
 <%=tool%> does not include `ascp`: it must be installed separately.
 
@@ -560,7 +562,7 @@ The easiest option to install `ascp` is through the use of the IBM Aspera Transf
 
 Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
-Install with:
+Install using <%=tool%> for the current platform with:
 
 ```bash
 <%=cmd%> config ascp install
@@ -572,7 +574,7 @@ or
 <%=cmd%> config transferd install
 ```
 
-This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then select the latest version for the current platform.
+This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then selects the latest version for the current platform.
 In this case, the default value for option `sdk_url` is `DEF`.
 
 Available Transfer Daemon versions can be listed with: `<%=cmd%> config transferd list`
@@ -650,17 +652,7 @@ The procedure:
 cd $HOME && tar zcvf rvm-<%=cmd%>.tgz .rvm
 ```
 
-- Show the Aspera SDK URL
-
-```bash
-<%=cmd%> --show-config --fields=sdk_url
-```
-
-- Download the SDK archive from that URL
-
-```bash
-curl -Lso sdk.zip https://ibm.biz/aspera_transfer_sdk
-```
+- Download the SDK archive for the selected architecture, follow [Install `ascp`](#installation-of-ascp-through-transferd)
 
 - Transfer those 2 files to the target system
 
@@ -673,7 +665,7 @@ tar zxvf rvm-<%=cmd%>.tgz
 
 source ~/.rvm/scripts/rvm
 
-<%=cmd%> config ascp install --sdk-url=file:///sdk.zip
+<%=cmd%> config ascp install --sdk-url=file:///[SDK archive file path]
 ```
 
 - Add those lines to shell init (`.profile`)
@@ -697,7 +689,7 @@ It is essentially the same procedure as installation for Windows with internet, 
 
 - Create an archive with necessary gems like in previous section
 
-- Download the SDK from: <https://ibm.biz/aspera_transfer_sdk>
+- Download the SDK following [Install `ascp`](#installation-of-ascp-through-transferd)
 
 - Create a Zip with all those files, and transfer to the target system.
 
@@ -885,7 +877,7 @@ podman load -i <%=cmd%>_image_latest.tar.gz
 
 #### Container: `aspera.conf`
 
-`ascp`'s configuration file `aspera.conf` is located in the container at: `/aspera_sdk/aspera.conf` (see Dockerfile).
+`ascp`'s configuration file `aspera.conf` is located in the container at: `/ibm_aspera/aspera.conf` (see Dockerfile).
 As the container is immutable, it is not recommended to modify this file.
 If one wants to change the content, it is possible to tell `ascp` to use another file using `ascp` option `-f`, e.g. by locating it on the host folder `$HOME/.aspera/<%=cmd%>` mapped to the container folder `/home/cliuser/.aspera/<%=cmd%>`:
 
