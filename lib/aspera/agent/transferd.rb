@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/environment'
 require 'aspera/agent/base'
 require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
@@ -19,20 +20,20 @@ module Aspera
 
       private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
 
-      # @param url          [String] URL of the transfer manager daemon
-      # @param external     [Bool]   if true, expect that an external daemon is already running
-      # @param keep         [Bool]   if true, do not shutdown daemon on exit
-      # @param base_options [Hash]   base options
+      # @param url   [String] URL of the transfer manager daemon
+      # @param start [Bool]   if false, expect that an external daemon is already running
+      # @param stop  [Bool]   if false, do not shutdown daemon on exit
+      # @param base  [Hash]   base class options
       def initialize(
-        url: AUTO_LOCAL_TCP_PORT,
-        external: false,
-        keep:     false,
-        **base_options
+        url:   AUTO_LOCAL_TCP_PORT,
+        start: true,
+        stop:  true,
+        **base
       )
-        super(**base_options)
-        @keep = keep
+        super(**base)
+        @stop = stop
         is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
-        raise 'Cannot use options `keep` or `external` with port zero' if is_local_auto_port && (@keep || external)
+        raise 'Cannot set options `stop` or `start` to false with port zero' if is_local_auto_port && (!@stop || !start)
         # keep PID for optional shutdown
         @daemon_pid = nil
         daemon_endpoint = url
@@ -46,14 +47,14 @@ module Aspera
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
           Log.log.debug{"Daemon info: #{get_info_response}"}
-          Log.log.warn{'Attached to existing daemon'} unless @daemon_pid || external || @keep
+          Log.log.warn('Attached to existing daemon') unless @daemon_pid || !start || !@stop
           at_exit{shutdown}
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
-          raise if external || !e.message.include?('failed to connect')
+          raise if !start || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
           Aspera.assert(@daemon_pid.nil?){"Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}}"}
-          Log.log.warn('no daemon present, starting daemon...') if external
+          Log.log.warn('no daemon present, starting daemon...') if !start
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
           Aspera.assert(daemon_uri.scheme.eql?('ipv4')){"Invalid scheme daemon URI #{daemon_endpoint}"}
@@ -76,7 +77,11 @@ module Aspera
           log_stdout = "#{transferd_base_tmp}.out"
           log_stderr = "#{transferd_base_tmp}.err"
           File.write(conf_file, config.to_json)
-          @daemon_pid = Process.spawn(Ascp::Installation.instance.path(:transferd), '--config', conf_file, out: log_stdout, err: log_stderr)
+          @daemon_pid = Environment.secure_spawn(
+            exec: Ascp::Installation.instance.path(:transferd),
+            args: ['--config', conf_file],
+            out: log_stdout,
+            err: log_stderr)
           begin
             # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do
@@ -88,7 +93,7 @@ module Aspera
             nil
           end
           Log.log.debug{"Daemon started with pid #{@daemon_pid}"}
-          Process.detach(@daemon_pid) if @keep
+          Process.detach(@daemon_pid) unless @stop
           at_exit {shutdown}
           # update port for next connection attempt (if auto high port was requested)
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
@@ -148,7 +153,7 @@ module Aspera
       end
 
       def shutdown
-        stop_daemon unless @keep
+        stop_daemon if @stop
       end
 
       def stop_daemon
