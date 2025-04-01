@@ -314,7 +314,7 @@ module Aspera
         if url.start_with?('file:')
           # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
           raise 'use format: file:///<path>' unless url.start_with?(FILE_SCHEME_PREFIX)
-          sdk_archive_path = url[FILE_SCHEME_PREFIX.length..-1]
+          sdk_archive_path = File.expand_path(url[FILE_SCHEME_PREFIX.length..-1])
           delete_archive = false
         else
           sdk_archive_path = File.join(Dir.tmpdir, File.basename(url))
