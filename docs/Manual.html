@@ -3463,22 +3463,22 @@ useful for direct node-to-node transfers.</p>
 <tr>
 <td><code>url</code></td>
 <td><code>String</code></td>
-<td>URL of the node API</br>Mandatory</td>
+<td>URL of the node API<br/>Mandatory</td>
 </tr>
 <tr>
 <td><code>username</code></td>
 <td><code>String</code></td>
-<td>Node api user or access key</br>Mandatory</td>
+<td>Node api user or access key<br/>Mandatory</td>
 </tr>
 <tr>
 <td><code>password</code></td>
 <td><code>String</code></td>
-<td>Password, secret or bearer token</br>Mandatory</td>
+<td>Password, secret or bearer token<br/>Mandatory</td>
 </tr>
 <tr>
 <td><code>root_id</code></td>
 <td><code>String</code></td>
-<td>Root file id</br>Mandatory only for bearer token</td>
+<td>Root file id<br/>Mandatory only for bearer token</td>
 </tr>
 </tbody>
 </table>
@@ -3508,8 +3508,8 @@ Gateway.</p>
 <p>Parameters provided in option <code>transfer_info</code> are:</p>
 <table>
 <colgroup>
-<col style="width: 33%" />
-<col style="width: 11%" />
+<col style="width: 29%" />
+<col style="width: 15%" />
 <col style="width: 54%" />
 </colgroup>
 <thead>
@@ -3521,24 +3521,24 @@ Gateway.</p>
 </thead>
 <tbody>
 <tr>
-<td>url</td>
+<td><code>url</code></td>
 <td><code>String</code></td>
-<td>URL of the HTTP GW</br>Mandatory</td>
+<td>URL of the HTTP GW<br/>Mandatory</td>
 </tr>
 <tr>
-<td>upload_chunk_size</td>
+<td><code>upload_chunk_size</code></td>
 <td><code>Integer</code></td>
 <td>Size in bytes of chunks for upload<br/>Default:
 <code>64000</code></td>
 </tr>
 <tr>
-<td>api_version</td>
+<td><code>api_version</code></td>
 <td><code>String</code></td>
 <td>Force use of version (<code>v1</code>, <code>v2</code>)<br/>Default:
 <code>v2</code></td>
 </tr>
 <tr>
-<td>synchronous</td>
+<td><code>synchronous</code></td>
 <td><code>Bool</code></td>
 <td>Wait for each message acknowledgment<br/>Default:
 <code>false</code></td>
@@ -3564,9 +3564,9 @@ class="header-section-number">4.20.6</span> Agent: Transfer SDK</h3>
 <p>Options for <code>transfer_info</code> are:</p>
 <table>
 <colgroup>
-<col style="width: 32%" />
-<col style="width: 25%" />
-<col style="width: 41%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+<col style="width: 39%" />
 </colgroup>
 <thead>
 <tr>
@@ -3580,19 +3580,18 @@ class="header-section-number">4.20.6</span> Agent: Transfer SDK</h3>
 <td><code>url</code></td>
 <td><code>String</code></td>
 <td>IP address and port listened by the
-daemon</br>Mandatory<br/>Default: <code>:0</code></td>
+daemon<br/>Mandatory<br/>Default: <code>:0</code></td>
 </tr>
 <tr>
-<td><code>external</code></td>
+<td><code>start</code></td>
 <td><code>Bool</code></td>
-<td>Use external daemon, do not start one.<br/>Default:
-<code>false</code></td>
+<td>Start a new daemon.<br/>Default: <code>true</code></td>
 </tr>
 <tr>
-<td><code>keep</code></td>
+<td><code>stop</code></td>
 <td><code>Bool</code></td>
-<td>Keep the daemon running after exiting
-<code>ascli</code><br/>Default: <code>false</code></td>
+<td>Stop daemon when exiting <code>ascli</code><br/>Default:
+<code>true</code></td>
 </tr>
 </tbody>
 </table>

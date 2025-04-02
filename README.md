@@ -3066,10 +3066,10 @@ Parameters provided in option `transfer_info` are:
 
 | Nam  e     | Type   | Description                                      |
 |------------|--------|--------------------------------------------------|
-| `url`      | `String` | URL of the node API</br>Mandatory                |
-| `username` | `String` | Node api user or access key</br>Mandatory        |
-| `password` | `String` | Password, secret or bearer token</br>Mandatory   |
-| `root_id`  | `String` | Root file id</br>Mandatory only for bearer token |
+| `url`      | `String` | URL of the node API<br/>Mandatory                |
+| `username` | `String` | Node api user or access key<br/>Mandatory        |
+| `password` | `String` | Password, secret or bearer token<br/>Mandatory   |
+| `root_id`  | `String` | Root file id<br/>Mandatory only for bearer token |
 
 Like any other option, `transfer_info` can get its value from a pre-configured [Option Preset](#option-preset) :
 
@@ -3096,12 +3096,12 @@ By specifying option: `--transfer=httpgw`, `ascli` will start transfers using th
 
 Parameters provided in option `transfer_info` are:
 
-| Name                   | Type   | Description                           |
-|------------------------|--------|---------------------------------------|
-| url                    | `String` | URL of the HTTP GW</br>Mandatory      |
-| upload_chunk_size      | `Integer`    | Size in bytes of chunks for upload<br/>Default: `64000`    |
-| api_version            | `String` | Force use of version (`v1`, `v2`)<br/>Default: `v2`       |
-| synchronous            | `Bool`   | Wait for each message acknowledgment<br/>Default: `false`  |
+| Name                | Type      | Description                           |
+|---------------------|-----------|---------------------------------------|
+| `url`               | `String`  | URL of the HTTP GW<br/>Mandatory |
+| `upload_chunk_size` | `Integer` | Size in bytes of chunks for upload<br/>Default: `64000` |
+| `api_version`       | `String`  | Force use of version (`v1`, `v2`)<br/>Default: `v2` |
+| `synchronous`       | `Bool`    | Wait for each message acknowledgment<br/>Default: `false` |
 
 Example:
 
@@ -3120,11 +3120,11 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer_info` are:
 
-| Name     | Type   | Description |
-|----------|--------|-------------|
-| `url`      | `String` | IP address and port listened by the daemon</br>Mandatory<br/>Default: `:0` |
-| `external` | `Bool`   | Use external daemon, do not start one.<br/>Default: `false` |
-| `keep`     | `Bool`   | Keep the daemon running after exiting `ascli`<br/>Default: `false` |
+| Name     | Type     | Description |
+|----------|----------|-------------|
+| `url`    | `String` | IP address and port listened by the daemon<br/>Mandatory<br/>Default: `:0` |
+| `start`  | `Bool`   | Start a new daemon.<br/>Default: `true` |
+| `stop`   | `Bool`   | Stop daemon when exiting `ascli`<br/>Default: `true` |
 
 > **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
 
