@@ -140,7 +140,7 @@ module Aspera
       # @param exec [String]     path to executable
       # @param args [Array, nil] arguments
       # @return [String] PID of process
-      def secure_execute(exec:, args: nil, env: nil)
+      def secure_execute(exec:, args: nil, env: nil, **system_args)
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
@@ -151,7 +151,9 @@ module Aspera
         # ensure no shell expansion
         spawn_args.push([exec, exec])
         spawn_args.concat(args) unless args.nil?
-        Kernel.system(*spawn_args, exception: true)
+        kwargs = {exception: true}
+        kwargs.merge!(system_args)
+        Kernel.system(*spawn_args, **kwargs)
         nil
       end
 
