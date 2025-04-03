@@ -280,7 +280,7 @@ module Aspera
       end
 
       def refreshed_transfer_token
-        return oauth.token(refresh: true)
+        return oauth.authorization(refresh: true)
       end
 
       # @return part of transfer spec with transport parameters only
@@ -310,12 +310,12 @@ module Aspera
         when :basic
           ak_name = auth_params[:username]
           Aspera.assert(auth_params[:password]){'no secret in node object'}
-          ak_token = Rest.basic_token(auth_params[:username], auth_params[:password])
+          ak_token = Rest.basic_authorization(auth_params[:username], auth_params[:password])
         when :oauth2
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
-          # TODO: token_generation_lambda = lambda{|do_refresh|oauth.token(refresh: do_refresh)}
+          # TODO: token_generation_lambda = lambda{|do_refresh|oauth.authorization(refresh: do_refresh)}
           # get bearer token, possibly use cache
-          ak_token = oauth.token
+          ak_token = oauth.authorization
         when :none
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
           ak_token = params[:headers]['Authorization']

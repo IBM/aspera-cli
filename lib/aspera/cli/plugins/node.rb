@@ -477,7 +477,7 @@ module Aspera
               result[:password] = apifid[:api].auth_params[:password]
             when :oauth2
               result[:username] = apifid[:api].params[:headers][Api::Node::HEADER_X_ASPERA_ACCESS_KEY]
-              result[:password] = apifid[:api].oauth.token
+              result[:password] = apifid[:api].oauth.authorization
             else Aspera.error_unreachable_line
             end
             return {type: :single_object, data: result} if command_repo.eql?(:node_info)
@@ -1016,7 +1016,7 @@ module Aspera
             Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
             return Main.result_status('done')
           when :basic_token
-            return Main.result_status(Rest.basic_token(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
+            return Main.result_status(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)))
           when :bearer_token
             private_key = OpenSSL::PKey::RSA.new(options.get_next_argument('private RSA key PEM value', validation: String))
             token_info = options.get_next_argument('user and group identification', validation: Hash)

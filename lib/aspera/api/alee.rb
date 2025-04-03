@@ -7,7 +7,7 @@ module Aspera
       def initialize(entitlement_id, customer_id, api_domain: AoC::SAAS_DOMAIN_PROD, version: 'v1')
         super(
           base_url: "https://api.#{api_domain}/metering/#{version}",
-          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_token(entitlement_id, customer_id)}
+          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_authorization(entitlement_id, customer_id)}
         )
       end
     end

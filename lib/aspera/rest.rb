@@ -62,7 +62,7 @@ module Aspera
 
     class << self
       # @return [String] Basic auth token
-      def basic_token(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
+      def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
 
       # Build a parameter list prefixed with "[]"
       # @param values [Array] list of values
@@ -295,7 +295,7 @@ module Aspera
         Log.log.debug('using Basic auth')
         # done in build_req
       when :oauth2
-        headers['Authorization'] = oauth.token unless headers.key?('Authorization')
+        headers['Authorization'] = oauth.authorization unless headers.key?('Authorization')
       when :url
         query ||= {}
         @auth_params[:url_query].each do |key, value|
@@ -409,12 +409,12 @@ module Aspera
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
             # try to use refresh token
-            req['Authorization'] = oauth.token(refresh: true)
+            req['Authorization'] = oauth.authorization(refresh: true)
           rescue RestCallError => e_tok
             e = e_tok
             Log.log.error('refresh failed'.bg_red)
             # regenerate a brand new token
-            req['Authorization'] = oauth.token(refresh: true)
+            req['Authorization'] = oauth.authorization(cache: false)
           end
           Log.log.debug{"using new token=#{headers['Authorization']}"}
           do_retry = true if (oauth_tries -= 1).positive?

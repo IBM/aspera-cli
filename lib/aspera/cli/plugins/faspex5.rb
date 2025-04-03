@@ -744,7 +744,7 @@ fields: %w[event_type created_at application user.name]}
               end
             end
           when :bearer_token
-            return {type: :text, data: @api_v5.oauth.token}
+            return {type: :text, data: @api_v5.oauth.authorization}
           when :packages
             return package_action
           when :shared_folders

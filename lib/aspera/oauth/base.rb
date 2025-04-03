@@ -79,6 +79,11 @@ module Aspera
         return call_params
       end
 
+      # @return value suitable for Authorization header
+      def authorization(**kwargs)
+        return OAuth::Factory.bearer_build(token(**kwargs))
+      end
+
       # get an OAuth v2 token (generated, cached, refreshed)
       # call token() to get a token.
       # if a token is expired (api returns 4xx), call again token(refresh: true)
@@ -129,7 +134,7 @@ module Aspera
         end
         Aspera.assert(token_data.key?(@token_field)){"API error: No such field in answer: #{@token_field}"}
         # ok we shall have a token here
-        return OAuth::Factory.bearer_build(token_data[@token_field])
+        return token_data[@token_field]
       end
     end
   end
