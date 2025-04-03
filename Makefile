@@ -21,7 +21,7 @@ clean::
 	rm -fr $(DIR_TMP)
 	cd $(DIR_DOC) && make clean
 	cd $(DIR_TST) && make clean
-	rm -f Gemfile.lock
+	cd container && make clean
 clean_doc::
 	cd $(DIR_DOC) && make clean_doc
 ##################################
