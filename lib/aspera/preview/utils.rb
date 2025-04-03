@@ -32,7 +32,7 @@ module Aspera
           tools_to_check.delete(:unoconv) if skip_types.include?(:office)
           # Check for binaries
           tools_to_check.each do |command_sym|
-            external_command(command_sym, ['-h'])
+            external_command(command_sym, ['-h'], out: File::NULL)
           rescue Errno::ENOENT => e
             raise "missing #{command_sym} binary: #{e}"
           rescue
@@ -45,7 +45,7 @@ module Aspera
         # @return nil
         def external_command(command_sym, command_args)
           Aspera.assert_values(command_sym, EXTERNAL_TOOLS){'command'}
-          Environment.secure_execute(exec: command_sym.to_s, args: command_args.map(&:to_s))
+          Environment.secure_execute(exec: command_sym.to_s, args: command_args.map(&:to_s), out: File::NULL, err: File::NULL)
         end
 
         def external_capture(command_sym, command_args)
