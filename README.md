@@ -244,7 +244,7 @@ $ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 
 > **Note:** if `objdump` is not available use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
-`ascli` does not include `ascp`: it must be installed separately.
+The `ascli` executable still requires installation of `ascp`: Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 ### Ruby
 
@@ -310,7 +310,7 @@ RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm instal
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-**Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
+**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems
 
 - Check available Ruby versions:
 
@@ -696,10 +696,10 @@ Installation without network:
 
 It is essentially the same procedure as installation for Windows with internet, but instead of retrieving files from internet, copy the files from a machine with internet access, and then install from those archives:
 
-- Download the `exe` Ruby installer from <https://rubyinstaller.org/downloads/>
+- Download the Ruby installer from <https://rubyinstaller.org/downloads/>
 
   ```bash
-  v=$(curl -s https://rubyinstaller.org/downloads/|sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p'|head -n 1)
+  v=$(curl -s https://rubyinstaller.org/downloads/ | sed -nEe 's|.*(https://.*/releases/download/.*exe).*|\1|p' | head -n 1)
   curl -o ${v##*/} $v
   ```
 
@@ -707,7 +707,7 @@ It is essentially the same procedure as installation for Windows with internet, 
 
 - Download the SDK following [Install `ascp`](#installation-of-ascp-through-transferd)
 
-- Create a Zip with all those files, and transfer to the target system.
+- Create a Zip with all those files and transfer to the target system.
 
 Then, on the target system:
 
@@ -718,7 +718,7 @@ Then, on the target system:
 rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\aspera-cli
 ```
 
-- Install the gems: Extract the gem archive, and then:
+- Install the gems: Extract the gem archive and then:
 
 ```bat
 gem install --force --local *.gem
@@ -3974,10 +3974,10 @@ OPTIONS:
         --thumb-vid-scale=VALUE      Png: video: size (ffmpeg scale argument)
         --thumb-vid-fraction=VALUE   Png: video: time percent position of snapshot
         --thumb-img-size=VALUE       Png: non-video: height (and width)
-        --thumb-text-font=VALUE      Png: plaintext: font to render text with imagemagick convert (identify -list font)
+        --thumb-text-font=VALUE      Png: plaintext: font for text rendering: `magick identify -list font`
         --video-conversion=ENUM      Mp4: method for preview generation: [reencode], blend, clips
         --video-png-conv=ENUM        Mp4: method for thumbnail generation: [fixed], animated
-        --video-scale=VALUE          Mp4: all: video scale (ffmpeg)
+        --video-scale=VALUE          Mp4: all: video scale (ffmpeg scale argument)
         --video-start-sec=VALUE      Mp4: all: start offset (seconds) of video preview
         --reencode-ffmpeg=VALUE      Mp4: reencode: options to ffmpeg
         --blend-keyframes=VALUE      Mp4: blend: # key frames
@@ -5750,10 +5750,10 @@ Examples of expressions:
   ascli node access_keys do self find /Documents '*.txt'
   ```
 
-The following are examples of `ruby_lambda` to be provided in the following template command:
+The following are examples of Ruby lambda code to be provided in the following template command:
 
 ```bash
- ascli node access_keys do self find / @ruby:'ruby_lambda'
+ ascli node access_keys do self find / @ruby:'->(f){[code here]}'
 ```
 
 > **Note:** Single quotes are used here above to protect the whole **Ruby** expression from the shell. Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
@@ -5801,7 +5801,7 @@ ascli node access_keys do self find / @ruby:'->(f){f["type"].eql?("file") and (D
 When a transfer is run, its information is stored (typicall, 1 day) in the HSTS database (Redis).
 This information can be retrieved with command: `transfer list`.
 
-If the number of transfer is too large, then the list will be retrieved in several API calls.
+If the number of transfers is too large, then the list will be retrieved using several API calls.
 
 In addition, it is possible to list "only new information" using option `once_only`.
 
@@ -5809,7 +5809,7 @@ In addition, it is possible to list "only new information" using option `once_on
 ascli node transfer list --once-only=yes
 ```
 
-The `iteratin_token` that keeps memory of latest event is stored in the persistance repository of `ascli`.
+The `iteration_token` that keeps memory of latest event is stored in the persistance repository of `ascli`.
 To reset it, add option: `--query=@json:'{"reset": true}'`.
 To list only a number of events, use the `max` parameter in query.
 Other parameters are directly transmitted to the underlying API (`GET /ops/transfers`).
@@ -5971,6 +5971,8 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 
 | parameter                 | Default                     | type      | description                                              |
 | ------------------------  |-----------------------------|-----------|----------------------------------------------------------|
+| _scope                    | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
+| _validity                 | 86400                       | Special   | Validity in seconds from now.                            |
 | user_id                   | -                           | Mandatory | Identifier of user                                       |
 | scope                     | `node.<access_key>:<_scope>`| Mandatory | API scope, e.g. `node.<access_key>:<node scope>`         |
 | expires_at                | `now+<_validity>`           | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ` e.g. `2021-12-31T23:59:59Z` |
@@ -5978,12 +5980,10 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 | group_ids                 | -                           | Optional  | List of group ids                                        |
 | organization_id           | -                           | Optional  | Organization id                                          |
 | watermarking_json_base64  | -                           | Optional  | Watermarking information (not used)                      |
-| _scope                    | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
-| _validity                 | 86400                       | Special   | Validity in seconds from now.                            |
 
 > **Note:** For convenience, `ascli` provides additional parameters `_scope` and `_validity`.
 > They are not part of the API and are removed from the final payload.
-> They are used respectively to build the default value of `scope` and `expires_at`.
+> They are used respectively to easily set a value for `scope` and `expires_at`.
 
 #### Bearer token: Environment
 
@@ -7138,7 +7138,7 @@ ascli cos node info
 ascli cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file path instead.
+> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL scheme (see previous section and `man ascp`), but you can, of course, send a real file by specifying a real file path instead.
 
 ### Cos sample commands
 
@@ -7228,13 +7228,17 @@ To display the value, use `asuserdata`:
 
 ```bash
 asuserdata -a | grep max_request_file_create_size_kb
+```
 
+```console
   max_request_file_create_size_kb: "1024"
+```
 
+```bash
 asconfigurator -x "server; max_request_file_create_size_kb,16384"
 ```
 
-If you use a value different than 16777216, then specify it using option `max_size`.
+If you use a value different than `16777216`, then specify it using option `max_size`.
 
 > **Note:** The HSTS parameter (`max_request_file_create_size_kb`) is in **kiloBytes** while the generator parameter is in **Bytes** (factor of 1024).
 
@@ -7242,12 +7246,12 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 `ascli` requires the following external tools available in the `PATH`:
 
-- **ImageMagick** : `convert` `composite`
+- **ImageMagick** v7+: `magick` `composite`
 - **OptiPNG** : `optipng`
 - **FFmpeg** : `ffmpeg` `ffprobe`
-- **Libreoffice** : `libreoffice`
+- **Libreoffice** : `unoconv`
 
-Here shown on Redhat/CentOS.
+Here shown on Redhat/Rocky Linux.
 
 Other OSes should work as well, but are note tested.
 
@@ -7281,9 +7285,9 @@ curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.ta
 
 If you don't want to have preview for office documents or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
 
-The generation of preview in based on the use of `unoconv` and `libreoffice`
+The generation of preview in based on the use of Libreoffice's `unoconv`.
 
-- CentOS 8
+- RHEL 8/Rocky Linux 8+
 
 ```bash
 dnf install unoconv

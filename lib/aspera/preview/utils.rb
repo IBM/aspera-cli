@@ -14,7 +14,7 @@ module Aspera
       # from bash manual: meta-character need to be escaped
       BASH_SPECIAL_CHARACTERS = "|&;()<> \t#\n"
       # external binaries used
-      EXTERNAL_TOOLS = %i[ffmpeg ffprobe convert composite optipng unoconv].freeze
+      EXTERNAL_TOOLS = %i[ffmpeg ffprobe magick optipng unoconv].freeze
       TEMP_FORMAT = 'img%04d.jpg'
       private_constant :BASH_SPECIAL_CHARACTERS, :EXTERNAL_TOOLS, :TEMP_FORMAT
 
@@ -97,7 +97,7 @@ module Aspera
           1.upto(count) do |i|
             percent = i * 100 / (count + 1)
             filename = get_tmp_num_filepath(temp_folder, index1 + i)
-            external_command(:composite, ['-blend', percent, img2, img1, filename])
+            external_command(:magick, ['composite', '-blend', percent, img2, img1, filename])
           end
         end
 

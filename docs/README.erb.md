@@ -304,7 +304,7 @@ RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm instal
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version supported.
 
-**Example:** RHEL 8+, Rocky Linux 8+, Centos 8 Stream: with extensions to compile native gems
+**Example:** RHEL 8+, Rocky Linux 8+: with extensions to compile native gems
 
 - Check available Ruby versions:
 
@@ -2042,7 +2042,7 @@ If the default global Option Preset is not set, and you want to use a different 
 <%=cmd%> config preset set default config my_common_defaults
 ```
 
-<%=include_commands_for_plugin('config')%>
+<%=include_commands_for_plugin(:config)%>
 
 #### Format of file
 
@@ -4760,7 +4760,7 @@ It works also on `node` resource using the `v4` command:
 
 For instructions, refer to section `find` for plugin `node`.
 
-<%=include_commands_for_plugin('aoc')%>
+<%=include_commands_for_plugin(:aoc)%>
 
 ## Plugin: `ats`: IBM Aspera Transfer Service
 
@@ -4884,7 +4884,7 @@ delete all my access keys:
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
 
-<%=include_commands_for_plugin('ats')%>
+<%=include_commands_for_plugin(:ats)%>
 
 ## Plugin: `server`: IBM Aspera High Speed Transfer Server (SSH)
 
@@ -4902,7 +4902,7 @@ Typically:
 <%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
-<%=include_commands_for_plugin('server')%>
+<%=include_commands_for_plugin(:server)%>
 
 ### Authentication on Server with SSH session
 
@@ -5072,10 +5072,10 @@ Examples of expressions:
   <%=cmd%> node access_keys do self find /Documents '*.txt'
   ```
 
-The following are examples of `ruby_lambda` to be provided in the following template command:
+The following are examples of Ruby lambda code to be provided in the following template command:
 
 ```bash
- <%=cmd%> node access_keys do self find / @ruby:'ruby_lambda'
+ <%=cmd%> node access_keys do self find / @ruby:'->(f){[code here]}'
 ```
 
 > **Note:** Single quotes are used here above to protect the whole **Ruby** expression from the shell. Then double quotes are used for strings in the **Ruby** expression to not mix with the shell.
@@ -5123,7 +5123,7 @@ The following are examples of `ruby_lambda` to be provided in the following temp
 When a transfer is run, its information is stored (typicall, 1 day) in the HSTS database (Redis).
 This information can be retrieved with command: `transfer list`.
 
-If the number of transfer is too large, then the list will be retrieved in several API calls.
+If the number of transfers is too large, then the list will be retrieved using several API calls.
 
 In addition, it is possible to list "only new information" using option `once_only`.
 
@@ -5131,7 +5131,7 @@ In addition, it is possible to list "only new information" using option `once_on
 <%=cmd%> node transfer list --once-only=yes
 ```
 
-The `iteratin_token` that keeps memory of latest event is stored in the persistance repository of <%=tool%>.
+The `iteration_token` that keeps memory of latest event is stored in the persistance repository of <%=tool%>.
 To reset it, add option: `--query=@json:'{"reset": true}'`.
 To list only a number of events, use the `max` parameter in query.
 Other parameters are directly transmitted to the underlying API (`GET /ops/transfers`).
@@ -5293,6 +5293,8 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 
 | parameter                 | Default                     | type      | description                                              |
 | ------------------------  |-----------------------------|-----------|----------------------------------------------------------|
+| _scope                    | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
+| _validity                 | 86400                       | Special   | Validity in seconds from now.                            |
 | user_id                   | -                           | Mandatory | Identifier of user                                       |
 | scope                     | `node.<access_key>:<_scope>`| Mandatory | API scope, e.g. `node.<access_key>:<node scope>`         |
 | expires_at                | `now+<_validity>`           | Mandatory | Format: `%Y-%m-%dT%H:%M:%SZ` e.g. `2021-12-31T23:59:59Z` |
@@ -5300,12 +5302,10 @@ Bearer tokens can be generated using command `bearer_token`: it takes two argume
 | group_ids                 | -                           | Optional  | List of group ids                                        |
 | organization_id           | -                           | Optional  | Organization id                                          |
 | watermarking_json_base64  | -                           | Optional  | Watermarking information (not used)                      |
-| _scope                    | `user:all`                  | Special   | Either `user:all` or `admin:all`                         |
-| _validity                 | 86400                       | Special   | Validity in seconds from now.                            |
 
 > **Note:** For convenience, <%=tool%> provides additional parameters `_scope` and `_validity`.
 > They are not part of the API and are removed from the final payload.
-> They are used respectively to build the default value of `scope` and `expires_at`.
+> They are used respectively to easily set a value for `scope` and `expires_at`.
 
 #### Bearer token: Environment
 
@@ -5398,7 +5398,7 @@ Let's use it:
 <%=cmd%> node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
 ```
 
-<%=include_commands_for_plugin('node')%>
+<%=include_commands_for_plugin(:node)%>
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
@@ -6094,7 +6094,7 @@ cargo client, or drive. Refer to the [same section](#receive-new-packages-only-c
 <%=cmd%> faspex packages recv ALL --once-only=yes --lock-port=12345
 ```
 
-<%=include_commands_for_plugin('faspex')%>
+<%=include_commands_for_plugin(:faspex)%>
 
 ## Plugin: `shares`: IBM Aspera Shares v1
 
@@ -6118,15 +6118,15 @@ user_id=$(<%=cmd%> shares admin user list --select=@json:'{"username":"entity1"}
 
 To figure out the entities payload, for example for creation, refer to the API documentation above.
 
-<%=include_commands_for_plugin('shares')%>
+<%=include_commands_for_plugin(:shares)%>
 
 ## Plugin: `console`: IBM Aspera Console
 
-<%=include_commands_for_plugin('console')%>
+<%=include_commands_for_plugin(:console)%>
 
 ## Plugin: `orchestrator`:IBM Aspera Orchestrator
 
-<%=include_commands_for_plugin('orchestrator')%>
+<%=include_commands_for_plugin(:orchestrator)%>
 
 ## Plugin: `cos`: IBM Cloud Object Storage
 
@@ -6229,23 +6229,23 @@ A subset of `node` plugin operations are supported, basically node API:
 <%=cmd%> cos node upload 'faux:///sample1G?1g'
 ```
 
-> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL (man `ascp` and section above), but you can, of course, send a real file by specifying a real file path instead.
+> **Note:** A dummy file `sample1G` of size 2GB is generated using the `faux` PVCL scheme (see previous section and `man ascp`), but you can, of course, send a real file by specifying a real file path instead.
 
-<%=include_commands_for_plugin('cos')%>
+<%=include_commands_for_plugin(:cos)%>
 
 ## Plugin: `httpgw`: HTTP Gateway
 
-<%=include_commands_for_plugin('httpgw')%>
+<%=include_commands_for_plugin(:httpgw)%>
 
 ## Plugin: `faspio`: Faspio Gateway
 
-<%=include_commands_for_plugin('faspio')%>
+<%=include_commands_for_plugin(:faspio)%>
 
 ## Plugin: `alee`: Aspera License Entitlement Engine
 
 Retrieve information on subscription.
 
-<%=include_commands_for_plugin('alee')%>
+<%=include_commands_for_plugin(:alee)%>
 
 ## Plugin: `preview`: Preview generator for AoC
 
@@ -6286,13 +6286,17 @@ To display the value, use `asuserdata`:
 
 ```bash
 asuserdata -a | grep max_request_file_create_size_kb
+```
 
+```console
   max_request_file_create_size_kb: "1024"
+```
 
+```bash
 asconfigurator -x "server; max_request_file_create_size_kb,16384"
 ```
 
-If you use a value different than 16777216, then specify it using option `max_size`.
+If you use a value different than `16777216`, then specify it using option `max_size`.
 
 > **Note:** The HSTS parameter (`max_request_file_create_size_kb`) is in **kiloBytes** while the generator parameter is in **Bytes** (factor of 1024).
 
@@ -6300,12 +6304,12 @@ If you use a value different than 16777216, then specify it using option `max_si
 
 <%=tool%> requires the following external tools available in the `PATH`:
 
-- **ImageMagick** : `convert` `composite`
+- **ImageMagick** v7+: `magick` `composite`
 - **OptiPNG** : `optipng`
 - **FFmpeg** : `ffmpeg` `ffprobe`
-- **Libreoffice** : `libreoffice`
+- **Libreoffice** : `unoconv`
 
-Here shown on Redhat/CentOS.
+Here shown on Redhat/Rocky Linux.
 
 Other OSes should work as well, but are note tested.
 
@@ -6339,9 +6343,9 @@ curl -s https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.ta
 
 If you don't want to have preview for office documents or if it is too complex you can skip office document preview generation by using option: `--skip-types=office`
 
-The generation of preview in based on the use of `unoconv` and `libreoffice`
+The generation of preview in based on the use of Libreoffice's `unoconv`.
 
-- CentOS 8
+- RHEL 8/Rocky Linux 8+
 
 ```bash
 dnf install unoconv
@@ -6539,7 +6543,7 @@ are directly written to the storage.
 
 If the preview generator does not have access to files on the file system (it is remote, no mount, or is an object storage), then the original file is first downloaded, then the result is uploaded, use method `remote`.
 
-<%=include_commands_for_plugin('preview')%>
+<%=include_commands_for_plugin(:preview)%>
 
 ## IBM Aspera Sync
 

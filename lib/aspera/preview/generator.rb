@@ -215,7 +215,8 @@ module Aspera
 
       def convert_pdf_to_png(source_file_path=nil)
         source_file_path ||= @source_file_path
-        Utils.external_command(:convert, [
+        Utils.external_command(:magick, [
+          'convert',
           '-size', "x#{@options.thumb_img_size}",
           '-background', 'white',
           '-flatten',
@@ -224,7 +225,8 @@ module Aspera
       end
 
       def convert_image_to_png
-        Utils.external_command(:convert, [
+        Utils.external_command(:magick, [
+          'convert',
           '-auto-orient',
           '-thumbnail', "#{@options.thumb_img_size}x#{@options.thumb_img_size}>",
           '-quality', 95,
@@ -239,7 +241,8 @@ module Aspera
       def convert_plaintext_to_png
         # get 100 first lines of text file
         first_lines = File.open(@source_file_path){|f|Array.new(100){f.readline rescue ''}.join}
-        Utils.external_command(:convert, [
+        Utils.external_command(:magick, [
+          'convert',
           '-size', "#{@options.thumb_img_size}x#{@options.thumb_img_size}",
           'xc:white', # define canvas with background color (xc, or canvas) of preceding size
           '-font', @options.thumb_text_font,
