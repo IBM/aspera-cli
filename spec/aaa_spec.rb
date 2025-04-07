@@ -2,10 +2,6 @@
 
 require 'spec_helper'
 
-# top folder of project
-project_top_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
-gem_lib_folder = File.join(project_top_folder, 'lib')
-$LOAD_PATH.unshift(gem_lib_folder)
 require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/ascp/management'
