@@ -1,8 +1,6 @@
 # must be first target
 all::
 
-DIR_PRIV=$(ASPERA_CLI_PRIVATE)/
-
 # define common variables to be used in other Makefile
 # required: DIR_TOP (can be empty if cwd)
 DIR_BIN=$(DIR_TOP)bin/

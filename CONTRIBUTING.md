@@ -68,12 +68,16 @@ A few macros/envvars control some aspects:
 
 | macro                       | description                          |
 |-----------------------------|--------------------------------------|
-| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file for tests |
+| `ASPERA_CLI_TEST_CONF_FILE` | Path to configuration file with secrets for tests |
+| `ASPERA_CLI_TEST_MACOS`     | Set to `true` if local HSTS running on macOS      |
+| `ASPERA_CLI_TEST_PRIVATE`   | Path to private folder               |
 | `ENABLE_COVERAGE`           | Tests with coverage analysis if set. |
 | `SIGNING_KEY`               | Path to signing key to build Gem.    |
 | `GEM_VERSION`               | Gem version to build container       |
 
 Those macros can be set either in an env var, or on the `make` command line.
+
+> **Note:** vars `ASPERA_CLI_TEST_` are typically set in user's shell profile.
 
 ### Documentation
 

@@ -114,7 +114,7 @@ ifeq ($(TST_SYNC_LCL_DIR),)
 $(error "TST_SYNC_LCL_DIR is empty, see error above")
 endif
 
-ifdef ASPERA_CLI_TEST_LOCAL_HSTS_MACOS
+ifdef ASPERA_CLI_TEST_MACOS
 all:: $(T).ssh_ok
 # ensure SSH is enabled on macos only
 $(T).ssh_ok: $(T).exists

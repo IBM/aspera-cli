@@ -13,7 +13,7 @@ all:: doc signed_gem
 clean::
 	cd container && make clean
 beta:
-	cd ../aspera-cli-private && make beta
+	cd $(ASPERA_CLI_TEST_PRIVATE) && make beta
 ##################################
 # Documentation
 .PHONY: doc clean_doc
