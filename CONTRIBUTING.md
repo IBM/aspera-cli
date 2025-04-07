@@ -155,88 +155,20 @@ Once tests are completed, or during test, consult the page: [coverage/index.html
 
 ## Build
 
-By default the gem is built signed: `make`.
+By default, the gem is built signed: `make`.
 A private key is required to generate a signed Gem.
 Its path must be set using macro/envvar `SIGNING_KEY`, see below.
-It is also possible to build a unsigned version for development purpose: `make unsigned_gem`.
+The gem is signed with the public certificate found in `certs` and the private key (kept secret by maintainer).
+
+```bash
+make SIGNING_KEY=/path/to/vault/gem-private_key.pem
+```
+
+It is also possible to build an unsigned version for development purpose: `make unsigned_gem`.
 
 ### Gem Signature
 
-Refer to:
-
-- <https://guides.rubygems.org/security/>
-- <https://ruby-doc.org/current/stdlibs/rubygems/Gem/Security.html>
-- `gem cert --help`
-
-Then procedure is as follows:
-
-- The maintainer creates the initial certificate and a private key:
-
-  ```bash
-  cd /path/to/vault
-  gem cert --build maintainer@example.com
-  ```
-
-  > **Note:** The email must match the field `spec.email` in `aspera-cli.gemspec`
-
-  This creates two files in folder `/path/to/vault` (e.g. $HOME/.ssh):
-  
-  - `gem-private_key.pem` : This file shall be kept secret in a vault.
-  - `gem-public_cert.pem` : This file is copied to a public place, here in folder `certs`
-
-  > **Note:** Alternatively, use an existing key or generate one, and then `make new-cert`
-
-- The maintainer builds the signed gem.
-
-  The gem is signed with the public certificate found in `certs` and the private key (kept secret by maintainer).
-
-  To build the signed gem:
-
-  ```bash
-  make SIGNING_KEY=/path/to/vault/gem-private_key.pem
-  ```
-
-- The user can activate gem signature verification on installation:
-
-  Add the certificate to gem trusted certificates:
-
-  ```bash
-  curl https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem -so aspera-cli-certificate.pem
-  gem cert --add aspera-cli-certificate.pem
-  rm aspera-cli-certificate.pem
-  ```
-
-  - The user installs the gem with `HighSecurity` or `MediumSecurity`: this will succeed only of the gem is trusted.
-
-  ```bash
-  gem install -P HighSecurity aspera-cli
-  ```
-
-  - The maintainer can renew the certificate when it is expired using the same private key:
-
-  ```bash
-  make update-cert SIGNING_KEY=/path/to/vault/gem-private_key.pem
-  ```
-
-  Alternatively, to generate a new certificate with the same key:
-
-  ```bash
-  make new-cert SIGNING_KEY=/path/to/vault/gem-private_key.pem
-  ```
-
-  - Show the current certificate contents
-
-  ```bash
-  make show-cert
-  ```
-
-  > Note: to provide a passphrase add argument: `-passin pass:_value_` to `openssl`
-
-  - Check that the signing key is the same as used to sign the certificate:
-
-  ```bash
-  make check-cert-key SIGNING_KEY=/path/to/vault/gem-private_key.pem
-  ```
+Refer to <certs/README.md>
 
 ### gRPC stubs for transfer SDK
 

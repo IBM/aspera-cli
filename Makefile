@@ -26,15 +26,10 @@ clean_doc::
 	cd $(DIR_DOC) && make clean_doc
 ##################################
 # Gem build
-.PHONY: gem_check_signing_key signed_gem unsigned_gem beta_gem clean_gem install clean_gems clean_optional_gems install_gems install_optional_gems clean_gems_installed
+.PHONY: signed_gem unsigned_gem beta_gem clean_gem install clean_gems clean_optional_gems install_gems install_optional_gems clean_gems_installed
 $(PATH_GEMFILE): $(DIR_TOP).gems_checked
 	gem build $(GEMSPEC)
 	gem specification $(PATH_GEMFILE) version
-# check that the signing key is present
-gem_check_signing_key:
-	@echo "Checking env var: SIGNING_KEY"
-	@if test -z "$$SIGNING_KEY";then echo "Error: Missing env var SIGNING_KEY" 1>&2;exit 1;fi
-	@if test ! -e "$$SIGNING_KEY";then echo "Error: No such file: $$SIGNING_KEY" 1>&2;exit 1;fi
 # force rebuild of gem and sign it, then check signature
 signed_gem: clean_gem gem_check_signing_key $(PATH_GEMFILE)
 	@tar tf $(PATH_GEMFILE)|grep '\.gz\.sig$$'
@@ -51,40 +46,13 @@ install: $(PATH_GEMFILE)
 clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 # gems that require native build are made optional
-clean_optional_gems: $(OPT_GEMS_FILE)
-	gem uninstall $$(cat $(OPT_GEMS_FILE))
+clean_optional_gems:
+	cd $(DIR_TOP). && bundle config set without optional && bundle install && bundle clean --force
 install_gems: $(DIR_TOP).gems_checked
 # grpc is installed on the side , if needed
 install_optional_gems: install_gems
-	bundle install --gemfile=$(DIR_TOP)Gemfile.optional
+	bundle config set without optional && bundle install
 clean:: clean_gem
-##################################
-# Gem certificate
-# Update the existing certificate, keeping the maintainer email
-update-cert: gem_check_signing_key
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
-	gem cert \
-	--re-sign \
-	--certificate $$cert_chain \
-	--private-key $$SIGNING_KEY \
-	--days 1100
-# Create a new certificate, taking the maintainer email from gemspec
-new-cert: gem_check_signing_key
-	maintainer_email=$$(sed -nEe "s/ *spec.email.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
-	gem cert \
-	--build $$maintainer_email \
-	--private-key $$SIGNING_KEY \
-	--days 1100
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
-	mv gem-public_cert.pem $$cert_chain
-show-cert:
-	cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
-	openssl x509 -noout -text -in $$cert_chain|head -n 13
-check-cert-key: $(DIR_TMP).exists gem_check_signing_key
-	@cert_chain=$(DIR_TOP)$$(sed -nEe "s/ *spec.cert_chain.+'(.+)'.*/\1/p" < $(GEMSPEC))&&\
-	openssl x509 -noout -pubkey -in $$cert_chain > $(DIR_TMP)cert.pub
-	@openssl rsa -pubout -passin pass:_value_ -in $$SIGNING_KEY > $(DIR_TMP)sign.pub
-	@if cmp -s $(DIR_TMP)cert.pub $(DIR_TMP)sign.pub;then echo "Ok: certificate and key match";else echo "Error: certificate and key do not match" 1>&2;exit 1;fi
 ##################################
 # Gem publish
 release: all
