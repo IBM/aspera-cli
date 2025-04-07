@@ -10,11 +10,12 @@ TAG_VERSION=$(DCK_REPO):$(GEM_VERSION)
 TAG_LATEST=$(DCK_REPO):latest
 PROCESS_TEMPLATE=sed -Ee 's/^\#erb:(.*)/<%\1%>/g' < Dockerfile.tmpl.erb | erb -T 2
 TOOL=podman
+OPT_GEMS=$(shell $(DIR_DOC)get_group.rb $(DIR_TOP)Gemfile optional)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 # TODO: get optional gems from 
 build: $(OPT_GEMS_FILE) Dockerfile.tmpl.erb
-	$(PROCESS_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
+	$(PROCESS_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt="$(OPT_GEMS)" > Dockerfile
 	$(TOOL) build --squash --tag $(TAG_VERSION) --tag $(TAG_LATEST) .
 test:
 	$(TOOL) run --tty --interactive --rm $(TAG_VERSION) $(CLI_NAME) -v
@@ -28,7 +29,7 @@ $(PATH_GEMFILE):
 	cd $(DIR_TOP) && make unsigned_gem
 beta_build_target: $(OPT_GEMS_FILE) Dockerfile.tmpl.erb $(PATH_GEMFILE)
 	cp $(PATH_GEMFILE) aspera-cli-beta.gem
-	$(PROCESS_TEMPLATE) arg_gem=aspera-cli-beta.gem arg_opt="$$(cat $(OPT_GEMS_FILE))" > Dockerfile
+	$(PROCESS_TEMPLATE) arg_gem=aspera-cli-beta.gem arg_opt="$(OPT_GEMS)" > Dockerfile
 	$(TOOL) build --squash --tag $(TAG_VERSION) .
 beta_build:
 	echo $(GEM_VERS_BETA) > $(DIR_TMP)/beta.txt
