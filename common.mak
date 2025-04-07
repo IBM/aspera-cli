@@ -26,14 +26,13 @@ GEM_VERS_BETA=$(GEM_VERSION).$(shell date +%Y%m%d%H%M)
 $(DIR_TMP).exists:
 	mkdir -p $(DIR_TMP)
 	@touch $@
+clean::
+	rm -fr $(DIR_TMP)
 # Ensure required ruby gems are installed
-# remove ascli and asession from riby gem bin folder, so that the one from dev is used
+ensure_gems_installed: $(DIR_TOP).gems_checked
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
-	gem install bundler
-	cd $(DIR_TOP). && bundle install --with development
-	rm -f $$(gem env gemdir)/bin/as{cli,ession}
+	cd $(DIR_TOP). && make install_dev_gems
 	touch $@
-clean:: clean_gems_installed
 clean_gems_installed:
 	rm -f $(DIR_TOP).gems_checked $(DIR_TOP)Gemfile.lock
 # check that the signing key is present
@@ -41,4 +40,5 @@ gem_check_signing_key:
 	@echo "Checking: SIGNING_KEY"
 	@if test -z '$(SIGNING_KEY)';then echo 'Error: Missing env var SIGNING_KEY' 1>&2;exit 1;fi
 	@if test ! -e '$(SIGNING_KEY)';then echo 'Error: No such file: $(SIGNING_KEY)' 1>&2;exit 1;fi
-.PHONY: gem_check_signing_key
+clean:: clean_gems_installed
+.PHONY: gem_check_signing_key ensure_gems_installed clean_gems_installed

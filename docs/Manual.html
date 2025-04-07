@@ -470,7 +470,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href=
 <h3 data-number="3.2.8" id="optional-gems"><span
 class="header-section-number">3.2.8</span> Optional gems</h3>
 <p>Some additional gems are required for some specific features, see <a
-href="Gemfile.optional">Gemfile.optional</a>:</p>
+href="Gemfile">Gemfile</a>:</p>
 <table>
 <colgroup>
 <col style="width: 22%" />
@@ -534,7 +534,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb41-1"><a href=
 <div class="sourceCode" id="cb42"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> update aspera-cli</span></code></pre></div>
 <p>During its execution, <code>ascli</code> checks every week if a new
-version is available and notifies the user in a WARN log. To de-activate
+version is available and notifies the user in a WARN log. To unactivate
 this feature, globally set the option <code>version_check_days</code> to
 <code>0</code>, or specify a different period in days.</p>
 <p>To check if a new version is available (independently of
@@ -546,19 +546,17 @@ id="gem-installation-with-signature-verification"><span
 class="header-section-number">3.3.1</span> Gem installation with
 signature verification</h3>
 <p>The gem is signed with a private key, and the public certificate is
-available in the github repository
+available in the gitHub repository
 (<code>certs/aspera-cli-public-cert.pem</code>). When installing the
 gem, the signature can be optionally verified.</p>
 <p>For <a href="https://guides.rubygems.org/security/#using-gems">secure
 installation</a>, one can install the gem with the public key:</p>
-<ul>
-<li>import the verification certificate:</li>
-</ul>
+<p>Import the verification certificate:</p>
 <div class="sourceCode" id="cb44"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> cert <span class="at">--add</span> <span class="op">&lt;(</span><span class="ex">curl</span> <span class="at">-Ls</span> https://raw.githubusercontent.com/IBM/aspera-cli/main/certs/aspera-cli-public-cert.pem<span class="op">)</span></span></code></pre></div>
-<ul>
-<li>Then, install the gem:</li>
-</ul>
+<p>The user installs the gem with <code>HighSecurity</code> or
+<code>MediumSecurity</code>: this will succeed only of the gem is
+trusted:</p>
 <div class="sourceCode" id="cb45"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install <span class="at">-P</span> MediumSecurity aspera-cli</span></code></pre></div>
 <h2 data-number="3.4" id="fasp-protocol-ascp"><span

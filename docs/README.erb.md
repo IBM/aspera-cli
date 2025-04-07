@@ -492,7 +492,7 @@ JRUBY_OPTS=--dev <%=cmd%> -v
 
 #### Optional gems
 
-Some additional gems are required for some specific features, see [Gemfile.optional](Gemfile.optional):
+Some additional gems are required for some specific features, see [Gemfile](Gemfile):
 
 <%=gem_opt_md_list%>
 

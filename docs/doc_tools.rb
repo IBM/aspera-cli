@@ -60,14 +60,34 @@ def gem_opt_cmd
   end.join("\n")
 end
 
+# not very reliable
 def gem_opt_list
-  File.read(@env[:GEMOPT]).lines.filter_map do |l|
-    m = l.match(/^gem\('([^']+)', '([^']+)'\)(.*)/)
+  File.read(@env[:GEMFILE]).lines.filter_map do |l|
+    m = l.match(/^ *gem\('([^']+)', '([^']+)'\)(.*)/)
     next nil unless m
     {
       name:    m[1],
       version: m[2],
       comment: m[3].gsub('# ', '').strip
+    }
+  end
+end
+
+# more reliable but missing comments
+def gem_opt_list_unused
+  require 'bundler'
+  # Load the definition from the Gemfile and Gemfile.lock
+  definition = Bundler::Definition.build(@env[:GEMFILE], "#{@env[:GEMFILE]}.lock", nil)
+  # Filter specs in the optional group
+  optional_specs = definition.dependencies.select do |dep|
+    dep.groups.include?(:optional)
+  end
+  # Print gem names and version requirements
+  optional_specs.map do |dep|
+    {
+      name:    dep.name,
+      version: dep.requirement,
+      comment: '-'
     }
   end
 end
@@ -291,7 +311,7 @@ end
 def generate_doc
   # parameters
   @env = {}
-  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC GEMOPT].each do |var|
+  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC GEMFILE].each do |var|
     @env[var] = ARGV.shift
     raise "Missing arg: #{var}" if @env[var].nil?
   end
