@@ -19,14 +19,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Set BUNDLE_WITHOUT to skip groups
-        run: bundle config set --local without 'optional development'
-
       - name: Set up Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+        env:
+          BUNDLE_WITHOUT: "optional development"
 
       - name: Run tests
         run: bundle exec rake spec
