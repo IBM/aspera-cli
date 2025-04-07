@@ -30,8 +30,8 @@ If you want to contribute, please:
 - Fork the project.
 - Make your feature addition or bug fix.
 - Add tests for it. This is important so I don't break it in a future version unintentionally.
-- run `rubocop` to comply for coding standards
-- **Bonus Points** go out to anyone who also updates `CHANGELOG.md` :)
+- Run `rubocop` to comply for coding standards
+- Update `CHANGELOG.md`
 - Send a pull request on GitHub.
 
 ## Architecture
@@ -64,6 +64,8 @@ TODO: document installation of tool chain.
 
 Build system uses GNU Make.
 
+### Environment
+
 A few macros/envvars control some aspects:
 
 | macro                       | description                          |
@@ -78,6 +80,14 @@ A few macros/envvars control some aspects:
 Those macros can be set either in an env var, or on the `make` command line.
 
 > **Note:** vars `ASPERA_CLI_TEST_` are typically set in user's shell profile.
+
+To use the CLI directly from the development environment, add this to your shell profile:
+
+```bash
+dev_ascli=$HOME/github/aspera-cli
+export PATH=$dev_ascli/bin:$PATH
+export RUBYLIB=$dev_ascli/lib:$RUBYLIB
+```
 
 ### Documentation
 
