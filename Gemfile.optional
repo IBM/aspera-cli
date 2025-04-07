@@ -1,8 +1,0 @@
-# Gemfile
-source('https://rubygems.org')
-
-gem('grpc', '~> 1.65') # for transferSDK
-gem('mimemagic', '~> 0.4') # for preview
-gem('rmagick', '~> 5.5') # for terminal view
-gem('symmetric-encryption', '~> 4.6') # for file vault
-gem('bigdecimal', '~> 3.1.9') if RUBY_VERSION >= '3.4' # for symmetric-encryption ?

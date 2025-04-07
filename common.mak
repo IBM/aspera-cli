@@ -30,12 +30,15 @@ $(DIR_TMP).exists:
 # remove ascli and asession from riby gem bin folder, so that the one from dev is used
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
 	gem install bundler
-	cd $(DIR_TOP). && bundle config set --local with development && bundle install
+	cd $(DIR_TOP). && bundle install --with development
 	rm -f $$(gem env gemdir)/bin/as{cli,ession}
 	touch $@
 clean:: clean_gems_installed
 clean_gems_installed:
 	rm -f $(DIR_TOP).gems_checked $(DIR_TOP)Gemfile.lock
-OPT_GEMS_FILE=$(DIR_TMP)gems_opt_list.txt
-$(OPT_GEMS_FILE): $(DIR_TOP)Gemfile.optional
-	ruby -w -e 'def source(_);end;def gem(n,_);print n," ";end;load "$(DIR_TOP)Gemfile.optional"' > $@
+# check that the signing key is present
+gem_check_signing_key:
+	@echo "Checking: SIGNING_KEY"
+	@if test -z '$(SIGNING_KEY)';then echo 'Error: Missing env var SIGNING_KEY' 1>&2;exit 1;fi
+	@if test ! -e '$(SIGNING_KEY)';then echo 'Error: No such file: $(SIGNING_KEY)' 1>&2;exit 1;fi
+.PHONY: gem_check_signing_key

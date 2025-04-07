@@ -36,7 +36,10 @@ Gem::Specification.new do |spec|
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(/^#{spec.bindir}/){|f|File.basename(f)}
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
-  spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY')) if ENV.key?('SIGNING_KEY')
+  if ENV.key?('SIGNING_KEY')
+    spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY'))
+    raise "Missing SIGNING_KEY: #{spec.signing_key}" unless File.exist?(spec.signing_key)
+  end
   # see also Aspera::Cli::Info::RUBY_CURRENT_MINIMUM_VERSION
   spec.required_ruby_version = '>= 3.1'
   spec.add_dependency('blankslate', '~> 3.1')
@@ -47,7 +50,7 @@ Gem::Specification.new do |spec|
   # spec.add_runtime_dependency('net-smtp', '~> 0.3') # it's part of base ruby
   spec.add_dependency('net-smtp', '~> 0.3') if defined?(JRUBY_VERSION)
   spec.add_dependency('net-ssh', '~> 7.3')
-  spec.add_dependency('openssl', '~> 3.3.0')
+  # spec.add_dependency('openssl', '~> 3.3.0')
   spec.add_dependency('rainbow', '~> 3.0')
   spec.add_dependency('ruby-progressbar', '~> 1.0')
   spec.add_dependency('rubyzip', '~> 2.0')
@@ -56,18 +59,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency('webrick', '~> 1.7')
   spec.add_dependency('websocket', '~> 1.2')
   spec.add_dependency('xml-simple', '~> 1.0')
-  # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
-  # Look in file: Gemfile.optional
-  # development gems
-  spec.add_development_dependency('grpc-tools', '~> 1.67.0')
-  spec.add_development_dependency('rake', '~> 13.0')
-  spec.add_development_dependency('reek', '~> 6.1.0')
-  spec.add_development_dependency('rspec', '~> 3.0')
-  spec.add_development_dependency('rubocop', '~> 1.12')
-  spec.add_development_dependency('rubocop-ast', '~> 1.4')
-  spec.add_development_dependency('rubocop-performance', '~> 1.10') unless defined?(JRUBY_VERSION)
-  spec.add_development_dependency('rubocop-shopify', '~> 2.0')
-  spec.add_development_dependency('ruby-lsp', '~> 0.23') unless defined?(JRUBY_VERSION)
-  spec.add_development_dependency('simplecov', '~> 0.22')
-  spec.add_development_dependency('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
 end
