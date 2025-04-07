@@ -69,6 +69,7 @@ install_dev_gems:
 install_optional_gems: install_dev_gems
 	bundle config set with optional && bundle install
 clean:: clean_gem
+	rm -fr $(DIR_TOP).bundle
 # transfer SDK stub generate
 PROTO_PATH=$(DIR_TMP)protos/
 GRPC_DEST=$(DIR_LIB)

@@ -141,10 +141,6 @@ endif
 START_TEST=$(DIR_TOP)tests/mark begin
 STOP_TEST=$(DIR_TOP)tests/mark end
 
-# flush cached tokens
-clean::
-	-$(EXE_NO_MAN) config tokens flush
-
 ###########
 # Coverage
 clean::

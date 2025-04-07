@@ -25,7 +25,7 @@ end
 def br; '<br/>'; end
 
 # to the power of
-def pow(x); "<sup>#{x}</sup>"; end
+def pow(value); "<sup>#{value}</sup>"; end
 
 # set values used in ERB
 # just command name
