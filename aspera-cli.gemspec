@@ -40,7 +40,7 @@ Gem::Specification.new do |spec|
     spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY'))
     raise "Missing SIGNING_KEY: #{spec.signing_key}" unless File.exist?(spec.signing_key)
   end
-  # see also Aspera::Cli::Info::RUBY_CURRENT_MINIMUM_VERSION
+  # see also Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
   spec.required_ruby_version = '>= 3.1'
   spec.add_dependency('blankslate', '~> 3.1')
   spec.add_dependency('csv', '~> 3.0')

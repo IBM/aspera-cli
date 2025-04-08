@@ -89,6 +89,8 @@ export PATH=$dev_ascli/bin:$PATH
 export RUBYLIB=$dev_ascli/lib:$RUBYLIB
 ```
 
+The env var `ASCLI_TRANSFER_SDK_LOCATION_URL` can be set to override the URL where the list of versions and download URLs for `transferd` can be retrieved, it can be useful to test new versions.
+
 ### Documentation
 
 Documentation is generated with `pandoc` and `LaTeX`.
