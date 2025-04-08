@@ -47,9 +47,8 @@ module Aspera
       EXE_FILES = %i[ascp ascp4 async].freeze
       FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
       TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
-      FILE_SCHEME_PREFIX = 'file:///'
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL, :FILE_SCHEME_PREFIX
+      private_constant :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -304,22 +303,13 @@ module Aspera
             Products::Transferd::RUNTIME_FOLDERS.any?{|i|name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
           end
         end
-        if url.start_with?('file:')
-          # require specific file scheme: the path part is "relative", or absolute if there are 4 slash
-          raise 'use format: file:///<path>' unless url.start_with?(FILE_SCHEME_PREFIX)
-          sdk_archive_path = File.expand_path(url[FILE_SCHEME_PREFIX.length..-1])
-          delete_archive = false
-        else
-          sdk_archive_path = File.join(Dir.tmpdir, File.basename(url))
-          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to_file: sdk_archive_path)
-          delete_archive = true
-        end
         # rename old install
         if backup && !Dir.empty?(folder)
           Log.log.warn('Previous install exists, renaming folder.')
           File.rename(folder, "#{folder}.#{Time.now.strftime('%Y%m%d%H%M%S')}")
           # TODO: delete old archives ?
         end
+        sdk_archive_path = UriReader.read_as_file(url)
         extract_archive_files(sdk_archive_path) do |entry_name, entry_stream, link_target|
           dest_folder = subfolder_lambda.call(entry_name)
           next if dest_folder.nil?
@@ -337,7 +327,6 @@ module Aspera
             File.symlink(link_target, dest_file)
           end
         end
-        File.unlink(sdk_archive_path) rescue nil if delete_archive # Windows may give error
         return unless with_exe
         # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)

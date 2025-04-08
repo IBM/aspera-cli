@@ -35,22 +35,23 @@ module Aspera
 
     # ensure that provided folder exists, or create it, generate a unique filename
     # @return path to that unique file
-    def new_file_path_in_folder(temp_folder, add_base = '')
+    def new_file_path_in_folder(temp_folder, prefix: nil, suffix: nil)
       FileUtils.mkdir_p(temp_folder)
-      new_file = File.join(temp_folder, add_base + SecureRandom.uuid)
+      new_file = File.join(temp_folder, [prefix, SecureRandom.uuid, suffix].compact.join('-'))
       @created_files.push(new_file)
       new_file
     end
 
     # same as above but in global temp folder, with user's name
-    def new_file_path_global(base_name)
+    def new_file_path_global(prefix=nil, suffix: nil)
       username =
         begin
           Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
         rescue StandardError
           'unknown_user'
         end
-      new_file_path_in_folder(Etc.systmpdir, base_name + '_' + username + '_')
+      prefix = [prefix, username].compact.join('-')
+      new_file_path_in_folder(Etc.systmpdir, prefix: prefix, suffix: suffix)
     end
 
     def cleanup_expired(temp_folder)
