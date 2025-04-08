@@ -108,11 +108,8 @@ TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
 TEMPORIZE_CREATE=sleep 10
 TEMPORIZE_FILE=sleep 30
 
-# sync dir must be an absolute path
-TST_SYNC_LCL_DIR=$(shell realpath "$(DIR_TMP)")/test_sync123
-ifeq ($(TST_SYNC_LCL_DIR),)
-$(error "TST_SYNC_LCL_DIR is empty, see error above")
-endif
+# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should
+TST_SYNC_LCL_DIR=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/test_sync123
 
 ifdef ASPERA_CLI_TEST_MACOS
 all:: $(T).ssh_ok
