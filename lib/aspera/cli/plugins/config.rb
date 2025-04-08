@@ -737,7 +737,7 @@ module Aspera
             n, v = Ascp::Installation.instance.install_sdk(url: options.get_option(:sdk_url, mandatory: true), version: version)
             return Main.result_status("Installed #{n} version #{v}")
           when :list
-            sdk_list = Ascp::Installation.sdk_locations
+            sdk_list = Ascp::Installation.instance.sdk_locations
             return Main.result_object_list(
               sdk_list,
               fields: sdk_list.first.keys - ['url']
