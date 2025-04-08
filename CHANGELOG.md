@@ -6,7 +6,8 @@
     * **container**: Updated Ruby to 3.4.2
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
-    * `echo`: Display of list was showing only first element
+    * **global**: #186 Removed dependency on openssl 3.3 gem to avoid msys dep on Windows.
+    * `echo`: Display of list (Array) was showing only first element of it.
     * `transferd`: support for version 1.1.5+
   * Breaking Changes:
     * `preview`: Updated Image Magick to v7+
