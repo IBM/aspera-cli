@@ -574,10 +574,16 @@ or
 <%=cmd%> config transferd install
 ```
 
-This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then selects the latest version for the current platform.
-In this case, the default value for option `sdk_url` is `DEF`.
+The installation of the transfer binary follows those steps:
 
-Available Transfer Daemon versions can be listed with: `<%=cmd%> config transferd list`
+- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specified a URL where to take the archive from.
+- The location of archives is retrieved from the url specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>
+- The archive for the current system architecture (CPU and OS) is selected and downloaded.
+
+The option `locations_url` can be set to override the URL where the list of versions is located, in case of air-gap environment or for testing.
+Option `sdk_url` can be set to specify a direct location for the transfer binaries.
+
+Available Transfer Daemon versions available from `locations_url` can be listed with: `<%=cmd%> config transferd list`
 
 To install a specific version, e.g. 1.1.3:
 

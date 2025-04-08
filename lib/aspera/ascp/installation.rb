@@ -361,6 +361,8 @@ module Aspera
         return sdk_name, sdk_version
       end
 
+      attr_accessor :transferd_urls
+
       private
 
       # policy for product selection
@@ -370,7 +372,7 @@ module Aspera
         @path_to_ascp = nil
         @sdk_dir = nil
         @found_products = nil
-        @transferd_urls = ENV.fetch('ASCLI_TRANSFER_SDK_LOCATION_URL', TRANSFER_SDK_LOCATION_URL)
+        @transferd_urls = TRANSFER_SDK_LOCATION_URL
       end
 
       public

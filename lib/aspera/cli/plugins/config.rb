@@ -210,7 +210,8 @@ module Aspera
           # Transfer SDK options
           options.declare(:ascp_path, 'Path to ascp', handler: {o: Ascp::Installation.instance, m: :ascp_path})
           options.declare(:use_product, 'Use ascp from specified product', handler: {o: self, m: :option_use_product})
-          options.declare(:sdk_url, 'URL to get SDK', default: SpecialValues::DEF)
+          options.declare(:sdk_url, 'URL to get Aspera Transfer Daemon', default: SpecialValues::DEF)
+          options.declare(:locations_url, 'URL to get locations of Aspera Transfer Daemon', handler: {o: Ascp::Installation.instance, m: :transferd_urls})
           options.declare(:sdk_folder, 'SDK folder path', handler: {o: Products::Transferd, m: :sdk_directory})
           options.declare(:progress_bar, 'Display progress bar', values: :bool, default: Environment.terminal?)
           # email options
