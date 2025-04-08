@@ -240,14 +240,13 @@ module Aspera
       def ascp_info
         ascp_data = file_paths
         ascp_data.merge!(ascp_pvcl_info)
-        ascp_data['sdk_locations'] = @transferd_urls
         ascp_data.merge!(ascp_ssl_info)
         return ascp_data
       end
 
       # @return the url for download of SDK archive for the given platform and version
       def sdk_url_for_platform(platform: nil, version: nil)
-        locations = self.class.sdk_locations
+        locations = sdk_locations
         platform = Environment.architecture if platform.nil?
         locations = locations.select{|l|l['platform'].eql?(platform)}
         raise "No SDK for platform: #{platform}" if locations.empty?
