@@ -1935,6 +1935,7 @@ $(T)f5_fxgw: $(T).exists
 	@$(STOP_TEST) $@
 $(T)f5_postproc: $(T).exists
 	@$(START_TEST) $@
+	-kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	rm -f $(DIR_TMP)pid_f5_postproc
 	$(EXE_MAN) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","processing":{"script_folder":"$(DIR_TST)"}}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
@@ -1942,7 +1943,7 @@ $(T)f5_postproc: $(T).exists
 	$(EXE_NO_MAN) faspex5 packages send @json:@extend:'{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}' 'faux:///test1?1m'
 	-curl http://localhost:8088/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'
 	-curl http://localhost:8088/wrong -d '{}'
-	sleep 300
+	sleep 5
 	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
