@@ -401,8 +401,9 @@ $(T)asession: $(T).exists
 	@$(START_TEST) $@
 	set -x&&\
 	remote_host=$$($(EXE_NO_MAN) config preset get server_user url)&&\
-	remote_host=$${remote_host##*/}&&remote_port="$remote_host"&&\
-	remote_port=$${remote_host#*:}&&remote_host=$${remote_host%:*}&&\
+	remote_host=$${remote_host#*://}&&\
+	remote_port=$${remote_host#*:}&&\
+	remote_host=$${remote_host%:*}&&\
 	remote_user=$$($(EXE_NO_MAN) config preset get server_user username)&&\
 	remote_pass=$$($(EXE_NO_MAN) config preset get server_user password)&&\
 	$(DIR_BIN)asession @json:@extend:'{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(DIR_TMP).","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}'
