@@ -20,14 +20,16 @@ if ENV.key?('ENABLE_COVERAGE')
   # lines with those words are ignored from coverage
   no_cov_functions = %w[error_unreachable_line error_unexpected_value Log.log.trace].freeze
   SimpleCov.start do
-    add_filter 'lib/aspera/cli/plugins/faspex.rb'
-    add_filter 'lib/aspera/node_simulator.rb'
-    add_filter 'lib/aspera/keychain/macos_security.rb'
+    # assert usually do not trigger
     add_filter do |source_file|
       source_file.lines.each do |line|
         line.skipped! if no_cov_functions.any?{|i|line.src.include?(i)}
       end
       false
     end
+    # no coverage test in those
+    add_filter 'lib/aspera/cli/plugins/faspex.rb'
+    add_filter 'lib/aspera/node_simulator.rb'
+    add_filter 'lib/aspera/keychain/macos_security.rb'
   end
 end
