@@ -20,17 +20,7 @@ class ::Hash
   end
 end
 
-# in 2.5
-unless Hash.method_defined?(:transform_keys)
-  class Hash
-    def transform_keys
-      raise 'missing block' unless block_given?
-      return each_with_object({}){|(k, v), memo|memo[yield(k)] = v}
-    end
-  end
-end
-
-# rails
+# Exists in Rails
 unless Hash.method_defined?(:symbolize_keys)
   class Hash
     def symbolize_keys
@@ -39,7 +29,7 @@ unless Hash.method_defined?(:symbolize_keys)
   end
 end
 
-# rails
+# Exists in Rails
 unless Hash.method_defined?(:stringify_keys)
   class Hash
     def stringify_keys
