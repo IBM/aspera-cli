@@ -1779,18 +1779,23 @@ $(T)f5_sh_folder_br: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 shared_folders browse @extend:%name:@preset:faspex5.shared_folder_name@
 	@$(STOP_TEST) $@
-$(T)f5_sh_folder_send: $(T).exists
+$(DIR_TMP)f5_pack_id: $(T).exists
+	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shared_folder_file --fields=id --display=data --output=$@
+$(T)f5_sh_folder_send: $(DIR_TMP)f5_pack_id
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shared_folder_file
+	@echo "Sent package with id: $$(cat $(DIR_TMP)f5_pack_id)"
+	$(EXE_NO_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_pack_id) @list:,failed,completed
 	@$(STOP_TEST) $@
-$(T)f5_p3: $(T).exists
+$(T)f5_p3: $(T)f5_sh_folder_send
 	@$(START_TEST) $@
-	@sleep 15
-	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"status":"completed","max":1}' --fields=id --output=$(DIR_TMP)f5_p31
-	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_p31)
-	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_p31)
-	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_p31) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
+	$(EXE_NO_MAN) faspex5 packages list --query=@json:'{"status":"completed","max":1}' --fields=id --output=$(DIR_TMP)f5_pack_id
+	$(EXE_MAN) faspex5 packages show $$(cat $(DIR_TMP)f5_pack_id)
+	$(EXE_MAN) faspex5 packages status $$(cat $(DIR_TMP)f5_pack_id)
+	$(EXE_MAN) faspex5 packages browse $$(cat $(DIR_TMP)f5_pack_id) --query=@json:'{"recursive":true}'
+	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_pack_id) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
+	$(EXE_MAN) faspex5 packages delete $$(cat $(DIR_TMP)f5_pack_id)
+	rm -f $(DIR_TMP)f5_pack_id
 	@$(STOP_TEST) $@
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
@@ -1832,6 +1837,7 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin workgroups list
 	$(EXE_MAN) faspex5 admin saml_configs list
 	$(EXE_MAN) faspex5 admin metadata_profiles list
+	$(EXE_MAN) faspex5 admin alternate_addresses list
 	@$(STOP_TEST) $@
 $(T)f5_dist_list: $(T).exists
 	@$(START_TEST) $@
@@ -1851,6 +1857,11 @@ $(T)f5_adm_job_lst: $(T).exists
 $(T)f5_adm_nod_lst: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) --preset=f5_admin faspex5 admin node list 
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node show %name:Local
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node browse %name:Local
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node shared_folders %name:Local list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node shared_folders %name:Local show %name:Main
+	$(EXE_MAN) --preset=f5_admin faspex5 admin node shared_folders %name:Local user %name:Main list
 	@$(STOP_TEST) $@
 $(T)f5_adm_api_lst: $(T).exists
 	@$(START_TEST) $@
