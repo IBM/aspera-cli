@@ -1795,8 +1795,9 @@ $(T)f5_p3: $(T)f5_sh_folder_send
 	$(EXE_MAN) faspex5 packages receive $$(cat $(DIR_TMP)f5_pack_id) --to-folder=$(DIR_TMP). --ts=@json:'{"content_protection_password":"my_secret_here"}'
 	$(EXE_MAN) faspex5 packages receive ALL --once-only=yes --to-folder=$(DIR_TMP).
 	$(EXE_MAN) faspex5 packages delete $$(cat $(DIR_TMP)f5_pack_id)
-	rm -f $(DIR_TMP)f5_pack_id
 	@$(STOP_TEST) $@
+clean::
+	rm -f $(DIR_TMP)f5_pack_id
 $(T)f5_pack_shbox: $(T).exists
 	@$(START_TEST) $@
 	$(EXE_MAN) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.shared_box_name@"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' $(TST_ASC_LCL_PATH)
@@ -1837,7 +1838,7 @@ $(T)f5_user_res: $(T).exists
 	$(EXE_MAN) faspex5 admin workgroups list
 	$(EXE_MAN) faspex5 admin saml_configs list
 	$(EXE_MAN) faspex5 admin metadata_profiles list
-	$(EXE_MAN) faspex5 admin alternate_addresses list
+	$(EXE_MAN) --preset=f5_admin faspex5 admin alternate_addresses list
 	@$(STOP_TEST) $@
 $(T)f5_dist_list: $(T).exists
 	@$(START_TEST) $@
