@@ -590,10 +590,16 @@ or
 ascli config transferd install
 ```
 
-This command will retrieve the list of current archives for all platforms from: <https://ibm.biz/sdk_location> and then selects the latest version for the current platform.
-In this case, the default value for option `sdk_url` is `DEF`.
+The installation of the transfer binary follows those steps:
 
-Available Transfer Daemon versions can be listed with: `ascli config transferd list`
+- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specified a URL where to take the archive from.
+- The location of archives is retrieved from the url specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>
+- The archive for the current system architecture (CPU and OS) is selected and downloaded.
+
+The option `locations_url` can be set to override the URL where the list of versions is located, in case of air-gap environment or for testing.
+Option `sdk_url` can be set to specify a direct location for the transfer binaries.
+
+Available Transfer Daemon versions available from `locations_url` can be listed with: `ascli config transferd list`
 
 To install a specific version, e.g. 1.1.3:
 
@@ -3810,7 +3816,8 @@ OPTIONS: global
         --key-path=VALUE             Wizard: path to private key for JWT
         --ascp-path=VALUE            Path to ascp
         --use-product=VALUE          Use ascp from specified product
-        --sdk-url=VALUE              URL to get SDK
+        --sdk-url=VALUE              URL to get Aspera Transfer Daemon
+        --locations-url=VALUE        URL to get locations of Aspera Transfer Daemon
         --sdk-folder=VALUE           SDK folder path
         --progress-bar=ENUM          Display progress bar: [no], yes
         --smtp=VALUE                 SMTP configuration (Hash)
@@ -6314,6 +6321,7 @@ ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=b
 
 ```bash
 admin accounts list
+admin alternate_addresses list
 admin clean_deleted
 admin contacts list
 admin distribution_lists create @json:'{"name":"test4","contacts":[{"name":"john@example.com"}]}'
@@ -6323,7 +6331,12 @@ admin event app --query=@json:'{"max":20}'
 admin event web
 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
 admin metadata_profiles list
+admin node browse %name:Local
 admin node list
+admin node shared_folders %name:Local list
+admin node shared_folders %name:Local show %name:Main
+admin node shared_folders %name:Local user %name:Main list
+admin node show %name:Local
 admin oauth_clients list --query=@json:'[["client_types[]","public"]]'
 admin registrations list
 admin saml_configs list
@@ -6342,6 +6355,8 @@ gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
 health
 invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
+packages browse f5_pack_id --query=@json:'{"recursive":true}'
+packages delete f5_pack_id
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
@@ -6349,8 +6364,8 @@ packages receive --box=my_shared_box_name package_box_id1 --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups workgroup_package_id1 --to-folder=.
 packages receive ALL --once-only=yes --to-folder=.
 packages receive INIT --once-only=yes
-packages receive f5_p31 --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
-packages send --shared-folder=%name:my_shared_folder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shared_folder_file
+packages receive f5_pack_id --to-folder=. --ts=@json:'{"content_protection_password":"my_secret_here"}'
+packages send --shared-folder=%name:my_shared_folder_name @json:'{"title":"test title","recipients":["my_email_internal"]}' my_shared_folder_file --fields=id --display=data --output=test
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
 packages send @json:'{"title":"test title","recipients":["my_shared_box_name"],"metadata":{"Options":"Opt1","TextInput":"example text"}}' test_file.bin
@@ -6358,8 +6373,8 @@ packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_
 packages send @json:'{"title":"test title","recipients":[{"name":"my_username"}]my_meta}' test_file.bin --ts=@json:'{"content_protection_password":"my_secret_here"}'
 packages show --box=my_shared_box_name package_box_id1
 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
-packages show f5_p31
-packages status f5_p31
+packages show f5_pack_id
+packages status f5_pack_id
 postprocessing --pid-file=pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","processing":{"script_folder":""}}' &
 shared browse %name:my_src
 shared list
