@@ -58,16 +58,20 @@ clean_gems: clean_gems_installed
 	if ls $$(gem env gemdir)/gems/* > /dev/null 2>&1; then gem uninstall -axI $$(ls $$(gem env gemdir)/gems/|sed -e 's/-[0-9].*$$//'|sort -u);fi
 # gems that require native build are made optional
 clean_optional_gems:
-	bundle config set without optional && bundle install && bundle clean --force
+	bundle config set without optional
+	bundle install
+	bundle clean --force
 # install dep gems and 
 # remove ascli and asession from ruby gem bin folder, so that the one from dev is used
 install_dev_gems:
 	gem install bundler
-	bundle config set with development && bundle install
+	bundle config set with development
+	bundle install
 	rm -f $$(gem env gemdir)/bin/as{cli,ession}
 # grpc is installed on the side , if needed
 install_optional_gems: install_dev_gems
-	bundle config set with optional && bundle install
+	bundle config set with optional
+	bundle install
 clean:: clean_gem
 	rm -fr $(DIR_TOP).bundle
 # transfer SDK stub generate
