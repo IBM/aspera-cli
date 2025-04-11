@@ -2,11 +2,37 @@
 
 require 'spec_helper'
 
+require 'aspera/assert'
+require 'aspera/uri_reader'
 require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/ascp/management'
 
-describe 'environment' do
+describe 'Assert' do
+  it 'works for list' do
+    Aspera.assert_values(:bad, [:good])
+    raise 'Shall not reach here'
+  rescue Aspera::AssertError => e
+    expect(e.message).to(start_with('assertion failed: expecting one of [:good], but have :bad'))
+  end
+end
+
+describe 'UriReader' do
+  it 'fails on bad uri' do
+    Aspera::UriReader.read('unknown:///foo.bar')
+    raise 'Shall not reach here'
+  rescue Aspera::InternalError => e
+    expect(e.message).to(include('unexpected value: "unknown"'))
+  end
+  it 'fails on bad file uri' do
+    Aspera::UriReader.read_as_file('file:foo.bar')
+    raise 'Shall not reach here'
+  rescue RuntimeError => e
+    expect(e.message).to(start_with('use format: file:///'))
+  end
+end
+
+describe 'Environment' do
   it 'works for OSes' do
     RbConfig::CONFIG['host_os'] = 'mswin'
     expect(Aspera::Environment.os).to(eq(Aspera::Environment::OS_WINDOWS))
