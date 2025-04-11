@@ -14,7 +14,7 @@ OPT_GEMS=$(shell $(DIR_DOC)get_group.rb $(DIR_TOP)Gemfile optional)
 # Refer to section "build" in CONTRIBUTING.md
 # no dependency: always re-generate
 # TODO: get optional gems from 
-build: $(OPT_GEMS_FILE) Dockerfile.tmpl.erb
+build: Dockerfile.tmpl.erb
 	$(PROCESS_TEMPLATE) arg_gem=$(GEM_NAME):$(GEM_VERSION) arg_opt="$(OPT_GEMS)" > Dockerfile
 	$(TOOL) build --squash --tag $(TAG_VERSION) --tag $(TAG_LATEST) .
 test:
@@ -27,7 +27,7 @@ push_latest:
 push: push_version push_latest
 $(PATH_GEMFILE):
 	cd $(DIR_TOP) && make unsigned_gem
-beta_build_target: $(OPT_GEMS_FILE) Dockerfile.tmpl.erb $(PATH_GEMFILE)
+beta_build_target: Dockerfile.tmpl.erb $(PATH_GEMFILE)
 	cp $(PATH_GEMFILE) aspera-cli-beta.gem
 	$(PROCESS_TEMPLATE) arg_gem=aspera-cli-beta.gem arg_opt="$(OPT_GEMS)" > Dockerfile
 	$(TOOL) build --squash --tag $(TAG_VERSION) .
