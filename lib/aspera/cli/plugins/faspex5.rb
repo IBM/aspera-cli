@@ -228,10 +228,8 @@ module Aspera
               config.progress_bar&.event(:transfer, session_id: id, info: status['bytes_written'].to_i)
             end
             if status_list.include?(status['upload_status'])
-              # if status['upload_status'].eql?('completed')
               config.progress_bar&.event(:end, session_id: id)
               return status
-              # end
             end
             sleep(1.0)
           end
@@ -467,7 +465,8 @@ module Aspera
             end
             return browse_folder("packages/#{package_id}/files/#{location}")
           when :status
-            status = wait_package_status(package_id, status_list: nil)
+            status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
+            status = wait_package_status(package_id, status_list: status_list)
             return {type: :single_object, data: status}
           when :delete
             ids = package_id
@@ -600,7 +599,11 @@ module Aspera
 
             end
           when :browse
-            return browse_folder("#{res_path}/#{instance_identifier}/browse")
+            node_id = instance_identifier do |field, value|
+              lookup_entity_by_field(
+                type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
+            end
+            return browse_folder("#{res_path}/#{node_id}/browse")
           when :invite_external_collaborator
             shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
