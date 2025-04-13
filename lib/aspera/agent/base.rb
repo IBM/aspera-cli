@@ -38,9 +38,9 @@ module Aspera
       private
 
       def initialize(progress: nil)
-        # method `shutdown` is optional
         Aspera.assert(respond_to?(:start_transfer))
         Aspera.assert(respond_to?(:wait_for_transfers_completion))
+        # method `shutdown` is optional
         @progress = progress
       end
 
