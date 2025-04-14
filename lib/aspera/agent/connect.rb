@@ -46,21 +46,6 @@ module Aspera
         end
       end
 
-      # @return the file path of local connect where API's URI can be read
-      def connect_api_url
-        connect_locations = Products::Other.find(Products::Connect.locations).first
-        raise "Product: #{name} not found, please install." if connect_locations.nil?
-        folder = File.join(connect_locations[:run_root], 'var', 'run')
-        ['', 's'].each do |ext|
-          uri_file = File.join(folder, "http#{ext}.uri")
-          Log.log.debug{"checking connect port file: #{uri_file}"}
-          if File.exist?(uri_file)
-            return File.open(uri_file, &:gets).strip
-          end
-        end
-        raise "no connect uri file found in #{folder}"
-      end
-
       def start_transfer(transfer_spec, token_regenerator: nil)
         if transfer_spec['direction'] == 'send'
           Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
@@ -140,6 +125,23 @@ module Aspera
           return [e]
         end
         return [:success]
+      end
+
+      private
+
+      # @return the file path of local connect where API's URI can be read
+      def connect_api_url
+        connect_locations = Products::Other.find(Products::Connect.locations).first
+        raise "Product: #{name} not found, please install." if connect_locations.nil?
+        folder = File.join(connect_locations[:run_root], 'var', 'run')
+        ['', 's'].each do |ext|
+          uri_file = File.join(folder, "http#{ext}.uri")
+          Log.log.debug{"checking connect port file: #{uri_file}"}
+          if File.exist?(uri_file)
+            return File.open(uri_file, &:gets).strip
+          end
+        end
+        raise "no connect uri file found in #{folder}"
       end
     end
   end

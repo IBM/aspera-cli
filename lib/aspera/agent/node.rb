@@ -13,10 +13,10 @@ module Aspera
     # this singleton class is used by the CLI to provide a common interface to start a transfer
     # before using it, the use must set the `node_api` member.
     class Node < Base
-      # @param url [String] the base url of the node api
-      # @param username [String] the username to use for the node api
-      # @param password [String] the password to use for the node api
-      # @param root_id [String] root file id if the node is an access key
+      # @param url          [String] the base url of the node api
+      # @param username     [String] the username to use for the node api
+      # @param password     [String] the password to use for the node api
+      # @param root_id      [String] root file id if the node is an access key
       # @param base_options [Hash] options for base class
       def initialize(
         url:,
@@ -42,12 +42,6 @@ module Aspera
         @node_api = Rest.new(**rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
-      end
-
-      # used internally to ensure node api is set before using.
-      def node_api_
-        Aspera.assert(!@node_api.nil?){'Before using this object, set the node_api attribute to a Aspera::Rest object'}
-        return @node_api
       end
 
       # generic method
@@ -118,6 +112,14 @@ module Aspera
         end
         # TODO: get status of sessions
         return []
+      end
+
+      private
+
+      # used internally to ensure node api is set before using.
+      def node_api_
+        Aspera.assert(!@node_api.nil?){'Before using this object, set the node_api attribute to a Aspera::Rest object'}
+        return @node_api
       end
     end
   end

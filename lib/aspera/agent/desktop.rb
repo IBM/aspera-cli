@@ -44,21 +44,6 @@ module Aspera
         end
       end
 
-      def aspera_client_api_url
-        log_file = Products::Desktop.log_file
-        url = 'http://127.0.0.1:33024'
-        File.open(log_file, 'r') do |file|
-          file.each_line do |line|
-            line = line.chomp
-            if (m = line.match(/JSON-RPC server listening on (.*)/))
-              url = "http://#{m[1]}"
-            end
-          end
-        end
-        # raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
-        return url
-      end
-
       def start_transfer(transfer_spec, token_regenerator: nil)
         @request_id = SecureRandom.uuid
         # if there is a token, we ask the client app to use well known ssh private keys
@@ -107,6 +92,24 @@ module Aspera
           return [e]
         end
         return [:success]
+      end
+
+      private
+
+      # @return [String] the url where transferd is listening
+      def aspera_client_api_url
+        log_file = Products::Desktop.log_file
+        url = 'http://127.0.0.1:33024'
+        File.open(log_file, 'r') do |file|
+          file.each_line do |line|
+            line = line.chomp
+            if (m = line.match(/JSON-RPC server listening on (.*)/))
+              url = "http://#{m[1]}"
+            end
+          end
+        end
+        # raise StandardError, "Unable to find the JSON-RPC server URL in #{log_file}" if url.nil?
+        return url
       end
     end
   end
