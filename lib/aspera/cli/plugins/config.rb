@@ -1078,7 +1078,6 @@ module Aspera
             if private_key_path.nil?
               formatter.display_status('Please provide the path to your private RSA key, or nothing to generate one:')
               private_key_path = options.get_option(:key_path, mandatory: true).to_s
-              # private_key_path = File.expand_path(private_key_path)
             end
             # else generate path
             if private_key_path.empty?
@@ -1109,7 +1108,7 @@ module Aspera
               identification[:product],
               URI.parse(wiz_url).host
             ]
-            elements.push(options.get_option(:username, mandatory: true)) unless wizard_result[:preset_value].key?(:link)
+            elements.push(options.get_option(:username, mandatory: true)) unless wizard_result[:preset_value].key?(:link) rescue nil
             wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
           end
           # test mode does not change conf file

@@ -78,15 +78,16 @@ module Aspera
             }
           end
 
-          # @param [String] url : url to check
+          # @param url [String] url to check
           # @return [Bool] true if private key is required for the url (i.e. no passcode)
           def private_key_required?(url)
             # pub link do not need private key
             return Api::AoC.link_info(url)[:token].nil?
           end
 
-          # @param [Hash] env : options, formatter
-          # @param [Hash] params : plugin_sym, instance_url
+          # @param object [Plugin] An instance of this class
+          # @param private_key_path [String] path to private key
+          # @param pub_key_pem [String] PEM of public key
           # @return [Hash] :preset_value, :test_args
           def wizard(object:, private_key_path: nil, pub_key_pem: nil)
             # set vars to look like object

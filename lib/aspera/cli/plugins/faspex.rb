@@ -74,7 +74,9 @@ module Aspera
             return nil
           end
 
-          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+          # @param object [Plugin] An instance of this class
+          # @return [Hash] :preset_value, :test_args
+          def wizard(object:)
             options = object.options
             return {
               preset_value: {

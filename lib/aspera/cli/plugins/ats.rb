@@ -14,6 +14,7 @@ module Aspera
       # Access Aspera Transfer Service
       # https://developer.ibm.com/aspera/docs/ats-api-reference/creating-ats-api-keys/
       class Ats < Cli::Plugin
+        # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
         def initialize(**env)
           super
