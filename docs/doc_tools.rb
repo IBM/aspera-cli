@@ -166,6 +166,7 @@ REPLACEMENTS = [
   [/ *> *[^(}][^ ]*$/, ''],
   # remove folder macro
   [/DIR_[A-Z]+/, ''],
+  [/STATE/, ''],
   # de-dup dollar in regex
   ['$$', '$'],
   # replace shell vars in shell

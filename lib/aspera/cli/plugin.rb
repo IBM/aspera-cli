@@ -19,8 +19,6 @@ module Aspera
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
       REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
-      # instance variables, also constructor parameters
-      INIT_PARAMS = %i[options transfer config formatter persistency only_manual].freeze
 
       class << self
         def declare_generic_options(options)
@@ -31,18 +29,17 @@ module Aspera
         end
       end
 
-      attr_accessor(*INIT_PARAMS)
+      def options; @broker.options; end
+      def transfer; @broker.transfer; end
+      def config; @broker.config; end
+      def formatter; @broker.formatter; end
+      def persistency; @broker.persistency; end
 
-      def initialize(options:, transfer:, config:, formatter:, persistency:, only_manual:, man_header: true)
+      def initialize(broker:, man_header: true)
         # check presence in descendant of mandatory method and constant
         Aspera.assert(respond_to?(:execute_action)){"Missing method 'execute_action' in #{self.class}"}
         Aspera.assert(self.class.constants.include?(:ACTIONS)){"Missing constant 'ACTIONS' in #{self.class}"}
-        @options = options
-        @transfer = transfer
-        @config = config
-        @formatter = formatter
-        @persistency = persistency
-        @only_manual = only_manual
+        @broker = broker
         add_manual_header if man_header
       end
 
@@ -56,7 +53,7 @@ module Aspera
 
       # @return a hash of instance variables
       def init_params
-        INIT_PARAMS.map{|p| [p, instance_variable_get("@#{p}".to_sym)]}.to_h
+        return {broker: @broker}
       end
 
       # must be called AFTER the instance action, ... folder browse <call instance_identifier>
