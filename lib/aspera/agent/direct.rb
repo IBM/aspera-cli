@@ -16,15 +16,66 @@ require 'English'
 
 module Aspera
   module Agent
-    # executes a local "ascp", connects mgt port, equivalent of "Fasp Manager"
+    # executes a local "ascp", create mgt port
     class Direct < Base
+      # ascp started locally, so listen local
       LISTEN_LOCAL_ADDRESS = '127.0.0.1'
-      # 0 means: select an available port
+      # 0 means: use any available port
       SELECT_AVAILABLE_PORT = 0
-      # spellchecker: enable
       private_constant :LISTEN_LOCAL_ADDRESS, :SELECT_AVAILABLE_PORT
 
-      # method of Base
+      # options for initialize (same as values in option transfer_info)
+      # @param ascp_args         [Array]   additional arguments to ascp
+      # @param wss               [Boolean] true: if both SSH and wss in ts: prefer wss
+      # @param quiet             [Boolean] by default no native ascp progress bar
+      # @param monitor           [Boolean] set to false to eliminate management port
+      # @param trusted_certs     [Array,NilClass] list of files with trusted certificates (stores)
+      # @param client_ssh_key    [String]  client ssh key option (from CLIENT_SSH_KEY_OPTIONS)
+      # @param check_ignore_cb   [Proc]    callback with host,port
+      # @param spawn_timeout_sec [Integer] timeout for ascp spawn
+      # @param spawn_delay_sec   [Integer] optional delay to start between sessions
+      # @param multi_incr_udp    [Boolean,NilClass] true: increment udp port for each session
+      # @param resume            [Hash,NilClass] resume policy
+      # @param management_cb     [Proc]    callback for management events
+      # @param base_options      [Hash]    other options for base class
+      def initialize(
+        ascp_args:         nil,
+        wss:               true,
+        quiet:             true,
+        trusted_certs:     nil,
+        client_ssh_key:    nil,
+        check_ignore_cb:   nil,
+        spawn_timeout_sec: 2,
+        spawn_delay_sec:   2,
+        multi_incr_udp:    nil,
+        resume:            nil,
+        monitor:           true,
+        management_cb:     nil,
+        **base_options
+      )
+        super(**base_options)
+        # special transfer parameters
+        @tr_opts = {
+          ascp_args:       ascp_args,
+          wss:             wss,
+          quiet:           quiet,
+          trusted_certs:   trusted_certs,
+          client_ssh_key:  client_ssh_key,
+          check_ignore_cb: check_ignore_cb
+        }
+        @spawn_timeout_sec = spawn_timeout_sec
+        @spawn_delay_sec = spawn_delay_sec
+        # default is true on Windows, false on other OSes
+        @multi_incr_udp = multi_incr_udp.nil? ? Environment.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
+        @monitor = monitor
+        @management_cb = management_cb
+        @resume_policy = Resumer.new(resume.nil? ? {} : resume.symbolize_keys)
+        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
+        @sessions = []
+        # mutex protects global data accessed by threads
+        @mutex = Mutex.new
+      end
+
       # start ascp transfer(s) (non blocking), single or multi-session
       # session information added to @sessions
       # @param transfer_spec [Hash] aspera transfer specification
@@ -48,11 +99,10 @@ module Aspera
         # (even if the var is not used in single session)
         multi_session_info = nil
         if transfer_spec.key?('multi_session')
-          multi_session_info = {
-            count: transfer_spec['multi_session'].to_i
-          }
           # Managed by multi-session, so delete from transfer spec
-          transfer_spec.delete('multi_session')
+          multi_session_info = {
+            count: transfer_spec.delete('multi_session').to_i
+          }
           if multi_session_info[:count].negative?
             Log.log.error{"multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0"}
             multi_session_info = nil
@@ -77,7 +127,7 @@ module Aspera
           error:             nil,               # exception if failed
           io:                nil,               # management port server socket
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
-          # env vars and args to ascp (from transfer spec)
+          # env vars and args for ascp (from transfer spec)
           env_args:          Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
 
@@ -135,6 +185,41 @@ module Aspera
         @sessions.select{|session| session[:job_id].eql?(job_id)}
       end
 
+      # send command to management port of command (used in `asession)
+      # @param job_id identified transfer process
+      # @param session_index index of session (for multi session)
+      # @param data command on mgt port, examples:
+      # {'type'=>'START','source'=>_path_,'destination'=>_path_}
+      # {'type'=>'DONE'}
+      def send_command(job_id, data)
+        session = @sessions.find{|session| session[:job_id].eql?(job_id)}
+        Log.log.debug{"command: #{data}"}
+        session[:io].puts(Ascp::Management.command_to_stream(data))
+      end
+
+      private
+
+      # transfer thread entry
+      # @param session information
+      def transfer_thread_entry(session)
+        begin
+          # set name for logging
+          Thread.current[:name] = 'transfer'
+          Log.log.debug{"ENTER (#{Thread.current[:name]})"}
+          # start transfer with selected resumer policy
+          @resume_policy.execute_with_resume do
+            start_and_monitor_process(session: session, **session[:env_args])
+          end
+          Log.log.debug('transfer ok'.bg_green)
+        rescue StandardError => e
+          session[:error] = e
+          Log.log.error{"Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red} if Log.instance.level.eql?(:debug)
+        end
+        Log.log.debug{"EXIT (#{Thread.current[:name]})"}
+      end
+
+      public
+
       # This is the low level method to start the transfer process.
       # Typically started in a thread.
       # Start process with management port.
@@ -154,18 +239,21 @@ module Aspera
         notify_progress(:pre_start, session_id: nil, info: 'starting')
         begin
           command_pid = nil
-          # we use Socket directly, instead of TCPServer, as it gives access to lower level options
-          socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
-          mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
-          # open any available (0) local TCP port for use as management port
-          mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
-          # make port ready to accept connections, before starting ascp
-          mgt_server_socket.listen(1)
-          # build arguments and add mgt port
-          command_arguments = if name.eql?(:async)
-            ["--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
-          else
-            ['-M', mgt_server_socket.local_address.ip_port.to_s]
+          command_arguments = []
+          if @monitor
+            # we use Socket directly, instead of TCPServer, as it gives access to lower level options
+            socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
+            mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+            # open any available (0) local TCP port for use as management port
+            mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
+            # make port ready to accept connections, before starting ascp
+            mgt_server_socket.listen(1)
+            # build arguments and add mgt port
+            command_arguments = if name.eql?(:async)
+              ["--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
+            else
+              ['-M', mgt_server_socket.local_address.ip_port.to_s]
+            end
           end
           command_arguments.concat(args)
           # capture process stderr
@@ -175,6 +263,8 @@ module Aspera
           command_pid = Environment.secure_spawn(env: env, exec: command_path, args: command_arguments, err: stderr_w)
           stderr_w.close
           notify_progress(:pre_start, session_id: nil, info: "waiting for #{name} to start")
+          # "ensure" block will wait for process
+          return unless @monitor
           # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
           # So we use select to detect that anything happens on the socket (connection)
           Log.log.debug{"before select, timeout: #{@spawn_timeout_sec}"}
@@ -185,9 +275,9 @@ module Aspera
           client_socket, _client_addrinfo = mgt_server_socket.accept
           Log.log.debug('after accept')
           management_port_io = client_socket.to_io
-          # management messages include file names which may be utf8
           # by default socket is US-ASCII
-          # TODO: use same value as Encoding.default_external
+          # management messages include file names which may be UTF-8
+          # TODO: use same value as Encoding.default_external ?
           management_port_io.set_encoding(Encoding::UTF_8)
           session[:io] = management_port_io
           processor = Ascp::Management.new
@@ -197,7 +287,7 @@ module Aspera
             next unless event
             # event is ready
             Log.log.trace1{Log.dump(:management_port, event)}
-            # store latest event by type
+            # store session identifier
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
             process_progress(event)
@@ -206,12 +296,10 @@ module Aspera
           Log.log.debug('management io closed')
           # check that last status was received before process exit
           last_event = processor.last_event
-          # process stderr of ascp
-          stderr_r&.each_line do |line|
-            Log.log.error(line.chomp)
-          end
-          raise Transfer::Error, "internal: no management event (#{last_event.class})" unless last_event.is_a?(Hash)
+          raise Transfer::Error, "No management event (#{last_event.class})" unless last_event.is_a?(Hash)
           case last_event['Type']
+          when 'DONE'
+            Log.log.trace1{'Graceful shutdown, DONE message received'}
           when 'ERROR'
             if /bearer token/i.match?(last_event['Description']) &&
                 session[:token_regenerator].respond_to?(:refreshed_transfer_token)
@@ -221,10 +309,9 @@ module Aspera
               env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
             raise Transfer::Error.new(last_event['Description'], last_event['Code'].to_i)
-          when 'DONE'
-            nil
           else
-            raise Transfer::Error, "unexpected last event type: #{last_event['Type']}, #{last_event['Description']}"
+            Log.log.error{"unexpected last event type: #{last_event['Type']}"}
+            # raise Transfer::Error, "unexpected last event type: #{last_event['Type']}, #{last_event['Description']}"
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
@@ -232,18 +319,21 @@ module Aspera
         rescue Interrupt
           raise Transfer::Error, 'transfer interrupted by user'
         ensure
-          mgt_server_socket.close
-          stderr_r&.close
+          mgt_server_socket&.close
+          session.delete(:io)
           # if command was successfully started, check its status
           unless command_pid.nil?
-            # "wait" for process to avoid zombie
-            Process.wait(command_pid)
-            status = $CHILD_STATUS
-            # command_pid = nil
-            session.delete(:io)
+            Process.kill(:INT, command_pid) if @monitor
+            # collect process exit status or wait for termination
+            _, status = Process.wait2(command_pid)
+            # process stderr of ascp
+            stderr_r.each_line do |line|
+              Log.log.error(line.chomp)
+            end
+            stderr_r.close
             # status is nil if an exception occurred before starting command
             if !status&.success?
-              message = status.nil? ? "#{name} not started" : "#{name} failed (#{status})"
+              message = "#{name} failed (#{status})"
               # raise error only if there was not already an exception (ERROR_INFO)
               raise Transfer::Error, message unless $ERROR_INFO
               # else display this message also, as main exception is already here
@@ -254,9 +344,9 @@ module Aspera
         nil
       end
 
-      attr_reader :sessions
-
       private
+
+      attr_reader :sessions
 
       # notify progress to callback
       # @param event management port event
@@ -293,88 +383,8 @@ module Aspera
           # cspell:enable
           # stop event when one file is completed
         else
-          Log.log.debug{"unknown event type #{event['Type']}"}
+          Log.log.debug{"Unknown event type for progress: #{event['Type']}"}
         end
-      end
-
-      # send command to management port of command (used in `asession)
-      # @param job_id identified transfer process
-      # @param session_index index of session (for multi session)
-      # @param data command on mgt port, examples:
-      # {'type'=>'START','source'=>_path_,'destination'=>_path_}
-      # {'type'=>'DONE'}
-      def send_command(job_id, data)
-        session = @sessions.find{|session| session[:job_id].eql?(job_id)}
-        Log.log.debug{"command: #{data}"}
-        session[:io].puts(Ascp::Management.command_to_stream(data))
-      end
-
-      # options for initialize (same as values in option transfer_info)
-      # @param ascp_args [Array] additional arguments to ascp
-      # @param wss [Boolean] true: if both SSH and wss in ts: prefer wss
-      # @param quiet [Boolean] by default no native ascp progress bar
-      # @param trusted_certs [Array,NilClass] list of files with trusted certificates (stores)
-      # @param client_ssh_key [String] client ssh key option (from CLIENT_SSH_KEY_OPTIONS)
-      # @param check_ignore_cb [Proc] callback with host,port
-      # @param spawn_timeout_sec [Integer] timeout for ascp spawn
-      # @param spawn_delay_sec [Integer] optional delay to start between sessions
-      # @param multi_incr_udp [Boolean,NilClass] true: increment udp port for each session
-      # @param resume [Hash,NilClass] resume policy
-      # @param management_cb [Proc] callback for management events
-      # @param base_options [Hash] other options for base class
-      def initialize(
-        ascp_args:         nil,
-        wss:               true,
-        quiet:             true,
-        trusted_certs:     nil,
-        client_ssh_key:    nil,
-        check_ignore_cb:   nil,
-        spawn_timeout_sec: 2,
-        spawn_delay_sec:   2,
-        multi_incr_udp:    nil,
-        resume:            nil,
-        management_cb:     nil,
-        **base_options
-      )
-        super(**base_options)
-        # special transfer parameters
-        @tr_opts = {
-          ascp_args:       ascp_args,
-          wss:             wss,
-          quiet:           quiet,
-          trusted_certs:   trusted_certs,
-          client_ssh_key:  client_ssh_key,
-          check_ignore_cb: check_ignore_cb
-        }
-        @spawn_timeout_sec = spawn_timeout_sec
-        @spawn_delay_sec = spawn_delay_sec
-        # default is true on windows, false on other platforms
-        @multi_incr_udp = multi_incr_udp.nil? ? Environment.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
-        @management_cb = management_cb
-        @resume_policy = Resumer.new(resume.nil? ? {} : resume.symbolize_keys)
-        # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
-        @sessions = []
-        # mutex protects global data accessed by threads
-        @mutex = Mutex.new
-      end
-
-      # transfer thread entry
-      # @param session information
-      def transfer_thread_entry(session)
-        begin
-          # set name for logging
-          Thread.current[:name] = 'transfer'
-          Log.log.debug{"ENTER (#{Thread.current[:name]})"}
-          # start transfer with selected resumer policy
-          @resume_policy.execute_with_resume do
-            start_and_monitor_process(session: session, **session[:env_args])
-          end
-          Log.log.debug('transfer ok'.bg_green)
-        rescue StandardError => e
-          session[:error] = e
-          Log.log.error{"Transfer thread error: #{e.class}:\n#{e.message}:\n#{e.backtrace.join("\n")}".red} if Log.instance.level.eql?(:debug)
-        end
-        Log.log.debug{"EXIT (#{Thread.current[:name]})"}
       end
     end
   end

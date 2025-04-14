@@ -298,7 +298,7 @@ $(T)serv_mkdir: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(T)serv_error: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(EXE_BGE) server -Pserver2_user --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
+	$(EXE_BGE) server -Pserver2_user --password=wrong upload $(TST_ASC_LCL_PATH) --transfer-info=@json:'{"monitor":false,"resume":{"iter_max":0}}' $(EXE_END_ERR)
 	$(EXE_BGE) server -Pserver2_user --password=wrong browse / --ssh-options=@json:'{"number_of_password_prompts":0}' $(EXE_END_ERR)
 	$(EXE_BGE) server -N --url=foo:// ls .$(EXE_END_ERR)
 	$(EXE_BGE) server -N --url=@preset:node_user.url upload wrong --ts=@json:'{"token":"test"}' --transfer-info=@json:'{"resume":{"iter_max":0}}' $(EXE_END_ERR)
@@ -1792,7 +1792,7 @@ $(T)f5_sh_folder_br: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(T)f5_sh_folder_send: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shared_folder_file --fields=id --display=data --output=$@
+	$(EXE_MAN) faspex5 packages send --shared-folder=@extend:%name:@preset:faspex5.shared_folder_name@ @json:@extend:'{"title":"test title","recipients":["@preset:misc.email_internal@"]}' @preset:faspex5.shared_folder_file --fields=id --display=data --output=$(STATE)f5_pack_id
 	@echo "Sent package with id: $$(cat $(STATE)f5_pack_id)"
 	$(EXE_NO_MAN) faspex5 packages status $$(cat $(STATE)f5_pack_id) @list:,failed,completed
 	@$(STOP_TEST) $@
