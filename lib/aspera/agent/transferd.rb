@@ -156,6 +156,8 @@ module Aspera
         stop_daemon if @stop
       end
 
+      private
+
       def stop_daemon
         if !@daemon_pid.nil?
           Log.log.debug("Stopping daemon #{@daemon_pid}")
