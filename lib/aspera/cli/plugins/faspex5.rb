@@ -74,6 +74,10 @@ module Aspera
             return nil
           end
 
+          # @param object [Plugin] An instance of this class
+          # @param private_key_path [String] path to private key
+          # @param pub_key_pem [String] PEM of public key
+          # @return [Hash] :preset_value, :test_args
           def wizard(object:, private_key_path:, pub_key_pem:)
             options = object.options
             formatter = object.formatter

@@ -24,6 +24,18 @@ module Aspera
               url:     base_url
             }
           end
+
+          # @param object [Plugin] An instance of this class
+          # @return [Hash] :preset_value, :test_args
+          def wizard(object:)
+            options = object.options
+            return {
+              preset_value: {
+                url: options.get_option(:url, mandatory: true)
+              },
+              test_args:    'info'
+            }
+          end
         end
         ACTIONS = %i[health bridges].freeze
 
