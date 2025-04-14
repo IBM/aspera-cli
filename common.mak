@@ -1,4 +1,5 @@
 # must be first target
+.PHONY: all clean
 all::
 
 # define common variables to be used in other Makefile
@@ -26,6 +27,7 @@ $(DIR_TMP).exists:
 	@touch $@
 clean::
 	rm -fr $(DIR_TMP)
+.PHONY: ensure_gems_installed gem_check_signing_key clean_gems_installed
 # Ensure required ruby gems are installed
 ensure_gems_installed: $(DIR_TOP).gems_checked
 $(DIR_TOP).gems_checked: $(DIR_TOP)Gemfile
@@ -39,4 +41,3 @@ gem_check_signing_key:
 	@if test -z '$(SIGNING_KEY)';then echo 'Error: Missing env var SIGNING_KEY' 1>&2;exit 1;fi
 	@if test ! -e '$(SIGNING_KEY)';then echo 'Error: No such file: $(SIGNING_KEY)' 1>&2;exit 1;fi
 clean:: clean_gems_installed
-.PHONY: gem_check_signing_key ensure_gems_installed clean_gems_installed
