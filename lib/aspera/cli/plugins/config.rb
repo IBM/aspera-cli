@@ -142,7 +142,7 @@ module Aspera
           end
         end
 
-        def initialize(**env)
+        def initialize(**_)
           # we need to defer parsing of options until we have the config file, so we can use @extend with @preset
           super
           @use_plugin_defaults = true
@@ -172,8 +172,8 @@ module Aspera
             default: self.class.default_app_main_folder(app_name: Info::CMD_NAME))
           options.parse_options!
           Log.log.debug{"#{Info::CMD_NAME} folder: #{@main_folder}"}
-          # data persistency manager, created by config plugin
-          @persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
+          # data persistency manager, created by config plugin, set for global object
+          @broker.persistency = PersistencyFolder.new(File.join(@main_folder, PERSISTENCY_FOLDER))
           # set folders for plugin lookup
           PluginFactory.instance.add_lookup_folder(self.class.gem_plugins_folder)
           PluginFactory.instance.add_lookup_folder(File.join(@main_folder, ASPERA_PLUGINS_FOLDERNAME))

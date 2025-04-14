@@ -16,7 +16,8 @@ module Aspera
       class Ats < Cli::Plugin
         # columns for list of cloud providers
         CLOUD_TABLE = %w[id name].freeze
-        def initialize(**env)
+        private_constant :CLOUD_TABLE
+        def initialize(**_)
           super
           options.declare(:ibm_api_key, 'IBM API key, see https://cloud.ibm.com/iam/apikeys')
           options.declare(:instance, 'ATS instance in ibm cloud')

@@ -136,8 +136,9 @@ module Aspera
 
         def initialize(api: nil, **env)
           super(**env, basic_options: api.nil?)
+          # TODO: basic_options: api.nil?
           Node.declare_options(options) if api.nil?
-          return if only_manual
+          return if env[:broker].only_manual?
           @api_node =
             if !api.nil?
               # this can be Api::Node or Rest (shares)
