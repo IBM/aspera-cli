@@ -2828,6 +2828,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | `resume.sleep_initial` | `Integer` | First Sleep before retry<%=br%>Default: `2` |
 | `resume.sleep_factor`  | `Integer` | Multiplier of sleep period between attempts<%=br%>Default: `2` |
 | `resume.sleep_max`     | `Integer` | Default: `60` |
+| `monitor`              | `Bool`    | Use management port.<%=br%>Default: `true` |
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` time.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -2835,6 +2836,11 @@ Sleep between iterations is given by the following formula where `iter_index` is
 ```bash
 max( sleep_max , sleep_initial * sleep_factor ^ iter_index )
 ```
+
+To display the native progress bar of `ascp`, use `--progress-bar=no --transfer-info=@json:'{"quiet":false}'`.
+
+To skip usage of management port (which de-activate custom progress bar), set option `monitor` to `false`.
+In that, use the native progress bar: `--transfer-info=@json:'{"monitor":false,"quiet":false}'`
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (e.g. WSS).
 In order to use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer_info`.
@@ -3338,8 +3344,6 @@ Example: parameter to download a faspex package and decrypt on the fly
 File transfer operations are monitored and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
 The same progress bar is used for any type of transfer, using `ascp`, server to server, using HTTPS, etc...
-
-To display the native progress bar of `ascp`, use `--progress-bar=no --transfer-info=@json:'{"quiet":false}'`.
 
 ### Scheduler
 
