@@ -4373,14 +4373,12 @@ Then, transfer between those:
 <%=cmd%> -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
 ```
 
-#### Example: Create registration key to register a node
+#### Example: Create registration key to register a tethered node
+
+The following command will create and display a secret token to register a self-managed Aspera Transfer Server:
 
 ```bash
-<%=cmd%> aoc admin client create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --format=csv
-```
-
-```output
-jfqslfdjlfdjfhdjklqfhdkl
+<%=cmd%> aoc admin client_registration_token create @json:'{"data":{"name":"laurentnode","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}' --fields=token --show-secrets=yes
 ```
 
 #### Example: Delete all registration keys
