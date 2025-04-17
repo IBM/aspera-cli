@@ -4384,7 +4384,7 @@ The following command will create and display a secret token to register a self-
 #### Example: Delete all registration keys
 
 ```bash
-<%=cmd%> aoc admin client list --fields=id --format=csv|<%=cmd%> aoc admin client delete @lines:@stdin: --bulk=yes
+<%=cmd%> aoc admin client_registration_token list --fields=id --format=csv|<%=cmd%> aoc admin client_registration_token delete @lines:@stdin: --bulk=yes
 ```
 
 ```output
