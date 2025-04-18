@@ -21,6 +21,11 @@ class HtmlFormatter
   end
 end
 
+# place warning in generated file
+def doc_warn(_)
+  'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md'
+end
+
 # line break in tables
 def br; '<br/>'; end
 

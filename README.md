@@ -1,6 +1,6 @@
 # Command Line Interface for IBM Aspera products
 <!--
-Do not edit this README.md, edit docs/README.erb.md, for details, read docs/README.md
+DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
@@ -751,6 +751,7 @@ podman --version
 #### Container: Quick start
 
 **Wanna start quickly ?** With an interactive shell ?
+
 Execute this:
 
 ```bash
@@ -1787,7 +1788,7 @@ The following decoders are supported:
 | `uri`    | `String` | `String` | Read value from specified URL, e.g. `--fpac=@uri:http://serv/f.pac` |
 | `val`    | `String` | `String` | Prevent decoders on the right to be decoded. e.g. `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
 | `yaml`   | `String` | Any      | Decode YAML |
-| `zlib`   | `String` | `String` | Decompress data using Zlib |
+| `zlib`   | `String` | `String` | Decompress data using zlib |
 
 > **Note:** A few commands support a value of type `Proc` (lambda expression).
 For example, the **Extended Value** `@ruby:'->(i){i["attr"]}'` is a lambda expression that returns the value for key `attr` of the `Hash` `i`.
