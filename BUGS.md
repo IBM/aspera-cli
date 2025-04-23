@@ -12,7 +12,7 @@ Please, make sure to include the following information:
 
 IMPORTANT: Remove any confidential information from the logs before posting them.
 
-[Use Github (Public Issue Reporting)](https://github.com/IBM/aspera-cli/issues)
+[Use GitHub (Public Issue Reporting)](https://github.com/IBM/aspera-cli/issues)
 
 ## Scope of Support
 

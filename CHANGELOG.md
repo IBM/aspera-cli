@@ -2,7 +2,7 @@
 
 * 4.22.0.pre
 
-  * 
+  * New Features:
   
 * 4.21.2
 
@@ -10,7 +10,7 @@
     * **container**: Updated Ruby to 3.4.2
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
-    * **global**: #186 Removed dependency on openssl 3.3 gem to avoid msys dep on Windows.
+    * **global**: #186 Removed dependency on OpenSSL 3.3 gem to avoid Msys dep on Windows.
     * `echo`: Display of list (Array) was showing only first element of it.
     * `transferd`: support for version 1.1.5+
   * Breaking Changes:
@@ -29,7 +29,7 @@
     * `config`: #175 `ascli config preset set GLOBAL version_check_days 0` causes a bad `config.yaml` to be written
     * `config`: #180 problem in `ascp install`
     * `config`: Soft links in transfer SDK archive are correctly extracted
-    * `aoc`: #184 token cache shall be different per aoc org.
+    * `aoc`: #184 token cache shall be different per AoC org.
     * `aoc`: Fix `packages delete` not working.
     * `direct` agent: #174 Race condition fix with `ascp`: timeout waiting mgt port connect (select not readable)
     * `preview`: #177 fix bug that prevents preview generation to work.
@@ -37,8 +37,8 @@
     * `transferd`: Use of Aspera Transfer Daemon requires minimum version 1.1.4. agent `trsdk` renamed `transferd`.
     * `ascp`: Default SDK version is now 1.1.4. Removes support for ascp4.
     * `node`: Removed deprecated command prefix `exec:`, use `@ruby:` instead.
-    * **global**: Now uses openssl 3.
-    * **global**: Ruby minimum versions is now 3.1 (mainly due to switch to openssl 3). Future minimum is 3.2. Recommended is 3.4. (that removes macOS default ruby support. Newer Ruby version shall be installed on macOS with `brew`)
+    * **global**: Now uses OpenSSL 3.
+    * **global**: Ruby minimum versions is now 3.1 (mainly due to switch to OpenSSL 3). Future minimum is 3.2. Recommended is 3.4. (that removes macOS default ruby support. Newer Ruby version shall be installed on macOS with `brew`)
     * **global**: Options `transpose_single` and `multi_table` replaced with single option `multi_single` and values: `no`, `yes`, `single`.
     * **global**: Column name for single object is now `field` instead of `key`.
 
@@ -49,15 +49,15 @@
   * New Features:
     * `aoc`: Improved usability for creation of Admin shared folders.
     * `node`: New option `node_cache` (bool) for gen4 operations.
-    * `node`: Option `root_id` now works always for node gen4, as well as `%id:` for file selection in addition to path.
+    * `node`: Option `root_id` now always works for node gen4, as well as `%id:` for file selection in addition to path.
     * `node`: `transfer list` now uses the `iteration_token` to retrieve all values. Option `once_only` is now supported.
     * **global**: option `http_options` now include retry options.
   * Issues Fixed:
     * `aoc`: Fixed `find` command not working. (undefined variable)
-    * `aoc`: #165 aoc mkdir now follows the last link of containing folder
+    * `aoc`: #165 AoC mkdir now follows the last link of containing folder
   * Breaking Changes:
     * Internal: Basic REST calls now return data directly. (no more `data` key). For advanced calls, use `call`.
-    * Internal: Transfer SDK download is now a 2-step procedure: First get the YAML file from github with URLS for the various platforms and versions, and then download the archive from the official IBM repository.
+    * Internal: Transfer SDK download is now a 2-step procedure: First get the YAML file from GitHub with URLs for the various platforms and versions, and then download the archive from the official IBM repository.
     **global**: option `format=multi` is replaced with option `multi_table=yes`
     * `faspex5`: removed deprecated option `value` replaced with positional parameter.
   
@@ -65,7 +65,7 @@
 
   * New Features:
     * `server`: add support for `async` (Aspera Sync) from Transfer SDK
-    * **global**: #156 support sending folders with httpgw
+    * **global**: #156 support sending folders with `httpgw`
     * **global**: new value for option `format`: `multi`
   * Issues Fixed:
     * `aoc`: #157 fix problem with `files browse` on a link
@@ -176,7 +176,7 @@
     * **global**: option `pid_file` to write tool's PID during execution, deleted on exit
     * `config`: command `remote_certificate` to retrieve a remote certificate
     * `config`: added logger level `trace1` and `trace2`
-    * `config`: `wizard` can detect multiple applications at the same address or url.
+    * `config`: `wizard` can detect multiple applications at the same address or URL.
     * `aoc`: wizard accepts public links
     * `aoc`: support private links, and possibility to list shared folder with workspace `@json:null`
     * `orchestrator`: error analysis for workflow start
@@ -184,7 +184,7 @@
     * `node`: added command `transfer sessions` to list all sessions of all transfers
     * `node`: generate bearer token from private key and user information
     * `node`: access node API with bearer token as credentials
-    * **global**: agent `direct` allows ignoring certificate for wss using http options
+    * **global**: agent `direct` allows ignoring certificate for WSS using HTTP options
     * `preview`: command `show` generates a preview and displays it in terminal
   * Issues Fixed:
     * Ruby warning: `net/protocol.rb:68: warning: already initialized constant Net::ProtocRetryError` solved by removing dependency on `net-smtp` from gem spec (already in base ruby).
@@ -249,7 +249,7 @@
     * `faspex5`: list content of package, and allow partial download of package
     * `faspex5`: list packages support multiple pages and items limitations (`max` and `pmax`)
     * `aoc`: files operations with workspace-less user (#109)
-    * `node`: async with gen3 token (#110)
+    * `node`: `async` with gen3 token (#110)
     * `node`: display of preview of file in terminal for access keys
   * Issues Fixed:
     * `cos`: do not use refresh token when not supported
@@ -265,10 +265,10 @@
     * **global**: `delete` operation supports option `value` for deletion parameters
     * `aoc`: command `aoc packages recv` accepts option `query` to specify a shared inbox
     * `faspex`: (v4) user delete accepts option `value` with value `{"destroy":true}` to delete users permanently
-    * `faspex`: (v4) gateway to faspex 5 for package send
+    * `faspex`: (v4) gateway to Faspex 5 for package send
     * `faspex5`: possibility to change email templates
     * `faspex5`: shared folder list and browse
-    * `faspex5`: emulate faspex 4 postprocessing, plugin: `faspex5` command: `postprocessing`
+    * `faspex5`: emulate Faspex 4 post-processing, plugin: `faspex5` command: `postprocessing`
     * `faspex5`: send package from remote source
     * `shares`: option `type` for command `shares admin user`
     * `shares`: full support for shares admin operations
@@ -284,14 +284,14 @@
   * New Features:
     * **global**: `vault`: secret finder, migration from config file
     * **global**: allow removal of transfer spec parameter by setting value to `null`
-    * **global**: option `ascp_opts` allows to provide native `ascp` options on command line
+    * **global**: option `ascp_opts` allows providing native `ascp` options on command line
     * `node`, `server`: command `sync` added to `node` (gen4) and `server` plugins, also available in `aoc`
   * Issues Fixed:
     * **global**: security: no shell interpolation
     * **global**: agent `node`: when WSS is used: no localhost (certificate)
     * `aoc`: #99 `file download` for single shared folder
-    * `faspex5`: change of API in faspex 5 for send package (paths is mandatory for any type of transfer now)
-    * **global**: Oauth web authentication was broken, fixed now
+    * `faspex5`: change of API in Faspex 5 for send package (paths is mandatory for any type of transfer now)
+    * **global**: OAuth web authentication was broken, fixed now
   * Breaking Changes:
     * **container**: image has entry point
     * `aoc`: `admin res node` commands `v3` and `v4` replaced with `do` and command `v3` moved inside `do`
