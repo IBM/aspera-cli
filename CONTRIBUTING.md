@@ -29,7 +29,7 @@ If you want to contribute, please:
 
 - Fork the project.
 - Make your feature addition or bug fix.
-- Add tests for it. This is important so I don't break it in a future version unintentionally.
+- Add tests for it. This is important, so it doesn't break in a future version unintentionally.
 - Run `rubocop` to comply for coding standards
 - Update `CHANGELOG.md`
 - Send a pull request on GitHub.
@@ -50,9 +50,9 @@ Transfer agents, in: `lib/aspera/agent`.
 
 ## Ruby version
 
-Install Ruby using your prefered method.
+Install Ruby using your preferred method.
 
-To cleanup installed gems to start fresh:
+To clean up installed gems to start fresh:
 
 ```bash
 make clean_gems
@@ -206,15 +206,12 @@ cd container
 
 ## Single executable build
 
-Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) and [here](https://github.com/you54f/ruby-packer)) was used to build a single executable.
+See [Executable build](./binary/README.md).
 
-<https://www.tebako.org/>
-
-A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
+For operations, move to the folder:
 
 ```bash
 cd binary
-make GEM_VERSION=4.11.0
 ```
 
 ## Development check list for new release
@@ -225,9 +222,8 @@ When preparing for a new release do the following:
 
 ## Long Term Implementation and delivery improvements
 
-- replace rest and oauth classes with ruby standard gems:
+- replace Rest and OAuth classes with ruby standard gems:
   - <https://github.com/rest-client/rest-client>
   - <https://github.com/oauth-xx/oauth2>
 - use gem Thor <http://whatisthor.com/> (or other standard Ruby CLI manager)
-- Package a single-file executable for various architectures with <https://github.com/pmq20/ruby-packer> (`rubyc`)
 - look at <https://github.com/phusion/traveling-ruby>
