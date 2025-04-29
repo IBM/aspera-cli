@@ -1,11 +1,5 @@
 ##################################
 # Integration tests
-# cspell:ignoreRegExp /[^a-z]t[a-z]+/     # test case name
-# cspell:ignoreRegExp /\$\(T\)[a-z_0-9]+/ # test case name
-# cspell:ignoreRegExp /\$\(DIR_TMP\)[a-z_0-9]+/ # temp file
-# cspell:ignoreRegExp / -r[a-z]+ /        # ruby require
-# cspell:ignore ifeq killall
-# cspell:ignore workgroups pubkey
 
 # root folder is one level up
 DIR_TOP=../
@@ -123,6 +117,7 @@ all:: $(T).ssh_ok
 $(T).ssh_ok: $(TMP_EXISTS)
 	sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
 	sudo systemsetup -getremotelogin
+	sudo -u asperadaemon test -w /Library/Logs/Aspera && sudo chown -R asperadaemon: /Library/Logs/Aspera || echo "Ok, log writable"
 	make restart_noded
 	while ! $(EXE_NO_MAN) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 	touch $@
