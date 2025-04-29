@@ -3,7 +3,8 @@
 * 4.22.0.pre
 
   * New Features:
-    * `vault`: Support for IBM HashiCorp Vault
+    * `vault`: Support for IBM HashiCorp Vault.
+    * `faspex5`: Support paging for Faspex5 browsing.
   
 * 4.21.2
 
