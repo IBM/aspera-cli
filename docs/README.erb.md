@@ -3497,7 +3497,7 @@ where:
 
 > **Note:** Characters `?` and `&` are shell special characters (wildcard and background), so `faux` file specification on command line should be protected (using quotes or `\`). If not, the shell may give error: `no matches found` or equivalent.
 
-For all sizes, a suffix can be added (case-insensitive) to the size: k, m, g, t, p, e (values are power of 2, e.g. 1M is 2<%=pow 20%>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8*2<%=pow 60%>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
+For all sizes, a suffix can be added (case-insensitive) to the size: k, m, g, t, p, e (values are power of 2, e.g. 1M is 2<%=pow 20%>, i.e. 1 mebibyte, not megabyte). The maximum allowed value is 8\*2<%=pow 60%>. Very large `faux` file sizes (petabyte range and above) will likely fail due to lack of destination storage unless destination is `faux://`.
 
 To send uninitialized data in place of a source directory, the source argument is replaced with an argument of the form:
 
@@ -3526,14 +3526,15 @@ The sequence parameter is applied as follows:
   - `size +/- (inc * rand())`
   - Where rand is a random number between 0 and 1
   - Note that file size must not be negative, inc will be set to size if it is greater than size
-  - Similarly, overall file size must be less than 8*2<%=pow 60%>. If size + inc is greater, inc will be reduced to limit size + inc to 7*2<%=pow 60%>.
+  - Similarly, overall file size must be less than 8\*2<%=pow 60%>.
+  If size + inc is greater, inc will be reduced to limit size + inc to 7\*2<%=pow 60%>.
 
 - If `seq` is `sequential` then each file size is:
 
   - `size + ((file_index - 1) * inc)`
   - Where first file is index 1
   - So file1 is `size` bytes, file2 is `size + inc` bytes, file3 is `size + inc * 2` bytes, etc.
-  - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less than 8*2<%=pow 60%>.
+  - As with `random`, `inc` will be adjusted if `size + (count * inc)` is not less than 8\*2<%=pow 60%>.
 
 Filenames generated are of the form: `<file>_<00000 ... count>_<filesize>`
 
@@ -3555,6 +3556,12 @@ Examples:
 
 ```bash
 <%=cmd%> server upload "faux:///mydir?file=testfile&count=1m&size=0&inc=2&seq=sequential" --to-folder=/Upload
+```
+
+- Upload a faux directory `mydir` containing 1000 files, of size 1 byte, with the base name of each file being `testfile` to /Upload
+
+```bash
+<%=cmd%> server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=/Upload
 ```
 
 ### Usage
@@ -5696,13 +5703,14 @@ Examples:
 
 To list the content of a package, use command `faspex5 packages browse /`.
 
-Option `query` is available.
+Option `query` is available with parameters supported by the API and <%=tool%> :
 
-To list recursively add option `--query=@json:'{"recursive":true}'`.
-
-> **Note:** Option `recursive` makes recursive API calls, so it can take a long time on large packages.
-
-To limit the number of items retrieved, use option `--query=@json:{"max":10}`.
+| Parameter    | Evaluation | Description |
+|--------------|------------|-------------|
+| `limit`      | API        | Number of items in one API call result. Default: `1000` |
+| `offset`     | API        | Index of first item. Default: `0` |
+| `recursive`  | <%=tool%>  | List inside folders. Default: `false` |
+| `max`        | <%=tool%>  | Maximum number of items. |
 
 ### Faspex 5: Receive a package
 
