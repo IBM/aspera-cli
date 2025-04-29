@@ -54,6 +54,8 @@ module Aspera
 
         def result_status(status); return {type: :status, data: status}; end
 
+        def result_text(data); return {type: :text, data: data}; end
+
         def result_success; return result_status('complete'); end
 
         # Process statuses of finished transfer sessions
@@ -156,6 +158,7 @@ module Aspera
             begin
               # no need to close later, will be freed on process exit. must save in member else it is garbage collected
               Log.log.debug{"Opening lock port #{lock_port}"}
+              # loopback address, could also be 'localhost'
               @tcp_server = TCPServer.new('127.0.0.1', lock_port)
             rescue StandardError => e
               execute_command = false
