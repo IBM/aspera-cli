@@ -216,8 +216,8 @@ module Aspera
       # data: for requested data, not displayed if level==error
       # info: additional info, displayed if level==info
       # error: always displayed on stderr
-      def display_message(message_level, message)
-        message = SecretHider.hide_secrets_in_string(message) if message.is_a?(String) && hide_secrets?
+      def display_message(message_level, message, hide_secrets: true)
+        message = SecretHider.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
         case message_level
         when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
         when :info then $stdout.puts(message) if @options[:display].eql?(:info)
@@ -226,8 +226,8 @@ module Aspera
         end
       end
 
-      def display_status(status)
-        display_message(:info, status)
+      def display_status(status, **kwopt)
+        display_message(:info, status, **kwopt)
       end
 
       def display_item_count(number, total)
