@@ -122,7 +122,7 @@ module Aspera
               formatter.display_status('Please Login to your Aspera on Cloud instance.')
               formatter.display_status('Navigate to: 👤 → Account Settings → Profile → Public Key')
               formatter.display_status('Check or update the value to:'.red.blink)
-              formatter.display_status(pub_key_pem)
+              formatter.display_status(pub_key_pem, hide_secrets: false)
               if !options.get_option(:test_mode)
                 formatter.display_status('Once updated or validated, press enter.')
                 Environment.instance.open_uri(instance_url)
