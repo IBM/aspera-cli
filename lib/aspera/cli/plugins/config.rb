@@ -39,7 +39,6 @@ module Aspera
         ASPERA_HOME_FOLDER_NAME = '.aspera'
         # default config file
         DEFAULT_CONFIG_FILENAME = 'config.yaml'
-        DEFAULT_VAULT_FILENAME = 'vault.bin'
         # reserved preset names
         CONF_PRESET_CONFIG = 'config'
         CONF_PRESET_VERSION = 'version'
@@ -148,7 +147,7 @@ module Aspera
           @use_plugin_defaults = true
           @config_presets = nil
           @config_checksum_on_disk = nil
-          @vault = nil
+          @vault_instance = nil
           @pac_exec = nil
           @sdk_default_location = false
           @option_insecure = false
@@ -192,7 +191,7 @@ module Aspera
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           # vault options
           options.declare(:secret, 'Secret for access keys')
-          options.declare(:vault, 'Vault for secrets', types: Hash)
+          options.declare(:vault, 'Vault for secrets', types: Hash, default: {})
           options.declare(:vault_password, 'Vault password')
           options.parse_options!
           # declare generic plugin options only after handlers are declared
@@ -1233,15 +1232,15 @@ module Aspera
           return nil
         end
 
-        # TODO: delete: ALLOWED_KEYS = %i[password username description].freeze
         # @return [Hash] result of execution of vault command
         def execute_vault
           command = options.get_next_command(%i[info list show create delete password])
           case command
           when :info
-            return Main.result_single_object(vault_info)
+            return Main.result_single_object(vault.info)
           when :list
-            return Main.result_object_list(vault.list, fields: %w(label url username password description))
+            # , fields: %w(label url username password description)
+            return Main.result_object_list(vault.list)
           when :show
             return Main.result_single_object(vault.get(label: options.get_next_argument('label')))
           when :create
@@ -1250,17 +1249,15 @@ module Aspera
             info = info.symbolize_keys
             info[:label] = label
             vault.set(info)
-            return Main.result_status('Password added')
+            return Main.result_status('Secret added')
           when :delete
             label_to_delete = options.get_next_argument('label')
             vault.delete(label: label_to_delete)
-            return Main.result_status("Entry deleted: #{label_to_delete}")
+            return Main.result_status("Secret deleted: #{label_to_delete}")
           when :password
-            Aspera.assert(vault.respond_to?(:password=)){'Vault does not support password change'}
-            new_password = options.get_next_argument('new_password')
-            vault.password = new_password
-            vault.save
-            return Main.result_status('Password updated')
+            Aspera.assert(vault.respond_to?(:change_password)){'Vault does not support password change'}
+            vault.change_password(options.get_next_argument('new_password'))
+            return Main.result_status('Vault password updated')
           end
         end
 
@@ -1275,42 +1272,18 @@ module Aspera
           return value
         end
 
-        def vault_info
-          info = options.get_option(:vault) || {}
-          info = info.symbolize_keys
-          info[:type] ||= 'file'
-          info[:name] ||= (info[:type].eql?('file') ? DEFAULT_VAULT_FILENAME : Info::CMD_NAME)
-          Aspera.assert(info.keys.sort == %i[name type]) {"vault info shall have exactly keys 'type' and 'name'"}
-          Aspera.assert(info.values.all?(String)){'vault info shall have only string values'}
-          info[:password] = options.get_option(:vault_password, mandatory: true)
-          return info
-        end
-
         # @return [Object] vault, from options or cache
         def vault
-          if @vault.nil?
-            info = vault_info
-            case info[:type]
-            when 'file'
-              # this module requires comilation, so it is optinal
-              require 'aspera/keychain/encrypted_hash'
-              # absolute_path? introduced in ruby 2.7
-              @vault = Keychain::EncryptedHash.new(
-                info[:name].eql?(File.absolute_path(info[:name])) ? info[:name] : File.join(@main_folder, info[:name]),
-                info[:password])
-            when 'system'
-              case Environment.os
-              when Environment::OS_MACOS
-                @vault = Keychain::MacosSystem.new(info[:name], info[:password])
-              else
-                raise 'not implemented for this OS'
-              end
-            else
-              raise Cli::BadArgument, "Unknown vault type: #{info[:type]}"
-            end
-          end
-          raise 'No vault defined' if @vault.nil?
-          @vault
+          return @vault_instance unless @vault_instance.nil?
+          info = options.get_option(:vault).symbolize_keys
+          info[:type] ||= 'file'
+          require 'aspera/keychain/factory'
+          @vault_instance = Keychain::Factory.create(
+            info,
+            Info::CMD_NAME,
+            @main_folder,
+            options.get_option(:vault_password)
+          )
         end
 
         def execute_test
