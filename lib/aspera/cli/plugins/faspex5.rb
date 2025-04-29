@@ -411,18 +411,27 @@ module Aspera
           return Main.result_transfer_multiple(result_transfer)
         end
 
-        # browse a folder
+        # Browse a folder
         # @param browse_endpoint [String] the endpoint to browse
         def browse_folder(browse_endpoint)
-          folders_to_process = [options.get_next_argument('folder path', mandatory: false, default: '/')]
+          folders_to_process = [options.get_next_argument('folder path', default: '/')]
           query = query_read_delete(default: {})
-          query['filters'] = {} unless query.key?('filters')
-          filters = query.delete('filters')
-          filters['basenames'] = [] unless filters.key?('basenames')
+          filters = query.delete('filters') {{}}
+          Aspera.assert_type(filters, Hash)
+          filters['basenames'] ||= []
           Aspera.assert_type(filters, Hash){'filters'}
           max_items = query.delete('max')
           recursive = query.delete('recursive')
+          use_paging = query.delete('paging') {true}
+          if use_paging
+            browse_endpoint = "#{browse_endpoint}/page"
+            query['per_page'] ||= 500
+          else
+            query['offset'] ||= 0
+            query['limit'] ||= 500
+          end
           all_items = []
+          total_count = nil
           until folders_to_process.empty?
             path = folders_to_process.shift
             loop do
@@ -434,22 +443,31 @@ module Aspera
                 body:        {'path' => path, 'filters' => filters},
                 body_type:   :json)
               all_items.concat(response[:data]['items'])
-              if recursive
-                folders_to_process.concat(response[:data]['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
-              end
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
                 break
               end
-              iteration_token = response[:http][HEADER_ITERATION_TOKEN]
-              break if iteration_token.nil? || iteration_token.empty?
-              query['iteration_token'] = iteration_token
+              if recursive
+                folders_to_process.concat(response[:data]['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
+              end
+              if use_paging
+                iteration_token = response[:http][HEADER_ITERATION_TOKEN]
+                break if iteration_token.nil? || iteration_token.empty?
+                query['iteration_token'] = iteration_token
+              else
+                if total_count.nil?
+                  total_count = response[:data]['total_count']
+                end
+                break if response[:data]['item_count'].eql?(0)
+                query['offset'] += response[:data]['item_count']
+              end
               formatter.long_operation_running(all_items.count)
             end
             query.delete('iteration_token')
           end
           formatter.long_operation_terminated
-          return {type: :object_list, data: all_items}
+
+          return Main.result_object_list(all_items, total: total_count)
         end
 
         def package_action
@@ -460,7 +478,7 @@ module Aspera
             end
           case command
           when :show
-            return {type: :single_object, data: @api_v5.read("packages/#{package_id}")}
+            return Main.result_single_object(@api_v5.read("packages/#{package_id}"))
           when :browse
             location = case options.get_option(:box)
             when 'inbox' then 'received'
@@ -471,7 +489,7 @@ module Aspera
           when :status
             status_list = options.get_next_argument('list of states, or nothing', mandatory: false, validation: Array)
             status = wait_package_status(package_id, status_list: status_list)
-            return {type: :single_object, data: status}
+            return Main.result_single_object(status)
           when :delete
             ids = package_id
             ids = [ids] unless ids.is_a?(Array)
@@ -528,7 +546,7 @@ module Aspera
                 formatter.display_status("Package #{package['id']}")
                 result = wait_package_status(package['id'])
               end
-              return {type: :single_object, data: result}
+              return Main.result_single_object(result)
             end
           when :list
             return {
@@ -620,7 +638,7 @@ module Aspera
               real_path: "#{res_type}/#{shared_inbox_id}/members",
               value: creation_payload['email_address'],
               query: {})
-            return {type: :single_object, data: result}
+            return Main.result_single_object(result)
           when :members, :saml_groups
             res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
             res_prefix = "#{res_type}/#{res_id}"
@@ -675,15 +693,17 @@ module Aspera
             delete_data = value_create_modify(command: command, default: {})
             delete_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if delete_data.empty?
             res = @api_v5.create('internal/packages/clean_deleted', delete_data)
-            return {type: :single_object, data: res}
+            return Main.result_single_object(res)
           when :events
             event_type = options.get_next_command(%i[application webhook])
             case event_type
             when :application
-              return {type: :object_list, data: list_entities(type: 'application_events', query: query_read_delete),
-fields: %w[event_type created_at application user.name]}
+              return Main.result_object_list(
+                list_entities(type: 'application_events', query: query_read_delete),
+                fields: %w[event_type created_at application user.name])
             when :webhook
-              return {type: :object_list, data: list_entities(type: 'all_webhooks_events', query: query_read_delete, item_list_key: 'events')}
+              return Main.result_object_list(
+                list_entities(type: 'all_webhooks_events', query: query_read_delete, item_list_key: 'events'))
             end
           when :configuration
             conf_path = 'configuration'
@@ -751,14 +771,14 @@ fields: %w[event_type created_at application user.name]}
               end
             end
           when :bearer_token
-            return {type: :text, data: @api_v5.oauth.authorization}
+            return Main.result_text(@api_v5.oauth.authorization)
           when :packages
             return package_action
           when :shared_folders
             all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
             case options.get_next_command(%i[list browse])
             when :list
-              return {type: :object_list, data: all_shared_folders}
+              return Main.result_object_list(all_shared_folders)
             when :browse
               shared_folder_id = instance_identifier do |field, value|
                 matches = all_shared_folders.select{|i|i[field].eql?(value)}

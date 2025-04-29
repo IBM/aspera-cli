@@ -5697,20 +5697,30 @@ Examples:
   <%=cmd%> faspex5 packages list @ruby:'->(p){p["state"].eql?("released")}'
   ```
 
-### Faspex 5: Content of a received Package
+### Faspex 5: Browsing folder content
 
-> **Note:** Listing content also applies to shares folder, nodes, and received packages (using `--box=outbox`).
-
-To list the content of a package, use command `faspex5 packages browse /`.
+Several entities support folder browsing: Packages, Nodes, Shared Folders.
+All support two modes: paging and legacy API.
+By default, paging is used.
 
 Option `query` is available with parameters supported by the API and <%=tool%> :
 
-| Parameter    | Evaluation | Description |
-|--------------|------------|-------------|
-| `limit`      | API        | Number of items in one API call result. Default: `1000` |
-| `offset`     | API        | Index of first item. Default: `0` |
-| `recursive`  | <%=tool%>  | List inside folders. Default: `false` |
-| `max`        | <%=tool%>  | Maximum number of items. |
+| Parameter    | Evaluation   | Description |
+|--------------|--------------|-------------|
+| `paging`     | <%=tool%>    | Use paging API. Default: `true` |
+| `recursive`  | <%=tool%>    | List inside folders. Default: `false` |
+| `max`        | <%=tool%>    | Maximum number of items. |
+| `filter`     | API          | Refer to API doc. Default: `{"basenames":[]}` |
+| `offset`     | API (legacy) | Index of first item. Default: `0` |
+| `limit`      | API (legacy) | Number of items in one API call result. Default: `500` |
+| `per_page`   | API (paging) | Number of items in one API call result. Default: `500` |
+
+### Faspex 5: Content of a received Package
+
+> **Note:** Listing content also applies to sent packages using `--box=outbox`.
+
+To list the content of a received package, use command `faspex5 packages browse <package id>`.
+Optionally, provide a folder path.
 
 ### Faspex 5: Receive a package
 
