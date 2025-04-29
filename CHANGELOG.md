@@ -3,6 +3,7 @@
 * 4.22.0.pre
 
   * New Features:
+    * `vault`: Support for IBM HashiCorp Vault
   
 * 4.21.2
 

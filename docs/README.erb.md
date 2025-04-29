@@ -2211,8 +2211,8 @@ or
 
 ### Secret Vault
 
-Secrets (e.g. passwords) are usually command options.
-They can be provided on command line, env vars, files etc.
+Secrets, e.g. passwords, keys, are needed when connecting to applications.
+Those secrets are usually provided as command options, on command line, env vars, files etc.
 
 For security reasons, those secrets shall not be exposed in clear, either:
 
@@ -2220,7 +2220,7 @@ For security reasons, those secrets shall not be exposed in clear, either:
 - In logs
 - In command output
 
-Instead, they shall be hidden or encrypted.
+Instead, they shall be hidden (logs) or encrypted (configuration).
 
 Terminal output secret removal is controlled by option `show_secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
@@ -2251,6 +2251,19 @@ For example, it can be securely specified on command line like this:
 ```bash
 read -s <%=opt_env(%Q`vault_password`)%>
 export <%=opt_env(%Q`vault_password`)%>
+```
+
+#### Vault: IBM Hashicorp Vault
+
+<https://developer.hashicorp.com/vault>
+
+Quick start macOS:
+
+```bash
+gem install vault
+brew tap hashicorp/tap
+brew install hashicorp/tap/vault
+vault server -dev -dev-root-token-id=dev-only-token
 ```
 
 #### Vault: System keychain

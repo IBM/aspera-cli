@@ -123,15 +123,28 @@ module Aspera
     end
 
     class MacosSystem
-      def initialize(name=nil, _password=nil)
-        @keychain = name.nil? ? MacosSecurity::Keychain.default_keychain : MacosSecurity::Keychain.by_name(name)
+      OPTIONS = %i[label username password url description].freeze
+      def initialize(name: nil)
+        @keychain_name = name.nil? ? 'default keychain' : name
+        @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
         raise "no such keychain #{name}" if @keychain.nil?
+      end
+
+      def info
+        return {
+          keychain: @keychain_name
+        }
+      end
+
+      def list
+        # the only way to list is `dump-keychain` which triggers security alert
+        raise 'list not implemented, use macos keychain app'
       end
 
       def set(options)
         Aspera.assert_type(options, Hash){'options'}
-        unsupported = options.keys - %i[label username password url description]
-        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
+        unsupported = options.keys - OPTIONS
+        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}, use #{OPTIONS.join(', ')}"}
         @keychain.password(
           :add, :generic, service: options[:label],
           account: options[:username] || 'none', password: options[:password], comment: options[:description])
@@ -147,11 +160,6 @@ module Aspera
         result[:secret] = info['password']
         result[:description] = info['icmt'] # cspell: disable-line
         return result
-      end
-
-      def list
-        # the only way to list is `dump-keychain` which triggers security alert
-        raise 'list not implemented, use macos keychain app'
       end
 
       def delete(options)

@@ -17,9 +17,9 @@ module Aspera
       CONTENT_KEYS = %i[label username password url description].freeze
       FILE_KEYS = %w[version type cipher data].sort.freeze
       private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :CONTENT_KEYS, :FILE_KEYS
-      def initialize(path, current_password)
-        Aspera.assert_type(path, String){'path to vault file'}
-        @path = path
+      def initialize(file:, password:)
+        Aspera.assert_type(file, String){'path to vault file'}
+        @path = file
         @all_secrets = {}
         @cipher_name = DEFAULT_CIPHER_NAME
         vault_encrypted_data = nil
@@ -37,31 +37,27 @@ module Aspera
           end
         end
         # setting password also creates the cipher
-        self.password = current_password
+        @cipher = cipher(password)
         if !vault_encrypted_data.nil?
           @all_secrets = YAML.load_stream(@cipher.decrypt(vault_encrypted_data)).first
         end
       end
 
-      # set the password and cipher
-      def password=(new_password)
-        # number of bits in second position
-        key_bytes = DEFAULT_CIPHER_NAME.split('-')[1].to_i / Environment::BITS_PER_BYTE
-        # derive key from passphrase, add trailing zeros
-        key = "#{new_password}#{"\x0" * key_bytes}"[0..(key_bytes - 1)]
-        Log.log.trace1{"secret=[#{key}],#{key.length}"}
-        @cipher = SymmetricEncryption.cipher = SymmetricEncryption::Cipher.new(cipher_name: DEFAULT_CIPHER_NAME, key: key, encoding: :none)
+      def info
+        return {
+          file: @path
+        }
       end
 
-      # save current data to file with format
-      def save
-        vault_info = {
-          'version' => '1.0.0',
-          'type'    => FILE_TYPE,
-          'cipher'  => @cipher_name,
-          'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
-        }
-        File.write(@path, YAML.dump(vault_info))
+      def list
+        result = []
+        @all_secrets.each do |label, values|
+          normal = values.symbolize_keys
+          normal[:label] = label
+          CONTENT_KEYS.each{|k|normal[k] = '' unless normal.key?(k)}
+          result.push(normal)
+        end
+        return result
       end
 
       # set a secret
@@ -79,14 +75,10 @@ module Aspera
         save
       end
 
-      def list
-        result = []
-        @all_secrets.each do |label, values|
-          normal = values.symbolize_keys
-          normal[:label] = label
-          CONTENT_KEYS.each{|k|normal[k] = '' unless normal.key?(k)}
-          result.push(normal)
-        end
+      def get(label:, exception: true)
+        Aspera.assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
+        result = @all_secrets[label].clone
+        result[:label] = label if result.is_a?(Hash)
         return result
       end
 
@@ -95,11 +87,32 @@ module Aspera
         save
       end
 
-      def get(label:, exception: true)
-        Aspera.assert(@all_secrets.key?(label)){"Label not found: #{label}"} if exception
-        result = @all_secrets[label].clone
-        result[:label] = label if result.is_a?(Hash)
-        return result
+      def change_password(password)
+        @cipher = cipher(password)
+        save
+      end
+
+      private
+
+      # set the password and cipher
+      def cipher(new_password)
+        # number of bits in second position
+        key_bytes = @cipher_name.split('-')[1].to_i / Environment::BITS_PER_BYTE
+        # derive key from passphrase, add trailing zeros
+        key = "#{new_password}#{"\x0" * key_bytes}"[0..(key_bytes - 1)]
+        Log.log.trace1{"secret=[#{key}],#{key.length}"}
+        SymmetricEncryption.cipher = SymmetricEncryption::Cipher.new(cipher_name: @cipher_name, key: key, encoding: :none)
+      end
+
+      # save current data to file with format
+      def save
+        vault_info = {
+          'version' => '1.0.0',
+          'type'    => FILE_TYPE,
+          'cipher'  => @cipher_name,
+          'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
+        }
+        File.write(@path, YAML.dump(vault_info))
       end
     end
   end
