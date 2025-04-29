@@ -47,6 +47,7 @@ module Aspera
               test_endpoint = 'ping'
               result = api.call(operation: 'GET', subpath: test_endpoint)
               next unless result[:http].body.eql?('')
+              # also remove "/"
               url_end = -2 - test_endpoint.length
               return {
                 url:     result[:http].uri.to_s[0..url_end],
@@ -136,12 +137,11 @@ module Aspera
 
         def initialize(api: nil, **env)
           super(**env, basic_options: api.nil?)
-          # TODO: basic_options: api.nil?
           Node.declare_options(options) if api.nil?
           return if env[:broker].only_manual?
           @api_node =
             if !api.nil?
-              # this can be Api::Node or Rest (shares)
+              # this can be Api::Node or Rest (Shares)
               api
             elsif OAuth::Factory.bearer?(options.get_option(:password, mandatory: true))
               # info is provided like node_info of aoc
@@ -842,7 +842,6 @@ module Aspera
                 last_iteration_token = next_iteration_token
                 transfers_data.concat(result[:data])
                 if max_items&.<=(transfers_data.length)
-                  # if !max_items.nil? && (transfers_data.length >= max_items)
                   transfers_data = transfers_data.slice(0, max_items)
                   break
                 end
