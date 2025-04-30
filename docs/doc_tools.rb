@@ -14,6 +14,8 @@ require 'yaml'
 require 'erb'
 require 'English'
 
+$debug = false
+
 # format special value depending on context
 class HtmlFormatter
   def special_format(special)
@@ -157,9 +159,8 @@ end
 # various replacements from commands in test makefile
 REPLACEMENTS = [
   # replace command name
-  [/^.*\$\(CLI_TEST\) +/, ''],
-  [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
-  [/\$\(EXE_END_FAI.?\)$/, ''],
+  [/^.*\$\(INCMAN\)/, ''],
+  [/\$\((CLI|BEG|END)_[A-Z_]+\)/, ''],
   # replace file_vars
   [/\$\$\((cat|basename) ([^)]+)\)/, '\2'],
   # replace makefile macros
@@ -213,7 +214,7 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{|replace|line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
-        # $stderr.puts line
+        $stderr.puts line if $debug
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []
