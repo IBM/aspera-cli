@@ -157,7 +157,7 @@ end
 # various replacements from commands in test makefile
 REPLACEMENTS = [
   # replace command name
-  [/^.*\$\(EXE_MAN\) +/, ''],
+  [/^.*\$\(CLI_TEST\) +/, ''],
   [/^.*\$\(EXE_BEG_FAI.?\) +/, ''],
   [/\$\(EXE_END_FAI.?\)$/, ''],
   # replace file_vars
@@ -209,7 +209,7 @@ def all_test_commands_by_plugin
     commands = {}
     File.open(@env[:TEST_MAKEFILE]) do |file|
       file.each_line do |line|
-        next unless line.match?(/\$\((EXE_MAN|EXE_BEG_FAI).?\) +/)
+        next unless line.include?('$(INCMAN)')
         line = line.chomp
         REPLACEMENTS.each{|replace|line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
