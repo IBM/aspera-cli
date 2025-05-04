@@ -54,6 +54,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency('rubyzip', '~> 2.0')
   spec.add_dependency('terminal-table', '~> 3.0.2')
   spec.add_dependency('tty-spinner', '~> 0.9')
+  spec.add_dependency('vault', '~> 0.18')
   spec.add_dependency('webrick', '~> 1.7')
   spec.add_dependency('websocket', '~> 1.2')
   spec.add_dependency('xml-simple', '~> 1.0')
