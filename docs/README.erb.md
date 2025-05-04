@@ -257,7 +257,7 @@ Required Ruby <%=ruby_version%>.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-Latest version of <%=tool%> requires a ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+Latest version of <%=tool%> requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
 If an older Ruby version is needed, then use an older version of <%=tool%> that supports it.
 
 #### Windows: Installer
@@ -292,7 +292,7 @@ The recommended way is to either use [Homebrew](https://brew.sh/) or [RVM](https
 brew install ruby
 ```
 
-This installs a recent ruby suitable for <%=tool%>.
+This installs a recent Ruby suitable for <%=tool%>.
 
 If using `rvm`, one way to force use of OpenSSL 3.0 is:
 
@@ -1137,7 +1137,7 @@ Hello World
 2
 ```
 
-> **Note:** Use `pp` instead of `puts` to display as ruby Array.
+> **Note:** Use `pp` instead of `puts` to display as Ruby `Array`.
 
 Once the shell has dealt with the command line "special" characters for it, the shell calls Windows' `CreateProcess` with just the whole command line as a single string.
 (Unlike Unix-like systems where the command line is split into arguments by the shell.)
@@ -1592,7 +1592,7 @@ Effective only when `format` is `table` to display `single_object` or `object_li
 
 If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
 
-If value is `yes` (default), then object are flattened, i.e. deep `Hash` are transformed into 1-level Hash, where keys are `.`-junction of deep keys.
+If value is `yes` (default), then object are flattened, i.e. deep `Hash` are transformed into 1-level `Hash`, where keys are `.`-junction of deep keys.
 In this case, it is possible to filter fields using the option `fields` using the compound field name using `.` (dot) as separator.
 
 Example: Result of command is a list of objects with a single object:
@@ -2512,10 +2512,10 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 
 | Parameter                 | Default       | Where     |
 |---------------------------|---------------|-----------|
-| `read_timeout`            | `60`          | ruby      |
-| `write_timeout`           | `60`          | ruby      |
-| `open_timeout`            | `60`          | ruby      |
-| `keep_alive_timeout`      | `2`           | ruby      |
+| `read_timeout`            | `60`          | Ruby      |
+| `write_timeout`           | `60`          | Ruby      |
+| `open_timeout`            | `60`          | Ruby      |
+| `keep_alive_timeout`      | `2`           | Ruby      |
 | `user_agent`              | <%=tool%>     | <%=tool%> |
 | `download_partial_suffix` | `.http_partial` | <%=tool%> |
 | `retry_on_error`          | `0`           | <%=tool%> |
@@ -2831,7 +2831,7 @@ The `transfer_info` option accepts the following optional parameters to control 
 | `quiet`                | `Bool`    | If `true`, then `ascp` progress bar is not shown.<%=br%>Default: `false` |
 | `trusted_certs`        | `Array`   | List of repositories for trusted certificates. |
 | `client_ssh_key`       | `String` | SSH Keys to use for token-based transfers. One of: `dsa_rsa`, `rsa`, `per_client`. Default: `rsa` |
-| `ascp_args`            | `Array`   | Array of strings with native `ascp` arguments.<%=br%>Default: `[]` |
+| `ascp_args`            | `Array`   | `Array` of strings with native `ascp` arguments.<%=br%>Default: `[]` |
 | `spawn_timeout_sec`    | `Float`   | Multi session<%=br%>Verification time that `ascp` is running<%=br%>Default: `3` |
 | `spawn_delay_sec`      | `Float`   | Multi session<%=br%>Delay between startup of sessions<%=br%>Default: `2` |
 | `multi_incr_udp`       | `Bool`    | Multi Session<%=br%>Increment UDP port on multi-session<%=br%>If `true`, each session will have a different UDP port starting at `fasp_port` (or default 33001)<%=br%>Else, each session will use `fasp_port` (or `ascp` default)<%=br%>Default: `true` on Windows, else `false` |
@@ -3587,7 +3587,7 @@ It takes either a `Hash` or an `Array`, corresponding to key/value pairs that ap
 
 For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
 
-If the same parameter needs to be provided several times, then it's possible as well to provide an Array or 2-element Array: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
+If the same parameter needs to be provided several times, then it's possible as well to provide an `Array` or 2-element `Array`: `--query=@json:'[["p1":,"v1"],["p2":"v2"]]'` leads to the same result as previously.
 
 If PHP's style array is used, then one can use either:
 

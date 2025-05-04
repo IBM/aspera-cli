@@ -271,7 +271,7 @@ Guide</a></li>
 </ul>
 <p>For convenience, you may refer to the following sections for a
 proposed method for specific operating systems.</p>
-<p>Latest version of <code>ascli</code> requires a ruby version <a
+<p>Latest version of <code>ascli</code> requires a Ruby version <a
 href="https://www.ruby-lang.org/en/downloads/branches/">at least under
 maintenance support</a>. If an older Ruby version is needed, then use an
 older version of <code>ascli</code> that supports it.</p>
@@ -316,7 +316,7 @@ href="https://brew.sh/">Homebrew</a> or <a
 href="https://rvm.io/">RVM</a>.</p>
 <div class="sourceCode" id="cb16"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install ruby</span></code></pre></div>
-<p>This installs a recent ruby suitable for <code>ascli</code>.</p>
+<p>This installs a recent Ruby suitable for <code>ascli</code>.</p>
 <p>If using <code>rvm</code>, one way to force use of OpenSSL 3.0
 is:</p>
 <div class="sourceCode" id="cb17"><pre
@@ -489,7 +489,7 @@ href="Gemfile">Gemfile</a>:</p>
 <tr>
 <td>grpc</td>
 <td>~&gt; 1.65</td>
-<td>for transferSDK</td>
+<td>for Aspera Transfer Daemon</td>
 </tr>
 <tr>
 <td>mimemagic</td>
@@ -498,13 +498,13 @@ href="Gemfile">Gemfile</a>:</p>
 </tr>
 <tr>
 <td>rmagick</td>
-<td>~&gt; 5.5</td>
+<td>~&gt; 6.1</td>
 <td>for terminal view</td>
 </tr>
 <tr>
 <td>symmetric-encryption</td>
 <td>~&gt; 4.6</td>
-<td>for file vault</td>
+<td>for encrypted hash file secrets</td>
 </tr>
 <tr>
 <td>bigdecimal</td>
@@ -517,7 +517,7 @@ href="Gemfile">Gemfile</a>:</p>
 <div class="sourceCode" id="cb40"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install grpc <span class="at">-v</span> <span class="st">&#39;~&gt; 1.65&#39;</span></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install mimemagic <span class="at">-v</span> <span class="st">&#39;~&gt; 0.4&#39;</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install rmagick <span class="at">-v</span> <span class="st">&#39;~&gt; 5.5&#39;</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install rmagick <span class="at">-v</span> <span class="st">&#39;~&gt; 6.1&#39;</span></span>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install symmetric-encryption <span class="at">-v</span> <span class="st">&#39;~&gt; 4.6&#39;</span></span>
 <span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gem</span> install bigdecimal <span class="at">-v</span> <span class="st">&#39;~&gt; 3.1.9&#39;</span></span></code></pre></div>
 <blockquote>
@@ -1174,7 +1174,7 @@ Hello World
 2</code></pre>
 <blockquote>
 <p><strong>Note:</strong> Use <code>pp</code> instead of
-<code>puts</code> to display as ruby Array.</p>
+<code>puts</code> to display as Ruby <code>Array</code>.</p>
 </blockquote>
 <p>Once the shell has dealt with the command line “special” characters
 for it, the shell calls Windows’ <code>CreateProcess</code> with just
@@ -1744,10 +1744,11 @@ display <code>single_object</code> or <code>object_list</code>.</p>
 are only the first level keys of the <code>Hash</code> result and values
 that are <code>Hash</code> are displayed as such in Ruby syntax.</p>
 <p>If value is <code>yes</code> (default), then object are flattened,
-i.e. deep <code>Hash</code> are transformed into 1-level Hash, where
-keys are <code>.</code>-junction of deep keys. In this case, it is
-possible to filter fields using the option <code>fields</code> using the
-compound field name using <code>.</code> (dot) as separator.</p>
+i.e. deep <code>Hash</code> are transformed into 1-level
+<code>Hash</code>, where keys are <code>.</code>-junction of deep keys.
+In this case, it is possible to filter fields using the option
+<code>fields</code> using the compound field name using <code>.</code>
+(dot) as separator.</p>
 <p>Example: Result of command is a list of objects with a single
 object:</p>
 <pre class="console"><code>$ ascli config echo @json:&#39;[{&quot;user&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;toto&quot;},&quot;project&quot;:&quot;blah&quot;}]&#39;
@@ -2904,22 +2905,22 @@ adjusted using option <code>http_options</code>:</p>
 <tr>
 <td><code>read_timeout</code></td>
 <td><code>60</code></td>
-<td>ruby</td>
+<td>Ruby</td>
 </tr>
 <tr>
 <td><code>write_timeout</code></td>
 <td><code>60</code></td>
-<td>ruby</td>
+<td>Ruby</td>
 </tr>
 <tr>
 <td><code>open_timeout</code></td>
 <td><code>60</code></td>
-<td>ruby</td>
+<td>Ruby</td>
 </tr>
 <tr>
 <td><code>keep_alive_timeout</code></td>
 <td><code>2</code></td>
-<td>ruby</td>
+<td>Ruby</td>
 </tr>
 <tr>
 <td><code>user_agent</code></td>
@@ -3285,7 +3286,7 @@ Default: <code>rsa</code></td>
 <tr>
 <td><code>ascp_args</code></td>
 <td><code>Array</code></td>
-<td>Array of strings with native <code>ascp</code>
+<td><code>Array</code> of strings with native <code>ascp</code>
 arguments.<br/>Default: <code>[]</code></td>
 </tr>
 <tr>
@@ -5749,7 +5750,8 @@ pairs that appear in the query part of request.</p>
 <p>For example: <code>--query=@json:'{"p1":"v1","p2":"v2"}'</code> leads
 to query: <code>?p1=v1&amp;p2=v2</code>.</p>
 <p>If the same parameter needs to be provided several times, then it’s
-possible as well to provide an Array or 2-element Array:
+possible as well to provide an <code>Array</code> or 2-element
+<code>Array</code>:
 <code>--query=@json:'[["p1":,"v1"],["p2":"v2"]]'</code> leads to the
 same result as previously.</p>
 <p>If PHP’s style array is used, then one can use either:</p>
