@@ -189,6 +189,7 @@ module Aspera
 
     attr_reader :base_url
     attr_reader :auth_params
+    attr_reader :headers
 
     # @return creation parameters
     def params
@@ -238,7 +239,7 @@ module Aspera
       @http_session = nil
       @redirect_max = redirect_max
       Aspera.assert_type(@redirect_max, Integer)
-      @headers = headers
+      @headers = headers.clone
       Aspera.assert_type(@headers, Hash)
       @headers['User-Agent'] ||= RestParameters.instance.user_agent
       # OAuth object (created on demand)

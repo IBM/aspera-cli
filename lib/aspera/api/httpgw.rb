@@ -314,6 +314,10 @@ module Aspera
             @upload_version = API_V1
           end
         end
+        @shared_info = nil
+        @ws_handshake = nil
+        @ws_io = nil
+        @ws_read_thread = nil
       end
 
       private

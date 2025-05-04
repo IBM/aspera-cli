@@ -45,6 +45,7 @@ module Aspera
       end
 
       # generic method
+      # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         # add root id if access key
         if !@root_id.nil?

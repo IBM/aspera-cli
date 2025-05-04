@@ -74,6 +74,8 @@ module Aspera
         @sessions = []
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
+        @pre_calc_sent = false
+        @pre_calc_last_size = nil
       end
 
       # start ascp transfer(s) (non blocking), single or multi-session

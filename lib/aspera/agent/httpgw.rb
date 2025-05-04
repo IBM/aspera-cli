@@ -30,6 +30,7 @@ module Aspera
       # Start FASP transfer based on transfer spec (hash table)
       # note that this should be asynchronous, but it is not
       # HTTP download only supports file list
+      # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         raise 'GW URL must be set' if @gw_api.nil?
         Aspera.assert_type(transfer_spec['paths'], Array){'paths'}
