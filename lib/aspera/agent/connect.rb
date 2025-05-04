@@ -17,6 +17,7 @@ module Aspera
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
       def initialize(**base_options)
         super
+        @transfer_id = nil
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
@@ -46,6 +47,7 @@ module Aspera
         end
       end
 
+      # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         if transfer_spec['direction'] == 'send'
           Log.log.warn{"Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red}
@@ -58,13 +60,12 @@ module Aspera
             'allowedFileTypes'        => ''})
           transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']}}
         end
-        @request_id = SecureRandom.uuid
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password
         transfer_spec['authentication'] = 'token' if transfer_spec.key?('token')
         connect_transfer_args = {
           'aspera_connect_settings' => @connect_settings.merge({
-            'request_id'    => @request_id,
+            'request_id'    => SecureRandom.uuid,
             'allow_dialogs' => true
           }),
           'transfer_specs'          => [{
@@ -72,17 +73,16 @@ module Aspera
           }]}
         # asynchronous anyway
         res = @connect_api.create('transfers/start', connect_transfer_args)
-        @xfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id']
+        @transfer_id = res['transfer_specs'].first['transfer_spec']['tags'][Transfer::Spec::TAG_RESERVED]['xfer_id']
       end
 
       def wait_for_transfers_completion
         connect_activity_args = {'aspera_connect_settings' => @connect_settings}
         started = false
         pre_calc = false
-        session_id = @xfer_id
         begin
           loop do
-            tr_info = @connect_api.create("transfers/info/#{@xfer_id}", connect_activity_args)
+            tr_info = @connect_api.create("transfers/info/#{@transfer_id}", connect_activity_args)
             Log.log.trace1{Log.dump(:tr_info, tr_info)}
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']
@@ -96,26 +96,26 @@ module Aspera
                 notify_progress(:pre_start, session_id: nil, info: transfer['status'])
               when 'running'
                 if !started
-                  notify_progress(:session_start, session_id: session_id)
+                  notify_progress(:session_start, session_id: @transfer_id)
                   started = true
                 end
                 if !pre_calc && (transfer['bytes_expected'] != 0)
-                  notify_progress(:session_size, session_id: session_id, info: transfer['bytes_expected'])
+                  notify_progress(:session_size, session_id: @transfer_id, info: transfer['bytes_expected'])
                   pre_calc = true
                 else
-                  notify_progress(:transfer, session_id: session_id, info: transfer['bytes_written'])
+                  notify_progress(:transfer, session_id: @transfer_id, info: transfer['bytes_written'])
                 end
               when 'completed'
-                notify_progress(:end, session_id: session_id)
+                notify_progress(:end, session_id: @transfer_id)
                 break
               when 'failed'
-                notify_progress(:end, session_id: session_id)
+                notify_progress(:end, session_id: @transfer_id)
                 raise Transfer::Error, transfer['error_desc']
               when 'cancelled'
-                notify_progress(:end, session_id: session_id)
+                notify_progress(:end, session_id: @transfer_id)
                 raise Transfer::Error, 'Transfer cancelled by user'
               else
-                notify_progress(:end, session_id: session_id)
+                notify_progress(:end, session_id: @transfer_id)
                 raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end

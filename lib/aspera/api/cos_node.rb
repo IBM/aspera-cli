@@ -88,7 +88,7 @@ module Aspera
         )
         # get delegated token to be placed in rest call header and in transfer tags
         @storage_credentials['token'][TOKEN_FIELD] = delegated_oauth.token
-        @headers['X-Aspera-Storage-Credentials'] = JSON.generate(@storage_credentials)
+        headers['X-Aspera-Storage-Credentials'] = JSON.generate(@storage_credentials)
       end
     end
   end

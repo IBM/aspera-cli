@@ -37,10 +37,14 @@ module Aspera
 
       private
 
+      Aspera.require_method!(:start_transfer)
+      Aspera.require_method!(:wait_for_transfers_completion)
+      # method `shutdown` is optional
+      def shutdown
+        nil
+      end
+
       def initialize(progress: nil)
-        Aspera.assert(respond_to?(:start_transfer))
-        Aspera.assert(respond_to?(:wait_for_transfers_completion))
-        # method `shutdown` is optional
         @progress = progress
       end
 

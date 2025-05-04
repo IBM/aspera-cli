@@ -46,5 +46,11 @@ module Aspera
     def error_unexpected_value(value, exception_class: InternalError)
       raise exception_class, "#{block_given? ? "#{yield}: " : nil}unexpected value: #{value.inspect}"
     end
+
+    def require_method!(name)
+      define_method(name) do |*_args|
+        raise NotImplementedError, "#{self.class} must implement the #{name} method"
+      end
+    end
   end
 end

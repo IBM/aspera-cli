@@ -38,3 +38,5 @@ detectors:
     enabled: false
   LongParameterList:
     enabled: false
+  TooManyInstanceVariables:
+    max_instance_variables: 15
