@@ -30,16 +30,10 @@ jobs:
       - name: Run tests
         run: bundle exec rake spec
         env:
-          CF_HSTS_SSH_URL: "ssh://eudemo.asperademo.com:33001"
-          CF_HSTS_SSH_USER: "${{ secrets.CF_HSTS_SSH_USER }}"
-          CF_HSTS_SSH_PASS: "${{ secrets.CF_HSTS_SSH_PASS }}"
+          RSPEC_CONFIG: '{"url":"ssh://eudemo.asperademo.com:33001","username":"${{ secrets.CF_HSTS_SSH_USER }}","password":"${{ secrets.CF_HSTS_SSH_PASS }}"}'
 
       - name: Run ascli test browse
-        run: bundle exec ascli server br /
-        env:
-          ASCLI_URL: "ssh://eudemo.asperademo.com:33001"
-          ASCLI_USERNAME: "${{ secrets.CF_HSTS_SSH_USER }}"
-          ASCLI_PASSWORD: "${{ secrets.CF_HSTS_SSH_PASS }}"
+        run: bundle exec ascli server br / --url=ssh://eudemo.asperademo.com:33001 --username=${{ secrets.CF_HSTS_SSH_USER }} --password=${{ secrets.CF_HSTS_SSH_PASS }}
 
       - name: Run ascli install ascp
         run: bundle exec ascli conf ascp install
