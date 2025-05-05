@@ -52,7 +52,7 @@ module Aspera
               result = api.call(
                 operation:        'POST',
                 headers:          {
-                  'Content-type' => 'text/plain',
+                  'Content-type' => Rest::MIME_TEXT,
                   'Accept'       => 'application/xrds+xml'
                 }
               )
@@ -91,7 +91,7 @@ module Aspera
           # extract elements from faspex public link
           def get_link_data(public_url)
             public_uri = URI.parse(public_url)
-            Aspera.assert((m = public_uri.path.match(%r{^(.*)/(external.*)$})), exception_class: Cli::BadArgument){'Public link does not match Faspex format'}
+            Aspera.assert(m = public_uri.path.match(%r{^(.*)/(external.*)$}), exception_class: Cli::BadArgument){'Public link does not match Faspex format'}
             base = m[1]
             subpath = m[2]
             port_add = public_uri.port.eql?(public_uri.default_port) ? '' : ":#{public_uri.port}"
@@ -252,11 +252,12 @@ module Aspera
           # pkg_created=api_public_link.create(create_path,package_create_params)
           # so extract data from javascript
           package_creation_data = api_public_link.call(
-            operation:   'POST',
-            subpath:     create_path,
-            headers:     {'Accept' => 'text/javascript'},
-            body:        package_create_params,
-            body_type:   :json)[:http].body
+            operation:    'POST',
+            subpath:      create_path,
+            content_type: Rest::MIME_JSON,
+            body:         package_create_params,
+            headers:      {'Accept' => 'text/javascript'}
+          )[:http].body
           # get arguments of function call
           package_creation_data.delete!("\n") # one line
           package_creation_data.gsub!(/^[^"]+\("\{/, '{') # delete header
@@ -415,12 +416,13 @@ module Aspera
                     xml_payload =
                       %Q(<?xml version="1.0" encoding="UTF-8"?><url-list xmlns="http://schemas.asperasoft.com/xml/url-list"><url href="#{sanitized}"/></url-list>)
                     transfer_spec['token'] = api_v3.call(
-                      operation:  'POST',
-                      subpath:    'issue-token',
-                      headers:    {'Accept' => 'text/plain', 'Content-Type' => 'application/vnd.aspera.url-list+xml'},
-                      query:      {'direction' => 'down'},
-                      body:       xml_payload,
-                      body_type:  :text)[:http].body
+                      operation:    'POST',
+                      subpath:      'issue-token',
+                      query:        {'direction' => 'down'},
+                      content_type: Rest::MIME_TEXT,
+                      body:         xml_payload,
+                      headers:      {'Accept' => Rest::MIME_TEXT, 'Content-Type' => 'application/vnd.aspera.url-list+xml'}
+                    )[:http].body
                   end
                   transfer_spec['direction'] = Transfer::Spec::DIRECTION_RECEIVE
                   statuses = transfer.start(transfer_spec)

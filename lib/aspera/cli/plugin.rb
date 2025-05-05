@@ -161,7 +161,13 @@ module Aspera
           if !delete_style.nil?
             one_res_id = [one_res_id] unless one_res_id.is_a?(Array)
             Aspera.assert_type(one_res_id, Array, exception_class: Cli::BadArgument)
-            rest_api.call(operation: 'DELETE', subpath: res_class_path, headers: {'Accept' => 'application/json'}, body: {delete_style => one_res_id}, body_type: :json)
+            rest_api.call(
+              operation:    'DELETE',
+              subpath:      res_class_path,
+              content_type: Rest::MIME_JSON,
+              body:         {delete_style => one_res_id},
+              headers:      {'Accept' => Rest::MIME_JSON}
+            )
             return Main.result_status('deleted')
           end
           return do_bulk_operation(command: command, descr: 'identifier', values: one_res_id) do |one_id|

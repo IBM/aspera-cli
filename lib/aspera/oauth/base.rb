@@ -10,14 +10,15 @@ module Aspera
     # OAuth 2 client for the REST client
     # Generate bearer token
     # Bearer tokens are cached in memory and in a file cache for later re-use
-    # https://tools.ietf.org/html/rfc6749
+    # OAuth 2.0 Authorization Framework: https://tools.ietf.org/html/rfc6749
+    # Bearer Token Usage: https://tools.ietf.org/html/rfc6750
     class Base
       # @param **             Parameters for REST
       # @param client_id      [String, nil]
       # @param client_secret  [String, nil]
       # @param scope          [String, nil]
       # @param use_query      [bool]        Provide parameters in query instead of body
-      # @param path_token     [String]      API end point to create a token
+      # @param path_token     [String]      API end point to create a token from base URL
       # @param token_field    [String]      Field in result that contains the token
       # @param cache_ids      [Array, nil]  List of unique identifiers for cache id generation
       def initialize(
@@ -56,7 +57,7 @@ module Aspera
       # helper method to create token as per RFC
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
-        payload = { body_type: :www }
+        payload = { content_type: Rest::MIME_WWW }
         if @use_query
           payload[:query] = creation_params
         else
@@ -65,7 +66,7 @@ module Aspera
         return @api.call(
           operation: 'POST',
           subpath:   @path_token,
-          headers:   {'Accept' => 'application/json'},
+          headers:   {'Accept' => Rest::MIME_JSON},
           **payload
         )
       end
@@ -96,12 +97,13 @@ module Aspera
         unless token_info.nil?
           token_data = token_info[:data]
           # Optional optimization:
-          # check if node token is expired based on decoded content then force refresh if close enough
+          # Check if token is expired based on decoded content then force refresh if close enough
           # might help in case the transfer agent cannot refresh himself
           # `direct` agent is equipped with refresh code
           # an API was already called, but failed, we need to regenerate or refresh
           if refresh || token_info[:expired]
-            if token_data.key?('refresh_token') && token_data['refresh_token'].eql?('not_supported')
+            refresh_token = nil
+            if token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
               # save possible refresh token, before deleting the cache
               refresh_token = token_data['refresh_token']
             end

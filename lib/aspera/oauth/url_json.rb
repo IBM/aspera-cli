@@ -20,12 +20,12 @@ module Aspera
 
       def create_token
         @api.call(
-          operation:   'POST',
-          subpath:     @path_token,
-          headers:     {'Accept' => 'application/json'},
-          query:       @query.merge(scope: @scope), # scope is here because it may change over time (node)
-          body:        @body,
-          body_type:   :json
+          operation:    'POST',
+          subpath:      @path_token,
+          query:        @query.merge(scope: @scope), # scope is here because it may change over time (node)
+          content_type: Rest::MIME_JSON,
+          body:         @body,
+          headers:      {'Accept' => Rest::MIME_JSON}
         )
       end
     end

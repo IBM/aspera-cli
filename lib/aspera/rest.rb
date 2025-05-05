@@ -57,8 +57,12 @@ module Aspera
     # error message when entity not found (TODO: use specific exception)
     ENTITY_NOT_FOUND = 'No such'
 
+    MIME_JSON = 'application/json'
+    MIME_WWW = 'application/x-www-form-urlencoded'
+    MIME_TEXT = 'text/plain'
+
     # Content-Type that are JSON
-    JSON_DECODE = ['application/json', 'application/vnd.api+json', 'application/x-javascript'].freeze
+    JSON_DECODE = [MIME_JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
 
     class << self
       # @return [String] Basic auth token
@@ -261,20 +265,20 @@ module Aspera
     # @param operation [String] HTTP operation (GET, POST, PUT, DELETE)
     # @param subpath [String] subpath of REST API
     # @param query [Hash] URL parameters
+    # @param content_type [String,nil] Type of body parameters (one of MIME_*) and serialization, else use headers
     # @param body [Hash, String] body parameters
-    # @param body_type [Symbol] type of body parameters (:json, :www, :text, nil)
+    # @param headers [Hash] additional headers (override Content-Type)
     # @param save_to_file (filepath)
     # @param return_error (bool)
-    # @param headers [Hash] additional headers
     def call(
       operation:,
       subpath: nil,
       query: nil,
+      content_type: nil,
       body: nil,
-      body_type: nil,
+      headers: nil,
       save_to_file: nil,
-      return_error: false,
-      headers: nil
+      return_error: false
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
@@ -318,19 +322,18 @@ module Aspera
         rescue NameError
           raise "unsupported operation : #{operation}"
         end
-        case body_type
-        when :json
+        case content_type
+        when nil # ignore
+        when MIME_JSON
           req.body = JSON.generate(body) # , ascii_only: true
-          req['Content-Type'] = 'application/json'
-        when :www
+          req['Content-Type'] = MIME_JSON
+        when MIME_WWW
           req.body = URI.encode_www_form(body)
-          req['Content-Type'] = 'application/x-www-form-urlencoded'
-        when :text
+          req['Content-Type'] = MIME_WWW
+        when MIME_TEXT
           req.body = body
-          req['Content-Type'] = 'text/plain'
-        when nil
-        else
-          raise "unsupported body type : #{body_type}"
+          req['Content-Type'] = MIME_TEXT
+        else Aspera.error_unexpected_value(content_type) {'body type'}
         end
         # set headers
         headers.each do |key, value|
@@ -351,7 +354,7 @@ module Aspera
         # make http request (pipelined)
         http_session.request(req) do |response|
           result[:http] = response
-          result_mime = self.class.parse_header(result[:http]['Content-Type'] || 'text/plain')[:type]
+          result_mime = self.class.parse_header(result[:http]['Content-Type'] || MIME_TEXT)[:type]
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
               result[:http].code.to_s.start_with?('2') &&
@@ -395,7 +398,7 @@ module Aspera
         when *JSON_DECODE
           result[:data] = JSON.parse(result[:http].body) rescue result[:http].body
           Log.log.debug{Log.dump('result_data', result[:data])}
-        else # when 'text/plain'
+        else # when MIME_TEXT
           result[:data] = result[:http].body
         end
         RestErrorAnalyzer.instance.raise_on_error(req, result)
@@ -437,7 +440,7 @@ module Aspera
           end
           # forwards the request to the new location
           return self.class.new(base_url: new_url, redirect_max: tries_remain_redirect).call(
-            operation: operation, query: query, body: body, body_type: body_type,
+            operation: operation, query: query, body: body, content_type: content_type,
             save_to_file: save_to_file, return_error: return_error, headers: headers)
         end
         # raise exception if could not retry and not return error in result
@@ -453,23 +456,23 @@ module Aspera
     #
 
     def create(subpath, params)
-      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)[:data]
+      return call(operation: 'POST', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
     end
 
     def read(subpath, query=nil)
-      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => 'application/json'}, query: query)[:data]
+      return call(operation: 'GET', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: query)[:data]
     end
 
     def update(subpath, params)
-      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => 'application/json'}, body: params, body_type: :json)[:data]
+      return call(operation: 'PUT', subpath: subpath, headers: {'Accept' => MIME_JSON}, body: params, content_type: MIME_JSON)[:data]
     end
 
     def delete(subpath, params=nil)
-      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => 'application/json'}, query: params)[:data]
+      return call(operation: 'DELETE', subpath: subpath, headers: {'Accept' => MIME_JSON}, query: params)[:data]
     end
 
     def cancel(subpath)
-      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => 'application/json'})[:data]
+      return call(operation: 'CANCEL', subpath: subpath, headers: {'Accept' => MIME_JSON})[:data]
     end
 
     # Query entity by general search (read with parameter `q`)
