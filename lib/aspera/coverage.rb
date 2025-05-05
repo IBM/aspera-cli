@@ -27,9 +27,10 @@ if ENV.key?('ENABLE_COVERAGE')
       end
       false
     end
-    # no coverage test in those
+    # no coverage in these files
     add_filter 'lib/aspera/cli/plugins/faspex.rb'
     add_filter 'lib/aspera/node_simulator.rb'
     add_filter 'lib/aspera/keychain/macos_security.rb'
+    add_filter 'lib/aspera/assert.rb'
   end
 end

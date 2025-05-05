@@ -42,7 +42,10 @@ module Aspera
       raise InternalError, "unreachable line reached: #{caller(2..2).first}"
     end
 
-    # the value is not one of the expected values
+    # The value is not one of the expected values
+    # @param value the wrong value
+    # @param exception_class exception to raise
+    # @param block additional description in front
     def error_unexpected_value(value, exception_class: InternalError)
       raise exception_class, "#{block_given? ? "#{yield}: " : nil}unexpected value: #{value.inspect}"
     end
