@@ -6,7 +6,7 @@
 # cspell:ignore cliuser optipng
 # Review the version of ruby to be used periodically from :
 # https://hub.docker.com/_/ruby
-FROM docker.io/ruby:3.4.3
+FROM docker.io/ruby:3.4.3-slim
 #erb: if arg_gem.end_with?('.gem')
 # For beta gem is file, then copy it
 COPY <%=arg_gem%> .
