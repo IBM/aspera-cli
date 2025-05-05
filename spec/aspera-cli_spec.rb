@@ -23,17 +23,10 @@ class LocalExecutor
   end
 end
 
-# check required env vars
-params = {}
-%i[url user pass].each do |p|
-  env = "CF_HSTS_SSH_#{p.to_s.upcase}"
-  params[p] = ENV.fetch(env, nil)
-  raise "missing env var: #{env}" unless params[p].is_a?(String) && !params[p].empty?
-end
-ssh_url = URI.parse(params[:url])
+ssh_url = URI.parse(RSpec.configuration.url)
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN = '/'
-demo_executor = Aspera::Ssh.new(ssh_url.host, params[:user], {password: params[:pass], port: ssh_url.port, use_agent: false})
+demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, {password: RSpec.configuration.password, port: ssh_url.port, use_agent: false})
 
 # to use a local executor, set PATH_FOLDER_MAIN to the pseudo docroot (local) folder
 # PATH_FOLDER_MAIN='/pseudo/docroot'

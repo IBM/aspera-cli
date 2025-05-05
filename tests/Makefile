@@ -164,9 +164,7 @@ clean::
 $(T)unit: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	set -x&&\
-	CF_HSTS_SSH_URL=$$($(CLI_TEST) config preset get server_user url) \
-	CF_HSTS_SSH_USER=$$($(CLI_TEST) config preset get server_user username) \
-	CF_HSTS_SSH_PASS=$$($(CLI_TEST) config preset get server_user password) \
+	RSPEC_CONFIG=$$($(CLI_TEST) config preset show server_user --format=json --show-secrets=yes) \
 	bundle exec rake spec
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tunit,$(T)unit))
