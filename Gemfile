@@ -7,7 +7,7 @@ gemspec
 
 # optional dependency gems for runtime that can cause problems (native part to compile) but seldom used
 group :optional do
-  gem('grpc', '~> 1.65') # for Aspera Transfer Daemon
+  gem('grpc', '~> 1.71') # for Aspera Transfer Daemon
   gem('mimemagic', '~> 0.4') # for preview
   gem('rmagick', '~> 6.1') # for terminal view
   gem('symmetric-encryption', '~> 4.6') # for encrypted hash file secrets
@@ -19,7 +19,7 @@ group :development do
   gem 'rake', '~> 13.0'
   gem 'reek', '~> 6.5.0'
   gem 'rspec', '~> 3.0'
-  gem 'rubocop', '~> 1.12'
+  gem 'rubocop', '~> 1.75'
   gem 'rubocop-ast', '~> 1.4'
   gem 'rubocop-performance', '~> 1.10' unless defined?(JRUBY_VERSION)
   gem 'rubocop-shopify', '~> 2.0'
