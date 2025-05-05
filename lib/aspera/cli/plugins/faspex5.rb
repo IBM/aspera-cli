@@ -391,12 +391,12 @@ module Aspera
             formatter.display_status("Receiving package #{pkg_id}")
             # TODO: allow from sent as well ?
             transfer_spec = @api_v5.call(
-              operation:   'POST',
-              subpath:     "packages/#{pkg_id}/transfer_spec/download",
-              headers:     {'Accept' => 'application/json'},
-              query:       download_params,
-              body:        param_file_list,
-              body_type:   :json
+              operation:    'POST',
+              subpath:      "packages/#{pkg_id}/transfer_spec/download",
+              query:        download_params,
+              content_type: Rest::MIME_JSON,
+              body:         param_file_list,
+              headers:      {'Accept' => Rest::MIME_JSON}
             )[:data]
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
@@ -436,12 +436,13 @@ module Aspera
             path = folders_to_process.shift
             loop do
               response = @api_v5.call(
-                operation:   'POST',
-                subpath:     browse_endpoint,
-                headers:     {'Accept' => 'application/json'},
-                query:       query,
-                body:        {'path' => path, 'filters' => filters},
-                body_type:   :json)
+                operation:    'POST',
+                subpath:      browse_endpoint,
+                query:        query,
+                content_type: Rest::MIME_JSON,
+                body:         {'path' => path, 'filters' => filters},
+                headers:      {'Accept' => Rest::MIME_JSON}
+              )
               all_items.concat(response[:data]['items'])
               if !max_items.nil? && (all_items.count >= max_items)
                 all_items = all_items.slice(0, max_items) if all_items.count > max_items
@@ -497,11 +498,12 @@ module Aspera
             Aspera.assert(ids.all?(String)){"Package id(s) shall be String, but have: #{ids.map(&:class).uniq.join(', ')}"}
             # API returns 204, empty on success
             @api_v5.call(
-              operation: 'DELETE',
-              subpath:   'packages',
-              headers:   {'Accept' => 'application/json'},
-              body:      {ids: ids},
-              body_type: :json)
+              operation:    'DELETE',
+              subpath:      'packages',
+              content_type: Rest::MIME_JSON,
+              body:         {ids: ids},
+              headers:      {'Accept' => Rest::MIME_JSON}
+            )
             return Main.result_status('Package(s) deleted')
           when :receive
             return package_receive(package_id)
@@ -520,12 +522,12 @@ module Aspera
             if shared_folder.nil?
               # send from local files
               transfer_spec = @api_v5.call(
-                operation:   'POST',
-                subpath:     "packages/#{package['id']}/transfer_spec/upload",
-                headers:     {'Accept' => 'application/json'},
-                query:       {transfer_type: TRANSFER_CONNECT},
-                body:        {paths: transfer.source_list},
-                body_type:   :json
+                operation:    'POST',
+                subpath:      "packages/#{package['id']}/transfer_spec/upload",
+                query:        {transfer_type: TRANSFER_CONNECT},
+                content_type: Rest::MIME_JSON,
+                body:         {paths: transfer.source_list},
+                headers:      {'Accept' => Rest::MIME_JSON}
               )[:data]
               # well, we asked a TS for connect, but we actually want a generic one
               transfer_spec.delete('authentication')

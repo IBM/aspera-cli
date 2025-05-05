@@ -411,11 +411,12 @@ module Aspera
             end
             begin
               @api_node.call(
-                operation: 'POST',
-                subpath:   'services/soap/Transfer-201210',
-                headers:   {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'},
-                body:      CENTRAL_SOAP_API_TEST,
-                body_type: :text)[:http].body
+                operation:    'POST',
+                subpath:      'services/soap/Transfer-201210',
+                content_type: Rest::MIME_TEXT,
+                body:         CENTRAL_SOAP_API_TEST,
+                headers:      {'Content-Type' => 'text/xml;charset=UTF-8', 'SOAPAction' => 'FASPSessionNET-200911#GetSessionInfo'}
+              )[:http].body
               nagios.add_ok('central', 'accessible by node')
             rescue StandardError => e
               nagios.add_critical('central', e.to_s)
@@ -762,10 +763,11 @@ module Aspera
               asyncs_id = instance_identifier {|field, value|ssync_lookup(field, value)}
               if %i[start stop].include?(sync_command)
                 @api_node.call(
-                  operation: 'POST',
-                  subpath:   "asyncs/#{asyncs_id}/#{sync_command}",
-                  body:      '',
-                  body_type: :text)[:http].body
+                  operation:    'POST',
+                  subpath:      "asyncs/#{asyncs_id}/#{sync_command}",
+                  content_type: Rest::MIME_TEXT,
+                  body:         ''
+                )[:http].body
                 return Main.result_status('Done')
               end
               parameters = nil

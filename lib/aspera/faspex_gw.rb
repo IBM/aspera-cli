@@ -47,12 +47,12 @@ module Aspera
       package = @app_api.create('packages', package_data)
       # TODO: option to send from remote source or httpgw
       transfer_spec = @app_api.call(
-        operation:   'POST',
-        subpath:     "packages/#{package['id']}/transfer_spec/upload",
-        headers:     {'Accept' => 'application/json'},
-        query:       {transfer_type: Cli::Plugins::Faspex5::TRANSFER_CONNECT},
-        body:        {paths: [{'destination'=>'/'}]},
-        body_type:   :json
+        operation:    'POST',
+        subpath:      "packages/#{package['id']}/transfer_spec/upload",
+        query:        {transfer_type: Cli::Plugins::Faspex5::TRANSFER_CONNECT},
+        content_type: Rest::MIME_JSON,
+        body:         {paths: [{'destination'=>'/'}]},
+        headers:      {'Accept' => Rest::MIME_JSON}
       )[:data]
       transfer_spec.delete('authentication')
       # but we place it in a Faspex package creation response
@@ -80,18 +80,18 @@ module Aspera
             end
           Log.log.info{"faspex_package_create_result=#{faspex_package_create_result}"}
           response.status = 200
-          response.content_type = 'application/json'
+          response.content_type = Rest::MIME_JSON
           response.body = JSON.generate(faspex_package_create_result)
         rescue => e
           response.status = 500
-          response['Content-Type'] = 'application/json'
+          response['Content-Type'] = Rest::MIME_JSON
           response.body = {error: e.message, stacktrace: e.backtrace}.to_json
           Log.log.error(e.message)
           Log.log.debug{e.backtrace.join("\n")}
         end
       else
         response.status = 400
-        response['Content-Type'] = 'application/json'
+        response['Content-Type'] = Rest::MIME_JSON
         response.body = {error: 'Unsupported endpoint'}.to_json
       end
     end
