@@ -201,7 +201,7 @@ module Aspera
           folders_to_process = [get_one_argument_with_prefix(prefix_path, 'path')]
           query = options.get_option(:query, default: {})
           # special parameter: max number of entries in result
-          max_items = query.delete('max')
+          max_items = query.delete(MAX_ITEMS)
           # special parameter: recursive browsing
           recursive = query.delete('recursive')
           # special parameter: only return one entry for the path, even if folder
