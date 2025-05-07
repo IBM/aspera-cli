@@ -278,7 +278,7 @@ module Aspera
         # @return [Hash] {data: , total: }
         def api_read_all(resource_class_path, base_query={})
           return api_call_paging(base_query) do |query|
-            aoc_api.call(operation: 'GET', subpath: resource_class_path, headers: {'Accept' => 'application/json'}, query: query)
+            aoc_api.call(operation: 'GET', subpath: resource_class_path, headers: {'Accept' => Rest::MIME_JSON}, query: query)
           end
         end
 

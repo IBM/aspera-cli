@@ -126,7 +126,7 @@ module Aspera
         # /files/id/files is normally cached in redis, but we can discard the cache
         # but /files/id is not cached
         def get_folder_entries(file_id, request_args=nil)
-          headers = {'Accept' => 'application/json'}
+          headers = {'Accept' => Rest::MIME_JSON}
           headers['X-Aspera-Cache-Control'] = 'no-cache' if @option_folder_reset_cache.eql?(:header)
           return @api_node.call(
             operation: 'GET',
