@@ -149,7 +149,7 @@ module Aspera
 
       # Call node API, possibly adding cache control header, as globally specified
       def read_with_cache(subpath, query=nil)
-        headers = {'Accept' => 'application/json'}
+        headers = {'Accept' => Rest::MIME_JSON}
         headers[HEADER_X_CACHE_CONTROL] = 'no-cache' unless self.class.use_node_cache
         return call(
           operation: 'GET',

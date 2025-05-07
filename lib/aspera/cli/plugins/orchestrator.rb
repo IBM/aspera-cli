@@ -22,7 +22,7 @@ module Aspera
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)
               test_endpoint = 'api/remote_node_ping'
-              result = api.call(operation: 'GET', subpath: test_endpoint, headers: {'Accept' => 'application/json'}, query: {format: :json})
+              result = api.call(operation: 'GET', subpath: test_endpoint, headers: {'Accept' => Rest::MIME_JSON}, query: {format: :json})
               next unless result[:data]['remote_orchestrator_info']
               url = result[:http].uri.to_s
               return {
