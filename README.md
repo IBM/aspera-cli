@@ -502,7 +502,7 @@ Some additional gems are required for some specific features, see [Gemfile](Gemf
 
 | name | version | comment |
 | ---- | ------- | ------- |
-| grpc | ~> 1.65 | for Aspera Transfer Daemon |
+| grpc | ~> 1.71 | for Aspera Transfer Daemon |
 | mimemagic | ~> 0.4 | for preview |
 | rmagick | ~> 6.1 | for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
@@ -511,7 +511,7 @@ Some additional gems are required for some specific features, see [Gemfile](Gemf
 Install like this:
 
 ```bash
-gem install grpc -v '~> 1.65'
+gem install grpc -v '~> 1.71'
 gem install mimemagic -v '~> 0.4'
 gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
