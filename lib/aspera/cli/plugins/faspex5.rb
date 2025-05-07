@@ -420,7 +420,7 @@ module Aspera
           Aspera.assert_type(filters, Hash)
           filters['basenames'] ||= []
           Aspera.assert_type(filters, Hash){'filters'}
-          max_items = query.delete('max')
+          max_items = query.delete(MAX_ITEMS)
           recursive = query.delete('recursive')
           use_paging = query.delete('paging') {true}
           if use_paging
