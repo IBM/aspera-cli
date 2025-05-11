@@ -5,14 +5,16 @@
   * New Features:
     * `vault`: Support for IBM HashiCorp Vault.
     * `faspex5`: Support paging for Faspex5 browsing.
-  
+  * Issues Fixed:
+    * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
+
 * 4.21.2
 
   * New Features:
     * **container**: Updated Ruby to 3.4.2
   * Issues Fixed:
     * **global**: #185 `@val:` shall stop processing extended values
-    * **global**: #186 Removed dependency on OpenSSL 3.3 gem to avoid Msys dep on Windows.
+    * **global**: #186 Removed dependency on OpenSSL 3.3 gem to avoid MSYS2 dep on Windows.
     * `echo`: Display of list (Array) was showing only first element of it.
     * `transferd`: support for version 1.1.5+
   * Breaking Changes:
