@@ -283,7 +283,7 @@ module Aspera
           if ws_info.nil?
             {
               id:   nil,
-              name: 'Shared folders'
+              name: "Shared #{application}"
             }
           else
             {
