@@ -64,7 +64,7 @@ module Aspera
       garbage_files = current_files(persist_category)
       if !max_age_seconds.nil?
         current_time = Time.now
-        garbage_files.select! { |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}
+        garbage_files.select!{ |filepath| (current_time - File.stat(filepath).mtime).to_i > max_age_seconds}
       end
       garbage_files.each do |filepath|
         File.delete(filepath)
@@ -79,7 +79,7 @@ module Aspera
     end
 
     def current_items(persist_category)
-      current_files(persist_category).each_with_object({}) {|i, h| h[File.basename(i, FILE_SUFFIX)] = File.read(i)}
+      current_files(persist_category).each_with_object({}){ |i, h| h[File.basename(i, FILE_SUFFIX)] = File.read(i)}
     end
 
     private

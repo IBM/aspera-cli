@@ -148,7 +148,7 @@ module Aspera
             ssh_key_list = [ssh_key_list] if ssh_key_list.is_a?(String)
             Aspera.assert_type(ssh_key_list, Array){'ssh_keys'}
             Aspera.assert(ssh_key_list.all?(String))
-            ssh_key_list.map!{|p|File.expand_path(p)}
+            ssh_key_list.map!{ |p| File.expand_path(p)}
             Log.log.debug{"SSH keys=#{ssh_key_list}"}
             if !ssh_key_list.empty?
               @ssh_opts[:keys] = ssh_key_list
@@ -176,7 +176,7 @@ module Aspera
             return Main.result_transfer(transfer.start(transfer_spec))
           when :sync
             # lets ignore the arguments provided by execute_sync_action, we just give the transfer spec
-            return execute_sync_action {transfer_spec}
+            return execute_sync_action{transfer_spec}
           end
         end
 
@@ -220,7 +220,7 @@ module Aspera
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer', 'ok')
               else
-                nagios.add_critical('transfer', statuses.reject{|i|i.eql?(:success)}.first.to_s)
+                nagios.add_critical('transfer', statuses.reject{ |i| i.eql?(:success)}.first.to_s)
               end
             else Aspera.error_unexpected_value(command_nagios)
             end

@@ -194,7 +194,7 @@ module Aspera
             if event.dig('data', 'type').eql?('file')
               file_entry = @api_node.read("files/#{event['data']['id']}") rescue nil
               if !file_entry.nil? &&
-                  @option_skip_folders.none?{|d|file_entry['path'].start_with?(d)}
+                  @option_skip_folders.none?{ |d| file_entry['path'].start_with?(d)}
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
                 if event['types'].include?('file.deleted')
                   Log.log.error('TODO'.red)
@@ -460,7 +460,7 @@ module Aspera
                   'id'   => @access_key_self['root_file_id'],
                   'name' => '/',
                   'type' => 'folder',
-                  'path' => '/' }
+                  'path' => '/'}
               else
                 @api_node.read("files/#{scan_id}")
               end

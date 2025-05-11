@@ -29,7 +29,7 @@ module Aspera
         }
       ].freeze
       # name of minimal arguments required, also used to generate a session name
-      SYNC_SIMPLE_ARGS = SYNC_ARGUMENTS_INFO.map{|i|i[:conf]}.freeze
+      SYNC_SIMPLE_ARGS = SYNC_ARGUMENTS_INFO.map{ |i| i[:conf]}.freeze
       private_constant :SYNC_ARGUMENTS_INFO, :SYNC_SIMPLE_ARGS
 
       class << self

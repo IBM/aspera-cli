@@ -50,7 +50,7 @@ module Aspera
           pixel_colors = []
           image.each_pixel do |pixel, col, row|
             pixel_rgb = [pixel.red, pixel.green, pixel.blue]
-            pixel_rgb = pixel_rgb.map { |color| color >> shift_for_8_bit } unless shift_for_8_bit.eql?(0)
+            pixel_rgb = pixel_rgb.map{ |color| color >> shift_for_8_bit} unless shift_for_8_bit.eql?(0)
             # init 2-dim array
             pixel_colors[row] ||= []
             pixel_colors[row][col] = pixel_rgb
@@ -82,7 +82,7 @@ module Aspera
             size:                blob.length
             # width:               image.columns,
             # height:              image.rows
-          }.map { |k, v| "#{k}=#{v}" }.join(';')
+          }.map{ |k, v| "#{k}=#{v}"}.join(';')
           # \a is BEL, \e is ESC : https://github.com/ruby/ruby/blob/master/doc/syntax/literals.rdoc#label-Strings
           # escape sequence for iTerm2 image display
           return "\e]1337;File=#{arguments}:#{Base64.encode64(blob)}\a"
@@ -91,7 +91,7 @@ module Aspera
         # @return [Boolean] true if the terminal supports iTerm2 image display
         def iterm_supported?
           TERM_ENV_VARS.each do |env_var|
-            return true if ITERM_NAMES.any? { |term| ENV[env_var]&.include?(term) }
+            return true if ITERM_NAMES.any?{ |term| ENV[env_var]&.include?(term)}
           end
           false
         end

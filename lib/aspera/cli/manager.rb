@@ -21,7 +21,7 @@ module Aspera
         @option_name = option_name
         @has_writer = @object.respond_to?(writer_method)
         Log.log.trace1{"AttrAccessor: #{@option_name}: #{@object.class}.#{@method}: writer=#{@has_writer}"}
-        Aspera.assert(@object.respond_to?(@method)) {"#{object} does not respond to #{method_name}"}
+        Aspera.assert(@object.respond_to?(@method)){"#{object} does not respond to #{method_name}"}
       end
 
       def value
@@ -76,9 +76,9 @@ module Aspera
         # find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
           # we accept shortcuts
-          matching_exact = allowed_values.select{|i| i.to_s.eql?(short_value)}
+          matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
-          matching = allowed_values.select{|i| i.to_s.start_with?(short_value)}
+          matching = allowed_values.select{ |i| i.to_s.start_with?(short_value)}
           multi_choice_assert(!matching.empty?, "unknown value for #{descr}: #{short_value}", allowed_values)
           multi_choice_assert(matching.length.eql?(1), "ambiguous shortcut for #{descr}: #{short_value}", matching)
           return enum_to_bool(matching.first) if allowed_values.eql?(BOOLEAN_VALUES)
@@ -89,7 +89,7 @@ module Aspera
         # @param error_msg [String] error message
         # @param accept_list [Array] list of allowed values
         def multi_choice_assert(assertion, error_msg, accept_list)
-          raise Cli::BadArgument, [error_msg, 'Use:'].concat(accept_list.map{|c|"- #{c}"}.sort).join("\n") unless assertion
+          raise Cli::BadArgument, [error_msg, 'Use:'].concat(accept_list.map{ |c| "- #{c}"}.sort).join("\n") unless assertion
         end
 
         # change option name with dash to name with underscore
@@ -113,7 +113,7 @@ module Aspera
           value_list.each do |value|
             raise Cli::BadArgument,
               "#{what.to_s.capitalize} #{descr} is a #{value.class} but must be #{type_list.length > 1 ? 'one of: ' : ''}#{type_list.map(&:name).join(', ')}" unless
-              type_list.any?{|t|value.is_a?(t)}
+              type_list.any?{ |t| value.is_a?(t)}
           end
         end
       end
@@ -202,13 +202,13 @@ module Aspera
           if !@unprocessed_cmd_line_arguments.empty?
             how_many = multiple ? @unprocessed_cmd_line_arguments.length : 1
             values = @unprocessed_cmd_line_arguments.shift(how_many)
-            values = values.map{|v|evaluate_extended_value(v, allowed_types)}
+            values = values.map{ |v| evaluate_extended_value(v, allowed_types)}
             # if expecting list and only one arg of type array : it is the list
             values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
             if accept_list
               allowed_values = [].concat(accept_list)
               allowed_values.concat(aliases.keys) unless aliases.nil?
-              values = values.map{|v|self.class.get_from_list(v, descr, allowed_values)}
+              values = values.map{ |v| self.class.get_from_list(v, descr, allowed_values)}
             end
             multiple ? values : values.first
           elsif !default.nil? then default
@@ -309,7 +309,7 @@ module Aspera
         Aspera.assert(!@declared_options.key?(option_symbol)){"#{option_symbol} already declared"}
         Aspera.assert(description[-1] != '.'){"#{option_symbol} ends with dot"}
         Aspera.assert(description[0] == description[0].upcase){"#{option_symbol} description does not start with capital"}
-        Aspera.assert(!['hash', 'extended value'].any?{|s|description.downcase.include?(s) }){"#{option_symbol} shall use :types"}
+        Aspera.assert(!['hash', 'extended value'].any?{ |s| description.downcase.include?(s)}){"#{option_symbol} shall use :types"}
         opt = @declared_options[option_symbol] = {
           read_write: handler.nil? ? :value : :accessor,
           # by default passwords and secrets are sensitive, else specify when declaring the option
@@ -339,7 +339,7 @@ module Aspera
           on_args.push(symbol_to_option(option_symbol, 'VALUE'))
           on_args.push("-#{short}VALUE") unless short.nil?
           on_args.push(coerce) unless coerce.nil?
-          @parser.on(*on_args) { |v| set_option(option_symbol, v, where: SOURCE_USER) }
+          @parser.on(*on_args){ |v| set_option(option_symbol, v, where: SOURCE_USER)}
         when Array, :bool
           if values.eql?(:bool)
             values = BOOLEAN_VALUES
@@ -348,14 +348,14 @@ module Aspera
           # this option value must be a symbol
           opt[:values] = values
           value = get_option(option_symbol)
-          help_values = values.map{|i|i.eql?(value) ? highlight_current(i) : i}.join(', ')
+          help_values = values.map{ |i| i.eql?(value) ? highlight_current(i) : i}.join(', ')
           if values.eql?(BOOLEAN_VALUES)
-            help_values = BOOLEAN_SIMPLE.map{|i|(i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
+            help_values = BOOLEAN_SIMPLE.map{ |i| (i.eql?(:yes) && value) || (i.eql?(:no) && !value) ? highlight_current(i) : i}.join(', ')
           end
           on_args[0] = "#{description}: #{help_values}"
           on_args.push(symbol_to_option(option_symbol, 'ENUM'))
           on_args.push(values)
-          @parser.on(*on_args){|v|set_option(option_symbol, self.class.get_from_list(v.to_s, description, values), where: SOURCE_USER)}
+          @parser.on(*on_args){ |v| set_option(option_symbol, self.class.get_from_list(v.to_s, description, values), where: SOURCE_USER)}
         when :date
           on_args.push(symbol_to_option(option_symbol, 'DATE'))
           @parser.on(*on_args) do |v|
@@ -478,7 +478,7 @@ module Aspera
       def prompt_user_input_in_list(prompt, sym_list)
         loop do
           input = prompt_user_input(prompt).to_sym
-          if sym_list.any?{|a|a.eql?(input)}
+          if sym_list.any?{ |a| a.eql?(input)}
             return input
           else
             $stderr.puts("No such #{prompt}: #{input}, select one of: #{sym_list.join(', ')}")
@@ -522,7 +522,7 @@ module Aspera
       private
 
       def evaluate_extended_value(value, types)
-        if DEFAULT_PARSER_TYPES.include?(types) || (types.is_a?(Array) && types.all?{|t|DEFAULT_PARSER_TYPES.include?(t)})
+        if DEFAULT_PARSER_TYPES.include?(types) || (types.is_a?(Array) && types.all?{ |t| DEFAULT_PARSER_TYPES.include?(t)})
           return ExtendedValue.instance.evaluate_with_default(value)
         end
         return ExtendedValue.instance.evaluate(value)

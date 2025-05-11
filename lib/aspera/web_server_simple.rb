@@ -58,7 +58,7 @@ module Aspera
         else
           Aspera.assert_type(certificate, Hash)
           certificate = certificate.symbolize_keys
-          raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{|key|!CERT_PARAMETERS.include?(key)}
+          raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{ |key| !CERT_PARAMETERS.include?(key)}
           if certificate.key?(:pkcs12)
             Log.log.debug('Using PKCS12 certificate')
             raise 'pkcs12 requires a key (password)' unless certificate.key?(:key)
@@ -88,14 +88,14 @@ module Aspera
       # call constructor of parent class, but capture STDERR
       # self signed certificate generates characters on STDERR
       # see create_self_signed_cert in webrick/ssl.rb
-      Log.capture_stderr { super(webrick_options) }
+      Log.capture_stderr{super(webrick_options)}
     end
 
     # blocking
     def start
       Log.log.info{"Listening on #{@url}"}
       # kill -HUP for graceful shutdown
-      Kernel.trap('HUP') { shutdown }
+      Kernel.trap('HUP'){shutdown}
       super
     end
 

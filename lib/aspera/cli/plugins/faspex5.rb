@@ -187,7 +187,7 @@ module Aspera
           else Aspera.error_unexpected_value(auth_type)
           end
           # in case user wants to use HTTPGW tell transfer agent how to get address
-          transfer.httpgw_url_cb = lambda { @api_v5.read('account')['gateway_url'] }
+          transfer.httpgw_url_cb = lambda{@api_v5.read('account')['gateway_url']}
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
@@ -304,7 +304,7 @@ module Aspera
             Aspera.assert(field.eql?('name')){'Default query is on name only'}
             query = {'q'=> value}
           end
-          found = list_entities(type: type, real_path: real_path, query: query, item_list_key: item_list_key).select{|i|i[field].eql?(value)}
+          found = list_entities(type: type, real_path: real_path, query: query, item_list_key: item_list_key).select{ |i| i[field].eql?(value)}
           case found.length
           when 0 then raise "No #{type} with #{field} = #{value}"
           when 1 then return found.first
@@ -350,28 +350,28 @@ module Aspera
           case package_ids
           when SpecialValues::INIT
             Aspera.assert(skip_ids_persistency){'Only with option once_only'}
-            skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{|p|p['id']})
+            skip_ids_persistency.data.clear.concat(list_packages_with_filter.map{ |p| p['id']})
             skip_ids_persistency.save
             return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
           when SpecialValues::ALL
             # TODO: if packages have same name, they will overwrite ?
             packages = list_packages_with_filter(query: {'status' => 'completed'})
-            Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
+            Log.log.trace1{Log.dump(:package_ids, packages.map{ |p| p['id']})}
             Log.log.trace1{Log.dump(:skip_ids, skip_ids_persistency.data)}
-            packages.reject!{|p|skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
-            Log.log.trace1{Log.dump(:package_ids, packages.map{|p|p['id']})}
+            packages.reject!{ |p| skip_ids_persistency.data.include?(p['id'])} if skip_ids_persistency
+            Log.log.trace1{Log.dump(:package_ids, packages.map{ |p| p['id']})}
           else
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)
             Aspera.assert_type(package_ids, Array){'Expecting a single package id or a list of ids'}
             Aspera.assert(package_ids.all?(String)){'Package id shall be String'}
             # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")}
-            packages = package_ids.map{|pkg_id|{'id'=>pkg_id}}
+            packages = package_ids.map{ |pkg_id| {'id'=>pkg_id}}
           end
           result_transfer = []
           param_file_list = {}
           begin
-            param_file_list['paths'] = transfer.source_list.map{|source|{'path'=>source}}
+            param_file_list['paths'] = transfer.source_list.map{ |source| {'path'=>source}}
           rescue Cli::BadArgument
             # paths is optional
           end
@@ -416,13 +416,13 @@ module Aspera
         def browse_folder(browse_endpoint)
           folders_to_process = [options.get_next_argument('folder path', default: '/')]
           query = query_read_delete(default: {})
-          filters = query.delete('filters') {{}}
+          filters = query.delete('filters'){{}}
           Aspera.assert_type(filters, Hash)
           filters['basenames'] ||= []
           Aspera.assert_type(filters, Hash){'filters'}
           max_items = query.delete(MAX_ITEMS)
           recursive = query.delete('recursive')
-          use_paging = query.delete('paging') {true}
+          use_paging = query.delete('paging'){true}
           if use_paging
             browse_endpoint = "#{browse_endpoint}/page"
             query['per_page'] ||= 500
@@ -449,7 +449,7 @@ module Aspera
                 break
               end
               if recursive
-                folders_to_process.concat(response[:data]['items'].select{|i|i['type'].eql?('directory')}.map{|i|i['path']})
+                folders_to_process.concat(response[:data]['items'].select{ |i| i['type'].eql?('directory')}.map{ |i| i['path']})
               end
               if use_paging
                 iteration_token = response[:http][HEADER_ITERATION_TOKEN]
@@ -629,7 +629,7 @@ module Aspera
             end
             return browse_folder("#{res_path}/#{node_id}/browse")
           when :invite_external_collaborator
-            shared_inbox_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            shared_inbox_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
             creation_payload = value_create_modify(command: res_command, type: [Hash, String])
             creation_payload = {'email_address' => creation_payload} if creation_payload.is_a?(String)
             res_path = "#{res_type}/#{shared_inbox_id}/external_collaborator"
@@ -642,7 +642,7 @@ module Aspera
               query: {})
             return Main.result_single_object(result)
           when :members, :saml_groups
-            res_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            res_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
             res_prefix = "#{res_type}/#{res_id}"
             res_path = "#{res_prefix}/#{res_command}"
             list_key = res_command.to_s
@@ -665,7 +665,7 @@ module Aspera
                 end
               end
               access = options.get_next_argument('level', mandatory: false, accept_list: %i[submit_only standard shared_inbox_admin], default: :standard)
-              options.unshift_next_argument({user: users.map{|u|{id: u, access: access}}})
+              options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
             return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
                      lookup_entity_by_field(
@@ -675,7 +675,7 @@ module Aspera
                        query: {type: Rest.array_params(%w{local_user saml_user self_registered_user external_user})})['id']
                    end
           when :reset_password
-            contact_id = instance_identifier { |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
+            contact_id = instance_identifier{ |field, value| lookup_entity_by_field(type: res_type.to_s, field: field, value: value, query: res_id_query)['id']}
             adm_api.create("#{res_type}/#{contact_id}/reset_password", {})
             return Main.result_status('password reset, user shall check email')
           end
@@ -712,20 +712,20 @@ module Aspera
             conf_cmd = options.get_next_command(%i[show modify])
             case conf_cmd
             when :show
-              return { type: :single_object, data: @api_v5.read(conf_path) }
+              return {type: :single_object, data: @api_v5.read(conf_path)}
             when :modify
-              return { type: :single_object, data: @api_v5.update(conf_path, value_create_modify(command: conf_cmd)) }
+              return {type: :single_object, data: @api_v5.update(conf_path, value_create_modify(command: conf_cmd))}
             end
           when :smtp
             smtp_path = 'configuration/smtp'
             smtp_cmd = options.get_next_command(%i[show create modify delete test])
             case smtp_cmd
             when :show
-              return { type: :single_object, data: @api_v5.read(smtp_path) }
+              return {type: :single_object, data: @api_v5.read(smtp_path)}
             when :create
-              return { type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)) }
+              return {type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))}
             when :modify
-              return { type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)) }
+              return {type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd))}
             when :delete
               @api_v5.delete(smtp_path)
               return Main.result_status('SMTP configuration deleted')
@@ -735,7 +735,7 @@ module Aspera
               creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
               result = wait_for_job(creation['job_id'])
               result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
-              return { type: :single_object, data: result }
+              return {type: :single_object, data: result}
             end
           end
         end
@@ -747,7 +747,7 @@ module Aspera
           set_api unless command.eql?(:postprocessing)
           case command
           when :version
-            return { type: :single_object, data: @api_v5.read('version') }
+            return {type: :single_object, data: @api_v5.read('version')}
           when :health
             nagios = Nagios.new
             begin
@@ -762,11 +762,11 @@ module Aspera
           when :user
             case options.get_next_command(%i[account profile])
             when :account
-              return { type: :single_object, data: @api_v5.read('account') }
+              return {type: :single_object, data: @api_v5.read('account')}
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: @api_v5.read('account/preferences') }
+                return {type: :single_object, data: @api_v5.read('account/preferences')}
               when :modify
                 @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
                 return Main.result_status('modified')
@@ -783,12 +783,12 @@ module Aspera
               return Main.result_object_list(all_shared_folders)
             when :browse
               shared_folder_id = instance_identifier do |field, value|
-                matches = all_shared_folders.select{|i|i[field].eql?(value)}
+                matches = all_shared_folders.select{ |i| i[field].eql?(value)}
                 raise "no match for #{field} = #{value}" if matches.empty?
                 raise "multiple matches for #{field} = #{value}" if matches.length > 1
                 matches.first['id']
               end
-              node = all_shared_folders.find{|i|i['id'].eql?(shared_folder_id)}
+              node = all_shared_folders.find{ |i| i['id'].eql?(shared_folder_id)}
               raise "No such shared folder id #{shared_folder_id}" if node.nil?
               return browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse")
             end

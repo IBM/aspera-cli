@@ -17,7 +17,7 @@ module Aspera
     # add methods to add nagios error levels, each take component name and message
     LEVELS.each_index do |code|
       name = "#{ADD_PREFIX}#{LEVELS[code]}".to_sym
-      define_method(name){|comp, msg|@data.push({code: code, comp: comp, msg: msg})}
+      define_method(name){ |comp, msg| @data.push({code: code, comp: comp, msg: msg})}
     end
 
     class << self
@@ -28,17 +28,17 @@ module Aspera
         %w[status component message].each do |c|
           Aspera.assert(data.first.key?(c)){"result must have #{c}"}
         end
-        res_errors = data.reject{|s|s['status'].eql?('ok')}
+        res_errors = data.reject{ |s| s['status'].eql?('ok')}
         # keep only errors in case of problem, other ok are assumed so
         data = res_errors unless res_errors.empty?
         # first is most critical
-        data.sort!{|a, b|LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
+        data.sort!{ |a, b| LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym)}
         # build message: if multiple components: concatenate
         # message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
         message = data
-          .map{|i|i['component']}
+          .map{ |i| i['component']}
           .uniq
-          .map{|comp|comp + ':' + data.select{|d|d['component'].eql?(comp)}.map{|d|d['message']}.join(',')}
+          .map{ |comp| comp + ':' + data.select{ |d| d['component'].eql?(comp)}.map{ |d| d['message']}.join(',')}
           .join(', ')
           .tr("\n", ' ')
         status = data.first['status'].upcase
@@ -80,7 +80,7 @@ module Aspera
     # translate for display
     def result
       raise 'missing result' if @data.empty?
-      {type: :object_list, data: @data.map{|i|{'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}}
+      {type: :object_list, data: @data.map{ |i| {'status' => LEVELS[i[:code]].to_s, 'component' => i[:comp], 'message' => i[:msg]}}}
     end
   end
 end

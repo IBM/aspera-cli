@@ -95,7 +95,7 @@ module Aspera
           end
           Log.log.debug{"Daemon started with pid #{@daemon_pid}"}
           Process.detach(@daemon_pid) unless @stop
-          at_exit {shutdown}
+          at_exit{shutdown}
           # update port for next connection attempt (if auto high port was requested)
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
           # local daemon started, try again

@@ -60,7 +60,7 @@ module Aspera
           end
 
           def key_chains(output)
-            output.split("\n").collect { |line| new(line.strip.gsub(/^"|"$/, '')) }
+            output.split("\n").collect{ |line| new(line.strip.gsub(/^"|"$/, ''))}
           end
 
           def default
@@ -77,7 +77,7 @@ module Aspera
           end
 
           def by_name(name)
-            list.find{|kc|kc.path.end_with?("/#{name}.keychain-db")}
+            list.find{ |kc| kc.path.end_with?("/#{name}.keychain-db")}
           end
         end
         attr_reader :path

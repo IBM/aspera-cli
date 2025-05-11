@@ -24,7 +24,7 @@ module Aspera
       SUPPORTED_AGENTS = Agent::Base.agent_list.freeze
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       # Short names of columns in manual
-      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{|agent_sym|agent_sym.to_s[0].to_sym}
+      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{ |agent_sym| agent_sym.to_s[0].to_sym}
       HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
 
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
@@ -57,7 +57,7 @@ module Aspera
               param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(agent_sym))
             end
             # only keep lines that are usable in supported agents
-            next if SUPPORTED_AGENTS_SHORT.inject(true){|memory, agent_short_sym|memory && param[agent_short_sym].empty?}
+            next if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
             param[:cli] =
               case options[:cli][:type]
               when :envvar then 'env:' + options[:cli][:variable]
@@ -71,7 +71,7 @@ module Aspera
                   [options[:accepted_types]]
                 else
                   raise "error: #{param}"
-                end.map{|n|"{#{n}}"}.join('|')
+                end.map{ |n| "{#{n}}"}.join('|')
                 conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
                 "#{options[:cli][:switch]} #{conversion_tag}#{values}"
               when :special then formatter.special_format('special')
@@ -84,7 +84,7 @@ module Aspera
             param[:description] = param[:description].gsub('&sol;', '\\')
             result.push(param)
           end
-          return result.sort_by { |parameter_info| parameter_info[:name] }
+          return result.sort_by{ |parameter_info| parameter_info[:name]}
         end
 
         # special encoding methods used in YAML (key: :convert)
@@ -99,7 +99,7 @@ module Aspera
         # file list is provided directly with ascp arguments
         # @param ascp_args [Array,NilClass] ascp arguments
         def ascp_args_file_list?(ascp_args)
-          ascp_args&.any?{|i|FILE_LIST_OPTIONS.include?(i)}
+          ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end
       end
 
@@ -140,22 +140,22 @@ module Aspera
         # transfer spec contains paths ?
         if !ts_paths_array.nil?
           Aspera.assert(!ascp_file_list_provided){'file list provided both in transfer spec and ascp file list. Remove one of them.'}
-          Aspera.assert(ts_paths_array.all?{|i|i.key?('source')}){"All elements of paths must have a 'source' key"}
-          is_pair_list = ts_paths_array.any?{|i|i.key?('destination')}
-          raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{|i|i.key?('destination')}
+          Aspera.assert(ts_paths_array.all?{ |i| i.key?('source')}){"All elements of paths must have a 'source' key"}
+          is_pair_list = ts_paths_array.any?{ |i| i.key?('destination')}
+          raise "All elements of paths must be consistent with 'destination' key" if is_pair_list && !ts_paths_array.all?{ |i| i.key?('destination')}
           if self.class.file_list_folder.nil?
             Aspera.assert(!is_pair_list){'file pair list is not supported when file list folder is not set'}
             # not safe for special characters ? (maybe not, depends on OS)
             Log.log.debug('placing source file list on command line (no file list file)')
-            @builder.add_command_line_options(ts_paths_array.map{|i|i['source']})
+            @builder.add_command_line_options(ts_paths_array.map{ |i| i['source']})
           else
             # safer option: generate a file list file if there is storage defined for it
             if is_pair_list
               file_list_option = '--file-pair-list'
-              lines = ts_paths_array.each_with_object([]){|e, m|m.push(e['source'], e['destination']) }
+              lines = ts_paths_array.each_with_object([]){ |e, m| m.push(e['source'], e['destination'])}
             else
               file_list_option = '--file-list'
-              lines = ts_paths_array.map{|i|i['source']}
+              lines = ts_paths_array.map{ |i| i['source']}
             end
             file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
             Log.log.debug{Log.dump(:file_list, lines)}

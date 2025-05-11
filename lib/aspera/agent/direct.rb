@@ -136,7 +136,7 @@ module Aspera
         if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
-          session[:thread] = Thread.new {transfer_thread_entry(session)}
+          session[:thread] = Thread.new{transfer_thread_entry(session)}
           @sessions.push(session)
         else
           Log.log.debug('Starting multi session threads')
@@ -153,7 +153,7 @@ module Aspera
             # option: increment (default as per ascp manual) or not (cluster on other side ?)
             args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
             # finally start the thread
-            this_session[:thread] = Thread.new {transfer_thread_entry(this_session)}
+            this_session[:thread] = Thread.new{transfer_thread_entry(this_session)}
             @sessions.push(this_session)
           end
         end
@@ -184,7 +184,7 @@ module Aspera
 
       # @return [Array] list of sessions for a job
       def sessions_by_job(job_id)
-        @sessions.select{|session| session[:job_id].eql?(job_id)}
+        @sessions.select{ |session| session[:job_id].eql?(job_id)}
       end
 
       # send command to management port of command (used in `asession)
@@ -194,7 +194,7 @@ module Aspera
       # {'type'=>'START','source'=>_path_,'destination'=>_path_}
       # {'type'=>'DONE'}
       def send_command(job_id, data)
-        session = @sessions.find{|session| session[:job_id].eql?(job_id)}
+        session = @sessions.find{ |session| session[:job_id].eql?(job_id)}
         Log.log.debug{"command: #{data}"}
         session[:io].puts(Ascp::Management.command_to_stream(data))
       end

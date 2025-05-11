@@ -24,8 +24,8 @@ module Aspera
 
       def disable_ecd_sha2_algorithms
         Log.log.debug('Disabling SSH ecdsa')
-        Net::SSH::Transport::Algorithms::ALGORITHMS.each_value { |a| a.reject! { |a| a =~ /^ecd(sa|h)-sha2/ } }
-        Net::SSH::KnownHosts::SUPPORTED_TYPE.reject! { |t| t =~ /^ecd(sa|h)-sha2/ }
+        Net::SSH::Transport::Algorithms::ALGORITHMS.each_value{ |a| a.reject!{ |a| a =~ /^ecd(sa|h)-sha2/}}
+        Net::SSH::KnownHosts::SUPPORTED_TYPE.reject!{ |t| t =~ /^ecd(sa|h)-sha2/}
       end
     end
     # ssh_options: same as Net::SSH.start
@@ -49,7 +49,7 @@ module Aspera
       Net::SSH.start(@host, @username, @ssh_options) do |session|
         ssh_channel = session.open_channel do |channel|
           # prepare stdout processing
-          channel.on_data{|_chan, data|response.push(data)}
+          channel.on_data{ |_chan, data| response.push(data)}
           # prepare stderr processing, stderr if type = 1
           channel.on_extended_data do |_chan, _type, data|
             error_message = "#{cmd}: [#{data.chomp}]"
@@ -58,7 +58,7 @@ module Aspera
             raise error_message
           end
           # send command to SSH channel (execute) cspell: disable-next-line
-          channel.send('cexe'.reverse, cmd){|_ch, _success|channel.send_data(input) unless input.nil?}
+          channel.send('cexe'.reverse, cmd){ |_ch, _success| channel.send_data(input) unless input.nil?}
         end
         # wait for channel to finish (command exit)
         ssh_channel.wait

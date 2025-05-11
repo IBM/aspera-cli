@@ -23,7 +23,7 @@ module Aspera
           api_version:       api_version,
           upload_chunk_size: upload_chunk_size,
           synchronous:       synchronous,
-          notify_cb:         ->(*pa, **ka) { notify_progress(*pa, **ka) }
+          notify_cb:         ->(*pa, **ka){notify_progress(*pa, **ka)}
         )
       end
 

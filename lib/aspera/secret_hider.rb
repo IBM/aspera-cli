@@ -62,17 +62,17 @@ module Aspera
         # only Strings can be secrets, not booleans, or hash, arrays
         return false unless keyword.is_a?(String) && value.is_a?(String)
         # those are not secrets
-        return false if KEY_FALSE_POSITIVES.any?{|f|f.match?(keyword)}
+        return false if KEY_FALSE_POSITIVES.any?{ |f| f.match?(keyword)}
         return true if ADDITIONAL_KEYS_TO_HIDE.include?(keyword)
         # check if keyword (name) contains an element that designate it as a secret
-        ALL_SECRETS.any?{|kw|keyword.include?(kw)}
+        ALL_SECRETS.any?{ |kw| keyword.include?(kw)}
       end
 
       # Hides recursively secrets in Hash or Array of Hash
       def deep_remove_secret(obj)
         case obj
         when Array
-          obj.each{|i|deep_remove_secret(i)}
+          obj.each{ |i| deep_remove_secret(i)}
         when Hash
           obj.each do |k, v|
             if secret?(k, v)

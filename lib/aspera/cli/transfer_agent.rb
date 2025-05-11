@@ -38,7 +38,7 @@ module Aspera
         # @return :success if all sessions statuses returned by "start" are success
         # else return the first error exception object
         def session_status(statuses)
-          error_statuses = statuses.reject{|i|i.eql?(:success)}
+          error_statuses = statuses.reject{ |i| i.eql?(:success)}
           return :success if error_statuses.empty?
           return error_statuses.first
         end
@@ -92,7 +92,7 @@ module Aspera
       def updated_ts(transfer_spec={})
         transfer_spec.deep_merge!(@transfer_spec_command_line)
         # recursively remove values that are nil (user wants to delete)
-        transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil?}
+        transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         return transfer_spec
       end
 
@@ -199,7 +199,7 @@ module Aspera
           return @transfer_paths
         when Array
           Log.log.debug('getting file list as extended value')
-          raise Cli::BadArgument, 'sources must be a Array of String' if !file_list.reject{|f|f.is_a?(String)}.empty?
+          raise Cli::BadArgument, 'sources must be a Array of String' if !file_list.reject{ |f| f.is_a?(String)}.empty?
         else
           raise Cli::BadArgument, "sources must be a Array, not #{file_list.class}"
         end
@@ -211,10 +211,10 @@ module Aspera
         case source_type
         when :list
           # when providing a list, just specify source
-          @transfer_paths = file_list.map{|i|{'source' => i}}
+          @transfer_paths = file_list.map{ |i| {'source' => i}}
         when :pair
           Aspera.assert(file_list.length.even?, exception_class: Cli::BadArgument){"When using pair, provide an even number of paths: #{file_list.length}"}
-          @transfer_paths = file_list.each_slice(2).to_a.map{|s, d|{'source' => s, 'destination' => d}}
+          @transfer_paths = file_list.each_slice(2).to_a.map{ |s, d| {'source' => s, 'destination' => d}}
         else Aspera.error_unexpected_value(source_type)
         end
         Log.log.debug{"paths=#{@transfer_paths}"}

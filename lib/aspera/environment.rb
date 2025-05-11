@@ -103,9 +103,9 @@ module Aspera
       def log_spawn(exec:, args: nil, env: nil)
         [
           'execute:'.red,
-          env&.map{|k, v| "#{k}=#{Shellwords.shellescape(v)}"},
+          env&.map{ |k, v| "#{k}=#{Shellwords.shellescape(v)}"},
           Shellwords.shellescape(exec),
-          args&.map{|a|Shellwords.shellescape(a)}
+          args&.map{ |a| Shellwords.shellescape(a)}
         ].compact.flatten.join(' ')
       end
 
@@ -122,7 +122,7 @@ module Aspera
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
         Aspera.assert_type(options, Hash) unless options.nil?
-        Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
+        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
         # start ascp in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
@@ -144,7 +144,7 @@ module Aspera
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array) unless args.nil?
         Aspera.assert_type(env, Hash) unless env.nil?
-        Log.log.debug {log_spawn(exec: exec, args: args, env: env)}
+        Log.log.debug{log_spawn(exec: exec, args: args, env: env)}
         # start in separate process
         spawn_args = []
         spawn_args.push(env) unless env.nil?
@@ -166,7 +166,7 @@ module Aspera
         Aspera.assert_type(exec, String)
         Aspera.assert_type(args, Array)
         Aspera.assert_type(opts, Hash)
-        Log.log.debug {log_spawn(exec: exec, args: args)}
+        Log.log.debug{log_spawn(exec: exec, args: args)}
         stdout, stderr, status = Open3.capture3(exec, *args, **opts)
         Log.log.debug{"status=#{status}, stderr=#{stderr}"}
         Log.log.trace1{"stdout=#{stdout}"}
@@ -256,7 +256,7 @@ module Aspera
     # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
     # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
     def terminal_supports_unicode?
-      @terminal_supports_unicode = self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{|var|ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
+      @terminal_supports_unicode = self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{ |var| ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
       return @terminal_supports_unicode
     end
 

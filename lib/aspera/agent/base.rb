@@ -21,7 +21,7 @@ module Aspera
           base_class = File.basename(__FILE__)
           Dir.entries(File.dirname(File.expand_path(__FILE__))).select do |file|
             file.end_with?(RUBY_EXT) && !file.eql?(base_class)
-          end.map{|file|file[0..(-1 - RUBY_EXT.length)].to_sym}
+          end.map{ |file| file[0..(-1 - RUBY_EXT.length)].to_sym}
         end
       end
 
@@ -31,7 +31,7 @@ module Aspera
         statuses = wait_for_transfers_completion
         @progress&.reset
         Aspera.assert_type(statuses, Array)
-        Aspera.assert(statuses.none?{|i|!i.eql?(:success) && !i.is_a?(StandardError)}){"bad statuses content: #{statuses}"}
+        Aspera.assert(statuses.none?{ |i| !i.eql?(:success) && !i.is_a?(StandardError)}){"bad statuses content: #{statuses}"}
         return statuses
       end
 

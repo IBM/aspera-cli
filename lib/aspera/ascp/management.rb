@@ -227,7 +227,7 @@ module Aspera
           # TODO: translate enhanced to capitalized ?
           data
             .keys
-            .map{|k|"#{k.capitalize}: #{data[k]}"}
+            .map{ |k| "#{k.capitalize}: #{data[k]}"}
             .unshift(MGT_HEADER)
             .push('', '')
             .join("\n")

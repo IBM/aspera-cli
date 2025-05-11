@@ -104,7 +104,7 @@ module Aspera
         # enclose arguments in double quotes, protect backslash and double quotes
         # ascmd uses space as token separator, and optional quotes ('") or \ to escape
         args.each do |v|
-          command.push(%Q{"#{v.gsub(/["\\]/){|s|"\\#{s}"}}"})
+          command.push(%Q{"#{v.gsub(/["\\]/){ |s| "\\#{s}"}}"})
         end
         command_lines.push(command.join(' '))
       end
@@ -141,7 +141,7 @@ module Aspera
       end
       # raise error as exception
       raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
-        result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{|i|i[:name]}.sort)
+        result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map{ |i| i[:name]}.sort)
       return result
     end
 
@@ -209,7 +209,7 @@ module Aspera
               result[field_info[:name]] ||= []
               result[field_info[:name]].push(parse(typed_buffer[:buffer], field_info[:is_a], indent_level))
             when :list_tlv_list # field is an array of values in a list of buffers
-              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{|r|parse(r[:buffer], field_info[:is_a], indent_level)}
+              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map{ |r| parse(r[:buffer], field_info[:is_a], indent_level)}
             when :list_tlv_restart # field is an array of values, but a new value is started on index 1
               fl = result[field_info[:name]] = []
               parse(typed_buffer[:buffer], :blist, indent_level).map do |tb|

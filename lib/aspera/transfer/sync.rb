@@ -21,49 +21,49 @@ module Aspera
       # JSON for async instance command line options
       CMDLINE_PARAMS_INSTANCE =
         {
-          'alt_logdir'          => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'watchd'              => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'apply_local_docroot' => { cli: { type: :opt_without_arg}},
-          'quiet'               => { cli: { type: :opt_without_arg}},
-          'ws_connect'          => { cli: { type: :opt_without_arg}}
+          'alt_logdir'          => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'watchd'              => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'apply_local_docroot' => {cli: {type: :opt_without_arg}},
+          'quiet'               => {cli: {type: :opt_without_arg}},
+          'ws_connect'          => {cli: {type: :opt_without_arg}}
         }.freeze
 
       # map sync session parameters to transfer spec: sync -> ts, true if same
       CMDLINE_PARAMS_SESSION =
         {
-          'name'                       => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'local_dir'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'remote_dir'                 => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'local_db_dir'               => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'remote_db_dir'              => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'host'                       => { cli: { type: :opt_with_arg}, accepted_types: :string, ts: :remote_host},
-          'user'                       => { cli: { type: :opt_with_arg}, accepted_types: :string, ts: :remote_user},
-          'private_key_paths'          => { cli: { type: :opt_with_arg, switch: '--private-key-path'}, accepted_types: :array},
-          'direction'                  => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'checksum'                   => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'tags'                       => { cli: { type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Transfer::Parameters.convert_json64'},
+          'name'                       => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'local_dir'                  => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'remote_dir'                 => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'local_db_dir'               => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'remote_db_dir'              => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'host'                       => {cli: {type: :opt_with_arg}, accepted_types: :string, ts: :remote_host},
+          'user'                       => {cli: {type: :opt_with_arg}, accepted_types: :string, ts: :remote_user},
+          'private_key_paths'          => {cli: {type: :opt_with_arg, switch: '--private-key-path'}, accepted_types: :array},
+          'direction'                  => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'checksum'                   => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'tags'                       => {cli: {type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Transfer::Parameters.convert_json64'},
                                             accepted_types: :hash, ts: true},
-          'tcp_port'                   => { cli: { type: :opt_with_arg}, accepted_types: :int, ts: :ssh_port},
-          'rate_policy'                => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'target_rate'                => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'cooloff'                    => { cli: { type: :opt_with_arg}, accepted_types: :int},
-          'pending_max'                => { cli: { type: :opt_with_arg}, accepted_types: :int},
-          'scan_intensity'             => { cli: { type: :opt_with_arg}, accepted_types: :string},
-          'cipher'                     => { cli: { type: :opt_with_arg, convert: 'Aspera::Transfer::Parameters.convert_remove_hyphen'},
+          'tcp_port'                   => {cli: {type: :opt_with_arg}, accepted_types: :int, ts: :ssh_port},
+          'rate_policy'                => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'target_rate'                => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'cooloff'                    => {cli: {type: :opt_with_arg}, accepted_types: :int},
+          'pending_max'                => {cli: {type: :opt_with_arg}, accepted_types: :int},
+          'scan_intensity'             => {cli: {type: :opt_with_arg}, accepted_types: :string},
+          'cipher'                     => {cli: {type: :opt_with_arg, convert: 'Aspera::Transfer::Parameters.convert_remove_hyphen'},
                                             accepted_types: :string, ts: true},
-          'transfer_threads'           => { cli: { type: :opt_with_arg}, accepted_types: :int},
-          'preserve_time'              => { cli: { type: :opt_without_arg}, ts: :preserve_times},
-          'preserve_access_time'       => { cli: { type: :opt_without_arg}, ts: nil},
-          'preserve_modification_time' => { cli: { type: :opt_without_arg}, ts: nil},
-          'preserve_uid'               => { cli: { type: :opt_without_arg}, ts: :preserve_file_owner_uid},
-          'preserve_gid'               => { cli: { type: :opt_without_arg}, ts: :preserve_file_owner_gid},
-          'create_dir'                 => { cli: { type: :opt_without_arg}, ts: true},
-          'reset'                      => { cli: { type: :opt_without_arg}},
+          'transfer_threads'           => {cli: {type: :opt_with_arg}, accepted_types: :int},
+          'preserve_time'              => {cli: {type: :opt_without_arg}, ts: :preserve_times},
+          'preserve_access_time'       => {cli: {type: :opt_without_arg}, ts: nil},
+          'preserve_modification_time' => {cli: {type: :opt_without_arg}, ts: nil},
+          'preserve_uid'               => {cli: {type: :opt_without_arg}, ts: :preserve_file_owner_uid},
+          'preserve_gid'               => {cli: {type: :opt_without_arg}, ts: :preserve_file_owner_gid},
+          'create_dir'                 => {cli: {type: :opt_without_arg}, ts: true},
+          'reset'                      => {cli: {type: :opt_without_arg}},
           # NOTE: only one env var, but multiple sessions... could be a problem
-          'remote_password'            => { cli: { type: :envvar, variable: 'ASPERA_SCP_PASS'}, ts: true},
-          'cookie'                     => { cli: { type: :envvar, variable: 'ASPERA_SCP_COOKIE'}, ts: true},
-          'token'                      => { cli: { type: :envvar, variable: 'ASPERA_SCP_TOKEN'}, ts: true},
-          'license'                    => { cli: { type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
+          'remote_password'            => {cli: {type: :envvar, variable: 'ASPERA_SCP_PASS'}, ts: true},
+          'cookie'                     => {cli: {type: :envvar, variable: 'ASPERA_SCP_COOKIE'}, ts: true},
+          'token'                      => {cli: {type: :envvar, variable: 'ASPERA_SCP_TOKEN'}, ts: true},
+          'license'                    => {cli: {type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
         }.freeze
 
       CommandLineBuilder.normalize_description(CMDLINE_PARAMS_INSTANCE)
@@ -248,8 +248,8 @@ module Aspera
               raise 'Missing either local_db_dir or local.path'
             end
           elsif sync_params.key?('sessions')
-            session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{|s|s['name'].eql?(session_name)}
-            raise "Session #{session_name} not found in #{sync_params['sessions'].map{|s|s['name']}.join(',')}" if session.nil?
+            session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{ |s| s['name'].eql?(session_name)}
+            raise "Session #{session_name} not found in #{sync_params['sessions'].map{ |s| s['name']}.join(',')}" if session.nil?
             raise 'Missing session name' if session['name'].nil?
             arguments.push("--name=#{session['name']}")
             if session.key?('local_db_dir')

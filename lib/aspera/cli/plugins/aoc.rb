@@ -204,7 +204,7 @@ module Aspera
         def api_from_options(new_base_path)
           create_values = {subpath: new_base_path, secret_finder: config}
           # create an API object with the same options, but with a different subpath
-          return Api::AoC.new(**OPTIONS_NEW.each_with_object(create_values) { |i, m|m[i] = options.get_option(i) unless options.get_option(i).nil?})
+          return Api::AoC.new(**OPTIONS_NEW.each_with_object(create_values){ |i, m| m[i] = options.get_option(i) unless options.get_option(i).nil?})
         rescue ArgumentError => e
           if (m = e.message.match(/missing keyword: :(.*)$/))
             raise Cli::Error, "Missing option: #{m[1]}"
@@ -217,7 +217,7 @@ module Aspera
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
             organization = @cache_api_aoc.read('organization')
             if organization['http_gateway_enabled'] && organization['http_gateway_server_url']
-              transfer.httpgw_url_cb = lambda { organization['http_gateway_server_url'] }
+              transfer.httpgw_url_cb = lambda{organization['http_gateway_server_url']}
               # @cache_api_aoc.current_user_info['connect_disabled']
             end
           end
@@ -438,8 +438,8 @@ module Aspera
           when :show
             object = aoc_api.read(resource_instance_path)
             # default: show all, but certificate
-            fields = object.keys.reject{|k|k.eql?('certificate')}
-            return { type: :single_object, data: object, fields: fields }
+            fields = object.keys.reject{ |k| k.eql?('certificate')}
+            return {type: :single_object, data: object, fields: fields}
           when :modify
             changes = options.get_next_argument('properties', validation: Hash)
             return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
@@ -759,9 +759,9 @@ module Aspera
           when :bearer_token
             return {type: :text, data: aoc_api.oauth.authorization}
           when :organization
-            return { type: :single_object, data: aoc_api.read('organization') }
+            return {type: :single_object, data: aoc_api.read('organization')}
           when :tier_restrictions
-            return { type: :single_object, data: aoc_api.read('tier_restrictions') }
+            return {type: :single_object, data: aoc_api.read('tier_restrictions')}
           when :user
             case options.get_next_command(%i[workspaces profile preferences])
             # when :settings
@@ -772,12 +772,12 @@ module Aspera
                 return result_list('workspaces', fields: %w[id name])
               when :current
                 aoc_api.context = :files
-                return { type: :single_object, data: aoc_api.workspace }
+                return {type: :single_object, data: aoc_api.workspace}
               end
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: aoc_api.current_user_info(exception: true) }
+                return {type: :single_object, data: aoc_api.current_user_info(exception: true)}
               when :modify
                 aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
@@ -786,7 +786,7 @@ module Aspera
               user_preferences_res = "users/#{aoc_api.current_user_info(exception: true)['id']}/user_interaction_preferences"
               case options.get_next_command(%i[show modify])
               when :show
-                return { type: :single_object, data: aoc_api.read(user_preferences_res) }
+                return {type: :single_object, data: aoc_api.read(user_preferences_res)}
               when :modify
                 aoc_api.update(user_preferences_res, options.get_next_argument('properties', validation: Hash))
                 return Main.result_status('modified')
@@ -829,7 +829,7 @@ module Aspera
               created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
               Main.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
               # return all info on package (especially package id)
-              return { type: :single_object, data: created_package[:info]}
+              return {type: :single_object, data: created_package[:info]}
             when :receive
               ids_to_download = nil
               if !aoc_api.public_link.nil?
@@ -857,7 +857,7 @@ module Aspera
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 Aspera.assert_type(query, Hash){'query'}
                 resolve_dropbox_name_default_ws_id(query)
-                all_ids = api_read_all('packages', query)[:data].map{|e|e['id']}
+                all_ids = api_read_all('packages', query)[:data].map{ |e| e['id']}
                 if ids_to_download.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
                   skip_ids_persistency.data.clear.concat(all_ids)
@@ -865,14 +865,14 @@ module Aspera
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 end
                 # remove from list the ones already downloaded
-                ids_to_download = all_ids.reject{|id|skip_ids_data.include?(id)}
+                ids_to_download = all_ids.reject{ |id| skip_ids_data.include?(id)}
               else
                 # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end
               file_list =
                 begin
-                  transfer.source_list.map{|i|{'source'=>i}}
+                  transfer.source_list.map{ |i| {'source'=>i}}
                 rescue Cli::BadArgument
                   [{'source' => '.'}]
                 end
@@ -903,7 +903,7 @@ module Aspera
             when :show
               package_id = instance_identifier
               package_info = aoc_api.read("packages/#{package_id}")
-              return { type: :single_object, data: package_info }
+              return {type: :single_object, data: package_info}
             when :list
               display_fields = %w[id name bytes_transferred]
               display_fields.push('workspace_id') if aoc_api.workspace[:id].nil?

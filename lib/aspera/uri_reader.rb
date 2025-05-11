@@ -22,7 +22,7 @@ module Aspera
           raise 'URL shall have a path, check syntax' if local_file_path.nil?
           local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
-        else Aspera.error_unexpected_value(uri.scheme) {"scheme for [#{uri_to_read}]"}
+        else Aspera.error_unexpected_value(uri.scheme){"scheme for [#{uri_to_read}]"}
         end
       end
 

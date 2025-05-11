@@ -110,15 +110,15 @@ module Aspera
               raise Cli::BadArgument, 'package has no link (deleted?)' if raise_no_link
               return nil
             end
-            result = entry['link'].find{|e| e['rel'].eql?('package')}['href']
+            result = entry['link'].find{ |e| e['rel'].eql?('package')}['href']
             return result
           end
 
           # @return [Integer] identifier of source
           def get_source_id_by_name(source_name, source_list)
-            match_source = source_list.find { |i| i['name'].eql?(source_name) }
+            match_source = source_list.find{ |i| i['name'].eql?(source_name)}
             return match_source['id'] unless match_source.nil?
-            raise Cli::Error, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{|i| %Q("#{i['name']}")}.join(', ')}])
+            raise Cli::Error, %Q(No such Faspex source: "#{source_name}" in [#{source_list.map{ |i| %Q("#{i['name']}")}.join(', ')}])
           end
         end
 
@@ -201,14 +201,14 @@ module Aspera
               package[PACKAGE_MATCH_FIELD] =
                 case mailbox
                 when :inbox, :archive
-                  recipient = package['to'].find{|i|recipient_names.include?(i['name'])}
+                  recipient = package['to'].find{ |i| recipient_names.include?(i['name'])}
                   recipient.nil? ? nil : recipient['recipient_delivery_id']
                 else # :sent
                   package['delivery_id']
                 end
               # add special key
               package['items'] = package['link'].is_a?(Array) ? package['link'].length : 0
-              package['metadata'] = package['metadata']['field'].each_with_object({}){|i, m| m[i['name']] = i['content'] }
+              package['metadata'] = package['metadata']['field'].each_with_object({}){ |i, m| m[i['name']] = i['content']}
               # if we look for a specific package
               stop_condition = true if !stop_at_id.nil? && stop_at_id.eql?(package[PACKAGE_MATCH_FIELD])
               # keep only those for the specified recipient
@@ -222,13 +222,13 @@ module Aspera
               result = result.slice(0, max_items) if result.count > max_items
               break
             end
-            link = box_data['link'].find{|i|i['rel'].eql?('next')}
+            link = box_data['link'].find{ |i| i['rel'].eql?('next')}
             Log.log.debug{"link: #{link}"}
             # no next link
             break if link.nil?
             # replace parameters with the ones from next link
             params = CGI.parse(URI.parse(link['href']).query)
-            mailbox_query = params.keys.each_with_object({}){|i, m| m[i] = params[i].first }
+            mailbox_query = params.keys.each_with_object({}){ |i, m| m[i] = params[i].first}
             Log.log.debug{"query: #{mailbox_query}"}
             break if !max_pages.nil? && (mailbox_query['page'].to_i > max_pages)
           end
@@ -291,7 +291,7 @@ module Aspera
             case command_pkg
             when :show
               delivery_id = instance_identifier
-              return {type: :single_object, data: mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)} }
+              return {type: :single_object, data: mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}}
             when :list
               return {
                 type:   :object_list,
@@ -353,14 +353,14 @@ module Aspera
                 raise 'empty id' if delivery_id.empty?
                 recipient = options.get_option(:recipient)
                 if delivery_id.eql?(SpecialValues::ALL)
-                  pkg_id_uri = mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
+                  pkg_id_uri = mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD], uri: self.class.get_fasp_uri_from_entry(i, raise_no_link: false)}}
                 elsif delivery_id.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'Only with option once_only'}
-                  skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{|i|{id: i[PACKAGE_MATCH_FIELD]}})
+                  skip_ids_persistency.data.clear.concat(mailbox_filtered_entries.map{ |i| {id: i[PACKAGE_MATCH_FIELD]}})
                   skip_ids_persistency.save
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 elsif !recipient.nil? && recipient.start_with?('*')
-                  found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{|p|p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
+                  found_package_link = mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}['link'].first['href']
                   raise "Not Found. Dropbox and Workgroup packages can use the link option with #{Transfer::Uri::SCHEME}" if found_package_link.nil?
                   pkg_id_uri = [{id: delivery_id, uri: found_package_link}]
                 else
@@ -400,7 +400,7 @@ module Aspera
               # prune packages already downloaded
               # TODO : remove ids from skip not present in inbox to avoid growing too big
               # skip_ids_data.select!{|id|pkg_id_uri.select{|p|p[:id].eql?(id)}}
-              pkg_id_uri.reject!{|i|skip_ids_data.include?(i[:id])}
+              pkg_id_uri.reject!{ |i| skip_ids_data.include?(i[:id])}
               Log.log.debug{Log.dump(:pkg_id_uri, pkg_id_uri)}
               return Main.result_status('no new package') if pkg_id_uri.empty?
               result_transfer = []
@@ -445,7 +445,7 @@ module Aspera
                 Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
                 self.class.get_source_id_by_name(value, source_list)
               end.to_i
-              selected_source = source_list.find{|i|i['id'].eql?(source_id)}
+              selected_source = source_list.find{ |i| i['id'].eql?(source_id)}
               raise 'No such source' if selected_source.nil?
               source_name = selected_source['name']
               source_hash = options.get_option(:storage, mandatory: true)
@@ -516,7 +516,7 @@ module Aspera
             # add missing entries
             users.each do |u|
               unless u['emails'].nil?
-                email = u['emails'].find{|i|i['primary'].eql?('true')}
+                email = u['emails'].find{ |i| i['primary'].eql?('true')}
                 u['email'] = email['value'] unless email.nil?
               end
               if u['email'].nil?

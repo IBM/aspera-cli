@@ -58,12 +58,12 @@ module Aspera
           @result[name] = @formatter.special_format('empty list')
         elsif array.all?(String)
           @result[name] = array.join("\n")
-        elsif array.all?{|i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
+        elsif array.all?{ |i| i.is_a?(Hash) && i.keys.eql?(%w[name])}
           @result[name] = array.map(&:values).join(', ')
-        elsif array.all?{|i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
-          flattened_hash(array.each_with_object({}){|i, h|h[i['name']] = i['value']}, name)
+        elsif array.all?{ |i| i.is_a?(Hash) && i.keys.sort.eql?(%w[name value])}
+          flattened_hash(array.each_with_object({}){ |i, h| h[i['name']] = i['value']}, name)
         else
-          array.each_with_index { |item, index| flatten_any(item, "#{name}.#{index}")}
+          array.each_with_index{ |item, index| flatten_any(item, "#{name}.#{index}")}
         end
         nil
       end
@@ -101,7 +101,7 @@ module Aspera
       class << self
         def all_but(list)
           list = [list] unless list.is_a?(Array)
-          return list.map{|i|"#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
+          return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
 
         def tick(yes)
@@ -142,7 +142,7 @@ module Aspera
       # Highlight special values
       def special_format(what)
         result = "<#{what}>"
-        return %w[null empty].any?{|s|what.include?(s)} ? result.dim : result.reverse_color
+        return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
       end
 
       # call this after REST calls if several api calls are expected
@@ -201,7 +201,7 @@ module Aspera
             end
           when :image
             # get list if key arguments of method
-            allowed_options = Preview::Terminal.method(:build).parameters.select{|i|i[0].eql?(:key)}.map{|i|i[1]}
+            allowed_options = Preview::Terminal.method(:build).parameters.select{ |i| i[0].eql?(:key)}.map{ |i| i[1]}
             # check that only supported options are given
             unknown_options = value.keys.map(&:to_sym) - allowed_options
             raise "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" unless unknown_options.empty?
@@ -301,11 +301,11 @@ module Aspera
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
-            obj_list = obj_list.map{|obj|Flattener.new(self).flatten(obj)} if @options[:flat_hash]
+            obj_list = obj_list.map{ |obj| Flattener.new(self).flatten(obj)} if @options[:flat_hash]
             display_table(obj_list, compute_fields(obj_list, fields))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
-            display_table(data.map { |i| { name => i } }, [name])
+            display_table(data.map{ |i| {name => i}}, [name])
           when :empty # no table
             display_message(:info, special_format('empty'))
             return
@@ -356,7 +356,7 @@ module Aspera
       private
 
       def all_fields(data)
-        data.each_with_object({}){|v, m|v.each_key{|c|m[c] = true}}.keys
+        data.each_with_object({}){ |v, m| v.each_key{ |c| m[c] = true}}.keys
       end
 
       # @return the list of fields to display
@@ -370,8 +370,8 @@ module Aspera
           # when NilClass then [SpecialValues::DEF]
           when String then @options[:fields].split(',')
           when Array then @options[:fields]
-          when Regexp then return all_fields(data).select{|i|i.match(@options[:fields])}
-          when Proc then return all_fields(data).select{|i|@options[:fields].call(i)}
+          when Regexp then return all_fields(data).select{ |i| i.match(@options[:fields])}
+          when Proc then return all_fields(data).select{ |i| @options[:fields].call(i)}
           else Aspera.error_unexpected_value(@options[:fields])
           end
         result = []
@@ -387,12 +387,12 @@ module Aspera
             # get the list of all column names used in all lines, not just first one, as all lines may have different columns
             request.unshift(*all_fields(data))
           when SpecialValues::DEF
-            default = all_fields(data).select{|i|default.call(i)} if default.is_a?(Proc)
+            default = all_fields(data).select{ |i| default.call(i)} if default.is_a?(Proc)
             default = all_fields(data) if default.nil?
             request.unshift(*default)
           else
             if removal
-              result = result.reject{|i|i.eql?(item)}
+              result = result.reject{ |i| i.eql?(item)}
             else
               result.push(item)
             end
@@ -410,8 +410,8 @@ module Aspera
         filter_columns_on_select(data)
         return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])
-        return data.map{|i|i[selected_fields.first]} if selected_fields.length == 1
-        return data.map{|i|i.slice(*selected_fields)}
+        return data.map{ |i| i[selected_fields.first]} if selected_fields.length == 1
+        return data.map{ |i| i.slice(*selected_fields)}
       end
 
       # filter the list of items on the select option
@@ -419,9 +419,9 @@ module Aspera
       def filter_columns_on_select(data)
         case @options[:select]
         when Proc
-          data.select!{|i|@options[:select].call(i)}
+          data.select!{ |i| @options[:select].call(i)}
         when Hash
-          @options[:select].each{|k, v|data.select!{|i|i[k].eql?(v)}}
+          @options[:select].each{ |k, v| data.select!{ |i| i[k].eql?(v)}}
         end
       end
 
@@ -443,9 +443,9 @@ module Aspera
         end
         Log.log.debug{Log.dump(:object_array, object_array)}
         # convert data to string, and keep only display fields
-        final_table_rows = object_array.map { |r| fields.map { |c| r[c].to_s } }
+        final_table_rows = object_array.map{ |r| fields.map{ |c| r[c].to_s}}
         # remove empty rows
-        final_table_rows.select!{|i| !(i.is_a?(Hash) && i.empty?)}
+        final_table_rows.select!{ |i| !(i.is_a?(Hash) && i.empty?)}
         # here : fields : list of column names
         case @options[:format]
         when :table
@@ -466,7 +466,7 @@ module Aspera
               style:     @options[:table_style]&.symbolize_keys))
           end
         when :csv
-          display_message(:data, final_table_rows.map{|t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
+          display_message(:data, final_table_rows.map{ |t| t.join(CSV_FIELD_SEPARATOR)}.join(CSV_RECORD_SEPARATOR))
         else
           raise "not expected: #{@options[:format]}"
         end

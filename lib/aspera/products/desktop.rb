@@ -18,7 +18,7 @@ module Aspera
             sub_bin:  File.join('Contents', 'Resources', 'transferd', 'bin')
           }]
           else []
-          end.map { |i| i.merge({ expected: APP_NAME }) }
+          end.map{ |i| i.merge({expected: APP_NAME})}
         end
 
         def log_file

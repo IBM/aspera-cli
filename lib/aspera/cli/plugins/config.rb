@@ -185,8 +185,8 @@ module Aspera
           # read config file (set @config_presets)
           read_config_file
           # add preset handler (needed for smtp)
-          ExtendedValue.instance.set_handler(EXTEND_PRESET, lambda{|v|preset_by_name(v)})
-          ExtendedValue.instance.set_handler(EXTEND_VAULT, lambda{|v|vault_value(v)})
+          ExtendedValue.instance.set_handler(EXTEND_PRESET, lambda{ |v| preset_by_name(v)})
+          ExtendedValue.instance.set_handler(EXTEND_VAULT, lambda{ |v| vault_value(v)})
           # load defaults before it can be overridden
           add_plugin_default_preset(CONF_GLOBAL_SYM)
           # vault options
@@ -197,7 +197,7 @@ module Aspera
           # declare generic plugin options only after handlers are declared
           Plugin.declare_generic_options(options)
           # configuration options
-          options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N') { @use_plugin_defaults = false }
+          options.declare(:no_default, 'Do not load default configuration for plugin', values: :none, short: 'N'){@use_plugin_defaults = false}
           options.declare(:preset, 'Load the named option preset from current config file', short: 'P', handler: {o: self, m: :option_preset})
           options.declare(:version_check_days, 'Period in days to check new version (zero to disable)', coerce: Integer, default: DEFAULT_CHECK_NEW_VERSION_DAYS)
           options.declare(:plugin_folder, 'Folder where to find additional plugins', handler: {o: self, m: :option_plugin_folder})
@@ -260,8 +260,8 @@ module Aspera
           end
           RestParameters.instance.user_agent = Info::CMD_NAME
           RestParameters.instance.progress_bar = @progress_bar
-          RestParameters.instance.session_cb = lambda{|http_session|update_http_session(http_session)}
-          @option_http_options.keys.select{|i|RestParameters.instance.respond_to?(i)}.each do |k|
+          RestParameters.instance.session_cb = lambda{ |http_session| update_http_session(http_session)}
+          @option_http_options.keys.select{ |i| RestParameters.instance.respond_to?(i)}.each do |k|
             method = "#{k}=".to_sym
             RestParameters.instance.send(method, @option_http_options[k])
             @option_http_options.delete(k)
@@ -298,7 +298,7 @@ module Aspera
               paths_to_add = [OpenSSL::X509::DEFAULT_CERT_DIR]
               # JRuby cert file seems not to be PEM
               paths_to_add.push(OpenSSL::X509::DEFAULT_CERT_FILE) unless defined?(JRUBY_VERSION)
-              paths_to_add.select!{|f|File.exist?(f)}
+              paths_to_add.select!{ |f| File.exist?(f)}
             elsif File.file?(path)
               @certificate_store.add_file(path)
             elsif File.directory?(path)
@@ -310,8 +310,8 @@ module Aspera
               pp = [File.realpath(p)]
               if File.directory?(p)
                 pp = Dir.entries(p)
-                  .map{|e|File.realpath(File.join(p, e))}
-                  .select{|entry|File.file?(entry)}
+                  .map{ |e| File.realpath(File.join(p, e))}
+                  .select{ |entry| File.file?(entry)}
               end
               @certificate_paths.concat(pp)
             end
@@ -518,7 +518,7 @@ module Aspera
           Aspera.assert_values(value.class, [String, Array]){'plugin folder'}
           value = [value] if value.is_a?(String)
           Aspera.assert(value.all?(String)){'plugin folder'}
-          value.each{|f|PluginFactory.instance.add_lookup_folder(f)}
+          value.each{ |f| PluginFactory.instance.add_lookup_folder(f)}
         end
 
         def option_plugin_folder
@@ -548,7 +548,7 @@ module Aspera
           # files search for configuration, by default the one given by user
           search_files = [@option_config_file]
           # find first existing file (or nil)
-          conf_file_to_load = search_files.find{|f| File.exist?(f)}
+          conf_file_to_load = search_files.find{ |f| File.exist?(f)}
           # if no file found, create default config
           if conf_file_to_load.nil?
             Log.log.warn{"No config file found. New configuration file: #{@option_config_file}"}
@@ -631,7 +631,7 @@ module Aspera
             found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
           end
           raise "No known application found at #{app_url}" if found_apps.empty?
-          Aspera.assert(found_apps.all?{|a|a.keys.all?(Symbol)})
+          Aspera.assert(found_apps.all?{ |a| a.keys.all?(Symbol)})
           return found_apps
         end
 
@@ -639,7 +639,7 @@ module Aspera
           command = options.get_next_command(%i[list info version])
           if %i[info version].include?(command)
             connect_id = options.get_next_argument('id or title')
-            one_res = Products::Connect.instance.versions.find{|i|i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
+            one_res = Products::Connect.instance.versions.find{ |i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
             raise Cli::NoSuchIdentifier.new(:connect, connect_id) if one_res.nil?
           end
           case command
@@ -653,7 +653,7 @@ module Aspera
             command = options.get_next_command(%i[list download open])
             if %i[download open].include?(command)
               link_title = options.get_next_argument('title or rel')
-              one_link = all_links.find {|i| i['title'].eql?(link_title) || i['rel'].eql?(link_title)}
+              one_link = all_links.find{ |i| i['title'].eql?(link_title) || i['rel'].eql?(link_title)}
               raise "no such value: #{link_title}" if one_link.nil?
             end
             case command
@@ -690,7 +690,7 @@ module Aspera
             # add command line transfer spec
             data['ts'] = transfer.updated_ts
             # add keys
-            DataRepository::ELEMENTS.each_with_object(data){|i, h|h[i.to_s] = DataRepository.instance.item(i)}
+            DataRepository::ELEMENTS.each_with_object(data){ |i, h| h[i.to_s] = DataRepository.instance.item(i)}
             # declare those as secrets
             SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
             return Main.result_single_object(data)
@@ -918,7 +918,7 @@ module Aspera
             when :only
               return Main.result_status(remote_chain.first.to_pem)
             when :name
-              return Main.result_status(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
+              return Main.result_status(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
             end
           when :echo # display the content of a value given on command line
             return Formatter.auto_type(options.get_next_argument('value', validation: nil))
@@ -1050,8 +1050,8 @@ module Aspera
           else
             formatter.display_status('Multiple applications detected, please select from:')
             formatter.display_results(type: :object_list, data: apps, fields: %w[product url version])
-            answer = options.prompt_user_input_in_list('product', apps.map{|a|a[:product]})
-            apps.find{|a|a[:product].eql?(answer)}
+            answer = options.prompt_user_input_in_list('product', apps.map{ |a| a[:product]})
+            apps.find{ |a| a[:product].eql?(answer)}
           end
           Log.log.debug{Log.dump(:identification, identification)}
           wiz_url = identification[:url]
@@ -1202,7 +1202,7 @@ module Aspera
           Environment.restrict_file_access(@main_folder)
           Log.log.info{"Writing #{@option_config_file}"}
           formatter.display_status('Saving config file.')
-          Environment.write_file_restricted(@option_config_file, force: true) {@config_presets.to_yaml}
+          Environment.write_file_restricted(@option_config_file, force: true){@config_presets.to_yaml}
           @config_checksum_on_disk = current_checksum
           return true
         end

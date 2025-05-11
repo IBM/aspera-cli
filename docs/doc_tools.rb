@@ -55,7 +55,7 @@ def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 def gem_opt_md_list
   columns = %i[name version comment].freeze
   data = gem_opt_list.map do |g|
-    columns.map {|c| g[c]}
+    columns.map{ |c| g[c]}
   end
   data.unshift(columns)
   markdown_table(data)
@@ -102,9 +102,9 @@ end
 # Generate markdown from the provided table
 def markdown_table(table)
   headings = table.shift
-  table.unshift(headings.map{|col_name|'-' * col_name.length})
+  table.unshift(headings.map{ |col_name| '-' * col_name.length})
   table.unshift(headings)
-  return table.map {|line| "| #{line.map{|i|i.to_s.gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
+  return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
 end
 
 # transfer spec description generation
@@ -116,10 +116,10 @@ def spec_table
   table.first[0] = 'Field'
   Aspera::Transfer::Parameters.man_table(HtmlFormatter.new).each do |param|
     param[:description] += (param[:description].empty? ? '' : "\n") + '(' + param[:cli] + ')' unless param[:cli].to_s.empty?
-    param.each_key{|k|param[k] = '&nbsp;' if param[k].to_s.strip.empty?}
+    param.each_key{ |k| param[k] = '&nbsp;' if param[k].to_s.strip.empty?}
     param[:description] = param[:description].gsub("\n", '<br/>')
     param[:type] = param[:type].gsub(',', '<br/>')
-    table.push(fields.map{|field_name|param[field_name]})
+    table.push(fields.map{ |field_name| param[field_name]})
   end
   return markdown_table(table)
 end
@@ -212,7 +212,7 @@ def all_test_commands_by_plugin
       file.each_line do |line|
         next unless line.include?('$(INCMAN)')
         line = line.chomp
-        REPLACEMENTS.each{|replace|line = line.gsub(replace.first, replace.last)}
+        REPLACEMENTS.each{ |replace| line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
         $stderr.puts line if $debug
         # plugin name shall be the first argument: command
@@ -259,7 +259,7 @@ def generate_generic_conf
   configuration.each do |k, preset_hash|
     preset_hash.each do |param_name, param_value|
       if param_name.eql?('ignore_certificate') && param_value.is_a?(Array) && param_value.all?(String)
-        param_value.map!{|fqdn|fqdn.gsub('aspera-emea', 'example')}
+        param_value.map!{ |fqdn| fqdn.gsub('aspera-emea', 'example')}
       end
       next unless param_value.is_a?(String)
       next if param_value.start_with?('@preset:')

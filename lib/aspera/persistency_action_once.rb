@@ -8,9 +8,9 @@ module Aspera
   # Persist data on file system
   class PersistencyActionOnce
     DELETE_DEFAULT = lambda(&:empty?)
-    PARSE_DEFAULT = lambda {|t| JSON.parse(t)}
-    FORMAT_DEFAULT = lambda {|h| JSON.generate(h)}
-    MERGE_DEFAULT = lambda {|current, file| current.concat(file).uniq rescue current}
+    PARSE_DEFAULT = lambda{ |t| JSON.parse(t)}
+    FORMAT_DEFAULT = lambda{ |h| JSON.generate(h)}
+    MERGE_DEFAULT = lambda{ |current, file| current.concat(file).uniq rescue current}
     MANAGER_METHODS = %i[get put delete]
     private_constant :DELETE_DEFAULT, :PARSE_DEFAULT, :FORMAT_DEFAULT, :MERGE_DEFAULT, :MANAGER_METHODS
 
@@ -22,7 +22,7 @@ module Aspera
     # @param :format   Optional  dump method (default to JSON)
     # @param :merge    Optional  merge data from file to current data
     def initialize(manager:, data:, id:, delete: DELETE_DEFAULT, parse: PARSE_DEFAULT, format: FORMAT_DEFAULT, merge: MERGE_DEFAULT)
-      Aspera.assert(MANAGER_METHODS.all?{|i|manager.respond_to?(i)}){"Manager must answer to #{MANAGER_METHODS}"}
+      Aspera.assert(MANAGER_METHODS.all?{ |i| manager.respond_to?(i)}){"Manager must answer to #{MANAGER_METHODS}"}
       Aspera.assert(!data.nil?)
       Aspera.assert_type(id, String)
       Aspera.assert(!id.empty?)

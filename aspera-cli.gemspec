@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
   spec.files = Dir.chdir(File.dirname(gemspec_file)){%x(git ls-files -z lib bin examples *.md).split("\x0")}
   # specify executable names: must be after lines defining: spec.bindir and spec.files
-  spec.executables = spec.files.grep(/^#{spec.bindir}/){|f|File.basename(f)}
+  spec.executables = spec.files.grep(/^#{spec.bindir}/){ |f| File.basename(f)}
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
   if ENV.key?('SIGNING_KEY')
     spec.signing_key = File.expand_path(ENV.fetch('SIGNING_KEY'))

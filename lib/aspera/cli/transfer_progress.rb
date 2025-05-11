@@ -32,7 +32,7 @@ module Aspera
         if @progress_bar.nil?
           @progress_bar = ProgressBar.create(
             format:      '%t %a %B %p%% %r Mbps %E',
-            rate_scale:  lambda{|rate|rate / Environment::BYTES_PER_MEBIBIT},
+            rate_scale:  lambda{ |rate| rate / Environment::BYTES_PER_MEBIBIT},
             title:       '',
             total:       nil)
         end
@@ -86,7 +86,7 @@ module Aspera
       private
 
       def total(key)
-        @sessions.values.inject(0){|m, s|m + s[key]}
+        @sessions.values.inject(0){ |m, s| m + s[key]}
       end
     end
   end

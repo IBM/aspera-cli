@@ -56,25 +56,25 @@ module Aspera
         # base handlers
         # other handlers can be set using set_handler, e.g. `preset` is reader in config plugin
         @handlers = {
-          val:    lambda{|v|v},
-          base64: lambda{|v|Base64.decode64(v)},
-          csvt:   lambda{|v|ExtendedValue.decode_csvt(v)},
-          env:    lambda{|v|ENV.fetch(v, nil)},
-          file:   lambda{|v|File.read(File.expand_path(v))},
-          uri:    lambda{|v|UriReader.read(v)},
-          json:   lambda{|v|JSON.parse(v)},
-          lines:  lambda{|v|v.split("\n")},
-          list:   lambda{|v|v[1..-1].split(v[0])},
-          none:   lambda{|v|ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
-          path:   lambda{|v|File.expand_path(v)},
-          re:     lambda{|v|Regexp.new(v, Regexp::MULTILINE)},
-          ruby:   lambda{|v|Environment.secure_eval(v, __FILE__, __LINE__)},
-          secret: lambda{|v|prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
-          stdin:  lambda{|v|ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
-          stdbin: lambda{|v|ExtendedValue.assert_no_value(v, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
-          yaml:   lambda{|v|YAML.load(v)},
-          zlib:   lambda{|v|Zlib::Inflate.inflate(v)},
-          extend: lambda{|v|ExtendedValue.instance.evaluate_all(v)}
+          val:    lambda{ |v| v},
+          base64: lambda{ |v| Base64.decode64(v)},
+          csvt:   lambda{ |v| ExtendedValue.decode_csvt(v)},
+          env:    lambda{ |v| ENV.fetch(v, nil)},
+          file:   lambda{ |v| File.read(File.expand_path(v))},
+          uri:    lambda{ |v| UriReader.read(v)},
+          json:   lambda{ |v| JSON.parse(v)},
+          lines:  lambda{ |v| v.split("\n")},
+          list:   lambda{ |v| v[1..-1].split(v[0])},
+          none:   lambda{ |v| ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
+          path:   lambda{ |v| File.expand_path(v)},
+          re:     lambda{ |v| Regexp.new(v, Regexp::MULTILINE)},
+          ruby:   lambda{ |v| Environment.secure_eval(v, __FILE__, __LINE__)},
+          secret: lambda{ |v| prompt = v.empty? ? 'secret' : v; $stdin.getpass("#{prompt}> ")}, # rubocop:disable Style/Semicolon
+          stdin:  lambda{ |v| ExtendedValue.assert_no_value(v, :stdin); $stdin.read}, # rubocop:disable Style/Semicolon
+          stdbin: lambda{ |v| ExtendedValue.assert_no_value(v, :stdbin); $stdin.binmode.read}, # rubocop:disable Style/Semicolon
+          yaml:   lambda{ |v| YAML.load(v)},
+          zlib:   lambda{ |v| Zlib::Inflate.inflate(v)},
+          extend: lambda{ |v| ExtendedValue.instance.evaluate_all(v)}
         }
         @default_decoder = nil
       end

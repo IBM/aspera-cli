@@ -74,7 +74,7 @@ module Aspera
     def add_env_args(env_args)
       Log.log.debug{"add_env_args: ENV=#{@result[:env]}, ARGS=#{@result[:args]}"}
       # warn about non translated arguments
-      @param_hash.each_pair{|key, val|Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
+      @param_hash.each_pair{ |key, val| Log.log.warn{"unrecognized parameter: #{key} = \"#{val}\""} if !@used_param_names.include?(key)}
       # set result
       env_args[:env].merge!(@result[:env])
       env_args[:args].concat(@result[:args])
@@ -84,7 +84,7 @@ module Aspera
     # add options directly to command line
     def add_command_line_options(options)
       return if options.nil?
-      options.each{|o|@result[:args].push(o.to_s)}
+      options.each{ |o| @result[:args].push(o.to_s)}
     end
 
     def process_params
@@ -176,7 +176,7 @@ module Aspera
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
         parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
         # if transfer_spec value is an array, applies option many times
-        parameter_value.each{|v|add_command_line_options([options[:cli][:switch], v])}
+        parameter_value.each{ |v| add_command_line_options([options[:cli][:switch], v])}
       else Aspera.error_unexpected_value(processing_type){processing_type.class.name}
       end
     end

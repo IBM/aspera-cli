@@ -68,8 +68,8 @@ module Aspera
       # set ascp executable path
       def ascp_path=(v)
         Aspera.assert_type(v, String)
-        Aspera.assert(!v.empty?) {'ascp path cannot be empty: check your config file'}
-        Aspera.assert(File.exist?(v)) {"No such file: [#{v}]"}
+        Aspera.assert(!v.empty?){'ascp path cannot be empty: check your config file'}
+        Aspera.assert(File.exist?(v)){"No such file: [#{v}]"}
         @path_to_ascp = v
       end
 
@@ -89,7 +89,7 @@ module Aspera
           pl = installed_products.first
           raise "no Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf ascp install" if pl.nil?
         else
-          pl = installed_products.find{|i|i[:name].eql?(product_name)}
+          pl = installed_products.find{ |i| i[:name].eql?(product_name)}
           raise "no such product installed: #{product_name}" if pl.nil?
         end
         self.ascp_path = pl[:ascp_path]
@@ -130,11 +130,11 @@ module Aspera
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
-          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem") {DataRepository.instance.item(type)}
+          file = check_or_create_sdk_file("aspera_bypass_#{type}.pem"){DataRepository.instance.item(type)}
         when :aspera_license
-          file = check_or_create_sdk_file('aspera-license') {DataRepository.instance.item(:license)}
+          file = check_or_create_sdk_file('aspera-license'){DataRepository.instance.item(:license)}
         when :aspera_conf
-          file = check_or_create_sdk_file('aspera.conf') {DEFAULT_ASPERA_CONF}
+          file = check_or_create_sdk_file('aspera.conf'){DEFAULT_ASPERA_CONF}
         when :fallback_certificate, :fallback_private_key
           file_key = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert_private_key.pem')
           file_cert = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert.pem')
@@ -144,8 +144,8 @@ module Aspera
             cert = OpenSSL::X509::Certificate.new
             private_key = OpenSSL::PKey::RSA.new(4096)
             WebServerSimple.fill_self_signed_cert(cert, private_key)
-            check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true) {private_key.to_pem}
-            check_or_create_sdk_file('aspera_fallback_cert.pem', force: true) {cert.to_pem}
+            check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true){private_key.to_pem}
+            check_or_create_sdk_file('aspera_fallback_cert.pem', force: true){cert.to_pem}
           end
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else Aspera.error_unexpected_value(k)
@@ -166,7 +166,7 @@ module Aspera
         Aspera.assert_values(types, CLIENT_SSH_KEY_OPTIONS)
         return case types
                when :dsa_rsa, :rsa
-                 types.to_s.split('_').map{|i|Installation.instance.path("ssh_private_#{i}".to_sym)}
+                 types.to_s.split('_').map{ |i| Installation.instance.path("ssh_private_#{i}".to_sym)}
                when :per_client
                  raise 'Not yet implemented'
                end
@@ -247,10 +247,10 @@ module Aspera
       def sdk_url_for_platform(platform: nil, version: nil)
         locations = sdk_locations
         platform = Environment.architecture if platform.nil?
-        locations = locations.select{|l|l['platform'].eql?(platform)}
+        locations = locations.select{ |l| l['platform'].eql?(platform)}
         raise "No SDK for platform: #{platform}" if locations.empty?
-        version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
-        info = locations.select{|entry| entry['version'].eql?(version)}
+        version = locations.max_by{ |entry| Gem::Version.new(entry['version'])}['version'] if version.nil?
+        info = locations.select{ |entry| entry['version'].eql?(version)}
         raise "No such version: #{version} for #{platform}" if info.empty?
         return info.first['url']
       end
@@ -300,7 +300,7 @@ module Aspera
         if subfolder_lambda.nil?
           # default files to extract directly to main folder if in selected source folders
           subfolder_lambda = ->(name) do
-            Products::Transferd::RUNTIME_FOLDERS.any?{|i|name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
+            Products::Transferd::RUNTIME_FOLDERS.any?{ |i| name.match?(%r{^[^/]*/#{i}/})} ? '/' : nil
           end
         end
         # rename old install
@@ -322,7 +322,7 @@ module Aspera
           end
           FileUtils.mkdir_p(dest_folder)
           if link_target.nil?
-            File.open(dest_file, 'wb') { |output_stream|IO.copy_stream(entry_stream, output_stream)}
+            File.open(dest_file, 'wb'){ |output_stream| IO.copy_stream(entry_stream, output_stream)}
           else
             File.symlink(link_target, dest_file)
           end

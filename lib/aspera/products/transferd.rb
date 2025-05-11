@@ -15,7 +15,7 @@ module Aspera
           [{
             app_root: sdk_directory,
             sub_bin:  ''
-          }].map { |i| i.merge({ expected: APP_NAME }) }
+          }].map{ |i| i.merge({expected: APP_NAME})}
         end
 
         # location of SDK files

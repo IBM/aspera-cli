@@ -111,7 +111,7 @@ module Aspera
         token_data = JSON.parse(token_raw_string)
         Aspera.assert_type(token_data, Hash)
         decoded_token = decode_token(token_data[TOKEN_FIELD])
-        info = { data: token_data }
+        info = {data: token_data}
         Log.log.debug{Log.dump('decoded_token', decoded_token)}
         if decoded_token.is_a?(Hash)
           info[:decoded] = decoded_token
@@ -159,11 +159,11 @@ module Aspera
         Aspera.assert_type(parameters, Hash)
         id = parameters[:grant_method]
         Aspera.assert(@token_type_classes.key?(id)){"token grant method unknown: '#{id}'"}
-        create_parameters = parameters.reject { |k, _v| k.eql?(:grant_method) }
+        create_parameters = parameters.reject{ |k, _v| k.eql?(:grant_method)}
         @token_type_classes[id].new(**create_parameters)
       end
     end
     # JSON Web Signature (JWS) compact serialization: https://datatracker.ietf.org/doc/html/rfc7515
-    Factory.instance.register_decoder(lambda { |token| parts = token.split('.'); Aspera.assert(parts.length.eql?(3)){'not JWS token'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon, Layout/LineLength
+    Factory.instance.register_decoder(lambda{ |token| parts = token.split('.'); Aspera.assert(parts.length.eql?(3)){'not JWS token'}; JSON.parse(Base64.decode64(parts[1]))}) # rubocop:disable Style/Semicolon, Layout/LineLength
   end
 end
