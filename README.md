@@ -2364,7 +2364,7 @@ read -s ASCLI_VAULT_PASSWORD
 export ASCLI_VAULT_PASSWORD
 ```
 
-#### Vault: IBM Hashicorp Vault
+#### Vault: IBM HashiCorp Vault
 
 <https://developer.hashicorp.com/vault>
 
@@ -3599,6 +3599,63 @@ EOF
 ```
 
 > **Note:** Logging options are kept here in the `cron` file instead of configuration file to allow execution on command line with output on command line.
+
+### Running as service
+
+Some commands result in `ascli` running as a server, listening on a port.
+In this case, it is usually desirable to run `ascli` as a service.
+On Linux, typically, [SystemD](https://systemd.io/) is used.
+
+A convenient way is to write a startup script, and run this script as a service.
+
+Let's give a base name for our service: `my_ascli_svc`
+
+The startup script can be simply the `ascli` command line, for example: `/usr/local/bin/start_my_ascli_svc.sh`:
+
+```bash
+#!/bin/bash
+set -e
+echo "Starting my_ascli_svc at $(date)"
+# set PATH to find ascli, and other environment setup
+exec ascli .....
+```
+
+And make this script executable:
+
+```bash
+chmod a+x /usr/local/bin/start_my_ascli_svc.sh
+```
+
+Create a startup file: `/etc/systemd/system/my_ascli_svc.service` :
+
+```ini
+[Unit]
+Description=My ascli daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/start_my_ascli_svc.sh
+Restart=on-failure
+RestartSec=15
+User=xfer
+# Optional, specify a working directory
+# WorkingDirectory=/path/to/working/dir
+# Optional, redirect output
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start with:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now my_ascli_svc.service
+systemctl status my_ascli_svc.service
+journalctl -u my_ascli_svc.service
+```
 
 ### Locking for exclusive execution
 
