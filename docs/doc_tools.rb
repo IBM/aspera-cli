@@ -14,8 +14,6 @@ require 'yaml'
 require 'erb'
 require 'English'
 
-$debug = false
-
 # format special value depending on context
 class HtmlFormatter
   def special_format(special)
@@ -214,7 +212,7 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{ |replace| line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
-        $stderr.puts line if $debug
+        $stderr.puts line if ENV['DEBUG']
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []
