@@ -287,6 +287,7 @@ module Aspera
         # @param fields fields to display
         # @param base_query a query applied always
         # @param default_query default query unless overriden by user
+        # @param &block (Optional) calls block with user's or default query
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
@@ -296,6 +297,7 @@ module Aspera
           return {type: :object_list, fields: fields}.merge(api_read_all(resource_class_path, base_query.merge(user_query).compact))
         end
 
+        # Translates `dropbox_name` to `dropbox_id` and fills workspace_id
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
@@ -821,7 +823,7 @@ module Aspera
               ids_to_download = nil
               if !aoc_api.public_link.nil?
                 aoc_api.assert_public_link_types(['view_received_package'])
-                # set the package id, it will
+                # set the package id from link
                 ids_to_download = aoc_api.public_link['data']['package_id']
               end
               # get from command line unless it was a public link
@@ -844,17 +846,17 @@ module Aspera
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 Aspera.assert_type(query, Hash){'query'}
                 resolve_dropbox_name_default_ws_id(query)
-                # remove from list the ones already downloaded
                 all_ids = api_read_all('packages', query)[:data].map{|e|e['id']}
                 if ids_to_download.eql?(SpecialValues::INIT)
-                  Aspera.assert(skip_ids_persistency){'Only with option once_only'}
+                  Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
                   skip_ids_persistency.data.clear.concat(all_ids)
                   skip_ids_persistency.save
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 end
-                # array here
+                # remove from list the ones already downloaded
                 ids_to_download = all_ids.reject{|id|skip_ids_data.include?(id)}
               else
+                # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end
               file_list =
@@ -865,7 +867,7 @@ module Aspera
                 end
               # list here
               result_transfer = []
-              formatter.display_status("found #{ids_to_download.length} package(s).")
+              formatter.display_status("Found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")
                 formatter.display_status("downloading package: [#{package_info['id']}] #{package_info['name']}")
