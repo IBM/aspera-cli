@@ -43,7 +43,7 @@ module Aspera
             app_root: File.join(Dir.home, '.aspera', 'connect'),
             run_root: File.join(Dir.home, '.aspera', 'connect')
           }]
-          end.map { |i| i.merge({ expected: APP_NAME }) }
+          end.map{ |i| i.merge({expected: APP_NAME})}
         end
       end
 

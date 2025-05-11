@@ -32,7 +32,7 @@ module Aspera
       created_package = @app_api.create_package_simple(package_data, true, nil)
       # but we place it in a Faspex package creation response
       return {
-        'links'         => { 'status' => 'unused' },
+        'links'         => {'status' => 'unused'},
         'xfer_sessions' => [created_package[:spec]]
       }
     end
@@ -42,7 +42,7 @@ module Aspera
       package_data = {
         'title'      => faspex_pkg_delivery['title'],
         'note'       => faspex_pkg_delivery['note'],
-        'recipients' => faspex_pkg_delivery['recipients'].map{|name|{'name'=>name}}
+        'recipients' => faspex_pkg_delivery['recipients'].map{ |name| {'name'=>name}}
       }
       package = @app_api.create('packages', package_data)
       # TODO: option to send from remote source or httpgw
@@ -57,7 +57,7 @@ module Aspera
       transfer_spec.delete('authentication')
       # but we place it in a Faspex package creation response
       return {
-        'links'         => { 'status' => 'unused' },
+        'links'         => {'status' => 'unused'},
         'xfer_sessions' => [transfer_spec]
       }
     end

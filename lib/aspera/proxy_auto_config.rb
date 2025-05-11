@@ -13,7 +13,7 @@ module URI
       def register_proxy_finder
         Aspera.assert(block_given?)
         # overload the method in URI : call user's provided block and fallback to original method
-        define_method(:find_proxy) {|env_vars=ENV| yield(to_s) || find_proxy_orig(env_vars)}
+        define_method(:find_proxy){ |env_vars=ENV| yield(to_s) || find_proxy_orig(env_vars)}
       end
     end
   end
@@ -70,7 +70,7 @@ END_OF_JAVASCRIPT
     end
 
     def register_uri_generic
-      URI::Generic.register_proxy_finder{|url_str|get_proxies(url_str).first}
+      URI::Generic.register_proxy_finder{ |url_str| get_proxies(url_str).first}
       # allow chaining
       return self
     end

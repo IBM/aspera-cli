@@ -18,7 +18,7 @@ module Aspera
     end
 
     def all_sessions
-      @agent.sessions.map { |session| session[:job_id] }.uniq.each.map{|job_id|job_to_transfer(job_id)}
+      @agent.sessions.map{ |session| session[:job_id]}.uniq.each.map{ |job_id| job_to_transfer(job_id)}
     end
 
     # status: ('waiting', 'partially_completed', 'unknown', 'waiting(read error)',] 'running', 'completed', 'failed'
@@ -185,9 +185,9 @@ module Aspera
           'size'        => folder_stat.size,
           'mtime'       => folder_stat.mtime.utc.iso8601,
           'permissions' => [
-            { 'name' => 'view' },
-            { 'name' => 'edit' },
-            { 'name' => 'delete' }
+            {'name' => 'view'},
+            {'name' => 'edit'},
+            {'name' => 'delete'}
           ]
         },
         'items' => []
@@ -208,9 +208,9 @@ module Aspera
           'size'        => item_stat.size,
           'mtime'       => item_stat.mtime.utc.iso8601,
           'permissions' => [
-            { 'name' => 'view' },
-            { 'name' => 'edit' },
-            { 'name' => 'delete' }
+            {'name' => 'view'},
+            {'name' => 'edit'},
+            {'name' => 'delete'}
           ]
         }
 

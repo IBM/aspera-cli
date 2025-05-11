@@ -102,7 +102,7 @@ module Aspera
             end
           end
         when Array
-          Aspera.assert(query.all?{|i| i.is_a?(Array) && i.length.eql?(2)}) {'Query must be array of arrays or 2 elements'}
+          Aspera.assert(query.all?{ |i| i.is_a?(Array) && i.length.eql?(2)}){'Query must be array of arrays or 2 elements'}
           query_array = query
         else
           raise "Query must be Hash or Array, not #{query.class}"
@@ -175,7 +175,7 @@ module Aspera
           one[1] = one[1].gsub(/\A"|"\z/, '')
           one
         end.to_h
-        { type: type.downcase, parameters: parameters }
+        {type: type.downcase, parameters: parameters}
       end
     end
 
@@ -254,7 +254,7 @@ module Aspera
     def oauth
       if @oauth.nil?
         Aspera.assert(@auth_params[:type].eql?(:oauth2)){'no OAuth defined'}
-        oauth_parameters = @auth_params.reject { |k, _v| k.eql?(:type) }
+        oauth_parameters = @auth_params.reject{ |k, _v| k.eql?(:type)}
         Log.log.debug{Log.dump('oauth parameters', oauth_parameters)}
         @oauth = OAuth::Factory.instance.create(**oauth_parameters)
       end
@@ -333,7 +333,7 @@ module Aspera
         when MIME_TEXT
           req.body = body
           req['Content-Type'] = MIME_TEXT
-        else Aspera.error_unexpected_value(content_type) {'body type'}
+        else Aspera.error_unexpected_value(content_type){'body type'}
         end
         # set headers
         headers.each do |key, value|
@@ -494,11 +494,11 @@ module Aspera
       else
         # multiple case insensitive partial matches, try case insensitive full match
         # (anyway AoC does not allow creation of 2 entities with same case insensitive name)
-        name_matches = matching_items.select{|i|i['name'].casecmp?(search_name)}
+        name_matches = matching_items.select{ |i| i['name'].casecmp?(search_name)}
         case name_matches.length
         when 1 then return name_matches.first
-        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{|i|i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
-        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{|i|i['name']}}"
+        when 0 then raise %Q(#{subpath}: multiple case insensitive partial match for: "#{search_name}": #{matching_items.map{ |i| i['name']}} but no case insensitive full match. Please be more specific or give exact name.) # rubocop:disable Layout/LineLength
+        else raise "Two entities cannot have the same case insensitive name: #{name_matches.map{ |i| i['name']}}"
         end
       end
     end

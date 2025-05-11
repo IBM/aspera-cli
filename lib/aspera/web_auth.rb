@@ -182,7 +182,7 @@ module Aspera
       # last argument (self) is provided to constructor of servlet
       mount(@expected_path, WebAuthServlet, self)
       # server runs in thread
-      Thread.new { start }
+      Thread.new{start}
     end
 
     # Called by web server thread on received request

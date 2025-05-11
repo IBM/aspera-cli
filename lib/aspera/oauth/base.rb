@@ -57,7 +57,7 @@ module Aspera
       # helper method to create token as per RFC
       def create_token_call(creation_params)
         Log.log.debug{'Generating a new token'.bg_green}
-        payload = { content_type: Rest::MIME_WWW }
+        payload = {content_type: Rest::MIME_WWW}
         if @use_query
           payload[:query] = creation_params
         else

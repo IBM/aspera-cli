@@ -81,7 +81,7 @@ module Aspera
           unless format.nil?
             case ret_style
             when :header
-              call_args[:headers] = {'Accept' => "application/#{format}" }
+              call_args[:headers] = {'Accept' => "application/#{format}"}
             when :arg
               call_args[:query] ||= {}
               call_args[:query][:format] = format
@@ -105,7 +105,7 @@ module Aspera
                 type:      :url,
                 url_query: {
                   'login'    => options.get_option(:username, mandatory: true),
-                  'password' => options.get_option(:password, mandatory: true) }
+                  'password' => options.get_option(:password, mandatory: true)}
               }
             when :head_basic
               {

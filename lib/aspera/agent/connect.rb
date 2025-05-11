@@ -58,7 +58,7 @@ module Aspera
             'suggestedName'           => '',
             'allowMultipleSelection'  => true,
             'allowedFileTypes'        => ''})
-          transfer_spec['paths'] = selection['dataTransfer']['files'].map { |i| {'source' => i['name']}}
+          transfer_spec['paths'] = selection['dataTransfer']['files'].map{ |i| {'source' => i['name']}}
         end
         # if there is a token, we ask connect client to use well known ssh private keys
         # instead of asking password

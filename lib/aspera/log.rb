@@ -17,10 +17,10 @@ class Logger
   TRACE_MAX = 2
   # add custom level to logger severity
   module Severity
-    1.upto(TRACE_MAX).each { |level| const_set(:"TRACE#{level}", - level)}
+    1.upto(TRACE_MAX).each{ |level| const_set(:"TRACE#{level}", - level)}
   end
   # quick access to label
-  SEVERITY_LABEL = Severity.constants.each_with_object({}) { |name, hash| hash[Severity.const_get(name)] = name}
+  SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
   def format_severity(severity)
     SEVERITY_LABEL[severity] || 'ANY'
   end
@@ -44,7 +44,7 @@ class Logger
     EOM
   end
   # declare methods for all levels
-  Logger::Severity.constants.each { |severity| make_methods(severity) }
+  Logger::Severity.constants.each{ |severity| make_methods(severity)}
 end
 
 $VERBOSE = old_verbose
@@ -59,7 +59,7 @@ module Aspera
     # class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
-      def levels; Logger::Severity.constants.sort{|a, b|Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{|c|c.downcase.to_sym}; end
+      def levels; Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}; end
 
       # get the logger object of singleton
       def log; instance.logger; end

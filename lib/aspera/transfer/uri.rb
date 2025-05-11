@@ -24,7 +24,7 @@ module Aspera
         result_ts['ssh_port'] = @fasp_uri.port
         result_ts['paths'] = [{'source' => URI.decode_www_form_component(@fasp_uri.path)}]
         # faspex 4 does not encode trailing base64 padding, fix that to be able to decode properly
-        fixed_query = @fasp_uri.query.gsub(/(=+)$/){|trail_equals|'%3D' * trail_equals.length}
+        fixed_query = @fasp_uri.query.gsub(/(=+)$/){ |trail_equals| '%3D' * trail_equals.length}
 
         Rest.query_to_h(fixed_query).each do |name, value|
           case name

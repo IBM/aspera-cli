@@ -70,7 +70,7 @@ module Aspera
               when 'ibm-s3'
                 server_data2 = nil
                 if server_data.nil?
-                  server_data2 = @ats_api_pub.all_servers.find{|s|s['id'].eql?(params['transfer_server_id'])}
+                  server_data2 = @ats_api_pub.all_servers.find{ |s| s['id'].eql?(params['transfer_server_id'])}
                   raise "no such transfer server id: #{params['transfer_server_id']}" if server_data2.nil?
                 else
                   server_data2 = @ats_api_pub.all_servers.find do |s|
@@ -111,7 +111,7 @@ module Aspera
             return Main.result_status("deleted #{access_key_id}")
           when :node
             ak_data = ats_api_pub_v1.read("access_keys/#{access_key_id}")
-            server_data = @ats_api_pub.all_servers.find {|i| i['id'].start_with?(ak_data['transfer_server_id'])}
+            server_data = @ats_api_pub.all_servers.find{ |i| i['id'].start_with?(ak_data['transfer_server_id'])}
             raise Cli::Error, 'no such server found' if server_data.nil?
             node_url = server_data['transfer_setup_url']
             api_node = Api::Node.new(
@@ -141,7 +141,7 @@ module Aspera
           command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
-            return {type: :object_list, data: @ats_api_pub.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }}
+            return {type: :object_list, data: @ats_api_pub.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h}}
           when :list
             return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
           when :show
@@ -149,7 +149,7 @@ module Aspera
               server_data = server_by_cloud_region
             else
               server_id = instance_identifier
-              server_data = @ats_api_pub.all_servers.find {|i| i['id'].eql?(server_id)}
+              server_data = @ats_api_pub.all_servers.find{ |i| i['id'].eql?(server_id)}
               raise 'no such server id' if server_data.nil?
             end
             return {type: :single_object, data: server_data}

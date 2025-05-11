@@ -5,13 +5,17 @@ Metrics/MethodLength:
 Metrics/AbcSize:
   Enabled: false
 Layout/SpaceBeforeBlockBraces:
-  Enabled: false
+  Enabled: true
+  EnforcedStyle: no_space
 Layout/SpaceInsideBlockBraces:
-  Enabled: false
+  Enabled: true
+  EnforcedStyle: no_space
 Layout/SpaceAroundBlockParameters:
-  Enabled: false
+  Enabled: true
+  EnforcedStyleInsidePipes: no_space
 Layout/SpaceInsideHashLiteralBraces:
-  Enabled: false
+  Enabled: true
+  EnforcedStyle: no_space
 Layout/MultilineHashBraceLayout:
   Enabled: false
 Layout/MultilineArrayBraceLayout:

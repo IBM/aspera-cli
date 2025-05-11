@@ -28,7 +28,7 @@ module Aspera
         super(**base_options)
         # root id is required for access key
         @root_id = root_id
-        rest_params = { base_url: url}
+        rest_params = {base_url: url}
         if OAuth::Factory.bearer?(password)
           Aspera.assert(!@root_id.nil?){'root_id not allowed for access key'}
           rest_params[:headers] = Api::Node.bearer_headers(password, access_key: username)

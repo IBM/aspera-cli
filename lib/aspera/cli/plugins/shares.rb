@@ -138,9 +138,9 @@ module Aspera
                 return entity_action(api_shares_admin, entities_path, is_singleton: !entity_verb.eql?(:share_permissions))
               when :import # saml
                 return do_bulk_operation(command: entity_verb, descr: 'user information') do |entity_parameters|
-                  entity_parameters = entity_parameters.transform_keys{|k|k.gsub(/\s+/, '_').downcase}
+                  entity_parameters = entity_parameters.transform_keys{ |k| k.gsub(/\s+/, '_').downcase}
                   Aspera.assert_type(entity_parameters, Hash)
-                  SAML_IMPORT_MANDATORY.each{|p|raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
+                  SAML_IMPORT_MANDATORY.each{ |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil?}
                   entity_parameters.each_key do |p|
                     raise "unsupported field: #{p}, use: #{SAML_IMPORT_ALLOWED.join(',')}" unless SAML_IMPORT_ALLOWED.include?(p)
                   end

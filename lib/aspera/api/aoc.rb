@@ -22,7 +22,7 @@ module Aspera
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
       # Well-known AoC global client apps
-      GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{|i|i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
+      GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select{ |i| i.to_s.start_with?(CLIENT_ID_PREFIX)}.freeze
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
       # path in URL of public links
@@ -237,7 +237,7 @@ module Aspera
             Log.log.debug{"ignoring error: #{e}"}
             {}
           end
-        USER_INFO_FIELDS_MIN.each{|f|@cache_user_info[f] = nil if @cache_user_info[f].nil?}
+        USER_INFO_FIELDS_MIN.each{ |f| @cache_user_info[f] = nil if @cache_user_info[f].nil?}
         return @cache_user_info
       end
 
@@ -386,10 +386,10 @@ module Aspera
           Aspera.assert(field.key?('name')){'metadata field must have name'}
           Aspera.assert(field.key?('values')){'metadata field must have values'}
           Aspera.assert_type(field['values'], Array){'metadata field values'}
-          Aspera.assert(!meta_schema.none?{|i|i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
+          Aspera.assert(!meta_schema.none?{ |i| i['name'].eql?(field['name'])}){"unknown metadata field: #{field['name']}"}
         end
         meta_schema.each do |field|
-          provided = pkg_meta.select{|i|i['name'].eql?(field['name'])}
+          provided = pkg_meta.select{ |i| i['name'].eql?(field['name'])}
           raise "only one field with name #{field['name']} allowed" if provided.count > 1
           raise "missing mandatory field: #{field['name']}" if field['required'] && provided.empty?
         end
@@ -519,7 +519,7 @@ module Aspera
         # Console cookie
         ################
         # we are sure that fields are not nil
-        cookie_elements = [app_info[:app], current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{|e|Base64.strict_encode64(e)}
+        cookie_elements = [app_info[:app], current_user_info['name'] || 'public link', current_user_info['email'] || 'none'].map{ |e| Base64.strict_encode64(e)}
         cookie_elements.unshift(COOKIE_PREFIX_CONSOLE_AOC)
         transfer_spec['cookie'] = cookie_elements.join(':')
         # Application tags

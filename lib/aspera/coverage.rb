@@ -5,7 +5,7 @@ if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
   require 'securerandom'
   # compute development top folder based on this source location
-  development_root = 3.times.inject(File.realpath(__FILE__)) { |p, _| File.dirname(p) }
+  development_root = 3.times.inject(File.realpath(__FILE__)){ |p, _| File.dirname(p)}
   SimpleCov.root(development_root)
   SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
   # keep cache data for 1 day (must be longer that time to run the whole test suite)
@@ -23,7 +23,7 @@ if ENV.key?('ENABLE_COVERAGE')
     # assert usually do not trigger
     add_filter do |source_file|
       source_file.lines.each do |line|
-        line.skipped! if no_cov_functions.any?{|i|line.src.include?(i)}
+        line.skipped! if no_cov_functions.any?{ |i| line.src.include?(i)}
       end
       false
     end

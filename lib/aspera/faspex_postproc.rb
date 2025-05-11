@@ -15,7 +15,7 @@ module Aspera
       Aspera.assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
       Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
-      raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{|k|!ALLOWED_PARAMETERS.include?(k)}
+      raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{ |k| !ALLOWED_PARAMETERS.include?(k)}
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
@@ -47,7 +47,7 @@ module Aspera
         webhook_parameters = JSON.parse(request.body)
         Log.log.debug{Log.dump(:webhook_parameters, webhook_parameters)}
         # env expects only strings
-        environment = webhook_parameters.each_with_object({}) { |(k, v), h| h[k] = v.to_s }
+        environment = webhook_parameters.each_with_object({}){ |(k, v), h| h[k] = v.to_s}
         post_proc_pid = Environment.secure_spawn(env: environment, exec: script_path)
         Timeout.timeout(@parameters[:timeout_seconds]) do
           # "wait" for process to avoid zombie

@@ -171,7 +171,7 @@ module Aspera
           cond_var:       ConditionVariable.new
         }
         # start read thread after handshake
-        @ws_read_thread = Thread.new {process_read_thread}
+        @ws_read_thread = Thread.new{process_read_thread}
         @notify_cb&.call(:session_start, session_id: session_id)
         @notify_cb&.call(:session_size, session_id: session_id, info: total_bytes_to_transfer)
         sleep(1)
@@ -309,7 +309,7 @@ module Aspera
         # web socket endpoint: by default use v2 (newer gateways), without base64 encoding
         # is the latest supported? else revert to old api
         if !@upload_version.eql?(API_V1)
-          if !@api_info['endpoints'].any?{|i|i.include?(@upload_version)}
+          if !@api_info['endpoints'].any?{ |i| i.include?(@upload_version)}
             Log.log.warn{"API version #{@upload_version} not supported, reverting to #{API_V1}"}
             @upload_version = API_V1
           end
@@ -377,7 +377,7 @@ module Aspera
             raise "File not found: #{source_path}"
           end
         end
-        transfer_spec['paths'] = files_to_send.map{|i|{'source' => i[:name]}}
+        transfer_spec['paths'] = files_to_send.map{ |i| {'source' => i[:name]}}
         files_to_send.push(total_bytes_to_transfer)
         return files_to_send
       end

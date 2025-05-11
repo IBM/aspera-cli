@@ -89,7 +89,7 @@ module Aspera
               end
               remediation = hint[:remediation]
               remediation = [remediation] unless remediation.is_a?(Array)
-              remediation.each{|r|formatter.display_message(:error, "#{Formatter::HINT_FLASH} #{r}")}
+              remediation.each{ |r| formatter.display_message(:error, "#{Formatter::HINT_FLASH} #{r}")}
               break
             end
           end

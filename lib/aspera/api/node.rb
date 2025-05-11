@@ -38,7 +38,7 @@ module Aspera
       PATH_SEPARATOR = '/'
 
       # register node special token decoder
-      OAuth::Factory.instance.register_decoder(lambda{|token|Node.decode_bearer_token(token)})
+      OAuth::Factory.instance.register_decoder(lambda{ |token| Node.decode_bearer_token(token)})
 
       # class instance variable, access with accessors on class
       @use_standard_ports = true
@@ -352,7 +352,7 @@ module Aspera
           # get the transfer user from info on access key
           transfer_spec['remote_user'] = info['transfer_user'] if info['transfer_user']
           # get settings from name.value array to hash key.value
-          settings = info['settings']&.each_with_object({}){|i, h|h[i['name']] = i['value']}
+          settings = info['settings']&.each_with_object({}){ |i, h| h[i['name']] = i['value']}
           # check WSS ports
           Transfer::Spec::WSS_FIELDS.each do |i|
             transfer_spec[i] = settings[i] if settings.key?(i)

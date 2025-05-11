@@ -21,9 +21,9 @@ module Aspera
       class << self
         # returns string with single quotes suitable for bash if there is any bash meta-character
         def shell_quote(argument)
-          return argument unless argument.chars.any?{|c|BASH_SPECIAL_CHARACTERS.include?(c)}
+          return argument unless argument.chars.any?{ |c| BASH_SPECIAL_CHARACTERS.include?(c)}
           # surround with single quotes, and escape single quotes
-          return %Q{'#{argument.gsub("'"){|_s| %q{'"'"'}}}'}
+          return %Q{'#{argument.gsub("'"){ |_s| %q{'"'"'}}}'}
         end
 
         # check that external tools can be executed

@@ -54,7 +54,7 @@ module Aspera
         @all_secrets.each do |label, values|
           normal = values.symbolize_keys
           normal[:label] = label
-          CONTENT_KEYS.each{|k|normal[k] = '' unless normal.key?(k)}
+          CONTENT_KEYS.each{ |k| normal[k] = '' unless normal.key?(k)}
           result.push(normal)
         end
         return result
