@@ -224,18 +224,21 @@ module Aspera
           return @cache_api_aoc
         end
 
+        # Generate or update hash with workspace id and name (option)
+        # @param hash   [Hash, Nil] set in provided hash
         # @param string [Bool] true to set key as string, else as symbol
-        # @param hash [Hash, Nil] set in this hash
-        # @param name [Bool] include name
-        # @return [Hash] with key `workspace_id` (symbol or string) only if workspace is defined
-        def workspace_id_hash(result: nil, string: false, name: false)
+        # @param name   [Bool] include name
+        # @return [Hash] with key `workspace_[id,name]` (symbol or string) only if defined
+        def workspace_id_hash(hash: nil, string: false, name: false)
           info = aoc_api.workspace
-          result = {} if result.nil?
-          %i[id name].each do |i|
+          hash = {} if hash.nil?
+          fields = %i[id]
+          fields.push(:name) if name
+          fields.each do |i|
             k = "workspace_#{i}"
-            result[string ? k : k.to_sym] = info[i] unless info[i].nil?
+            hash[string ? k : k.to_sym] = info[i] unless info[i].nil?
           end
-          return result
+          return hash
         end
 
         # Get resource identifier from command line, either directly or from name.
@@ -320,7 +323,7 @@ module Aspera
             query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
             query.delete('dropbox_name')
           end
-          workspace_id_hash(result: query, string: true)
+          workspace_id_hash(hash: query, string: true)
           # by default show dropbox packages only for dropboxes
           query['exclude_dropbox_packages'] = !query.key?('dropbox_id') unless query.key?('exclude_dropbox_packages')
         end
@@ -660,16 +663,17 @@ module Aspera
         end
 
         # Create a shared link for the given entity
-        # @param shared_data [Hash] information for shared data
-        # @param block [Proc] Optional: called on creation
-        def short_link_command(shared_data, purpose_public:)
+        # @param purpose_public [Symbol]
+        # @param shared_data    [Hash] information for shared data
+        # @param block          [Proc] Optional: called on creation
+        def short_link_command(purpose_public:, **shared_data)
           link_type = options.get_next_argument('link type', accept_list: %i[public private])
           purpose_local = case link_type
           when :public
             case purpose_public
             when /package/ then 'send_package_to_dropbox'
             when /shared/ then 'token_auth_redirection'
-            else raise 'error'
+            else Aspera.error_unexpected_value(purpose_public){'public link purpose'}
             end
           when :private then 'shared_folder_auth_link'
           else Aspera.error_unreachable_line
@@ -799,24 +803,24 @@ module Aspera
               case options.get_next_command(%i[list show short_link])
               when :list
                 default_query = {'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}
-                workspace_id_hash(result: default_query, string: true)
+                workspace_id_hash(hash: default_query, string: true)
                 return result_list('dropbox_memberships', fields: %w[dropbox_id dropbox.name], default_query: default_query)
               when :show
                 return {type: :single_object, data: aoc_api.read(get_resource_path_from_args('dropboxes'))}
               when :short_link
                 return short_link_command(
-                  {
-                    dropbox_id: get_resource_id_from_args('dropboxes'),
-                    name:       ''
-                  }.merge(workspace_id_hash),
-                  purpose_public: 'send_package_to_dropbox')
+                  purpose_public: 'send_package_to_dropbox',
+                  dropbox_id:     get_resource_id_from_args('dropboxes'),
+                  name:           '',
+                  **workspace_id_hash
+                )
               end
             when :send
               package_data = value_create_modify(command: package_command)
               new_user_option = options.get_option(:new_user_option)
               option_validate = options.get_option(:validate_metadata)
               # works for both normal user auth and link auth
-              workspace_id_hash(result: package_data, string: true) unless package_data.key?('workspace_id')
+              workspace_id_hash(hash: package_data, string: true) unless package_data.key?('workspace_id')
               if !aoc_api.public_link.nil?
                 aoc_api.assert_public_link_types(%w[send_package_to_user send_package_to_dropbox])
                 box_type = aoc_api.public_link['purpose'].split('_').last
@@ -928,14 +932,15 @@ module Aspera
             when :short_link
               folder_dest = options.get_next_argument('path', validation: String)
               home_node_api = aoc_api.node_api_from(
-                node_id:        aoc_api.home[:node_id],
+                node_id: aoc_api.home[:node_id],
                 **workspace_id_hash(name: true))
               shared_apfid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
               return short_link_command(
-                {
-                  node_id: shared_apfid[:api].app_info[:node_info]['id'],
-                  file_id: shared_apfid[:file_id]
-                }.merge(workspace_id_hash), purpose_public: 'view_shared_file') do |resource_id|
+                purpose_public: 'view_shared_file',
+                node_id:        shared_apfid[:api].app_info[:node_info]['id'],
+                file_id:        shared_apfid[:file_id],
+                **workspace_id_hash
+              ) do |resource_id|
                        # TODO: merge with node permissions ?
                        # TODO: access level as arg
                        access_levels = Api::Node::ACCESS_LEVELS # ['delete','list','mkdir','preview','read','rename','write']
@@ -951,8 +956,9 @@ module Aspera
                            'created_by_name'  => aoc_api.current_user_info['name'],
                            'created_by_email' => aoc_api.current_user_info['email'],
                            'access_key'       => shared_apfid[:api].app_info[:node_info]['access_key'],
-                           'node'             => shared_apfid[:api].app_info[:node_info]['host']
-                         }.merge(workspace_id_hash(string: true, name: true))
+                           'node'             => shared_apfid[:api].app_info[:node_info]['host'],
+                           **workspace_id_hash(string: true, name: true)
+                         }
                        }
                        created_data = shared_apfid[:api].create('permissions', perm_data)
                        aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apfid[:api].app_info)
