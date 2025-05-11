@@ -2253,7 +2253,7 @@ read -s <%=opt_env(%Q`vault_password`)%>
 export <%=opt_env(%Q`vault_password`)%>
 ```
 
-#### Vault: IBM Hashicorp Vault
+#### Vault: IBM HashiCorp Vault
 
 <https://developer.hashicorp.com/vault>
 
@@ -3403,6 +3403,63 @@ EOF
 ```
 
 > **Note:** Logging options are kept here in the `cron` file instead of configuration file to allow execution on command line with output on command line.
+
+### Running as service
+
+Some commands result in <%=tool%> running as a server, listening on a port.
+In this case, it is usually desirable to run <%=tool%> as a service.
+On Linux, typically, [SystemD](https://systemd.io/) is used.
+
+A convenient way is to write a startup script, and run this script as a service.
+
+Let's give a base name for our service: `my_<%=cmd%>_svc`
+
+The startup script can be simply the <%=tool%> command line, for example: `/usr/local/bin/start_my_<%=cmd%>_svc.sh`:
+
+```bash
+#!/bin/bash
+set -e
+echo "Starting my_<%=cmd%>_svc at $(date)"
+# set PATH to find <%=cmd%>, and other environment setup
+exec <%=cmd%> .....
+```
+
+And make this script executable:
+
+```bash
+chmod a+x /usr/local/bin/start_my_<%=cmd%>_svc.sh
+```
+
+Create a startup file: `/etc/systemd/system/my_<%=cmd%>_svc.service` :
+
+```ini
+[Unit]
+Description=My <%=cmd%> daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/start_my_<%=cmd%>_svc.sh
+Restart=on-failure
+RestartSec=15
+User=xfer
+# Optional, specify a working directory
+# WorkingDirectory=/path/to/working/dir
+# Optional, redirect output
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start with:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now my_<%=cmd%>_svc.service
+systemctl status my_<%=cmd%>_svc.service
+journalctl -u my_<%=cmd%>_svc.service
+```
 
 ### Locking for exclusive execution
 
