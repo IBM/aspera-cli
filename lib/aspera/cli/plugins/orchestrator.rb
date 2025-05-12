@@ -64,20 +64,14 @@ module Aspera
 
         # Call orchestrator API, it's a bit special
         # @param endpoint   [String]  the endpoint to call
-        # @param prefix     [String]  the prefix to add to the endpoint
-        # @param id         [String]  the id to add to the endpoint
         # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)
         # @param format     [String]  the format to request, 'json', 'xml', nil
         # @param args       [Hash]    the arguments to pass
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
-        # @param http       [Boolean] if true, returns the HttpResponse, else 
-        def call_ao(endpoint, prefix: 'api', id: nil, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
-          # calls are GET
-          call_args = {operation: 'GET', subpath: endpoint}
-          # specify prefix if necessary
-          call_args[:subpath] = "#{prefix}/#{call_args[:subpath]}" unless prefix.nil?
-          # specify id if necessary
-          call_args[:subpath] = "#{call_args[:subpath]}/#{id}" unless id.nil?
+        # @param http       [Boolean] if true, returns the HttpResponse, else
+        def call_ao(endpoint, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
+          # calls are all GET
+          call_args = {operation: 'GET', subpath: "api/#{endpoint}"}
           ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
           call_args[:query] = args unless args.nil?
           unless format.nil?
@@ -94,9 +88,9 @@ module Aspera
           end
           result = @api_orch.call(**call_args)
           return result[:http] if http
-          result[:data] = XmlSimple.xml_in(result[:http].body, {'ForceArray' => xml_arrays}) if format.eql?('xml')
-          Log.log.debug{Log.dump(:data, result[:data])}
-          return result[:data]
+          result = format.eql?('xml') ? XmlSimple.xml_in(result[:http].body, {'ForceArray' => xml_arrays}) : result[:data]
+          Log.log.debug{Log.dump(:data, result)}
+          return result
         end
 
         def execute_action
@@ -149,36 +143,34 @@ module Aspera
             return Main.result_object_list(result['Plugin'])
           when :workflow
             command = options.get_next_command(%i[list status inputs details start export])
-            unless [:list].include?(command)
-              wf_id = instance_identifier
-            end
             case command
             when :status
-              wf_id = nil if wf_id.eql?(SpecialValues::ALL)
-              result = call_ao('workflows_status', id: wf_id)
+              wf_id = instance_identifier
+              result = call_ao(wf_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{wf_id}")
               return Main.result_object_list(result['workflows']['workflow'])
             when :list
-              result = call_ao('workflows_list', id: 0)
+              result = call_ao('workflows_list/0')
               return {
                 type:   :object_list,
                 data:   result['workflows']['workflow'],
                 fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
               }
             when :details
-              result = call_ao('workflow_details', id: wf_id)
+              result = call_ao("workflow_details/#{instance_identifier}")
               return Main.result_object_list(result['workflows']['workflow']['statuses'])
             when :inputs
-              result = call_ao('workflow_inputs_spec', id: wf_id)
+              result = call_ao("workflow_inputs_spec/#{instance_identifier}")
               return Main.result_single_object(result['workflow_inputs_spec'])
             when :export
-              result = call_ao('export_workflow', id: wf_id, format: nil, http: true)
-              return {type: :text, data: result.body}
+              result = call_ao("export_workflow/#{instance_identifier}", format: nil, http: true)
+              return Main.result_text(result.body)
             when :start
               result = {
                 type: :single_object,
                 data: nil
               }
               call_params = {format: :json}
+              wf_id = instance_identifier
               # get external parameters if any
               options.get_next_argument('external_parameters', mandatory: false, validation: Hash, default: {}).each do |name, value|
                 call_params["external_parameters[#{name}]"] = value
@@ -199,7 +191,7 @@ module Aspera
               if call_params['synchronous']
                 result[:type] = :text
               end
-              result[:data] = call_ao('initiate', id: wf_id, args: call_params)
+              result[:data] = call_ao("initiate/#{wf_id}", args: call_params)
               return result
             end
           else Aspera.error_unexpected_value(command)
