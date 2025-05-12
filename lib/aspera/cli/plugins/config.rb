@@ -785,7 +785,7 @@ module Aspera
             value = @config_presets[name][param_name]
             raise "no such option in preset #{name} : #{param_name}" if value.nil?
             case value
-            when Numeric, String then return {type: :text, data: ExtendedValue.instance.evaluate(value.to_s)}
+            when Numeric, String then return Main.result_text(ExtendedValue.instance.evaluate(value.to_s))
             end
             return Main.result_single_object(value)
           when :unset

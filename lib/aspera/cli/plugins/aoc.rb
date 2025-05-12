@@ -311,7 +311,8 @@ module Aspera
           user_query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks to query
           yield(user_query) if block_given?
-          return {type: :object_list, fields: fields}.merge(api_read_all(resource_class_path, base_query.merge(user_query).compact))
+          result = api_read_all(resource_class_path, base_query.merge(user_query).compact)
+          return Main.result_object_list(result[:data], fields: fields, total: result[:total])
         end
 
         # Translates `dropbox_name` to `dropbox_id` and fills workspace_id
@@ -761,7 +762,7 @@ module Aspera
           when :servers
             return Main.result_object_list(Rest.new(base_url: "#{Api::AoC.api_base_url}/#{Api::AoC::API_V1}").read('servers'))
           when :bearer_token
-            return {type: :text, data: aoc_api.oauth.authorization}
+            return Main.result_text(aoc_api.oauth.authorization)
           when :organization
             return Main.result_single_object(aoc_api.read('organization'))
           when :tier_restrictions
