@@ -120,17 +120,6 @@ module Aspera
           return result.green if yes
           return result.red
         end
-
-        def auto_type(data)
-          result = {type: :other_struct, data: data}
-          result[:type] = :single_object if result[:data].is_a?(Hash)
-          if result[:data].is_a?(Array)
-            if result[:data].all?(Hash)
-              result[:type] = :object_list
-            end
-          end
-          return result
-        end
       end
 
       # initialize the formatter
@@ -317,9 +306,6 @@ module Aspera
           when :text # no table
             # :status displays a simple message
             display_message(:data, data)
-          when :other_struct # no table
-            # :other_struct is any other type of structure
-            display_message(:data, PP.pp(data, +''))
           else
             raise "unknown data type: #{type}"
           end

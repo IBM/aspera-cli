@@ -118,10 +118,10 @@ module Aspera
         end
         display_fields = [id_result, 'status']
         if is_bulk
-          return {type: :object_list, data: result_list, fields: display_fields}
+          return Main.result_object_list(result_list, fields: display_fields)
         else
           display_fields = fields unless fields.eql?(:default)
-          return {type: :single_object, data: result_list.first, fields: display_fields}
+          return Main.result_single_object(result_list.first, fields: display_fields)
         end
       end
 
@@ -175,7 +175,7 @@ module Aspera
             {'id' => one_id}
           end
         when :show
-          return {type: :single_object, data: rest_api.read(one_res_path), fields: display_fields}
+          return Main.result_single_object(rest_api.read(one_res_path), fields: display_fields)
         when :list
           resp = rest_api.call(operation: 'GET', subpath: res_class_path, headers: {'Accept' => Rest::MIME_JSON}, query: query_read_delete)
           return Main.result_empty if resp[:http].code == '204'
@@ -193,10 +193,10 @@ module Aspera
           end
           case data
           when Hash
-            return {type: :single_object, data: data, fields: display_fields}
+            return Main.result_single_object(data, fields: display_fields)
           when Array
-            return {type: :object_list, data: data, fields: display_fields} if data.empty? || data.first.is_a?(Hash)
-            return {type: :value_list, data: data, name: 'id'}
+            return Main.result_object_list(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
+            return Main.result_value_list(data, name: 'id')
           else
             raise "An error occurred: unexpected result type for list: #{data.class}"
           end

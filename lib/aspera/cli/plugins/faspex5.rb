@@ -712,20 +712,20 @@ module Aspera
             conf_cmd = options.get_next_command(%i[show modify])
             case conf_cmd
             when :show
-              return {type: :single_object, data: @api_v5.read(conf_path)}
+              return Main.result_single_object(@api_v5.read(conf_path))
             when :modify
-              return {type: :single_object, data: @api_v5.update(conf_path, value_create_modify(command: conf_cmd))}
+              return Main.result_single_object(@api_v5.update(conf_path, value_create_modify(command: conf_cmd)))
             end
           when :smtp
             smtp_path = 'configuration/smtp'
             smtp_cmd = options.get_next_command(%i[show create modify delete test])
             case smtp_cmd
             when :show
-              return {type: :single_object, data: @api_v5.read(smtp_path)}
+              return Main.result_single_object(@api_v5.read(smtp_path))
             when :create
-              return {type: :single_object, data: @api_v5.create(smtp_path, value_create_modify(command: smtp_cmd))}
+              return Main.result_single_object(@api_v5.create(smtp_path, value_create_modify(command: smtp_cmd)))
             when :modify
-              return {type: :single_object, data: @api_v5.update(smtp_path, value_create_modify(command: smtp_cmd))}
+              return Main.result_single_object(@api_v5.update(smtp_path, value_create_modify(command: smtp_cmd)))
             when :delete
               @api_v5.delete(smtp_path)
               return Main.result_status('SMTP configuration deleted')
@@ -735,7 +735,7 @@ module Aspera
               creation = @api_v5.create(File.join(smtp_path, 'test'), test_data)
               result = wait_for_job(creation['job_id'])
               result['serialized_args'] = JSON.parse(result['serialized_args']) rescue result['serialized_args']
-              return {type: :single_object, data: result}
+              return Main.result_single_object(result)
             end
           end
         end
@@ -747,7 +747,7 @@ module Aspera
           set_api unless command.eql?(:postprocessing)
           case command
           when :version
-            return {type: :single_object, data: @api_v5.read('version')}
+            return Main.result_single_object(@api_v5.read('version'))
           when :health
             nagios = Nagios.new
             begin
@@ -762,11 +762,11 @@ module Aspera
           when :user
             case options.get_next_command(%i[account profile])
             when :account
-              return {type: :single_object, data: @api_v5.read('account')}
+              return Main.result_single_object(@api_v5.read('account'))
             when :profile
               case options.get_next_command(%i[show modify])
               when :show
-                return {type: :single_object, data: @api_v5.read('account/preferences')}
+                return Main.result_single_object(@api_v5.read('account/preferences'))
               when :modify
                 @api_v5.update('account/preferences', options.get_next_argument('modified parameters', validation: Hash))
                 return Main.result_status('modified')

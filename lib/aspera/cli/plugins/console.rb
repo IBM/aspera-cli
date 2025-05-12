@@ -86,11 +86,11 @@ module Aspera
               command = options.get_next_command(%i[list submit])
               case command
               when :list
-                return {type: :object_list, data: api_console.read('smart_transfers')}
+                return Main.result_object_list(api_console.read('smart_transfers'))
               when :submit
                 smart_id = options.get_next_argument('smart_id')
                 params = options.get_next_argument('transfer parameters')
-                return {type: :object_list, data: api_console.create("smart_transfers/#{smart_id}", params)}
+                return Main.result_object_list(api_console.create("smart_transfers/#{smart_id}", params))
               end
             when :current
               command = options.get_next_command([:list])

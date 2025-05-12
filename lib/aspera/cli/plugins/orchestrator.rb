@@ -11,8 +11,10 @@ module Aspera
   module Cli
     module Plugins
       class Orchestrator < Cli::BasicAuthPlugin
+        STANDARD_PATH = '/aspera/orchestrator'
+        TEST_ENDPOINT = 'api/remote_node_ping'
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT
         class << self
-          STANDARD_PATH = '/aspera/orchestrator'
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
             urls = [address_or_url]
@@ -21,13 +23,12 @@ module Aspera
             urls.each do |base_url|
               next unless base_url.match?('https?://')
               api = Rest.new(base_url: base_url)
-              test_endpoint = 'api/remote_node_ping'
-              result = api.call(operation: 'GET', subpath: test_endpoint, headers: {'Accept' => Rest::MIME_JSON}, query: {format: :json})
+              result = api.call(operation: 'GET', subpath: TEST_ENDPOINT, headers: {'Accept' => Rest::MIME_JSON}, query: {format: :json})
               next unless result[:data]['remote_orchestrator_info']
               url = result[:http].uri.to_s
               return {
                 version: result[:data]['remote_orchestrator_info']['orchestrator-version'],
-                url:     url[0..url.index(test_endpoint) - 2]
+                url:     url[0..url.index(TEST_ENDPOINT) - 2]
               }
             rescue StandardError => e
               error = e
@@ -61,14 +62,15 @@ module Aspera
 
         ACTIONS = %i[health info workflow plugins processes].freeze
 
-        # call orchestrator api
-        # @param endpoint [String] the endpoint to call
-        # @param prefix [String] the prefix to add to the endpoint
-        # @param id [String] the id to add to the endpoint
-        # @param ret_style [Symbol] the return style, :header, :arg, :ext(extension)
-        # @param format [String] the format to request, 'json', 'xml', nil
-        # @param args [Hash] the arguments to pass
+        # Call orchestrator API, it's a bit special
+        # @param endpoint   [String]  the endpoint to call
+        # @param prefix     [String]  the prefix to add to the endpoint
+        # @param id         [String]  the id to add to the endpoint
+        # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)
+        # @param format     [String]  the format to request, 'json', 'xml', nil
+        # @param args       [Hash]    the arguments to pass
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
+        # @param http       [Boolean] if true, returns the HttpResponse, else 
         def call_ao(endpoint, prefix: 'api', id: nil, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
           # calls are GET
           call_args = {operation: 'GET', subpath: endpoint}
@@ -136,15 +138,15 @@ module Aspera
             return nagios.result
           when :info
             result = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
-            return {type: :single_object, data: result}
+            return Main.result_single_object(result)
           when :processes
             # TODO: Bug ? API has only XML format
             result = call_ao('processes_status', format: 'xml')
-            return {type: :object_list, data: result['process']}
+            return Main.result_object_list(result['process'])
           when :plugins
             # TODO: Bug ? only json format on url
             result = call_ao('plugin_version')
-            return {type: :object_list, data: result['Plugin']}
+            return Main.result_object_list(result['Plugin'])
           when :workflow
             command = options.get_next_command(%i[list status inputs details start export])
             unless [:list].include?(command)
@@ -154,7 +156,7 @@ module Aspera
             when :status
               wf_id = nil if wf_id.eql?(SpecialValues::ALL)
               result = call_ao('workflows_status', id: wf_id)
-              return {type: :object_list, data: result['workflows']['workflow']}
+              return Main.result_object_list(result['workflows']['workflow'])
             when :list
               result = call_ao('workflows_list', id: 0)
               return {
@@ -164,10 +166,10 @@ module Aspera
               }
             when :details
               result = call_ao('workflow_details', id: wf_id)
-              return {type: :object_list, data: result['workflows']['workflow']['statuses']}
+              return Main.result_object_list(result['workflows']['workflow']['statuses'])
             when :inputs
               result = call_ao('workflow_inputs_spec', id: wf_id)
-              return {type: :single_object, data: result['workflow_inputs_spec']}
+              return Main.result_single_object(result['workflow_inputs_spec'])
             when :export
               result = call_ao('export_workflow', id: wf_id, format: nil, http: true)
               return {type: :text, data: result.body}

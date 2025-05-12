@@ -921,7 +921,7 @@ module Aspera
               return Main.result_status(remote_chain.first.subject.to_a.find{ |name, _, _| name == 'CN'}[1])
             end
           when :echo # display the content of a value given on command line
-            return Formatter.auto_type(options.get_next_argument('value', validation: nil))
+            return Main.result_auto(options.get_next_argument('value', validation: nil))
           when :download
             file_url = options.get_next_argument('source URL').chomp
             file_dest = options.get_next_argument('file path', mandatory: false)

@@ -88,15 +88,15 @@ module Aspera
               end
             end
             res = ats_api_pub_v1.create('access_keys', params)
-            return {type: :single_object, data: res}
+            return Main.result_single_object(res)
             # TODO : action : modify, with "PUT"
           when :list
             params = options.get_option(:params) || {'offset' => 0, 'max_results' => 1000}
             res = ats_api_pub_v1.read('access_keys', params)
-            return {type: :object_list, data: res['data'], fields: ['name', 'id', 'created.at', 'modified.at']}
+            return Main.result_object_list(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
           when :show
             res = ats_api_pub_v1.read("access_keys/#{access_key_id}")
-            return {type: :single_object, data: res}
+            return Main.result_single_object(res)
           when :modify
             params = value_create_modify(command: command)
             params['id'] = access_key_id
@@ -105,7 +105,7 @@ module Aspera
           when :entitlement
             ak = ats_api_pub_v1.read("access_keys/#{access_key_id}")
             api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
-            return {type: :single_object, data: api_bss.read('entitlement')}
+            return Main.result_single_object(api_bss.read('entitlement'))
           when :delete
             ats_api_pub_v1.delete("access_keys/#{access_key_id}")
             return Main.result_status("deleted #{access_key_id}")
@@ -132,7 +132,7 @@ module Aspera
                 username: access_key_id,
                 password: config.lookup_secret(url: ats_url, username: access_key_id)
               })
-            return {type: :single_object, data: api_ak_auth.read('servers')}
+            return Main.result_single_object(api_ak_auth.read('servers'))
           else Aspera.error_unexpected_value(command)
           end
         end
@@ -141,9 +141,9 @@ module Aspera
           command = options.get_next_command(%i[clouds list show])
           case command
           when :clouds
-            return {type: :object_list, data: @ats_api_pub.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h}}
+            return Main.result_object_list(@ats_api_pub.cloud_names.map{ |k, v| CLOUD_TABLE.zip([k, v]).to_h})
           when :list
-            return {type: :object_list, data: @ats_api_pub.all_servers, fields: %w[id cloud region]}
+            return Main.result_object_list(@ats_api_pub.all_servers, fields: %w[id cloud region])
           when :show
             if options.get_option(:cloud) || options.get_option(:region)
               server_data = server_by_cloud_region
@@ -152,7 +152,7 @@ module Aspera
               server_data = @ats_api_pub.all_servers.find{ |i| i['id'].eql?(server_id)}
               raise 'no such server id' if server_data.nil?
             end
-            return {type: :single_object, data: server_data}
+            return Main.result_single_object(server_data)
           end
         end
 
@@ -191,16 +191,16 @@ module Aspera
           when :instances
             instances = ats_ibm_api.read('instances')
             Log.log.warn{"more instances remaining: #{instances['remaining']}"} unless instances['remaining'].to_i.eql?(0)
-            return {type: :value_list, data: instances['data'], name: 'instance'}
+            return Main.result_value_list(instances['data'], name: 'instance')
           when :create
             created_key = ats_ibm_api.create('api_keys', value_create_modify(command: command, default: {}))
-            return {type: :single_object, data: created_key}
+            return Main.result_single_object(created_key)
           when :list # list known api keys in ATS (this require an api_key ...)
             res = ats_ibm_api.read('api_keys', {'offset' => 0, 'max_results' => 1000})
-            return {type: :value_list, data: res['data'], name: 'ats_id'}
+            return Main.result_value_list(res['data'], name: 'ats_id')
           when :show # show one of api_key in ATS
             res = ats_ibm_api.read("api_keys/#{concerned_id}")
-            return {type: :single_object, data: res}
+            return Main.result_single_object(res)
           when :delete
             ats_ibm_api.delete("api_keys/#{concerned_id}")
             return Main.result_status("deleted #{concerned_id}")
@@ -227,7 +227,7 @@ module Aspera
             return execute_action_api_key
           when :aws_trust_policy
             res = ats_api_pub_v1.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})
-            return {type: :single_object, data: res}
+            return Main.result_single_object(res)
           else Aspera.error_unexpected_value(command)
           end
         end

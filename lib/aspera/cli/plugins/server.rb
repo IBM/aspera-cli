@@ -236,11 +236,11 @@ module Aspera
               when :mkdir, :mv, :cp, :rm
                 return Main.result_success
               when :ls
-                return {type: :object_list, data: result.map(&:stringify_keys), fields: %w[zmode zuid zgid size mtime name]}
+                return Main.result_object_list(result.map(&:stringify_keys), fields: %w[zmode zuid zgid size mtime name])
               when :df
-                return {type: :object_list, data: result.map(&:stringify_keys)}
+                return Main.result_object_list(result.map(&:stringify_keys))
               when :du, :md5sum, :info
-                return {type: :single_object, data: result.stringify_keys}
+                return Main.result_single_object(result.stringify_keys)
               end
             rescue AsCmd::Error => e
               raise Cli::BadArgument, e.extended_message
