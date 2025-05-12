@@ -1621,10 +1621,10 @@ $(T)conf_extended: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	test $$($(CLI_TEST) config echo @val:@file:foo --format=text) = @file:foo
 	test $$($(CLI_TEST) config echo @base64:Zm9v --format=text) = foo
-	test "$$($(CLI_TEST) config echo @lines:@json:'"1\n2\n"')" = '["1", "2"]'
-	test "$$($(CLI_TEST) config echo @list:,1,2)" = '["1", "2"]'
-	test "$$($(CLI_TEST) config echo @json:'["1","2"]')" = '["1", "2"]'
-	test "$$($(CLI_TEST) config echo @yaml:@json:'"- 1\n- 2\n"')" = '[1, 2]'
+	test "$$($(CLI_TEST) config echo @lines:@json:'"1\n2\n"' --format=ruby)" = '["1", "2"]'
+	test "$$($(CLI_TEST) config echo @list:,1,2 --format=ruby)" = '["1", "2"]'
+	test "$$($(CLI_TEST) config echo @json:'["1","2"]' --format=ruby)" = '["1", "2"]'
+	test "$$($(CLI_TEST) config echo @yaml:@json:'"- 1\n- 2\n"' --format=ruby)" = '[1, 2]'
 	@$(STOP_TEST) $@
 $(T)conf_interactive: $(TMP_EXISTS)
 	@$(START_TEST) $@
