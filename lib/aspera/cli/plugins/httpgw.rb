@@ -58,7 +58,7 @@ module Aspera
             return nagios.result
           when :info
             api_v1 = Api::Httpgw.new(url: base_url)
-            return {type: :single_object, data: api_v1.info}
+            return Main.result_single_object(api_v1.info)
           end
         end
       end

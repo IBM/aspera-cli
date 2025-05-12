@@ -100,7 +100,7 @@ module Aspera
           when :status
             sync_session_name = options.get_next_argument('name of sync session', mandatory: false, validation: String)
             async_params = options.get_option(:sync_info, mandatory: true)
-            return {type: :single_object, data: Transfer::Sync.admin_status(async_params, sync_session_name)}
+            return Main.result_single_object(Transfer::Sync.admin_status(async_params, sync_session_name))
           end
         end
       end

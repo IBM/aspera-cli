@@ -291,7 +291,7 @@ module Aspera
             case command_pkg
             when :show
               delivery_id = instance_identifier
-              return {type: :single_object, data: mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)}}
+              return Main.result_single_object(mailbox_filtered_entries(stop_at_id: delivery_id).find{ |p| p[PACKAGE_MATCH_FIELD].eql?(delivery_id)})
             when :list
               return {
                 type:   :object_list,
@@ -439,7 +439,7 @@ module Aspera
             source_list = api_v3.read('source_shares')['items']
             case command_source
             when :list
-              return {type: :object_list, data: source_list}
+              return Main.result_object_list(source_list)
             else # :info :node
               source_id = instance_identifier do |field, value|
                 Aspera.assert(field.eql?('name'), exception_class: Cli::BadArgument){'only name as selector, or give id'}
@@ -464,7 +464,7 @@ module Aspera
               Log.log.debug{Log.dump(:source_info, source_info)}
               case command_source
               when :info
-                return {data: source_info, type: :single_object}
+                return Main.result_single_object(source_info)
               when :node
                 node_config = ExtendedValue.instance.evaluate(source_info[KEY_NODE])
                 Log.log.debug{"node=#{node_config}"}
@@ -481,13 +481,13 @@ module Aspera
             end
           when :me
             my_info = api_v3.read('me')
-            return {data: my_info, type: :single_object}
+            return Main.result_single_object(my_info)
           when :dropbox
             command_pkg = options.get_next_command([:list])
             case command_pkg
             when :list
               dropbox_list = api_v3.read('dropboxes')
-              return {type: :object_list, data: dropbox_list['items'], fields: %w[name id description can_read can_write]}
+              return Main.result_object_list(dropbox_list['items'], fields: %w[name id description can_read can_write])
             end
           when :v4
             command = options.get_next_command(%i[package dropbox dmembership workgroup wmembership user metadata_profile])
@@ -526,11 +526,11 @@ module Aspera
               u['first_name'], u['last_name'] = u['displayName'].split(' ', 2)
               u['x'] = true
             end
-            return {type: :object_list, data: users}
+            return Main.result_object_list(users)
           when :login_methods
             login_meths = api_v3.call(operation: 'GET', subpath: 'login/new', headers: {'Accept' => 'application/xrds+xml'})[:http].body
             login_methods = XmlSimple.xml_in(login_meths, {'ForceArray' => false})
-            return {type: :object_list, data: login_methods['XRD']['Service']}
+            return Main.result_object_list(login_methods['XRD']['Service'])
           end
         end
       end

@@ -42,8 +42,9 @@ module Aspera
       STATUS_FIELD = 'status'
       COMMAND_CONFIG = :config
       COMMAND_HELP = :help
+      SCALAR_TYPES = [String, Integer, Symbol].freeze
 
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES
 
       class << self
         # expect some list, but nothing to display
@@ -80,7 +81,7 @@ module Aspera
             item[STATUS_FIELD] = item[STATUS_FIELD].map(&:to_s).join(',')
           end
           raise global_status unless global_status.eql?(:success)
-          return {type: :object_list, data: status_table}
+          return result_object_list(status_table)
         end
 
         def result_image(blob, formatter:)
@@ -97,6 +98,23 @@ module Aspera
 
         def result_value_list(data, name)
           return {type: :value_list, data: data, name: name}
+        end
+
+        # Determines type of result based on data
+        def result_auto(data)
+          case data
+          when Hash
+            return result_single_object(data)
+          when Array
+            all_types = data.map(&:class).uniq
+            return result_object_list(data) if all_types.eql?([Hash])
+            unsupported_types = all_types - SCALAR_TYPES
+            return result_value_list(data, 'list') if unsupported_types.empty?
+            Aspera.error_unexpected_value(unsupported_types){'list item types'}
+          when *SCALAR_TYPES
+            return result_text(data)
+          else Aspera.error_unexpected_value(data.class.name){'result type'}
+          end
         end
       end
 
