@@ -5980,11 +5980,11 @@ It is invoked like this:
 An optional positional parameter can be provided as extended value `Hash`:
 
 | Parameter         | Type     | Default | Description                                         |
-|-------------------|----------|---------|-----------------------------------------------------|
-| **server info**   | -        | -       | See [Web service](#web-service).                    |
-| `script_folder`   | `String` | `.`     | Prefix added to script path (Default: CWD)          |
-| `fail_on_error`   | `Bool`   | false   | Fail if true and process exits with non-zero code   |
-| `timeout_seconds` | `Integer`| 60      | Time out before script is killed                    |
+|-------------------|----------|-------|-----------------------------------------------------|
+| **server info**   | -        | -     | See [Web service](#web-service).                    |
+| `script_folder`   | `String` | `.`   | Prefix added to script path (Default: CWD)          |
+| `fail_on_error`   | `Bool`   | false | Fail if true and process exits with non-zero code   |
+| `timeout_seconds` | `Integer`| 60    | Time out before script is killed                    |
 
 When a request on <%=tool%> is received the following happens:
 
