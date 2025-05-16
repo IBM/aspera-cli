@@ -815,22 +815,22 @@ module Aspera
             end
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify(command: command, description: 'listening url (e.g. https://localhost:12345)', type: String)
-            uri = URI.parse(url)
-            server = WebServerSimple.new(uri)
+            parameters = value_create_modify(command: command, default: {}).symbolize_keys
+            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
+            uri = URI.parse(parameters[:url])
+            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
+            Aspera.assert(parameters.slice(*WebServerSimple::PARAMS).empty?)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
             server.start
             return Main.result_status('Gateway terminated')
           when :postprocessing
             require 'aspera/faspex_postproc' # cspell:disable-line
-            parameters = value_create_modify(command: command)
-            parameters = parameters.symbolize_keys
-            Aspera.assert(parameters.key?(:url)){'Missing key: url'}
+            parameters = value_create_modify(command: command, default: {}).symbolize_keys
+            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
             uri = URI.parse(parameters[:url])
-            parameters[:processing] ||= {}
-            parameters[:processing][:root] = uri.path
-            server = WebServerSimple.new(uri, certificate: parameters[:certificate])
-            server.mount(uri.path, Faspex4PostProcServlet, parameters[:processing])
+            parameters[:root] = uri.path
+            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
+            server.mount(uri.path, Faspex4PostProcServlet, parameters.slice(*WebServerSimple::PARAMS))
             server.start
             return Main.result_status('Gateway terminated')
           end

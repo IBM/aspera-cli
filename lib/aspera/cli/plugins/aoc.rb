@@ -999,9 +999,11 @@ module Aspera
             return execute_admin_action
           when :gateway
             require 'aspera/faspex_gw'
-            url = value_create_modify(command: command, type: String)
-            uri = URI.parse(url)
-            server = WebServerSimple.new(uri)
+            parameters = value_create_modify(command: command, default: {}).symbolize_keys
+            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
+            uri = URI.parse(parameters[:url])
+            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
+            Aspera.assert(parameters.slice(*WebServerSimple::PARAMS).empty?)
             aoc_api.context = :files
             server.mount(uri.path, Faspex4GWServlet, aoc_api, aoc_api.workspace[:id])
             server.start

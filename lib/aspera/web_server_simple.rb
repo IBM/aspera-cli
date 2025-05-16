@@ -10,11 +10,12 @@ require 'openssl'
 module Aspera
   # Simple WEBrick server with HTTPS support
   class WebServerSimple < WEBrick::HTTPServer
-    CERT_PARAMETERS = %i[key cert chain pkcs12].freeze
+    PARAMS = %i[cert key chain].freeze
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
     ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
+    PKCS12_EXT = %w[p12 pfx]
 
-    private_constant :CERT_PARAMETERS, :GENERIC_ISSUER, :ONE_YEAR_SECONDS
+    private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT
 
     class << self
       # Fill and self sign provided certificate
@@ -38,49 +39,51 @@ module Aspera
       end
     end
 
-    # @param uri [URI]
-    def initialize(uri, certificate: nil)
-      @url = uri
+    # @param url   [URI]    Local address where server will listen (use scheme, host and port only)
+    # @param cert  [String] Path to certificate file, either with extension .p12 or .pfx, else assumed PEM
+    # @param key   [String] Path to key file (PEM) or passphrase (pkcs12)
+    # @param chain [String] Path to certificate chain file (PEM only)
+    def initialize(uri, cert: nil, key: nil, chain: nil)
+      Aspera.assert_type(uri, URI)
+      @uri = uri
       # see https://www.rubydoc.info/stdlib/webrick/WEBrick/Config
       webrick_options = {
-        BindAddress: uri.host,
-        Port:        uri.port,
+        BindAddress: @uri.host,
+        Port:        @uri.port,
         Logger:      Log.log,
         AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # replace default access log to call local method "<<" below
       }
-      case uri.scheme
+      case @uri.scheme
       when 'http'
         Log.log.debug('HTTP mode')
       when 'https'
         webrick_options[:SSLEnable] = true
-        if certificate.nil?
+        if cert.nil?
           webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
         else
-          Aspera.assert_type(certificate, Hash)
-          certificate = certificate.symbolize_keys
-          raise "unexpected key in certificate config: only: #{CERT_PARAMETERS.join(', ')}" if certificate.keys.any?{ |key| !CERT_PARAMETERS.include?(key)}
-          if certificate.key?(:pkcs12)
+          Aspera.assert_type(cert, String)
+          if PKCS12_EXT.any?{ |ext| cert.end_with?(".#{ext}")}
             Log.log.debug('Using PKCS12 certificate')
-            raise 'pkcs12 requires a key (password)' unless certificate.key?(:key)
-            pkcs12 = OpenSSL::PKCS12.new(File.read(certificate[:pkcs12]), certificate[:key])
+            raise 'PKCS12 requires a key (password)' if key.nil?
+            pkcs12 = OpenSSL::PKCS12.new(File.read(cert), key)
             webrick_options[:SSLCertificate] = pkcs12.certificate
             webrick_options[:SSLPrivateKey] = pkcs12.key
             webrick_options[:SSLExtraChainCert] = pkcs12.ca_certs
           else
             Log.log.debug('Using PEM certificate')
-            webrick_options[:SSLPrivateKey] = if certificate.key?(:key)
-              OpenSSL::PKey::RSA.new(File.read(certificate[:key]))
-            else
+            webrick_options[:SSLPrivateKey] = if key.nil?
               OpenSSL::PKey::RSA.new(4096)
-            end
-            if certificate.key?(:cert)
-              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read(certificate[:cert]))
             else
+              OpenSSL::PKey::RSA.new(File.read(key))
+            end
+            if cert.nil?
               webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new
               self.class.fill_self_signed_cert(webrick_options[:SSLCertificate], webrick_options[:SSLPrivateKey])
+            else
+              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read(cert))
             end
-            if certificate.key?(:chain)
-              webrick_options[:SSLExtraChainCert] = [OpenSSL::X509::Certificate.new(File.read(certificate[:chain]))]
+            if !chain.nil?
+              webrick_options[:SSLExtraChainCert] = [OpenSSL::X509::Certificate.new(File.read(chain))]
             end
           end
         end
@@ -93,7 +96,7 @@ module Aspera
 
     # blocking
     def start
-      Log.log.info{"Listening on #{@url}"}
+      Log.log.info{"Listening on #{@uri}"}
       # kill -HUP for graceful shutdown
       Kernel.trap('HUP'){shutdown}
       super
