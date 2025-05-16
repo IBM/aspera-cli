@@ -7,7 +7,9 @@
     * `faspex5`: Support paging for Faspex5 browsing.
   * Issues Fixed:
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
-
+  * Breaking Changes:
+    * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of `String`.
+    * `faspex5 postprocessing`: Now takes a flat `Hash`.
 * 4.21.2
 
   * New Features:

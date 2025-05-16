@@ -106,7 +106,7 @@ TST_MED_LCL_PATH=faux:///$(shell $(URL_ENCODER) "$(TST_MED_FILENAME)")?100m
 TEMPORIZE_CREATE=sleep 10
 TEMPORIZE_FILE=sleep 30
 
-# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should
+# sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
 TST_SYNC_LCL_DIR=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/test_sync123
 
 ifdef ASPERA_CLI_TEST_MACOS
@@ -276,6 +276,12 @@ $(T)shares_9: $(TMP_EXISTS)
 $(T)shares_10: $(T)shares_9
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) shares files delete @extend:@preset:shares.share1@/new_folder
+	@$(STOP_TEST) $@
+$(T)shares_sync: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	mkdir -p $(TST_SYNC_LCL_DIR)synctst
+	-$(CLI_TEST) shares files mkdir /london-sh1/synctst
+	$(INCMAN)$(CLI_TEST) shares files sync start push /london-sh1/synctst $(TST_SYNC_LCL_DIR)synctst --sync-info=@json:'{"quiet":false}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
 #######################################################################################################################
@@ -711,7 +717,7 @@ $(eval $(call test_suite_all,tndak,$(T)nd_ak $(T)nd_ak1 $(T)nd_ak_mkdir $(T)nd_a
 $(T)aocfxgw: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(DIR_TMP)pid_aocfxgw
-	$(INCMAN)$(CLI_TEST) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw https://localhost:12345/aspera/faspex &
+	$(INCMAN)$(CLI_TEST) aoc gateway --pid-file=$(DIR_TMP)pid_aocfxgw @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_aocfxgw)
 	$(CLI_TEST) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --silent-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
@@ -1935,7 +1941,7 @@ $(T)f5_wizard: $(TMP_EXISTS)
 $(T)f5_fxgw: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -f $(DIR_TMP)pid_f5_fxgw
-	$(INCMAN)$(CLI_TEST) faspex5 gateway --pid-file=$(DIR_TMP)pid_f5_fxgw https://localhost:12346/aspera/faspex &
+	$(INCMAN)$(CLI_TEST) faspex5 gateway --pid-file=$(DIR_TMP)pid_f5_fxgw @json:'{"url":"https://localhost:12346/aspera/faspex"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_f5_fxgw)
 	$(CLI_TEST) -N faspex --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
@@ -1948,7 +1954,7 @@ $(T)f5_postproc: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	-kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
 	rm -f $(DIR_TMP)pid_f5_postproc
-	$(INCMAN)$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","processing":{"script_folder":"$(DIR_TST)"}}' &
+	$(INCMAN)$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_f5_postproc)&&echo ">>>> Process $$(cat $(DIR_TMP)pid_f5_postproc)"
 	$(CLI_TEST) faspex5 packages send @json:@extend:'{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}' 'faux:///test1?1m'
@@ -1961,18 +1967,18 @@ $(T)f5_postproc: $(TMP_EXISTS)
 PKCS_P=YourExportPassword
 $(T)f5_cert_test: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"http://localhost:18080/domain","processing":{"script_folder":"$(DIR_TST)"}}' &
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"http://localhost:18080/domain","script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
-	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	openssl req -newkey rsa:2048 -x509 -days 365 -nodes -keyout $(DIR_TMP)private_key.pem -out $(DIR_TMP)certificate.pem -subj "/CN=MyCert"
-	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"cert":"$(DIR_TMP)certificate.pem","chain":"$(DIR_TMP)certificate.pem","key":"$(DIR_TMP)private_key.pem"},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"cert":"$(DIR_TMP)certificate.pem","chain":"$(DIR_TMP)certificate.pem","key":"$(DIR_TMP)private_key.pem"},"script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	openssl pkcs12 -export -out $(DIR_TMP)certificate.p12 -inkey $(DIR_TMP)private_key.pem -in $(DIR_TMP)certificate.pem -name "MyCertAlias" -passout pass:$(PKCS_P)
-	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(DIR_TMP)certificate.p12","key":"$(PKCS_P)"},"processing":{"script_folder":"$(DIR_TST)"}}' &
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_cert_test @json:'{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(DIR_TMP)certificate.p12","key":"$(PKCS_P)"},"script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_cert_test;do sleep 1;let --i;done
 	kill $$(cat $(DIR_TMP)pid_f5_cert_test)
 	@$(STOP_TEST) $@

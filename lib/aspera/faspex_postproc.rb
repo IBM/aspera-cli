@@ -15,7 +15,8 @@ module Aspera
       Aspera.assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
       Log.log.debug{Log.dump(:post_proc_parameters, @parameters)}
-      raise "unexpected key in parameters config: only: #{ALLOWED_PARAMETERS.join(', ')}" if @parameters.keys.any?{ |k| !ALLOWED_PARAMETERS.include?(k)}
+      not_allowed = @parameters.keys - ALLOWED_PARAMETERS
+      raise "unsupported parameters: #{not_allowed.join(', ')}" unless not_allowed.empty?
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
