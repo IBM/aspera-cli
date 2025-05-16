@@ -817,8 +817,8 @@ module Aspera
             require 'aspera/faspex_gw'
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
-            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
-            Aspera.assert(parameters.slice(*WebServerSimple::PARAMS).empty?)
+            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+            Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
             server.start
             return Main.result_status('Gateway terminated')
@@ -827,8 +827,8 @@ module Aspera
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
             uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             parameters[:root] = uri.path
-            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
-            server.mount(uri.path, Faspex4PostProcServlet, parameters.slice(*WebServerSimple::PARAMS))
+            server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
+            server.mount(uri.path, Faspex4PostProcServlet, parameters.except(*WebServerSimple::PARAMS))
             server.start
             return Main.result_status('Gateway terminated')
           end
