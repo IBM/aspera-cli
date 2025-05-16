@@ -35,7 +35,7 @@ module Aspera
           d_t_s.each do |res|
             r_err = res.dig(*%w[transfer_spec error]) || res['error']
             next unless r_err.is_a?(Hash)
-            RestErrorAnalyzer.add_error(call_context, type, "#{r_err['code']}: #{r_err['reason']}: #{r_err['user_message']}")
+            RestErrorAnalyzer.add_error(call_context, type, r_err.values.join(': '))
           end
         end
         RestErrorAnalyzer.instance.add_simple_handler(name: 'T9:IBM cloud IAM', path: ['errorMessage'])
