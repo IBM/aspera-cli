@@ -137,7 +137,7 @@ module Aspera
 
         def initialize(api: nil, **env)
           super(**env, basic_options: api.nil?)
-          Node.declare_options(options) if api.nil?
+          Node.declare_options(options)
           return if env[:broker].only_manual?
           @api_node =
             if !api.nil?
@@ -1026,16 +1026,15 @@ module Aspera
             return Main.result_status(Api::Node.bearer_token(payload: token_info, access_key: access_key, private_key: private_key))
           when :simulator
             require 'aspera/node_simulator'
-            parameters = value_create_modify(command: command)
-            parameters = parameters.symbolize_keys
-            raise 'Missing key: url' unless parameters.key?(:url)
+            parameters = value_create_modify(command: command, default: {}).symbolize_keys
+            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
             uri = URI.parse(parameters[:url])
-            server = WebServerSimple.new(uri, certificate: parameters[:certificate])
-            server.mount(uri.path, NodeSimulatorServlet, parameters[:credentials], NodeSimulator.new)
+            server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
+            server.mount(uri.path, NodeSimulatorServlet, parameters.slice(*WebServerSimple::PARAMS), NodeSimulator.new)
             server.start
             return Main.result_status('Simulator terminated')
           end
-          raise 'ERROR: shall not reach this line'
+          Aspera.error_unreachable_line
         end
 
         private
