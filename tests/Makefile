@@ -721,7 +721,7 @@ $(T)aocfxgw: $(TMP_EXISTS)
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_aocfxgw)
 	$(CLI_TEST) -N faspex --url=https://localhost:12345/aspera/faspex --username=_unused_ --password=_unused_ --silent-insecure=yes package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
-	kill -HUP $$(cat $(DIR_TMP)pid_aocfxgw)
+	kill -TERM $$(cat $(DIR_TMP)pid_aocfxgw)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_aocfxgw;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(T)aocg1: $(TMP_EXISTS)
@@ -1947,12 +1947,12 @@ $(T)f5_fxgw: $(TMP_EXISTS)
 	$(CLI_TEST) -N faspex --url=https://localhost:12346/aspera/faspex --username=_unused_ --password=_unused_ package send --delivery-info=@json:'{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}' 'faux:///test1?1m'
 	-curl -k https://localhost:12346/aspera/faspex/send -d 'bad'
 	-curl -k https://localhost:12346/aspera/faspex/bad -d 'bad'
-	kill -HUP $$(cat $(DIR_TMP)pid_f5_fxgw)
+	kill -TERM $$(cat $(DIR_TMP)pid_f5_fxgw)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_fxgw;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 $(T)f5_postproc: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	-kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
+	-kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
 	rm -f $(DIR_TMP)pid_f5_postproc
 	$(INCMAN)$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","script_folder":"$(DIR_TST)"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
@@ -1961,7 +1961,7 @@ $(T)f5_postproc: $(TMP_EXISTS)
 	-curl http://localhost:8088/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'
 	-curl http://localhost:8088/wrong -d '{}'
 	sleep 5
-	kill -HUP $$(cat $(DIR_TMP)pid_f5_postproc)
+	kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	@$(STOP_TEST) $@
 PKCS_P=YourExportPassword
