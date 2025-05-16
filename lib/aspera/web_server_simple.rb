@@ -98,8 +98,9 @@ module Aspera
     # blocking
     def start
       Log.log.info{"Listening on #{@uri}"}
-      # kill -HUP for graceful shutdown
-      Kernel.trap('HUP'){shutdown}
+      # kill (-TERM) for graceful shutdown
+      handler = proc{shutdown}
+      %i{INT TERM}.each{ |sig| trap(sig, &handler)}
       super
     end
 
