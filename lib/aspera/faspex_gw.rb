@@ -8,8 +8,8 @@ require 'json'
 module Aspera
   # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
-    # @param app_api
-    # @param app_context [String]
+    # @param app_api     [Rest]   API object
+    # @param app_context [String] workspace id (aoc only)
     def initialize(server, app_api, app_context)
       Aspera.assert_values(app_api.class.name, ['Aspera::Api::AoC', 'Aspera::Rest'])
       super(server)
