@@ -1823,7 +1823,7 @@ $(T)f5_pack_user_public: $(TMP_EXISTS)
 $(T)f5_pack_wrkgrp: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) faspex5 packages send @json:@extend:'{"title":"test title","recipients":["@preset:faspex5.workgroup@"]}' $(TST_ASC_LCL_PATH)
-	$(TEMPORIZE_CREATE)0
+	$(TEMPORIZE_CREATE)
 	$(INCMAN)$(CLI_TEST) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups
 	$(CLI_TEST) faspex5 packages list --box=@preset:faspex5.workgroup --group-type=workgroups --query=@json:'{"status":"completed","limit":1,"max":1}' --fields=id --format=csv --display=data --output=$(STATE)workgroup_package_id1
 	$(INCMAN)$(CLI_TEST) faspex5 packages show --box=@preset:faspex5.workgroup --group-type=workgroups $$(cat $(STATE)workgroup_package_id1)
