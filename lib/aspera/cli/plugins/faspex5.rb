@@ -816,8 +816,7 @@ module Aspera
           when :gateway
             require 'aspera/faspex_gw'
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
-            uri = URI.parse(parameters[:url])
+            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
             Aspera.assert(parameters.slice(*WebServerSimple::PARAMS).empty?)
             server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
@@ -826,8 +825,7 @@ module Aspera
           when :postprocessing
             require 'aspera/faspex_postproc' # cspell:disable-line
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
-            uri = URI.parse(parameters[:url])
+            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             parameters[:root] = uri.path
             server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
             server.mount(uri.path, Faspex4PostProcServlet, parameters.slice(*WebServerSimple::PARAMS))

@@ -1000,8 +1000,7 @@ module Aspera
           when :gateway
             require 'aspera/faspex_gw'
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            parameters[:url] = 'http://localhost:8080' unless parameters.key?(:url)
-            uri = URI.parse(parameters[:url])
+            uri = URI.parse(parameters.delete(:url){WebServerSimple::DEFAULT_URL})
             server = WebServerSimple.new(uri, **parameters.except(*WebServerSimple::PARAMS))
             Aspera.assert(parameters.slice(*WebServerSimple::PARAMS).empty?)
             aoc_api.context = :files

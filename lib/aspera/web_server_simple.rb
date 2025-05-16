@@ -11,6 +11,7 @@ module Aspera
   # Simple WEBrick server with HTTPS support
   class WebServerSimple < WEBrick::HTTPServer
     PARAMS = %i[cert key chain].freeze
+    DEFAULT_URL = 'http://localhost:8080'
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
     ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
     PKCS12_EXT = %w[p12 pfx]
