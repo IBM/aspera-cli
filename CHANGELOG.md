@@ -9,7 +9,8 @@
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
   * Breaking Changes:
     * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of `String`.
-    * `faspex5 postprocessing`: Now takes a flat `Hash`.
+    * `faspex5 postprocessing`: Now takes a flat `Hash`, instead or key `processing`.
+
 * 4.21.2
 
   * New Features:
