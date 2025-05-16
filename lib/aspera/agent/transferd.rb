@@ -163,7 +163,7 @@ module Aspera
       def stop_daemon
         if !@daemon_pid.nil?
           Log.log.debug("Stopping daemon #{@daemon_pid}")
-          Process.kill('INT', @daemon_pid)
+          Process.kill(:INT, @daemon_pid)
           _, status = Process.wait2(@daemon_pid)
           Log.log.debug("daemon stopped #{status}")
           @daemon_pid = nil
