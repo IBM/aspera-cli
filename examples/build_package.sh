@@ -2,12 +2,14 @@
 # Usage: ./build_package.sh <gem_name> <gem_version>
 # Example: ./build_package.sh aspera-cli 4.18.0
 set -e
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <gem_name> <gem_version>"
+if [ "$#" -lt 2 -o "$#" -gt 3 ]; then
+    echo "Usage: $0 <gem_name> <gem_version> [<method>]"
     exit 1
 fi
 gem_name=$1
 gem_version=$2
+archtype=${3:-tgz}
+echo $archtype
 # on macOS, GNU tar is gtar
 GNU_TAR=tar
 if [ "$(uname)" == "Darwin" ]; then
@@ -21,8 +23,21 @@ rm -fr $tmp_dir_install
 echo "Getting gems $gem_name $gem_version"
 # install gems in a temporary folder
 gem install $gem_name:$gem_version --no-document --install-dir $tmp_dir_install
-archive=$gem_name-$gem_version-gems.tgz
+archive=$PWD/$gem_name-$gem_version-gems.$archtype
+rm -f $archive
 # .gem files are located in cache folder
-$GNU_TAR -zcf $archive --directory=$tmp_dir_install/cache/. .
+case $archtype in
+tgz)
+    $GNU_TAR -zcf $archive --directory=$tmp_dir_install/cache/. .
+    ;;
+zip)
+    pushd $tmp_dir_install/cache
+    zip -r $archive *
+    popd
+    ;;
+*)
+    echo "ERROR: $archive"
+    exit 1
+esac
 rm -fr $tmp_dir_install
 echo "Archive: $archive"
