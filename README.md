@@ -6,6 +6,7 @@ markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
 subtitle: "ascli 4.22.0.pre"
+author: "Laurent MARTIN"
 PANDOC_META_END
 -->
 
@@ -2523,6 +2524,26 @@ Many applications are available, including on internet, to generate key pairs.
 For example: <https://cryptotools.net/rsagen>
 
 > **Note:** Be careful that private keys are sensitive information, and shall be kept secret (like a password), so using online tools is risky.
+
+### Web service
+
+Some plugins start a local web server.
+This server can server HTTP or HTTPS (with certificate):
+
+The following parameters are supported:
+
+| Parameter         | Type     | Default | Description                                         |
+|-------------------|----------|---------|-----------------------------------------------------|
+| `url`             | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.           | <!-- markdownlint-disable-line -->
+| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. .pfx or .p12 for PKCS12) |
+| `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for PKCS12           |
+| `chain`           | `String` | -       | (HTTPS) Path to certificate chain (PEM only)                         |
+
+Parameter `url` (base URL) defines:
+
+- If `http` or `https` is used
+- The local port number (default 443 for HTTPS, 80 for HTTP)
+- The **base path**, i.e. the path under which requests are received, if a reverse proxy is used this can be used to route.
 
 ### Image and video thumbnails
 
@@ -5436,7 +5457,7 @@ files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
 files upload --to-folder=/testsrc test_file.bin
 files upload --workspace=my_other_workspace --to-folder=my_other_folder test_file.bin --transfer=node --transfer-info=@json:@stdin:
 files v3 info
-gateway --pid-file=pid_aocfxgw https://localhost:12345/aspera/faspex &
+gateway --pid-file=pid_aocfxgw @json:'{"url":"https://localhost:12345/aspera/faspex"}' &
 org --url=my_public_link_recv_from_aoc_user
 organization
 packages browse package_id3 /
@@ -6430,7 +6451,7 @@ admin smtp show
 admin smtp test my_email_external
 admin workgroups list
 bearer_token
-gateway --pid-file=pid_f5_fxgw https://localhost:12346/aspera/faspex &
+gateway --pid-file=pid_f5_fxgw @json:'{"url":"https://localhost:12346/aspera/faspex"}' &
 health
 invitation list
 invitations create @json:'{"email_address":"aspera.user1+u@gmail.com"}'
@@ -6454,7 +6475,7 @@ packages show --box=my_shared_box_name package_box_id1
 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 packages show f5_pack_id
 packages status f5_pack_id
-postprocessing --pid-file=pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","processing":{"script_folder":""}}' &
+postprocessing --pid-file=pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","script_folder":""}' &
 shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
@@ -6774,54 +6795,46 @@ To send a password reset link to a user, use command `reset_password` on the `ac
 ### Faspex 5: Faspex 4-style post-processing
 
 The command `ascli faspex5 postprocessing` emulates Faspex 4 post-processing script execution in Faspex 5.
-It implements Faspex 5 web hooks and calls a script with the same environment variables as set by Faspex 4.
+It implements a web hook for Faspex 5 and calls a script with the same environment variables as set by Faspex 4.
 Environment variables at set to the values provided by the web hook which are the same as Faspex 4 post-processing.
 
-It allows to quickly migrate workflows to Faspex 5 while preserving scripts.
-Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine.
+It allows to quickly migrate workflows from Faspex 4 to Faspex 5 while preserving scripts.
+Nevertheless, on long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine, using Faspex 5 native web hooks or File Processing.
 
 It is invoked like this:
 
 ```bash
-ascli faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing"}'
+ascli faspex5 postprocessing
 ```
 
-The following parameters are supported in the extended value `Hash`:
+An optional positional parameter can be provided as extended value `Hash`:
 
-| Parameter                  | Type     | Default | Description                                       |
-|----------------------------|----------|---------|-----------------------------------------------------|
-| `url`                      | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.             | <!-- markdownlint-disable-line -->
-| `certificate`              | `Hash`   | `nil`   | Certificate information (if URL is HTTPS)           |
-| `certificate.key`          | `String` | `nil`   | Path to private key file                            |
-| `certificate.cert`         | `String` | `nil`   | Path to certificate                                 |
-| `certificate.chain`        | `String` | `nil`   | Path to certificate chain                           |
-| `processing`               | `Hash`   | `nil`   | Behavior of post-processing                         |
-| `processing.script_folder` | `String` | `.`     | Prefix added to script path                         |
-| `processing.fail_on_error` | `Bool`   | false   | Fail if true and process exits with non-zero code   |
-| `processing.timeout_seconds` | `Integer`| 60      | Time out before script is killed                    |
+| Parameter         | Type     | Default | Description                                         |
+|-------------------|----------|-------|-----------------------------------------------------|
+| **server info**   | -        | -     | See [Web service](#web-service).                    |
+| `script_folder`   | `String` | `.`   | Prefix added to script path (Default: CWD)          |
+| `fail_on_error`   | `Bool`   | false | Fail if true and process exits with non-zero code   |
+| `timeout_seconds` | `Integer`| 60    | Time out before script is killed                    |
 
-Parameter `url` (base URL) defines:
-
-- If `http` or `https` is used
-- The local port number (default 443 for HTTPS, 80 for HTTP)
-- The **base path**, i.e. the path under which requests are received, if a reverse proxy is used this can be used to route.
-
-When a request is received the following happens:
+When a request on `ascli` is received the following happens:
 
 - `ascli` gets the path of the URL called
 - It removes the **base path** of base URL.
 - It prepends it with the value of `script_folder`
-- It executes the script
+- It executes the script at that path
 - Upon success, a success code is returned
 
 For example:
 
-The base URL is defined as: `http://localhost:8080/processing`.
-The parameter `script_folder` is set to `/opt/scripts`
+```bash
+ascli faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing","script_folder":"/opt/scripts"}'
+```
 
 In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
 For example, if `ascli` in running in the base host, the URL hostname shall not be localhost, as this refers to the local address inside Faspex container.
-Instead, one can specify the IP address of the host or `host.containers.internal`.
+Instead, one can specify the **IP address of the host** or `host.containers.internal` (Check `podman` manual).
+
+Let's define the web hook:
 
 **Webhook endpoint URI** : `http://host.containers.internal:8080/processing/script1.sh`
 
@@ -6836,7 +6849,7 @@ For legacy Faspex client applications that use the `send` API (only) of Faspex v
 It takes a single argument which is the URL at which the gateway will be located (locally):
 
 ```bash
-ascli faspex5 gateway https://localhost:12345/aspera/faspex
+ascli faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
 ```
 
 There are many limitations:
@@ -6849,6 +6862,8 @@ There are many limitations:
 - No authentication of F4 side (ignored).
 
 Behavior: The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex5 API call, which returns a transfer spec, which is returned to the calling client. The calling client uses this to start a transfer to HSTS which is actually managed by Faspex 5.
+
+For other parameters, see [Web service](#web-service).
 
 ### Faspex 5: Get Bearer token to use API
 
@@ -7103,6 +7118,7 @@ files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files mkdir my_share1/new_folder
+files sync start push /london-sh1/synctst /data/local_syncsynctst --sync-info=@json:'{"quiet":false}'
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin

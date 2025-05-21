@@ -10,7 +10,6 @@ variables:
   documentclass: report
   mainfont: "IBM Plex Sans"
   monofont: "IBM Plex Mono"
-  author: "Laurent MARTIN"
   urlcolor: blue
   geometry: margin=15mm
   include-before:

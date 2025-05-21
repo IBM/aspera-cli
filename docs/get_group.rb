@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Displays list of gems and versin, suitable for installation with `gem install`
+# Displays list of gems and version, suitable for installation with `gem install`
 
 require 'bundler'
 
