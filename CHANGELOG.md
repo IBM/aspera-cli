@@ -5,6 +5,7 @@
   * New Features:
     * `vault`: Support for IBM HashiCorp Vault.
     * `faspex5`: Support paging for Faspex5 browsing.
+    * `aoc`: New `query` parameter `dry_run` for command `packages receive` when in `only_once` mode.
   * Issues Fixed:
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
   * Breaking Changes:

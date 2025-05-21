@@ -4658,6 +4658,12 @@ shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbo
 <%=cmd%> aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 ```
 
+To list packages that would be downloaded, without actually downloading them, use parameter: `dry_run` set to `true` in the `query` option.
+
+```bash
+--query=@json:'{"dry_run":true}'
+```
+
 #### Example: Send a package with files from the Files app
 
 Find files in Files app:
