@@ -2785,8 +2785,8 @@ provided.</td>
 <td><code>cert</code></td>
 <td><code>String</code></td>
 <td>-</td>
-<td>(HTTPS) Path to certificate file (with ext. .pfx or .p12 for
-PKCS12)</td>
+<td>(HTTPS) Path to certificate file (with ext. <code>.pfx</code> or
+<code>.p12</code> for PKCS12)</td>
 </tr>
 <tr>
 <td><code>key</code></td>
@@ -7164,8 +7164,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb387-1"><a href
 <span id="cb387-89"><a href="#cb387-89" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
 <span id="cb387-90"><a href="#cb387-90" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
 <span id="cb387-91"><a href="#cb387-91" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb387-92"><a href="#cb387-92" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /testdst /data/local_sync <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;quiet&quot;:false}&#39;</span></span>
-<span id="cb387-93"><a href="#cb387-93" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /testdst /data/local_sync <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;reset&quot;:true}]}&#39;</span></span>
+<span id="cb387-92"><a href="#cb387-92" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /data/local_sync /testdst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;quiet&quot;:false}&#39;</span></span>
+<span id="cb387-93"><a href="#cb387-93" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /data/local_sync /testdst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;reset&quot;:true}]}&#39;</span></span>
 <span id="cb387-94"><a href="#cb387-94" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg</span>
 <span id="cb387-95"><a href="#cb387-95" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
 <span id="cb387-96"><a href="#cb387-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> transfer push /testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst test_file.bin</span>
@@ -9106,7 +9106,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb494-1"><a href
 <span id="cb494-16"><a href="#cb494-16" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin</span>
 <span id="cb494-17"><a href="#cb494-17" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
 <span id="cb494-18"><a href="#cb494-18" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir my_share1/new_folder</span>
-<span id="cb494-19"><a href="#cb494-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /london-sh1/synctst /data/local_syncsynctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span></span>
+<span id="cb494-19"><a href="#cb494-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_syncsynctst /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span></span>
 <span id="cb494-20"><a href="#cb494-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
 <span id="cb494-21"><a href="#cb494-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
 <span id="cb494-22"><a href="#cb494-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
@@ -9660,23 +9660,25 @@ following plugins:</p>
 <li><code>aoc files sync</code> (uses node)</li>
 <li><code>shares files sync</code> (uses node)</li>
 </ul>
-<p>One advantage over the <code>async</code> command line is the
-possibility to use a configuration file, using standard options of
-<code>ascli</code>. Moreover, <code>ascli</code> supports sync with
-application requiring token-based authorization.</p>
+<p>One advantage of using <code>ascli</code> over the <code>async</code>
+command line is the possibility to use a configuration file, using
+standard options of <code>ascli</code>. Moreover, <code>ascli</code>
+supports sync with application requiring token-based authorization.</p>
 <p>Some <code>sync</code> parameters are filled by the related plugin
 using transfer spec parameters (e.g. including token).</p>
 <blockquote>
 <p><strong>Note:</strong> All <code>sync</code> commands require an
 <code>async</code> enabled license and availability of the
-<code>async</code> executable (and <code>asyncadmin</code>). The
-Transfer SDK 1.3 includes this.</p>
+<code>async</code> executable (and <code>asyncadmin</code>). The Aspera
+Transfer SDK 1.3+ includes this.</p>
 </blockquote>
-<p><code>sync</code> supports 0 or 3 arguments:</p>
+<p><code>sync</code> supports 0 or 3 arguments. If 3 arguments are
+provided, they are applied to the first (and only) session and mapped,
+in that order, to:</p>
 <ul>
-<li>direction</li>
-<li>local folder</li>
-<li>remote folder</li>
+<li><code>direction</code></li>
+<li><code>local.path</code></li>
+<li><code>remote.path</code></li>
 </ul>
 <p>Additional options can be provided with option
 <code>sync_info</code>, for which two syntax are possible, as
@@ -9686,10 +9688,13 @@ class="header-section-number">19.1</span> <code>async</code> API and
 <code>conf</code> format</h2>
 <p>It is the same payload as specified on the option <code>--conf</code>
 of <code>async</code> or in Node API <code>/asyncs</code>. This is the
-preferred syntax and allows a single session definition.</p>
+<strong>preferred</strong> syntax and allows a single session
+definition.</p>
 <blockquote>
-<p><strong>Note:</strong> No progress, nor error messages is provided on
-terminal.</p>
+<p><strong>Note:</strong> By default, no progress, nor error messages is
+provided on terminal. To activate messages, set option
+<code>sync_info</code> parameter <code>quiet</code> to
+<code>false</code>.</p>
 </blockquote>
 <p>Documentation on Async Node API can be found on <a
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22">IBM
@@ -9715,13 +9720,6 @@ sync session is defined.</p>
 <p><strong>Note:</strong> Progress and error messages are provided on
 terminal like regular command line invocation of <code>async</code>.</p>
 </blockquote>
-<p>If 3 arguments are provided, they are applied to the first (and only)
-session and mapped to:</p>
-<ul>
-<li><code>direction</code></li>
-<li><code>local_dir</code></li>
-<li><code>remote_dir</code></li>
-</ul>
 <h1 data-number="20" id="hot-folder"><span
 class="header-section-number">20</span> Hot folder</h1>
 <h2 data-number="20.1" id="requirements"><span
