@@ -2535,7 +2535,7 @@ The following parameters are supported:
 | Parameter         | Type     | Default | Description                                         |
 |-------------------|----------|---------|-----------------------------------------------------|
 | `url`             | `String` | `http://localhost:8080` | Base URL on which requests are listened, a path can be provided.           | <!-- markdownlint-disable-line -->
-| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. .pfx or .p12 for PKCS12) |
+| `cert`            | `String` | -       | (HTTPS) Path to certificate file (with ext. `.pfx` or `.p12` for PKCS12) |
 | `key`             | `String` | -       | (HTTPS) Path to private key file (PEM), or passphrase for PKCS12           |
 | `chain`           | `String` | -       | (HTTPS) Path to certificate chain (PEM only)                         |
 
@@ -5454,8 +5454,8 @@ files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","
 files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-files sync start pull /testdst /data/local_sync --sync-info=@json:'{"reset":true,"quiet":false}'
-files sync start pull /testdst /data/local_sync --sync-info=@json:'{"sessions":[{"reset":true}]}'
+files sync start pull /data/local_sync /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
+files sync start pull /data/local_sync /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
 files transfer push /testsrc --to-folder=/testdst test_file.bin
@@ -7124,7 +7124,7 @@ files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files mkdir my_share1/new_folder
-files sync start push /london-sh1/synctst /data/local_syncsynctst --sync-info=@json:'{"quiet":false}'
+files sync start push /data/local_syncsynctst /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
@@ -7646,27 +7646,28 @@ An interface for the `async` utility is provided in the following plugins:
 - `aoc files sync` (uses node)
 - `shares files sync` (uses node)
 
-One advantage over the `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
+One advantage of using `ascli` over the `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
 Moreover, `ascli` supports sync with application requiring token-based authorization.
 
 Some `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
-> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Transfer SDK 1.3 includes this.
+> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer SDK 1.3+ includes this.
 
-`sync` supports 0 or 3 arguments:
+`sync` supports 0 or 3 arguments.
+If 3 arguments are provided, they are applied to the first (and only) session and mapped, in that order, to:
 
-- direction
-- local folder
-- remote folder
+- `direction`
+- `local.path`
+- `remote.path`
 
 Additional options can be provided with option `sync_info`, for which two syntax are possible, as follows.
 
 ### `async` API and `conf` format
 
 It is the same payload as specified on the option `--conf` of `async` or in Node API `/asyncs`.
-This is the preferred syntax and allows a single session definition.
+This is the **preferred** syntax and allows a single session definition.
 
-> **Note:** No progress, nor error messages is provided on terminal.
+> **Note:** By default, no progress, nor error messages is provided on terminal. To activate messages, set option `sync_info` parameter `quiet` to `false`.
 
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
@@ -7685,12 +7686,6 @@ It allows definition of multiple sync sessions in a single command, although usu
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
 > **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
-
-If 3 arguments are provided, they are applied to the first (and only) session and mapped to:
-
-- `direction`
-- `local_dir`
-- `remote_dir`
 
 ## Hot folder
 

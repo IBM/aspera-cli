@@ -10,6 +10,7 @@ require 'aspera/transfer/parameters'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
+require 'aspera/cli/sync_actions'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -44,6 +45,8 @@ def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 
 # container image in docker hub
 def container_image; Aspera::Cli::Info::CONTAINER; end
+
+def sync_arguments_list; Aspera::Cli::SyncActions::ARGUMENTS_LIST.map{ |i| "- `#{i}`"}.join("\n"); end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
