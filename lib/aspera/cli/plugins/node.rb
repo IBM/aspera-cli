@@ -252,7 +252,38 @@ module Aspera
           return c_result_remove_prefix_path(result, 'path', prefix_path)
         end
 
-        # file and folder related commands
+        # Create async transfer spec request from direction and folders
+        # @param sync_direction one of push pull bidi
+        # @param local_path local folder to sync
+        # @param remote_path remote folder to sync
+        def sync_spec_request(sync_direction, local_path, remote_path)
+          case sync_direction
+          when :push then {
+            type:  :sync_upload,
+            paths: [{
+              source:      local_path,
+              destination: remote_path
+            }]
+          }
+          when :pull then {
+            type:  :sync_download,
+            paths: [{
+              source:      remote_path,
+              destination: local_path
+            }]
+          }
+          when :bidi then {
+            type:  :sync,
+            paths: [{
+              source:      local_path,
+              destination: remote_path
+            }]
+          }
+          else Aspera.error_unexpected_value(sync_direction)
+          end
+        end
+
+        # Commands based on Gen3 API for file and folder
         def execute_command_gen3(command, prefix_path)
           case command
           when :delete
@@ -305,17 +336,7 @@ module Aspera
             return execute_sync_action do |sync_direction, local_path, remote_path|
               # Gen3 API
               # empty transfer spec for authorization request
-              request_transfer_spec = {
-                type:  case sync_direction
-                       when :push then :sync_upload
-                       when :pull then :sync_download
-                       when :bidi then :sync
-                       end,
-                paths: [{
-                  source:      remote_path,
-                  destination: local_path
-                }]
-              }
+              request_transfer_spec = sync_spec_request(sync_direction, local_path, remote_path)
               # add fixed parameters if any (for COS)
               @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
               # prepare payload for single request
