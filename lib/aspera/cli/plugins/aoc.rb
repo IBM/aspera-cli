@@ -53,7 +53,9 @@ module Aspera
           'completed'   => true}.freeze
         # options and parameters for Api::AoC.new
         OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
-        private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW
+        PACKAGE_LIST_DEFAULT_FIELDS = %w[id name bytes_transferred].freeze
+
+        private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
         class << self
           def application_name
             'Aspera on Cloud'
@@ -258,7 +260,7 @@ module Aspera
 
         # Call block with same query using paging and response information
         # block must return a hash with :data and :http keys
-        # @return [Hash] {data: , total: }
+        # @return [Hash] {items: , total: }
         def api_call_paging(base_query={})
           Aspera.assert_type(base_query, Hash){'query'}
           Aspera.assert(block_given?)
@@ -288,7 +290,7 @@ module Aspera
             break if !max_pages.nil? && page_count >= max_pages
           end
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
-          return {data: item_list, total: total_count}
+          return {items: item_list, total: total_count}
         end
 
         # read using the query and paging
@@ -312,7 +314,7 @@ module Aspera
           # caller may add specific modifications or checks to query
           yield(user_query) if block_given?
           result = api_read_all(resource_class_path, base_query.merge(user_query).compact)
-          return Main.result_object_list(result[:data], fields: fields, total: result[:total])
+          return Main.result_object_list(result[:items], fields: fields, total: result[:total])
         end
 
         # Translates `dropbox_name` to `dropbox_id` and fills workspace_id
@@ -861,16 +863,21 @@ module Aspera
               when SpecialValues::ALL, SpecialValues::INIT
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 Aspera.assert_type(query, Hash){'query'}
+                dry_run = query.delete('dry_run')
                 resolve_dropbox_name_default_ws_id(query)
-                all_ids = api_read_all('packages', query)[:data].map{ |e| e['id']}
+                all_packages = api_read_all('packages', query)[:items]
                 if ids_to_download.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
-                  skip_ids_persistency.data.clear.concat(all_ids)
+                  skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
                   skip_ids_persistency.save
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 end
                 # remove from list the ones already downloaded
-                ids_to_download = all_ids.reject{ |id| skip_ids_data.include?(id)}
+                packages_to_download = all_packages.reject{ |pkg| skip_ids_data.include?(pkg['id'])}
+                if dry_run
+                  return Main.result_object_list(packages_to_download, fields: PACKAGE_LIST_DEFAULT_FIELDS)
+                end
+                ids_to_download = packages_to_download.map{ |e| e['id']}
               else
                 # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
@@ -910,7 +917,7 @@ module Aspera
               package_info = aoc_api.read("packages/#{package_id}")
               return Main.result_single_object(package_info)
             when :list
-              display_fields = %w[id name bytes_transferred]
+              display_fields = PACKAGE_LIST_DEFAULT_FIELDS
               display_fields.push('workspace_id') if aoc_api.workspace[:id].nil?
               return result_list('packages', fields: display_fields, base_query: PACKAGE_RECEIVED_BASE_QUERY) do |query|
                        resolve_dropbox_name_default_ws_id(query)
