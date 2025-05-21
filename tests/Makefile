@@ -280,8 +280,8 @@ $(T)shares_10: $(T)shares_9
 $(T)shares_sync: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	mkdir -p $(TST_SYNC_LCL_DIR)synctst
-	-$(CLI_TEST) shares files mkdir /london-sh1/synctst
-	$(INCMAN)$(CLI_TEST) shares files sync start push /london-sh1/synctst $(TST_SYNC_LCL_DIR)synctst --sync-info=@json:'{"quiet":false}'
+	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TST_SYNC_LCL_DIR)synctst /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
 #######################################################################################################################
@@ -858,8 +858,8 @@ $(T)aocfsync1: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TST_SYNC_LCL_DIR)
 	mkdir -p $(TST_SYNC_LCL_DIR)
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"reset":true,"quiet":false}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull /testdst $(TST_SYNC_LCL_DIR) --sync-info=@json:'{"sessions":[{"reset":true}]}'
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TST_SYNC_LCL_DIR) /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TST_SYNC_LCL_DIR) /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
 	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"$(TST_SYNC_LCL_DIR)"},"remote":{"path":"/testdst"}}'
 	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'
 	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TST_SYNC_LCL_DIR)","remote_dir":"/testdst","reset":true}]}'

@@ -172,7 +172,7 @@ module Aspera
             end
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
             env_args[:args] = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_params))}"]
-            Log.log.debug{Log.dump(:sync_params_enriched, sync_params)}
+            Log.log.debug{Log.dump(:sync_conf, sync_params)}
             agent = Agent::Direct.new
             agent.start_and_monitor_process(session: {}, name: :async, **env_args)
           elsif sync_params.key?('sessions')

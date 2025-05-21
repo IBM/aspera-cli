@@ -7,30 +7,30 @@ module Aspera
   module Cli
     # Module for sync actions
     module SyncActions
-      # optional simple command line arguments for sync
-      # in Array to keep option order
+      # Optional simple command line arguments for sync
+      # in Array to keep order as on command line
       # conf: key in option --conf
       # args: key for command line args
       # values: possible values for argument
       # type: type for validation
-      SYNC_ARGUMENTS_INFO = [
+      ARGUMENTS_INFO = [
         {
           conf:   'direction',
           args:   'direction',
           values: Transfer::Sync::DIRECTIONS
         }, {
-          conf: 'remote.path',
-          args: 'remote_dir',
-          type: String
-        }, {
           conf: 'local.path',
           args: 'local_dir',
+          type: String
+        }, {
+          conf: 'remote.path',
+          args: 'remote_dir',
           type: String
         }
       ].freeze
       # name of minimal arguments required, also used to generate a session name
-      SYNC_SIMPLE_ARGS = SYNC_ARGUMENTS_INFO.map{ |i| i[:conf]}.freeze
-      private_constant :SYNC_ARGUMENTS_INFO, :SYNC_SIMPLE_ARGS
+      ARGUMENTS_LIST = ARGUMENTS_INFO.map{ |i| i[:conf]}.freeze
+      private_constant :ARGUMENTS_INFO
 
       class << self
         def declare_options(options)
@@ -42,7 +42,7 @@ module Aspera
       def sync_args_to_params(async_params)
         # sync session parameters can be provided on command line instead of sync_info
         arguments = {}
-        SYNC_ARGUMENTS_INFO.each do |info|
+        ARGUMENTS_INFO.each do |info|
           value = options.get_next_argument(
             info[:conf],
             mandatory: false,
@@ -52,7 +52,7 @@ module Aspera
           arguments[info[:conf]] = value.to_s
         end
         Log.log.debug{Log.dump('arguments', arguments)}
-        raise Cli::BadArgument, "Provide 0 or 3 arguments, not #{arguments.keys.length} for: #{SYNC_SIMPLE_ARGS.join(', ')}" unless
+        raise Cli::BadArgument, "Provide 0 or 3 arguments, not #{arguments.keys.length} for: #{ARGUMENTS_LIST.join(', ')}" unless
           [0, 3].include?(arguments.keys.length)
         if !arguments.empty?
           session_info = async_params
@@ -63,7 +63,7 @@ module Aspera
             session_info = async_params['sessions'][0]
             param_path = :args
           end
-          SYNC_ARGUMENTS_INFO.each do |info|
+          ARGUMENTS_INFO.each do |info|
             key_path = info[param_path].split('.')
             hash_for_key = session_info
             if key_path.length > 1
@@ -76,7 +76,7 @@ module Aspera
           end
           if !session_info.key?('name')
             # if no name is specified, generate one from simple arguments
-            session_info['name'] = SYNC_SIMPLE_ARGS.filter_map do |arg_name|
+            session_info['name'] = ARGUMENTS_LIST.filter_map do |arg_name|
               arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
             end.reject(&:empty?).join('_')
           end
