@@ -6,6 +6,7 @@ markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
 subtitle: "<%=cmd%> <%=gemspec.version.to_s%>"
+author: "Laurent MARTIN"
 PANDOC_META_END
 -->
 

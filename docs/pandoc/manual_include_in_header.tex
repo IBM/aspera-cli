@@ -17,7 +17,7 @@
   highlightcolor=lightgray,
   fontsize=\small
 }
-% \usepackage{grffile}
+% use env var GFX_DIR for graphics location
 \usepackage{graphicx}
 \graphicspath{{\directlua{tex.sprint(os.getenv('GFX_DIR'))}}}
 % https://ctan.org/pkg/eso-pic
