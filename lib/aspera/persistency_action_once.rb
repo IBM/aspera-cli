@@ -39,6 +39,7 @@ module Aspera
       merge.call(@persisted_object, parse.call(value)) unless value.nil?
     end
 
+    # Save persisted object on storage
     def save
       if @delete_condition.call(@persisted_object)
         @manager.delete(@object_id)
@@ -47,6 +48,7 @@ module Aspera
       end
     end
 
+    # @return internal persisted object, in order to modify its content
     def data
       return @persisted_object
     end
