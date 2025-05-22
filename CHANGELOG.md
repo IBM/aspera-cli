@@ -3,14 +3,14 @@
 * 4.22.0.pre
 
   * New Features:
-    * `vault`: Support for IBM HashiCorp Vault.
     * `faspex5`: Support paging for Faspex5 browsing.
-    * `aoc`: New `query` parameter `dry_run` for command `packages receive` when in `only_once` mode.
+    * `aoc`: #196 Command `packages list` now also supports option `once_only`.
+    * `vault`: Support for IBM HashiCorp Vault to store secrets.
   * Issues Fixed:
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
   * Breaking Changes:
-    * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of `String`.
-    * `faspex5 postprocessing`: Now takes a flat `Hash`, instead or key `processing`.
+    * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of only `String`.
+    * `faspex5 postprocessing`: Now takes a flat `Hash`, instead of multi-level `Hash`.
 
 * 4.21.2
 
