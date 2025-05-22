@@ -53,7 +53,7 @@ module Aspera
           'completed'   => true}.freeze
         # options and parameters for Api::AoC.new
         OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
-        PACKAGE_LIST_DEFAULT_FIELDS = %w[id name bytes_transferred].freeze
+        PACKAGE_LIST_DEFAULT_FIELDS = %w[id name created_at files_completed bytes_transferred].freeze
 
         private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
         class << self
@@ -288,7 +288,9 @@ module Aspera
             item_list += add_items
             break if !max_items.nil? && item_list.count >= max_items
             break if !max_pages.nil? && page_count >= max_pages
+            formatter.long_operation_running("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
           end
+          formatter.long_operation_terminated
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
           return {items: item_list, total: total_count}
         end
@@ -301,7 +303,7 @@ module Aspera
           end
         end
 
-        # list all entities, given additional, default and user's queries
+        # List all entities, given additional, default and user's queries
         # @param resource_class_path path to query on API
         # @param fields fields to display
         # @param base_query a query applied always
@@ -310,14 +312,14 @@ module Aspera
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {})
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
-          user_query = query_read_delete(default: default_query)
+          query = query_read_delete(default: default_query)
           # caller may add specific modifications or checks to query
-          yield(user_query) if block_given?
-          result = api_read_all(resource_class_path, base_query.merge(user_query).compact)
+          yield(query) if block_given?
+          result = api_read_all(resource_class_path, base_query.merge(query).compact)
           return Main.result_object_list(result[:items], fields: fields, total: result[:total])
         end
 
-        # Translates `dropbox_name` to `dropbox_id` and fills workspace_id
+        # Translates `dropbox_name` to `dropbox_id` and fills current workspace_id
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
@@ -741,6 +743,26 @@ module Aspera
           end
         end
 
+        # @return persistency object if option `once_only` is used.
+        def package_persistency
+          return nil unless options.get_option(:once_only, mandatory: true)
+          # TODO: add query info to id
+          PersistencyActionOnce.new(
+            manager: persistency,
+            data: [],
+            id: IdGenerator.from_list(
+              ['aoc_recv',
+               options.get_option(:url, mandatory: true),
+               aoc_api.workspace[:id]
+              ].concat(aoc_api.additional_persistence_ids)))
+        end
+
+        def reject_packages_from_persistency(all_packages, skip_ids_persistency)
+          return if skip_ids_persistency.nil?
+          skip_package = skip_ids_persistency.data.each_with_object({}){ |i, m| m[i] = true}
+          all_packages.reject!{ |pkg| skip_package[pkg['id']]}
+        end
+
         # must be public
         ACTIONS = %i[reminder servers bearer_token organization tier_restrictions user packages files admin automation gateway].freeze
 
@@ -846,24 +868,11 @@ module Aspera
               end
               # get from command line unless it was a public link
               ids_to_download ||= instance_identifier
-              skip_ids_data = []
-              skip_ids_persistency = nil
-              if options.get_option(:once_only, mandatory: true)
-                # TODO: add query info to id
-                skip_ids_persistency = PersistencyActionOnce.new(
-                  manager: persistency,
-                  data: skip_ids_data,
-                  id: IdGenerator.from_list(
-                    ['aoc_recv',
-                     options.get_option(:url, mandatory: true),
-                     aoc_api.workspace[:id]
-                    ].concat(aoc_api.additional_persistence_ids)))
-              end
+              skip_ids_persistency = package_persistency
               case ids_to_download
               when SpecialValues::ALL, SpecialValues::INIT
                 query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
                 Aspera.assert_type(query, Hash){'query'}
-                dry_run = query.delete('dry_run')
                 resolve_dropbox_name_default_ws_id(query)
                 all_packages = api_read_all('packages', query)[:items]
                 if ids_to_download.eql?(SpecialValues::INIT)
@@ -873,11 +882,8 @@ module Aspera
                   return Main.result_status("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
                 end
                 # remove from list the ones already downloaded
-                packages_to_download = all_packages.reject{ |pkg| skip_ids_data.include?(pkg['id'])}
-                if dry_run
-                  return Main.result_object_list(packages_to_download, fields: PACKAGE_LIST_DEFAULT_FIELDS)
-                end
-                ids_to_download = packages_to_download.map{ |e| e['id']}
+                reject_packages_from_persistency(all_packages, skip_ids_persistency)
+                ids_to_download = all_packages.map{ |e| e['id']}
               else
                 # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
@@ -906,9 +912,9 @@ module Aspera
                   rest_token: package_node_api)
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed
-                if TransferAgent.session_status(statuses).eql?(:success)
-                  skip_ids_data.push(package_id)
-                  skip_ids_persistency&.save
+                if skip_ids_persistency && TransferAgent.session_status(statuses).eql?(:success)
+                  skip_ids_persistency.data.push(package_id)
+                  skip_ids_persistency.save
                 end
               end
               return Main.result_transfer_multiple(result_transfer)
@@ -917,11 +923,16 @@ module Aspera
               package_info = aoc_api.read("packages/#{package_id}")
               return Main.result_single_object(package_info)
             when :list
+              # code here is similar to :receive ALL, including with option once_only
+              query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
+              Aspera.assert_type(query, Hash){'query'}
+              resolve_dropbox_name_default_ws_id(query)
+              result = api_read_all('packages', query)
+              skip_ids_persistency = package_persistency
+              reject_packages_from_persistency(result[:items], skip_ids_persistency)
               display_fields = PACKAGE_LIST_DEFAULT_FIELDS
-              display_fields.push('workspace_id') if aoc_api.workspace[:id].nil?
-              return result_list('packages', fields: display_fields, base_query: PACKAGE_RECEIVED_BASE_QUERY) do |query|
-                       resolve_dropbox_name_default_ws_id(query)
-                     end
+              display_fields += ['workspace_id'] if aoc_api.workspace[:id].nil?
+              return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
             when :delete
               return do_bulk_operation(command: package_command, descr: 'identifier', values: instance_identifier) do |id|
                 Aspera.assert_values(id.class, [String, Integer]){'identifier'}
