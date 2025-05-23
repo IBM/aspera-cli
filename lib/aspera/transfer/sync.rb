@@ -89,7 +89,7 @@ module Aspera
       private_constant :CMDLINE_PARAMS_INSTANCE, :CMDLINE_PARAMS_SESSION, :CMDLINE_PARAMS_KEYS, :TSPEC_TO_ASYNC_CONF, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
-        # Set remote_dir in sync parameters based on transfer spec
+        # Set `remote_dir` in sync parameters based on transfer spec
         # @param params [Hash] sync parameters, old or new format
         # @param remote_dir_key [String] key to update in above hash
         # @param transfer_spec [Hash] transfer spec
@@ -100,7 +100,8 @@ module Aspera
           elsif transfer_spec['cookie']&.start_with?('aspera.shares2')
             # TODO : something more generic, independent of Shares
             # in Shares, the actual folder on remote end is not always the same as the name of the share
-            actual_remote = transfer_spec['paths']&.first&.[]('source')
+            remote_key = transfer_spec['direction'].eql?('send') ? 'destination' : 'source'
+            actual_remote = transfer_spec['paths']&.first&.[](remote_key)
             sync_params[remote_dir_key] = actual_remote if actual_remote
           end
           nil
@@ -133,13 +134,11 @@ module Aspera
         end
 
         # @param sync_params [Hash] sync parameters, old or new format
-        # @param block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
-        def start(
-          sync_params,
-          &block
-        )
+        # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
+        def start(sync_params)
           Log.log.debug{Log.dump(:sync_params_initial, sync_params)}
           Aspera.assert_type(sync_params, Hash)
+          Aspera.assert(%w[local sessions].any?{ |k| sync_params.key?(k)}){'At least one of `local` or `sessions` must be present in async parameters'}
           env_args = {
             args: [],
             env:  {}
@@ -151,7 +150,7 @@ module Aspera
             Aspera.assert_type(remote, Hash){'remote'}
             Aspera.assert_type(remote['path'], String){'remote path'}
             # get transfer spec if possible, and feed back to new structure
-            if block
+            if block_given?
               transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], remote['path'])
               # translate transfer spec to async parameters
               TSPEC_TO_ASYNC_CONF.each do |ts_param, sy_path|
@@ -175,13 +174,14 @@ module Aspera
             Log.log.debug{Log.dump(:sync_conf, sync_params)}
             agent = Agent::Direct.new
             agent.start_and_monitor_process(session: {}, name: :async, **env_args)
-          elsif sync_params.key?('sessions')
+          else
+            # key 'sessions' is present
             # ascli JSON format (cmdline)
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
               sync_params.keys.push('instance').uniq.sort.eql?(CMDLINE_PARAMS_KEYS)
             Aspera.assert_type(sync_params['sessions'], Array)
             Aspera.assert_type(sync_params['sessions'].first, Hash)
-            if block
+            if block_given?
               sync_params['sessions'].each do |session|
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
@@ -202,7 +202,6 @@ module Aspera
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
-
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least name'}
@@ -211,8 +210,6 @@ module Aspera
               session_builder.add_env_args(env_args)
             end
             Environment.secure_execute(exec: Ascp::Installation.instance.path(:async), **env_args)
-          else
-            raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
           return nil
         end

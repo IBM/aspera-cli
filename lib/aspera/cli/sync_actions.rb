@@ -52,9 +52,9 @@ module Aspera
           arguments[info[:conf]] = value.to_s
         end
         Log.log.debug{Log.dump('arguments', arguments)}
-        raise Cli::BadArgument, "Provide 0 or 3 arguments, not #{arguments.keys.length} for: #{ARGUMENTS_LIST.join(', ')}" unless
-          [0, 3].include?(arguments.keys.length)
-        if !arguments.empty?
+        case arguments.keys.length
+        when 0 then nil
+        when 3
           session_info = async_params
           param_path = :conf
           if async_params.key?('sessions') || async_params.key?('instance')
@@ -77,9 +77,10 @@ module Aspera
           if !session_info.key?('name')
             # if no name is specified, generate one from simple arguments
             session_info['name'] = ARGUMENTS_LIST.filter_map do |arg_name|
-              arguments[arg_name]&.gsub(/[^a-zA-Z0-9]/, '')
-            end.reject(&:empty?).join('_')
+              arguments[arg_name]&.gsub(/[^a-zA-Z0-9]+/, '_')
+            end.reject(&:empty?).join('_').gsub(/__+/, '_')
           end
+        else raise Cli::BadArgument, "Provide 0 or 3 arguments, not #{arguments.keys.length} for: #{ARGUMENTS_LIST.join(', ')}"
         end
       end
 
