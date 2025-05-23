@@ -59,7 +59,7 @@ full: all interactive optional
 # just to test nagios, but those are tested in the respective plugins
 only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
-only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2
+only_sync: tnsync tnsyncs $(T)serv_sync $(T)aocfsync1 $(T)aocfsync2 $(T)shares_sync
 
 only_progress: $(T)serv_upload1 $(T)serv_upload3
 
@@ -283,9 +283,10 @@ $(T)shares_sync: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	mkdir -p $(TST_SYNC_LCL_DIR)synctst
 	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TST_SYNC_LCL_DIR)synctst /london-sh1/synctst --sync-info=@json:'{"reset":true}'
 	$(INCMAN)$(CLI_TEST) shares files sync start push $(TST_SYNC_LCL_DIR)synctst /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10))
+$(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10 $(T)shares_sync))
 #######################################################################################################################
 $(T)serv_browse: $(TMP_EXISTS)
 	@$(START_TEST) $@
