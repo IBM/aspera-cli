@@ -107,7 +107,7 @@ TEMPORIZE_CREATE=sleep 10
 TEMPORIZE_FILE=sleep 30
 
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
-TST_SYNC_LCL_DIR=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/test_sync123
+TST_SYNC_LCL_DIR=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/test_sync123/
 
 ifdef ASPERA_CLI_TEST_MACOS
 all:: $(T).ssh_ok
@@ -116,6 +116,7 @@ $(T).ssh_ok: $(TMP_EXISTS)
 	sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
 	sudo systemsetup -getremotelogin
 	sudo -u asperadaemon test -w /Library/Logs/Aspera && sudo chown -R asperadaemon: /Library/Logs/Aspera || echo "Ok, log writable"
+	ls -al /Library/Logs/Aspera
 	make restart_noded
 	while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 	touch $@
@@ -127,6 +128,7 @@ restart_noded:
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperanoded.plist
 	sudo launchctl unload /Library/LaunchDaemons/com.aspera.asperaredisd.plist
 	sleep 5
+	sudo chmod +a "asperadaemon allow read,write,delete,add_file" /Library/Logs/Aspera
 	-ps -ef|grep aspera|grep -v grep
 	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperaredisd.plist
 	sudo launchctl load /Library/LaunchDaemons/com.aspera.asperanoded.plist
@@ -961,7 +963,7 @@ $(T)aocp2: $(TMP_EXISTS)
 $(T)aocp3: $(T)aoc_pack_send1
 	@$(START_TEST) $@
 	:>$(STATE)package_id3;while test -z "$$(cat $(STATE)package_id3)";do \
-	$(CLI_TEST) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1}' --output=$(STATE)package_id3;\
+	$(CLI_TEST) aoc packages list --format=csv --fields=id --display=data --query=@json:'{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}' --output=$(STATE)package_id3;\
 	sleep 3;\
 	date;\
 	done
