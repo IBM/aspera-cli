@@ -93,7 +93,7 @@ module Aspera
         end
 
         def result_object_list(data, fields: nil, total: nil)
-          return {type: :object_list, data: data, fields: fields, total: nil}
+          return {type: :object_list, data: data, fields: fields, total: total}
         end
 
         def result_value_list(data, name)
