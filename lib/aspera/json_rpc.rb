@@ -23,7 +23,7 @@ module Aspera
       @request_id = 0
     end
 
-    def respond_to_missing?(sym, include_private = false)
+    def respond_to_missing?(_sym, _include_private = false)
       true
     end
 
