@@ -36,9 +36,8 @@ module Aspera
           return IdGenerator.from_list([
             PERSIST_CATEGORY_TOKEN,
             url,
-            Factory.class_to_id(creator_class),
-            *params
-          ].flatten)
+            Factory.class_to_id(creator_class)] +
+            params)
         end
 
         # @return snake version of class name

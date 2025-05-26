@@ -48,7 +48,7 @@ module Aspera
       BOOLEAN_SIMPLE = %i[no yes].freeze
       FALSE_VALUES = [BOOLEAN_SIMPLE.first, false].freeze
       TRUE_VALUES = [BOOLEAN_SIMPLE.last, true].freeze
-      BOOLEAN_VALUES = [TRUE_VALUES, FALSE_VALUES].flatten.freeze
+      BOOLEAN_VALUES = (TRUE_VALUES + FALSE_VALUES).freeze
 
       # option name separator on command line
       OPTION_SEP_LINE = '-'
