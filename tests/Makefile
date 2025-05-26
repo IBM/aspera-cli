@@ -116,7 +116,7 @@ $(T).ssh_ok: $(TMP_EXISTS)
 	sudo systemsetup -getremotelogin | grep -s Off && sudo systemsetup -setremotelogin on || :
 	sudo systemsetup -getremotelogin
 	sudo -u asperadaemon test -w /Library/Logs/Aspera && sudo chown -R asperadaemon: /Library/Logs/Aspera || echo "Ok, log writable"
-	ls -al /Library/Logs/Aspera
+	sudo -u asperadaemon ls -al /Library/Logs/Aspera
 	make restart_noded
 	while ! $(CLI_TEST) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 	touch $@
