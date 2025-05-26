@@ -226,7 +226,7 @@ module Aspera
           return @cache_api_aoc
         end
 
-        # Generate or update hash with workspace id and name (option)
+        # Generate or update Hash with workspace id and name (option), if not already set
         # @param hash   [Hash, Nil] set in provided hash
         # @param string [Bool] true to set key as string, else as symbol
         # @param name   [Bool] include name
@@ -238,7 +238,8 @@ module Aspera
           fields.push(:name) if name
           fields.each do |i|
             k = "workspace_#{i}"
-            hash[string ? k : k.to_sym] = info[i] unless info[i].nil?
+            k = k.to_sym unless string
+            hash[k] = info[i] unless info[i].nil? || hash.key?(k)
           end
           return hash
         end
@@ -323,14 +324,22 @@ module Aspera
         def resolve_dropbox_name_default_ws_id(query)
           if query.key?('dropbox_name')
             # convenience: specify name instead of id
-            raise 'not both dropbox_name and dropbox_id' if query.key?('dropbox_id')
+            raise 'Use field dropbox_name or dropbox_id, not both' if query.key?('dropbox_id')
             # TODO : craft a query that looks for dropbox only in current workspace
-            query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query['dropbox_name'])['id']
-            query.delete('dropbox_name')
+            query['dropbox_id'] = aoc_api.lookup_by_name('dropboxes', query.delete('dropbox_name'))['id']
           end
           workspace_id_hash(hash: query, string: true)
           # by default show dropbox packages only for dropboxes
           query['exclude_dropbox_packages'] = !query.key?('dropbox_id') unless query.key?('exclude_dropbox_packages')
+        end
+
+        # @return [Hash] {items,total} with all packages according to combination of user's query and default query
+        def list_all_packages_with_query
+          query = query_read_delete(default: {})
+          Aspera.assert_type(query, Hash){'query'}
+          PACKAGE_RECEIVED_BASE_QUERY.each{ |k, v| query[k] = v unless query.key?(k)}
+          resolve_dropbox_name_default_ws_id(query)
+          return api_read_all('packages', query.compact)
         end
 
         NODE4_EXT_COMMANDS = %i[transfer].concat(Node::COMMANDS_GEN4).freeze
@@ -871,10 +880,7 @@ module Aspera
               skip_ids_persistency = package_persistency
               case ids_to_download
               when SpecialValues::ALL, SpecialValues::INIT
-                query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
-                Aspera.assert_type(query, Hash){'query'}
-                resolve_dropbox_name_default_ws_id(query)
-                all_packages = api_read_all('packages', query)[:items]
+                all_packages = list_all_packages_with_query[:items]
                 if ids_to_download.eql?(SpecialValues::INIT)
                   Aspera.assert(skip_ids_persistency){'INIT requires option once_only'}
                   skip_ids_persistency.data.clear.concat(all_packages.map{ |e| e['id']})
@@ -923,11 +929,7 @@ module Aspera
               package_info = aoc_api.read("packages/#{package_id}")
               return Main.result_single_object(package_info)
             when :list
-              # code here is similar to :receive ALL, including with option once_only
-              query = query_read_delete(default: PACKAGE_RECEIVED_BASE_QUERY)
-              Aspera.assert_type(query, Hash){'query'}
-              resolve_dropbox_name_default_ws_id(query)
-              result = api_read_all('packages', query)
+              result = list_all_packages_with_query
               skip_ids_persistency = package_persistency
               reject_packages_from_persistency(result[:items], skip_ids_persistency)
               display_fields = PACKAGE_LIST_DEFAULT_FIELDS
