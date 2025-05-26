@@ -16,6 +16,10 @@ module Aspera
       # external binaries used
       EXTERNAL_TOOLS = %i[ffmpeg ffprobe magick optipng unoconv].freeze
       TEMP_FORMAT = 'img%04d.jpg'
+      FFMPEG_DEFAULT_PARAMS = [
+        '-y', # overwrite output without asking
+        '-loglevel', 'error' # show only errors and up
+      ].freeze
       private_constant :BASH_SPECIAL_CHARACTERS, :EXTERNAL_TOOLS, :TEMP_FORMAT
 
       class << self
@@ -53,17 +57,11 @@ module Aspera
           return Environment.secure_capture(exec: command_sym.to_s, args: command_args.map(&:to_s))
         end
 
-        def ffmpeg(a)
-          Aspera.assert_type(a, Hash)
-          # input_file,input_args,output_file,output_args
-          a[:gl_p] ||= [
-            '-y', # overwrite output without asking
-            '-loglevel', 'error' # show only errors and up
-          ]
-          a[:in_p] ||= []
-          a[:out_p] ||= []
-          Aspera.assert(%i[gl_p in_f in_p out_f out_p].eql?(a.keys.sort)){"wrong params (#{a.keys.sort})"}
-          external_command(:ffmpeg, [a[:gl_p], a[:in_p], '-i', a[:in_f], a[:out_p], a[:out_f]].flatten)
+        def ffmpeg(gl_p: FFMPEG_DEFAULT_PARAMS, in_p: [], in_f:, out_p: [], out_f:)
+          Aspera.assert_type(gl_p, Array)
+          Aspera.assert_type(in_p, Array)
+          Aspera.assert_type(out_p, Array)
+          external_command(:ffmpeg, gl_p +  in_p + ['-i', in_f] + out_p + [out_f])
         end
 
         # @return Float in seconds
