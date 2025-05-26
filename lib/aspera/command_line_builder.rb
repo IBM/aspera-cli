@@ -40,6 +40,8 @@ module Aspera
           options[:mandatory] ||= false
           options[:desc] ||= ''
           options[:desc] = "DEPRECATED: #{options[:deprecation]}\n#{options[:desc]}" if options.key?(:deprecation)
+          # replace "back solidus" HTML entity with its text value
+          options[:desc] = options[:desc].gsub('&bsol;', '\\')
           cli = options[:cli]
           unsupported_cli_keys = cli.keys - CLI_KEYS
           Aspera.assert(unsupported_cli_keys.empty?){"Unsupported cli keys: #{unsupported_cli_keys}"}

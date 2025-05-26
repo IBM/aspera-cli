@@ -713,8 +713,8 @@ module Aspera
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
             return Main.result_object_list(
-              Transfer::Parameters.man_table(formatter),
-              fields: [%w[name type], Transfer::Parameters::SUPPORTED_AGENTS_SHORT.map(&:to_s), %w[description]].flatten.freeze
+              Transfer::Parameters.man_table(formatter, cli: false),
+              fields: Transfer::Parameters::FIELDS.map(&:to_s)
             )
           when :errors
             error_data = []
@@ -753,7 +753,7 @@ module Aspera
         PRESET_EXIST_ACTIONS = %i[show delete get unset].freeze
         # require id
         PRESET_INSTANCE_ACTIONS = %i[initialize update ask set].concat(PRESET_EXIST_ACTIONS).freeze
-        PRESET_ALL_ACTIONS = [PRESET_GBL_ACTIONS, PRESET_INSTANCE_ACTIONS].flatten.freeze
+        PRESET_ALL_ACTIONS = (PRESET_GBL_ACTIONS + PRESET_INSTANCE_ACTIONS).freeze
 
         def execute_preset(action: nil, name: nil)
           action = options.get_next_command(PRESET_ALL_ACTIONS) if action.nil?
