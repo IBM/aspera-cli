@@ -62,7 +62,7 @@ module Aspera
           env:    lambda{ |v| ENV.fetch(v, nil)},
           file:   lambda{ |v| File.read(File.expand_path(v))},
           uri:    lambda{ |v| UriReader.read(v)},
-          json:   lambda{ |v| JSON.parse(v)},
+          json:   lambda{ |v| JSON_parse(v)},
           lines:  lambda{ |v| v.split("\n")},
           list:   lambda{ |v| v[1..-1].split(v[0])},
           none:   lambda{ |v| ExtendedValue.assert_no_value(v, :none); nil}, # rubocop:disable Style/Semicolon
@@ -82,6 +82,25 @@ module Aspera
       # Regex to match an extended value
       def handler_regex_string
         "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
+      end
+
+      # JSON Parser, with more information on error location
+      def JSON_parse(v)
+        JSON.parse(v)
+      rescue JSON::ParserError => e
+        m = /at line (\d+) column (\d+)/.match(e.message)
+        raise if m.nil?
+        line = m[1].to_i - 1
+        column = m[2].to_i - 1
+        lines = v.lines
+        raise if line >= lines.size
+        error_line = lines[line].chomp
+        context_col_beg = [column - 10, 0].max
+        context_col_end = [column + 10, error_line.length].min
+        context = error_line[context_col_beg...context_col_end]
+        cursor_pos = column - context_col_beg
+        pointer = ' ' * cursor_pos + '^'.blink
+        raise BadArgument, "#{e.message}\n#{context}\n#{pointer}"
       end
 
       public
