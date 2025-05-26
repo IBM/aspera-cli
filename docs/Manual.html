@@ -3864,7 +3864,7 @@ provided.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>In transit encryption type.<br/>Allowed values: none, aes-128,
 aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm,
-aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
+aes-192-gcm, aes-256-gcm<br/>(-c=(conversion){enum})</td>
 </tr>
 <tr>
 <td>cipher_allowed</td>
@@ -3899,8 +3899,8 @@ aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Enable client-side encryption at rest. (CSEAR, content
-protection)<br/>Allowed values: encrypt, decrypt<br/>(–file-crypt
-{enum})</td>
+protection)<br/>Allowed values: encrypt,
+decrypt<br/>(–file-crypt={enum})</td>
 </tr>
 <tr>
 <td>content_protection_password</td>
@@ -3997,7 +3997,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>UDP datagram size in bytes<br/>(-Z {int})</td>
+<td>UDP datagram size in bytes<br/>(-Z={int})</td>
 </tr>
 <tr>
 <td>direction</td>
@@ -4009,7 +4009,7 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Direction of transfer (on client side)<br/>Allowed values: send,
-receive<br/>(–mode (conversion){enum})</td>
+receive<br/>(–mode=(conversion){enum})</td>
 </tr>
 <tr>
 <td>exclude_newer_than</td>
@@ -4022,8 +4022,8 @@ receive<br/>(–mode (conversion){enum})</td>
 <td>Y</td>
 <td>Exclude files, but not directories, from the transfer if they are
 newer than the specified number of seconds added to the source
-computer’s epoch. e.g. “-86400” for newer than a day
-back.<br/>(–exclude-newer-than {string})</td>
+computer’s epoch.<br/>e.g. “-86400” for newer than a day
+back.<br/>(–exclude-newer-than={string})</td>
 </tr>
 <tr>
 <td>exclude_older_than</td>
@@ -4036,8 +4036,8 @@ back.<br/>(–exclude-newer-than {string})</td>
 <td>Y</td>
 <td>Exclude files, but not directories, from the transfer if they are
 older than the specified number of seconds added to the source
-computer’s epoch. e.g. “-86400” for older than a day
-back.<br/>(–exclude-older-than {string})</td>
+computer’s epoch.<br/>e.g. “-86400” for older than a day
+back.<br/>(–exclude-older-than={string})</td>
 </tr>
 <tr>
 <td>fasp_port</td>
@@ -4048,7 +4048,7 @@ back.<br/>(–exclude-older-than {string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies fasp (UDP) port.<br/>(-O {int})</td>
+<td>Specifies fasp (UDP) port.<br/>(-O={int})</td>
 </tr>
 <tr>
 <td>fasp_url</td>
@@ -4084,7 +4084,7 @@ none<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
-transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
+transfer cannot be performed.<br/>(-y=(conversion){bool}|{string})</td>
 </tr>
 <tr>
 <td>http_fallback_port</td>
@@ -4095,7 +4095,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>Specifies http port when no cipher is used<br/>(-t {int})</td>
+<td>Specifies http port when no cipher is used<br/>(-t={int})</td>
 </tr>
 <tr>
 <td>https_fallback_port</td>
@@ -4106,7 +4106,7 @@ transfer cannot be performed.<br/>(-y (conversion){bool}|{string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies https port when cipher is used<br/>(-t {int})</td>
+<td>Specifies https port when cipher is used<br/>(-t={int})</td>
 </tr>
 <tr>
 <td>keepalive</td>
@@ -4203,8 +4203,8 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Set the minimum transfer rate in kilobits per second.<br/>(-m
-{int})</td>
+<td>Set the minimum transfer rate in kilobits per
+second.<br/>(-m={int})</td>
 </tr>
 <tr>
 <td>move_after_transfer</td>
@@ -4217,7 +4217,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td> </td>
 <td>The relative path to which the files will be moved after the
 transfer at the source side. Available as of
-3.8.0.<br/>(–move-after-transfer {string})</td>
+3.8.0.<br/>(–move-after-transfer={string})</td>
 </tr>
 <tr>
 <td>multi_session</td>
@@ -4231,7 +4231,7 @@ transfer at the source side. Available as of
 <td>Use multi-session transfer. max 128.<br/>Each participant on one
 host needs an independent UDP (-O) port.<br/>Large files are split
 between sessions only when transferring with
-resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
+resume_policy=none.<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>multi_session_threshold</td>
@@ -4244,7 +4244,7 @@ resume_policy=none.<br/><br/>(&lt;special&gt;)</td>
 <td> </td>
 <td>Split files across multiple ascp sessions if their size in bytes is
 greater than or equal to the specified value.<br/>(0=no file is
-split)<br/>(–multi-session-threshold {int})</td>
+split)<br/>(–multi-session-threshold={int})</td>
 </tr>
 <tr>
 <td>obfuscate_file_names</td>
@@ -4269,7 +4269,7 @@ true.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Overwrite destination files with the source files of the same
 name.<br/>Allowed values: never, always, diff, older,
-diff+older<br/>(–overwrite {enum})</td>
+diff+older<br/>(–overwrite={enum})</td>
 </tr>
 <tr>
 <td>password</td>
@@ -4334,7 +4334,7 @@ the transfer.<br/>(–preserve-access-time)</td>
 <td> </td>
 <td> </td>
 <td>Preserve access control lists.<br/>Allowed values: none, native,
-metafile<br/>(–preserve-acls {enum})</td>
+metafile<br/>(–preserve-acls={enum})</td>
 </tr>
 <tr>
 <td>preserve_creation_time</td>
@@ -4360,7 +4360,7 @@ ignored.<br/>(–preserve-creation-time)</td>
 <td> </td>
 <td> </td>
 <td>Preserve the extended attributes.<br/>Allowed values: none, native,
-metafile<br/>(–preserve-xattrs {enum})</td>
+metafile<br/>(–preserve-xattrs={enum})</td>
 </tr>
 <tr>
 <td>preserve_file_owner_gid</td>
@@ -4410,7 +4410,7 @@ timestamps at the destination.<br/>(–preserve-modification-time)</td>
 <td> </td>
 <td> </td>
 <td>Preserve remote access control lists.<br/>Allowed values: none,
-native, metafile<br/>(–remote-preserve-acls {enum})</td>
+native, metafile<br/>(–remote-preserve-acls={enum})</td>
 </tr>
 <tr>
 <td>preserve_source_access_time</td>
@@ -4448,7 +4448,7 @@ accessed<br/>(–preserve-source-access-time)</td>
 server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports
 for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if
 specified here, overrides the value of environment variable
-ASPERA_PROXY_PASS.<br/>(–proxy {string})</td>
+ASPERA_PROXY_PASS.<br/>(–proxy={string})</td>
 </tr>
 <tr>
 <td>rate_policy</td>
@@ -4460,7 +4460,7 @@ ASPERA_PROXY_PASS.<br/>(–proxy {string})</td>
 <td>Y</td>
 <td>Y</td>
 <td>The transfer rate policy to use when sharing bandwidth.<br/>Allowed
-values: low, fair, high, fixed<br/>(–policy {enum})</td>
+values: low, fair, high, fixed<br/>(–policy={enum})</td>
 </tr>
 <tr>
 <td>rate_policy_allowed</td>
@@ -4508,8 +4508,8 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>IP or fully qualified domain name of the remote server<br/>(–host
-{string})</td>
+<td>IP or fully qualified domain name of the remote
+server<br/>(–host={string})</td>
 </tr>
 <tr>
 <td>remote_password</td>
@@ -4531,8 +4531,8 @@ node.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Remote user. Default value is “xfer” on node or connect.<br/>(–user
-{string})</td>
+<td>Remote user. Default value is “xfer” on node or
+connect.<br/>(–user={string})</td>
 </tr>
 <tr>
 <td>remove_after_transfer</td>
@@ -4594,7 +4594,7 @@ well.<br/>(–remove-skipped)</td>
 <td>Y</td>
 <td>If a transfer is interrupted or fails to finish, resume without
 re-transferring the whole files.<br/>Allowed values: none, attrs,
-sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
+sparse_csum, full_csum<br/>(-k=(conversion){enum})</td>
 </tr>
 <tr>
 <td>retry_duration</td>
@@ -4619,7 +4619,7 @@ sparse_csum, full_csum<br/>(-k (conversion){enum})</td>
 <td>Y</td>
 <td>Path to be prepended to each source path.<br/>This is either a
 conventional path or it can be a URI but only if there is no root
-defined.<br/>(–source-prefix64 (conversion){string})</td>
+defined.<br/>(–source-prefix64=(conversion){string})</td>
 </tr>
 <tr>
 <td>source_root_id</td>
@@ -4645,7 +4645,7 @@ token auth for the source node.<br/>(&lt;ignored&gt;)</td>
 <td>Specify the prefix to be stripped off from each source
 object.<br/>The remaining portion of the source path is kept intact at
 the destination.<br/>Special care must be taken when used with cloud
-storage.<br/>(–src-base64 (conversion){string})</td>
+storage.<br/>(–src-base64=(conversion){string})</td>
 </tr>
 <tr>
 <td>ssh_args</td>
@@ -4668,8 +4668,8 @@ caution.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P
-{int})</td>
+<td>Specifies SSH (TCP) port. Default: local:22,
+other:33001<br/>(-P={int})</td>
 </tr>
 <tr>
 <td>ssh_private_key</td>
@@ -4705,8 +4705,8 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Check it against server SSH host key fingerprint<br/>(–check-sshfp
-{string})</td>
+<td>Check it against server SSH host key
+fingerprint<br/>(–check-sshfp={string})</td>
 </tr>
 <tr>
 <td>symlink_policy</td>
@@ -4718,7 +4718,7 @@ Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Handle source side symbolic links<br/>Allowed values: follow, copy,
-copy+force, skip<br/>(–symbolic-links {enum})</td>
+copy+force, skip<br/>(–symbolic-links={enum})</td>
 </tr>
 <tr>
 <td>tags</td>
@@ -4731,7 +4731,7 @@ copy+force, skip<br/>(–symbolic-links {enum})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
 Key <code>aspera.xfer_retry</code> specified a retry timeout for node
-api initiated transfers.<br/>(–tags64 (conversion){hash})</td>
+api initiated transfers.<br/>(–tags64=(conversion){hash})</td>
 </tr>
 <tr>
 <td>target_rate_cap_kbps</td>
@@ -4754,7 +4754,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies desired speed for the transfer.<br/>(-l {int})</td>
+<td>Specifies desired speed for the transfer.<br/>(-l={int})</td>
 </tr>
 <tr>
 <td>target_rate_percentage</td>
@@ -6739,17 +6739,18 @@ then external users are invited to join the workspace</li>
 </ul>
 <h3 data-number="5.6.2" id="list-packages"><span
 class="header-section-number">5.6.2</span> List packages</h3>
-<p>By default, when using <code>aoc packages list</code>, the following
-<code>query</code> is performed:</p>
+<p>By default, when using <code>aoc packages list</code> or
+<code>aoc packages receive ALL</code>, the following <code>query</code>
+is performed:</p>
 <table>
 <colgroup>
-<col style="width: 80%" />
-<col style="width: 20%" />
+<col style="width: 75%" />
+<col style="width: 24%" />
 </colgroup>
 <thead>
 <tr>
-<th>query parameter</th>
-<th>value</th>
+<th>Query parameter</th>
+<th>Value</th>
 </tr>
 </thead>
 <tbody>
@@ -6771,19 +6772,20 @@ class="header-section-number">5.6.2</span> List packages</h3>
 </tr>
 <tr>
 <td><code>workspace_id</code></td>
-<td>based on current workspace</td>
-</tr>
-<tr>
-<td><code>exclude_dropbox_packages</code></td>
-<td><code>true</code> if watching a dropbox, or <code>false</code> if
-not</td>
+<td>Set based on current workspace</td>
 </tr>
 <tr>
 <td><code>dropbox_id</code></td>
-<td>set according to <code>dropbox_name</code></td>
+<td>Set according to <code>dropbox_name</code>, if provided</td>
+</tr>
+<tr>
+<td><code>exclude_dropbox_packages</code></td>
+<td><code>true</code> unless <code>dropbox_id</code> is provided</td>
 </tr>
 </tbody>
 </table>
+<p>Parameters provided using option <code>query</code> override this
+query. To remove a parameter, set it to <code>null</code>.</p>
 <h3 data-number="5.6.3"
 id="example-send-a-package-with-one-file-to-two-users-using-their-email"><span
 class="header-section-number">5.6.3</span> Example: Send a package with
@@ -9105,11 +9107,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb493-1"><a href
 <span id="cb493-17"><a href="#cb493-17" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
 <span id="cb493-18"><a href="#cb493-18" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir my_share1/new_folder</span>
 <span id="cb493-19"><a href="#cb493-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_syncsynctst /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span></span>
-<span id="cb493-20"><a href="#cb493-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb493-21"><a href="#cb493-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
-<span id="cb493-22"><a href="#cb493-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
-<span id="cb493-23"><a href="#cb493-23" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
-<span id="cb493-24"><a href="#cb493-24" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span></code></pre></div>
+<span id="cb493-20"><a href="#cb493-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_syncsynctst /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb493-21"><a href="#cb493-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb493-22"><a href="#cb493-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
+<span id="cb493-23"><a href="#cb493-23" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
+<span id="cb493-24"><a href="#cb493-24" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
+<span id="cb493-25"><a href="#cb493-25" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span></code></pre></div>
 <h1 data-number="12" id="plugin-console-ibm-aspera-console"><span
 class="header-section-number">12</span> Plugin: <code>console</code>:
 IBM Aspera Console</h1>

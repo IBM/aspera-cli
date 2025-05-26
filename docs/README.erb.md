@@ -4592,17 +4592,20 @@ If a user recipient (email) is not already registered and the workspace allows e
 
 #### List packages
 
-By default, when using `aoc packages list`, the following `query` is performed:
+By default, when using `aoc packages list` or `aoc packages receive ALL`, the following `query` is performed:
 
-| query parameter            | value |
-|----------------------------|-------|
+| Query parameter            | Value   |
+|----------------------------|---------|
 | `archived`                 | `false` |
 | `has_content`              | `true`  |
 | `received`                 | `true`  |
 | `completed`                | `true`  |
-| `workspace_id`             | based on current workspace |
-| `exclude_dropbox_packages` | `true` if watching a dropbox, or `false` if not |
-| `dropbox_id`               | set according to `dropbox_name` |
+| `workspace_id`             | Set based on current workspace |
+| `dropbox_id`               | Set according to `dropbox_name`, if provided |
+| `exclude_dropbox_packages` | `true` unless `dropbox_id` is provided |
+
+Parameters provided using option `query` override this query.
+To remove a parameter, set it to `null`.
 
 #### Example: Send a package with one file to two users, using their email
 
