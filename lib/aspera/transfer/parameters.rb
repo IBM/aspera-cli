@@ -68,9 +68,9 @@ module Aspera
               when :envvar then 'env:' + options[:cli][:variable]
               when :opt_without_arg then options[:cli][:switch]
               when :opt_with_arg
-                arg_type = options.key?(:enum) ? 'enum' : options[:accepted_types].map{ |n| "{#{n}}"}.join('|')
+                arg_type = options.key?(:enum) ? '{enum}' : options[:accepted_types].map{ |n| "{#{n}}"}.join('|')
                 conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
-                "#{options[:cli][:switch]} #{conversion_tag}#{arg_type}"
+                "#{options[:cli][:switch]}=#{conversion_tag}#{arg_type}"
               when :special then formatter.special_format('special')
               when :ignore then formatter.special_format('ignored')
               else
