@@ -15,8 +15,8 @@ module Aspera
     # keys in hash that contain secrets
     KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
     HTTP_SECRETS = %w[Authorization].freeze
-    ALL_SECRETS = [ASCP_ENV_SECRETS, KEY_SECRETS, HTTP_SECRETS].flatten.freeze
-    ALL_SECRETS2 = [KEY_SECRETS, HTTP_SECRETS].flatten.freeze
+    ALL_SECRETS = (ASCP_ENV_SECRETS + KEY_SECRETS + HTTP_SECRETS).freeze
+    ALL_SECRETS2 = (KEY_SECRETS + HTTP_SECRETS).freeze
     KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/].freeze
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [

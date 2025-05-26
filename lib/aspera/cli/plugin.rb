@@ -12,7 +12,7 @@ module Aspera
       # operations with id
       INSTANCE_OPS = %i[modify delete show].freeze
       # all standard operations
-      ALL_OPS = [GLOBAL_OPS, INSTANCE_OPS].flatten.freeze
+      ALL_OPS = (GLOBAL_OPS + INSTANCE_OPS).freeze
       # special query parameter: max number of items for list command
       MAX_ITEMS = 'max'
       # special query parameter: max number of pages for list command
