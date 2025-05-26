@@ -11,6 +11,7 @@ require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
 require 'pp'
+require 'word_wrap'
 
 module Aspera
   module Cli
@@ -128,10 +129,17 @@ module Aspera
         @spinner = nil
       end
 
-      # Highlight special values
+      # Highlight special values on terminal
       def special_format(what)
         result = "<#{what}>"
         return %w[null empty].any?{ |s| what.include?(s)} ? result.dim : result.reverse_color
+      end
+
+      # for transfer spec table, build line for display
+      def check_row(row)
+        row.each_key do |k|
+          row[k] = row[k].map{ |i| WordWrap.ww(i.to_s, 120).chomp}.join("\n") if row[k].is_a?(Array)
+        end
       end
 
       # call this after REST calls if several api calls are expected

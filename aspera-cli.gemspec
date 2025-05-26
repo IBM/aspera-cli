@@ -57,5 +57,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency('vault', '~> 0.18')
   spec.add_dependency('webrick', '~> 1.7')
   spec.add_dependency('websocket', '~> 1.2')
+  spec.add_dependency('word_wrap', '~> 1.0')
   spec.add_dependency('xml-simple', '~> 1.0')
 end

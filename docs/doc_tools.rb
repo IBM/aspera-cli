@@ -17,8 +17,17 @@ require 'English'
 
 # format special value depending on context
 class HtmlFormatter
-  def special_format(special)
-    "&lt;#{special}&gt;"
+  class << self
+    def special_format(special)
+      "&lt;#{special}&gt;"
+    end
+
+    def check_row(row)
+      row.each_key do |k|
+        row[k] = row[k].join('<br/>') if row[k].is_a?(Array)
+        row[k] = '&nbsp;' if row[k].to_s.strip.empty?
+      end
+    end
   end
 end
 
@@ -108,20 +117,14 @@ def markdown_table(table)
   return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
 end
 
-# transfer spec description generation
+# Transfer spec description generation for markdown manual
 def spec_table
-  # list of fields to display (column titles and key in source table)
-  fields = [:name, :type, Aspera::Transfer::Parameters::SUPPORTED_AGENTS_SHORT, :description].flatten.freeze
-  # Headings
-  table = [fields.map(&:capitalize)]
-  table.first[0] = 'Field'
-  Aspera::Transfer::Parameters.man_table(HtmlFormatter.new).each do |param|
-    param[:description] += (param[:description].empty? ? '' : "\n") + '(' + param[:cli] + ')' unless param[:cli].to_s.empty?
-    param.each_key{ |k| param[k] = '&nbsp;' if param[k].to_s.strip.empty?}
-    param[:description] = param[:description].gsub("\n", '<br/>')
-    param[:type] = param[:type].gsub(',', '<br/>')
-    table.push(fields.map{ |field_name| param[field_name]})
+  table = Aspera::Transfer::Parameters.man_table(HtmlFormatter).map do |param|
+    Aspera::Transfer::Parameters::FIELDS.map{ |field_name| param[field_name]}
   end
+  # Headings
+  table.unshift(Aspera::Transfer::Parameters::FIELDS.map(&:capitalize))
+  table.first[0] = 'Field'
   return markdown_table(table)
 end
 

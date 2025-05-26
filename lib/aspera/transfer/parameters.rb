@@ -26,8 +26,8 @@ module Aspera
       # Short names of columns in manual
       SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{ |agent_sym| agent_sym.to_s[0].to_sym}
       HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
-
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
+      FIELDS = (%i[name type] + SUPPORTED_AGENTS_SHORT + %i[description]).freeze
 
       class << self
         # temp file list files are created here
@@ -46,45 +46,39 @@ module Aspera
           @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
         end
 
-        # @param formatter [Cli::Formatter] formatter to use
+        # @param formatter [Cli::Formatter] formatter to use, methods: special_format, check_row
+        # @param &block modify parameter info if needed
         # @return a table suitable to display in manual
-        def man_table(formatter)
-          result = []
-          Spec::DESCRIPTION.each do |name, options|
-            param = {name: name, type: [options[:accepted_types]].flatten.join(','), description: options[:desc]}
+        def man_table(formatter, cli: true)
+          Spec::DESCRIPTION.filter_map do |name, options|
+            param = {
+              name:        name,
+              type:        options[:accepted_types],
+              description: options[:desc].split("\n")
+            }
             # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |agent_sym|
               param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(agent_sym))
             end
             # only keep lines that are usable in supported agents
-            next if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
-            param[:cli] =
+            next false if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
+            param[:description].push("Allowed values: #{options[:enum].join(', ')}") if options.key?(:enum)
+            cli_option =
               case options[:cli][:type]
               when :envvar then 'env:' + options[:cli][:variable]
               when :opt_without_arg then options[:cli][:switch]
               when :opt_with_arg
-                values = if options.key?(:enum)
-                  ['enum']
-                elsif options[:accepted_types].is_a?(Array)
-                  options[:accepted_types]
-                elsif !options[:accepted_types].nil?
-                  [options[:accepted_types]]
-                else
-                  raise "error: #{param}"
-                end.map{ |n| "{#{n}}"}.join('|')
+                arg_type = options.key?(:enum) ? 'enum' : options[:accepted_types].map{ |n| "{#{n}}"}.join('|')
                 conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
-                "#{options[:cli][:switch]} #{conversion_tag}#{values}"
+                "#{options[:cli][:switch]} #{conversion_tag}#{arg_type}"
               when :special then formatter.special_format('special')
               when :ignore then formatter.special_format('ignored')
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end
-            param[:description] += "\nAllowed values: #{options[:enum].join(', ')}" if options.key?(:enum)
-            # replace "solidus" HTML entity with its text value
-            param[:description] = param[:description].gsub('&sol;', '\\')
-            result.push(param)
-          end
-          return result.sort_by{ |parameter_info| parameter_info[:name]}
+            param[:description].push("(#{cli_option})") if cli && !cli_option.to_s.empty?
+            formatter.check_row(param)
+          end.sort_by{ |i| i[:name]}
         end
 
         # special encoding methods used in YAML (key: :convert)
