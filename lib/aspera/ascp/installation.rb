@@ -141,9 +141,8 @@ module Aspera
           if !File.exist?(file_key) || !File.exist?(file_cert)
             require 'openssl'
             # create new self signed certificate for http fallback
-            cert = OpenSSL::X509::Certificate.new
             private_key = OpenSSL::PKey::RSA.new(4096)
-            WebServerSimple.fill_self_signed_cert(cert, private_key)
+            cert = WebServerSimple.self_signed_cert(private_key)
             check_or_create_sdk_file('aspera_fallback_cert_private_key.pem', force: true){private_key.to_pem}
             check_or_create_sdk_file('aspera_fallback_cert.pem', force: true){cert.to_pem}
           end
