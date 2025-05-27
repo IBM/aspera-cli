@@ -1957,15 +1957,21 @@ $(T)f5_postproc: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	-kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
 	rm -f $(DIR_TMP)pid_f5_postproc
-	$(INCMAN)$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","script_folder":"$(DIR_TST)"}' &
+	openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes -keyout $(DIR_TMP)key.pem -out $(DIR_TMP)cert.pem -subj "/CN=localhost"
+	openssl pkcs12 -export -out $(DIR_TMP)localhost.p12 -inkey $(DIR_TMP)key.pem -in $(DIR_TMP)cert.pem -passout pass:changeit
+	$(INCMAN)$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","cert":"$(DIR_TMP)localhost.p12","key":"changeit"}' &
 	let i=10;while test $$i -gt 0 -a ! -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
 	kill -0 $$(cat $(DIR_TMP)pid_f5_postproc)&&echo ">>>> Process $$(cat $(DIR_TMP)pid_f5_postproc)"
 	$(CLI_TEST) faspex5 packages send @json:@extend:'{"title":"test_webhook_ascli","recipients":["@preset:faspex5.shared_box_name@"]}' 'faux:///test1?1m'
-	-curl http://localhost:8088/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'
-	-curl http://localhost:8088/wrong -d '{}'
+	-curl -k https://localhost:8553/asclihook/post_proc_test.sh -d '{"faspex_pkg_directory":"/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test","faspex_pkg_name":"Test files","faspex_pkg_note":"","faspex_pkg_id":506,"faspex_pkg_delivery_id":506,"faspex_recipient_list":"aspera-recipient-test@ibm.com","faspex_recipient_count":1,"faspex_sender_id":30,"faspex_sender_name":"aspera-sender-test@ibm.com","faspex_sender_email":"aspera-sender-test@ibm.com","faspex_pkg_total_bytes":4633,"faspex_pkg_total_files":1,"faspex_pkg_uuid":"61ae5299-d8ea-496e-8b15-8cdc0379fc4a","faspex_metadata_fields": "{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}","faspex_recipient_0":"aspera-sender-test@ibm.com"}'
+	-curl -k https://localhost:8553/wrong -d '{}'
 	sleep 5
 	kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
 	let i=10;while test $$i -gt 0 -a -f $(DIR_TMP)pid_f5_postproc;do sleep 1;let --i;done
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","key":"$(DIR_TMP)key.pem"}' & sleep 5
+	kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
+	$(CLI_TEST) faspex5 postprocessing --pid-file=$(DIR_TMP)pid_f5_postproc @json:'{"url":"https://localhost:8553/asclihook","script_folder":"$(DIR_TST)","cert":"$(DIR_TMP)cert.pem","key":"$(DIR_TMP)key.pem"}' & sleep 5
+	kill -TERM $$(cat $(DIR_TMP)pid_f5_postproc)
 	@$(STOP_TEST) $@
 PKCS_P=YourExportPassword
 $(T)f5_cert_test: $(TMP_EXISTS)

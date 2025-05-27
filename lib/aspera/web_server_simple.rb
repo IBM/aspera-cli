@@ -14,17 +14,19 @@ module Aspera
     DEFAULT_URL = 'http://localhost:8080'
     GENERIC_ISSUER = '/C=FR/O=Test/OU=Test/CN=Test'
     ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
-    PKCS12_EXT = %w[p12 pfx]
+    PKCS12_EXT = %w[p12 pfx].map{ |i| ".#{i}"}.freeze
+    CLOCK_SKEW_OFFSET_SEC = 5
 
-    private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT
+    private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
 
     class << self
-      # Fill and self sign provided certificate
-      def fill_self_signed_cert(cert, key, digest = 'SHA256')
+      # Generate or fill and self sign certificate
+      def self_signed_cert(private_key, digest: 'SHA256')
+        cert = OpenSSL::X509::Certificate.new
         cert.subject = cert.issuer = OpenSSL::X509::Name.parse(GENERIC_ISSUER)
-        cert.not_before = cert.not_after = Time.now
-        cert.not_after += ONE_YEAR_SECONDS
-        cert.public_key = key.public_key
+        cert.not_before = Time.now - CLOCK_SKEW_OFFSET_SEC
+        cert.not_after  = cert.not_before + ONE_YEAR_SECONDS
+        cert.public_key = private_key.public_key
         cert.serial = 0x0
         cert.version = 2
         ef = OpenSSL::X509::ExtensionFactory.new
@@ -36,7 +38,13 @@ module Aspera
           # ef.create_extension('keyUsage', 'cRLSign,keyCertSign', true),
         ]
         cert.add_extension(ef.create_extension('authorityKeyIdentifier', 'keyid:always,issuer:always'))
-        cert.sign(key, OpenSSL::Digest.new(digest))
+        cert.sign(private_key, OpenSSL::Digest.new(digest))
+        cert
+      end
+
+      # @return a list of Certificates from chain file
+      def read_chain_file(chain)
+        File.read(chain).scan(/-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----/m).map{ |i| OpenSSL::X509::Certificate.new(i)}
       end
     end
 
@@ -59,34 +67,29 @@ module Aspera
         Log.log.debug('HTTP mode')
       when 'https'
         webrick_options[:SSLEnable] = true
-        if cert.nil?
+        if cert.nil? && key.nil?
           webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
+        elsif cert && PKCS12_EXT.any?{ |ext| File.extname(cert).casecmp(ext).zero?}
+          # PKCS12
+          Log.log.debug('Using PKCS12 certificate')
+          raise 'PKCS12 requires a key (password)' if key.nil?
+          pkcs12 = OpenSSL::PKCS12.new(File.read(cert), key)
+          webrick_options[:SSLCertificate] = pkcs12.certificate
+          webrick_options[:SSLPrivateKey] = pkcs12.key
+          webrick_options[:SSLExtraChainCert] = pkcs12.ca_certs
         else
-          Aspera.assert_type(cert, String)
-          if PKCS12_EXT.any?{ |ext| cert.end_with?(".#{ext}")}
-            Log.log.debug('Using PKCS12 certificate')
-            raise 'PKCS12 requires a key (password)' if key.nil?
-            pkcs12 = OpenSSL::PKCS12.new(File.read(cert), key)
-            webrick_options[:SSLCertificate] = pkcs12.certificate
-            webrick_options[:SSLPrivateKey] = pkcs12.key
-            webrick_options[:SSLExtraChainCert] = pkcs12.ca_certs
+          Log.log.debug('Using PEM certificate')
+          webrick_options[:SSLPrivateKey] = if key.nil?
+            OpenSSL::PKey::RSA.new(4096)
           else
-            Log.log.debug('Using PEM certificate')
-            webrick_options[:SSLPrivateKey] = if key.nil?
-              OpenSSL::PKey::RSA.new(4096)
-            else
-              OpenSSL::PKey::RSA.new(File.read(key))
-            end
-            if cert.nil?
-              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new
-              self.class.fill_self_signed_cert(webrick_options[:SSLCertificate], webrick_options[:SSLPrivateKey])
-            else
-              webrick_options[:SSLCertificate] = OpenSSL::X509::Certificate.new(File.read(cert))
-            end
-            if !chain.nil?
-              webrick_options[:SSLExtraChainCert] = [OpenSSL::X509::Certificate.new(File.read(chain))]
-            end
+            OpenSSL::PKey::RSA.new(File.read(key))
           end
+          webrick_options[:SSLCertificate] = if cert.nil?
+            self.class.self_signed_cert(webrick_options[:SSLPrivateKey])
+          else
+            OpenSSL::X509::Certificate.new(File.read(cert))
+          end
+          webrick_options[:SSLExtraChainCert] = read_chain_file(chain) unless chain.nil?
         end
       end
       # call constructor of parent class, but capture STDERR
