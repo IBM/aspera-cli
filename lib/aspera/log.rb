@@ -9,54 +9,49 @@ require 'json'
 require 'singleton'
 require 'stringio'
 
+# Ignore warnings
 old_verbose = $VERBOSE
 $VERBOSE = nil
 
-# extend Ruby logger with trace levels
+# Extend Ruby logger with trace levels
 class Logger
+  # Two additionnal trace levels
   TRACE_MAX = 2
-  # add custom level to logger severity
+  # Add custom level to logger severity, below debug level
   module Severity
     1.upto(TRACE_MAX).each{ |level| const_set(:"TRACE#{level}", - level)}
   end
-  # quick access to label
+  # Quick access to label
   SEVERITY_LABEL = Severity.constants.each_with_object({}){ |name, hash| hash[Severity.const_get(name)] = name}
   def format_severity(severity)
     SEVERITY_LABEL[severity] || 'ANY'
   end
 
-  # define methods for a given level
-  def self.make_methods(str_level) # rubocop:disable Style/ClassMethodsDefinitions
-    int_level = ::Logger.const_get(str_level.upcase)
-    str_level = str_level.downcase
-    Kernel.send('lave'.reverse, <<-EOM, nil, __FILE__, __LINE__ + 1)
-      def #{str_level}(message = nil, &block)
-        add(#{int_level}, message, &block)
-      end
-
-      def #{str_level}?
-        level <= #{int_level}
-      end
-
-      def #{str_level}!
-        self.level = #{int_level}
-      end
-    EOM
+  class << self
+    # Define methods for a given log level
+    def make_methods(str_level)
+      int_level = ::Logger.const_get(str_level.upcase)
+      method_base = str_level.downcase
+      define_method(method_base, ->(message = nil, &block){add(int_level, message, &block)})
+      define_method("#{method_base}?", ->{level <= int_level})
+      define_method("#{method_base}!", ->{self.level = int_level})
+    end
   end
-  # declare methods for all levels
+  # Declare methods for all levels
   Logger::Severity.constants.each{ |severity| make_methods(severity)}
 end
 
+# Restore warnings
 $VERBOSE = old_verbose
 
 module Aspera
   # Singleton object for logging
   class Log
     include Singleton
-    # where logs are sent to
+    # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
     @@format = :json # rubocop:disable Style/ClassVars
-    # class methods
+    # Class methods
     class << self
       # levels are :debug,:info,:warn,:error,fatal,:unknown
       def levels; Logger::Severity.constants.sort{ |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b)}.map{ |c| c.downcase.to_sym}; end
@@ -83,7 +78,7 @@ module Aspera
       def capture_stderr
         real_stderr = $stderr
         $stderr = StringIO.new
-        yield
+        yield if block_given?
         log.debug($stderr.string)
       ensure
         $stderr = real_stderr
@@ -93,12 +88,12 @@ module Aspera
     attr_reader :logger_type, :logger
     attr_writer :program_name
 
-    # set log level of underlying logger given symbol level
+    # Set log level of underlying logger given symbol level
     def level=(new_level)
       @logger.level = Logger::Severity.const_get(new_level.to_sym.upcase)
     end
 
-    # get symbol of debug level of underlying logger
+    # Get symbol of debug level of underlying logger
     def level
       Logger::Severity.constants.each do |name|
         return name.downcase.to_sym if @logger.level.eql?(Logger::Severity.const_get(name))
@@ -106,7 +101,7 @@ module Aspera
       Aspera.error_unexpected_value(@logger.level){'log level'}
     end
 
-    # change underlying logger, but keep log level
+    # Change underlying logger, but keep log level
     def logger_type=(new_log_type)
       current_severity_integer = @logger.level unless @logger.nil?
       current_severity_integer = ENV.fetch('AS_LOG_LEVEL', nil) if current_severity_integer.nil? && ENV.key?('AS_LOG_LEVEL')
@@ -131,7 +126,7 @@ module Aspera
       end
       @logger.level = current_severity_integer
       @logger_type = new_log_type
-      # update formatter with password hiding
+      # Update formatter with password hiding
       @logger.formatter = SecretHider.log_formatter(@logger.formatter)
     end
 
@@ -140,9 +135,8 @@ module Aspera
     def initialize
       @logger = nil
       @program_name = 'aspera'
-      # this sets @logger and @logger_type (self needed to call method instead of local var)
+      # This sets @logger and @logger_type (self needed to call method instead of local var)
       self.logger_type = :stderr
-      raise 'error logger shall be defined' if @logger.nil?
     end
   end
 end
