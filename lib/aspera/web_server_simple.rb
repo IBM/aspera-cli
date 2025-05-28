@@ -69,7 +69,7 @@ module Aspera
         webrick_options[:SSLEnable] = true
         if cert.nil? && key.nil?
           webrick_options[:SSLCertName] = [['CN', WEBrick::Utils.getservername]]
-        elsif cert && PKCS12_EXT.any?{ |ext| File.extname(cert).casecmp(ext).zero?}
+        elsif cert && PKCS12_EXT.include?(File.extname(cert).downcase)
           # PKCS12
           Log.log.debug('Using PKCS12 certificate')
           raise 'PKCS12 requires a key (password)' if key.nil?
@@ -90,6 +90,7 @@ module Aspera
             OpenSSL::X509::Certificate.new(File.read(cert))
           end
           webrick_options[:SSLExtraChainCert] = read_chain_file(chain) unless chain.nil?
+          raise 'key and cert do not match' unless webrick_options[:SSLCertificate].public_key.to_der == webrick_options[:SSLPrivateKey].public_key.to_der
         end
       end
       # call constructor of parent class, but capture STDERR
