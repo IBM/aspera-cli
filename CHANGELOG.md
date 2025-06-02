@@ -6,6 +6,7 @@
     * `faspex5`: Support paging for Faspex5 browsing.
     * `aoc`: #196 Command `packages list` now also supports option `once_only`.
     * `vault`: Support for IBM HashiCorp Vault to store secrets.
+    * `wizard`: Preset name can now be specified as optional positional parameter.
   * Issues Fixed:
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
   * Breaking Changes:

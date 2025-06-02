@@ -1053,6 +1053,7 @@ module Aspera
             answer = options.prompt_user_input_in_list('product', apps.map{ |a| a[:product]})
             apps.find{ |a| a[:product].eql?(answer)}
           end
+          wiz_preset_name = options.get_next_argument('preset name', default: '')
           Log.log.debug{Log.dump(:identification, identification)}
           wiz_url = identification[:url]
           formatter.display_status("Using: #{identification[:name]} at #{wiz_url}".bold)
@@ -1101,8 +1102,7 @@ module Aspera
           Log.log.debug{"wizard result: #{wizard_result}"}
           Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)){"missing or extra keys in wizard result: #{wizard_result.keys}"}
           # get preset name from user or default
-          wiz_preset_name = nil
-          if wiz_preset_name.nil?
+          if wiz_preset_name.empty?
             elements = [
               identification[:product],
               URI.parse(wiz_url).host
