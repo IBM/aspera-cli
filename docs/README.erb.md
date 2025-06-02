@@ -221,27 +221,33 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 ### <%=tool%> executable
 
 It is planned to provide <%=tool%> as a single platform-dependent executable.
-[Releases can be found here](https://ibm.biz/aspera-cli-exe).
+[Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is an Alpha feature. On Linux, the executable requires a minimum GLIBC version.
+**Note:** This is a Beta feature. On Linux, the executable requires a minimum GLIBC version. Installation of `ascp` is still required separately. Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
-On Linux, check your GLIBC version with `ldd`:
+On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+
+```bash
+ldd --version | head -n1
+```
 
 ```console
-$ ldd --version | head -n1
 ldd (GNU libc) 2.34
 ```
 
-Check an executable's min required version:
+Check an executable's (<%=tool%>, `ascp`) minimum required GLIBC version:
+
+```bash
+objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
+```
 
 ```console
-$ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 2.34
 ```
 
-> **Note:** if `objdump` is not available use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
+> **Note:** if `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
-The <%=tool%> executable still requires installation of `ascp`: Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [here](https://eudemo.asperademo.com/download/sdk.html).
 
 ### Ruby
 
@@ -284,10 +290,11 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 #### macOS: `brew`
 
 **macOS** comes with Ruby 2.6.
-It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future.
+It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes).
+It will be removed from macOS in the future.
 Do not use it.
 
-The recommended way is to either use [Homebrew](https://brew.sh/) or [RVM](https://rvm.io/).
+The recommended way is to either use [Homebrew](https://brew.sh/).
 
 ```bash
 brew install ruby
@@ -295,7 +302,29 @@ brew install ruby
 
 This installs a recent Ruby suitable for <%=tool%>.
 
-If using `rvm`, one way to force use of OpenSSL 3.0 is:
+To add PATH to ruby, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
+
+```bash
+use_ruby(){
+    version=$1
+    local prefix=$(brew --prefix ruby${version:+@}$version)
+    if ! test -d $prefix;then
+        echo "No such ruby version: $version"
+        brew list|grep ruby
+        return 1
+    fi
+    export PATH="$prefix/bin:$PATH"
+    export PATH="$(gem env gemdir)/bin:$PATH"
+    export LDFLAGS="-L$prefix/lib"
+    export CPPFLAGS="-I$prefix/include"
+    export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+    echo "Using: $prefix"
+    ruby -v
+}
+use_ruby
+```
+
+If using [RVM](https://rvm.io/), one way to force use of OpenSSL 3.0 is:
 
 ```bash
 RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
@@ -2150,9 +2179,25 @@ Example: Define options using a `Hash`:
 
 #### Wizard
 
-The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information.
+The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information for a given application.
 
-It takes an optional argument: the URL of the application, and an **option**: `query` which allows limiting the detection to a given plugin.
+It takes three optional arguments:
+
+- the URL of the application, else it will ask for it
+- the plugin name: it limits detection to a given plugin, else it will try to detect known plugins from the URL
+- the preset name: it will create a new [Option Preset](#option-preset) with this name, else it will use specific information to generate a unique preset name.
+
+Special options are also available to the wizard:
+
+| Option      | Value    | Description |
+|-------------|----------|-------------|
+| `default`   | [yes]/no | Set as default configuration for specified plugin. |
+| `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
+| `key-path`  | path     | Path to private key for JWT.    |
+| `test-mode` | yes/[no] | Skip private key check step.    |
+
+Other options can be provided to the wizard, such as `--username`, etc...
+They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
 
@@ -3731,11 +3776,12 @@ It is recommended to use the wizard to set it up, although manual configuration 
 
 ### Configuration: Using Wizard
 
-<%=tool%> provides a configuration wizard.
+<%=tool%> provides a configuration [wizard](#wizard).
 
 The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
 
-The first
+The first optional argument is the URL of your Aspera on Cloud instance, e.g. `https://_your_instance_.ibmaspera.com` or simply the organization name, and a second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
+If optional arguments are not provided, the wizard will ask interactively and try to detect the application.
 
 Here is a sample invocation :
 
@@ -3772,6 +3818,13 @@ If you already know the application, and want to limit the detection to it, prov
 
 > **Note:** In above example, replace `_your_instance_` with the first part of your actual AoC URL: `https://_your_instance_.ibmaspera.com`.
 
+After successful completion of the wizard, a new configuration preset is created, and set as default for the `aoc` plugin.
+This can be verified with command:
+
+```bash
+<%=cmd%> config preset over
+```
+
 ### Configuration: Using manual setup
 
 > **Note:** If you used the wizard (recommended): skip this section.
@@ -3780,7 +3833,7 @@ If you already know the application, and want to limit the detection to it, prov
 
 Several types of OAuth authentication are supported:
 
-- JSON Web Token (JWT) : authentication is secured by a private key (recommended for <%=tool%>)
+- JSON Web Token (JWT) : authentication is secured by a private key (recommended)
 - Web based authentication : authentication is made by user using a browser
 - URL Token : external user's authentication with URL tokens (public links)
 
@@ -3875,11 +3928,15 @@ If you are not using the built-in client_id and secret, JWT needs to be authoriz
 ```
 
 ```output
-+------------+---------------+
-|     id     |  name         |
-+------------+---------------+
-| my_BJbQiFw | my-client-app |
-+------------+---------------+
+Items: 4/4
+╭────────────┬─────────────────────╮
+│ id         │ name                │
+╞════════════╪═════════════════════╡
+│ oXPUyJ7JpQ │ PRI Sydney          │
+│ TaoAmAG8Rg │ ascli_test_web      │
+│ TDNl2bLZqw │ ascli_web           │
+│ VTh92i5OfQ │ shannon             │
+╰────────────┴─────────────────────╯
 ```
 
 ```bash
