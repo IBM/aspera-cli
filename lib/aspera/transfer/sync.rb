@@ -142,8 +142,8 @@ module Aspera
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield((session['direction'] || 'push').to_sym, session['local_dir'], session['remote_dir'])
                 CMDLINE_PARAMS_SESSION.each do |async_param, behavior|
-                  if behavior.key?(:ts)
-                    tspec_param = behavior[:ts].is_a?(TrueClass) ? async_param : behavior[:ts].to_s
+                  if behavior.key?('ts')
+                    tspec_param = behavior['ts'].is_a?(TrueClass) ? async_param : behavior['ts'].to_s
                     session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
                   end
                 end
