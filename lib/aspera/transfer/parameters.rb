@@ -53,26 +53,26 @@ module Aspera
           Spec::DESCRIPTION.filter_map do |name, options|
             param = {
               name:        name,
-              type:        options[:accepted_types],
-              description: options[:desc].split("\n")
+              type:        options['type'],
+              description: options['description'].split("\n")
             }
             # add flags for supported agents in doc
             SUPPORTED_AGENTS.each do |agent_sym|
-              param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options[:agents].nil? || options[:agents].include?(agent_sym))
+              param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options['agents'].nil? || options['agents'].include?(agent_sym))
             end
             # only keep lines that are usable in supported agents
             next false if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
-            param[:description].push("Allowed values: #{options[:enum].join(', ')}") if options.key?(:enum)
+            param[:description].push("Allowed values: #{options['enum'].join(', ')}") if options.key?('enum')
             cli_option =
-              case options[:cli][:type]
-              when :envvar then 'env:' + options[:cli][:variable]
-              when :opt_without_arg then options[:cli][:switch]
-              when :opt_with_arg
-                arg_type = options.key?(:enum) ? '{enum}' : options[:accepted_types].map{ |n| "{#{n}}"}.join('|')
-                conversion_tag = options[:cli].key?(:convert) ? '(conversion)' : ''
-                "#{options[:cli][:switch]}=#{conversion_tag}#{arg_type}"
-              when :special then formatter.special_format('special')
-              when :ignore then formatter.special_format('ignored')
+              case options['cli']['opt-type']
+              when 'envvar' then 'env:' + options['cli']['variable']
+              when 'opt_without_arg' then options['cli']['switch']
+              when 'opt_with_arg'
+                arg_type = options.key?('enum') ? '{enum}' : options['type'].map{ |n| "{#{n}}"}.join('|')
+                conversion_tag = options['cli'].key?('convert') ? '(conversion)' : ''
+                "#{options['cli']['switch']}=#{conversion_tag}#{arg_type}"
+              when 'special' then formatter.special_format('special')
+              when 'ignore' then formatter.special_format('ignored')
               else
                 param[:d].eql?(tick_yes) ? '' : 'n/a'
               end
@@ -81,13 +81,13 @@ module Aspera
           end.sort_by{ |i| i[:name]}
         end
 
-        # special encoding methods used in YAML (key: :convert)
+        # special encoding methods used in YAML (key: convert)
         def convert_remove_hyphen(value); value.tr('-', ''); end
 
-        # special encoding methods used in YAML (key: :convert)
+        # special encoding methods used in YAML (key: convert)
         def convert_json64(value); Base64.strict_encode64(JSON.generate(value)); end
 
-        # special encoding methods used in YAML (key: :convert)
+        # special encoding methods used in YAML (key: convert)
         def convert_base64(value); Base64.strict_encode64(value); end
 
         # file list is provided directly with ascp arguments

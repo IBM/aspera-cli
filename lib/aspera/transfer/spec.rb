@@ -38,9 +38,9 @@ module Aspera
       DESCRIPTION = CommandLineBuilder.read_description(__FILE__)
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
       DESCRIPTION.each do |name, description|
-        next unless description[:enum].is_a?(Array)
-        const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description[:enum])
-        description[:enum].each do |enum|
+        next unless description['enum'].is_a?(Array)
+        const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description['enum'])
+        description['enum'].each do |enum|
           const_set("#{name.to_s.upcase}_#{enum.upcase.gsub(/[^A-Z0-9]/, '_')}", enum.freeze)
         end
       end

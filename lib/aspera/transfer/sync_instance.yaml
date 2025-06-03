@@ -1,18 +1,18 @@
 ---
 alt_logdir:
-  :cli:
-    :type: :opt_with_arg
-  :accepted_types: :string
+  cli:
+    opt-type: opt_with_arg
+  type: string
 watchd:
-  :cli:
-    :type: :opt_with_arg
-  :accepted_types: :string
+  cli:
+    opt-type: opt_with_arg
+  type: string
 apply_local_docroot:
-  :cli:
-    :type: :opt_without_arg
+  cli:
+    opt-type: opt_without_arg
 quiet:
-  :cli:
-    :type: :opt_without_arg
+  cli:
+    opt-type: opt_without_arg
 ws_connect:
-  :cli:
-    :type: :opt_without_arg
+  cli:
+    opt-type: opt_without_arg

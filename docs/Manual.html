@@ -3905,7 +3905,7 @@ description.</p>
 <tbody>
 <tr>
 <td>apply_local_docroot</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -3953,7 +3953,7 @@ aes-192-gcm, aes-256-gcm<br/>(-c=(conversion){enum})</td>
 </tr>
 <tr>
 <td>compression</td>
-<td>int</td>
+<td>integer</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4001,7 +4001,7 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 </tr>
 <tr>
 <td>create_dir</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4012,7 +4012,7 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 </tr>
 <tr>
 <td>delete_before_transfer</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4022,12 +4022,12 @@ application<br/>(env:ASPERA_SCP_COOKIE)</td>
 <td>Before transfer, delete files that exist at the destination but not
 at the source.<br/>The source and destination arguments must be
 directories that have matching names.<br/>Objects on the destination
-that have the same name but different type or size as objects<br/>on the
+that have the same name but different type or size as objects on the
 source are not deleted.<br/>(–delete-before-transfer)</td>
 </tr>
 <tr>
 <td>delete_source</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4063,14 +4063,14 @@ node.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>dgram_size</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>UDP datagram size in bytes<br/>(-Z={int})</td>
+<td>UDP datagram size in bytes<br/>(-Z={integer})</td>
 </tr>
 <tr>
 <td>direction</td>
@@ -4114,14 +4114,14 @@ back.<br/>(–exclude-older-than={string})</td>
 </tr>
 <tr>
 <td>fasp_port</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies fasp (UDP) port.<br/>(-O={int})</td>
+<td>Specifies fasp (UDP) port.<br/>(-O={integer})</td>
 </tr>
 <tr>
 <td>fasp_url</td>
@@ -4149,7 +4149,7 @@ none<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>http_fallback</td>
-<td>bool<br/>string</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4157,33 +4157,33 @@ none<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
-transfer cannot be performed.<br/>(-y=(conversion){bool}|{string})</td>
+transfer cannot be performed.<br/>(-y=(conversion){boolean})</td>
 </tr>
 <tr>
 <td>http_fallback_port</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>Specifies http port when no cipher is used<br/>(-t={int})</td>
+<td>Specifies http port when no cipher is used<br/>(-t={integer})</td>
 </tr>
 <tr>
 <td>https_fallback_port</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies https port when cipher is used<br/>(-t={int})</td>
+<td>Specifies https port when cipher is used<br/>(-t={integer})</td>
 </tr>
 <tr>
 <td>keepalive</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -4195,7 +4195,7 @@ mode.<br/>(–keepalive)</td>
 </tr>
 <tr>
 <td>lock_min_rate</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4206,7 +4206,7 @@ mode.<br/>(–keepalive)</td>
 </tr>
 <tr>
 <td>lock_min_rate_kbps</td>
-<td>bool</td>
+<td>boolean</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4219,7 +4219,7 @@ the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>lock_rate_policy</td>
-<td>bool</td>
+<td>boolean</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4231,7 +4231,7 @@ value.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>lock_target_rate</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4242,7 +4242,7 @@ value.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>lock_target_rate_kbps</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4255,7 +4255,7 @@ the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>min_rate_cap_kbps</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4269,7 +4269,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>min_rate_kbps</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4277,7 +4277,7 @@ no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Set the minimum transfer rate in kilobits per
-second.<br/>(-m={int})</td>
+second.<br/>(-m={integer})</td>
 </tr>
 <tr>
 <td>move_after_transfer</td>
@@ -4294,7 +4294,7 @@ transfer at the source side. Available as of
 </tr>
 <tr>
 <td>multi_session</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4308,7 +4308,7 @@ resume_policy=none.<br/>(&lt;special&gt;)</td>
 </tr>
 <tr>
 <td>multi_session_threshold</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4317,11 +4317,11 @@ resume_policy=none.<br/>(&lt;special&gt;)</td>
 <td> </td>
 <td>Split files across multiple ascp sessions if their size in bytes is
 greater than or equal to the specified value.<br/>(0=no file is
-split)<br/>(–multi-session-threshold={int})</td>
+split)<br/>(–multi-session-threshold={integer})</td>
 </tr>
 <tr>
 <td>obfuscate_file_names</td>
-<td>bool</td>
+<td>boolean</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4373,7 +4373,7 @@ only.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>precalculate_job_size</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4385,7 +4385,7 @@ size.<br/>(–precalculate-job-size)</td>
 </tr>
 <tr>
 <td>preserve_access_time</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4394,8 +4394,8 @@ size.<br/>(–precalculate-job-size)</td>
 <td>Y</td>
 <td>Preserve the source-file access timestamps at the
 destination.<br/>Because source access times are updated by the transfer
-operation,<br/>the timestamp that is preserved is the one just before to
-the transfer.<br/>(–preserve-access-time)</td>
+operation, the timestamp that is preserved is the one just before to the
+transfer.<br/>(–preserve-access-time)</td>
 </tr>
 <tr>
 <td>preserve_acls</td>
@@ -4411,7 +4411,7 @@ metafile<br/>(–preserve-acls={enum})</td>
 </tr>
 <tr>
 <td>preserve_creation_time</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4437,7 +4437,7 @@ metafile<br/>(–preserve-xattrs={enum})</td>
 </tr>
 <tr>
 <td>preserve_file_owner_gid</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -4449,7 +4449,7 @@ owner<br/>(–preserve-file-owner-gid)</td>
 </tr>
 <tr>
 <td>preserve_file_owner_uid</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -4461,7 +4461,7 @@ owner<br/>(–preserve-file-owner-uid)</td>
 </tr>
 <tr>
 <td>preserve_modification_time</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4469,7 +4469,7 @@ owner<br/>(–preserve-file-owner-uid)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Set the modification time, the last time a file or directory was
-modified (written), of a transferred file<br/>to the modification of the
+modified (written), of a transferred file to the modification of the
 source file or directory.<br/>Preserve source-file modification
 timestamps at the destination.<br/>(–preserve-modification-time)</td>
 </tr>
@@ -4487,7 +4487,7 @@ native, metafile<br/>(–remote-preserve-acls={enum})</td>
 </tr>
 <tr>
 <td>preserve_source_access_time</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -4499,7 +4499,7 @@ accessed<br/>(–preserve-source-access-time)</td>
 </tr>
 <tr>
 <td>preserve_times</td>
-<td>bool</td>
+<td>boolean</td>
 <td> </td>
 <td>Y</td>
 <td> </td>
@@ -4550,7 +4550,7 @@ fixed<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>read_threads</td>
-<td>int</td>
+<td>integer</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4609,7 +4609,7 @@ connect.<br/>(–user={string})</td>
 </tr>
 <tr>
 <td>remove_after_transfer</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4621,7 +4621,7 @@ success<br/>(–remove-after-transfer)</td>
 </tr>
 <tr>
 <td>remove_empty_directories</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4633,7 +4633,7 @@ directories.<br/>(–remove-empty-directories)</td>
 </tr>
 <tr>
 <td>remove_empty_source_directory</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td> </td>
 <td>Y</td>
@@ -4645,7 +4645,7 @@ itself, if empty<br/>(–remove-empty-source-directory)</td>
 </tr>
 <tr>
 <td>remove_skipped</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4671,13 +4671,13 @@ sparse_csum, full_csum<br/>(-k=(conversion){enum})</td>
 </tr>
 <tr>
 <td>retry_duration</td>
-<td>string<br/>int</td>
-<td> </td>
-<td>Y</td>
+<td>integer</td>
 <td> </td>
 <td> </td>
 <td> </td>
-<td>Y</td>
+<td> </td>
+<td> </td>
+<td> </td>
 <td>Specifies how long to wait before retrying transfer.
 (e.g. “5min”)<br/>(&lt;ignored&gt;)</td>
 </tr>
@@ -4734,7 +4734,7 @@ caution.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>ssh_port</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4742,7 +4742,7 @@ caution.<br/>(&lt;ignored&gt;)</td>
 <td>Y</td>
 <td>Y</td>
 <td>Specifies SSH (TCP) port. Default: local:22,
-other:33001<br/>(-P={int})</td>
+other:33001<br/>(-P={integer})</td>
 </tr>
 <tr>
 <td>ssh_private_key</td>
@@ -4795,7 +4795,7 @@ copy+force, skip<br/>(–symbolic-links={enum})</td>
 </tr>
 <tr>
 <td>tags</td>
-<td>hash</td>
+<td>object</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4803,12 +4803,12 @@ copy+force, skip<br/>(–symbolic-links={enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
-Key <code>aspera.xfer_retry</code> specified a retry timeout for node
-api initiated transfers.<br/>(–tags64=(conversion){hash})</td>
+Key <code>aspera.xfer_retry</code> specifies a retry timeout for node
+api initiated transfers.<br/>(–tags64=(conversion){object})</td>
 </tr>
 <tr>
 <td>target_rate_cap_kbps</td>
-<td>int</td>
+<td>integer</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4820,14 +4820,14 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>target_rate_kbps</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies desired speed for the transfer.<br/>(-l={int})</td>
+<td>Specifies desired speed for the transfer.<br/>(-l={integer})</td>
 </tr>
 <tr>
 <td>target_rate_percentage</td>
@@ -4865,7 +4865,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>use_ascp4</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4887,7 +4887,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>write_threads</td>
-<td>int</td>
+<td>integer</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -4898,7 +4898,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>wss_enabled</td>
-<td>bool</td>
+<td>boolean</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4909,7 +4909,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>wss_port</td>
-<td>int</td>
+<td>integer</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4920,7 +4920,7 @@ API.<br/>(&lt;ignored&gt;)</td>
 </tr>
 <tr>
 <td>xfer_max_retries</td>
-<td>int</td>
+<td>integer</td>
 <td> </td>
 <td>Y</td>
 <td> </td>
