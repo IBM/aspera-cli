@@ -2,7 +2,6 @@
 
 require 'aspera/command_line_builder'
 require 'aspera/assert'
-require 'yaml'
 
 module Aspera
   module Transfer
@@ -36,7 +35,7 @@ module Aspera
           XFER_DIR_TO_TYPE.fetch(direction)
         end
       end
-      DESCRIPTION = CommandLineBuilder.normalize_description(YAML.load_file("#{__FILE__[0..-3]}yaml"))
+      DESCRIPTION = CommandLineBuilder.read_description(__FILE__)
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
       DESCRIPTION.each do |name, description|
         next unless description[:enum].is_a?(Array)
