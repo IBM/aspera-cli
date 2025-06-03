@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'yaml'
 module Aspera
   # helper class to build command line from a parameter list (key-value hash)
   # constructor takes hash: { 'param1':'value1', ...}
@@ -27,8 +28,9 @@ module Aspera
       end
 
       # Called by provider of definition before constructor of this class so that params_definition has all mandatory fields
-      def normalize_description(full_description)
-        full_description.each do |name, options|
+      def read_description(source_path, suffix=nil)
+        suffix = "_#{suffix}" unless suffix.nil?
+        YAML.load_file("#{source_path[0..-4]}#{suffix}.yaml").each do |name, options|
           Aspera.assert_type(options, Hash){name}
           unsupported_keys = options.keys - OPTIONS_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
@@ -53,7 +55,7 @@ module Aspera
           if !cli.key?(:switch) && cli.key?(:type) && CLI_OPTION_TYPE_SWITCH.include?(cli[:type])
             cli[:switch] = '--' + name.to_s.tr('_', '-')
           end
-        end
+        end.freeze
       end
     end
 

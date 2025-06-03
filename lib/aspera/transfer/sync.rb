@@ -19,55 +19,10 @@ module Aspera
       # sync direction, default is push
       DIRECTIONS = %i[push pull bidi].freeze
       # JSON for async instance command line options
-      CMDLINE_PARAMS_INSTANCE =
-        {
-          'alt_logdir'          => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'watchd'              => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'apply_local_docroot' => {cli: {type: :opt_without_arg}},
-          'quiet'               => {cli: {type: :opt_without_arg}},
-          'ws_connect'          => {cli: {type: :opt_without_arg}}
-        }.freeze
+      CMDLINE_PARAMS_INSTANCE = CommandLineBuilder.read_description(__FILE__, 'instance')
 
       # map sync session parameters to transfer spec: sync -> ts, true if same
-      CMDLINE_PARAMS_SESSION =
-        {
-          'name'                       => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'local_dir'                  => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'remote_dir'                 => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'local_db_dir'               => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'remote_db_dir'              => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'host'                       => {cli: {type: :opt_with_arg}, accepted_types: :string, ts: :remote_host},
-          'user'                       => {cli: {type: :opt_with_arg}, accepted_types: :string, ts: :remote_user},
-          'private_key_paths'          => {cli: {type: :opt_with_arg, switch: '--private-key-path'}, accepted_types: :array},
-          'direction'                  => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'checksum'                   => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'tags'                       => {cli: {type: :opt_with_arg, switch: '--tags64', convert: 'Aspera::Transfer::Parameters.convert_json64'},
-                                            accepted_types: :hash, ts: true},
-          'tcp_port'                   => {cli: {type: :opt_with_arg}, accepted_types: :int, ts: :ssh_port},
-          'rate_policy'                => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'target_rate'                => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'cooloff'                    => {cli: {type: :opt_with_arg}, accepted_types: :int},
-          'pending_max'                => {cli: {type: :opt_with_arg}, accepted_types: :int},
-          'scan_intensity'             => {cli: {type: :opt_with_arg}, accepted_types: :string},
-          'cipher'                     => {cli: {type: :opt_with_arg, convert: 'Aspera::Transfer::Parameters.convert_remove_hyphen'},
-                                            accepted_types: :string, ts: true},
-          'transfer_threads'           => {cli: {type: :opt_with_arg}, accepted_types: :int},
-          'preserve_time'              => {cli: {type: :opt_without_arg}, ts: :preserve_times},
-          'preserve_access_time'       => {cli: {type: :opt_without_arg}, ts: nil},
-          'preserve_modification_time' => {cli: {type: :opt_without_arg}, ts: nil},
-          'preserve_uid'               => {cli: {type: :opt_without_arg}, ts: :preserve_file_owner_uid},
-          'preserve_gid'               => {cli: {type: :opt_without_arg}, ts: :preserve_file_owner_gid},
-          'create_dir'                 => {cli: {type: :opt_without_arg}, ts: true},
-          'reset'                      => {cli: {type: :opt_without_arg}},
-          # NOTE: only one env var, but multiple sessions... could be a problem
-          'remote_password'            => {cli: {type: :envvar, variable: 'ASPERA_SCP_PASS'}, ts: true},
-          'cookie'                     => {cli: {type: :envvar, variable: 'ASPERA_SCP_COOKIE'}, ts: true},
-          'token'                      => {cli: {type: :envvar, variable: 'ASPERA_SCP_TOKEN'}, ts: true},
-          'license'                    => {cli: {type: :envvar, variable: 'ASPERA_SCP_LICENSE'}}
-        }.freeze
-
-      CommandLineBuilder.normalize_description(CMDLINE_PARAMS_INSTANCE)
-      CommandLineBuilder.normalize_description(CMDLINE_PARAMS_SESSION)
+      CMDLINE_PARAMS_SESSION = CommandLineBuilder.read_description(__FILE__, 'session')
 
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 

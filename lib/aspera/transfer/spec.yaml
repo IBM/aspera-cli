@@ -55,13 +55,13 @@ create_dir:
     :type: :opt_without_arg
     :switch: "-d"
 delete_before_transfer:
-  :desc: |-
+  :desc: >-
     Before transfer, delete files that exist at the destination but not at the source.
+
     The source and destination arguments must be directories that have matching names.
+
     Objects on the destination that have the same name but different type or size as objects
     on the source are not deleted.
-
-
   :cli:
     :type: :opt_without_arg
 delete_source: # duplicate of remove_after_transfer ?
@@ -79,11 +79,10 @@ destination_root:
   :cli:
     :type: :special
 destination_root_id:
-  :desc: |-
+  :desc: >-
     The file ID of the destination root directory.
+
     Required when using Bearer token auth for the destination node.
-
-
   :accepted_types: :string
   :agents:
   - :sdk
@@ -102,20 +101,20 @@ direction:
       receive: recv
       send: send
 exclude_newer_than:
-  :desc: |-
-    Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.
+  :desc: >-
+    Exclude files, but not directories, from the transfer if they are newer
+    than the specified number of seconds added to the source computer's epoch.
+
     e.g. "-86400" for newer than a day back.
-
-
   :accepted_types: :string
   :cli:
     :type: :opt_with_arg
 exclude_older_than:
-  :desc: |-
-    Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.
+  :desc: >-
+    Exclude files, but not directories, from the transfer if they are older
+    than the specified number of seconds added to the source computer's epoch.
+
     e.g. "-86400" for older than a day back.
-
-
   :accepted_types: :string
   :cli:
     :type: :opt_with_arg
@@ -188,11 +187,11 @@ multi_session:
     :type: :special
     :switch: "-C"
 multi_session_threshold:
-  :desc: |-
-    Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.
+  :desc: >-
+    Split files across multiple ascp sessions if their size in bytes is greater than
+    or equal to the specified value.
+
     (0=no file is split)
-
-
   :accepted_types: :int
   :agents:
   - :direct
@@ -211,12 +210,13 @@ overwrite:
   :cli:
     :type: :opt_with_arg
 password:
-  :desc: |-
-    Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.
+  :desc: >-
+    Password for local Windows user when transfer user associated with node api user is not
+    the same as the one running asperanoded.
+
     Allows impersonating the transfer user and have access to resources (e.g. network shares).
+
     Windows only, node api only.
-
-
   :accepted_types: :string
   :agents:
   - :node
@@ -234,30 +234,28 @@ precalculate_job_size:
   :cli:
     :type: :opt_without_arg
 preserve_access_time:
-  :desc: |-
+  :desc: >-
     Preserve the source-file access timestamps at the destination.
+
     Because source access times are updated by the transfer operation,
     the timestamp that is preserved is the one just before to the transfer.
-
-
   :cli:
     :type: :opt_without_arg
 preserve_creation_time:
-  :desc: |-
+  :desc: >-
     (Windows only) Preserve source-file creation timestamps at the destination.
+
     Only Windows systems retain information about creation time.
+
     If the destination is not a Windows computer, this option is ignored.
-
-
   :cli:
     :type: :opt_without_arg
 preserve_modification_time:
-  :desc: |-
-    Set the modification time, the last time a file or directory was modified (written), of a transferred file
-    to the modification of the source file or directory.
+  :desc: >-
+    Set the modification time, the last time a file or directory was modified (written),
+    of a transferred file to the modification of the source file or directory.
+
     Preserve source-file modification timestamps at the destination.
-
-
   :cli:
     :type: :opt_without_arg
 preserve_times:
@@ -328,13 +326,14 @@ remove_skipped:
   :cli:
     :type: :opt_without_arg
 proxy:
-  :desc: |-
+  :desc: >-
     Specify the address of the Aspera high-speed proxy server.
+
     dnat(s)://[user[:password]@]server:port
+
     Default ports for DNAT and DNATS protocols are 9091 and 9092.
+
     Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
-
-
   :agents:
   - :direct
   - :sdk
@@ -359,11 +358,9 @@ resume_policy:
 retry_duration:
   :desc: Specifies how long to wait before retrying transfer. (e.g. "5min")
   :accepted_types:
-  - :string
   - :int
+  - :string
   :agents:
-  - :node
-  - :connect
   - :sdk
   :cli:
     :type: :ignore
@@ -382,12 +379,12 @@ ssh_port:
     :type: :opt_with_arg
     :switch: "-P"
 ssh_private_key:
-  :desc: |-
+  :desc: >-
     Private key used for SSH authentication.
+
     Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...
+
     Note the JSON encoding: &bsol;n for newlines.
-
-
   :agents:
   - :direct
   - :sdk
@@ -422,7 +419,10 @@ symlink_policy:
     :type: :opt_with_arg
     :switch: "--symbolic-links"
 tags:
-  :desc: Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specified a retry timeout for node api initiated transfers.
+  :desc: >-
+    Metadata for transfer as JSON.
+    Key `aspera` is reserved.
+    Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
   :accepted_types: :hash
   :cli:
     :type: :opt_with_arg
@@ -474,22 +474,21 @@ use_system_ssh:
     :type: :ignore
     :switch: "-SSH"
 source_root:
-  :desc: |-
+  :desc: >-
     Path to be prepended to each source path.
+
     This is either a conventional path or it can be a URI but only if there is no root defined.
-
-
   :cli:
     :type: :opt_with_arg
     :switch: "--source-prefix64"
     :convert: Aspera::Transfer::Parameters.convert_base64
 min_rate_cap_kbps:
-  :desc: |-
+  :desc: >-
     The highest minimum rate that an incoming transfer can request, in kilobits per second.
+
     Client minimum rate requests that exceed the minimum rate cap are ignored.
+
     The default value of unlimited applies no cap to the minimum rate. (Default: 0)
-
-
   :accepted_types: :int
   :cli:
     :type: :ignore
@@ -502,20 +501,18 @@ lock_rate_policy:
   :cli:
     :type: :ignore
 lock_target_rate_kbps:
-  :desc: |-
+  :desc: >-
     If true, lock the target transfer rate to the default value set for target_rate_kbps.
+
     If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
-
-
   :accepted_types: :bool
   :cli:
     :type: :ignore
 lock_min_rate_kbps:
-  :desc: |-
+  :desc: >-
     If true, lock the minimum transfer rate to the value set for min_rate_kbps.
+
     If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
-
-
   :accepted_types: :bool
   :agents:
   - :sdk
@@ -530,12 +527,12 @@ apply_local_docroot:
   :cli:
     :type: :opt_without_arg
 src_base:
-  :desc: |-
+  :desc: >-
     Specify the prefix to be stripped off from each source object.
+
     The remaining portion of the source path is kept intact at the destination.
+
     Special care must be taken when used with cloud storage.
-
-
   :agents:
   - :direct
   - :node
