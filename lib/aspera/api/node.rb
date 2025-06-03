@@ -27,7 +27,7 @@ module Aspera
         :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT,
         :REQUIRED_APP_INFO_FIELDS, :REQUIRED_APP_API_METHODS
 
-      # node api permissions
+      # Node API permissions
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       HEADER_X_TOTAL_COUNT = 'X-Total-Count'
@@ -81,6 +81,7 @@ module Aspera
         end
 
         # Create an Aspera Node bearer token
+        # @param access_key [String] Access key identifier
         # @param payload [String] JSON payload to be included in the token
         # @param private_key [OpenSSL::PKey::RSA] Private key to sign the token
         def bearer_token(access_key:, payload:, private_key:)
@@ -106,6 +107,7 @@ module Aspera
           ].join("\n")))
         end
 
+        # Decode an Aspera Node bearer token
         def decode_bearer_token(token)
           return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)
         end
