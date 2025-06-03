@@ -31,15 +31,18 @@ module Aspera
   class RestParameters
     include Singleton
 
-    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_sleep, :session_cb, :progress_bar
+    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_on_timeout, :retry_on_unavailable, :retry_max, :retry_sleep, :session_cb, :progress_bar
 
     private
 
     def initialize
       @user_agent = 'RubyAsperaRest'
       @download_partial_suffix = '.http_partial'
-      @retry_on_error = 0
-      @retry_sleep = nil
+      @retry_on_error = false
+      @retry_on_timeout = true
+      @retry_on_unavailable = true
+      @retry_max = 1
+      @retry_sleep = 4
       @session_cb = nil
       @progress_bar = nil
     end
@@ -63,6 +66,8 @@ module Aspera
 
     # Content-Type that are JSON
     JSON_DECODE = [MIME_JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
+
+    UNAVAILABLE_CODES = ['503']
 
     class << self
       # @return [String] Basic auth token
@@ -342,10 +347,8 @@ module Aspera
         # :type = :basic
         req.basic_auth(@auth_params[:username], @auth_params[:password]) if @auth_params[:type].eql?(:basic)
         Log.log.trace1{Log.dump(:req_body, req.body)}
-        # we try the call, and will retry only if oauth, as we can, first with refresh, and then re-auth if refresh is bad
-        oauth_tries ||= 2
-        timeout_tries ||= 5
-        general_tries ||= 1 + RestParameters.instance.retry_on_error
+        # we try the call, and will retry on some error types
+        error_tries ||= 1 + RestParameters.instance.retry_max
         # initialize with number of initial retries allowed, nil gives zero
         tries_remain_redirect = @redirect_max if tries_remain_redirect.nil?
         Log.log.debug("send request (retries=#{tries_remain_redirect})")
@@ -406,9 +409,11 @@ module Aspera
       rescue RestCallError => e
         do_retry = false
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
-        do_retry = true if e.response.body.include?('failed: connect timed out') && (timeout_tries -= 1).positive?
+        do_retry ||= true if e.response.body.include?('failed: connect timed out') && RestParameters.instance.retry_on_timeout
+        # AoC sometimes not available
+        do_retry ||= true if RestParameters.instance.retry_on_unavailable && UNAVAILABLE_CODES.include?(result[:http].code.to_s)
         # possibility to retry anything if it fails
-        do_retry = true if (general_tries -= 1).positive?
+        do_retry ||= true if RestParameters.instance.retry_on_error
         # not authorized: oauth token expired
         if @not_auth_codes.include?(result[:http].code.to_s) && @auth_params[:type].eql?(:oauth2)
           begin
@@ -421,10 +426,10 @@ module Aspera
             req['Authorization'] = oauth.authorization(cache: false)
           end
           Log.log.debug{"using new token=#{headers['Authorization']}"}
-          do_retry = true if (oauth_tries -= 1).positive?
+          do_retry ||= true
         end
-        if do_retry
-          sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.nil?
+        if do_retry && (error_tries -= 1).positive?
+          sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.eql?(0)
           retry
         end
         # redirect ? (any code beginning with 3)
