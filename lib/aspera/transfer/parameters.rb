@@ -51,6 +51,7 @@ module Aspera
         # @return a table suitable to display in manual
         def man_table(formatter, cli: true)
           Spec::DESCRIPTION.filter_map do |name, options|
+            # manual table
             param = {
               name:        name,
               type:        options['type'],
@@ -68,7 +69,8 @@ module Aspera
               when 'envvar' then 'env:' + options['cli']['variable']
               when 'opt_without_arg' then options['cli']['switch']
               when 'opt_with_arg'
-                arg_type = options.key?('enum') ? '{enum}' : options['type'].map{ |n| "{#{n}}"}.join('|')
+                arg_type = options.key?('enum') ? '{enum}' : "{#{options['type']}}"
+                arg_type += "|{#{options['x-type']}}" if options.key?('x-type')
                 conversion_tag = options['cli'].key?('convert') ? '(conversion)' : ''
                 "#{options['cli']['switch']}=#{conversion_tag}#{arg_type}"
               when 'special' then formatter.special_format('special')

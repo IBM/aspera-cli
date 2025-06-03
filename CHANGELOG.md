@@ -12,6 +12,7 @@
   * Breaking Changes:
     * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of only `String`.
     * `faspex5 postprocessing`: Now takes a flat `Hash`, instead of multi-level `Hash`.
+    * HTTP: More retry parameters.
 
 * 4.21.2
 

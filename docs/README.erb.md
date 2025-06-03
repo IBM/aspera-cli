@@ -75,6 +75,9 @@ Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, <%=tool%> is perfect.
 
+<%=tool%> is developer-friendly, designed for quickly testing APIs and learning how to work with Aspera APIs.
+Refer to section: [Logging, Debugging](#logging-debugging).
+
 So, which is Aspera's CLI ? <%=tool%> or `ascp`
 
 `ascp` is the low level Aspera command line for **transfers**.
@@ -83,7 +86,7 @@ So, ANY Aspera transfer leads to one `ascp` process running on client side and a
 `ascp` can be used as a command line, but it is very low level, and practically it can be used on command line only if there is no Aspera web app (AoC, Faspex, etc...) and ONLY to do a transfer (send/receive), not for any operation on Aspera apps (e.g. listing remote files).
 `ascp` does not provide a configuration file to store credentials or options, it does not resume automatically on transfer error.
 
-In fact, <%=tool%> can do everything that `ascp` does, and much more, and in an easier way.
+In fact, <%=tool%> can do everything that `ascp` does, and much more, in an easier way.
 
 ### Notations, Shell, Examples
 
@@ -2576,16 +2579,19 @@ To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Default       | Where     |
-|---------------------------|---------------|-----------|
-| `read_timeout`            | `60`          | Ruby      |
-| `write_timeout`           | `60`          | Ruby      |
-| `open_timeout`            | `60`          | Ruby      |
-| `keep_alive_timeout`      | `2`           | Ruby      |
-| `user_agent`              | <%=tool%>     | <%=tool%> |
-| `download_partial_suffix` | `.http_partial` | <%=tool%> |
-| `retry_on_error`          | `0`           | <%=tool%> |
-| `retry_sleep`             | `nil`         | <%=tool%> |
+| Parameter                 | Type | Default         | Handler   |
+|---------------------------|------|-----------------|-----------|
+| `read_timeout`            | int  | `60`            | Ruby      |
+| `write_timeout`           | int  | `60`            | Ruby      |
+| `open_timeout`            | int  | `60`            | Ruby      |
+| `keep_alive_timeout`      | int  | `2`             | Ruby      |
+| `user_agent`              | int  | <%=tool%>       | <%=tool%> |
+| `download_partial_suffix` | int  | `.http_partial` | <%=tool%> |
+| `retry_on_error`          | bool | `false`         | <%=tool%> |
+| `retry_on_timeout`        | bool | `true`          | <%=tool%> |
+| `retry_on_unavailable`    | bool | `true`          | <%=tool%> |
+| `retry_max`               | int  | `1`             | <%=tool%> |
+| `retry_sleep`             | int  | `4`             | <%=tool%> |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -4133,7 +4139,8 @@ New resources (users, groups, workspaces, etc...) can be created using a command
 <%=cmd%> aoc admin create <resource type> @json:'{<...parameters...>}'
 ```
 
-Some API endpoints are described [here](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22). Sadly, not all.
+Some API endpoints are described in [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22).
+Sadly, not all.
 
 Nevertheless, it is possible to guess the structure of the creation value by simply dumping an existing resource, and use the same parameters for the creation.
 
