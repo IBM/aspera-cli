@@ -225,27 +225,33 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 ### `ascli` executable
 
 It is planned to provide `ascli` as a single platform-dependent executable.
-[Releases can be found here](https://ibm.biz/aspera-cli-exe).
+[Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is an Alpha feature. On Linux, the executable requires a minimum GLIBC version.
+**Note:** This is a Beta feature. On Linux, the executable requires a minimum GLIBC version. Installation of `ascp` is still required separately. Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
-On Linux, check your GLIBC version with `ldd`:
+On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
+
+```bash
+ldd --version | head -n1
+```
 
 ```console
-$ ldd --version | head -n1
 ldd (GNU libc) 2.34
 ```
 
-Check an executable's min required version:
+Check an executable's (`ascli`, `ascp`) minimum required GLIBC version:
+
+```bash
+objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
+```
 
 ```console
-$ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 2.34
 ```
 
-> **Note:** if `objdump` is not available use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
+> **Note:** if `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
-The `ascli` executable still requires installation of `ascp`: Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [here](https://eudemo.asperademo.com/download/sdk.html).
 
 ### Ruby
 
@@ -290,10 +296,11 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 #### macOS: `brew`
 
 **macOS** comes with Ruby 2.6.
-It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes), and it will be removed in the future.
+It is an old unsupported version and [Apple has deprecated it](https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes).
+It will be removed from macOS in the future.
 Do not use it.
 
-The recommended way is to either use [Homebrew](https://brew.sh/) or [RVM](https://rvm.io/).
+The recommended way is to either use [Homebrew](https://brew.sh/).
 
 ```bash
 brew install ruby
@@ -301,7 +308,29 @@ brew install ruby
 
 This installs a recent Ruby suitable for `ascli`.
 
-If using `rvm`, one way to force use of OpenSSL 3.0 is:
+To add PATH to ruby, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
+
+```bash
+use_ruby(){
+    version=$1
+    local prefix=$(brew --prefix ruby${version:+@}$version)
+    if ! test -d $prefix;then
+        echo "No such ruby version: $version"
+        brew list|grep ruby
+        return 1
+    fi
+    export PATH="$prefix/bin:$PATH"
+    export PATH="$(gem env gemdir)/bin:$PATH"
+    export LDFLAGS="-L$prefix/lib"
+    export CPPFLAGS="-I$prefix/include"
+    export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+    echo "Using: $prefix"
+    ruby -v
+}
+use_ruby
+```
+
+If using [RVM](https://rvm.io/), one way to force use of OpenSSL 3.0 is:
 
 ```bash
 RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
@@ -2261,9 +2290,25 @@ ascli -N --preset=@json:'{"url":"_url_here_","password":"my_password_here","user
 
 #### Wizard
 
-The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information.
+The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information for a given application.
 
-It takes an optional argument: the URL of the application, and an **option**: `query` which allows limiting the detection to a given plugin.
+It takes three optional arguments:
+
+- the URL of the application, else it will ask for it
+- the plugin name: it limits detection to a given plugin, else it will try to detect known plugins from the URL
+- the preset name: it will create a new [Option Preset](#option-preset) with this name, else it will use specific information to generate a unique preset name.
+
+Special options are also available to the wizard:
+
+| Option      | Value    | Description |
+|-------------|----------|-------------|
+| `default`   | [yes]/no | Set as default configuration for specified plugin. |
+| `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
+| `key-path`  | path     | Path to private key for JWT.    |
+| `test-mode` | yes/[no] | Skip private key check step.    |
+
+Other options can be provided to the wizard, such as `--username`, etc...
+They will be added to the [Option Preset](#option-preset) created by the wizard.
 
 The simplest invocation is:
 
@@ -4218,11 +4263,12 @@ It is recommended to use the wizard to set it up, although manual configuration 
 
 ### Configuration: Using Wizard
 
-`ascli` provides a configuration wizard.
+`ascli` provides a configuration [wizard](#wizard).
 
 The wizard guides you through the steps to create a new configuration preset for Aspera on Cloud.
 
-The first
+The first optional argument is the URL of your Aspera on Cloud instance, e.g. `https://_your_instance_.ibmaspera.com` or simply the organization name, and a second optional argument can also be provided to specify the plugin name, e.g. `aoc` for Aspera on Cloud.
+If optional arguments are not provided, the wizard will ask interactively and try to detect the application.
 
 Here is a sample invocation :
 
@@ -4259,6 +4305,13 @@ ascli config wizard _your_instance_ aoc
 
 > **Note:** In above example, replace `_your_instance_` with the first part of your actual AoC URL: `https://_your_instance_.ibmaspera.com`.
 
+After successful completion of the wizard, a new configuration preset is created, and set as default for the `aoc` plugin.
+This can be verified with command:
+
+```bash
+ascli config preset over
+```
+
 ### Configuration: Using manual setup
 
 > **Note:** If you used the wizard (recommended): skip this section.
@@ -4267,7 +4320,7 @@ ascli config wizard _your_instance_ aoc
 
 Several types of OAuth authentication are supported:
 
-- JSON Web Token (JWT) : authentication is secured by a private key (recommended for `ascli`)
+- JSON Web Token (JWT) : authentication is secured by a private key (recommended)
 - Web based authentication : authentication is made by user using a browser
 - URL Token : external user's authentication with URL tokens (public links)
 
@@ -4362,11 +4415,15 @@ ascli aoc admin client list
 ```
 
 ```output
-+------------+---------------+
-|     id     |  name         |
-+------------+---------------+
-| my_BJbQiFw | my-client-app |
-+------------+---------------+
+Items: 4/4
+╭────────────┬─────────────────────╮
+│ id         │ name                │
+╞════════════╪═════════════════════╡
+│ oXPUyJ7JpQ │ PRI Sydney          │
+│ TaoAmAG8Rg │ ascli_test_web      │
+│ TDNl2bLZqw │ ascli_web           │
+│ VTh92i5OfQ │ shannon             │
+╰────────────┴─────────────────────╯
 ```
 
 ```bash
@@ -6073,10 +6130,10 @@ For example, they are used in Aspera on Cloud.
 This is also available for developers for any application integrating Aspera.
 In this API, files, users and groups are identified by an ID (a `String`, e.g. `"125"`, not necessarily numerical).
 
-Bearer tokens are typically generated by the authentication application and then recognized by the Node API.
+Bearer tokens are typically generated by the authenticating application and then recognized by the Node API.
 A bearer token is authorized on the node by creating `permissions` on a **folder**.
 
-Bearer tokens can be generated using command `bearer_token`: it takes two arguments:
+Bearer tokens can be generated using `ascli` command `bearer_token`: it takes two arguments:
 
 - The private key used to sign the token.
 - The token information, which is a `Hash` containing the following elements:
@@ -6112,36 +6169,40 @@ They way to create access keys depend slightly on the type of HSTS:
 
 - If Aspera on Cloud or ATS is used, then the SaaS API for access key creation is used.
 
+> **Note:** Refer to [HSTS manual](https://www.ibm.com/docs/en/ahts): `Access key authentication` section for more details on access key creation.
+
+In the next sections, we will assume that an access key has been created and that `ascli` is configured to use this access key by default using `node`.
+
 #### Bearer token: Preparation
 
 Let's assume that the access key was created, and a default configuration is set to use this **access key**.
 Using `ascli`, an access key can be created using the `access_key create` on the node (using main node credentials) or ATS.
 
-- Create a private key (organization key) that will be used to sign bearer tokens:
+Create a private key (organization key) that will be used to sign bearer tokens:
 
-  ```bash
-  my_private_pem=./myorgkey.pem
-  ascli config genkey $my_private_pem
-  ```
+```bash
+my_private_pem=./myorgkey.pem
+ascli config genkey $my_private_pem
+```
 
-  > **Note:** This key is not used for authentication, it is used to sign bearer tokens.
-  > Refer to section [private key](#private-key) for more details on generation.
+> **Note:** This key is not used for authentication, it is used to sign bearer tokens.
+> Refer to section [private key](#private-key) for more details on generation.
 
-- The corresponding public key shall be placed as an attribute of the **access key**:
+The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<id>`):
 
-  ```bash
-  ascli node access_key set_bearer_key self @file:$my_private_pem
-  ```
+```bash
+ascli node access_key set_bearer_key self @file:$my_private_pem
+```
 
-  > **Note:** Either the public or private key can be provided, and only the public key is used.
-  > This will enable to check the signature of the bearer token.
-  > Above command is executed with access key credentials.
+> **Note:** Either the public or private key can be provided, and only the public key is used.
+> This will enable to check the signature of the bearer token.
+> Above command is executed with access key credentials.
 
-  Alternatively, use the following equivalent command, as `ascli` kindly extracts the public key with extension `.pub`:
+Alternatively, use the following equivalent command, as `ascli` kindly extracts the public key with extension `.pub`:
 
-  ```bash
-  ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
-  ```
+```bash
+ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
+```
 
 #### Bearer token: Configuration for user
 
@@ -6174,6 +6235,8 @@ Using `ascli`, an access key can be created using the `access_key create` on the
   ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
   ```
 
+> **Note:** The Bearer token can also be created using command `asnodeadmin` on HSTS. Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section. Code for token generation is provided in [lib/aspera/api/node.rb](lib/aspera/api/node.rb)
+
 #### Bearer token: User side
 
 Now, let's assume we are the user, the only information received are:
@@ -6185,7 +6248,7 @@ Now, let's assume we are the user, the only information received are:
 Let's use it:
 
 ```bash
-ascli node -N --url=... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
+ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
 ```
 
 ### Node sample commands
@@ -6480,7 +6543,7 @@ packages show --box=my_shared_box_name package_box_id1
 packages show --box=my_workgroup --group-type=workgroups workgroup_package_id1
 packages show f5_pack_id
 packages status f5_pack_id
-postprocessing --pid-file=pid_f5_postproc @json:'{"url":"http://localhost:8088/asclihook","script_folder":""}' &
+postprocessing --pid-file=pid_f5_postproc @json:'{"url":"https://localhost:8553/asclihook","script_folder":"","cert":"localhost.p12","key":"changeit"}' &
 shared browse %name:my_src
 shared list
 shared_folders browse %name:my_shared_folder_name
