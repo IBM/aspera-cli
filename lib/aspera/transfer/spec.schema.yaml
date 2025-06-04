@@ -69,7 +69,7 @@ properties:
       Required when using Bearer token auth for the destination node.
     type: string
     x-agents:
-    - sdk
+    - transferd
     x-cli-ignore: true
   direction:
     description: 'Direction of transfer (on client side)'
@@ -110,7 +110,7 @@ properties:
     - none
     default: none
     x-agents:
-    - sdk
+    - transferd
     - node
     - direct
     x-cli-ignore: true
@@ -168,6 +168,19 @@ properties:
     - diff
     - older
     - diff+older
+  save_before_overwrite:
+    description: >-
+      If a transfer would result in an existing file <filename>.<ext> being overwritten,
+      move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext>
+      (where index is set to 1 at the beginning of each new second and
+      incremented for each file saved in this manner during the same second) in the same directory 
+      before writing the new file.
+
+      File attributes are maintained in the renamed file.
+    x-cli-switch: true
+    x-agents:
+    - direct
+    - node
   password:
     description: >-
       Password for local Windows user when transfer user associated with node api user is not
@@ -213,7 +226,7 @@ properties:
   preserve_times:
     description: Preserve file timestamps. 
     x-agents:
-    - sdk
+    - transferd
     - node
     x-cli-switch: true
   rate_policy:
@@ -228,7 +241,7 @@ properties:
     description: The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.
     type: string
     x-agents:
-    - sdk
+    - transferd
     x-cli-ignore: true
   remote_host:
     description: IP or fully qualified domain name of the remote server
@@ -259,7 +272,7 @@ properties:
     x-agents:
     - direct
     - connect
-    - sdk
+    - transferd
     - node
     x-cli-switch: true
   proxy:
@@ -273,7 +286,7 @@ properties:
       Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
     x-agents:
     - direct
-    - sdk
+    - transferd
   resume_policy:
     description: If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.
     default: faspmgr:none;other:sparse_csum
@@ -293,13 +306,13 @@ properties:
     type: integer
     x-type: string
     x-agents:
-    - sdk
+    - transferd
     x-cli-ignore: true
   source_root_id:
     description: The file ID of the source root directory. Required when using Bearer token auth for the source node.
     type: string
     x-agents:
-    - sdk
+    - transferd
     - node
     x-cli-ignore: true
   ssh_port:
@@ -315,20 +328,20 @@ properties:
       Note the JSON encoding: &bsol;n for newlines.
     x-agents:
     - direct
-    - sdk
+    - transferd
     x-cli-envvar: ASPERA_SCP_KEY
   ssh_private_key_passphrase:
     description: The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.
     type: string
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-envvar: ASPERA_SCP_PASS
   ssh_args:
     description: Array of arguments to pass to SSH. Use with caution.
     type: string
     x-agents:
-    - sdk
+    - transferd
     x-cli-ignore: true
   symlink_policy:
     description: "Handle source side symbolic links"
@@ -363,7 +376,7 @@ properties:
     x-agents:
     - node
     - connect
-    - sdk
+    - transferd
     x-cli-ignore: true
   token:
     description: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
@@ -375,13 +388,13 @@ properties:
     x-agents:
     - direct
     - node
-    - sdk
+    - transferd
     x-cli-special: true
   use_system_ssh:
     description: TODO, comment...
     type: string
     x-agents:
-    - sdk
+    - transferd
     x-cli-ignore: true
     x-cli-option: "-SSH"
   source_root:
@@ -404,7 +417,7 @@ properties:
     description: If true, lock the rate policy to the default value.
     type: boolean
     x-agents:
-    - sdk
+    - transferd
     - connect
     x-cli-ignore: true
   lock_target_rate_kbps:
@@ -421,14 +434,14 @@ properties:
       If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
     type: boolean
     x-agents:
-    - sdk
+    - transferd
     - connect
     x-cli-ignore: true
   apply_local_docroot:
     description: Apply local docroot to source paths.
     x-agents:
     - direct
-    - sdk
+    - transferd
     x-cli-switch: true
   src_base:
     description: >-
@@ -440,7 +453,7 @@ properties:
     x-agents:
     - direct
     - node
-    - sdk
+    - transferd
     x-cli-option: "--src-base64"
     x-cli-convert: base64
   preserve_acls:
@@ -452,7 +465,7 @@ properties:
     default: none
     x-agents:
     - direct
-    - sdk
+    - transferd
   preserve_remote_acls:
     description: "Preserve remote access control lists."
     enum:
@@ -461,21 +474,21 @@ properties:
     - metafile
     default: none
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-option: "--remote-preserve-acls"
   preserve_file_owner_uid:
     description: Preserve the user ID for a file owner
     type: boolean
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-switch: true
   preserve_file_owner_gid:
     description: Preserve the group ID for a file owner
     type: boolean
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-switch: true
   preserve_extended_attrs:
@@ -486,13 +499,13 @@ properties:
     - metafile
     default: none
     x-agents:
-    - sdk
+    - transferd
     x-cli-option: "--preserve-xattrs"
   preserve_source_access_time:
     description: Preserve the time logged for when the source file was accessed
     type: boolean
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-switch: true
   remove_empty_source_directory:
@@ -500,12 +513,12 @@ properties:
     type: boolean
     x-agents:
     - direct
-    - sdk
+    - transferd
     x-cli-switch: true
   keepalive:
     description: The session is running in persistent session mode.
     x-agents:
-    - sdk
+    - transferd
     - direct
     x-cli-switch: true
   dgram_size:
