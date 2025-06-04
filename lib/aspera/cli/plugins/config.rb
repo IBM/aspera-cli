@@ -673,7 +673,7 @@ module Aspera
         end
 
         def execute_action_ascp
-          command = options.get_next_command(%i[connect use show products info install spec errors])
+          command = options.get_next_command(%i[connect use show products info install spec schema errors])
           case command
           when :connect
             return execute_connect_action
@@ -717,6 +717,8 @@ module Aspera
               Transfer::SpecDoc.man_table(formatter, cli: false),
               fields: Transfer::SpecDoc::TABLE_COLUMNS.map(&:to_s)
             )
+          when :schema
+            return Main.result_single_object(Transfer::Spec::SCHEMA)
           when :errors
             error_data = []
             Transfer::ERROR_INFO.each_pair do |code, prop|

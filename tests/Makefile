@@ -1393,10 +1393,20 @@ TEST_CONFIG=$(DIR_TMP)sample.conf
 CLI_TMP_CONF=$(CLI_NOCONF) --config-file=$(TEST_CONFIG)
 clean::
 	rm -f $(TEST_CONFIG)
-$(T)conf_ascp_1: $(TMP_EXISTS)
+$(T)conf_ascp_show: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp show
+	@$(STOP_TEST) $@
+$(T)conf_ascp_spec: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp spec
+	@$(STOP_TEST) $@
+$(T)conf_ascp_schema: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) config ascp schema --format=jsonpp
+	@$(STOP_TEST) $@
+$(T)conf_ascp_errors: $(TMP_EXISTS)
+	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config ascp errors
 	@$(STOP_TEST) $@
 $(T)conf_ascp_2: $(TMP_EXISTS)
@@ -1651,7 +1661,7 @@ $(T)conf_logger: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) config file --logger=syslog --log-level=debug
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_1 $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_install $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_extended $(T)conf_hint $(T)conf_logger))
+$(eval $(call test_suite_all,tconfig,$(T)conf_ascp_show $(T)conf_ascp_spec $(T)conf_ascp_schema $(T)conf_ascp_errors $(T)conf_ascp_2 $(T)conf_ascp_3 $(T)conf_ascp_4 $(T)conf_ascp_5 $(T)conf_ascp_6 $(T)conf_ascp_install $(T)conf_ascp_8 $(T)conf_pset_1 $(T)conf_pset_2 $(T)conf_pset_3 $(T)conf_pset_4 $(T)conf_pset_5 $(T)conf_pset_6 $(T)conf_open $(T)conf_list $(T)conf_over $(T)conf_vers_check $(T)conf_gem $(T)conf_help_1 $(T)conf_help_2 $(T)conf_coffee_1 $(T)conf_coffee_2 $(T)conf_plugins $(T)conf_wizard_org $(T)conf_wizard_gen $(T)conf_detect $(T)conf_genkey $(T)conf_cert $(T)conf_smtp $(T)conf_pac $(T)conf_check_gem $(T)conf_doc $(T)conf_echo $(T)conf_extended $(T)conf_hint $(T)conf_logger))
 #######################################################################################################################
 $(T)prev_check: $(TMP_EXISTS)
 	@$(START_TEST) $@
