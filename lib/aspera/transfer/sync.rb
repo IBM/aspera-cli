@@ -5,6 +5,7 @@
 require 'aspera/command_line_builder'
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
+require 'aspera/transfer/convert'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
@@ -19,10 +20,8 @@ module Aspera
       # sync direction, default is push
       DIRECTIONS = %i[push pull bidi].freeze
       # JSON for async instance command line options
-      CMDLINE_PARAMS_INSTANCE = CommandLineBuilder.read_description(__FILE__, 'instance')
-
-      # map sync session parameters to transfer spec: sync -> ts, true if same
-      CMDLINE_PARAMS_SESSION = CommandLineBuilder.read_description(__FILE__, 'session')
+      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'instance')
+      SESSION_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'session')
 
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
@@ -41,7 +40,7 @@ module Aspera
 
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
 
-      private_constant :CMDLINE_PARAMS_INSTANCE, :CMDLINE_PARAMS_SESSION, :CMDLINE_PARAMS_KEYS, :TSPEC_TO_ASYNC_CONF, :ASYNC_ADMIN_EXECUTABLE
+      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :TSPEC_TO_ASYNC_CONF, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
         # Set `remote_dir` in sync parameters based on transfer spec
@@ -141,10 +140,10 @@ module Aspera
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield((session['direction'] || 'push').to_sym, session['local_dir'], session['remote_dir'])
-                CMDLINE_PARAMS_SESSION.each do |async_param, behavior|
-                  if behavior.key?('ts')
-                    tspec_param = behavior['ts'].is_a?(TrueClass) ? async_param : behavior['ts'].to_s
-                    session[async_param] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
+                SESSION_SCHEMA['properties'].each do |name, properties|
+                  if properties.key?('x-tspec')
+                    tspec_param = properties['x-tspec'].is_a?(TrueClass) ? name : properties['x-tspec'].to_s
+                    session[name] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
                   end
                 end
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
@@ -153,14 +152,14 @@ module Aspera
             end
             if sync_params.key?('instance')
               Aspera.assert_type(sync_params['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(sync_params['instance'], CMDLINE_PARAMS_INSTANCE)
+              instance_builder = CommandLineBuilder.new(sync_params['instance'], INSTANCE_SCHEMA, Convert)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least name'}
-              session_builder = CommandLineBuilder.new(session_params, CMDLINE_PARAMS_SESSION)
+              session_builder = CommandLineBuilder.new(session_params, SESSION_SCHEMA, Convert)
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end

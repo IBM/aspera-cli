@@ -6,6 +6,7 @@ require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
+require 'aspera/transfer/convert'
 require 'aspera/ascp/installation'
 require 'aspera/cli/formatter'
 require 'aspera/agent/base'
@@ -23,13 +24,16 @@ module Aspera
       # Agents shown in manual for parameters (sub list)
       SUPPORTED_AGENTS = Agent::Base.agent_list.freeze
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      # Short names of columns in manual
-      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{ |agent_sym| agent_sym.to_s[0].to_sym}
-      HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
       private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
-      FIELDS = (%i[name type] + SUPPORTED_AGENTS_SHORT + %i[description]).freeze
+      HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
+      CONVERT_TAGS = %w[x-cli-convert x-cli-enum-convert].freeze
 
       class << self
+        # first letter of agent name symbol
+        def agent_to_short(agent_sym)
+          agent_sym.to_sym.eql?(:direct) ? :a : agent_sym.to_s[0].to_sym
+        end
+
         # temp file list files are created here
         def file_list_folder=(value)
           @file_list_folder = value
@@ -50,7 +54,7 @@ module Aspera
         # @param &block modify parameter info if needed
         # @return a table suitable to display in manual
         def man_table(formatter, cli: true)
-          Spec::DESCRIPTION.filter_map do |name, options|
+          Spec::SCHEMA['properties'].filter_map do |name, options|
             # manual table
             param = {
               name:        name,
@@ -58,39 +62,31 @@ module Aspera
               description: options['description'].split("\n")
             }
             # add flags for supported agents in doc
-            SUPPORTED_AGENTS.each do |agent_sym|
-              param[agent_sym.to_s[0].to_sym] = Cli::Formatter.tick(options['agents'].nil? || options['agents'].include?(agent_sym))
+            SUPPORTED_AGENTS.map(&:to_s).each do |agent_name|
+              param[agent_to_short(agent_name)] = Cli::Formatter.tick(options['x-agents'].nil? || options['x-agents'].include?(agent_name))
             end
             # only keep lines that are usable in supported agents
             next false if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
             param[:description].push("Allowed values: #{options['enum'].join(', ')}") if options.key?('enum')
             cli_option =
-              case options['cli']['opt-type']
-              when 'envvar' then 'env:' + options['cli']['variable']
-              when 'opt_without_arg' then options['cli']['switch']
-              when 'opt_with_arg'
+              if options['x-cli-switch']
+                options['x-cli-option']
+              elsif options['x-cli-special']
+                formatter.special_format('special')
+              elsif options['x-cli-ignore']
+                formatter.special_format('ignored')
+              else
                 arg_type = options.key?('enum') ? '{enum}' : "{#{options['type']}}"
                 arg_type += "|{#{options['x-type']}}" if options.key?('x-type')
-                conversion_tag = options['cli'].key?('convert') ? '(conversion)' : ''
-                "#{options['cli']['switch']}=#{conversion_tag}#{arg_type}"
-              when 'special' then formatter.special_format('special')
-              when 'ignore' then formatter.special_format('ignored')
-              else
-                param[:d].eql?(tick_yes) ? '' : 'n/a'
+                conversion_tag = CONVERT_TAGS.any?{ |k| options.key?(k)} ? '(conversion)' : ''
+                sep = options['x-cli-option'].start_with?('--') ? '=' : ''
+                "#{options['x-cli-option']}#{sep}#{conversion_tag}#{arg_type}"
               end
+            cli_option = 'env:' + options['x-cli-envvar'] if options.key?('x-cli-envvar')
             param[:description].push("(#{cli_option})") if cli && !cli_option.to_s.empty?
             formatter.check_row(param)
           end.sort_by{ |i| i[:name]}
         end
-
-        # special encoding methods used in YAML (key: convert)
-        def convert_remove_hyphen(value); value.tr('-', ''); end
-
-        # special encoding methods used in YAML (key: convert)
-        def convert_json64(value); Base64.strict_encode64(JSON.generate(value)); end
-
-        # special encoding methods used in YAML (key: convert)
-        def convert_base64(value); Base64.strict_encode64(value); end
 
         # file list is provided directly with ascp arguments
         # @param ascp_args [Array,NilClass] ascp arguments
@@ -98,6 +94,10 @@ module Aspera
           ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end
       end
+
+      # Short names of columns in manual
+      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{ |agent_sym| agent_to_short(agent_sym)}
+      TABLE_COLUMNS = (%i[name type] + SUPPORTED_AGENTS_SHORT + %i[description]).freeze
 
       # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(
@@ -121,7 +121,7 @@ module Aspera
         Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
         Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
         Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
-        @builder = CommandLineBuilder.new(@job_spec, Spec::DESCRIPTION)
+        @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, Convert)
       end
 
       # either place source files on command line, or add file list file
@@ -129,7 +129,7 @@ module Aspera
         # is the file list provided through ascp parameters?
         ascp_file_list_provided = self.class.ascp_args_file_list?(@ascp_args)
         # set if paths is mandatory in ts
-        @builder.params_definition['paths'][:mandatory] = !@job_spec.key?('keepalive') && !ascp_file_list_provided # cspell:words keepalive
+        @builder.required('paths', !@job_spec.key?('keepalive') && !ascp_file_list_provided) # cspell:words keepalive
         # get paths in transfer spec (after setting if it is mandatory)
         ts_paths_array = @builder.read_param('paths')
         file_list_option = nil

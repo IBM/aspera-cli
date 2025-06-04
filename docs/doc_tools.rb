@@ -120,10 +120,10 @@ end
 # Transfer spec description generation for markdown manual
 def spec_table
   table = Aspera::Transfer::Parameters.man_table(HtmlFormatter).map do |param|
-    Aspera::Transfer::Parameters::FIELDS.map{ |field_name| param[field_name]}
+    Aspera::Transfer::Parameters::TABLE_COLUMNS.map{ |field_name| param[field_name]}
   end
-  # Headings
-  table.unshift(Aspera::Transfer::Parameters::FIELDS.map(&:capitalize))
+  # Column titles
+  table.unshift(Aspera::Transfer::Parameters::TABLE_COLUMNS.map(&:capitalize))
   table.first[0] = 'Field'
   return markdown_table(table)
 end

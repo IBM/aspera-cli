@@ -4,7 +4,7 @@
 
 require 'aspera/log'
 require 'aspera/rest'
-require 'aspera/command_line_builder'
+require 'aspera/transfer/convert'
 
 module Aspera
   module Transfer
@@ -39,10 +39,10 @@ module Aspera
           when 'bwcap'       then result_ts['target_rate_cap_kbps'] = value.to_i
           when 'enc'         then result_ts['cipher'] = value.gsub(/^aes/, 'aes-').gsub(/cfb$/, '-cfb').gsub(/gcm$/, '-gcm').gsub('--', '-')
           when 'tags64'      then result_ts['tags'] = JSON.parse(Base64.strict_decode64(value))
-          when 'createpath'  then result_ts['create_dir'] = CommandLineBuilder.yes_to_true(value)
-          when 'fallback'    then result_ts['http_fallback'] = CommandLineBuilder.yes_to_true(value)
-          when 'lockpolicy'  then result_ts['lock_rate_policy'] = CommandLineBuilder.yes_to_true(value)
-          when 'lockminrate' then result_ts['lock_min_rate'] = CommandLineBuilder.yes_to_true(value)
+          when 'createpath'  then result_ts['create_dir'] = Convert.yes_to_true(value)
+          when 'fallback'    then result_ts['http_fallback'] = Convert.yes_to_true(value)
+          when 'lockpolicy'  then result_ts['lock_rate_policy'] = Convert.yes_to_true(value)
+          when 'lockminrate' then result_ts['lock_min_rate'] = Convert.yes_to_true(value)
           when 'auth'        then Log.log.debug{"ignoring #{name}=#{value}"} # Not used (yes/no)
           when 'v'           then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch -- Not used (shall be 2)
           when 'protect'     then Log.log.debug{"ignoring #{name}=#{value}"} # rubocop:disable Lint/DuplicateBranch -- TODO: what is this ?

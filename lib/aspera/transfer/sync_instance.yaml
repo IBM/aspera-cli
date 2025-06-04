@@ -1,18 +1,13 @@
----
-alt_logdir:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-watchd:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-apply_local_docroot:
-  cli:
-    opt-type: opt_without_arg
-quiet:
-  cli:
-    opt-type: opt_without_arg
-ws_connect:
-  cli:
-    opt-type: opt_without_arg
+title: SyncInstanceSpec
+type: object
+properties:
+  alt_logdir:
+    type: string
+  watchd:
+    type: string
+  apply_local_docroot:
+    x-cli-switch: true
+  quiet:
+    x-cli-switch: true
+  ws_connect:
+    x-cli-switch: true

@@ -1,132 +1,79 @@
----
-name:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-local_dir:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-remote_dir:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-local_db_dir:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-remote_db_dir:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-host:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-  ts: remote_host
-user:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-  ts: remote_user
-private_key_paths:
-  cli:
-    opt-type: opt_with_arg
-    switch: "--private-key-path"
-  type: array
-direction:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-checksum:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-tags:
-  cli:
-    opt-type: opt_with_arg
-    switch: "--tags64"
-    convert: Aspera::Transfer::Parameters.convert_json64
-  type: object
-  ts: true
-tcp_port:
-  cli:
-    opt-type: opt_with_arg
-  type: integer
-  ts: ssh_port
-rate_policy:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-target_rate:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-cooloff:
-  cli:
-    opt-type: opt_with_arg
-  type: integer
-pending_max:
-  cli:
-    opt-type: opt_with_arg
-  type: integer
-scan_intensity:
-  cli:
-    opt-type: opt_with_arg
-  type: string
-cipher:
-  cli:
-    opt-type: opt_with_arg
-    convert: Aspera::Transfer::Parameters.convert_remove_hyphen
-  type: string
-  ts: true
-transfer_threads:
-  cli:
-    opt-type: opt_with_arg
-  type: integer
-preserve_time:
-  cli:
-    opt-type: opt_without_arg
-  ts: preserve_times
-preserve_access_time:
-  cli:
-    opt-type: opt_without_arg
-  ts:
-preserve_modification_time:
-  cli:
-    opt-type: opt_without_arg
-  ts:
-preserve_uid:
-  cli:
-    opt-type: opt_without_arg
-  ts: preserve_file_owner_uid
-preserve_gid:
-  cli:
-    opt-type: opt_without_arg
-  ts: preserve_file_owner_gid
-create_dir:
-  cli:
-    opt-type: opt_without_arg
-  ts: true
-reset:
-  cli:
-    opt-type: opt_without_arg
-remote_password:
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_PASS
-  ts: true
-cookie:
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_COOKIE
-  ts: true
-token:
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_TOKEN
-  ts: true
-license:
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_LICENSE
+title: SyncSessionSpec
+type: object
+properties:
+  name:
+    type: string
+  local_dir:
+    type: string
+  remote_dir:
+    type: string
+  local_db_dir:
+    type: string
+  remote_db_dir:
+    type: string
+  host:
+    type: string
+    x-tspec: remote_host
+  user:
+    type: string
+    x-tspec: remote_user
+  private_key_paths:
+    type: array
+    x-cli-option: "--private-key-path"
+  direction:
+    type: string
+  checksum:
+    type: string
+  tags:
+    type: object
+    x-cli-option: "--tags64"
+    x-cli-convert: json64
+    x-tspec: true
+  tcp_port:
+    type: integer
+    x-tspec: ssh_port
+  rate_policy:
+    type: string
+  target_rate:
+    type: string
+  cooloff:
+    type: integer
+  pending_max:
+    type: integer
+  scan_intensity:
+    type: string
+  cipher:
+    type: string
+    x-cli-convert: remove_hyphen
+    x-tspec: true
+  transfer_threads:
+    type: integer
+  preserve_time:
+    x-cli-switch: true
+    x-tspec: preserve_times
+  preserve_access_time:
+    x-cli-switch: true
+  preserve_modification_time:
+    x-cli-switch: true
+  preserve_uid:
+    x-cli-switch: true
+    x-tspec: preserve_file_owner_uid
+  preserve_gid:
+    x-cli-switch: true
+    x-tspec: preserve_file_owner_gid
+  create_dir:
+    x-cli-switch: true
+    x-tspec: true
+  reset:
+    x-cli-switch: true
+  remote_password:
+    x-cli-envvar: ASPERA_SCP_PASS
+    x-tspec: true
+  cookie:
+    x-cli-envvar: ASPERA_SCP_COOKIE
+    x-tspec: true
+  token:
+    x-cli-envvar: ASPERA_SCP_TOKEN
+    x-tspec: true
+  license:
+    x-cli-envvar: ASPERA_SCP_LICENSE
