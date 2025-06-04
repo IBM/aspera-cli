@@ -15,7 +15,7 @@ DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
 TMPL_CONF_FILE_PATH=$(DIR_DOC)test_env.conf
 
 # main target to build doc
-all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF)
+all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF) $(DIR_DOC)spec.schema.json
 
 doc: all
 
@@ -30,6 +30,9 @@ clean_doc::
 # Date in PDF header is either the last checked in date or today if file has been modified
 # sudo tlmgr install fvextra
 $(eval $(call markdown_to_pdf,$(DIR_TOP)README.md,$(MANUAL_PDF)))
+
+$(DIR_DOC)spec.schema.json: $(DIR_LIB)aspera/transfer/spec.schema.yaml
+	$(CLI_PATH) config ascp schema --format=jsonpp --output=$@
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \

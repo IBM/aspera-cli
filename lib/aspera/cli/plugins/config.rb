@@ -718,7 +718,7 @@ module Aspera
               fields: Transfer::SpecDoc::TABLE_COLUMNS.map(&:to_s)
             )
           when :schema
-            return Main.result_single_object(Transfer::Spec::SCHEMA)
+            return Main.result_single_object(Transfer::Spec::SCHEMA.merge({'$comment'=>'DO NOT EDIT, this file was generated from the YAML.'}))
           when :errors
             error_data = []
             Transfer::ERROR_INFO.each_pair do |code, prop|
