@@ -1,0 +1,735 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml",
+  "$comment": "DO NOT EDIT, this file was generated from the YAML.",
+  "title": "Aspera Transfer Specification",
+  "description": "Information defining an Aspera transfer.",
+  "type": "object",
+  "required": [
+    "destination_root",
+    "direction",
+    "paths",
+    "remote_host",
+    "remote_user"
+  ],
+  "properties": {
+    "cipher": {
+      "description": "In transit encryption algorithms.",
+      "enum": [
+        "none",
+        "aes-128",
+        "aes-192",
+        "aes-256",
+        "aes-128-cfb",
+        "aes-192-cfb",
+        "aes-256-cfb",
+        "aes-128-gcm",
+        "aes-192-gcm",
+        "aes-256-gcm"
+      ],
+      "default": "none",
+      "x-cli-option": "-c",
+      "x-cli-convert": "remove_hyphen",
+      "type": "string"
+    },
+    "content_protection": {
+      "description": "Enable client-side encryption at rest. (CSEAR, content protection)",
+      "enum": [
+        "encrypt",
+        "decrypt"
+      ],
+      "x-cli-option": "--file-crypt",
+      "type": "string"
+    },
+    "content_protection_password": {
+      "description": "Specifies CSEAR password. (content protection)",
+      "type": "string",
+      "x-cli-envvar": "ASPERA_SCP_FILEPASS"
+    },
+    "cookie": {
+      "description": "Metadata for transfer specified by application",
+      "type": "string",
+      "x-cli-envvar": "ASPERA_SCP_COOKIE"
+    },
+    "create_dir": {
+      "description": "Specifies whether to create new directories.",
+      "type": "boolean",
+      "x-cli-option": "-d",
+      "x-cli-switch": true
+    },
+    "delete_before_transfer": {
+      "description": "Before transfer, delete files that exist at the destination but not at the source.\nThe source and destination arguments must be directories that have matching names.\nObjects on the destination that have the same name but different type or size as objects on the source are not deleted.",
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--delete-before-transfer"
+    },
+    "delete_source": {
+      "description": "Remove SRC files after transfer success",
+      "type": "boolean",
+      "x-agents": [
+        "node",
+        "direct"
+      ],
+      "x-cli-option": "--remove-after-transfer",
+      "x-cli-switch": true
+    },
+    "destination_root": {
+      "description": "Destination root directory.",
+      "x-cli-special": true,
+      "type": "string",
+      "x-cli-option": "--destination-root"
+    },
+    "destination_root_id": {
+      "description": "The file ID of the destination root directory.\nRequired when using Bearer token auth for the destination node.",
+      "type": "string",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-ignore": true
+    },
+    "direction": {
+      "description": "Direction of transfer (on client side)",
+      "enum": [
+        "send",
+        "receive"
+      ],
+      "x-cli-option": "--mode",
+      "x-cli-enum-convert": {
+        "receive": "recv",
+        "send": "send"
+      },
+      "type": "string"
+    },
+    "exclude_newer_than": {
+      "description": "Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.\ne.g. \"-86400\" for newer than a day back.",
+      "type": "string",
+      "x-cli-option": "--exclude-newer-than"
+    },
+    "exclude_older_than": {
+      "description": "Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.\ne.g. \"-86400\" for older than a day back.",
+      "type": "string",
+      "x-cli-option": "--exclude-older-than"
+    },
+    "fasp_port": {
+      "description": "Specifies fasp (UDP) port.",
+      "type": "integer",
+      "default": 33001,
+      "x-cli-option": "-O"
+    },
+    "file_checksum": {
+      "description": "Enable checksum reporting for transferred files by specifying the hash to use.",
+      "enum": [
+        "sha-512",
+        "sha-384",
+        "sha-256",
+        "sha1",
+        "md5",
+        "none"
+      ],
+      "default": "none",
+      "x-agents": [
+        "transferd",
+        "node",
+        "direct"
+      ],
+      "x-cli-ignore": true,
+      "x-cli-option": "--checksum-type",
+      "type": "string"
+    },
+    "http_fallback": {
+      "description": "When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.",
+      "type": "boolean",
+      "x-type": "string",
+      "x-cli-option": "-y",
+      "x-cli-enum-convert": {
+        "force": "F",
+        "true": 1,
+        "false": 0
+      }
+    },
+    "http_fallback_port": {
+      "description": "Specifies http port when no cipher is used",
+      "type": "integer",
+      "x-agents": [
+        "direct"
+      ],
+      "x-cli-option": "-t"
+    },
+    "https_fallback_port": {
+      "description": "Specifies https port when cipher is used",
+      "type": "integer",
+      "x-cli-option": "-t"
+    },
+    "move_after_transfer": {
+      "description": "The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.",
+      "x-agents": [
+        "direct",
+        "node"
+      ],
+      "type": "string",
+      "x-cli-option": "--move-after-transfer"
+    },
+    "multi_session": {
+      "description": "Use multi-session transfer. max 128.\nEach participant on one host needs an independent UDP (-O) port.\nLarge files are split between sessions only when transferring with resume_policy=none.",
+      "type": "integer",
+      "x-cli-option": "-C",
+      "x-cli-special": true
+    },
+    "multi_session_threshold": {
+      "description": "Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.\n(0=no file is split)",
+      "type": "integer",
+      "x-agents": [
+        "direct",
+        "node"
+      ],
+      "x-cli-option": "--multi-session-threshold"
+    },
+    "overwrite": {
+      "description": "Overwrite destination files with the source files of the same name.",
+      "default": "diff",
+      "enum": [
+        "never",
+        "always",
+        "diff",
+        "older",
+        "diff+older"
+      ],
+      "type": "string",
+      "x-cli-option": "--overwrite"
+    },
+    "save_before_overwrite": {
+      "description": "If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.\nFile attributes are maintained in the renamed file.",
+      "x-cli-switch": true,
+      "x-agents": [
+        "direct",
+        "node"
+      ],
+      "type": "boolean",
+      "x-cli-option": "--save-before-overwrite"
+    },
+    "password": {
+      "description": "Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.\nAllows impersonating the transfer user and have access to resources (e.g. network shares).\nWindows only, node api only.",
+      "type": "string",
+      "x-agents": [
+        "node"
+      ],
+      "x-cli-ignore": true
+    },
+    "paths": {
+      "description": "Array of path to the source (required) and a path to the destination (optional).",
+      "type": "array",
+      "x-cli-special": true,
+      "x-cli-option": "--paths"
+    },
+    "precalculate_job_size": {
+      "description": "Specifies whether to precalculate the job size.",
+      "type": "boolean",
+      "x-cli-switch": true,
+      "x-cli-option": "--precalculate-job-size"
+    },
+    "preserve_access_time": {
+      "description": "Preserve the source-file access timestamps at the destination.\nBecause source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.",
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--preserve-access-time"
+    },
+    "preserve_creation_time": {
+      "description": "(Windows only) Preserve source-file creation timestamps at the destination.\nOnly Windows systems retain information about creation time.\nIf the destination is not a Windows computer, this option is ignored.",
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--preserve-creation-time"
+    },
+    "preserve_modification_time": {
+      "description": "Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.\nPreserve source-file modification timestamps at the destination.",
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--preserve-modification-time"
+    },
+    "preserve_times": {
+      "description": "Preserve file timestamps.",
+      "x-agents": [
+        "transferd",
+        "node"
+      ],
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--preserve-times"
+    },
+    "rate_policy": {
+      "description": "The transfer rate policy to use when sharing bandwidth.",
+      "enum": [
+        "low",
+        "fair",
+        "high",
+        "fixed"
+      ],
+      "x-cli-option": "--policy",
+      "type": "string"
+    },
+    "remote_access_key": {
+      "description": "The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.",
+      "type": "string",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-ignore": true
+    },
+    "remote_host": {
+      "description": "IP or fully qualified domain name of the remote server",
+      "x-cli-option": "--host",
+      "type": "string"
+    },
+    "remote_user": {
+      "description": "Remote user. Default value is \"xfer\" on node or connect.",
+      "x-cli-option": "--user",
+      "type": "string"
+    },
+    "remote_password": {
+      "description": "SSH session password",
+      "x-cli-envvar": "ASPERA_SCP_PASS",
+      "type": "string"
+    },
+    "remove_after_transfer": {
+      "description": "Remove SRC files after transfer success",
+      "type": "boolean",
+      "x-agents": [
+        "direct",
+        "node"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--remove-after-transfer"
+    },
+    "remove_empty_directories": {
+      "description": "Specifies whether to remove empty directories.",
+      "type": "boolean",
+      "x-agents": [
+        "direct",
+        "node"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--remove-empty-directories"
+    },
+    "remove_skipped": {
+      "description": "Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.",
+      "type": "boolean",
+      "x-agents": [
+        "direct",
+        "connect",
+        "transferd",
+        "node"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--remove-skipped"
+    },
+    "proxy": {
+      "description": "Specify the address of the Aspera high-speed proxy server.\ndnat(s)://[user[:password]@]server:port\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "type": "string",
+      "x-cli-option": "--proxy"
+    },
+    "resume_policy": {
+      "description": "If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.",
+      "default": "faspmgr:none;other:sparse_csum",
+      "enum": [
+        "none",
+        "attrs",
+        "sparse_csum",
+        "full_csum"
+      ],
+      "x-cli-option": "-k",
+      "x-cli-enum-convert": {
+        "none": 0,
+        "attrs": 1,
+        "sparse_csum": 2,
+        "full_csum": 3
+      },
+      "type": "string"
+    },
+    "retry_duration": {
+      "description": "Specifies how long to wait before retrying transfer. (e.g. \"5min\")",
+      "type": "integer",
+      "x-type": "string",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-ignore": true
+    },
+    "source_root_id": {
+      "description": "The file ID of the source root directory. Required when using Bearer token auth for the source node.",
+      "type": "string",
+      "x-agents": [
+        "transferd",
+        "node"
+      ],
+      "x-cli-ignore": true
+    },
+    "ssh_port": {
+      "description": "Specifies SSH (TCP) port. Default: local:22, other:33001",
+      "type": "integer",
+      "x-cli-option": "-P"
+    },
+    "ssh_private_key": {
+      "description": "Private key used for SSH authentication.\nShall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...\nNote the JSON encoding: &bsol;n for newlines.",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "x-cli-envvar": "ASPERA_SCP_KEY",
+      "type": "string"
+    },
+    "ssh_private_key_passphrase": {
+      "description": "The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.",
+      "type": "string",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-envvar": "ASPERA_SCP_PASS"
+    },
+    "ssh_args": {
+      "description": "Array of arguments to pass to SSH. Use with caution.",
+      "type": "string",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-ignore": true
+    },
+    "symlink_policy": {
+      "description": "Handle source side symbolic links",
+      "enum": [
+        "follow",
+        "copy",
+        "copy+force",
+        "skip"
+      ],
+      "default": "follow",
+      "x-cli-option": "--symbolic-links",
+      "type": "string"
+    },
+    "tags": {
+      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
+      "type": "object",
+      "x-cli-option": "--tags64",
+      "x-cli-convert": "json64"
+    },
+    "target_rate_cap_kbps": {
+      "description": "Returned by upload/download_setup node API.",
+      "type": "integer",
+      "x-agents": [
+        "connect"
+      ],
+      "x-cli-ignore": true
+    },
+    "target_rate_kbps": {
+      "description": "Specifies desired speed for the transfer.",
+      "type": "integer",
+      "x-cli-option": "-l"
+    },
+    "title": {
+      "description": "Title of the transfer",
+      "type": "string",
+      "x-agents": [
+        "node",
+        "connect",
+        "transferd"
+      ],
+      "x-cli-ignore": true
+    },
+    "token": {
+      "description": "Authorization token: Bearer, Basic or ATM (Also arg -W)",
+      "x-cli-envvar": "ASPERA_SCP_TOKEN",
+      "type": "string"
+    },
+    "use_ascp4": {
+      "description": "specify version of protocol",
+      "type": "boolean",
+      "default": false,
+      "x-agents": [
+        "direct",
+        "node",
+        "transferd"
+      ],
+      "x-cli-special": true,
+      "x-cli-option": "--use-ascp4"
+    },
+    "use_system_ssh": {
+      "description": "TODO, comment...",
+      "type": "string",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-ignore": true,
+      "x-cli-option": "-SSH"
+    },
+    "source_root": {
+      "description": "Path to be prepended to each source path.\nThis is either a conventional path or it can be a URI but only if there is no root defined.",
+      "x-cli-option": "--source-prefix64",
+      "x-cli-convert": "base64",
+      "type": "string"
+    },
+    "min_rate_cap_kbps": {
+      "description": "The highest minimum rate that an incoming transfer can request, in kilobits per second.\nClient minimum rate requests that exceed the minimum rate cap are ignored.\nThe default value of unlimited applies no cap to the minimum rate. (Default: 0)",
+      "type": "integer",
+      "x-cli-ignore": true
+    },
+    "lock_rate_policy": {
+      "description": "If true, lock the rate policy to the default value.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "connect"
+      ],
+      "x-cli-ignore": true
+    },
+    "lock_target_rate_kbps": {
+      "description": "If true, lock the target transfer rate to the default value set for target_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "type": "boolean",
+      "x-cli-ignore": true
+    },
+    "lock_min_rate_kbps": {
+      "description": "If true, lock the minimum transfer rate to the value set for min_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "connect"
+      ],
+      "x-cli-ignore": true
+    },
+    "apply_local_docroot": {
+      "description": "Apply local docroot to source paths.",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--apply-local-docroot"
+    },
+    "src_base": {
+      "description": "Specify the prefix to be stripped off from each source object.\nThe remaining portion of the source path is kept intact at the destination.\nSpecial care must be taken when used with cloud storage.",
+      "x-agents": [
+        "direct",
+        "node",
+        "transferd"
+      ],
+      "x-cli-option": "--src-base64",
+      "x-cli-convert": "base64",
+      "type": "string"
+    },
+    "preserve_acls": {
+      "description": "Preserve access control lists.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "type": "string",
+      "x-cli-option": "--preserve-acls"
+    },
+    "preserve_remote_acls": {
+      "description": "Preserve remote access control lists.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-option": "--remote-preserve-acls",
+      "type": "string"
+    },
+    "preserve_file_owner_uid": {
+      "description": "Preserve the user ID for a file owner",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--preserve-file-owner-uid"
+    },
+    "preserve_file_owner_gid": {
+      "description": "Preserve the group ID for a file owner",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--preserve-file-owner-gid"
+    },
+    "preserve_extended_attrs": {
+      "description": "Preserve the extended attributes.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-option": "--preserve-xattrs",
+      "type": "string"
+    },
+    "preserve_source_access_time": {
+      "description": "Preserve the time logged for when the source file was accessed",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--preserve-source-access-time"
+    },
+    "remove_empty_source_directory": {
+      "description": "Remove empty source subdirectories and remove the source directory itself, if empty",
+      "type": "boolean",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--remove-empty-source-directory"
+    },
+    "keepalive": {
+      "description": "The session is running in persistent session mode.",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--keepalive"
+    },
+    "dgram_size": {
+      "description": "UDP datagram size in bytes",
+      "type": "integer",
+      "x-cli-option": "-Z"
+    },
+    "min_rate_kbps": {
+      "description": "Set the minimum transfer rate in kilobits per second.",
+      "type": "integer",
+      "default": 0,
+      "x-cli-option": "-m"
+    },
+    "sshfp": {
+      "description": "Check it against server SSH host key fingerprint",
+      "x-cli-option": "--check-sshfp",
+      "type": "string"
+    },
+    "target_rate_percentage": {
+      "description": "TODO: remove ?",
+      "x-cli-ignore": true,
+      "type": "string"
+    },
+    "rate_policy_allowed": {
+      "description": "Specifies most aggressive rate policy that is allowed.\nReturned by node API.",
+      "enum": [
+        "low",
+        "fair",
+        "high",
+        "fixed"
+      ],
+      "x-agents": [
+        "connect"
+      ],
+      "x-cli-ignore": true,
+      "type": "string"
+    },
+    "fasp_url": {
+      "description": "Only used in Faspex.",
+      "x-agents": [
+        "unknown"
+      ],
+      "x-cli-ignore": true,
+      "type": "string"
+    },
+    "lock_min_rate": {
+      "description": "TODO: remove ?",
+      "type": "boolean",
+      "x-cli-ignore": true
+    },
+    "lock_target_rate": {
+      "description": "TODO: remove ?",
+      "type": "boolean",
+      "x-cli-ignore": true
+    },
+    "authentication": {
+      "description": "value=token for SSH bypass keys, else password asked if not provided.",
+      "x-agents": [
+        "connect"
+      ],
+      "x-cli-ignore": true,
+      "type": "string"
+    },
+    "cipher_allowed": {
+      "description": "returned by node API. Valid literals include \"aes-128\" and \"none\".",
+      "x-cli-ignore": true,
+      "type": "string"
+    },
+    "obfuscate_file_names": {
+      "description": "HTTP Gateway obfuscates file names when set to true.",
+      "type": "boolean",
+      "x-agents": [
+        "httpgw"
+      ],
+      "x-cli-ignore": true
+    },
+    "wss_enabled": {
+      "description": "Server has Web Socket service enabled",
+      "type": "boolean",
+      "x-cli-special": true,
+      "x-cli-option": "--wss-enabled"
+    },
+    "wss_port": {
+      "description": "TCP port used for websocket service feed",
+      "type": "integer",
+      "x-cli-special": true,
+      "x-cli-option": "--wss-port"
+    },
+    "compression": {
+      "description": "ascp4 only, 0 / 1?",
+      "type": "integer",
+      "x-agents": [
+        "unknown"
+      ],
+      "x-cli-ignore": true
+    },
+    "read_threads": {
+      "description": "ascp4 only",
+      "type": "integer",
+      "x-agents": [
+        "unknown"
+      ],
+      "x-cli-ignore": true
+    },
+    "write_threads": {
+      "description": "ascp4 only",
+      "type": "integer",
+      "x-agents": [
+        "unknown"
+      ],
+      "x-cli-ignore": true
+    },
+    "xfer_max_retries": {
+      "description": "maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).",
+      "type": "integer",
+      "x-agents": [
+        "node"
+      ],
+      "x-cli-ignore": true
+    }
+  }
+}

@@ -1,5 +1,6 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml
+$comment: The original file is the YAML file.
 title: Aspera Transfer Specification
 description: Information defining an Aspera transfer.
 type: object
