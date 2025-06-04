@@ -2113,6 +2113,7 @@ ascp install --sdk-folder=sdk_test_dir
 ascp install 1.1.3
 ascp products list
 ascp products use 'IBM Aspera Connect'
+ascp schema --format=jsonpp
 ascp show
 ascp spec
 check_update
@@ -3368,6 +3369,7 @@ ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 | remove_skipped | boolean | Y | Y | &nbsp; | &nbsp; | Y | Y | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
 | resume_policy | string | Y | Y | Y | Y | Y | Y | If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
 | retry_duration | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specifies how long to wait before retrying transfer. (e.g. "5min")<br/>(&lt;ignored&gt;) |
+| save_before_overwrite | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.<br/>File attributes are maintained in the renamed file.<br/>(--save-before-overwrite) |
 | source_root | string | Y | Y | Y | Y | Y | Y | Path to be prepended to each source path.<br/>This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64=(conversion){string}) |
 | source_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Y | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(&lt;ignored&gt;) |
 | src_base | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64=(conversion){string}) |

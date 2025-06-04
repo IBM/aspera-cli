@@ -1,4 +1,7 @@
-title: TransferSpec
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml
+title: Aspera Transfer Specification
+description: Information defining an Aspera transfer.
 type: object
 required:
 - destination_root

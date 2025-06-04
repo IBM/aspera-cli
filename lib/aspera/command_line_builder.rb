@@ -57,7 +57,7 @@ module Aspera
           # by default : string, unless it's without arg
           properties['type'] ||= properties['x-cli-switch'] ? 'boolean' : 'string'
           # add default cli option name if not present, and if supported in "direct".
-          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-ignore'] && (properties.key?('x-cli-switch') || !properties.key?('x-agents') || properties['x-agents'].include?('direct'))
+          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-ignore'] && !properties['x-cli-envvar'] && (properties.key?('x-cli-switch') || !properties.key?('x-agents') || properties['x-agents'].include?('direct'))
           properties.freeze
         end
         schema['required'] = [] unless schema.key?('required')
