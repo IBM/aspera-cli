@@ -24,7 +24,7 @@ module Aspera
     # x-agents       [Array]    Supported agents (for doc only), if not specified: all
     # x-tspec        [String ]  (async) true if same name in transfer spec, else name in transfer spec
     # x-deprecation  [String ]  Deprecation message for doc
-    OPTIONS_KEYS = %w[
+    SCHEMA_KEYS = %w[
       description
       type
       default
@@ -43,16 +43,16 @@ module Aspera
       x-deprecation
     ].freeze
 
-    private_constant :OPTIONS_KEYS
+    private_constant :SCHEMA_KEYS
 
     class << self
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
       def read_schema(source_path, suffix=nil)
         suffix = "_#{suffix}" unless suffix.nil?
-        schema = YAML.load_file("#{source_path[0..-4]}#{suffix}.yaml")
+        schema = YAML.load_file("#{source_path[0..-4]}#{suffix}.schema.yaml")
         schema['properties'].each do |name, properties|
           Aspera.assert_type(properties, Hash){name}
-          unsupported_keys = properties.keys - OPTIONS_KEYS
+          unsupported_keys = properties.keys - SCHEMA_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
           # by default : optional
           properties['description'] = '' unless properties.key?('description')
