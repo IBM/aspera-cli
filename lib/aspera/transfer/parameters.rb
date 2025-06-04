@@ -9,7 +9,6 @@ require 'aspera/transfer/spec'
 require 'aspera/transfer/convert'
 require 'aspera/ascp/installation'
 require 'aspera/cli/formatter'
-require 'aspera/agent/base'
 require 'aspera/rest'
 require 'securerandom'
 require 'base64'
@@ -21,19 +20,11 @@ module Aspera
   module Transfer
     # translate transfer specification to ascp parameter list
     class Parameters
-      # Agents shown in manual for parameters (sub list)
-      SUPPORTED_AGENTS = Agent::Base.agent_list.freeze
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
-      private_constant :SUPPORTED_AGENTS, :FILE_LIST_OPTIONS
+      private_constant :FILE_LIST_OPTIONS
       HTTP_FALLBACK_ACTIVATION_VALUES = ['1', 1, true, 'force'].freeze
-      CONVERT_TAGS = %w[x-cli-convert x-cli-enum-convert].freeze
 
       class << self
-        # first letter of agent name symbol
-        def agent_to_short(agent_sym)
-          agent_sym.to_sym.eql?(:direct) ? :a : agent_sym.to_s[0].to_sym
-        end
-
         # temp file list files are created here
         def file_list_folder=(value)
           @file_list_folder = value
@@ -50,56 +41,14 @@ module Aspera
           @file_list_folder ||= TempFileManager.instance.new_file_path_global('asession_filelists')
         end
 
-        # @param formatter [Cli::Formatter] formatter to use, methods: special_format, check_row
-        # @param &block modify parameter info if needed
-        # @return a table suitable to display in manual
-        def man_table(formatter, cli: true)
-          Spec::SCHEMA['properties'].filter_map do |name, options|
-            # manual table
-            param = {
-              name:        name,
-              type:        options['type'],
-              description: options['description'].split("\n")
-            }
-            # add flags for supported agents in doc
-            SUPPORTED_AGENTS.map(&:to_s).each do |agent_name|
-              param[agent_to_short(agent_name)] = Cli::Formatter.tick(options['x-agents'].nil? || options['x-agents'].include?(agent_name))
-            end
-            # only keep lines that are usable in supported agents
-            next false if SUPPORTED_AGENTS_SHORT.inject(true){ |memory, agent_short_sym| memory && param[agent_short_sym].empty?}
-            param[:description].push("Allowed values: #{options['enum'].join(', ')}") if options.key?('enum')
-            cli_option =
-              if options['x-cli-switch']
-                options['x-cli-option']
-              elsif options['x-cli-special']
-                formatter.special_format('special')
-              elsif options['x-cli-ignore']
-                formatter.special_format('ignored')
-              else
-                arg_type = options.key?('enum') ? '{enum}' : "{#{options['type']}}"
-                arg_type += "|{#{options['x-type']}}" if options.key?('x-type')
-                conversion_tag = CONVERT_TAGS.any?{ |k| options.key?(k)} ? '(conversion)' : ''
-                sep = options['x-cli-option'].start_with?('--') ? '=' : ''
-                "#{options['x-cli-option']}#{sep}#{conversion_tag}#{arg_type}"
-              end
-            cli_option = 'env:' + options['x-cli-envvar'] if options.key?('x-cli-envvar')
-            param[:description].push("(#{cli_option})") if cli && !cli_option.to_s.empty?
-            formatter.check_row(param)
-          end.sort_by{ |i| i[:name]}
-        end
-
         # file list is provided directly with ascp arguments
-        # @param ascp_args [Array,NilClass] ascp arguments
+        # @columns ascp_args [Array,NilClass] ascp arguments
         def ascp_args_file_list?(ascp_args)
           ascp_args&.any?{ |i| FILE_LIST_OPTIONS.include?(i)}
         end
       end
 
-      # Short names of columns in manual
-      SUPPORTED_AGENTS_SHORT = SUPPORTED_AGENTS.map{ |agent_sym| agent_to_short(agent_sym)}
-      TABLE_COLUMNS = (%i[name type] + SUPPORTED_AGENTS_SHORT + %i[description]).freeze
-
-      # @param options [Hash] key: :wss: bool, :ascp_args: array of strings
+      # @columns options [Hash] key: :wss: bool, :ascp_args: array of strings
       def initialize(
         job_spec,
         ascp_args:       nil,

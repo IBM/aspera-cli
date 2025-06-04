@@ -6,7 +6,7 @@
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
-require 'aspera/transfer/parameters'
+require 'aspera/transfer/spec_doc'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
@@ -119,13 +119,15 @@ end
 
 # Transfer spec description generation for markdown manual
 def spec_table
-  table = Aspera::Transfer::Parameters.man_table(HtmlFormatter).map do |param|
-    Aspera::Transfer::Parameters::TABLE_COLUMNS.map{ |field_name| param[field_name]}
+  agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
+  agents.unshift(%w[ID Name])
+  props = Aspera::Transfer::SpecDoc.man_table(HtmlFormatter).map do |param|
+    Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map{ |field_name| param[field_name]}
   end
   # Column titles
-  table.unshift(Aspera::Transfer::Parameters::TABLE_COLUMNS.map(&:capitalize))
-  table.first[0] = 'Field'
-  return markdown_table(table)
+  props.unshift(Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map(&:capitalize))
+  props.first[0] = 'Field'
+  [markdown_table(agents), markdown_table(props)].join("\n\n")
 end
 
 # @return the minimum ruby version from gemspec

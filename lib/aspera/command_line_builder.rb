@@ -18,7 +18,7 @@ module Aspera
     # x-cli-option   [String]   Command line option (starts with "-")
     # x-cli-switch   [Bool]     true if option has no arg, else by default option has a value
     # x-cli-special  [Bool]     true if special handling (defered)
-    # x-cli-ignore   [Bool]     true if ignored
+    # x-cli-ignore   [Bool]     true if not in ascp
     # x-cli-enum-convert [Hash] Conversion for enum ts to arg
     # x-cli-convert  [String]   method name for Convert object
     # x-agents       [Array]    Supported agents (for doc only), if not specified: all
@@ -54,15 +54,10 @@ module Aspera
           Aspera.assert_type(properties, Hash){name}
           unsupported_keys = properties.keys - SCHEMA_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
-          # by default : optional
-          properties['description'] = '' unless properties.key?('description')
-          properties['description'] = "DEPRECATED: #{properties['x-deprecation']}\n#{properties['description']}" if properties.key?('x-deprecation')
-          # replace "back solidus" HTML entity with its text value
-          properties['description'] = properties['description'].gsub('&bsol;', '\\')
           # by default : string, unless it's without arg
           properties['type'] ||= properties['x-cli-switch'] ? 'boolean' : 'string'
-          # add default cli option name if not present
-          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') unless properties.key?('x-cli-option')
+          # add default cli option name if not present, and if supported in "direct".
+          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-ignore'] && (properties.key?('x-cli-switch') || !properties.key?('x-agents') || properties['x-agents'].include?('direct'))
           properties.freeze
         end
         schema['required'] = [] unless schema.key?('required')

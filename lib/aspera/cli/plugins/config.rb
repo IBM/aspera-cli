@@ -13,6 +13,7 @@ require 'aspera/products/transferd'
 require 'aspera/transfer/error_info'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/spec'
+require 'aspera/transfer/spec_doc'
 require 'aspera/keychain/macos_security'
 require 'aspera/proxy_auto_config'
 require 'aspera/environment'
@@ -713,8 +714,8 @@ module Aspera
             return Main.result_status("Installed #{n} version #{v}")
           when :spec
             return Main.result_object_list(
-              Transfer::Parameters.man_table(formatter, cli: false),
-              fields: Transfer::Parameters::TABLE_COLUMNS.map(&:to_s)
+              Transfer::SpecDoc.man_table(formatter, cli: false),
+              fields: Transfer::SpecDoc::TABLE_COLUMNS.map(&:to_s)
             )
           when :errors
             error_data = []
