@@ -1,721 +1,594 @@
-# description    [String] description
-# type           [String] accepted type for non-enum
-# default        [String] default value if not specified
-# enum           [Array]  set with list of values for enum types accepted in transfer spec
-# agents         [Array]  supported agents (for doc only), if not specified: all
-# required       [Bool]   optional, default: false
-# cli.type       [Symbol] ascp: type of parameter, one of CLI_OPTION_TYPES (opt_without_arg opt_with_arg special ignore envvar)
-# cli.switch     [String] ascp: switch for ascp command line
-# cli.convert    [String] ascp: transform value: either a Hash with conversion values, or name of class
-# cli.variable   [String] ascp: name of env var
-# cspell:words dgram dnat dnats faspmgr asperanoded xattrs keepalive datagram
----
-cipher:
-  description: "In transit encryption type."
-  enum:
-  - none
-  - aes-128
-  - aes-192
-  - aes-256
-  - aes-128-cfb
-  - aes-192-cfb
-  - aes-256-cfb
-  - aes-128-gcm
-  - aes-192-gcm
-  - aes-256-gcm
-  default: none
-  cli:
-    opt-type: opt_with_arg
-    switch: "-c"
-    convert: Aspera::Transfer::Parameters.convert_remove_hyphen
-content_protection:
-  description: Enable client-side encryption at rest. (CSEAR, content protection)
-  enum:
-  - encrypt
-  - decrypt
-  cli:
-    opt-type: opt_with_arg
-    switch: "--file-crypt"
-content_protection_password:
-  description: "Specifies CSEAR password. (content protection)"
-  type: string
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_FILEPASS
-cookie:
-  description: Metadata for transfer specified by application
-  type: string
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_COOKIE
-create_dir:
-  description: Specifies whether to create new directories.
-  type: boolean
-  cli:
-    opt-type: opt_without_arg
-    switch: "-d"
-delete_before_transfer:
-  description: >-
-    Before transfer, delete files that exist at the destination but not at the source.
+title: TransferSpec
+type: object
+required:
+- destination_root
+- direction
+- paths
+- remote_host
+- remote_user
+properties:
+  cipher:
+    description: In transit encryption algorithms.
+    enum:
+    - none
+    - aes-128
+    - aes-192
+    - aes-256
+    - aes-128-cfb
+    - aes-192-cfb
+    - aes-256-cfb
+    - aes-128-gcm
+    - aes-192-gcm
+    - aes-256-gcm
+    default: none
+    x-cli-option: "-c"
+    x-cli-convert: remove_hyphen
+  content_protection:
+    description: Enable client-side encryption at rest. (CSEAR, content protection)
+    enum:
+    - encrypt
+    - decrypt
+    x-cli-option: "--file-crypt"
+  content_protection_password:
+    description: "Specifies CSEAR password. (content protection)"
+    type: string
+    x-cli-envvar: ASPERA_SCP_FILEPASS
+  cookie:
+    description: Metadata for transfer specified by application
+    type: string
+    x-cli-envvar: ASPERA_SCP_COOKIE
+  create_dir:
+    description: Specifies whether to create new directories.
+    type: boolean
+    x-cli-option: "-d"
+    x-cli-switch: true
+  delete_before_transfer:
+    description: >-
+      Before transfer, delete files that exist at the destination but not at the source.
 
-    The source and destination arguments must be directories that have matching names.
+      The source and destination arguments must be directories that have matching names.
 
-    Objects on the destination that have the same name but different type or size as objects
-    on the source are not deleted.
-  cli:
-    opt-type: opt_without_arg
-delete_source: # duplicate of remove_after_transfer ?
-  description: Remove SRC files after transfer success
-  type: boolean
-  agents:
-  - :node
-  - :direct
-  cli:
-    opt-type: opt_without_arg
-    switch: "--remove-after-transfer"
-destination_root:
-  description: Destination root directory.
-  required: true
-  cli:
-    opt-type: special
-destination_root_id:
-  description: >-
-    The file ID of the destination root directory.
+      Objects on the destination that have the same name but different type or size as objects
+      on the source are not deleted.
+    x-cli-switch: true
+  delete_source: # duplicate of remove_after_transfer ?
+    description: Remove SRC files after transfer success
+    type: boolean
+    x-agents:
+    - node
+    - direct
+    x-cli-option: "--remove-after-transfer"
+    x-cli-switch: true
+  destination_root:
+    description: Destination root directory.
+    x-cli-special: true
+  destination_root_id:
+    description: >-
+      The file ID of the destination root directory.
 
-    Required when using Bearer token auth for the destination node.
-  type: string
-  agents:
-  - :sdk
-  cli:
-    opt-type: ignore
-direction:
-  description: 'Direction of transfer (on client side)'
-  required: true
-  enum:
-  - send
-  - receive
-  cli:
-    opt-type: opt_with_arg
-    switch: "--mode"
-    convert:
+      Required when using Bearer token auth for the destination node.
+    type: string
+    x-agents:
+    - sdk
+    x-cli-ignore: true
+  direction:
+    description: 'Direction of transfer (on client side)'
+    enum:
+    - send
+    - receive
+    x-cli-option: "--mode"
+    x-cli-enum-convert:
       receive: recv
       send: send
-exclude_newer_than:
-  description: >-
-    Exclude files, but not directories, from the transfer if they are newer
-    than the specified number of seconds added to the source computer's epoch.
+  exclude_newer_than:
+    description: >-
+      Exclude files, but not directories, from the transfer if they are newer
+      than the specified number of seconds added to the source computer's epoch.
 
-    e.g. "-86400" for newer than a day back.
-  type: string
-  cli:
-    opt-type: opt_with_arg
-exclude_older_than:
-  description: >-
-    Exclude files, but not directories, from the transfer if they are older
-    than the specified number of seconds added to the source computer's epoch.
+      e.g. "-86400" for newer than a day back.
+    type: string
+  exclude_older_than:
+    description: >-
+      Exclude files, but not directories, from the transfer if they are older
+      than the specified number of seconds added to the source computer's epoch.
 
-    e.g. "-86400" for older than a day back.
-  type: string
-  cli:
-    opt-type: opt_with_arg
-fasp_port:
-  description: Specifies fasp (UDP) port.
-  type: integer
-  default: 33001
-  cli:
-    opt-type: opt_with_arg
-    switch: "-O"
-file_checksum:
-  description: "Enable checksum reporting for transferred files by specifying the hash to use."
-  enum:
-  - sha-512
-  - sha-384
-  - sha-256
-  - sha1
-  - md5
-  - none
-  default: none
-  agents:
-  - :sdk
-  - :node
-  - :direct
-  cli:
-    opt-type: ignore
-    switch: "--checksum-type"
-http_fallback:
-  description: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
-  type: boolean
-  x-type: string
-  cli:
-    opt-type: opt_with_arg
-    switch: "-y"
-    convert:
+      e.g. "-86400" for older than a day back.
+    type: string
+  fasp_port:
+    description: Specifies fasp (UDP) port.
+    type: integer
+    default: 33001
+    x-cli-option: "-O"
+  file_checksum:
+    description: "Enable checksum reporting for transferred files by specifying the hash to use."
+    enum:
+    - sha-512
+    - sha-384
+    - sha-256
+    - sha1
+    - md5
+    - none
+    default: none
+    x-agents:
+    - sdk
+    - node
+    - direct
+    x-cli-ignore: true
+    x-cli-option: "--checksum-type"
+  http_fallback:
+    description: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
+    type: boolean
+    x-type: string
+    x-cli-option: "-y"
+    x-cli-enum-convert:
       force: F
       true: 1
       false: 0
-http_fallback_port:
-  description: Specifies http port when no cipher is used
-  type: integer
-  agents:
-  - :direct
-  cli:
-    opt-type: opt_with_arg
-    switch: "-t"
-https_fallback_port:
-  description: Specifies https port when cipher is used
-  type: integer
-  cli:
-    opt-type: opt_with_arg
-    switch: "-t"
-move_after_transfer:
-  description: The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.
-  agents:
-  - :direct
-  - :node
-  cli:
-    opt-type: opt_with_arg
-multi_session:
-  description: |
-    Use multi-session transfer. max 128.
-    Each participant on one host needs an independent UDP (-O) port.
-    Large files are split between sessions only when transferring with resume_policy=none.
+  http_fallback_port:
+    description: Specifies http port when no cipher is used
+    type: integer
+    x-agents:
+    - direct
+    x-cli-option: "-t"
+  https_fallback_port:
+    description: Specifies https port when cipher is used
+    type: integer
+    x-cli-option: "-t"
+  move_after_transfer:
+    description: The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.
+    x-agents:
+    - direct
+    - node
+  multi_session:
+    description: >-
+      Use multi-session transfer. max 128.
 
+      Each participant on one host needs an independent UDP (-O) port.
 
-  type: integer
-  cli:
-    opt-type: special
-    switch: "-C"
-multi_session_threshold:
-  description: >-
-    Split files across multiple ascp sessions if their size in bytes is greater than
-    or equal to the specified value.
+      Large files are split between sessions only when transferring with resume_policy=none.
+    type: integer
+    x-cli-option: "-C"
+    x-cli-special: true
+  multi_session_threshold:
+    description: >-
+      Split files across multiple ascp sessions if their size in bytes is greater than
+      or equal to the specified value.
 
-    (0=no file is split)
-  type: integer
-  agents:
-  - :direct
-  - :node
-  cli:
-    opt-type: opt_with_arg
-overwrite:
-  description: "Overwrite destination files with the source files of the same name."
-  default: diff
-  enum:
-  - never
-  - always
-  - diff
-  - older
-  - diff+older
-  cli:
-    opt-type: opt_with_arg
-password:
-  description: >-
-    Password for local Windows user when transfer user associated with node api user is not
-    the same as the one running asperanoded.
+      (0=no file is split)
+    type: integer
+    x-agents:
+    - direct
+    - node
+  overwrite:
+    description: "Overwrite destination files with the source files of the same name."
+    default: diff
+    enum:
+    - never
+    - always
+    - diff
+    - older
+    - diff+older
+  password:
+    description: >-
+      Password for local Windows user when transfer user associated with node api user is not
+      the same as the one running asperanoded.
 
-    Allows impersonating the transfer user and have access to resources (e.g. network shares).
+      Allows impersonating the transfer user and have access to resources (e.g. network shares).
 
-    Windows only, node api only.
-  type: string
-  agents:
-  - :node
-  cli:
-    opt-type: ignore
-paths:
-  description: Array of path to the source (required) and a path to the destination (optional).
-  required: true
-  type: array
-  cli:
-    opt-type: special
-precalculate_job_size:
-  description: Specifies whether to precalculate the job size.
-  type: boolean
-  cli:
-    opt-type: opt_without_arg
-preserve_access_time:
-  description: >-
-    Preserve the source-file access timestamps at the destination.
+      Windows only, node api only.
+    type: string
+    x-agents:
+    - node
+    x-cli-ignore: true
+  paths:
+    description: Array of path to the source (required) and a path to the destination (optional).
+    type: array
+    x-cli-special: true
+  precalculate_job_size:
+    description: Specifies whether to precalculate the job size.
+    type: boolean
+    x-cli-switch: true
+  preserve_access_time:
+    description: >-
+      Preserve the source-file access timestamps at the destination.
 
-    Because source access times are updated by the transfer operation,
-    the timestamp that is preserved is the one just before to the transfer.
-  cli:
-    opt-type: opt_without_arg
-preserve_creation_time:
-  description: >-
-    (Windows only) Preserve source-file creation timestamps at the destination.
+      Because source access times are updated by the transfer operation,
+      the timestamp that is preserved is the one just before to the transfer.
+    x-cli-switch: true
+  preserve_creation_time:
+    description: >-
+      (Windows only) Preserve source-file creation timestamps at the destination.
 
-    Only Windows systems retain information about creation time.
+      Only Windows systems retain information about creation time.
 
-    If the destination is not a Windows computer, this option is ignored.
-  cli:
-    opt-type: opt_without_arg
-preserve_modification_time:
-  description: >-
-    Set the modification time, the last time a file or directory was modified (written),
-    of a transferred file to the modification of the source file or directory.
+      If the destination is not a Windows computer, this option is ignored.
+    x-cli-switch: true
+  preserve_modification_time:
+    description: >-
+      Set the modification time, the last time a file or directory was modified (written),
+      of a transferred file to the modification of the source file or directory.
 
-    Preserve source-file modification timestamps at the destination.
-  cli:
-    opt-type: opt_without_arg
-preserve_times:
-  description: Preserve file timestamps. 
-  agents:
-  - :sdk
-  - :node
-  cli:
-    opt-type: opt_without_arg
-rate_policy:
-  description: The transfer rate policy to use when sharing bandwidth.
-  enum:
-  - low
-  - fair
-  - high
-  - fixed
-  cli:
-    opt-type: opt_with_arg
-    switch: "--policy"
-remote_access_key:
-  description: The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.
-  type: string
-  agents:
-  - :sdk
-  cli:
-    opt-type: ignore
-remote_host:
-  description: IP or fully qualified domain name of the remote server
-  required: true
-  cli:
-    opt-type: opt_with_arg
-    switch: "--host"
-remote_user:
-  description: Remote user. Default value is "xfer" on node or connect.
-  required: true
-  cli:
-    opt-type: opt_with_arg
-    switch: "--user"
-remote_password:
-  description: SSH session password
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_PASS
-remove_after_transfer:
-  description: Remove SRC files after transfer success
-  type: boolean
-  agents:
-  - :direct
-  - :node
-  cli:
-    opt-type: opt_without_arg
-remove_empty_directories:
-  description: Specifies whether to remove empty directories.
-  type: boolean
-  agents:
-  - :direct
-  - :node
-  cli:
-    opt-type: opt_without_arg
-remove_skipped:
-  description: Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.
-  type: boolean
-  agents:
-  - :direct
-  - :connect
-  - :sdk
-  - :node
-  cli:
-    opt-type: opt_without_arg
-proxy:
-  description: >-
-    Specify the address of the Aspera high-speed proxy server.
+      Preserve source-file modification timestamps at the destination.
+    x-cli-switch: true
+  preserve_times:
+    description: Preserve file timestamps. 
+    x-agents:
+    - sdk
+    - node
+    x-cli-switch: true
+  rate_policy:
+    description: The transfer rate policy to use when sharing bandwidth.
+    enum:
+    - low
+    - fair
+    - high
+    - fixed
+    x-cli-option: "--policy"
+  remote_access_key:
+    description: The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.
+    type: string
+    x-agents:
+    - sdk
+    x-cli-ignore: true
+  remote_host:
+    description: IP or fully qualified domain name of the remote server
+    x-cli-option: "--host"
+  remote_user:
+    description: Remote user. Default value is "xfer" on node or connect.
+    x-cli-option: "--user"
+  remote_password:
+    description: SSH session password
+    x-cli-envvar: ASPERA_SCP_PASS
+  remove_after_transfer:
+    description: Remove SRC files after transfer success
+    type: boolean
+    x-agents:
+    - direct
+    - node
+    x-cli-switch: true
+  remove_empty_directories:
+    description: Specifies whether to remove empty directories.
+    type: boolean
+    x-agents:
+    - direct
+    - node
+    x-cli-switch: true
+  remove_skipped:
+    description: Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.
+    type: boolean
+    x-agents:
+    - direct
+    - connect
+    - sdk
+    - node
+    x-cli-switch: true
+  proxy:
+    description: >-
+      Specify the address of the Aspera high-speed proxy server.
 
-    dnat(s)://[user[:password]@]server:port
+      dnat(s)://[user[:password]@]server:port
 
-    Default ports for DNAT and DNATS protocols are 9091 and 9092.
+      Default ports for DNAT and DNATS protocols are 9091 and 9092.
 
-    Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
-  agents:
-  - :direct
-  - :sdk
-  cli:
-    opt-type: opt_with_arg
-resume_policy:
-  description: If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.
-  default: faspmgr:none;other:sparse_csum
-  enum:
-  - none
-  - attrs
-  - sparse_csum
-  - full_csum
-  cli:
-    opt-type: opt_with_arg
-    switch: "-k"
-    convert:
+      Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.
+    x-agents:
+    - direct
+    - sdk
+  resume_policy:
+    description: If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.
+    default: faspmgr:none;other:sparse_csum
+    enum:
+    - none
+    - attrs
+    - sparse_csum
+    - full_csum
+    x-cli-option: "-k"
+    x-cli-enum-convert:
       none: 0
       attrs: 1
       sparse_csum: 2
       full_csum: 3
-retry_duration:
-  description: Specifies how long to wait before retrying transfer. (e.g. "5min")
-  type: integer
-  x-type: string
-  agents:
-  - :sdk
-  cli:
-    opt-type: ignore
-source_root_id:
-  description: The file ID of the source root directory. Required when using Bearer token auth for the source node.
-  type: string
-  agents:
-  - :sdk
-  - :node
-  cli:
-    opt-type: ignore
-ssh_port:
-  description: "Specifies SSH (TCP) port. Default: local:22, other:33001"
-  type: integer
-  cli:
-    opt-type: opt_with_arg
-    switch: "-P"
-ssh_private_key:
-  description: >-
-    Private key used for SSH authentication.
+  retry_duration:
+    description: Specifies how long to wait before retrying transfer. (e.g. "5min")
+    type: integer
+    x-type: string
+    x-agents:
+    - sdk
+    x-cli-ignore: true
+  source_root_id:
+    description: The file ID of the source root directory. Required when using Bearer token auth for the source node.
+    type: string
+    x-agents:
+    - sdk
+    - node
+    x-cli-ignore: true
+  ssh_port:
+    description: "Specifies SSH (TCP) port. Default: local:22, other:33001"
+    type: integer
+    x-cli-option: "-P"
+  ssh_private_key:
+    description: >-
+      Private key used for SSH authentication.
 
-    Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...
+      Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...
 
-    Note the JSON encoding: &bsol;n for newlines.
-  agents:
-  - :direct
-  - :sdk
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_KEY
-ssh_private_key_passphrase:
-  description: The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.
-  type: string
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_PASS
-ssh_args:
-  description: Array of arguments to pass to SSH. Use with caution.
-  type: string
-  agents:
-  - :sdk
-  cli:
-    opt-type: ignore
-symlink_policy:
-  description: "Handle source side symbolic links"
-  enum:
-  - follow
-  - copy
-  - copy+force
-  - skip
-  default: follow
-  cli:
-    opt-type: opt_with_arg
-    switch: "--symbolic-links"
-tags:
-  description: >-
-    Metadata for transfer as JSON.
-    Key `aspera` is reserved.
-    Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
-  type: object
-  cli:
-    opt-type: opt_with_arg
-    switch: "--tags64"
-    convert: Aspera::Transfer::Parameters.convert_json64
-target_rate_cap_kbps:
-  description: Returned by upload/download_setup node API.
-  type: integer
-  agents:
-  - :connect
-  cli:
-    opt-type: ignore
-target_rate_kbps:
-  description: Specifies desired speed for the transfer.
-  type: integer
-  cli:
-    opt-type: opt_with_arg
-    switch: "-l"
-title:
-  description: Title of the transfer
-  type: string
-  agents:
-  - :node
-  - :connect
-  - :sdk
-  cli:
-    opt-type: ignore
-token:
-  description: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
-  cli:
-    opt-type: envvar
-    variable: ASPERA_SCP_TOKEN
-use_ascp4:
-  description: specify version of protocol
-  type: boolean
-  default: false
-  agents:
-  - :direct
-  - :node
-  - :sdk
-  cli:
-    opt-type: special
-use_system_ssh:
-  description: TODO, comment...
-  type: string
-  agents:
-  - :sdk
-  cli:
-    opt-type: ignore
-    switch: "-SSH"
-source_root:
-  description: >-
-    Path to be prepended to each source path.
+      Note the JSON encoding: &bsol;n for newlines.
+    x-agents:
+    - direct
+    - sdk
+    x-cli-envvar: ASPERA_SCP_KEY
+  ssh_private_key_passphrase:
+    description: The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.
+    type: string
+    x-agents:
+    - sdk
+    - direct
+    x-cli-envvar: ASPERA_SCP_PASS
+  ssh_args:
+    description: Array of arguments to pass to SSH. Use with caution.
+    type: string
+    x-agents:
+    - sdk
+    x-cli-ignore: true
+  symlink_policy:
+    description: "Handle source side symbolic links"
+    enum:
+    - follow
+    - copy
+    - copy+force
+    - skip
+    default: follow
+    x-cli-option: "--symbolic-links"
+  tags:
+    description: >-
+      Metadata for transfer as JSON.
+      Key `aspera` is reserved.
+      Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
+    type: object
+    x-cli-option: "--tags64"
+    x-cli-convert: json64
+  target_rate_cap_kbps:
+    description: Returned by upload/download_setup node API.
+    type: integer
+    x-agents:
+    - connect
+    x-cli-ignore: true
+  target_rate_kbps:
+    description: Specifies desired speed for the transfer.
+    type: integer
+    x-cli-option: "-l"
+  title:
+    description: Title of the transfer
+    type: string
+    x-agents:
+    - node
+    - connect
+    - sdk
+    x-cli-ignore: true
+  token:
+    description: 'Authorization token: Bearer, Basic or ATM (Also arg -W)'
+    x-cli-envvar: ASPERA_SCP_TOKEN
+  use_ascp4:
+    description: specify version of protocol
+    type: boolean
+    default: false
+    x-agents:
+    - direct
+    - node
+    - sdk
+    x-cli-special: true
+  use_system_ssh:
+    description: TODO, comment...
+    type: string
+    x-agents:
+    - sdk
+    x-cli-ignore: true
+    x-cli-option: "-SSH"
+  source_root:
+    description: >-
+      Path to be prepended to each source path.
 
-    This is either a conventional path or it can be a URI but only if there is no root defined.
-  cli:
-    opt-type: opt_with_arg
-    switch: "--source-prefix64"
-    convert: Aspera::Transfer::Parameters.convert_base64
-min_rate_cap_kbps:
-  description: >-
-    The highest minimum rate that an incoming transfer can request, in kilobits per second.
+      This is either a conventional path or it can be a URI but only if there is no root defined.
+    x-cli-option: "--source-prefix64"
+    x-cli-convert: base64
+  min_rate_cap_kbps:
+    description: >-
+      The highest minimum rate that an incoming transfer can request, in kilobits per second.
 
-    Client minimum rate requests that exceed the minimum rate cap are ignored.
+      Client minimum rate requests that exceed the minimum rate cap are ignored.
 
-    The default value of unlimited applies no cap to the minimum rate. (Default: 0)
-  type: integer
-  cli:
-    opt-type: ignore
-lock_rate_policy:
-  description: If true, lock the rate policy to the default value.
-  type: boolean
-  agents:
-  - :sdk
-  - :connect
-  cli:
-    opt-type: ignore
-lock_target_rate_kbps:
-  description: >-
-    If true, lock the target transfer rate to the default value set for target_rate_kbps.
+      The default value of unlimited applies no cap to the minimum rate. (Default: 0)
+    type: integer
+    x-cli-ignore: true
+  lock_rate_policy:
+    description: If true, lock the rate policy to the default value.
+    type: boolean
+    x-agents:
+    - sdk
+    - connect
+    x-cli-ignore: true
+  lock_target_rate_kbps:
+    description: >-
+      If true, lock the target transfer rate to the default value set for target_rate_kbps.
 
-    If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
-  type: boolean
-  cli:
-    opt-type: ignore
-lock_min_rate_kbps:
-  description: >-
-    If true, lock the minimum transfer rate to the value set for min_rate_kbps.
+      If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+    type: boolean
+    x-cli-ignore: true
+  lock_min_rate_kbps:
+    description: >-
+      If true, lock the minimum transfer rate to the value set for min_rate_kbps.
 
-    If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
-  type: boolean
-  agents:
-  - :sdk
-  - :connect
-  cli:
-    opt-type: ignore
-apply_local_docroot:
-  description: Apply local docroot to source paths.
-  agents:
-  - :direct
-  - :sdk
-  cli:
-    opt-type: opt_without_arg
-src_base:
-  description: >-
-    Specify the prefix to be stripped off from each source object.
+      If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.
+    type: boolean
+    x-agents:
+    - sdk
+    - connect
+    x-cli-ignore: true
+  apply_local_docroot:
+    description: Apply local docroot to source paths.
+    x-agents:
+    - direct
+    - sdk
+    x-cli-switch: true
+  src_base:
+    description: >-
+      Specify the prefix to be stripped off from each source object.
 
-    The remaining portion of the source path is kept intact at the destination.
+      The remaining portion of the source path is kept intact at the destination.
 
-    Special care must be taken when used with cloud storage.
-  agents:
-  - :direct
-  - :node
-  - :sdk
-  cli:
-    opt-type: opt_with_arg
-    switch: "--src-base64"
-    convert: Aspera::Transfer::Parameters.convert_base64
-preserve_acls:
-  description: "Preserve access control lists."
-  enum:
-  - none
-  - native
-  - metafile
-  default: none
-  agents:
-  - :direct
-  - :sdk
-  cli:
-    opt-type: opt_with_arg
-preserve_remote_acls:
-  description: "Preserve remote access control lists."
-  enum:
-  - none
-  - native
-  - metafile
-  default: none
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: opt_with_arg
-    switch: "--remote-preserve-acls"
-preserve_file_owner_uid:
-  description: Preserve the user ID for a file owner
-  type: boolean
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: opt_without_arg
-preserve_file_owner_gid:
-  description: Preserve the group ID for a file owner
-  type: boolean
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: opt_without_arg
-preserve_extended_attrs:
-  description: "Preserve the extended attributes."
-  enum:
-  - none
-  - native
-  - metafile
-  default: none
-  agents:
-  - :sdk
-  cli:
-    opt-type: opt_with_arg
-    switch: "--preserve-xattrs"
-preserve_source_access_time:
-  description: Preserve the time logged for when the source file was accessed
-  type: boolean
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: opt_without_arg
-remove_empty_source_directory:
-  description: "Remove empty source subdirectories and remove the source directory itself, if empty"
-  type: boolean
-  agents:
-  - :direct
-  - :sdk
-  cli:
-    opt-type: opt_without_arg
-keepalive:
-  description: The session is running in persistent session mode.
-  agents:
-  - :sdk
-  - :direct
-  cli:
-    opt-type: opt_without_arg
-dgram_size:
-  description: UDP datagram size in bytes
-  type: integer
-  cli:
-    opt-type: opt_with_arg
-    switch: "-Z"
-min_rate_kbps:
-  description: Set the minimum transfer rate in kilobits per second.
-  type: integer
-  default: 0
-  cli:
-    opt-type: opt_with_arg
-    switch: "-m"
-sshfp:
-  description: Check it against server SSH host key fingerprint
-  cli:
-    opt-type: opt_with_arg
-    switch: "--check-sshfp"
-target_rate_percentage:
-  description: "TODO: remove ?"
-  cli:
-    opt-type: ignore
-rate_policy_allowed:
-  description: "Specifies most aggressive rate policy that is allowed.\nReturned by node API."
-  enum:
-  - low
-  - fair
-  - high
-  - fixed
-  agents:
-  - :connect
-  cli:
-    opt-type: ignore
-fasp_url:
-  description: Only used in Faspex.
-  agents:
-  - :unknown
-  cli:
-    opt-type: ignore
-lock_min_rate:
-  description: "TODO: remove ?"
-  type: boolean
-  cli:
-    opt-type: ignore
-lock_target_rate:
-  description: "TODO: remove ?"
-  type: boolean
-  cli:
-    opt-type: ignore
-authentication:
-  description: 'value=token for SSH bypass keys, else password asked if not provided.'
-  agents:
-  - :connect
-  cli:
-    opt-type: ignore
-cipher_allowed:
-  description: returned by node API. Valid literals include "aes-128" and "none".
-  cli:
-    opt-type: ignore
-obfuscate_file_names:
-  description: HTTP Gateway obfuscates file names when set to true.
-  type: boolean
-  agents:
-  - :httpgw
-  cli:
-    opt-type: ignore
-wss_enabled:
-  description: Server has Web Socket service enabled
-  type: boolean
-  cli:
-    opt-type: special
-wss_port:
-  description: TCP port used for websocket service feed
-  type: integer
-  cli:
-    opt-type: special
-compression:
-  description: ascp4 only, 0 / 1?
-  type: integer
-  agents:
-  - :unknown
-  cli:
-    opt-type: ignore
-read_threads:
-  description: ascp4 only
-  type: integer
-  agents:
-  - :unknown
-  cli:
-    opt-type: ignore
-write_threads:
-  description: ascp4 only
-  type: integer
-  agents:
-  - :unknown
-  cli:
-    opt-type: ignore
-xfer_max_retries:
-  description: maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).
-  type: integer
-  agents:
-  - :node
-  cli:
-    opt-type: ignore
+      Special care must be taken when used with cloud storage.
+    x-agents:
+    - direct
+    - node
+    - sdk
+    x-cli-option: "--src-base64"
+    x-cli-convert: base64
+  preserve_acls:
+    description: "Preserve access control lists."
+    enum:
+    - none
+    - native
+    - metafile
+    default: none
+    x-agents:
+    - direct
+    - sdk
+  preserve_remote_acls:
+    description: "Preserve remote access control lists."
+    enum:
+    - none
+    - native
+    - metafile
+    default: none
+    x-agents:
+    - sdk
+    - direct
+    x-cli-option: "--remote-preserve-acls"
+  preserve_file_owner_uid:
+    description: Preserve the user ID for a file owner
+    type: boolean
+    x-agents:
+    - sdk
+    - direct
+    x-cli-switch: true
+  preserve_file_owner_gid:
+    description: Preserve the group ID for a file owner
+    type: boolean
+    x-agents:
+    - sdk
+    - direct
+    x-cli-switch: true
+  preserve_extended_attrs:
+    description: "Preserve the extended attributes."
+    enum:
+    - none
+    - native
+    - metafile
+    default: none
+    x-agents:
+    - sdk
+    x-cli-option: "--preserve-xattrs"
+  preserve_source_access_time:
+    description: Preserve the time logged for when the source file was accessed
+    type: boolean
+    x-agents:
+    - sdk
+    - direct
+    x-cli-switch: true
+  remove_empty_source_directory:
+    description: "Remove empty source subdirectories and remove the source directory itself, if empty"
+    type: boolean
+    x-agents:
+    - direct
+    - sdk
+    x-cli-switch: true
+  keepalive:
+    description: The session is running in persistent session mode.
+    x-agents:
+    - sdk
+    - direct
+    x-cli-switch: true
+  dgram_size:
+    description: UDP datagram size in bytes
+    type: integer
+    x-cli-option: "-Z"
+  min_rate_kbps:
+    description: Set the minimum transfer rate in kilobits per second.
+    type: integer
+    default: 0
+    x-cli-option: "-m"
+  sshfp:
+    description: Check it against server SSH host key fingerprint
+    x-cli-option: "--check-sshfp"
+  target_rate_percentage:
+    description: "TODO: remove ?"
+    x-cli-ignore: true
+  rate_policy_allowed:
+    description: "Specifies most aggressive rate policy that is allowed.\nReturned by node API."
+    enum:
+    - low
+    - fair
+    - high
+    - fixed
+    x-agents:
+    - connect
+    x-cli-ignore: true
+  fasp_url:
+    description: Only used in Faspex.
+    x-agents:
+    - unknown
+    x-cli-ignore: true
+  lock_min_rate:
+    description: "TODO: remove ?"
+    type: boolean
+    x-cli-ignore: true
+  lock_target_rate:
+    description: "TODO: remove ?"
+    type: boolean
+    x-cli-ignore: true
+  authentication:
+    description: 'value=token for SSH bypass keys, else password asked if not provided.'
+    x-agents:
+    - connect
+    x-cli-ignore: true
+  cipher_allowed:
+    description: returned by node API. Valid literals include "aes-128" and "none".
+    x-cli-ignore: true
+  obfuscate_file_names:
+    description: HTTP Gateway obfuscates file names when set to true.
+    type: boolean
+    x-agents:
+    - httpgw
+    x-cli-ignore: true
+  wss_enabled:
+    description: Server has Web Socket service enabled
+    type: boolean
+    x-cli-special: true
+  wss_port:
+    description: TCP port used for websocket service feed
+    type: integer
+    x-cli-special: true
+  compression:
+    description: ascp4 only, 0 / 1?
+    type: integer
+    x-agents:
+    - unknown
+    x-cli-ignore: true
+  read_threads:
+    description: ascp4 only
+    type: integer
+    x-agents:
+    - unknown
+    x-cli-ignore: true
+  write_threads:
+    description: ascp4 only
+    type: integer
+    x-agents:
+    - unknown
+    x-cli-ignore: true
+  xfer_max_retries:
+    description: maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).
+    type: integer
+    x-agents:
+    - node
+    x-cli-ignore: true

@@ -714,7 +714,7 @@ module Aspera
           when :spec
             return Main.result_object_list(
               Transfer::Parameters.man_table(formatter, cli: false),
-              fields: Transfer::Parameters::FIELDS.map(&:to_s)
+              fields: Transfer::Parameters::TABLE_COLUMNS.map(&:to_s)
             )
           when :errors
             error_data = []

@@ -35,9 +35,9 @@ module Aspera
           XFER_DIR_TO_TYPE.fetch(direction)
         end
       end
-      DESCRIPTION = CommandLineBuilder.read_description(__FILE__)
+      SCHEMA = CommandLineBuilder.read_schema(__FILE__)
       # define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
-      DESCRIPTION.each do |name, description|
+      SCHEMA['properties'].each do |name, description|
         next unless description['enum'].is_a?(Array)
         const_set(:"#{name.to_s.upcase}_ENUM_VALUES", description['enum'])
         description['enum'].each do |enum|
