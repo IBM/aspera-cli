@@ -108,7 +108,7 @@ module Aspera
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
         # actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download http_node_download sync transport]
+        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete browse upload download cat sync transport]
 
         BASE_ACTIONS = %i[api_details].concat(COMMANDS_GEN3).freeze
 
@@ -126,7 +126,7 @@ module Aspera
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info browse find].freeze
 
         # commands for execute_command_gen4
-        COMMANDS_GEN4 = %i[mkdir rename delete upload download sync http_node_download show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
+        COMMANDS_GEN4 = %i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3].concat(NODE4_READ_ACTIONS).freeze
 
         # commands supported in ATS for COS
         COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
@@ -368,14 +368,13 @@ module Aspera
             # delete this part, as the returned value contains only destination, and not sources
             transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
-          when :http_node_download
+          when :cat
             remote_path = get_one_argument_with_prefix(prefix_path, 'remote path')
-            file_name = File.basename(remote_path)
-            @api_node.call(
+            File.basename(remote_path)
+            result = @api_node.call(
               operation: 'GET',
-              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents",
-              save_to_file: File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_name))
-            return Main.result_status("downloaded: #{file_name}")
+              subpath: "files/#{URI.encode_www_form_component(remote_path)}/contents")
+            return Main.result_text(result[:http].body)
           when :transport
             return Main.result_single_object(@api_node.transport_params)
           end
@@ -519,13 +518,41 @@ module Aspera
             apifid = apifid_from_next_arg(top_file_id)
             find_lambda = Api::Node.file_matcher_from_argument(options)
             return Main.result_object_list(@api_node.find_files(apifid[:file_id], find_lambda), fields: ['path'])
-          when :mkdir
+          when :mkdir, :mklink, :mkfile
             containing_folder_path = options.get_next_argument('path').split(Api::Node::PATH_SEPARATOR)
-            new_folder = containing_folder_path.pop
-            # add trailing slash to force last link to be resolved
+            new_item = containing_folder_path.pop
             apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path.join(Api::Node::PATH_SEPARATOR), true)
-            result = apifid[:api].create("files/#{apifid[:file_id]}/files", {name: new_folder, type: :folder})
-            return Main.result_status("created: #{result['name']} (id=#{result['id']})")
+            query = options.get_option(:query, mandatory: false)
+            check_exists = true
+            payload = {name: new_item}
+            if query
+              check_exists = !query.delete('check').eql?(false)
+              target = query.delete('target')
+              if target
+                target_apifid = @api_node.resolve_api_fid(top_file_id, target, true)
+                payload[:target_id] = target_apifid[:file_id]
+              end
+              payload.merge!(query.symbolize_keys)
+            end
+            if check_exists
+              folder_content = apifid[:api].read("files/#{apifid[:file_id]}/files")
+              link_name = ".#{new_item}.asp-lnk"
+              found = folder_content.find{ |i| i['name'].eql?(new_item) || i['name'].eql?(link_name)}
+              raise "A #{found['type']} already exists with name #{new_item}" if found
+            end
+            case command_repo
+            when :mkdir
+              payload[:type] = :folder
+            when :mklink
+              payload[:type] = :link
+              Aspera.assert(payload[:target_id]){'Missing target_id'}
+              Aspera.assert(payload[:target_node_id]){'Missing target_node_id'}
+            when :mkfile
+              payload[:type] = :file
+              payload[:contents] = Base64.strict_encode64(options.get_next_argument('contents'))
+            end
+            result = apifid[:api].create("files/#{apifid[:file_id]}/files", payload)
+            return Main.result_single_object(result)
           when :rename
             file_path = options.get_next_argument('source path')
             apifid = @api_node.resolve_api_fid(top_file_id, file_path)
@@ -589,7 +616,7 @@ module Aspera
               end
             end
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
-          when :http_node_download
+          when :cat
             source_paths = transfer.ts_source_paths
             source_folder = source_paths.shift['source']
             if source_paths.empty?
@@ -600,11 +627,10 @@ module Aspera
             raise Cli::BadArgument, 'one file at a time only in HTTP mode' if source_paths.length > 1
             file_name = source_paths.first['source']
             apifid = @api_node.resolve_api_fid(top_file_id, File.join(source_folder, file_name))
-            apifid[:api].call(
+            result = apifid[:api].call(
               operation: 'GET',
-              subpath: "files/#{apifid[:file_id]}/content",
-              save_to_file: File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_name))
-            return Main.result_status("downloaded: #{file_name}")
+              subpath: "files/#{apifid[:file_id]}/content")
+            return Main.result_text(result[:http].body)
           when :show
             apifid = apifid_from_next_arg(top_file_id)
             items = apifid[:api].read("files/#{apifid[:file_id]}")

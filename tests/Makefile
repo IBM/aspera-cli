@@ -599,7 +599,7 @@ $(T)nd_slash: $(TMP_EXISTS)
 $(T)nd2_http: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) node upload $(TST_ASC_LCL_PATH) --to-folder=@preset:server.upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
-	$(INCMAN)$(CLI_TEST) node http_node_download @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
+	$(INCMAN)$(CLI_TEST) node cat @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME) --to-folder=$(DIR_TMP).
 	$(INCMAN)$(CLI_TEST) node delete @extend:@preset:server.upload_folder@/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)nd_2_nd_xfer: $(TMP_EXISTS)
@@ -851,7 +851,7 @@ $(T)aocfdowna: $(T)aoc_tstdst
 	@$(STOP_TEST) $@
 $(T)aocfhttpd: $(T)aocftr
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) aoc files http_node_download --to-folder=$(DIR_TMP). testdst/$(TST_ASC_FILENAME)
+	$(INCMAN)$(CLI_TEST) aoc files cat --to-folder=$(DIR_TMP). testdst/$(TST_ASC_FILENAME)
 	@$(STOP_TEST) $@
 $(T)aocfv3inf: $(TMP_EXISTS)
 	@$(START_TEST) $@

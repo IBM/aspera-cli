@@ -8,12 +8,15 @@
     * `vault`: Support for IBM HashiCorp Vault to store secrets.
     * `wizard`: Preset name can now be specified as optional positional parameter.
     * `config`: New command `ascp schema` displays JSON schema for transfer spec for all, or just one agent.
+    * `node`: #198 By default do not allow creation of folder if a link exists with the same name. Use option `query` with parameter `check` set to `false` to disable.
+    * `node`: In gen4 operations, also used in `aoc files`, new commands: `mklink`, `mkfile`.
   * Issues Fixed:
     * `aoc`: #195 `package receive ALL` for shared inbox without workspace now works.
   * Breaking Changes:
     * `faspex5`, `aoc`: `gateway` now takes argument as `Hash` with `url` instead of only `String`.
     * `faspex5 postprocessing`: Now takes a flat `Hash`, instead of multi-level `Hash`.
     * HTTP: More retry parameters.
+    * `node`: renamed command `http_node_download` to `cat`, and it directly displays the content of the file in the terminal unless option `--output` is specified.
 
 * 4.21.2
 
