@@ -4028,7 +4028,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User's name to log in
@@ -5520,13 +5520,13 @@ files browse / --url=my_public_link_folder_pass --password=my_public_link_passwo
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
+files cat --to-folder=. testdst/test_file.bin
 files delete /testsrc
 files download --transfer=connect testdst/test_file.bin
 files download --transfer=desktop testdst/test_file.bin
 files find /
 files find / '\.partial$'
 files find / @ruby:'->(f){f["type"].eql?("file")}'
-files http_node_download --to-folder=. testdst/test_file.bin
 files mkdir /testsrc
 files modify my_test_folder
 files permission my_test_folder list
@@ -6320,6 +6320,7 @@ async show ALL
 basic_token
 bearer_token @file:my_private_key @json:'{"user_id":"666"}' --output=bearer_666
 browse / --log-level=trace2
+cat my_upload_folder/test_file.bin --to-folder=.
 central file list
 central file modify --validator=1 @json:'{"files":[]}'
 central session list
@@ -6327,7 +6328,6 @@ delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder
 delete my_upload_folder/test_file.bin
 download my_upload_folder/test_file.bin --to-folder=.
 health
-http_node_download my_upload_folder/test_file.bin --to-folder=.
 info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 license
 mkdir my_upload_folder/a_folder
