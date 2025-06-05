@@ -3258,7 +3258,7 @@ All parameters necessary for this transfer are described in a [**transfer-spec**
 - Etc...
 
 `ascli` builds the [**transfer-spec**](#transfer-specification) internally as a `Hash`.
-It is not necessary to provide additional parameters on the command line for this transfer.
+It is not necessary to provide additional parameters on the command line for a transfer.
 
 It is possible to modify or add any of the supported [**transfer-spec**](#transfer-specification) parameter using the `ts` option.
 The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) containing one or several [**transfer-spec**](#transfer-specification) parameters.
@@ -3293,6 +3293,19 @@ Parameters can be displayed with commands:
 ascli config ascp spec
 ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
+
+A JSON Schema can be generated with command:
+
+```bash
+ascli config ascp schema --format=jsonpp
+```
+
+An optional parameter can be specified to display the schema for a specific transfer agent:
+
+```bash
+ascli config ascp schema transferd --format=jsonpp
+```
+
 `ascp` argument or environment variable is provided in description.
 
 | ID | Name |
@@ -3307,42 +3320,45 @@ ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 | Field | Type | A | C | D | H | N | T | Description |
 | ----- | ---- | - | - | - | - | - | - | ----------- |
 | apply_local_docroot | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Apply local docroot to source paths.<br/>(--apply-local-docroot) |
-| authentication | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | value=token for SSH bypass keys, else password asked if not provided.<br/>(&lt;ignored&gt;) |
+| authentication | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | value=token for SSH bypass keys, else password asked if not provided. |
 | cipher | string | Y | Y | Y | Y | Y | Y | In transit encryption algorithms.<br/>Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm<br/>(-c (conversion){enum}) |
-| cipher_allowed | string | Y | Y | Y | Y | Y | Y | returned by node API. Valid literals include "aes-128" and "none".<br/>(&lt;ignored&gt;) |
-| compression | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only, 0 / 1?<br/>(&lt;ignored&gt;) |
+| cipher_allowed | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | returned by node API. Valid literals include "aes-128" and "none". |
+| compression | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only, 0 / 1? |
 | content_protection | string | Y | Y | Y | Y | Y | Y | Enable client-side encryption at rest. (CSEAR, content protection)<br/>Allowed values: encrypt, decrypt<br/>(--file-crypt={enum}) |
 | content_protection_password | string | Y | Y | Y | Y | Y | Y | Specifies CSEAR password. (content protection)<br/>(env:ASPERA_SCP_FILEPASS) |
 | cookie | string | Y | Y | Y | Y | Y | Y | Metadata for transfer specified by application<br/>(env:ASPERA_SCP_COOKIE) |
 | create_dir | boolean | Y | Y | Y | Y | Y | Y | Specifies whether to create new directories.<br/>(-d) |
 | delete_before_transfer | boolean | Y | Y | Y | Y | Y | Y | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(--delete-before-transfer) |
-| delete_source | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
+| delete_source | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
 | destination_root | string | Y | Y | Y | Y | Y | Y | Destination root directory.<br/>(&lt;special&gt;) |
-| destination_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(&lt;ignored&gt;) |
+| destination_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node. |
 | dgram_size | integer | Y | Y | Y | Y | Y | Y | UDP datagram size in bytes<br/>(-Z {integer}) |
 | direction | string | Y | Y | Y | Y | Y | Y | Direction of transfer (on client side)<br/>Allowed values: send, receive<br/>(--mode=(conversion){enum}) |
 | exclude_newer_than | string | Y | Y | Y | Y | Y | Y | Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.<br/>e.g. "-86400" for newer than a day back.<br/>(--exclude-newer-than={string}) |
 | exclude_older_than | string | Y | Y | Y | Y | Y | Y | Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.<br/>e.g. "-86400" for older than a day back.<br/>(--exclude-older-than={string}) |
+| fail_bad_filepass | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Fail on bad file decryption passphrase.<br/>(--fail-bad-filepass) |
 | fasp_port | integer | Y | Y | Y | Y | Y | Y | Specifies fasp (UDP) port.<br/>(-O {integer}) |
-| fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex.<br/>(&lt;ignored&gt;) |
-| file_checksum | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(&lt;ignored&gt;) |
+| fasp_proxy | object | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Proxy for communications between the remote server and the (local) client. |
+| fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex. |
+| file_checksum | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(--file-checksum={enum}) |
 | http_fallback | boolean | Y | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){boolean}\|{string}) |
-| http_fallback_port | integer | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specifies http port when no cipher is used<br/>(-t {integer}) |
+| http_fallback_port | integer | Y | Y | Y | Y | Y | Y | Specifies http port when no cipher is used<br/>(-t {integer}) |
 | https_fallback_port | integer | Y | Y | Y | Y | Y | Y | Specifies https port when cipher is used<br/>(-t {integer}) |
+| icos | object | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Configuration parameters for IBM Cloud Object Storage (ICOS). |
 | keepalive | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The session is running in persistent session mode.<br/>(--keepalive) |
-| lock_min_rate | boolean | Y | Y | Y | Y | Y | Y | TODO: remove ?<br/>(&lt;ignored&gt;) |
-| lock_min_rate_kbps | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;) |
-| lock_rate_policy | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the rate policy to the default value.<br/>(&lt;ignored&gt;) |
-| lock_target_rate | boolean | Y | Y | Y | Y | Y | Y | TODO: remove ?<br/>(&lt;ignored&gt;) |
-| lock_target_rate_kbps | boolean | Y | Y | Y | Y | Y | Y | If true, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(&lt;ignored&gt;) |
-| min_rate_cap_kbps | integer | Y | Y | Y | Y | Y | Y | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(&lt;ignored&gt;) |
+| lock_min_rate | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | TODO: remove ? |
+| lock_min_rate_kbps | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps. |
+| lock_rate_policy | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the rate policy to the default value. |
+| lock_target_rate | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | TODO: remove ? |
+| lock_target_rate_kbps | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps. |
+| min_rate_cap_kbps | integer | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0) |
 | min_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Set the minimum transfer rate in kilobits per second.<br/>(-m {integer}) |
-| move_after_transfer | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.<br/>(--move-after-transfer={string}) |
+| move_after_transfer | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.<br/>(--move-after-transfer={string}) |
 | multi_session | integer | Y | Y | Y | Y | Y | Y | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with resume_policy=none.<br/>(&lt;special&gt;) |
-| multi_session_threshold | integer | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(--multi-session-threshold={integer}) |
-| obfuscate_file_names | boolean | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | HTTP Gateway obfuscates file names when set to true.<br/>(&lt;ignored&gt;) |
-| overwrite | string | Y | Y | Y | Y | Y | Y | Overwrite destination files with the source files of the same name.<br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite={enum}) |
-| password | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node api only.<br/>(&lt;ignored&gt;) |
+| multi_session_threshold | integer | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(--multi-session-threshold={integer}) |
+| obfuscate_file_names | boolean | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | HTTP Gateway obfuscates file names when set to true. |
+| overwrite | string | Y | Y | Y | Y | Y | Y | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- always – Always overwrite the file.<br/>- never – Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- diff – Overwrite the file if it is different from the source,  depending on the compare method (default is size).  If the destination is object storage, diff has the same effect as always.  If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped.  If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume. <br/>- diff+older – Overwrite the file if it is older and different from the source,  depending on the compare method (default is size).  If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped.  If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed. <br/>- older – Overwrite the file if its timestamp is older than the source timestamp. <br/>If you set an overwrite policy of diff or diff+older, difference is determined  by the value set for resume_policy:<br/>"none" - the source and destination files are always considered different and  the destination file is always overwritten<br/>"attributes" - the source and destination files are compared based on file attributes <br/>"sparse_checksum" - the source and destination files are compared based on sparse checksums, (currently file size)<br/>"full_checksum" - the source and destination files are compared based on full checksums <br/>Allowed values: never, always, diff, older, diff+older<br/>(--overwrite={enum}) |
+| password | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node api only. |
 | paths | array | Y | Y | Y | Y | Y | Y | Array of path to the source (required) and a path to the destination (optional).<br/>(&lt;special&gt;) |
 | precalculate_job_size | boolean | Y | Y | Y | Y | Y | Y | Specifies whether to precalculate the job size.<br/>(--precalculate-job-size) |
 | preserve_access_time | boolean | Y | Y | Y | Y | Y | Y | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.<br/>(--preserve-access-time) |
@@ -3353,44 +3369,51 @@ ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 | preserve_file_owner_uid | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Preserve the user ID for a file owner<br/>(--preserve-file-owner-uid) |
 | preserve_modification_time | boolean | Y | Y | Y | Y | Y | Y | Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.<br/>Preserve source-file modification timestamps at the destination.<br/>(--preserve-modification-time) |
 | preserve_remote_acls | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Preserve remote access control lists.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-acls={enum}) |
+| preserve_remote_extended_attrs | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Preserve remote extended attributes.<br/>Allowed values: none, native, metafile<br/>(--remote-preserve-xattrs={enum}) |
 | preserve_source_access_time | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Preserve the time logged for when the source file was accessed<br/>(--preserve-source-access-time) |
-| preserve_times | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Preserve file timestamps.<br/>(--preserve-times) |
-| proxy | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specify the address of the Aspera high-speed proxy server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy={string}) |
-| rate_policy | string | Y | Y | Y | Y | Y | Y | The transfer rate policy to use when sharing bandwidth.<br/>Allowed values: low, fair, high, fixed<br/>(--policy={enum}) |
-| rate_policy_allowed | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed<br/>(&lt;ignored&gt;) |
-| read_threads | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(&lt;ignored&gt;) |
-| remote_access_key | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.<br/>(&lt;ignored&gt;) |
+| preserve_times | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Preserve file timestamps.<br/>(-p {boolean}) |
+| proxy | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specify the address of the Aspera high-speed proxy server.<br/>dnat(s)://[user[:password]@]server:port<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.<br/>(--proxy={string}) |
+| rate_policy | string | Y | Y | Y | Y | Y | Y | The transfer rate policy to use when sharing bandwidth. Allowable values:<br/>- high : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.<br/>- fair : (Default) Share bandwidth equally with other traffic.<br/>- low : Use only unused bandwidth.<br/>- fixed : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged. <br/>Allowed values: low, fair, high, fixed<br/>(--policy={enum}) |
+| rate_policy_allowed | string | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Specifies most aggressive rate policy that is allowed.<br/>Returned by node API.<br/>Allowed values: low, fair, high, fixed |
+| read_threads | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only |
+| remote_access_key | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node. |
 | remote_host | string | Y | Y | Y | Y | Y | Y | IP or fully qualified domain name of the remote server<br/>(--host={string}) |
 | remote_password | string | Y | Y | Y | Y | Y | Y | SSH session password<br/>(env:ASPERA_SCP_PASS) |
 | remote_user | string | Y | Y | Y | Y | Y | Y | Remote user. Default value is "xfer" on node or connect.<br/>(--user={string}) |
-| remove_after_transfer | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
-| remove_empty_directories | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Specifies whether to remove empty directories.<br/>(--remove-empty-directories) |
-| remove_empty_source_directory | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Remove empty source subdirectories and remove the source directory itself, if empty<br/>(--remove-empty-source-directory) |
-| remove_skipped | boolean | Y | Y | &nbsp; | &nbsp; | Y | Y | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
-| resume_policy | string | Y | Y | Y | Y | Y | Y | If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
-| retry_duration | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specifies how long to wait before retrying transfer. (e.g. "5min")<br/>(&lt;ignored&gt;) |
-| save_before_overwrite | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.<br/>File attributes are maintained in the renamed file.<br/>(--save-before-overwrite) |
+| remove_after_transfer | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Remove SRC files after transfer success<br/>(--remove-after-transfer) |
+| remove_empty_directories | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Specifies whether to remove empty directories.<br/>(--remove-empty-directories) |
+| remove_empty_source_dir | boolean | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Remove empty source subdirectories and remove the source directory itself, if empty. |
+| remove_empty_source_directory | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Remove empty source subdirectories and remove the source directory itself, if empty.<br/>(--remove-empty-source-directory) |
+| remove_skipped | boolean | Y | Y | &nbsp; | &nbsp; | Y | &nbsp; | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
+| resume_policy | string | Y | Y | Y | Y | Y | Y | If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:<br/>- none : Always re-transfer the entire file<br/>- attrs : Compare file attributes and resume if they match, and re-transfer if they do not<br/>- sparse_csum : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not<br/>- full_csum : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not. <br/>Note: transferd uses values: attributes, sparse_checksum, full_checksum.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
+| retry_duration | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specifies how long to wait before retrying transfer. (e.g. "5min") |
+| save_before_overwrite | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.<br/>File attributes are maintained in the renamed file.<br/>(--save-before-overwrite) |
+| skip_duplicate_check | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Don't check for duplicate files at the destination.<br/>(--skip-dir-traversal-dupes) |
+| skip_special_files | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets. <br/>(--skip-special-files) |
 | source_root | string | Y | Y | Y | Y | Y | Y | Path to be prepended to each source path.<br/>This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(--source-prefix64=(conversion){string}) |
-| source_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Y | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(&lt;ignored&gt;) |
+| source_root_id | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Y | The file ID of the source root directory. Required when using Bearer token auth for the source node. |
 | src_base | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(--src-base64=(conversion){string}) |
-| ssh_args | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Array of arguments to pass to SSH. Use with caution.<br/>(&lt;ignored&gt;) |
-| ssh_port | integer | Y | Y | Y | Y | Y | Y | Specifies SSH (TCP) port. Default: local:22, other:33001<br/>(-P {integer}) |
+| src_base64 | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The folder name below which the directory structure is preserved (base64 encoded).<br/>(--src-base64={string}) |
+| ssh_args | array | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Array of arguments to pass to SSH. Use with caution.<br/>(-i {array}) |
+| ssh_port | integer | Y | Y | Y | Y | Y | Y | Specifies SSH (TCP) port.<br/>(-P {integer}) |
 | ssh_private_key | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----\nMII...<br/>Note the JSON encoding: \n for newlines.<br/>(env:ASPERA_SCP_KEY) |
 | ssh_private_key_passphrase | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(env:ASPERA_SCP_PASS) |
-| sshfp | string | Y | Y | Y | Y | Y | Y | Check it against server SSH host key fingerprint<br/>(--check-sshfp={string}) |
+| ssh_private_key_path | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Path to private key for SSH.<br/>(-i {string}) |
+| sshfp | string | Y | Y | Y | Y | Y | Y | Check it against server SSH host key fingerprint.<br/>(--check-sshfp={string}) |
 | symlink_policy | string | Y | Y | Y | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links={enum}) |
-| tags | object | Y | Y | Y | Y | Y | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64=(conversion){object}) |
-| target_rate_cap_kbps | integer | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Returned by upload/download_setup node API.<br/>(&lt;ignored&gt;) |
-| target_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {integer}) |
-| target_rate_percentage | string | Y | Y | Y | Y | Y | Y | TODO: remove ?<br/>(&lt;ignored&gt;) |
-| title | string | &nbsp; | Y | &nbsp; | &nbsp; | Y | Y | Title of the transfer<br/>(&lt;ignored&gt;) |
+| tags | object | Y | Y | Y | Y | Y | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64=(conversion){object}\|{string}) |
+| tags64 | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64={string}) |
+| target_rate_cap_kbps | integer | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | Maximum target rate for incoming transfers, in kilobits per second.  Returned by upload/download_setup node API. |
+| target_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {integer}\|{string}) |
+| target_rate_percentage | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | TODO: remove ? |
+| title | string | &nbsp; | Y | &nbsp; | &nbsp; | Y | Y | Title of the transfer. |
 | token | string | Y | Y | Y | Y | Y | Y | Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN) |
-| use_ascp4 | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | specify version of protocol<br/>(&lt;special&gt;) |
-| use_system_ssh | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | TODO, comment...<br/>(&lt;ignored&gt;) |
-| write_threads | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only<br/>(&lt;ignored&gt;) |
+| use_ascp4 | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Specify version of protocol. Do not use ascp4.<br/>(&lt;special&gt;) |
+| use_system_ssh | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | TODO, comment...<br/>(-SSH {string}) |
+| write_threads | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | ascp4 only |
 | wss_enabled | boolean | Y | Y | Y | Y | Y | Y | Server has Web Socket service enabled<br/>(&lt;special&gt;) |
 | wss_port | integer | Y | Y | Y | Y | Y | Y | TCP port used for websocket service feed<br/>(&lt;special&gt;) |
-| xfer_max_retries | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).<br/>(&lt;ignored&gt;) |
+| xfer_max_retries | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5). |
 
 #### Destination folder for transfers
 

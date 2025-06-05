@@ -42,8 +42,6 @@ module Aspera
                 properties['x-cli-option']
               elsif properties['x-cli-special']
                 formatter.special_format('special')
-              elsif properties['x-cli-ignore']
-                formatter.special_format('ignored')
               elsif properties['x-cli-option']
                 arg_type = properties.key?('enum') ? '{enum}' : "{#{properties['type']}}"
                 arg_type += "|{#{properties['x-type']}}" if properties.key?('x-type')

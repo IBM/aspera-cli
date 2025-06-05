@@ -13,6 +13,23 @@
     "remote_user"
   ],
   "properties": {
+    "apply_local_docroot": {
+      "description": "Apply local docroot to source paths.",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--apply-local-docroot"
+    },
+    "authentication": {
+      "description": "value=token for SSH bypass keys, else password asked if not provided.",
+      "x-agents": [
+        "connect"
+      ],
+      "type": "string"
+    },
     "cipher": {
       "description": "In transit encryption algorithms.",
       "enum": [
@@ -31,6 +48,18 @@
       "x-cli-option": "-c",
       "x-cli-convert": "remove_hyphen",
       "type": "string"
+    },
+    "cipher_allowed": {
+      "description": "returned by node API. Valid literals include \"aes-128\" and \"none\".",
+      "x-agents": [
+        "connect"
+      ],
+      "type": "string"
+    },
+    "compression": {
+      "description": "ascp4 only, 0 / 1?",
+      "type": "integer",
+      "x-agents": []
     },
     "content_protection": {
       "description": "Enable client-side encryption at rest. (CSEAR, content protection)",
@@ -68,7 +97,8 @@
       "type": "boolean",
       "x-agents": [
         "node",
-        "direct"
+        "direct",
+        "transferd"
       ],
       "x-cli-option": "--remove-after-transfer",
       "x-cli-switch": true
@@ -84,8 +114,12 @@
       "type": "string",
       "x-agents": [
         "transferd"
-      ],
-      "x-cli-ignore": true
+      ]
+    },
+    "dgram_size": {
+      "description": "UDP datagram size in bytes",
+      "type": "integer",
+      "x-cli-option": "-Z"
     },
     "direction": {
       "description": "Direction of transfer (on client side)",
@@ -110,11 +144,33 @@
       "type": "string",
       "x-cli-option": "--exclude-older-than"
     },
+    "fail_bad_filepass": {
+      "description": "Fail on bad file decryption passphrase.",
+      "type": "boolean",
+      "x-cli-switch": true,
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "x-cli-option": "--fail-bad-filepass"
+    },
     "fasp_port": {
       "description": "Specifies fasp (UDP) port.",
       "type": "integer",
       "default": 33001,
       "x-cli-option": "-O"
+    },
+    "fasp_proxy": {
+      "description": "Proxy for communications between the remote server and the (local) client.",
+      "type": "object",
+      "x-agents": [
+        "transferd"
+      ]
+    },
+    "fasp_url": {
+      "description": "Only used in Faspex.",
+      "x-agents": [],
+      "type": "string"
     },
     "file_checksum": {
       "description": "Enable checksum reporting for transferred files by specifying the hash to use.",
@@ -128,13 +184,11 @@
       ],
       "default": "none",
       "x-agents": [
-        "transferd",
         "node",
         "direct"
       ],
-      "x-cli-ignore": true,
-      "x-cli-option": "--checksum-type",
-      "type": "string"
+      "type": "string",
+      "x-cli-option": "--file-checksum"
     },
     "http_fallback": {
       "description": "When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.",
@@ -150,9 +204,6 @@
     "http_fallback_port": {
       "description": "Specifies http port when no cipher is used",
       "type": "integer",
-      "x-agents": [
-        "direct"
-      ],
       "x-cli-option": "-t"
     },
     "https_fallback_port": {
@@ -160,13 +211,83 @@
       "type": "integer",
       "x-cli-option": "-t"
     },
+    "icos": {
+      "description": "Configuration parameters for IBM Cloud Object Storage (ICOS).",
+      "type": "object",
+      "x-agents": [
+        "transferd"
+      ]
+    },
+    "keepalive": {
+      "description": "The session is running in persistent session mode.",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "type": "boolean",
+      "x-cli-option": "--keepalive"
+    },
+    "lock_min_rate": {
+      "description": "TODO: remove ?",
+      "type": "boolean",
+      "x-agents": [
+        "connect"
+      ]
+    },
+    "lock_min_rate_kbps": {
+      "description": "If true, lock the minimum transfer rate to the value set for min_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "connect"
+      ]
+    },
+    "lock_rate_policy": {
+      "description": "If true, lock the rate policy to the default value.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "connect"
+      ]
+    },
+    "lock_target_rate": {
+      "description": "TODO: remove ?",
+      "type": "boolean",
+      "x-agents": [
+        "connect"
+      ]
+    },
+    "lock_target_rate_kbps": {
+      "description": "If true, lock the target transfer rate to the default value set for target_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "connect"
+      ]
+    },
+    "min_rate_cap_kbps": {
+      "description": "The highest minimum rate that an incoming transfer can request, in kilobits per second.\nClient minimum rate requests that exceed the minimum rate cap are ignored.\nThe default value of unlimited applies no cap to the minimum rate. (Default: 0)",
+      "type": "integer",
+      "x-agents": [
+        "connect",
+        "transferd"
+      ]
+    },
+    "min_rate_kbps": {
+      "description": "Set the minimum transfer rate in kilobits per second.",
+      "type": "integer",
+      "default": 0,
+      "x-cli-option": "-m"
+    },
     "move_after_transfer": {
       "description": "The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.",
+      "type": "string",
       "x-agents": [
         "direct",
-        "node"
+        "node",
+        "transferd"
       ],
-      "type": "string",
       "x-cli-option": "--move-after-transfer"
     },
     "multi_session": {
@@ -180,12 +301,20 @@
       "type": "integer",
       "x-agents": [
         "direct",
-        "node"
+        "node",
+        "transferd"
       ],
       "x-cli-option": "--multi-session-threshold"
     },
+    "obfuscate_file_names": {
+      "description": "HTTP Gateway obfuscates file names when set to true.",
+      "type": "boolean",
+      "x-agents": [
+        "httpgw"
+      ]
+    },
     "overwrite": {
-      "description": "Overwrite destination files with the source files of the same name.",
+      "description": "Overwrite files at the destination with source files of the same name based  on the policy:\n- always – Always overwrite the file.\n- never – Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.\n- diff – Overwrite the file if it is different from the source,  depending on the compare method (default is size).  If the destination is object storage, diff has the same effect as always.  If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped.  If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume. \n- diff+older – Overwrite the file if it is older and different from the source,  depending on the compare method (default is size).  If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped.  If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed. \n- older – Overwrite the file if its timestamp is older than the source timestamp. \nIf you set an overwrite policy of diff or diff+older, difference is determined  by the value set for resume_policy:\n\"none\" - the source and destination files are always considered different and  the destination file is always overwritten\n\"attributes\" - the source and destination files are compared based on file attributes \n\"sparse_checksum\" - the source and destination files are compared based on sparse checksums, (currently file size)\n\"full_checksum\" - the source and destination files are compared based on full checksums ",
       "default": "diff",
       "enum": [
         "never",
@@ -197,23 +326,12 @@
       "type": "string",
       "x-cli-option": "--overwrite"
     },
-    "save_before_overwrite": {
-      "description": "If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.\nFile attributes are maintained in the renamed file.",
-      "x-cli-switch": true,
-      "x-agents": [
-        "direct",
-        "node"
-      ],
-      "type": "boolean",
-      "x-cli-option": "--save-before-overwrite"
-    },
     "password": {
       "description": "Password for local Windows user when transfer user associated with node api user is not the same as the one running asperanoded.\nAllows impersonating the transfer user and have access to resources (e.g. network shares).\nWindows only, node api only.",
       "type": "string",
       "x-agents": [
         "node"
-      ],
-      "x-cli-ignore": true
+      ]
     },
     "paths": {
       "description": "Array of path to the source (required) and a path to the destination (optional).",
@@ -233,11 +351,60 @@
       "type": "boolean",
       "x-cli-option": "--preserve-access-time"
     },
+    "preserve_acls": {
+      "description": "Preserve access control lists.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "direct",
+        "transferd"
+      ],
+      "type": "string",
+      "x-cli-option": "--preserve-acls"
+    },
     "preserve_creation_time": {
       "description": "(Windows only) Preserve source-file creation timestamps at the destination.\nOnly Windows systems retain information about creation time.\nIf the destination is not a Windows computer, this option is ignored.",
       "x-cli-switch": true,
       "type": "boolean",
       "x-cli-option": "--preserve-creation-time"
+    },
+    "preserve_extended_attrs": {
+      "description": "Preserve the extended attributes.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-option": "--preserve-xattrs",
+      "type": "string"
+    },
+    "preserve_file_owner_gid": {
+      "description": "Preserve the group ID for a file owner",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--preserve-file-owner-gid"
+    },
+    "preserve_file_owner_uid": {
+      "description": "Preserve the user ID for a file owner",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--preserve-file-owner-uid"
     },
     "preserve_modification_time": {
       "description": "Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.\nPreserve source-file modification timestamps at the destination.",
@@ -245,18 +412,67 @@
       "type": "boolean",
       "x-cli-option": "--preserve-modification-time"
     },
-    "preserve_times": {
-      "description": "Preserve file timestamps.",
+    "preserve_remote_acls": {
+      "description": "Preserve remote access control lists.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
       "x-agents": [
         "transferd",
-        "node"
+        "direct"
+      ],
+      "x-cli-option": "--remote-preserve-acls",
+      "type": "string"
+    },
+    "preserve_remote_extended_attrs": {
+      "description": "Preserve remote extended attributes.",
+      "enum": [
+        "none",
+        "native",
+        "metafile"
+      ],
+      "default": "none",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-option": "--remote-preserve-xattrs",
+      "type": "string"
+    },
+    "preserve_source_access_time": {
+      "description": "Preserve the time logged for when the source file was accessed",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
       ],
       "x-cli-switch": true,
+      "x-cli-option": "--preserve-source-access-time"
+    },
+    "preserve_times": {
+      "description": "Preserve file timestamps.",
       "type": "boolean",
-      "x-cli-option": "--preserve-times"
+      "x-agents": [
+        "transferd",
+        "node",
+        "direct"
+      ],
+      "x-cli-option": "-p"
+    },
+    "proxy": {
+      "description": "Specify the address of the Aspera high-speed proxy server.\ndnat(s)://[user[:password]@]server:port\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.",
+      "x-agents": [
+        "direct",
+        "noded"
+      ],
+      "type": "string",
+      "x-cli-option": "--proxy"
     },
     "rate_policy": {
-      "description": "The transfer rate policy to use when sharing bandwidth.",
+      "description": "The transfer rate policy to use when sharing bandwidth. Allowable values:\n- high : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.\n- fair : (Default) Share bandwidth equally with other traffic.\n- low : Use only unused bandwidth.\n- fixed : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged. ",
       "enum": [
         "low",
         "fair",
@@ -266,22 +482,34 @@
       "x-cli-option": "--policy",
       "type": "string"
     },
+    "rate_policy_allowed": {
+      "description": "Specifies most aggressive rate policy that is allowed.\nReturned by node API.",
+      "enum": [
+        "low",
+        "fair",
+        "high",
+        "fixed"
+      ],
+      "x-agents": [
+        "connect"
+      ],
+      "type": "string"
+    },
+    "read_threads": {
+      "description": "ascp4 only",
+      "type": "integer",
+      "x-agents": []
+    },
     "remote_access_key": {
       "description": "The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.",
       "type": "string",
       "x-agents": [
         "transferd"
-      ],
-      "x-cli-ignore": true
+      ]
     },
     "remote_host": {
       "description": "IP or fully qualified domain name of the remote server",
       "x-cli-option": "--host",
-      "type": "string"
-    },
-    "remote_user": {
-      "description": "Remote user. Default value is \"xfer\" on node or connect.",
-      "x-cli-option": "--user",
       "type": "string"
     },
     "remote_password": {
@@ -289,12 +517,18 @@
       "x-cli-envvar": "ASPERA_SCP_PASS",
       "type": "string"
     },
+    "remote_user": {
+      "description": "Remote user. Default value is \"xfer\" on node or connect.",
+      "x-cli-option": "--user",
+      "type": "string"
+    },
     "remove_after_transfer": {
       "description": "Remove SRC files after transfer success",
       "type": "boolean",
       "x-agents": [
         "direct",
-        "node"
+        "node",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-after-transfer"
@@ -304,10 +538,27 @@
       "type": "boolean",
       "x-agents": [
         "direct",
-        "node"
+        "node",
+        "transferd"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-empty-directories"
+    },
+    "remove_empty_source_dir": {
+      "description": "Remove empty source subdirectories and remove the source directory itself, if empty.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd"
+      ]
+    },
+    "remove_empty_source_directory": {
+      "description": "Remove empty source subdirectories and remove the source directory itself, if empty.",
+      "type": "boolean",
+      "x-agents": [
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--remove-empty-source-directory"
     },
     "remove_skipped": {
       "description": "Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.",
@@ -315,23 +566,13 @@
       "x-agents": [
         "direct",
         "connect",
-        "transferd",
         "node"
       ],
       "x-cli-switch": true,
       "x-cli-option": "--remove-skipped"
     },
-    "proxy": {
-      "description": "Specify the address of the Aspera high-speed proxy server.\ndnat(s)://[user[:password]@]server:port\nDefault ports for DNAT and DNATS protocols are 9091 and 9092.\nPassword, if specified here, overrides the value of environment variable ASPERA_PROXY_PASS.",
-      "x-agents": [
-        "direct",
-        "transferd"
-      ],
-      "type": "string",
-      "x-cli-option": "--proxy"
-    },
     "resume_policy": {
-      "description": "If a transfer is interrupted or fails to finish, resume without re-transferring the whole files.",
+      "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- none : Always re-transfer the entire file\n- attrs : Compare file attributes and resume if they match, and re-transfer if they do not\n- sparse_csum : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not\n- full_csum : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not. \nNote: transferd uses values: attributes, sparse_checksum, full_checksum.",
       "default": "faspmgr:none;other:sparse_csum",
       "enum": [
         "none",
@@ -350,12 +591,49 @@
     },
     "retry_duration": {
       "description": "Specifies how long to wait before retrying transfer. (e.g. \"5min\")",
+      "$comment": "TODO: check this.",
       "type": "integer",
       "x-type": "string",
       "x-agents": [
         "transferd"
+      ]
+    },
+    "save_before_overwrite": {
+      "description": "If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.\nFile attributes are maintained in the renamed file.",
+      "x-cli-switch": true,
+      "x-agents": [
+        "direct",
+        "node",
+        "transferd"
       ],
-      "x-cli-ignore": true
+      "type": "boolean",
+      "x-cli-option": "--save-before-overwrite"
+    },
+    "skip_duplicate_check": {
+      "description": "Don't check for duplicate files at the destination.",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-option": "--skip-dir-traversal-dupes",
+      "x-cli-switch": true
+    },
+    "skip_special_files": {
+      "description": "All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets. ",
+      "type": "boolean",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-switch": true,
+      "x-cli-option": "--skip-special-files"
+    },
+    "source_root": {
+      "description": "Path to be prepended to each source path.\nThis is either a conventional path or it can be a URI but only if there is no root defined.",
+      "x-cli-option": "--source-prefix64",
+      "x-cli-convert": "base64",
+      "type": "string"
     },
     "source_root_id": {
       "description": "The file ID of the source root directory. Required when using Bearer token auth for the source node.",
@@ -363,11 +641,39 @@
       "x-agents": [
         "transferd",
         "node"
+      ]
+    },
+    "src_base": {
+      "description": "Specify the prefix to be stripped off from each source object.\nThe remaining portion of the source path is kept intact at the destination.\nSpecial care must be taken when used with cloud storage.",
+      "x-agents": [
+        "direct",
+        "node",
+        "transferd"
       ],
-      "x-cli-ignore": true
+      "x-cli-option": "--src-base64",
+      "x-cli-convert": "base64",
+      "type": "string"
+    },
+    "src_base64": {
+      "description": "The folder name below which the directory structure is preserved (base64 encoded).",
+      "type": "string",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-option": "--src-base64"
+    },
+    "ssh_args": {
+      "description": "Array of arguments to pass to SSH. Use with caution.",
+      "type": "array",
+      "x-agents": [
+        "transferd"
+      ],
+      "x-cli-option": "-i"
     },
     "ssh_port": {
-      "description": "Specifies SSH (TCP) port. Default: local:22, other:33001",
+      "description": "Specifies SSH (TCP) port.",
+      "default": "direct:22, other:33001",
       "type": "integer",
       "x-cli-option": "-P"
     },
@@ -389,13 +695,19 @@
       ],
       "x-cli-envvar": "ASPERA_SCP_PASS"
     },
-    "ssh_args": {
-      "description": "Array of arguments to pass to SSH. Use with caution.",
+    "ssh_private_key_path": {
+      "description": "Path to private key for SSH.",
       "type": "string",
       "x-agents": [
-        "transferd"
+        "transferd",
+        "direct"
       ],
-      "x-cli-ignore": true
+      "x-cli-option": "-i"
+    },
+    "sshfp": {
+      "description": "Check it against server SSH host key fingerprint.",
+      "x-cli-option": "--check-sshfp",
+      "type": "string"
     },
     "symlink_policy": {
       "description": "Handle source side symbolic links",
@@ -412,31 +724,46 @@
     "tags": {
       "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
       "type": "object",
+      "x-type": "string",
       "x-cli-option": "--tags64",
       "x-cli-convert": "json64"
     },
+    "tags64": {
+      "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
+      "type": "string",
+      "x-agents": [
+        "transferd",
+        "direct"
+      ],
+      "x-cli-option": "--tags64"
+    },
     "target_rate_cap_kbps": {
-      "description": "Returned by upload/download_setup node API.",
+      "description": "Maximum target rate for incoming transfers, in kilobits per second.  Returned by upload/download_setup node API.",
       "type": "integer",
       "x-agents": [
-        "connect"
-      ],
-      "x-cli-ignore": true
+        "connect",
+        "transferd"
+      ]
     },
     "target_rate_kbps": {
       "description": "Specifies desired speed for the transfer.",
       "type": "integer",
+      "x-type": "string",
       "x-cli-option": "-l"
     },
+    "target_rate_percentage": {
+      "description": "TODO: remove ?",
+      "x-agents": [],
+      "type": "string"
+    },
     "title": {
-      "description": "Title of the transfer",
+      "description": "Title of the transfer.",
       "type": "string",
       "x-agents": [
         "node",
         "connect",
         "transferd"
-      ],
-      "x-cli-ignore": true
+      ]
     },
     "token": {
       "description": "Authorization token: Bearer, Basic or ATM (Also arg -W)",
@@ -444,7 +771,7 @@
       "type": "string"
     },
     "use_ascp4": {
-      "description": "specify version of protocol",
+      "description": "Specify version of protocol. Do not use ascp4.",
       "type": "boolean",
       "default": false,
       "x-agents": [
@@ -459,233 +786,15 @@
       "description": "TODO, comment...",
       "type": "string",
       "x-agents": [
-        "transferd"
+        "transferd",
+        "direct"
       ],
-      "x-cli-ignore": true,
       "x-cli-option": "-SSH"
     },
-    "source_root": {
-      "description": "Path to be prepended to each source path.\nThis is either a conventional path or it can be a URI but only if there is no root defined.",
-      "x-cli-option": "--source-prefix64",
-      "x-cli-convert": "base64",
-      "type": "string"
-    },
-    "min_rate_cap_kbps": {
-      "description": "The highest minimum rate that an incoming transfer can request, in kilobits per second.\nClient minimum rate requests that exceed the minimum rate cap are ignored.\nThe default value of unlimited applies no cap to the minimum rate. (Default: 0)",
+    "write_threads": {
+      "description": "ascp4 only",
       "type": "integer",
-      "x-cli-ignore": true
-    },
-    "lock_rate_policy": {
-      "description": "If true, lock the rate policy to the default value.",
-      "type": "boolean",
-      "x-agents": [
-        "transferd",
-        "connect"
-      ],
-      "x-cli-ignore": true
-    },
-    "lock_target_rate_kbps": {
-      "description": "If true, lock the target transfer rate to the default value set for target_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
-      "type": "boolean",
-      "x-cli-ignore": true
-    },
-    "lock_min_rate_kbps": {
-      "description": "If true, lock the minimum transfer rate to the value set for min_rate_kbps.\nIf false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.",
-      "type": "boolean",
-      "x-agents": [
-        "transferd",
-        "connect"
-      ],
-      "x-cli-ignore": true
-    },
-    "apply_local_docroot": {
-      "description": "Apply local docroot to source paths.",
-      "x-agents": [
-        "direct",
-        "transferd"
-      ],
-      "x-cli-switch": true,
-      "type": "boolean",
-      "x-cli-option": "--apply-local-docroot"
-    },
-    "src_base": {
-      "description": "Specify the prefix to be stripped off from each source object.\nThe remaining portion of the source path is kept intact at the destination.\nSpecial care must be taken when used with cloud storage.",
-      "x-agents": [
-        "direct",
-        "node",
-        "transferd"
-      ],
-      "x-cli-option": "--src-base64",
-      "x-cli-convert": "base64",
-      "type": "string"
-    },
-    "preserve_acls": {
-      "description": "Preserve access control lists.",
-      "enum": [
-        "none",
-        "native",
-        "metafile"
-      ],
-      "default": "none",
-      "x-agents": [
-        "direct",
-        "transferd"
-      ],
-      "type": "string",
-      "x-cli-option": "--preserve-acls"
-    },
-    "preserve_remote_acls": {
-      "description": "Preserve remote access control lists.",
-      "enum": [
-        "none",
-        "native",
-        "metafile"
-      ],
-      "default": "none",
-      "x-agents": [
-        "transferd",
-        "direct"
-      ],
-      "x-cli-option": "--remote-preserve-acls",
-      "type": "string"
-    },
-    "preserve_file_owner_uid": {
-      "description": "Preserve the user ID for a file owner",
-      "type": "boolean",
-      "x-agents": [
-        "transferd",
-        "direct"
-      ],
-      "x-cli-switch": true,
-      "x-cli-option": "--preserve-file-owner-uid"
-    },
-    "preserve_file_owner_gid": {
-      "description": "Preserve the group ID for a file owner",
-      "type": "boolean",
-      "x-agents": [
-        "transferd",
-        "direct"
-      ],
-      "x-cli-switch": true,
-      "x-cli-option": "--preserve-file-owner-gid"
-    },
-    "preserve_extended_attrs": {
-      "description": "Preserve the extended attributes.",
-      "enum": [
-        "none",
-        "native",
-        "metafile"
-      ],
-      "default": "none",
-      "x-agents": [
-        "transferd"
-      ],
-      "x-cli-option": "--preserve-xattrs",
-      "type": "string"
-    },
-    "preserve_source_access_time": {
-      "description": "Preserve the time logged for when the source file was accessed",
-      "type": "boolean",
-      "x-agents": [
-        "transferd",
-        "direct"
-      ],
-      "x-cli-switch": true,
-      "x-cli-option": "--preserve-source-access-time"
-    },
-    "remove_empty_source_directory": {
-      "description": "Remove empty source subdirectories and remove the source directory itself, if empty",
-      "type": "boolean",
-      "x-agents": [
-        "direct",
-        "transferd"
-      ],
-      "x-cli-switch": true,
-      "x-cli-option": "--remove-empty-source-directory"
-    },
-    "keepalive": {
-      "description": "The session is running in persistent session mode.",
-      "x-agents": [
-        "transferd",
-        "direct"
-      ],
-      "x-cli-switch": true,
-      "type": "boolean",
-      "x-cli-option": "--keepalive"
-    },
-    "dgram_size": {
-      "description": "UDP datagram size in bytes",
-      "type": "integer",
-      "x-cli-option": "-Z"
-    },
-    "min_rate_kbps": {
-      "description": "Set the minimum transfer rate in kilobits per second.",
-      "type": "integer",
-      "default": 0,
-      "x-cli-option": "-m"
-    },
-    "sshfp": {
-      "description": "Check it against server SSH host key fingerprint",
-      "x-cli-option": "--check-sshfp",
-      "type": "string"
-    },
-    "target_rate_percentage": {
-      "description": "TODO: remove ?",
-      "x-cli-ignore": true,
-      "type": "string"
-    },
-    "rate_policy_allowed": {
-      "description": "Specifies most aggressive rate policy that is allowed.\nReturned by node API.",
-      "enum": [
-        "low",
-        "fair",
-        "high",
-        "fixed"
-      ],
-      "x-agents": [
-        "connect"
-      ],
-      "x-cli-ignore": true,
-      "type": "string"
-    },
-    "fasp_url": {
-      "description": "Only used in Faspex.",
-      "x-agents": [
-        "unknown"
-      ],
-      "x-cli-ignore": true,
-      "type": "string"
-    },
-    "lock_min_rate": {
-      "description": "TODO: remove ?",
-      "type": "boolean",
-      "x-cli-ignore": true
-    },
-    "lock_target_rate": {
-      "description": "TODO: remove ?",
-      "type": "boolean",
-      "x-cli-ignore": true
-    },
-    "authentication": {
-      "description": "value=token for SSH bypass keys, else password asked if not provided.",
-      "x-agents": [
-        "connect"
-      ],
-      "x-cli-ignore": true,
-      "type": "string"
-    },
-    "cipher_allowed": {
-      "description": "returned by node API. Valid literals include \"aes-128\" and \"none\".",
-      "x-cli-ignore": true,
-      "type": "string"
-    },
-    "obfuscate_file_names": {
-      "description": "HTTP Gateway obfuscates file names when set to true.",
-      "type": "boolean",
-      "x-agents": [
-        "httpgw"
-      ],
-      "x-cli-ignore": true
+      "x-agents": []
     },
     "wss_enabled": {
       "description": "Server has Web Socket service enabled",
@@ -699,37 +808,12 @@
       "x-cli-special": true,
       "x-cli-option": "--wss-port"
     },
-    "compression": {
-      "description": "ascp4 only, 0 / 1?",
-      "type": "integer",
-      "x-agents": [
-        "unknown"
-      ],
-      "x-cli-ignore": true
-    },
-    "read_threads": {
-      "description": "ascp4 only",
-      "type": "integer",
-      "x-agents": [
-        "unknown"
-      ],
-      "x-cli-ignore": true
-    },
-    "write_threads": {
-      "description": "ascp4 only",
-      "type": "integer",
-      "x-agents": [
-        "unknown"
-      ],
-      "x-cli-ignore": true
-    },
     "xfer_max_retries": {
-      "description": "maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).",
+      "description": "Maximum number of retries, for node API initiated transfers. Shall not exceed aspera.conf `transfer_manager_max_retries` (default 5).",
       "type": "integer",
       "x-agents": [
         "node"
-      ],
-      "x-cli-ignore": true
+      ]
     }
   }
 }
