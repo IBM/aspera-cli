@@ -5959,7 +5959,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse central delete download events health http_node_download info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User&#39;s name to log in
@@ -7470,13 +7470,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href
 <span id="cb392-67"><a href="#cb392-67" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> browse my_remote_file</span>
 <span id="cb392-68"><a href="#cb392-68" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> browse my_remote_folder</span>
 <span id="cb392-69"><a href="#cb392-69" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> browse my_remote_folder/</span>
-<span id="cb392-70"><a href="#cb392-70" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete /testsrc</span>
-<span id="cb392-71"><a href="#cb392-71" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--transfer</span><span class="op">=</span>connect testdst/test_file.bin</span>
-<span id="cb392-72"><a href="#cb392-72" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--transfer</span><span class="op">=</span>desktop testdst/test_file.bin</span>
-<span id="cb392-73"><a href="#cb392-73" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find /</span>
-<span id="cb392-74"><a href="#cb392-74" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find / <span class="st">&#39;\.partial$&#39;</span></span>
-<span id="cb392-75"><a href="#cb392-75" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find / @ruby:<span class="st">&#39;-&gt;(f){f[&quot;type&quot;].eql?(&quot;file&quot;)}&#39;</span></span>
-<span id="cb392-76"><a href="#cb392-76" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> http_node_download <span class="at">--to-folder</span><span class="op">=</span>. testdst/test_file.bin</span>
+<span id="cb392-70"><a href="#cb392-70" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> cat <span class="at">--to-folder</span><span class="op">=</span>. testdst/test_file.bin</span>
+<span id="cb392-71"><a href="#cb392-71" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> delete /testsrc</span>
+<span id="cb392-72"><a href="#cb392-72" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--transfer</span><span class="op">=</span>connect testdst/test_file.bin</span>
+<span id="cb392-73"><a href="#cb392-73" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--transfer</span><span class="op">=</span>desktop testdst/test_file.bin</span>
+<span id="cb392-74"><a href="#cb392-74" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find /</span>
+<span id="cb392-75"><a href="#cb392-75" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find / <span class="st">&#39;\.partial$&#39;</span></span>
+<span id="cb392-76"><a href="#cb392-76" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> find / @ruby:<span class="st">&#39;-&gt;(f){f[&quot;type&quot;].eql?(&quot;file&quot;)}&#39;</span></span>
 <span id="cb392-77"><a href="#cb392-77" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir /testsrc</span>
 <span id="cb392-78"><a href="#cb392-78" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> modify my_test_folder</span>
 <span id="cb392-79"><a href="#cb392-79" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> permission my_test_folder list</span>
@@ -8346,14 +8346,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb449-1"><a href
 <span id="cb449-30"><a href="#cb449-30" aria-hidden="true" tabindex="-1"></a><span class="ex">basic_token</span></span>
 <span id="cb449-31"><a href="#cb449-31" aria-hidden="true" tabindex="-1"></a><span class="ex">bearer_token</span> @file:my_private_key @json:<span class="st">&#39;{&quot;user_id&quot;:&quot;666&quot;}&#39;</span> <span class="at">--output</span><span class="op">=</span>bearer_666</span>
 <span id="cb449-32"><a href="#cb449-32" aria-hidden="true" tabindex="-1"></a><span class="ex">browse</span> / <span class="at">--log-level</span><span class="op">=</span>trace2</span>
-<span id="cb449-33"><a href="#cb449-33" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
-<span id="cb449-34"><a href="#cb449-34" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
-<span id="cb449-35"><a href="#cb449-35" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
-<span id="cb449-36"><a href="#cb449-36" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
-<span id="cb449-37"><a href="#cb449-37" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
-<span id="cb449-38"><a href="#cb449-38" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb449-39"><a href="#cb449-39" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
-<span id="cb449-40"><a href="#cb449-40" aria-hidden="true" tabindex="-1"></a><span class="ex">http_node_download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb449-33"><a href="#cb449-33" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb449-34"><a href="#cb449-34" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file list</span>
+<span id="cb449-35"><a href="#cb449-35" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> file modify <span class="at">--validator</span><span class="op">=</span>1 @json:<span class="st">&#39;{&quot;files&quot;:[]}&#39;</span></span>
+<span id="cb449-36"><a href="#cb449-36" aria-hidden="true" tabindex="-1"></a><span class="ex">central</span> session list</span>
+<span id="cb449-37"><a href="#cb449-37" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file</span>
+<span id="cb449-38"><a href="#cb449-38" aria-hidden="true" tabindex="-1"></a><span class="ex">delete</span> my_upload_folder/test_file.bin</span>
+<span id="cb449-39"><a href="#cb449-39" aria-hidden="true" tabindex="-1"></a><span class="ex">download</span> my_upload_folder/test_file.bin <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb449-40"><a href="#cb449-40" aria-hidden="true" tabindex="-1"></a><span class="ex">health</span></span>
 <span id="cb449-41"><a href="#cb449-41" aria-hidden="true" tabindex="-1"></a><span class="ex">info</span> <span class="at">--fpac</span><span class="op">=</span><span class="st">&#39;function FindProxyForURL(url,host){return &quot;DIRECT&quot;}&#39;</span></span>
 <span id="cb449-42"><a href="#cb449-42" aria-hidden="true" tabindex="-1"></a><span class="ex">license</span></span>
 <span id="cb449-43"><a href="#cb449-43" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/a_folder</span>
