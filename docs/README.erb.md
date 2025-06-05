@@ -3146,7 +3146,7 @@ All parameters necessary for this transfer are described in a [**transfer-spec**
 - Etc...
 
 <%=tool%> builds the [**transfer-spec**](#transfer-specification) internally as a `Hash`.
-It is not necessary to provide additional parameters on the command line for this transfer.
+It is not necessary to provide additional parameters on the command line for a transfer.
 
 It is possible to modify or add any of the supported [**transfer-spec**](#transfer-specification) parameter using the `ts` option.
 The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) containing one or several [**transfer-spec**](#transfer-specification) parameters.
@@ -3181,6 +3181,19 @@ Parameters can be displayed with commands:
 <%=cmd%> config ascp spec
 <%=cmd%> config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
 ```
+
+A JSON Schema can be generated with command:
+
+```bash
+<%=cmd%> config ascp schema --format=jsonpp
+```
+
+An optional parameter can be specified to display the schema for a specific transfer agent:
+
+```bash
+<%=cmd%> config ascp schema transferd --format=jsonpp
+```
+
 `ascp` argument or environment variable is provided in description.
 
 <%=spec_table%>

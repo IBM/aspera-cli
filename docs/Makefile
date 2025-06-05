@@ -13,9 +13,10 @@ MANUAL_PDF=$(MANUAL_BASE).pdf
 MANUAL_HTML=$(MANUAL_BASE).html
 DOC_TOOL=ruby -I $(DIR_DOC). -I $(DIR_LIB). -r doc_tools -e
 TMPL_CONF_FILE_PATH=$(DIR_DOC)test_env.conf
+TSPEC_JSON_SCHEMA=$(DIR_DOC)spec.schema.json
 
 # main target to build doc
-all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(MANUAL_HTML) $(MANUAL_PDF) $(DIR_DOC)spec.schema.json
+all:: $(DIR_TOP).gems_checked $(TMPL_CONF_FILE_PATH) $(TSPEC_JSON_SCHEMA) $(MANUAL_HTML) $(MANUAL_PDF)
 
 doc: all
 
@@ -31,8 +32,10 @@ clean_doc::
 # sudo tlmgr install fvextra
 $(eval $(call markdown_to_pdf,$(DIR_TOP)README.md,$(MANUAL_PDF)))
 
-$(DIR_DOC)spec.schema.json: $(DIR_LIB)aspera/transfer/spec.schema.yaml
+$(TSPEC_JSON_SCHEMA): $(DIR_LIB)aspera/transfer/spec.schema.yaml
 	$(CLI_PATH) config ascp schema --format=jsonpp --output=$@
+clean_doc::
+	rm -f $(TSPEC_JSON_SCHEMA)
 
 $(MANUAL_HTML): $(DIR_TOP)README.md
 	pandoc \

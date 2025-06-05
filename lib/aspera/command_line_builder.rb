@@ -18,7 +18,6 @@ module Aspera
     # x-cli-option   [String]   Command line option (starts with "-")
     # x-cli-switch   [Bool]     true if option has no arg, else by default option has a value
     # x-cli-special  [Bool]     true if special handling (defered)
-    # x-cli-ignore   [Bool]     true if not in ascp
     # x-cli-enum-convert [Hash] Conversion for enum ts to arg
     # x-cli-convert  [String]   method name for Convert object
     # x-agents       [Array]    Supported agents (for doc only), if not specified: all
@@ -30,12 +29,12 @@ module Aspera
       default
       enum
       required
+      $comment
       x-type
       x-cli-envvar
       x-cli-option
       x-cli-switch
       x-cli-special
-      x-cli-ignore
       x-cli-enum-convert
       x-cli-convert
       x-agents
@@ -43,9 +42,16 @@ module Aspera
       x-deprecation
     ].freeze
 
-    private_constant :SCHEMA_KEYS
+    CLI_AGENT = 'direct'
+
+    private_constant :SCHEMA_KEYS, :CLI_AGENT
 
     class << self
+      # @return true if given agent supports that field
+      def supported_by_agent(agent, properties)
+        !properties.key?('x-agents') || properties['x-agents'].include?(agent)
+      end
+
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
       def read_schema(source_path, suffix=nil)
         suffix = "_#{suffix}" unless suffix.nil?
@@ -57,7 +63,7 @@ module Aspera
           # by default : string, unless it's without arg
           properties['type'] ||= properties['x-cli-switch'] ? 'boolean' : 'string'
           # add default cli option name if not present, and if supported in "direct".
-          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-ignore'] && !properties['x-cli-envvar'] && (properties.key?('x-cli-switch') || !properties.key?('x-agents') || properties['x-agents'].include?('direct'))
+          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-envvar'] && (properties.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, properties))
           properties.freeze
         end
         schema['required'] = [] unless schema.key?('required')
@@ -169,11 +175,13 @@ module Aspera
         parameter_value = converted_value
       end
 
+      return unless self.class.supported_by_agent(CLI_AGENT, properties)
+
       if read
         # just get value (deferred)
         return parameter_value
-      elsif properties['x-cli-special'] || properties['x-cli-ignore']
-        # ignore this parameter or process later
+      elsif properties['x-cli-special']
+        # process later
         return
       elsif properties.key?('x-cli-envvar')
         # set in env var
