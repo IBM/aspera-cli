@@ -1,6 +1,8 @@
 $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/spec.schema.yaml
-$comment: The original file is the YAML file.
+$comment: >-
+  The original file is the YAML file.
+  `x-` fields documented in command_line_builder.rb
 title: Aspera Transfer Specification
 description: Information defining an Aspera transfer.
 type: object
@@ -87,7 +89,7 @@ properties:
     - send
     - receive
     x-cli-option: "--mode"
-    x-cli-enum-convert:
+    x-cli-convert:
       receive: recv
       send: send
   exclude_newer_than:
@@ -136,10 +138,11 @@ properties:
     - direct
   http_fallback:
     description: When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.
-    type: boolean
-    x-type: string
+    type:
+    - boolean
+    - string
     x-cli-option: "-y"
-    x-cli-enum-convert:
+    x-cli-convert:
       force: F
       true: 1
       false: 0
@@ -495,7 +498,7 @@ properties:
     - sparse_csum
     - full_csum
     x-cli-option: "-k"
-    x-cli-enum-convert:
+    x-cli-convert:
       none: 0
       attrs: 1
       sparse_csum: 2
@@ -503,8 +506,9 @@ properties:
   retry_duration:
     description: Specifies how long to wait before retrying transfer. (e.g. "5min")
     $comment: "TODO: check this."
-    type: integer
-    x-type: string
+    type:
+    - integer
+    - string
     x-agents:
     - transferd
   save_before_overwrite:
@@ -625,7 +629,6 @@ properties:
       Key `aspera` is reserved.
       Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.
     type: object
-    x-type: string
     x-cli-option: "--tags64"
     x-cli-convert: json64
   tags64:
@@ -648,7 +651,6 @@ properties:
   target_rate_kbps:
     description: Specifies desired speed for the transfer.
     type: integer
-    x-type: string
     x-cli-option: "-l"
   title:
     description: Title of the transfer.

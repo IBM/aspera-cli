@@ -9,20 +9,18 @@ module Aspera
   # process_param is called repeatedly with all known parameters
   # add_env_args is called to get resulting param list and env var (also checks that all params were used)
   class CommandLineBuilder
-    # description    [String]   Description
-    # type           [String]   Accepted type for non-enum
-    # default        [String]   Default value if not specified
-    # enum           [Array]    Set with list of values for enum types accepted in transfer spec
-    # x-type         [String]   Additional type possible
-    # x-cli-envvar   [String]   Name of env var
-    # x-cli-option   [String]   Command line option (starts with "-")
-    # x-cli-switch   [Bool]     true if option has no arg, else by default option has a value
-    # x-cli-special  [Bool]     true if special handling (defered)
-    # x-cli-enum-convert [Hash] Conversion for enum ts to arg
-    # x-cli-convert  [String]   method name for Convert object
-    # x-agents       [Array]    Supported agents (for doc only), if not specified: all
-    # x-tspec        [String ]  (async) true if same name in transfer spec, else name in transfer spec
-    # x-deprecation  [String ]  Deprecation message for doc
+    # description    [String]       Description
+    # type           [String,Array] Accepted type(s) for non-enum
+    # default        [String]       Default value if not specified
+    # enum           [Array]        Set with list of values for enum types accepted in transfer spec
+    # x-cli-envvar   [String]       Name of env var
+    # x-cli-option   [String]       Command line option (starts with "-")
+    # x-cli-switch   [Bool]         true if option has no arg, else by default option has a value
+    # x-cli-special  [Bool]         true if special handling (defered)
+    # x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
+    # x-agents       [Array]        Supported agents (for doc only), if not specified: all
+    # x-tspec        [Bool,String]  (async) true if same name in transfer spec, else name in transfer spec, else ignored
+    # x-deprecation  [String]       Deprecation message for doc
     SCHEMA_KEYS = %w[
       description
       type
@@ -30,12 +28,10 @@ module Aspera
       enum
       required
       $comment
-      x-type
       x-cli-envvar
       x-cli-option
       x-cli-switch
       x-cli-special
-      x-cli-enum-convert
       x-cli-convert
       x-agents
       x-tspec
@@ -141,15 +137,17 @@ module Aspera
       # no default setting
       # parameter_value=properties['default'] if parameter_value.nil? and properties.has_key?('default')
       # Check parameter type
-      expected_classes = case properties['type']
-      when 'string' then [String]
-      when 'array' then [Array]
-      when 'object' then [Hash]
-      when 'integer' then [Integer]
-      when 'boolean' then [TrueClass, FalseClass]
-      else Aspera.error_unexpected_value(properties['type'])
-      end
-      expected_classes.push(properties['x-type']) if properties.key?('x-type')
+      expected_classes =
+        [properties['type']].flatten.map do |type|
+          case type
+          when 'string' then [String]
+          when 'array' then [Array]
+          when 'object' then [Hash]
+          when 'integer' then [Integer]
+          when 'boolean' then [TrueClass, FalseClass]
+          else Aspera.error_unexpected_value(properties['type'])
+          end
+        end.flatten
       # check that value is of expected type
       raise Transfer::Error, "#{name} is : #{parameter_value.class} (#{parameter_value}), shall be #{properties['type']}, " \
         unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
@@ -163,15 +161,14 @@ module Aspera
       raise "Enum value #{parameter_value} is not allowed for #{name}" if properties.key?('enum') && !properties['enum'].include?(parameter_value)
 
       # convert some values if value on command line needs processing from value in structure
-      if (convert = properties['x-cli-enum-convert'])
-        # translate using conversion table
-        new_value = convert[parameter_value]
-        raise "Unsupported value: #{parameter_value}, expect: #{convert.keys.join(', ')}" if new_value.nil?
-        parameter_value = new_value
-      elsif (convert = properties['x-cli-convert'])
-        # "convert" has name of encoding method
-        converted_value = @convert.send(convert, parameter_value)
-        raise Transfer::Error, "unsupported #{name}: #{parameter_value}" if converted_value.nil?
+      if (convert = properties['x-cli-convert'])
+        converted_value =
+          case convert
+          when Hash then convert[parameter_value]
+          when String then @convert.send(convert, parameter_value)
+          else Aspera.error_unexpected_value(convert){"Conversion type for #{name} is Hash or String only."}
+          end
+        raise "No conversion for: #{name}=#{parameter_value}" if converted_value.nil?
         parameter_value = converted_value
       end
 

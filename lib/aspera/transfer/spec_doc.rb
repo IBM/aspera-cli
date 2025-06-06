@@ -6,8 +6,6 @@ module Aspera
   module Transfer
     # translate transfer specification to ascp parameter list
     class SpecDoc
-      CONVERT_TAGS = %w[x-cli-convert x-cli-enum-convert].freeze
-      private_constant :CONVERT_TAGS
       class << self
         # first letter of agent name symbol
         def agent_to_short(agent_sym)
@@ -43,9 +41,8 @@ module Aspera
               elsif properties['x-cli-special']
                 formatter.special_format('special')
               elsif properties['x-cli-option']
-                arg_type = properties.key?('enum') ? '{enum}' : "{#{properties['type']}}"
-                arg_type += "|{#{properties['x-type']}}" if properties.key?('x-type')
-                conversion_tag = CONVERT_TAGS.any?{ |k| properties.key?(k)} ? '(conversion)' : ''
+                arg_type = properties.key?('enum') ? '{enum}' : "{#{[properties['type']].flatten.join('|')}}"
+                conversion_tag = properties.key?('x-cli-convert') ? '(conversion)' : ''
                 sep = properties['x-cli-option'].start_with?('--') ? '=' : ' '
                 "#{properties['x-cli-option']}#{sep}#{conversion_tag}#{arg_type}"
               end
