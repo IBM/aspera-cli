@@ -128,7 +128,7 @@
         "receive"
       ],
       "x-cli-option": "--mode",
-      "x-cli-enum-convert": {
+      "x-cli-convert": {
         "receive": "recv",
         "send": "send"
       },
@@ -192,10 +192,12 @@
     },
     "http_fallback": {
       "description": "When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.",
-      "type": "boolean",
-      "x-type": "string",
+      "type": [
+        "boolean",
+        "string"
+      ],
       "x-cli-option": "-y",
-      "x-cli-enum-convert": {
+      "x-cli-convert": {
         "force": "F",
         "true": 1,
         "false": 0
@@ -581,7 +583,7 @@
         "full_csum"
       ],
       "x-cli-option": "-k",
-      "x-cli-enum-convert": {
+      "x-cli-convert": {
         "none": 0,
         "attrs": 1,
         "sparse_csum": 2,
@@ -592,8 +594,10 @@
     "retry_duration": {
       "description": "Specifies how long to wait before retrying transfer. (e.g. \"5min\")",
       "$comment": "TODO: check this.",
-      "type": "integer",
-      "x-type": "string",
+      "type": [
+        "integer",
+        "string"
+      ],
       "x-agents": [
         "transferd"
       ]
@@ -724,7 +728,6 @@
     "tags": {
       "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.",
       "type": "object",
-      "x-type": "string",
       "x-cli-option": "--tags64",
       "x-cli-convert": "json64"
     },
@@ -748,7 +751,6 @@
     "target_rate_kbps": {
       "description": "Specifies desired speed for the transfer.",
       "type": "integer",
-      "x-type": "string",
       "x-cli-option": "-l"
     },
     "target_rate_percentage": {

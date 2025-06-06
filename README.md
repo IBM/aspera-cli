@@ -3341,7 +3341,7 @@ ascli config ascp schema transferd --format=jsonpp
 | fasp_proxy | object | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Proxy for communications between the remote server and the (local) client. |
 | fasp_url | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Only used in Faspex. |
 | file_checksum | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: sha-512, sha-384, sha-256, sha1, md5, none<br/>(--file-checksum={enum}) |
-| http_fallback | boolean | Y | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){boolean}\|{string}) |
+| http_fallback | boolean<br/>string | Y | Y | Y | Y | Y | Y | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(-y (conversion){boolean\|string}) |
 | http_fallback_port | integer | Y | Y | Y | Y | Y | Y | Specifies http port when no cipher is used<br/>(-t {integer}) |
 | https_fallback_port | integer | Y | Y | Y | Y | Y | Y | Specifies https port when cipher is used<br/>(-t {integer}) |
 | icos | object | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Configuration parameters for IBM Cloud Object Storage (ICOS). |
@@ -3386,7 +3386,7 @@ ascli config ascp schema transferd --format=jsonpp
 | remove_empty_source_directory | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Remove empty source subdirectories and remove the source directory itself, if empty.<br/>(--remove-empty-source-directory) |
 | remove_skipped | boolean | Y | Y | &nbsp; | &nbsp; | Y | &nbsp; | Must also have remove_after_transfer set to true, Defaults to false, if true, skipped files will be removed as well.<br/>(--remove-skipped) |
 | resume_policy | string | Y | Y | Y | Y | Y | Y | If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:<br/>- none : Always re-transfer the entire file<br/>- attrs : Compare file attributes and resume if they match, and re-transfer if they do not<br/>- sparse_csum : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not<br/>- full_csum : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not. <br/>Note: transferd uses values: attributes, sparse_checksum, full_checksum.<br/>Allowed values: none, attrs, sparse_csum, full_csum<br/>(-k (conversion){enum}) |
-| retry_duration | integer | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specifies how long to wait before retrying transfer. (e.g. "5min") |
+| retry_duration | integer<br/>string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Specifies how long to wait before retrying transfer. (e.g. "5min") |
 | save_before_overwrite | boolean | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.<br/>File attributes are maintained in the renamed file.<br/>(--save-before-overwrite) |
 | skip_duplicate_check | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Don't check for duplicate files at the destination.<br/>(--skip-dir-traversal-dupes) |
 | skip_special_files | boolean | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If true, ascp skips special assets and proceeds with the transfer of all other assets. <br/>(--skip-special-files) |
@@ -3401,10 +3401,10 @@ ascli config ascp schema transferd --format=jsonpp
 | ssh_private_key_path | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Path to private key for SSH.<br/>(-i {string}) |
 | sshfp | string | Y | Y | Y | Y | Y | Y | Check it against server SSH host key fingerprint.<br/>(--check-sshfp={string}) |
 | symlink_policy | string | Y | Y | Y | Y | Y | Y | Handle source side symbolic links<br/>Allowed values: follow, copy, copy+force, skip<br/>(--symbolic-links={enum}) |
-| tags | object | Y | Y | Y | Y | Y | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64=(conversion){object}\|{string}) |
+| tags | object | Y | Y | Y | Y | Y | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64=(conversion){object}) |
 | tags64 | string | Y | &nbsp; | &nbsp; | &nbsp; | &nbsp; | Y | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a retry timeout for node api initiated transfers.<br/>(--tags64={string}) |
 | target_rate_cap_kbps | integer | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | Maximum target rate for incoming transfers, in kilobits per second.  Returned by upload/download_setup node API. |
-| target_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {integer}\|{string}) |
+| target_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Specifies desired speed for the transfer.<br/>(-l {integer}) |
 | target_rate_percentage | string | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | &nbsp; | TODO: remove ? |
 | title | string | &nbsp; | Y | &nbsp; | &nbsp; | Y | Y | Title of the transfer. |
 | token | string | Y | Y | Y | Y | Y | Y | Authorization token: Bearer, Basic or ATM (Also arg -W)<br/>(env:ASPERA_SCP_TOKEN) |

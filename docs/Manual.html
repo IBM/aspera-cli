@@ -4236,7 +4236,7 @@ none<br/>(–file-checksum={enum})</td>
 </tr>
 <tr>
 <td>http_fallback</td>
-<td>boolean</td>
+<td>boolean<br/>string</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
@@ -4244,8 +4244,7 @@ none<br/>(–file-checksum={enum})</td>
 <td>Y</td>
 <td>Y</td>
 <td>When true(1), attempts to perform an HTTP transfer if a FASP
-transfer cannot be performed.<br/>(-y
-(conversion){boolean}|{string})</td>
+transfer cannot be performed.<br/>(-y (conversion){boolean|string})</td>
 </tr>
 <tr>
 <td>http_fallback_port</td>
@@ -4830,7 +4829,7 @@ full_csum<br/>(-k (conversion){enum})</td>
 </tr>
 <tr>
 <td>retry_duration</td>
-<td>integer</td>
+<td>integer<br/>string</td>
 <td> </td>
 <td> </td>
 <td> </td>
@@ -5028,8 +5027,7 @@ copy+force, skip<br/>(–symbolic-links={enum})</td>
 <td>Y</td>
 <td>Metadata for transfer as JSON. Key <code>aspera</code> is reserved.
 Key <code>aspera.xfer_retry</code> specifies a retry timeout for node
-api initiated
-transfers.<br/>(–tags64=(conversion){object}|{string})</td>
+api initiated transfers.<br/>(–tags64=(conversion){object})</td>
 </tr>
 <tr>
 <td>tags64</td>
@@ -5065,8 +5063,7 @@ Returned by upload/download_setup node API.</td>
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>Specifies desired speed for the transfer.<br/>(-l
-{integer}|{string})</td>
+<td>Specifies desired speed for the transfer.<br/>(-l {integer})</td>
 </tr>
 <tr>
 <td>target_rate_percentage</td>
