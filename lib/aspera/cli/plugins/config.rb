@@ -76,6 +76,7 @@ module Aspera
         # for testing only
         SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
         CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
+        SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
         private_constant :DEFAULT_CONFIG_FILENAME,
           :CONF_PRESET_CONFIG,
           :CONF_PRESET_VERSION,
@@ -97,7 +98,8 @@ module Aspera
           :SELF_SIGNED_CERT,
           :PERSISTENCY_FOLDER,
           :DEFAULT_PRIV_KEY_LENGTH,
-          :CONF_OVERVIEW_KEYS
+          :CONF_OVERVIEW_KEYS,
+          :SMTP_CONF_PARAMS
 
         class << self
           def generate_rsa_private_key(path:, length: DEFAULT_PRIV_KEY_LENGTH)
@@ -1143,9 +1145,12 @@ module Aspera
         # @return [Hash] email server setting with defaults if not defined
         def email_settings
           smtp = options.get_option(:smtp, mandatory: true)
-          # change string keys into symbol keys
+          # change keys from string into symbol
           smtp = smtp.symbolize_keys
+          unsupported = smtp.keys - SMTP_CONF_PARAMS
+          raise Cli::Error, "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" unless unsupported.empty?
           # defaults
+          # smtp[:ssl] = nil (false)
           smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
           smtp[:port] ||= if smtp[:tls]
             587
@@ -1174,8 +1179,8 @@ module Aspera
           mail_conf = email_settings
           values[:from_name] ||= mail_conf[:from_name]
           values[:from_email] ||= mail_conf[:from_email]
-          %i[from_name from_email].each do |n|
-            Aspera.assert(values.key?(n)){"Missing email parameter: #{n}"}
+          %i[to from_email].each do |n|
+            Aspera.assert_type(values[n], String){"Missing email parameter: #{n} in config"}
           end
           start_options = [mail_conf[:domain]]
           start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)
