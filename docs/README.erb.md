@@ -297,7 +297,7 @@ It is an old unsupported version and [Apple has deprecated it](https://developer
 It will be removed from macOS in the future.
 Do not use it.
 
-The recommended way is to either use [Homebrew](https://brew.sh/).
+The recommended way is to use [Homebrew](https://brew.sh/).
 
 ```bash
 brew install ruby
@@ -305,7 +305,7 @@ brew install ruby
 
 This installs a recent Ruby suitable for <%=tool%>.
 
-To add PATH to ruby, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
+To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
 
 ```bash
 use_ruby(){
