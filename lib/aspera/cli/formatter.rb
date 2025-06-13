@@ -293,13 +293,12 @@ module Aspera
             obj_list = data
             if type.eql?(:single_object)
               obj_list = [obj_list]
-              @options[:multi_single] = :yes
             end
             Aspera.assert_type(obj_list, Array)
             Aspera.assert(obj_list.all?(Hash)){"expecting Array of Hash: #{obj_list.inspect}"}
             # :object_list is an array of hash tables, where key=colum name
             obj_list = obj_list.map{ |obj| Flattener.new(self).flatten(obj)} if @options[:flat_hash]
-            display_table(obj_list, compute_fields(obj_list, fields))
+            display_table(obj_list, compute_fields(obj_list, fields), single: type.eql?(:single_object))
           when :value_list
             # :value_list is a simple array of values, name of column provided in the :name
             display_table(data.map{ |i| {name => i}}, [name])
@@ -422,7 +421,7 @@ module Aspera
       # displays a list of objects
       # @param object_array  [Array] array of hash
       # @param fields        [Array] list of column names
-      def display_table(object_array, fields)
+      def display_table(object_array, fields, single: false)
         Aspera.assert(!fields.nil?){'missing fields parameter'}
         filter_columns_on_select(object_array)
         if object_array.empty?
@@ -432,8 +431,15 @@ module Aspera
         end
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
-          display_message(:data, object_array.first[fields.first])
-          return
+          Log.log.debug("display_table: single element, field: #{fields.first}")
+          data = object_array.first[fields.first]
+          unless data.is_a?(Array) && data.all?(Hash)
+            display_message(:data, data)
+            return
+          end
+          object_array = data
+          fields = all_fields(object_array)
+          single = false
         end
         Log.log.debug{Log.dump(:object_array, object_array)}
         # convert data to string, and keep only display fields
@@ -443,17 +449,17 @@ module Aspera
         # here : fields : list of column names
         case @options[:format]
         when :table
-          if @options[:multi_single].eql?(:yes) ||
+          if single || @options[:multi_single].eql?(:yes) ||
               (@options[:multi_single].eql?(:single) && final_table_rows.length.eql?(1))
+            # display multiple objects as multiple transposed tables
             final_table_rows.each do |row|
-              Log.log.debug{Log.dump(:row, row)}
               display_message(:data, Terminal::Table.new(
                 headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
                 style:     @options[:table_style]&.symbolize_keys))
             end
           else
-            # display the table !
+            # display the table ! as single table
             display_message(:data, Terminal::Table.new(
               headings:  fields,
               rows:      final_table_rows,
