@@ -1,16 +1,15 @@
 # Embedded Ruby template
-# lines beginning with "#erb:" are embedded ruby lines
-# processing is done in Makefile so there is no syntax error in Dockerfile
-# arg: arg_gem: specify a gemfile or a gem version
-# arg: arg_opt: specify list of optional gems
-# cspell:ignore cliuser optipng
-# Review the version of ruby to be used periodically from :
+# Lines beginning with "#erb:" are embedded ruby lines.
+# Processing is done in Makefile to avoid syntax error in Dockerfile
+# @param arg_gem specify a gemfile or a gem version
+# @param arg_opt specify list of optional gems
+# Review the version of Ruby to be used periodically from :
 # https://hub.docker.com/_/ruby
-FROM docker.io/ruby:3.4.3-slim
+FROM docker.io/ruby:3.4.4-slim
 #erb: if arg_gem.end_with?('.gem')
-# For beta gem is file, then copy it
+# For beta, gem is file, then copy it.
 COPY <%=arg_gem%> .
-# if a gem file was provided, once copied in container: use the basename only
+# If a gem file was provided, once copied in container: use the basename only
 #erb: arg_gem=File.basename(arg_gem)
 #erb: end
 # Location of Aspera SDK files (binaries, license file)
