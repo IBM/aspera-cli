@@ -1,0 +1,30 @@
+site_name: Aspera CLI
+site_url: https://laurent-martin.github.io/aspera-cli/
+repo_url: https://github.com/IBM/aspera-cli
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.expand
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+    - search.share
+    - toc.follow
+nav:
+  - Home: index.md  # Will point to README
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+
