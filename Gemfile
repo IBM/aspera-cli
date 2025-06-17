@@ -15,7 +15,7 @@ group :optional do
 end
 
 group :development do
-  gem 'grpc-tools', '~> 1.67.0'
+  gem 'grpc-tools', '~> 1.73.0'
   gem 'rake', '~> 13.0'
   gem 'reek', '~> 6.5.0'
   gem 'rspec', '~> 3.0'
