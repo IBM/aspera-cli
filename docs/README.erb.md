@@ -5584,6 +5584,32 @@ Let's use it:
 
 <%=include_commands_for_plugin(:node)%>
 
+### Open Telemetry
+
+The Node plugin supports Open Telemetry (OTel) for monitoring and tracing.
+
+<%=tool%> can poll the Node API for transfer events and send them to an OTel collector.
+
+The command expects the following parameters provided as a `Hash` positional parameter:
+
+| Parameter   | Type     | Default |  Description                    |
+|-------------|----------|---------|---------------------------------|
+| `url`       | `String` | -       | URL of the Instana backend.     |
+| `apikey`    | `String` | -       | Token for the OTel collector.   |
+| `interval`  | `Float`  | 10      | Polling interval in seconds.    |
+
+For convenience, those parameters can be provided in a preset, e.g. `otel_default`.
+
+```bash
+<%=cmd%> config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","apikey":"*********","interval":1.1}'
+```
+
+Then it is invoked like this (assuming a default node is configured):
+
+```bash
+<%=cmd%> node telemetry @preset:otel_default
+```
+
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
 IBM Aspera's newer self-managed application.
