@@ -212,7 +212,7 @@ module Aspera
           single_call = query.key?('skip')
           # API default is 100, so use 1000 for default
           query['count'] ||= 1000
-          raise Cli::BadArgument, 'options recursive and skip cannot be used together' if recursive && single_call
+          raise Cli::BadArgument, 'options `recursive` and `skip` cannot be used together' if recursive && single_call
           all_items = []
           until folders_to_process.empty?
             path = folders_to_process.shift
@@ -393,7 +393,7 @@ module Aspera
             case ak_command
             when *Plugin::ALL_OPS
               return entity_command(ak_command, @api_node, 'access_keys') do |field, value|
-                       raise 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
+                       raise Cli::BadIdentifier, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
                        @api_node.read('access_keys/self')['id']
                      end
             when :do
@@ -468,7 +468,7 @@ module Aspera
         # @return [Hash] api and main file id for given path or id in next argument
         def apifid_from_next_arg(top_file_id)
           file_path = instance_identifier(description: 'path or %id:<id>') do |attribute, value|
-            raise 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
+            raise Cli::BadIdentifier, 'Only selection "id" is supported (file id)' unless attribute.eql?('id')
             # directly return result for method
             return {api: @api_node, file_id: value}
           end
@@ -479,7 +479,7 @@ module Aspera
         def execute_command_gen4(command_repo, top_file_id)
           override_file_id = options.get_option(:root_id)
           top_file_id = override_file_id unless override_file_id.nil?
-          raise 'Specify root file id with option root_id' if top_file_id.nil?
+          raise Cli::Error, 'Specify root file id with option root_id' if top_file_id.nil?
           case command_repo
           when :v3
             # NOTE: other common actions are unauthorized with user scope
@@ -613,7 +613,7 @@ module Aspera
                 # TODO: add this ? , 'destination'=>file_info['name']
                 source_paths = [{'source' => '.'}]
               else
-                raise "Unknown source type: #{file_info['type']}"
+                raise BadArgument, "Unknown source type: #{file_info['type']}"
               end
             end
             return Main.result_transfer(transfer.start(apifid[:api].transfer_spec_gen4(apifid[:file_id], Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
@@ -674,7 +674,7 @@ module Aspera
               end
             when :create
               create_param = options.get_next_argument('creation data', validation: Hash)
-              raise 'no file_id' if create_param.key?('file_id')
+              raise Cli::BadArgument, 'no file_id' if create_param.key?('file_id')
               create_param['file_id'] = apifid[:file_id]
               create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
               # add application specific tags (AoC)
@@ -709,7 +709,7 @@ module Aspera
               async_ids = @api_node.read('async/list')['sync_ids']
               summaries = @api_node.create('async/summary', {'syncs' => async_ids})['sync_summaries']
               selected = summaries.find{ |s| s['name'].eql?(async_name)}
-              raise "no such sync: #{async_name}" if selected.nil?
+              raise Cli::BadIdentifier, "no such sync: #{async_name}" if selected.nil?
               async_id = selected['snid']
               async_ids = [async_id]
             end
@@ -781,7 +781,7 @@ module Aspera
             # name is unique, so we can return
             return id if sync_info[field].eql?(value)
           end
-          raise Cli::BadArgument, "no such sync: #{field}=#{value}"
+          raise Cli::BadIdentifier, "no such sync: #{field}=#{value}"
         end
 
         ACTIONS = %i[
@@ -842,8 +842,7 @@ module Aspera
             when :cancel
               resp = @api_node.cancel("streams/#{options.get_next_argument('transfer id')}")
               return Main.result_single_object(resp)
-            else
-              raise 'error'
+            else Aspera.error_unexpected_value(command)
             end
           when :transfer
             command = options.get_next_command(%i[list cancel show modify bandwidth_average sessions])
@@ -868,7 +867,7 @@ module Aspera
                 end
                 last_iteration_token = iteration_persistency.data.first
               end
-              raise 'reset only with once_only' if transfer_filter.key?('reset') && iteration_persistency.nil?
+              raise Cli::BadArgument, 'reset only with once_only' if transfer_filter.key?('reset') && iteration_persistency.nil?
               max_items = transfer_filter.delete(MAX_ITEMS)
               transfers_data = []
               loop do
@@ -967,8 +966,7 @@ module Aspera
                 result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
               end
               return Main.result_object_list(result)
-            else
-              raise 'error'
+            else Aspera.error_unexpected_value(command)
             end
           when :service
             command = options.get_next_command(%i[list create delete])
@@ -1109,7 +1107,7 @@ module Aspera
                 link_info = result[:http]['Link']
                 unless link_info.nil?
                   m = link_info.match(/<([^>]+)>/)
-                  raise "Cannot parse iteration in Link: #{link_info}" if m.nil?
+                  Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
                   next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
                 end
                 # same as last iteration: stop
