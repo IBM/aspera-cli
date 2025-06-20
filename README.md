@@ -303,7 +303,7 @@ It is an old unsupported version and [Apple has deprecated it](https://developer
 It will be removed from macOS in the future.
 Do not use it.
 
-The recommended way is to either use [Homebrew](https://brew.sh/).
+The recommended way is to use [Homebrew](https://brew.sh/).
 
 ```bash
 brew install ruby
@@ -311,7 +311,7 @@ brew install ruby
 
 This installs a recent Ruby suitable for `ascli`.
 
-To add PATH to ruby, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
+To add PATH to Ruby on Apple Silicon, add this in your shell configuration file (e.g. `~/.bash_profile` or `~/.zshrc`):
 
 ```bash
 use_ruby(){
@@ -4028,7 +4028,7 @@ OPTIONS:
 
 
 COMMAND: node
-SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync transfer transport upload watch_folder
+SUBCOMMANDS: access_keys api_details asperabrowser async basic_token bearer_token browse cat central delete download events health info license mkdir mkfile mklink rename search service simulator slash space ssync stream sync telemetry transfer transport upload watch_folder
 OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User's name to log in
@@ -6365,6 +6365,32 @@ upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source
 upload --username=my_ak_name --password=my_ak_secret test_file.bin
 upload test_file.bin --to-folder=my_upload_folder --ts=@json:'{"target_rate_cap_kbps":10000}'
 watch_folder list
+```
+
+### Open Telemetry
+
+The Node plugin supports Open Telemetry (OTel) for monitoring and tracing.
+
+`ascli` can poll the Node API for transfer events and send them to an OTel collector.
+
+The command expects the following parameters provided as a `Hash` positional parameter:
+
+| Parameter   | Type     | Default |  Description                    |
+|-------------|----------|---------|---------------------------------|
+| `url`       | `String` | -       | URL of the Instana backend.     |
+| `apikey`    | `String` | -       | Token for the OTel collector.   |
+| `interval`  | `Float`  | 10      | Polling interval in seconds.    |
+
+For convenience, those parameters can be provided in a preset, e.g. `otel_default`.
+
+```bash
+ascli config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","apikey":"*********","interval":1.1}'
+```
+
+Then it is invoked like this (assuming a default node is configured):
+
+```bash
+ascli node telemetry @preset:otel_default
 ```
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
