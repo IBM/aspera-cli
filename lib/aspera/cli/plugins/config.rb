@@ -643,7 +643,7 @@ module Aspera
           if %i[info version].include?(command)
             connect_id = options.get_next_argument('id or title')
             one_res = Products::Connect.instance.versions.find{ |i| i['id'].eql?(connect_id) || i['title'].eql?(connect_id)}
-            raise Cli::NoSuchIdentifier.new(:connect, connect_id) if one_res.nil?
+            raise Cli::BadIdentifier.new(:connect, connect_id) if one_res.nil?
           end
           case command
           when :list
