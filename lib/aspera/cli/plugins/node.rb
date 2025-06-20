@@ -795,7 +795,9 @@ module Aspera
           asperabrowser
           basic_token
           bearer_token
-          simulator].concat(COMMON_ACTIONS).freeze
+          simulator
+          telemetry
+        ].concat(COMMON_ACTIONS).freeze
 
         def execute_action(command=nil)
           command ||= options.get_next_command(ACTIONS)
@@ -845,11 +847,6 @@ module Aspera
             end
           when :transfer
             command = options.get_next_command(%i[list cancel show modify bandwidth_average sessions])
-            res_class_path = 'ops/transfers'
-            if %i[cancel show modify].include?(command)
-              one_res_id = instance_identifier
-              one_res_path = "#{res_class_path}/#{one_res_id}"
-            end
             case command
             when :list
               transfer_filter = query_read_delete(default: {})
@@ -876,7 +873,7 @@ module Aspera
               transfers_data = []
               loop do
                 transfer_filter['iteration_token'] = last_iteration_token unless last_iteration_token.nil?
-                result = @api_node.call(operation: 'GET', subpath: res_class_path, query: transfer_filter)
+                result = @api_node.call(operation: 'GET', subpath: 'ops/transfers', query: transfer_filter)
                 # no data
                 break if result[:data].empty?
                 # get next iteration token from link
@@ -905,7 +902,7 @@ module Aspera
                 fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path]
               }
             when :sessions
-              transfers_data = @api_node.read(res_class_path, query_read_delete)
+              transfers_data = @api_node.read('ops/transfers', query_read_delete)
               sessions = transfers_data.map{ |t| t['sessions']}.flatten
               sessions.each do |session|
                 session['start_time'] = Time.at(session['start_time_usec'] / 1_000_000.0).utc.iso8601(0)
@@ -917,16 +914,16 @@ module Aspera
                 fields: %w[id status start_time end_time target_rate_kbps]
               }
             when :cancel
-              resp = @api_node.cancel(one_res_path)
+              resp = @api_node.cancel("ops/transfers/#{instance_identifier}")
               return Main.result_single_object(resp)
             when :show
-              resp = @api_node.read(one_res_path)
+              resp = @api_node.read("ops/transfers/#{instance_identifier}")
               return Main.result_single_object(resp)
             when :modify
-              resp = @api_node.update(one_res_path, options.get_next_argument('update value', validation: Hash))
+              resp = @api_node.update("ops/transfers/#{instance_identifier}", options.get_next_argument('update value', validation: Hash))
               return Main.result_single_object(resp)
             when :bandwidth_average
-              transfers_data = @api_node.read(res_class_path, query_read_delete)
+              transfers_data = @api_node.read('ops/transfers', query_read_delete)
               # collect all key dates
               bandwidth_period = {}
               dir_info = %i[avg_kbps sessions].freeze
@@ -1080,6 +1077,90 @@ module Aspera
             server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
             server.start
             return Main.result_status('Simulator terminated')
+          when :telemetry
+            parameters = value_create_modify(command: command, default: {}).symbolize_keys
+            %i[url apikey].each do |psym|
+              raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
+            end
+            require 'socket'
+            parameters[:interval] = 10 unless parameters.key?(:interval)
+            parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
+            interval = parameters[:interval].to_f
+            raise Cli::BadArgument, 'Interval must be a positive number in seconds' if interval <= 0
+            backend_api = Rest.new(
+              base_url: "#{parameters[:url]}/v1",
+              headers: {
+                # 'Authorization'  => "apiToken #{parameters[:apikey]}",
+                'x-instana-key'  => parameters[:apikey],
+                'x-instana-host' => parameters[:hostname]
+              }
+            )
+
+            loop do
+              start_time = Time.now
+              transfer_filter = {active_only: true}
+              transfers_data = []
+              loop do
+                result = @api_node.call(operation: 'GET', subpath: 'ops/transfers', query: transfer_filter)
+                # no data
+                break if result[:data].empty?
+                # get next iteration token from link
+                next_iteration_token = nil
+                link_info = result[:http]['Link']
+                unless link_info.nil?
+                  m = link_info.match(/<([^>]+)>/)
+                  raise "Cannot parse iteration in Link: #{link_info}" if m.nil?
+                  next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
+                end
+                # same as last iteration: stop
+                break if next_iteration_token&.eql?(transfer_filter[:iteration_token])
+                transfer_filter[:iteration_token] = next_iteration_token
+                transfers_data.concat(result[:data])
+                break if next_iteration_token.nil?
+              end
+              puts("#{transfers_data.length} active transfers")
+              epoch_nsec = start_time.to_i * 1_000_000_000 + start_time.nsec
+              # https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend
+              backend_api.create('metrics', {
+                resourceMetrics: [
+                  {
+                    resource:     {
+                      attributes: [
+                        {
+                          key:   'service.name',
+                          value: {
+                            stringValue: 'mycurl5'
+                          }
+                        }
+                      ]
+                    },
+                    scopeMetrics: [
+                      {
+                        metrics: [
+                          {
+                            name:        'tutur2',
+                            unit:        '1',
+                            description: '',
+                            sum:         {
+                              aggregationTemporality: 1,
+                              isMonotonic:            true,
+                              dataPoints:             [
+                                {
+                                  asDouble:          4,
+                                  startTimeUnixNano: epoch_nsec,
+                                  timeUnixNano:      epoch_nsec
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              })
+              sleep([0, interval - (Time.now - start_time)].max)
+            end
           end
           Aspera.error_unreachable_line
         end
