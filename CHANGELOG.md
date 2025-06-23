@@ -1,6 +1,6 @@
 # Changes (Release notes)
 
-* 4.22.0.pre
+* 4.22.0
 
   * New Features:
     * `faspex5`: Support paging for Faspex5 browsing.
