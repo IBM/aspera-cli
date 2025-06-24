@@ -65,10 +65,10 @@ It is designed for:
 - `curl` (for REST calls)
 - Aspera transfer (`ascp`)
 
-If the need is to perform operations programmatically in languages such as: C, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
+If the need is to perform operations programmatically in languages such as: C/C++, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 - Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
+- Transfer SDK : with gRPC interface and language stubs (C/C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
@@ -99,14 +99,14 @@ Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, 
 Some commands will start an Aspera transfer (e.g. `upload`).
 The transfer is not directly implemented in <%=tool%>, rather <%=tool%> uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
 
-> **Note:** A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS).
+> **Note:** A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
 A **[Transfer Agent](#transfer-clients-agents)** can be local or remote...
-For example a remote Aspera Server may be used as a transfer agent (using Node API).
+For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
 i.e. using option `--transfer=node`
 
 ## Quick Start
 
-This section guides you from installation, first use and advanced use.
+This section guides you from installation to first use and advanced use.
 
 First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start using <%=tool%>.
 
@@ -226,7 +226,10 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 It is planned to provide <%=tool%> as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is a Beta feature. On Linux, the executable requires a minimum GLIBC version. Installation of `ascp` is still required separately. Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+**Note:** This is a Beta feature.
+On Linux, the executable requires a minimum GLIBC version.
+Installation of `ascp` is still required separately.
+Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
@@ -238,7 +241,7 @@ ldd --version | head -n1
 ldd (GNU libc) 2.34
 ```
 
-Check an executable's (<%=tool%>, `ascp`) minimum required GLIBC version:
+Check an executable's (e.g. `/bin/bash`, <%=tool%>, `ascp`) minimum required GLIBC version:
 
 ```bash
 objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
@@ -248,9 +251,9 @@ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 2.34
 ```
 
-> **Note:** if `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
+> **Note:** If `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
-The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [here](https://eudemo.asperademo.com/download/sdk.html).
+The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [in this page](https://eudemo.asperademo.com/download/sdk.html).
 
 ### Ruby
 

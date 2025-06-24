@@ -1298,6 +1298,7 @@ module Aspera
           )
         end
 
+        # Artifically raise an exception for tests
         def execute_test
           case options.get_next_command(%i[throw web])
           when :throw
@@ -1317,6 +1318,8 @@ module Aspera
           url.sub(%r{/+$}, '').sub(%r{^(https://[^/]+):443$}, '\1')
         end
 
+        # Look for a preset that has the corresponding URL and username
+        # @return the first one matching
         def lookup_preset(url:, username:)
           # remove extra info to maximize match
           url = canonical_url(url)
@@ -1329,6 +1332,8 @@ module Aspera
           nil
         end
 
+        # Lookup the corresponding secret for the given URL and usernames
+        # @raise Exception if mandatory and not found
         def lookup_secret(url:, username:, mandatory: false)
           secret = options.get_option(:secret)
           if secret.nil?
