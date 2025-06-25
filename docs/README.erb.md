@@ -5605,7 +5605,7 @@ Identify the region and the endpoint URL will be `https://otlp-[region]-saas.ins
 For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
 
 ```bash
-<%=cmd%> config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","apikey":"*********","interval":1.1}'
+<%=cmd%> config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"*********","interval":1.1}'
 ```
 
 Then it is invoked like this (assuming a default node is configured):
