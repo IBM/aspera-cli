@@ -5,7 +5,7 @@ DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read 
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
-subtitle: "ascli 4.22.0.pre"
+subtitle: "ascli 4.23.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -16,7 +16,7 @@ PANDOC_META_END
 
 ## Introduction
 
-Version : 4.22.0.pre
+Version : 4.23.0.pre
 
 Laurent/2016-2025
 
@@ -67,10 +67,10 @@ It is designed for:
 - `curl` (for REST calls)
 - Aspera transfer (`ascp`)
 
-If the need is to perform operations programmatically in languages such as: C, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
+If the need is to perform operations programmatically in languages such as: C/C++, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 - Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer SDK : with gRPC interface and language stubs (C, C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
+- Transfer SDK : with gRPC interface and language stubs (C/C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
 
 Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
@@ -101,14 +101,14 @@ Command line arguments beginning with `my_` in examples, e.g. `my_param_value`, 
 Some commands will start an Aspera transfer (e.g. `upload`).
 The transfer is not directly implemented in `ascli`, rather `ascli` uses one of the external Aspera Transfer Clients called **[Transfer Agents](#transfer-clients-agents)**.
 
-> **Note:** A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS).
+> **Note:** A **[Transfer Agent](#transfer-clients-agents)** is a client for the remote Transfer Server (HSTS/HSTE).
 A **[Transfer Agent](#transfer-clients-agents)** can be local or remote...
-For example a remote Aspera Server may be used as a transfer agent (using Node API).
+For example a remote Aspera Transfer Server may be used as a transfer agent (using Node API).
 i.e. using option `--transfer=node`
 
 ## Quick Start
 
-This section guides you from installation, first use and advanced use.
+This section guides you from installation to first use and advanced use.
 
 First, follow section: [Installation](#installation) (Ruby, Gem, FASP) to start using `ascli`.
 
@@ -116,7 +116,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```console
 $ ascli --version
-4.22.0.pre
+4.23.0.pre
 ```
 
 ### First use
@@ -230,7 +230,10 @@ A package with pre-installed Ruby, gem and `ascp` may also be provided.
 It is planned to provide `ascli` as a single platform-dependent executable.
 [Beta releases can be found here](https://ibm.biz/aspera-cli-exe).
 
-**Note:** This is a Beta feature. On Linux, the executable requires a minimum GLIBC version. Installation of `ascp` is still required separately. Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
+**Note:** This is a Beta feature.
+On Linux, the executable requires a minimum GLIBC version.
+Installation of `ascp` is still required separately.
+Refer to [Install `ascp`](#installation-of-ascp-through-transferd).
 
 On Linux, check the minimum required GLIBC on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:
 
@@ -242,7 +245,7 @@ ldd --version | head -n1
 ldd (GNU libc) 2.34
 ```
 
-Check an executable's (`ascli`, `ascp`) minimum required GLIBC version:
+Check an executable's (e.g. `/bin/bash`, `ascli`, `ascp`) minimum required GLIBC version:
 
 ```bash
 objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
@@ -252,9 +255,9 @@ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 2.34
 ```
 
-> **Note:** if `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
+> **Note:** If `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
-The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [here](https://eudemo.asperademo.com/download/sdk.html).
+The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [in this page](https://eudemo.asperademo.com/download/sdk.html).
 
 ### Ruby
 
@@ -832,7 +835,7 @@ ascli -v
 ```
 
 ```text
-4.22.0.pre
+4.23.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -3919,7 +3922,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.22.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.23.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -5348,36 +5351,34 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 ```
 
 `ascli` expects the same payload for creation.
-`ascli` automatically populates this payload like this:
+`ascli` automatically populates some payload fields and provides convenient additional fields that generate native fields:
 
-- `file_id` : the ID of the folder to share whose path is specified in the command line
-- `access_levels` : are set by default to full access.
-- `tags` : are set with expected values for AoC: username who creates, and workspace in which the shared folder is created.
-- `access_type` and `access_id` : need to be set by the user, or using special key as follows.
-
-To change `access_levels`, just provide the list of levels in the `@json:` payload.
+| Field           | Type     | Description |
+|-----------------|----------|-------------|
+| `file_id`       | Native<br/>Auto     | ID of the folder to share, as specified in the command line by path. |
+| `access_levels` | Native<br/>Optional | List of access levels to set for the shared folder. Defaults to full access. |
+| `tags`          | Native<br/>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
+| `access_type`   | Native<br/>Required | Type of access, such as `user`, `group`, or `workspace`. Can be set with parameter `with`. |
+| `access_id`     | Native<br/>Required | ID of the user, group, or workspace (see `with`) |
+| `with`          | `ascli`           | Recipient of shared folder. Can be a username, a group name, or a workspace name. `ascli` will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
+| `link_name`     |  `ascli`          | Name of the link file created in the user's home folder for private links. |
+| `as`            |  `ascli`          | Name of the link file created in the user's home folder for admin shared folders. |
 
 In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`. This is conveniently set by `ascli` using an empty string for the pseudo key `with`. In order to share a folder with a different, special tags are set, but this is conveniently done by `ascli` using the `as` key.
 
-The following optional additional helper keys are supported by `ascli`:
-
-- `with` : Recipient of shared folder. Can be a username, a group name, or a workspace name. `ascli` will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below).
-- `link_name` : The name of the link file created in the user's home folder for private links.
-- `as` : The name of the link file created in the user's home folder for admin shared folders.
-
-- List permissions on a shared folder as user
+List permissions on a shared folder:
 
 ```bash
 ascli aoc files perm /shared_folder_test1 list
 ```
 
-- Share a personal folder with other users
+Share a personal folder with other users:
 
 ```bash
 ascli aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
-- Revoke shared access
+Revoke shared access:
 
 ```bash
 ascli aoc files perm /shared_folder_test1 delete 6161
@@ -5392,7 +5393,7 @@ ascli aoc files short_link _path_here_ public list
 ascli aoc files short_link public delete _id_
 ```
 
-- Create an admin shared folder and shared with a user or group or workspace
+Create an admin shared folder and shared with a user or group or workspace:
 
 ```bash
 ascli aoc admin node do 1234 mkdir folder_on_node
@@ -6369,19 +6370,22 @@ watch_folder list
 
 ### Open Telemetry
 
-The Node plugin supports Open Telemetry (OTel) for monitoring and tracing.
+The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
-`ascli` can poll the Node API for transfer events and send them to an OTel collector.
+`ascli` polls the Node API for transfer events and sends them to an OTel collector.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default |  Description                    |
-|-------------|----------|---------|---------------------------------|
-| `url`       | `String` | -       | URL of the Instana backend.     |
-| `apikey`    | `String` | -       | Token for the OTel collector.   |
-| `interval`  | `Float`  | 10      | Polling interval in seconds.    |
+| Parameter   | Type     | Default |  Description                      |
+|-------------|----------|---------|-----------------------------------|
+| `url`       | `String` | -       | URL of the Instana HTTPS backend. |
+| `key`       | `String` | -       | Agent key for the backend.        |
+| `interval`  | `Float`  | 10      | Polling interval in seconds.      |
 
-For convenience, those parameters can be provided in a preset, e.g. `otel_default`.
+To retrieve backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
+Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, i.e. replace `ingress` with `otlp`.
+
+For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
 
 ```bash
 ascli config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","apikey":"*********","interval":1.1}'

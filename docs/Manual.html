@@ -4,7 +4,7 @@ DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read 
 markdownlint-disable MD033 MD003 MD053
 cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
-subtitle: "ascli 4.22.0.pre"
+subtitle: "ascli 4.23.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -18,7 +18,7 @@ src="https://bestpractices.coreinfrastructure.org/projects/5861/badge"
 alt="CII Best Practices" /></a></p>
 <h1 data-number="1" id="introduction"><span
 class="header-section-number">1</span> Introduction</h1>
-<p>Version : 4.22.0.pre</p>
+<p>Version : 4.23.0.pre</p>
 <p>Laurent/2016-2025</p>
 <p>This gem provides the <code>ascli</code> CLI (Command Line Interface)
 to IBM Aspera software.</p>
@@ -77,11 +77,11 @@ href="#extended-value-syntax">Extended Value</a>)</li>
 <li>Aspera transfer (<code>ascp</code>)</li>
 </ul>
 <p>If the need is to perform operations programmatically in languages
-such as: C, Go, Python, NodeJS, … then it is better to directly use <a
-href="https://ibm.biz/aspera_api">Aspera APIs</a></p>
+such as: C/C++, Go, Python, NodeJS, … then it is better to directly use
+<a href="https://ibm.biz/aspera_api">Aspera APIs</a></p>
 <ul>
 <li>Product APIs (REST) : e.g. AoC, Faspex, node</li>
-<li>Transfer SDK : with gRPC interface and language stubs (C, C++,
+<li>Transfer SDK : with gRPC interface and language stubs (C/C++,
 Python, .NET/C#, java, Go, Ruby, Rust, etc…)</li>
 </ul>
 <p>Using APIs (application REST API and transfer SDK) will prove to be
@@ -125,22 +125,22 @@ href="#transfer-clients-agents">Transfer Agents</a></strong>.</p>
 <blockquote>
 <p><strong>Note:</strong> A <strong><a
 href="#transfer-clients-agents">Transfer Agent</a></strong> is a client
-for the remote Transfer Server (HSTS). A <strong><a
+for the remote Transfer Server (HSTS/HSTE). A <strong><a
 href="#transfer-clients-agents">Transfer Agent</a></strong> can be local
-or remote… For example a remote Aspera Server may be used as a transfer
-agent (using Node API). i.e. using option
+or remote… For example a remote Aspera Transfer Server may be used as a
+transfer agent (using Node API). i.e. using option
 <code>--transfer=node</code></p>
 </blockquote>
 <h1 data-number="2" id="quick-start"><span
 class="header-section-number">2</span> Quick Start</h1>
-<p>This section guides you from installation, first use and advanced
+<p>This section guides you from installation to first use and advanced
 use.</p>
 <p>First, follow section: <a href="#installation">Installation</a>
 (Ruby, Gem, FASP) to start using <code>ascli</code>.</p>
 <p>Once the gem is installed, <code>ascli</code> shall be
 accessible:</p>
 <pre class="console"><code>$ ascli --version
-4.22.0.pre</code></pre>
+4.23.0.pre</code></pre>
 <h2 data-number="2.1" id="first-use"><span
 class="header-section-number">2.1</span> First use</h2>
 <p>Once installation is completed, you can proceed to the first use with
@@ -248,18 +248,20 @@ check your GLIBC version with <code>ldd</code>:</p>
 <div class="sourceCode" id="cb13"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ldd</span> <span class="at">--version</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n1</span></span></code></pre></div>
 <pre class="console"><code>ldd (GNU libc) 2.34</code></pre>
-<p>Check an executable’s (<code>ascli</code>, <code>ascp</code>) minimum
-required GLIBC version:</p>
+<p>Check an executable’s (e.g. <code>/bin/bash</code>,
+<code>ascli</code>, <code>ascp</code>) minimum required GLIBC
+version:</p>
 <div class="sourceCode" id="cb15"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">objdump</span> <span class="at">-p</span> /bin/bash <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-n</span> <span class="st">&#39;s/^.*GLIBC_//p&#39;</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-V</span> <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n1</span></span></code></pre></div>
 <pre class="console"><code>2.34</code></pre>
 <blockquote>
-<p><strong>Note:</strong> if <code>objdump</code> is not available, then
+<p><strong>Note:</strong> If <code>objdump</code> is not available, then
 use <code>strings</code> or <code>grep -z 'GLIBC_'|tr \\0 \\n</code></p>
 </blockquote>
 <p>The required GLIBC version for <code>ascp</code> can be found in the
 <a href="https://www.ibm.com/docs/en/ahts">Release Notes of HSTS</a> or
-<a href="https://eudemo.asperademo.com/download/sdk.html">here</a>.</p>
+<a href="https://eudemo.asperademo.com/download/sdk.html">in this
+page</a>.</p>
 <h2 data-number="3.2" id="ruby"><span
 class="header-section-number">3.2</span> Ruby</h2>
 <p>A Ruby interpreter is required to run <code>ascli</code>.</p>
@@ -819,7 +821,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a href=
 <p>Then, you can execute the container like a local command:</p>
 <div class="sourceCode" id="cb68"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-v</span></span></code></pre></div>
-<pre class="text"><code>4.22.0.pre</code></pre>
+<pre class="text"><code>4.23.0.pre</code></pre>
 <p>In order to keep persistency of configuration on the host, you should
 specify your user’s configuration folder as a volume for the container.
 To enable write access, a possibility is to run as <code>root</code> in
@@ -5848,7 +5850,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb285-1"><a href
 class="header-section-number">4.30</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.22.0.pre)
+        ascli -- a command line tool for Aspera Applications (v4.23.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]
@@ -7268,18 +7270,76 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb384-1"><a href
 <span id="cb384-6"><a href="#cb384-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tags&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="er">...</span><span class="fu">},</span></span>
 <span id="cb384-7"><a href="#cb384-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p><code>ascli</code> expects the same payload for creation.
-<code>ascli</code> automatically populates this payload like this:</p>
-<ul>
-<li><code>file_id</code> : the ID of the folder to share whose path is
-specified in the command line</li>
-<li><code>access_levels</code> : are set by default to full access.</li>
-<li><code>tags</code> : are set with expected values for AoC: username
-who creates, and workspace in which the shared folder is created.</li>
-<li><code>access_type</code> and <code>access_id</code> : need to be set
-by the user, or using special key as follows.</li>
-</ul>
-<p>To change <code>access_levels</code>, just provide the list of levels
-in the <code>@json:</code> payload.</p>
+<code>ascli</code> automatically populates some payload fields and
+provides convenient additional fields that generate native fields:</p>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 25%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>file_id</code></td>
+<td>Native<br/>Auto</td>
+<td>ID of the folder to share, as specified in the command line by
+path.</td>
+</tr>
+<tr>
+<td><code>access_levels</code></td>
+<td>Native<br/>Optional</td>
+<td>List of access levels to set for the shared folder. Defaults to full
+access.</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>Native<br/>Auto</td>
+<td>Set with expected values for AoC: username who creates, and
+workspace in which the shared folder is created.</td>
+</tr>
+<tr>
+<td><code>access_type</code></td>
+<td>Native<br/>Required</td>
+<td>Type of access, such as <code>user</code>, <code>group</code>, or
+<code>workspace</code>. Can be set with parameter
+<code>with</code>.</td>
+</tr>
+<tr>
+<td><code>access_id</code></td>
+<td>Native<br/>Required</td>
+<td>ID of the user, group, or workspace (see <code>with</code>)</td>
+</tr>
+<tr>
+<td><code>with</code></td>
+<td><code>ascli</code></td>
+<td>Recipient of shared folder. Can be a username, a group name, or a
+workspace name. <code>ascli</code> will resolve the name to the proper
+type and ID in fields <code>access_type</code> and
+<code>access_id</code>. If the value is the empty string, then it
+declares the shared folder in the workspace (first action to do, see
+below).</td>
+</tr>
+<tr>
+<td><code>link_name</code></td>
+<td><code>ascli</code></td>
+<td>Name of the link file created in the user’s home folder for private
+links.</td>
+</tr>
+<tr>
+<td><code>as</code></td>
+<td><code>ascli</code></td>
+<td>Name of the link file created in the user’s home folder for admin
+shared folders.</td>
+</tr>
+</tbody>
+</table>
 <p>In order to declare/create the shared folder in the workspace, a
 special value for <code>access_id</code> is used:
 <code>ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]</code>. This is
@@ -7287,31 +7347,13 @@ conveniently set by <code>ascli</code> using an empty string for the
 pseudo key <code>with</code>. In order to share a folder with a
 different, special tags are set, but this is conveniently done by
 <code>ascli</code> using the <code>as</code> key.</p>
-<p>The following optional additional helper keys are supported by
-<code>ascli</code>:</p>
-<ul>
-<li><p><code>with</code> : Recipient of shared folder. Can be a
-username, a group name, or a workspace name. <code>ascli</code> will
-resolve the name to the proper type and ID in fields
-<code>access_type</code> and <code>access_id</code>. If the value is the
-empty string, then it declares the shared folder in the workspace (first
-action to do, see below).</p></li>
-<li><p><code>link_name</code> : The name of the link file created in the
-user’s home folder for private links.</p></li>
-<li><p><code>as</code> : The name of the link file created in the user’s
-home folder for admin shared folders.</p></li>
-<li><p>List permissions on a shared folder as user</p></li>
-</ul>
+<p>List permissions on a shared folder:</p>
 <div class="sourceCode" id="cb385"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb385-1"><a href="#cb385-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files perm /shared_folder_test1 list</span></code></pre></div>
-<ul>
-<li>Share a personal folder with other users</li>
-</ul>
+<p>Share a personal folder with other users:</p>
 <div class="sourceCode" id="cb386"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb386-1"><a href="#cb386-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files perm /shared_folder_test1 create @json:<span class="st">&#39;{&quot;with&quot;:&quot;laurent&quot;}&#39;</span></span></code></pre></div>
-<ul>
-<li>Revoke shared access</li>
-</ul>
+<p>Revoke shared access:</p>
 <div class="sourceCode" id="cb387"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb387-1"><a href="#cb387-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files perm /shared_folder_test1 delete 6161</span></code></pre></div>
 <p>Public and Private short links can be managed with command:</p>
@@ -7320,10 +7362,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb388-1"><a href
 <span id="cb388-2"><a href="#cb388-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link _path_here_ private list</span>
 <span id="cb388-3"><a href="#cb388-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link _path_here_ public list</span>
 <span id="cb388-4"><a href="#cb388-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc files short_link public delete _id_</span></code></pre></div>
-<ul>
-<li>Create an admin shared folder and shared with a user or group or
-workspace</li>
-</ul>
+<p>Create an admin shared folder and shared with a user or group or
+workspace:</p>
 <div class="sourceCode" id="cb389"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb389-1"><a href="#cb389-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin node do 1234 mkdir folder_on_node</span>
 <span id="cb389-2"><a href="#cb389-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin node do 1234 perm folder_on_node create @json:<span class="st">&#39;{&quot;with&quot;:&quot;&quot;,&quot;as&quot;:&quot;folder_for_users&quot;}&#39;</span> <span class="at">--workspace</span><span class="op">=</span><span class="st">&quot;my ws&quot;</span></span>
@@ -8391,9 +8431,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb449-1"><a href
 <span id="cb449-77"><a href="#cb449-77" aria-hidden="true" tabindex="-1"></a><span class="ex">watch_folder</span> list</span></code></pre></div>
 <h2 data-number="8.14" id="open-telemetry"><span
 class="header-section-number">8.14</span> Open Telemetry</h2>
-<p>The Node plugin supports Open Telemetry (OTel) for monitoring and
-tracing.</p>
-<p><code>ascli</code> can poll the Node API for transfer events and send
+<p>The <code>node</code> plugin supports Open Telemetry (OTel) for
+monitoring and tracing.</p>
+<p><code>ascli</code> polls the Node API for transfer events and sends
 them to an OTel collector.</p>
 <p>The command expects the following parameters provided as a
 <code>Hash</code> positional parameter:</p>
@@ -8411,13 +8451,13 @@ them to an OTel collector.</p>
 <td><code>url</code></td>
 <td><code>String</code></td>
 <td>-</td>
-<td>URL of the Instana backend.</td>
+<td>URL of the Instana HTTPS backend.</td>
 </tr>
 <tr>
-<td><code>apikey</code></td>
+<td><code>key</code></td>
 <td><code>String</code></td>
 <td>-</td>
-<td>Token for the OTel collector.</td>
+<td>Agent key for the backend.</td>
 </tr>
 <tr>
 <td><code>interval</code></td>
@@ -8427,8 +8467,15 @@ them to an OTel collector.</p>
 </tr>
 </tbody>
 </table>
+<p>To retrieve backend information: Go to the Instana web interface,
+<strong>More</strong> → <strong>Agents</strong> →
+<strong>Docker</strong> and identify the agent endpoint and key,
+e.g. <code>endpoint=ingress-blue-saas.instana.io</code>. Identify the
+region and the endpoint URL will be
+<code>https://otlp-[region]-saas.instana.io</code>, i.e. replace
+<code>ingress</code> with <code>otlp</code>.</p>
 <p>For convenience, those parameters can be provided in a preset,
-e.g. <code>otel_default</code>.</p>
+e.g. named <code>otel_default</code>.</p>
 <div class="sourceCode" id="cb450"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb450-1"><a href="#cb450-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset init otel_default @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://otlp-orange-saas.instana.io:4318&quot;,&quot;apikey&quot;:&quot;*********&quot;,&quot;interval&quot;:1.1}&#39;</span></span></code></pre></div>
 <p>Then it is invoked like this (assuming a default node is
