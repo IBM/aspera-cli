@@ -4843,36 +4843,34 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 ```
 
 <%=tool%> expects the same payload for creation.
-<%=tool%> automatically populates this payload like this:
+<%=tool%> automatically populates some payload fields and provides convenient additional fields that generate native fields:
 
-- `file_id` : the ID of the folder to share whose path is specified in the command line
-- `access_levels` : are set by default to full access.
-- `tags` : are set with expected values for AoC: username who creates, and workspace in which the shared folder is created.
-- `access_type` and `access_id` : need to be set by the user, or using special key as follows.
-
-To change `access_levels`, just provide the list of levels in the `@json:` payload.
+| Field           | Type     | Description |
+|-----------------|----------|-------------|
+| `file_id`       | Native<br/>Auto     | ID of the folder to share, as specified in the command line by path. |
+| `access_levels` | Native<br/>Optional | List of access levels to set for the shared folder. Defaults to full access. |
+| `tags`          | Native<br/>Auto     | Set with expected values for AoC: username who creates, and workspace in which the shared folder is created. |
+| `access_type`   | Native<br/>Required | Type of access, such as `user`, `group`, or `workspace`. Can be set with parameter `with`. |
+| `access_id`     | Native<br/>Required | ID of the user, group, or workspace (see `with`) |
+| `with`          | <%=tool%>           | Recipient of shared folder. Can be a username, a group name, or a workspace name. <%=tool%> will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
+| `link_name`     |  <%=tool%>          | Name of the link file created in the user's home folder for private links. |
+| `as`            |  <%=tool%>          | Name of the link file created in the user's home folder for admin shared folders. |
 
 In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`. This is conveniently set by <%=tool%> using an empty string for the pseudo key `with`. In order to share a folder with a different, special tags are set, but this is conveniently done by <%=tool%> using the `as` key.
 
-The following optional additional helper keys are supported by <%=tool%>:
-
-- `with` : Recipient of shared folder. Can be a username, a group name, or a workspace name. <%=tool%> will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below).
-- `link_name` : The name of the link file created in the user's home folder for private links.
-- `as` : The name of the link file created in the user's home folder for admin shared folders.
-
-- List permissions on a shared folder as user
+List permissions on a shared folder:
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 list
 ```
 
-- Share a personal folder with other users
+Share a personal folder with other users:
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
-- Revoke shared access
+Revoke shared access:
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 delete 6161
@@ -4887,7 +4885,7 @@ Public and Private short links can be managed with command:
 <%=cmd%> aoc files short_link public delete _id_
 ```
 
-- Create an admin shared folder and shared with a user or group or workspace
+Create an admin shared folder and shared with a user or group or workspace:
 
 ```bash
 <%=cmd%> aoc admin node do 1234 mkdir folder_on_node
@@ -5589,19 +5587,22 @@ Let's use it:
 
 ### Open Telemetry
 
-The Node plugin supports Open Telemetry (OTel) for monitoring and tracing.
+The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
-<%=tool%> can poll the Node API for transfer events and send them to an OTel collector.
+<%=tool%> polls the Node API for transfer events and sends them to an OTel collector.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default |  Description                    |
-|-------------|----------|---------|---------------------------------|
-| `url`       | `String` | -       | URL of the Instana backend.     |
-| `apikey`    | `String` | -       | Token for the OTel collector.   |
-| `interval`  | `Float`  | 10      | Polling interval in seconds.    |
+| Parameter   | Type     | Default |  Description                      |
+|-------------|----------|---------|-----------------------------------|
+| `url`       | `String` | -       | URL of the Instana HTTPS backend. |
+| `key`       | `String` | -       | Agent key for the backend.        |
+| `interval`  | `Float`  | 10      | Polling interval in seconds.      |
 
-For convenience, those parameters can be provided in a preset, e.g. `otel_default`.
+To retrieve backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
+Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, i.e. replace `ingress` with `otlp`.
+
+For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
 
 ```bash
 <%=cmd%> config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","apikey":"*********","interval":1.1}'

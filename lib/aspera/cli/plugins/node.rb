@@ -1077,7 +1077,7 @@ module Aspera
             return Main.result_status('Simulator terminated')
           when :telemetry
             parameters = value_create_modify(command: command, default: {}).symbolize_keys
-            %i[url apikey].each do |psym|
+            %i[url key].each do |psym|
               raise Cli::BadArgument, "Missing parameter: #{psym}" unless parameters.key?(psym)
             end
             require 'socket'
@@ -1088,8 +1088,8 @@ module Aspera
             backend_api = Rest.new(
               base_url: "#{parameters[:url]}/v1",
               headers: {
-                # 'Authorization'  => "apiToken #{parameters[:apikey]}",
-                'x-instana-key'  => parameters[:apikey],
+                # 'Authorization'  => "apiToken #{parameters[:key]}",
+                'x-instana-key'  => parameters[:key],
                 'x-instana-host' => parameters[:hostname]
               }
             )
@@ -1127,7 +1127,7 @@ module Aspera
                         {
                           key:   'service.name',
                           value: {
-                            stringValue: 'mycurl5'
+                            stringValue: 'IBMAspera'
                           }
                         }
                       ]
@@ -1136,15 +1136,23 @@ module Aspera
                       {
                         metrics: [
                           {
-                            name:        'tutur2',
-                            unit:        '1',
-                            description: '',
+                            name:        'active.transfers',
+                            description: 'Number of active transfers',
+                            unit:        '{transfer}',
                             sum:         {
-                              aggregationTemporality: 1,
-                              isMonotonic:            true,
+                              aggregationTemporality: 2,
+                              isMonotonic:            false,
                               dataPoints:             [
                                 {
-                                  asDouble:          4,
+                                  attributes:        [
+                                    {
+                                      key:   'server.name',
+                                      value: {
+                                        stringValue: 'HSTS1'
+                                      }
+                                    }
+                                  ],
+                                  asInt:             transfers_data.length,
                                   startTimeUnixNano: epoch_nsec,
                                   timeUnixNano:      epoch_nsec
                                 }
