@@ -40,3 +40,5 @@ beta_test:
 	make GEM_VERSION=$$(cat $(DIR_TMP)/beta.txt) test
 clean::
 	rm -f Dockerfile aspera-cli-beta.gem $(DIR_TMP)/beta.txt
+info:
+	@echo "Repo: $(DCK_REPO)"
