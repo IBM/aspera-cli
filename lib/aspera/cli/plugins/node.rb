@@ -849,7 +849,6 @@ module Aspera
             case command
             when :list
               transfer_filter = query_read_delete(default: {})
-              last_iteration_token = nil
               iteration_persistency = nil
               if options.get_option(:once_only, mandatory: true)
                 iteration_persistency = PersistencyActionOnce.new(
@@ -865,35 +864,10 @@ module Aspera
                   iteration_persistency.save
                   return Main.result_status('Persistency reset')
                 end
-                last_iteration_token = iteration_persistency.data.first
               end
               raise Cli::BadArgument, 'reset only with once_only' if transfer_filter.key?('reset') && iteration_persistency.nil?
               max_items = transfer_filter.delete(MAX_ITEMS)
-              transfers_data = []
-              loop do
-                transfer_filter['iteration_token'] = last_iteration_token unless last_iteration_token.nil?
-                result = @api_node.call(operation: 'GET', subpath: 'ops/transfers', query: transfer_filter)
-                # no data
-                break if result[:data].empty?
-                # get next iteration token from link
-                next_iteration_token = nil
-                link_info = result[:http]['Link']
-                unless link_info.nil?
-                  m = link_info.match(/<([^>]+)>/)
-                  raise "Cannot parse iteration in Link: #{link_info}" if m.nil?
-                  next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
-                end
-                # same as last iteration: stop
-                break if next_iteration_token&.eql?(last_iteration_token)
-                last_iteration_token = next_iteration_token
-                transfers_data.concat(result[:data])
-                if max_items&.<=(transfers_data.length)
-                  transfers_data = transfers_data.slice(0, max_items)
-                  break
-                end
-                break if last_iteration_token.nil?
-              end
-              iteration_persistency&.data&.[]=(0, last_iteration_token)
+              transfers_data = call_with_iteration(api: @api_node, operation: 'GET', subpath: 'ops/transfers', max: max_items, query: transfer_filter, iteration: iteration_persistency&.data)
               iteration_persistency&.save
               return {
                 type:   :object_list,
@@ -1085,7 +1059,7 @@ module Aspera
             parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
             interval = parameters[:interval].to_f
             raise Cli::BadArgument, 'Interval must be a positive number in seconds' if interval <= 0
-            backend_api = Rest.new(
+            otel_api = Rest.new(
               base_url: "#{parameters[:url]}/v1",
               headers: {
                 # 'Authorization'  => "apiToken #{parameters[:key]}",
@@ -1093,79 +1067,61 @@ module Aspera
                 'x-instana-host' => parameters[:hostname]
               }
             )
-
-            loop do
-              start_time = Time.now
-              transfer_filter = {active_only: true}
-              transfers_data = []
-              loop do
-                result = @api_node.call(operation: 'GET', subpath: 'ops/transfers', query: transfer_filter)
-                # no data
-                break if result[:data].empty?
-                # get next iteration token from link
-                next_iteration_token = nil
-                link_info = result[:http]['Link']
-                unless link_info.nil?
-                  m = link_info.match(/<([^>]+)>/)
-                  Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
-                  next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
-                end
-                # same as last iteration: stop
-                break if next_iteration_token&.eql?(transfer_filter[:iteration_token])
-                transfer_filter[:iteration_token] = next_iteration_token
-                transfers_data.concat(result[:data])
-                break if next_iteration_token.nil?
-              end
-              puts("#{transfers_data.length} active transfers")
-              epoch_nsec = start_time.to_i * 1_000_000_000 + start_time.nsec
-              # https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend
-              backend_api.create('metrics', {
-                resourceMetrics: [
-                  {
-                    resource:     {
-                      attributes: [
+            datapoint = {
+              attributes:   [
+                {
+                  key:   'server.name',
+                  value: {
+                    stringValue: 'HSTS1'
+                  }
+                }
+              ],
+              asInt:        nil,
+              timeUnixNano: nil
+            }
+            # https://opentelemetry.io/docs/specs/otel/metrics/data-model/#gauge
+            metrics = {
+              resourceMetrics: [
+                {
+                  resource:     {
+                    attributes: [
+                      {
+                        key:   'service.name',
+                        value: {
+                          stringValue: 'IBMAspera'
+                        }
+                      }
+                    ]
+                  },
+                  scopeMetrics: [
+                    {
+                      metrics: [
                         {
-                          key:   'service.name',
-                          value: {
-                            stringValue: 'IBMAspera'
+                          name:        'active.transfers',
+                          description: 'Number of active transfers',
+                          unit:        '1',
+                          gauge:       {
+                            dataPoints: [
+                              datapoint
+                            ]
                           }
                         }
                       ]
-                    },
-                    scopeMetrics: [
-                      {
-                        metrics: [
-                          {
-                            name:        'active.transfers',
-                            description: 'Number of active transfers',
-                            unit:        '{transfer}',
-                            sum:         {
-                              aggregationTemporality: 2,
-                              isMonotonic:            false,
-                              dataPoints:             [
-                                {
-                                  attributes:        [
-                                    {
-                                      key:   'server.name',
-                                      value: {
-                                        stringValue: 'HSTS1'
-                                      }
-                                    }
-                                  ],
-                                  asInt:             transfers_data.length,
-                                  startTimeUnixNano: epoch_nsec,
-                                  timeUnixNano:      epoch_nsec
-                                }
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              })
-              sleep([0, interval - (Time.now - start_time)].max)
+                    }
+                  ]
+                }
+              ]
+            }
+            loop do
+              timestamp = Time.now
+              transfers_data = call_with_iteration(api: @api_node, operation: 'GET', subpath: 'ops/transfers', query: {active_only: true})
+              datapoint[:asInt] = transfers_data.length
+              datapoint[:timeUnixNano] = timestamp.to_i * 1_000_000_000 + timestamp.nsec
+              Log.log.info("#{datapoint[:asInt]} active transfers")
+              # https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend
+              otel_api.create('metrics', metrics)
+              break if interval.eql?(0.0)
+              sleep([0.0, interval - (Time.now - timestamp)].max)
             end
           end
           Aspera.error_unreachable_line
@@ -1185,6 +1141,45 @@ module Aspera
           path_arg = options.get_next_argument(name, validation: String)
           return path_arg if @prefix_path.nil?
           return File.join(@prefix_path, path_arg)
+        end
+
+        # Executes the provided API call in loop
+        # @param api [Rest]  the API to call
+        # @param iteration [Array] a single element array with the iteration token or nil
+        # @param max [Integer] maximum number of items to return, or nil for no limit
+        # @param query [Hash] query parameters to use for the API call
+        # @param call_args [Hash] additional arguments to pass to the API call
+        # @return [Array] list of items returned by the API call
+        def call_with_iteration(api:, iteration: nil, max: nil, query: nil, **call_args)
+          query_token = query.clone || {}
+          item_list = []
+          query_token[:iteration_token] = iteration.first if iteration.is_a?(Array)
+          loop do
+            result = api.call(**call_args, query: query_token)
+            Aspera.assert_type(result[:data], Array){"Expected data to be an Array, got: #{result[:data].class}"}
+            # no data
+            break if result[:data].empty?
+            # get next iteration token from link
+            next_iteration_token = nil
+            link_info = result[:http]['Link']
+            unless link_info.nil?
+              m = link_info.match(/<([^>]+)>/)
+              Aspera.assert(m){"Cannot parse iteration in Link: #{link_info}"}
+              next_iteration_token = CGI.parse(URI.parse(m[1]).query)['iteration_token']&.first
+            end
+            # same as last iteration: stop
+            break if next_iteration_token&.eql?(query_token[:iteration_token])
+            query_token[:iteration_token] = next_iteration_token
+            item_list.concat(result[:data])
+            if max&.<=(item_list.length)
+              item_list = item_list.slice(0, max)
+              break
+            end
+            break if next_iteration_token.nil?
+          end
+          # save iteration token if needed
+          iteration[0] = query_token[:iteration_token] unless iteration.nil?
+          item_list
         end
       end
     end
