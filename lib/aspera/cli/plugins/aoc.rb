@@ -198,6 +198,7 @@ module Aspera
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
+          options.declare(:per_package, 'One folder per received package', values: :bool, default: true)
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)
@@ -894,27 +895,34 @@ module Aspera
                 # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end
+              # download all files, or specified list only
               file_list =
                 begin
                   transfer.source_list.map{ |i| {'source'=>i}}
                 rescue Cli::BadArgument
                   [{'source' => '.'}]
                 end
-              # list here
+              per_package_main_folder =
+                if options.get_option(:per_package)
+                  transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
+                end
               result_transfer = []
               formatter.display_status("Found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")
-                formatter.display_status("downloading package: [#{package_info['id']}] #{package_info['name']}")
+                formatter.display_status("Downloading package: [#{package_info['id']}] #{package_info['name']}")
                 package_node_api = aoc_api.node_api_from(
                   node_id: package_info['node_id'],
                   package_info: package_info,
                   **workspace_id_hash(name: true))
+                transfer_spec = package_node_api.transfer_spec_gen4(
+                  package_info['contents_file_id'],
+                  Transfer::Spec::DIRECTION_RECEIVE,
+                  {'paths'=> file_list})
+                transfer_spec['destination_root'] = "#{per_package_main_folder}/#{package_info['id']}" unless per_package_main_folder.nil?
+                formatter.display_status("To #{transfer_spec['destination_root']}.")
                 statuses = transfer.start(
-                  package_node_api.transfer_spec_gen4(
-                    package_info['contents_file_id'],
-                    Transfer::Spec::DIRECTION_RECEIVE,
-                    {'paths'=> file_list}),
+                  transfer_spec,
                   rest_token: package_node_api)
                 result_transfer.push({'package' => package_id, Main::STATUS_FIELD => statuses})
                 # update skip list only if all transfer sessions completed

@@ -1,6 +1,10 @@
 # Changes (Release notes)
 
 * 4.23.0.pre
+  * New Features:
+    * `aoc`: New option `per_package` to create a folder per package when receiving packages.
+  * Breaking Changes:
+    * `aoc`: `per_package` defaults to `yes`, so a new level of folder is added when receiving a package. Set to `no` to revert to previous behaviour.
 
 * 4.22.0
 
