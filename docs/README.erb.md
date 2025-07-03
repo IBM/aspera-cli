@@ -4628,7 +4628,7 @@ In this case:
   - Specify the source folder as first item in the list
   - followed by the list of file names.
 
-### Packages
+### Packages app
 
 The web-mail-like application.
 
@@ -4637,7 +4637,7 @@ The web-mail-like application.
 General syntax:
 
 ```bash
-<%=cmd%> aoc packages send [package extended value] [other parameters such as file list and transfer parameters]
+<%=cmd%> aoc packages send [package extended value] [other parameters such as options and file list]
 ```
 
 Package creation parameter are sent as **Command Parameter**.
@@ -4661,30 +4661,13 @@ If a user recipient (email) is not already registered and the workspace allows e
 - if the option `new_user_option` is `@json:{"package_contact":true}` (default), then a public link is sent and the external user does not need to create an account
 - if the option `new_user_option` is `@json:{}`, then external users are invited to join the workspace
 
-#### List packages
-
-By default, when using `aoc packages list` or `aoc packages receive ALL`, the following `query` is performed:
-
-| Query parameter            | Value   |
-|----------------------------|---------|
-| `archived`                 | `false` |
-| `has_content`              | `true`  |
-| `received`                 | `true`  |
-| `completed`                | `true`  |
-| `workspace_id`             | Set based on current workspace |
-| `dropbox_id`               | Set according to `dropbox_name`, if provided |
-| `exclude_dropbox_packages` | `true` unless `dropbox_id` is provided |
-
-Parameters provided using option `query` override this query.
-To remove a parameter, set it to `null`.
-
-#### Example: Send a package with one file to two users, using their email
+##### Example: Send a package with one file to two users, using their email
 
 ```bash
 <%=cmd%> aoc packages send @json:'{"name":"my title","note":"my note","recipients":["someuser@example.com","other@example.com"]}' my_file.dat
 ```
 
-#### Example: Send a package to a shared inbox with metadata
+##### Example: Send a package to a shared inbox with metadata
 
 ```bash
 <%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":["Shared Inbox With Meta"],"metadata":{"Project Id":"123","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' ~/Documents/Samples/200KB.1
@@ -4696,7 +4679,105 @@ It is also possible to use identifiers and API parameters:
 <%=cmd%> aoc packages send --workspace="my ws" @json:'{"name":"my pack title","recipients":[{"type":"dropbox","id":"12345"}],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' ~/Documents/Samples/200KB.1
 ```
 
-#### Example: List packages in a given shared inbox
+##### Example: Send a package with files from the Files app
+
+Find files in Files app:
+
+```bash
+<%=cmd%> aoc files browse /src_folder
+```
+
+```text
++---------------+--------+----------------+--------------+----------------------+--------------+
+| name          | type   | recursive_size | size         | modified_time        | access_level |
++---------------+--------+----------------+--------------+----------------------+--------------+
+| sample_video  | link   |                |              | 2020-11-29T22:49:09Z | edit         |
+| 100G          | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
+| 10M.dat       | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
+| Test.pdf      | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
++---------------+--------+----------------+--------------+----------------------+--------------+
+```
+
+Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
+
+```bash
+<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
+```
+
+#### Receive packages
+
+The command to receive one or multiple packages is:
+
+```bash
+<%=cmd%> aoc packages recv [package id]
+```
+
+Where `[package id]` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
+Option `once_only` is supported, see below.
+
+By default, files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder` (see description earlier).
+To not use the package ID in the folder path, set option `per_package` to `no`.
+
+##### Example: Receive all packages from a given shared inbox
+
+```bash
+<%=cmd%> aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+```
+
+To list packages that would be downloaded, without actually downloading them, replace `recv ALL` with `list` (keep options `once_only` and `query`)
+
+##### Receive new packages only (Cargo)
+
+It is possible to automatically download new packages, like using Aspera Cargo:
+
+```bash
+<%=cmd%> aoc packages recv ALL --once-only=yes --lock-port=12345
+```
+
+- `ALL` (case-sensitive) will download all packages
+- `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
+- `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
+
+Typically, one would execute this command on a regular basis, using the method of your choice: see [Scheduler](#scheduler).
+
+##### Example: Content of a received Package
+
+Some `node` operations are available for a package, such as `browse` and `find`.
+
+To list the content of a package, use command `packages browse <package id> <folder>`:
+
+```bash
+<%=cmd%> aoc package browse my5CnbeWng /
+```
+
+To list recursively, use command `find`.
+
+To download only some files listed in the package, just add the path of the files on the command line.
+
+For advanced users, it's also possible to pipe node information for the package and use node operations:
+
+```bash
+<%=cmd%> aoc package node_info <package ID here> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
+```
+
+#### List packages
+
+By default, when using `aoc packages list` or `aoc packages receive ALL`, the following `query` is performed:
+
+| Query parameter            | Value   |
+|----------------------------|---------|
+| `archived`                 | `false` |
+| `has_content`              | `true`  |
+| `received`                 | `true`  |
+| `completed`                | `true`  |
+| `workspace_id`             | Set based on current workspace. |
+| `dropbox_id`               | Set according to `dropbox_name`, if provided. |
+| `exclude_dropbox_packages` | `true` unless `dropbox_id` is provided. |
+
+Parameters provided using option `query` override this query.
+To remove a parameter, set it to `null`.
+
+##### Example: List packages in a given shared inbox
 
 When user packages are listed, the following query is used:
 
@@ -4726,74 +4807,7 @@ shared_box_id=$(<%=cmd%> aoc packages shared_inboxes show --name='My Shared Inbo
 <%=cmd%> aoc packages list --query=@json:'{"dropbox_id":"'$shared_box_id'","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false,"sort":"-received_at"}'
 ```
 
-#### Example: Receive all packages from a given shared inbox
-
-```bash
-<%=cmd%> aoc packages recv ALL --workspace=_workspace_ --once-only=yes --lock-port=12345 --query=@json:'{"dropbox_name":"_shared_inbox_name_","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
-```
-
-To list packages that would be downloaded, without actually downloading them, replace `recv ALL` with `list` (keep options `once_only` and `query`)
-
-#### Example: Send a package with files from the Files app
-
-Find files in Files app:
-
-```bash
-<%=cmd%> aoc files browse /src_folder
-```
-
-```text
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| name          | type   | recursive_size | size         | modified_time        | access_level |
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| sample_video  | link   |                |              | 2020-11-29T22:49:09Z | edit         |
-| 100G          | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
-| 10M.dat       | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
-| Test.pdf      | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
-+---------------+--------+----------------+--------------+----------------------+--------------+
-```
-
-Let's send a package with the file `10M.dat` from subfolder /src_folder in a package:
-
-```bash
-<%=cmd%> aoc files node_info /src_folder --format=json --display=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=node --transfer-info=@json:@stdin:
-```
-
-#### Receive new packages only (Cargo)
-
-It is possible to automatically download new packages, like using Aspera Cargo:
-
-```bash
-<%=cmd%> aoc packages recv ALL --once-only=yes --lock-port=12345
-```
-
-- `ALL` (case-sensitive) will download all packages
-- `--once-only=yes` keeps memory of any downloaded package in persistency files located in the configuration folder
-- `--lock-port=12345` ensures that only one instance is started at the same time, to avoid running two downloads in parallel
-
-Typically, one would execute this command on a regular basis, using the method of your choice: see [Scheduler](#scheduler).
-
-### Example: Content of a received Package
-
-Some `node` operations are available for a package, such as `browse` and `find`.
-
-To list the content of a package, use command `packages browse <package id> <folder>`:
-
-```bash
-<%=cmd%> aoc package browse my5CnbeWng /
-```
-
-To list recursively, use command `find`.
-
-To download only some files listed in the package, just add the path of the files on the command line.
-
-For advanced users, it's also possible to pipe node information for the package and use node operations:
-
-```bash
-<%=cmd%> aoc package node_info <package ID here> / --format=json --show-secrets=yes --display=data | <%=cmd%> node -N --preset=@json:@stdin: access_key do self browse /
-```
-
-### Files
+### Files app
 
 The Files application presents a **Home** folder to users in a given workspace.
 Files located here are either user's files, or shared folders.
@@ -5589,17 +5603,19 @@ Let's use it:
 
 The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
+> **Note:** This is an experimental feature and currently only available for the `node` plugin and Instana backend.
+
 <%=tool%> polls the Node API for transfer events and sends them to an OTel collector.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default |  Description                      |
-|-------------|----------|---------|-----------------------------------|
-| `url`       | `String` | -       | URL of the Instana HTTPS backend. |
-| `key`       | `String` | -       | Agent key for the backend.        |
-| `interval`  | `Float`  | 10      | Polling interval in seconds.      |
+| Parameter   | Type     | Default |  Description                                      |
+|-------------|----------|---------|---------------------------------------------------|
+| `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.        |
+| `key`       | `String` | -       | Agent key for the backend.                        |
+| `interval`  | `Float`  | 10      | Polling interval in seconds. `0` for single shot. |
 
-To retrieve backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
+To retrieve OTel backend information: Go to the Instana web interface, **More** &rarr; **Agents** &rarr; **Docker** and identify the agent endpoint and key, e.g. `endpoint=ingress-blue-saas.instana.io`.
 Identify the region and the endpoint URL will be `https://otlp-[region]-saas.instana.io`, i.e. replace `ingress` with `otlp`.
 
 For convenience, those parameters can be provided in a preset, e.g. named `otel_default`.
@@ -5613,6 +5629,12 @@ Then it is invoked like this (assuming a default node is configured):
 ```bash
 <%=cmd%> node telemetry @preset:otel_default
 ```
+
+In Instana, create a custom Dashboard to visualize the OTel data:
+
+- Add Widget: Histogram
+- Data Source: Infrastructure and Platforms
+- Metric: search `transfer`
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
