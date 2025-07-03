@@ -1,4 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/transfer/sync_instance.schema.yaml
+$comment: >-
+  `x-` fields documented in command_line_builder.rb
+  This spec is specific to ascli.
+  The native async conf format is now preferred.
 title: SyncSessionSpec
+description: Sync session parameters for async.
 type: object
 properties:
   name:

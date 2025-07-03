@@ -17,8 +17,10 @@ module Aspera
   module Transfer
     # builds command line arg for async and execute it
     module Sync
-      # sync direction, default is push
+      # sync direction
       DIRECTIONS = %i[push pull bidi].freeze
+      # default direction for sync
+      DEFAULT_DIRECTION = :push
       # JSON for async instance command line options
       INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'instance')
       SESSION_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'session')
@@ -26,6 +28,7 @@ module Aspera
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
       # Translation of transfer spec parameters to async v2 API (asyncs)
+      # TODO: complete this list with all transfer spec parameters or include in async json schema with x- parameters
       TSPEC_TO_ASYNC_CONF = {
         'remote_host'     => 'remote.host',
         'remote_user'     => 'remote.user',
@@ -87,6 +90,13 @@ module Aspera
           return certificates_to_use
         end
 
+        # Get symbol of sync direction, defaulting to :push
+        # @param params [Hash] sync parameters, old or new format
+        # @return [Symbol] direction symbol, one of :push, :pull, :bidi
+        def direction_sym(params)
+          (params['direction'] || DEFAULT_DIRECTION).to_sym
+        end
+
         # @param sync_params [Hash] sync parameters, old or new format
         # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params)
@@ -105,7 +115,7 @@ module Aspera
             Aspera.assert_type(remote['path'], String){'remote path'}
             # get transfer spec if possible, and feed back to new structure
             if block_given?
-              transfer_spec = yield((sync_params['direction'] || 'push').to_sym, sync_params['local']['path'], remote['path'])
+              transfer_spec = yield(direction_sym(sync_params), sync_params['local']['path'], remote['path'])
               # translate transfer spec to async parameters
               TSPEC_TO_ASYNC_CONF.each do |ts_param, sy_path|
                 next unless transfer_spec.key?(ts_param)
@@ -139,7 +149,7 @@ module Aspera
               sync_params['sessions'].each do |session|
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
-                transfer_spec = yield((session['direction'] || 'push').to_sym, session['local_dir'], session['remote_dir'])
+                transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
                 SESSION_SCHEMA['properties'].each do |name, properties|
                   if properties.key?('x-tspec')
                     tspec_param = properties['x-tspec'].is_a?(TrueClass) ? name : properties['x-tspec'].to_s
@@ -158,7 +168,7 @@ module Aspera
             end
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
-              Aspera.assert(session_params.key?('name')){'session must contain at least name'}
+              Aspera.assert(session_params.key?('name')){'session must contain at least: name'}
               session_builder = CommandLineBuilder.new(session_params, SESSION_SCHEMA, Convert)
               session_builder.process_params
               session_builder.add_env_args(env_args)
