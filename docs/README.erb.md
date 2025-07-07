@@ -594,10 +594,7 @@ This can be installed either be installing an Aspera transfer software or using 
 
 #### Installation of `ascp` through `transferd`
 
-The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon.
-
-Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
-
+The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
 Install using <%=tool%> for the current platform with:
 
 ```bash
@@ -610,14 +607,18 @@ or
 <%=cmd%> config transferd install
 ```
 
-The installation of the transfer binary follows those steps:
+The installation of the transfer binaries follows those steps:
 
-- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specified a URL where to take the archive from.
-- The location of archives is retrieved from the URL specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>
-- The archive for the current system architecture (CPU and OS) is selected and downloaded.
+- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specifies directly the URL where to take the archive from.
+- Download the YAML file from the URL specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>. This file provides the list of supported OS, CPU and versions of the Aspera Transfer Daemon.
+- Select the archive for the current system architecture (CPU and OS) is selected and downloaded. An alternate version can be specified as position argument, e.g. `1.1.3`.
+- By default, the archive is extracted to `$HOME/.aspera/sdk`, this can be changed by setting the `sdk_folder` option.
 
-The option `locations_url` can be set to override the URL where the list of versions is located, in case of air-gap environment or for testing.
-Option `sdk_url` can be set to specify a direct location for the transfer binaries.
+| Option          | Default | Description |
+|-----------------|---------|-------------|
+| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer SDK archive. `DEF` means: select from available archives. |
+| `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
+| `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
 
 Available Transfer Daemon versions available from `locations_url` can be listed with: `<%=cmd%> config transferd list`
 
@@ -639,13 +640,15 @@ To download it, pipe to `config download`:
 <%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
 ```
 
-If installation from a local file preferred instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+If installation from a local file preferred (airgap installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```bash
 <%=cmd%> config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
 #### Installation of `ascp` through other component
 
