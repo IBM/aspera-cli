@@ -675,7 +675,7 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 #### Gem files and dependencies
 
-The sample script: [examples/build_package.sh](examples/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
+The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
 
 ```console
 $ ./build_package.sh aspera-cli 4.18.0
@@ -867,9 +867,9 @@ mkdir -p $HOME/.aspera/<%=cmd%>
 
 #### Container: Sample start script
 
-A convenience sample script is also provided: download the script [`d<%=cmd%>`](../examples/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>) :
+A convenience sample script is also provided: download the script [`d<%=cmd%>`](../container/d<%=cmd%>) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/container/d<%=cmd%>) :
 
-> **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> config gem path)/../examples/d<%=cmd%> <%=cmd%>`
+> **Note:** If you have installed <%=tool%>, the script `d<%=cmd%>` can also be found: `cp $(<%=cmd%> config gem path)/../container/d<%=cmd%> <%=cmd%>`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -889,7 +889,7 @@ To add local storage as a volume, you can use the env var `docker_args`:
 Example of use:
 
 ```bash
-curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/d<%=cmd%>
+curl -o <%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/container/d<%=cmd%>
 chmod a+x <%=cmd%>
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir

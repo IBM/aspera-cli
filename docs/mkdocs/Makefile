@@ -14,3 +14,6 @@ all:: $(VENV_FLAG)
 	cp $(DIR_TOP)README.md $(DIR_MKDOC)docs/index.md
 	source $(VENV_DIR)bin/activate &&\
 	mkdocs serve
+clean::
+	rm -rf $(DIR_MKDOC)docs
+	rm -rf $(VENV_DIR)

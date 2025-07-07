@@ -610,10 +610,7 @@ This can be installed either be installing an Aspera transfer software or using 
 
 #### Installation of `ascp` through `transferd`
 
-The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon.
-
-Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
-
+The easiest option to install `ascp` is through the use of the IBM Aspera Transfer Daemon (`transferd`).
 Install using `ascli` for the current platform with:
 
 ```bash
@@ -626,14 +623,18 @@ or
 ascli config transferd install
 ```
 
-The installation of the transfer binary follows those steps:
+The installation of the transfer binaries follows those steps:
 
-- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specified a URL where to take the archive from.
-- The location of archives is retrieved from the URL specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>
-- The archive for the current system architecture (CPU and OS) is selected and downloaded.
+- Check the value of option `sdk_url`: if the value is the default value `DEF`, then the procedure follows, else it specifies directly the URL where to take the archive from.
+- Download the YAML file from the URL specified by option `locations_url` whose default value is <https://ibm.biz/sdk_location>. This file provides the list of supported OS, CPU and versions of the Aspera Transfer Daemon.
+- Select the archive for the current system architecture (CPU and OS) is selected and downloaded. An alternate version can be specified as position argument, e.g. `1.1.3`.
+- By default, the archive is extracted to `$HOME/.aspera/sdk`, this can be changed by setting the `sdk_folder` option.
 
-The option `locations_url` can be set to override the URL where the list of versions is located, in case of air-gap environment or for testing.
-Option `sdk_url` can be set to specify a direct location for the transfer binaries.
+| Option          | Default | Description |
+|-----------------|---------|-------------|
+| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer SDK archive. `DEF` means: select from available archives. |
+| `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
+| `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
 
 Available Transfer Daemon versions available from `locations_url` can be listed with: `ascli config transferd list`
 
@@ -655,13 +656,15 @@ To download it, pipe to `config download`:
 ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | ascli config download @stdin:
 ```
 
-If installation from a local file preferred instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+If installation from a local file preferred (airgap installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```bash
 ascli config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
 The format is: `file:///<path>`, where `<path>` can be either a relative path (not starting with `/`), or an absolute path.
+
+Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
 #### Installation of `ascp` through other component
 
@@ -688,7 +691,7 @@ Refer to section: [Transfer Agents](#transfer-clients-agents)
 
 #### Gem files and dependencies
 
-The sample script: [examples/build_package.sh](examples/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
+The sample script: [windows/build_package.sh](windows/build_package.sh) can be used to download all necessary gems and dependencies in a `tar.gz`.
 
 ```console
 $ ./build_package.sh aspera-cli 4.18.0
@@ -880,9 +883,9 @@ asclish
 
 #### Container: Sample start script
 
-A convenience sample script is also provided: download the script [`dascli`](../examples/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli) :
+A convenience sample script is also provided: download the script [`dascli`](../container/dascli) from [the GIT repo](https://raw.githubusercontent.com/IBM/aspera-cli/main/container/dascli) :
 
-> **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../examples/dascli ascli`
+> **Note:** If you have installed `ascli`, the script `dascli` can also be found: `cp $(ascli config gem path)/../container/dascli ascli`
 
 Some environment variables can be set for this script to adapt its behavior:
 
@@ -902,7 +905,7 @@ To add local storage as a volume, you can use the env var `docker_args`:
 Example of use:
 
 ```bash
-curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/examples/dascli
+curl -o ascli https://raw.githubusercontent.com/IBM/aspera-cli/main/container/dascli
 chmod a+x ascli
 export xferdir=$HOME/xferdir
 mkdir -p $xferdir
@@ -2173,7 +2176,7 @@ preset set default shares conf_name
 preset show conf_name
 preset unset conf_name param
 preset update conf_name --p1=v1 --p2=v2
-proxy_check --fpac=@file:examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
+proxy_check --fpac=@file:proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 pubkey @file:my_key
 remote_certificate chain https://node.example.com/path
 remote_certificate name https://node.example.com/path
@@ -3993,21 +3996,21 @@ OPTIONS: global
         --default=ENUM               Wizard: set as default configuration for specified plugin (also: update): no, [yes]
         --test-mode=ENUM             Wizard: skip private key check step: [no], yes
         --key-path=VALUE             Wizard: path to private key for JWT
-        --ascp-path=VALUE            Path to ascp
-        --use-product=VALUE          Use ascp from specified product
-        --sdk-url=VALUE              URL to get Aspera Transfer Daemon
-        --locations-url=VALUE        URL to get locations of Aspera Transfer Daemon
-        --sdk-folder=VALUE           SDK folder path
+        --ascp-path=VALUE            Ascp: Path to ascp
+        --use-product=VALUE          Ascp: Use ascp from specified product
+        --sdk-url=VALUE              Ascp: URL to get Aspera Transfer Executables
+        --locations-url=VALUE        Ascp: URL to get locations of Aspera Transfer Daemon
+        --sdk-folder=VALUE           Ascp: SDK folder path
         --progress-bar=ENUM          Display progress bar: [no], yes
-        --smtp=VALUE                 SMTP configuration (Hash)
-        --notify-to=VALUE            Email recipient for notification of transfers
-        --notify-template=VALUE      Email ERB template for notification of transfers
-        --insecure=ENUM              Do not validate any HTTPS certificate: [no], yes
-        --ignore-certificate=VALUE   Do not validate HTTPS certificate for these URLs (Array)
-        --silent-insecure=ENUM       Issue a warning if certificate is ignored: no, [yes]
-        --cert-stores=VALUE          List of folder with trusted certificates (Array, String)
-        --http-options=VALUE         Options for HTTP/S socket (Hash)
-        --http-proxy=VALUE           URL for HTTP proxy with optional credentials (String)
+        --smtp=VALUE                 Email: SMTP configuration (Hash)
+        --notify-to=VALUE            Email: Recipient for notification of transfers
+        --notify-template=VALUE      Email: ERB template for notification of transfers
+        --insecure=ENUM              HTTP/S: Do not validate any certificate: [no], yes
+        --ignore-certificate=VALUE   HTTP/S: Do not validate certificate for these URLs (Array)
+        --silent-insecure=ENUM       HTTP/S: Issue a warning if certificate is ignored: no, [yes]
+        --cert-stores=VALUE          HTTP/S: List of folder with trusted certificates (Array, String)
+        --http-options=VALUE         HTTP/S: Options for HTTP/S socket (Hash)
+        --http-proxy=VALUE           HTTP/S: URL for proxy with optional credentials (String)
         --cache-tokens=ENUM          Save and reuse OAuth tokens: no, [yes]
         --fpac=VALUE                 Proxy auto configuration script
         --proxy-credentials=VALUE    HTTP proxy credentials for fpac: user, password (Array)
