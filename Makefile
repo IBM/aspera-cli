@@ -79,7 +79,7 @@ PROTO_PATH=$(DIR_TMP)protos/
 GRPC_DEST=$(DIR_LIB)
 grpc:
 	mkdir -p $(PROTO_PATH)
-	$(DIR_TOP)examples/get_proto_file.rb $(PROTO_PATH)
+	$(DIR_DOC)get_proto_file.rb $(PROTO_PATH)
 	grpc_tools_ruby_protoc\
 	  --proto_path=$(PROTO_PATH)\
 	  --ruby_out=$(GRPC_DEST)\

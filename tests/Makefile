@@ -1600,7 +1600,7 @@ $(T)conf_smtp: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(T)conf_pac: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) config proxy_check --fpac=@file:$(DIR_TOP)examples/proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
+	$(INCMAN)$(CLI_TEST) config proxy_check --fpac=@file:$(DIR_TST)proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 	@$(STOP_TEST) $@
 $(T)conf_check_gem: $(TMP_EXISTS)
 	@$(START_TEST) $@
