@@ -1,6 +1,6 @@
 # Single executable ascli
 
-The goal here is to build the tool as a compiled single executable
+Build the CLI tool as a compiled single executable.
 
 Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) and [here](https://github.com/you54f/ruby-packer)) was used to build a single executable.
 
@@ -8,6 +8,8 @@ Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) an
 
 A modern version of this is now used: [`tebako`](https://github.com/tamatebako/tebako) for which a container is provided.
 
+Usage: (non-Windows)
+
 ```bash
-make GEM_VERSION=4.11.0
+make GEM_VERSION=4.22.0
 ```
