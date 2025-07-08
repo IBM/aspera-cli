@@ -13,7 +13,7 @@ definition = Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil)
 # Gem names and version requirements in the selected group
 line = definition.dependencies.filter_map do |dep|
   next unless dep.groups.include?(groupname.to_sym)
-  "'#{dep.name}:#{dep.requirement}'"
+  "'#{dep.name}:#{dep.requirement.to_s.delete(' ')}'"
 end.join(' ')
 
 print(line)
