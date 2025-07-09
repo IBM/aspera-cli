@@ -196,6 +196,8 @@ module Aspera
           last_line = ''
           while (line = stderr.gets)
             line.chomp!
+            # skip lines that may have accents
+            next unless line.valid_encoding?
             last_line = line
             case line
             when /^DBG Path ([^ ]+) (dir|file) +: (.*)$/
