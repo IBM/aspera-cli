@@ -691,7 +691,7 @@ module Aspera
             # collect info from ascp executable
             data = Ascp::Installation.instance.ascp_info
             # add command line transfer spec
-            data['ts'] = transfer.updated_ts
+            data['ts'] = transfer.option_transfer_spec
             # add keys
             DataRepository::ELEMENTS.each_with_object(data){ |i, h| h[i.to_s] = DataRepository.instance.item(i)}
             # declare those as secrets
