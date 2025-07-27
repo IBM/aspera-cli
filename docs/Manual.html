@@ -200,7 +200,7 @@ class="header-section-number">2.2</span> Going further</h2>
 <p>Get familiar with configuration, options, commands : <a
 href="#command-line-interface">Command Line Interface</a>.</p>
 <p>Then, follow the section relative to the product you want to interact
-with (Aspera on Cloud, Faspex, …) : <a href="plugins">Application
+with (Aspera on Cloud, Faspex, …) : <a href="#plugins">Application
 Plugins</a></p>
 <h1 data-number="3" id="installation"><span
 class="header-section-number">3</span> Installation</h1>
@@ -805,7 +805,7 @@ class="sourceCode bat"><code class="sourceCode dosbat"><span id="cb61-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp install <span class="at">--sdk-url</span><span class="op">=</span>file:///sdk.zip</span></code></pre></div>
 <blockquote>
 <p><strong>Note:</strong> An example of installation script is provided:
-<a href="docs/install.bat">docs/install.bat</a></p>
+<a href="windows/install.bat">windows/install.bat</a></p>
 </blockquote>
 <h2 data-number="3.6" id="container"><span
 class="header-section-number">3.6</span> Container</h2>
@@ -843,7 +843,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb65-1"><a href=
 <h3 data-number="3.6.2" id="container-details"><span
 class="header-section-number">3.6.2</span> Container: Details</h3>
 <p>The container image is built from this <a
-href="Dockerfile.tmpl.erb">Dockerfile</a>. The entry point is
+href="container/Dockerfile.tmpl.erb">Dockerfile</a>. The entry point is
 <code>ascli</code> and the default command is <code>help</code>.</p>
 <p>The container can be executed for individual commands like this: (add
 <code>ascli</code> commands and options at the end of the command line,
@@ -6153,7 +6153,7 @@ OPTIONS:
         --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --per-package=ENUM           One folder per received package: no, [yes]
+        --package-folder=VALUE       Field of package to use as folder name, or @none: (String, NilClass)
 
 
 COMMAND: server
@@ -7139,14 +7139,21 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb373-1"><a href
 class="header-section-number">5.6.2</span> Receive packages</h3>
 <p>The command to receive one or multiple packages is:</p>
 <div class="sourceCode" id="cb374"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb374-1"><a href="#cb374-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc packages recv [package id]</span></code></pre></div>
-<p>Where <code>[package id]</code> is the identifier of the package to
-receive or <code>ALL</code> to receive all packages matching the query.
-Option <code>once_only</code> is supported, see below.</p>
-<p>By default, files will be downloaded in a folder named with the
-package ID inside the folder specified by option <code>to_folder</code>
-(see description earlier). To not use the package ID in the folder path,
-set option <code>per_package</code> to <code>no</code>.</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb374-1"><a href="#cb374-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc packages recv <span class="op">&lt;</span>package id<span class="op">&gt;</span> [<span class="op">&lt;</span>file<span class="op">&gt;</span> ...]</span></code></pre></div>
+<p>Where <code>&lt;package id&gt;</code> is the identifier of the
+package to receive or <code>ALL</code> to receive all packages matching
+the query. Option <code>once_only</code> is supported, see below.</p>
+<p>To download only some files from the package, just add the path of
+the files on the command line: <code>[file list]</code>, see option
+<code>sources</code>. By default, all files in the package are
+downloaded, i.e. <code>.</code> is used as the file list.</p>
+<p>Option <code>package_folder</code> define the attribute of folder
+used as destination sub folder in the <code>to_folder</code> path (see
+description earlier). Default value is <code>id</code>, so all package
+files will be downloaded in a folder named with the package ID inside
+the folder specified by option <code>to_folder</code>. To not use the
+package ID in the folder path, set option <code>package_folder</code> to
+<code>@none:</code>.</p>
 <h4 data-number="5.6.2.1"
 id="example-receive-all-packages-from-a-given-shared-inbox"><span
 class="header-section-number">5.6.2.1</span> Example: Receive all
@@ -7183,9 +7190,7 @@ as <code>browse</code> and <code>find</code>.</p>
 <code>packages browse &lt;package id&gt; &lt;folder&gt;</code>:</p>
 <div class="sourceCode" id="cb377"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb377-1"><a href="#cb377-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc package browse my5CnbeWng /</span></code></pre></div>
-<p>To list recursively, use command <code>find</code>.</p>
-<p>To download only some files listed in the package, just add the path
-of the files on the command line.</p>
+<p>Use command <code>find</code> to list recursively.</p>
 <p>For advanced users, it’s also possible to pipe node information for
 the package and use node operations:</p>
 <div class="sourceCode" id="cb378"><pre
@@ -7598,7 +7603,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb393-1"><a href
 <span id="cb393-108"><a href="#cb393-108" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
 <span id="cb393-109"><a href="#cb393-109" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive INIT <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;}&#39;</span></span>
 <span id="cb393-110"><a href="#cb393-110" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb393-111"><a href="#cb393-111" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>. /</span>
+<span id="cb393-111"><a href="#cb393-111" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>. / <span class="at">--package-folder</span><span class="op">=</span>name</span>
 <span id="cb393-112"><a href="#cb393-112" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> test_file.bin</span>
 <span id="cb393-113"><a href="#cb393-113" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
 <span id="cb393-114"><a href="#cb393-114" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>

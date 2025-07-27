@@ -969,7 +969,7 @@ $(T)aocp3: $(T)aoc_pack_send1
 	date;\
 	done
 	$(INCMAN)$(CLI_TEST) aoc packages receive $$(cat $(STATE)package_id3) --to-folder=$(DIR_TMP).
-	$(INCMAN)$(CLI_TEST) aoc packages receive $$(cat $(STATE)package_id3) --to-folder=$(DIR_TMP). /
+	$(INCMAN)$(CLI_TEST) aoc packages receive $$(cat $(STATE)package_id3) --to-folder=$(DIR_TMP). / --package-folder=name
 	$(INCMAN)$(CLI_TEST) aoc packages browse $$(cat $(STATE)package_id3) /
 	@$(STOP_TEST) $@
 $(T)aocp4: $(TMP_EXISTS)

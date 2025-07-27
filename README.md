@@ -202,7 +202,7 @@ complete
 
 Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
+Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
 
 ## Installation
 
@@ -775,7 +775,7 @@ gem install --force --local *.gem
 ascli config ascp install --sdk-url=file:///sdk.zip
 ```
 
-> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
+> **Note:** An example of installation script is provided: [windows/install.bat](windows/install.bat)
 
 ### Container
 
@@ -816,7 +816,7 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](Dockerfile.tmpl.erb).
+The container image is built from this [Dockerfile](container/Dockerfile.tmpl.erb).
 The entry point is `ascli` and the default command is `help`.
 
 The container can be executed for individual commands like this: (add `ascli` commands and options at the end of the command line, e.g. `-v` to display the version)
@@ -4193,7 +4193,7 @@ OPTIONS:
         --workspace=VALUE            Name of workspace (String, NilClass)
         --new-user-option=VALUE      New user creation option for unknown package recipients (Hash)
         --validate-metadata=ENUM     Validate shared inbox metadata: no, [yes]
-        --per-package=ENUM           One folder per received package: no, [yes]
+        --package-folder=VALUE       Field of package to use as folder name, or @none: (String, NilClass)
 
 
 COMMAND: server
@@ -5221,14 +5221,18 @@ ascli aoc files node_info /src_folder --format=json --display=data | ascli aoc p
 The command to receive one or multiple packages is:
 
 ```bash
-ascli aoc packages recv [package id]
+ascli aoc packages recv <package id> [<file> ...]
 ```
 
-Where `[package id]` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
+Where `<package id>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
 Option `once_only` is supported, see below.
 
-By default, files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder` (see description earlier).
-To not use the package ID in the folder path, set option `per_package` to `no`.
+To download only some files from the package, just add the path of the files on the command line: `[file list]`, see option `sources`.
+By default, all files in the package are downloaded, i.e. `.` is used as the file list.
+
+Option `package_folder` define the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
+Default value is `id`, so all package files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder`.
+To not use the package ID in the folder path, set option `package_folder` to `@none:`.
 
 ##### Example: Receive all packages from a given shared inbox
 
@@ -5262,9 +5266,7 @@ To list the content of a package, use command `packages browse <package id> <fol
 ascli aoc package browse my5CnbeWng /
 ```
 
-To list recursively, use command `find`.
-
-To download only some files listed in the package, just add the path of the files on the command line.
+Use command `find` to list recursively.
 
 For advanced users, it's also possible to pipe node information for the package and use node operations:
 
@@ -5580,7 +5582,7 @@ packages receive ALL --once-only=yes --to-folder=. --lock-port=12345
 packages receive ALL --once-only=yes --to-folder=. --lock-port=12345 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query=@json:'{"dropbox_name":"my_shared_inbox_name"}'
 packages receive package_id3 --to-folder=.
-packages receive package_id3 --to-folder=. /
+packages receive package_id3 --to-folder=. / --package-folder=name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"$(notdir test) PACKAGE_TITLE_BASE","recipients":["my_shared_inbox_meta"],"metadata":{"Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin

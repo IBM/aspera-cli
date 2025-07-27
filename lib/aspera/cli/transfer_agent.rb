@@ -88,14 +88,6 @@ module Aspera
       # add other transfer spec parameters
       def option_transfer_spec_deep_merge(ts); @transfer_spec_command_line.deep_merge!(ts); end
 
-      # @return [Hash] transfer spec with updated values from command line, including removed values
-      def updated_ts(transfer_spec={})
-        transfer_spec.deep_merge!(@transfer_spec_command_line)
-        # recursively remove values that are nil (user wants to delete)
-        transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
-        return transfer_spec
-      end
-
       attr_reader :transfer_info
 
       # multiple option are merged
@@ -173,9 +165,10 @@ module Aspera
 
       # This is how the list of files to be transferred is specified
       # get paths suitable for transfer spec from command line
+      # @param default [String] if set, used as default file for --sources=@args
       # @return [Hash] {source: (mandatory), destination: (optional)}
       # computation is done only once, cache is kept in @transfer_paths
-      def ts_source_paths
+      def ts_source_paths(default: nil)
         # return cache if set
         return @transfer_paths unless @transfer_paths.nil?
         # start with lower priority : get paths from transfer spec on command line
@@ -185,8 +178,9 @@ module Aspera
         case file_list
         when nil, FILE_LIST_FROM_ARGS
           Log.log.debug('getting file list as parameters')
+          Aspera.assert_type(default, Array) unless default.nil?
           # get remaining arguments
-          file_list = @opt_mgr.get_next_argument('source file list', multiple: true)
+          file_list = @opt_mgr.get_next_argument('source file list', multiple: true, default: default)
           raise Cli::BadArgument, 'specify at least one file on command line or use ' \
             "--sources=#{FILE_LIST_FROM_TRANSFER_SPEC} to use transfer spec" if !file_list.is_a?(Array) || file_list.empty?
         when FILE_LIST_FROM_TRANSFER_SPEC
@@ -252,7 +246,9 @@ module Aspera
         # update command line paths, unless destination already has one
         @transfer_spec_command_line['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
-        updated_ts(transfer_spec)
+        transfer_spec.deep_merge!(@transfer_spec_command_line)
+        # recursively remove values that are nil (user wants to delete)
+        transfer_spec.deep_do{ |hash, key, value, _unused| hash.delete(key) if value.nil?}
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
         if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
           transfer_spec['content_protection_password'] = @opt_mgr.prompt_user_input('content protection password', sensitive: true)

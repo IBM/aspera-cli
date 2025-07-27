@@ -198,7 +198,7 @@ module Aspera
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
-          options.declare(:per_package, 'One folder per received package', values: :bool, default: true)
+          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', types: [String, NilClass], default: 'id')
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)
@@ -891,23 +891,16 @@ module Aspera
                 # remove from list the ones already downloaded
                 reject_packages_from_persistency(all_packages, skip_ids_persistency)
                 ids_to_download = all_packages.map{ |e| e['id']}
+                formatter.display_status("Found #{ids_to_download.length} package(s).")
               else
                 # single id to array
                 ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
               end
               # download all files, or specified list only
-              file_list =
-                begin
-                  transfer.source_list.map{ |i| {'source'=>i}}
-                rescue Cli::BadArgument
-                  [{'source' => '.'}]
-                end
-              per_package_main_folder =
-                if options.get_option(:per_package)
-                  transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
-                end
+              ts_paths = transfer.ts_source_paths(default: ['.'])
+              per_package_field = options.get_option(:package_folder)
+              destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               result_transfer = []
-              formatter.display_status("Found #{ids_to_download.length} package(s).")
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")
                 formatter.display_status("Downloading package: [#{package_info['id']}] #{package_info['name']}")
@@ -918,8 +911,9 @@ module Aspera
                 transfer_spec = package_node_api.transfer_spec_gen4(
                   package_info['contents_file_id'],
                   Transfer::Spec::DIRECTION_RECEIVE,
-                  {'paths'=> file_list})
-                transfer_spec['destination_root'] = "#{per_package_main_folder}/#{package_info['id']}" unless per_package_main_folder.nil?
+                  {'paths'=> ts_paths})
+                transfer.option_transfer_spec['destination_root'] = File.join(destination_folder, package_info[per_package_field]) unless per_package_field.nil?
+                Log.log.debug{">>Transfer spec: #{transfer_spec}"}
                 formatter.display_status("To #{transfer_spec['destination_root']}.")
                 statuses = transfer.start(
                   transfer_spec,

@@ -2,11 +2,11 @@
 
 * 4.23.0.pre
   * New Features:
-    * `aoc`: New option `per_package` to create a folder per package when receiving packages.
+    * `aoc`: New option `package_folder` to create a folder per package when receiving packages.
   * Breaking Changes:
-    * `aoc`: `per_package` defaults to `yes`, so a new level of folder is added when receiving a package. Set to `no` to revert to previous behavior.
+    * `aoc`: `package_folder` defaults to `id`, so a new level of folder is added when receiving a package. Set to `@none:` to revert to previous behavior.
 
-* 4.22.0 2025-06-x
+* 4.22.0 2025-06-23
 
   * New Features:
     * `faspex5`: Support paging for Faspex5 browsing.

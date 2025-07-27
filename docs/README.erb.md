@@ -4712,14 +4712,18 @@ Let's send a package with the file `10M.dat` from subfolder /src_folder in a pac
 The command to receive one or multiple packages is:
 
 ```bash
-<%=cmd%> aoc packages recv [package id]
+<%=cmd%> aoc packages recv <package id> [<file> ...]
 ```
 
-Where `[package id]` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
+Where `<package id>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
 Option `once_only` is supported, see below.
 
-By default, files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder` (see description earlier).
-To not use the package ID in the folder path, set option `per_package` to `no`.
+To download only some files from the package, just add the path of the files on the command line: `[file list]`, see option `sources`.
+By default, all files in the package are downloaded, i.e. `.` is used as the file list.
+
+Option `package_folder` define the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
+Default value is `id`, so all package files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder`.
+To not use the package ID in the folder path, set option `package_folder` to `@none:`.
 
 ##### Example: Receive all packages from a given shared inbox
 
@@ -4753,9 +4757,7 @@ To list the content of a package, use command `packages browse <package id> <fol
 <%=cmd%> aoc package browse my5CnbeWng /
 ```
 
-To list recursively, use command `find`.
-
-To download only some files listed in the package, just add the path of the files on the command line.
+Use command `find` to list recursively.
 
 For advanced users, it's also possible to pipe node information for the package and use node operations:
 
