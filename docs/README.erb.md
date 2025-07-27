@@ -200,7 +200,7 @@ complete
 
 Get familiar with configuration, options, commands : [Command Line Interface](#command-line-interface).
 
-Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...) : [Application Plugins](plugins)
+Then, follow the section relative to the product you want to interact with (Aspera on Cloud, Faspex, ...) : [Application Plugins](#plugins)
 
 ## Installation
 
@@ -759,7 +759,7 @@ gem install --force --local *.gem
 <%=cmd%> config ascp install --sdk-url=file:///sdk.zip
 ```
 
-> **Note:** An example of installation script is provided: [docs/install.bat](docs/install.bat)
+> **Note:** An example of installation script is provided: [windows/install.bat](windows/install.bat)
 
 ### Container
 
@@ -800,7 +800,7 @@ That is simple, but there are limitations:
 
 #### Container: Details
 
-The container image is built from this [Dockerfile](Dockerfile.tmpl.erb).
+The container image is built from this [Dockerfile](container/Dockerfile.tmpl.erb).
 The entry point is <%=tool%> and the default command is `help`.
 
 The container can be executed for individual commands like this: (add <%=tool%> commands and options at the end of the command line, e.g. `-v` to display the version)

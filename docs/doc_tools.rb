@@ -320,6 +320,23 @@ def generate_generic_conf
   puts(configuration.to_yaml)
 end
 
+def check_links(file_path)
+  # read markdown file line by line, and check that all links are valid
+  # ignore links starting with https:// or #, other links are considered as file paths
+  require 'uri'
+  require 'net/http'
+  File.open(file_path) do |file|
+    file.each_line do |line|
+      line.scan(/(?:\[(.*?)\]\((.*?)\))/) do |match|
+        link_text = match[0]
+        link_url = match[1]
+        next if link_url.start_with?('https://', 'http://', '#') || link_url.include?('<%=')
+        raise "Invalid link: #{link_text} (#{link_url})" unless File.exist?(File.join('..', link_url))
+      end
+    end
+  end
+end
+
 # main function to generate README.md
 def generate_doc
   # parameters
@@ -328,6 +345,7 @@ def generate_doc
     @env[var] = ARGV.shift
     raise "Missing arg: #{var}" if @env[var].nil?
   end
+  check_links(@env[:TEMPLATE])
   # get current plugins
   plugin_manager = Aspera::Cli::PluginFactory.instance
   plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
