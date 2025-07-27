@@ -22,7 +22,7 @@ module Aspera
     # @param value [Object] the value to check
     # @param type [Class] the expected type
     def assert_type(value, type, exception_class: AssertError)
-      assert(value.is_a?(type), exception_class: exception_class){"#{block_given? ? "#{yield}: " : nil}expecting #{type}, but have #{value.inspect}"}
+      assert(value.is_a?(type), exception_class: exception_class){"#{"#{yield}: " if block_given?}expecting #{type}, but have #{value.inspect}"}
     end
 
     # assert that value is one of the given values
@@ -33,7 +33,7 @@ module Aspera
       assert(values.include?(value), exception_class: exception_class) do
         val_list = values.inspect
         val_list = "one of #{val_list}" if values.is_a?(Array)
-        "#{block_given? ? "#{yield}: " : nil}expecting #{val_list}, but have #{value.inspect}"
+        "#{"#{yield}: " if block_given?}expecting #{val_list}, but have #{value.inspect}"
       end
     end
 
@@ -47,7 +47,7 @@ module Aspera
     # @param exception_class exception to raise
     # @param block additional description in front
     def error_unexpected_value(value, exception_class: InternalError)
-      raise exception_class, "#{block_given? ? "#{yield}: " : nil}unexpected value: #{value.inspect}"
+      raise exception_class, "#{"#{yield}: " if block_given?}unexpected value: #{value.inspect}"
     end
 
     def require_method!(name)
