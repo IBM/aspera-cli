@@ -6552,7 +6552,7 @@ If you use a value different from `16777216`, then specify it using option `max_
 
 <%=tool%> requires the following external tools available in the `PATH`:
 
-- **ImageMagick** v7+: `magick` `composite`
+- **ImageMagick** v7+: `magick` (for tools: `convert` and `composite`)
 - **OptiPNG** : `optipng`
 - **FFmpeg** : `ffmpeg` `ffprobe`
 - **LibreOffice** : `unoconv`
@@ -6578,6 +6578,19 @@ Available fonts, used to generate PNG for text, can be listed with `magick ident
 Prefer ImageMagick version >=7.
 
 More info on ImageMagick at <https://imagemagick.org/>
+
+If your OS has only ImageMagick v6, then you can create a script called `magick` and add it to your `PATH`:
+
+```bash
+#!/bin/bash
+exec "$@"
+```
+
+make it executable:
+
+```bash
+chmod a+x /usr/local/bin/magick
+```
 
 #### Video: FFmpeg
 
