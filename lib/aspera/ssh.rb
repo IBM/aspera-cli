@@ -55,7 +55,7 @@ module Aspera
             error_message = "#{cmd}: [#{data.chomp}]"
             # Happens when windows user hasn't logged in and created home account.
             error_message += "\nHint: home not created in Windows?" if data.include?('Could not chdir to home directory')
-            raise error_message
+            Log.log.debug(error_message)
           end
           # send command to SSH channel (execute) cspell: disable-next-line
           channel.send('cexe'.reverse, cmd){ |_ch, _success| channel.send_data(input) unless input.nil?}

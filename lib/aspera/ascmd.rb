@@ -10,7 +10,7 @@ module Aspera
   # execute: "ascmd -h" to get syntax
   # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
   class AsCmd
-    # number of arguments for each operation
+    # number of arguments for each operation (to allow splitting into batches)
     OPS_ARGS = {
       cp:     2,
       df:     0,
@@ -23,11 +23,11 @@ module Aspera
       rm:     1
     }.freeze
 
-    # protocol is based on Type-Length-Value
-    # type start at one, but array index start at zero
+    # Protocol is based on Type-Length-Value
+    # Type start at one, but array index start at zero
     ENUM_START = 1
 
-    # description of result structures (see ascmdtypes.h).
+    # Description of result structures (see ascmdtypes.h).
     # Base types are big endian
     # key = name of type
     # index in array `fields` is the type (minus ENUM_START)
@@ -79,17 +79,25 @@ module Aspera
     end
 
     # execute an "as" command on a remote server
+    # Version 2 allows use of reverse proxy with multiple addresses.
     # @param [Symbol] one of OPERATIONS
     # @param [Array] parameters for "as" command
     # @return result of command, type depends on command (bool, array, hash)
-    def execute_single(action_sym, arguments)
+    def execute_single(action_sym, arguments, version: 1, host: nil)
       arguments = [] if arguments.nil?
       Log.log.debug{"execute_single:#{action_sym}:#{arguments}"}
       Aspera.assert_type(action_sym, Symbol)
       Aspera.assert_type(arguments, Array)
       Aspera.assert(arguments.all?(String), 'arguments must be strings')
+      remote_cmd = 'ascmd'
       # lines of commands (String's)
       command_lines = []
+      if version.eql?(2)
+        cmd = "as_session_init --protocol=#{version}"
+        cmd += " --host=#{host}" if host
+        command_lines.push(cmd)
+        remote_cmd += ' -V2'
+      end
       # add "as_" command
       main_command = "as_#{action_sym}"
       arg_batches =
@@ -114,7 +122,7 @@ module Aspera
       stdin_input = command_lines.join("\n")
       Log.log.trace1{"execute_single:#{stdin_input}"}
       # execute, get binary output
-      byte_buffer = @command_executor.execute('ascmd', stdin_input).unpack('C*')
+      byte_buffer = @command_executor.execute(remote_cmd, stdin_input).unpack('C*')
       raise 'ERROR: empty answer from server' if byte_buffer.empty?
       # get hash or table result
       result = self.class.parse(byte_buffer, :result)

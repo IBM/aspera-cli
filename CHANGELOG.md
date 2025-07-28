@@ -3,6 +3,8 @@
 * 4.23.0.pre
   * New Features:
     * `aoc`: New option `package_folder` to create a folder per package when receiving packages.
+  * Issues Fixed:
+    * `server`: #209: missing home folder for transfer user shall not cause an error.
   * Breaking Changes:
     * `aoc`: `package_folder` defaults to `id`, so a new level of folder is added when receiving a package. Set to `@none:` to revert to previous behavior.
     * `config`: In `ascp info`: `openssldir` &rarr; `ascp_openssl_dir`, `openssl_version` &rarr; `ascp_openssl_version`, `sdk_ascp_version` &rarr; `ascp_version`
