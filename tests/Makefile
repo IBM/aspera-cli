@@ -1687,6 +1687,10 @@ $(T)prev_pdf: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.pdf
 	@$(STOP_TEST) $@
+$(T)prev_txt: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) preview show --base=$(DIR_TMP)$$(basename $@) /etc/hosts
+	@$(STOP_TEST) $@
 $(T)prev_docx: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) preview show --base=$(DIR_TMP)$$(basename $@) @preset:file.docx
@@ -1727,7 +1731,7 @@ $(T)prev_folder: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) preview scan --scan-id=1 --skip-types=office --log-level=info --file-access=remote --ts=@json:'{"target_rate_kbps":1000000}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_trevents $(T)prev_events $(T)prev_scan $(T)prev_folder))
+$(eval $(call test_suite_all,tprev,$(T)prev_check $(T)prev_dcm $(T)prev_pdf $(T)prev_txt $(T)prev_docx $(T)prev_mpg_png_fix $(T)prev_mpg_png_ani $(T)prev_mxf_blend $(T)prev_mpg_reencode $(T)prev_mpg_clips $(T)prev_trevents $(T)prev_events $(T)prev_scan $(T)prev_folder))
 #######################################################################################################################
 # TODO : finalize
 thot:
