@@ -34,6 +34,8 @@ module Aspera
       # types of events for shared folder creation
       # Node events: permission.created permission.modified permission.deleted
       PERMISSIONS_CREATED = ['permission.created'].freeze
+      # Special name when creating workspace shared folders
+      ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
 
       private_constant :MAX_AOC_URL_REDIRECT,
         :CLIENT_ID_PREFIX,
@@ -43,7 +45,8 @@ module Aspera
         :JWT_AUDIENCE,
         :OAUTH_API_SUBPATH,
         :USER_INFO_FIELDS_MIN,
-        :PERMISSIONS_CREATED
+        :PERMISSIONS_CREATED,
+        :ID_AK_ADMIN
 
       # various API scopes supported
       SCOPE_FILES_SELF = 'self'
@@ -546,17 +549,12 @@ module Aspera
         transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['app'] = app_info[:app]
       end
 
-      ID_AK_ADMIN = 'ASPERA_ACCESS_KEY_ADMIN'
       # Callback from Plugins::Node
       # add application specific tags to permissions creation
       # @param perm_data [Hash] parameters for creating permissions
       # @param app_info [Hash] application information
       def permissions_set_create_params(perm_data:, app_info:)
-        # workspace shared folder:
-        # access_id = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
         defaults = {
-          # 'access_type'   => 'user', # mandatory: user or group
-          # 'access_id'     => access_id, # id of user or group or special
           'tags' => {
             Transfer::Spec::TAG_RESERVED => {
               'files' => {
@@ -567,8 +565,6 @@ module Aspera
                   'shared_by_user_id' => current_user_info['id'],
                   'shared_by_name'    => current_user_info['name'],
                   'shared_by_email'   => current_user_info['email'],
-                  # 'shared_with_name'  => access_id,
-                  # 'share_as'  => new_name_for_folder,
                   'access_key'        => app_info[:node_info]['access_key'],
                   'node'              => app_info[:node_info]['name']
                 }
@@ -578,19 +574,20 @@ module Aspera
         }
         perm_data.deep_merge!(defaults)
         tag_workspace = perm_data['tags'][Transfer::Spec::TAG_RESERVED]['files']['workspace']
-        case perm_data['with']
+        shared_with = perm_data.delete('with')
+        case shared_with
         when NilClass
         when ''
+          # workspace shared folder
           perm_data['access_type'] = 'user'
           perm_data['access_id'] = "#{ID_AK_ADMIN}_WS_#{app_info[:workspace_id]}"
           tag_workspace['shared_with_name'] = perm_data['access_id']
         else
-          entity_info = lookup_by_name('contacts', perm_data['with'], query: {'current_workspace_id' => app_info[:workspace_id]})
+          entity_info = lookup_by_name('contacts', shared_with, query: {'current_workspace_id' => app_info[:workspace_id]})
           perm_data['access_type'] = entity_info['source_type']
           perm_data['access_id'] = entity_info['source_id']
-          tag_workspace['shared_with_name'] = entity_info['email']
+          tag_workspace['shared_with_name'] = entity_info['email'] # TODO: check that ???
         end
-        perm_data.delete('with')
         if perm_data.key?('as')
           tag_workspace['share_as'] = perm_data['as']
           perm_data.delete('as')

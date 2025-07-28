@@ -4875,27 +4875,31 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 | `link_name`     |  <%=tool%>          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  <%=tool%>          | Name of the link file created in the user's home folder for admin shared folders. |
 
-In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`. This is conveniently set by <%=tool%> using an empty string for the pseudo key `with`. In order to share a folder with a different, special tags are set, but this is conveniently done by <%=tool%> using the `as` key.
+In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`.
+This is conveniently set by <%=tool%> using an empty string for the pseudo key `with`.
+In order to share a folder with a different, special tags are set, but this is conveniently done by <%=tool%> using the `as` key.
 
-List permissions on a shared folder:
+##### Example: List permissions on a shared folder
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 list
 ```
 
-Share a personal folder with other users:
+##### Example: Share a personal folder with other users
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
-Revoke shared access:
+##### Example: Revoke shared access
 
 ```bash
 <%=cmd%> aoc files perm /shared_folder_test1 delete 6161
 ```
 
-Public and Private short links can be managed with command:
+##### Example: Public and Private short links
+
+They can be managed with commands:
 
 ```bash
 <%=cmd%> aoc files short_link _path_here_ private create
@@ -4904,17 +4908,57 @@ Public and Private short links can be managed with command:
 <%=cmd%> aoc files short_link public delete _id_
 ```
 
-Create an admin shared folder and shared with a user or group or workspace:
+##### Example: Create a workspace shared folder
+
+First, identify the node ID where the shared folder will be created.
+
+To use the default node for workspace `my ws`, use the command:
+
+```bash
+ascli aoc admin workspace show %name:'my ws' --fields=node_id
+```
+
+Alternatively (longer):
+
+```bash
+ascli aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
+```
+
+Or select manually from the list of nodes:
+
+```bash
+<%=cmd%> aoc admin node list --fields=id,name
+```
+
+In the following commands, replace `1234` with the node ID and `my ws` with the workspace name.
+The node can also be conveniently identified using the **percent selector** instead of numerical ID: `%name:"my node"`.
+
+If the shared folder does not exist, then create it:
 
 ```bash
 <%=cmd%> aoc admin node do 1234 mkdir folder_on_node
-<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
-<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_users"}' --workspace="my ws"
-<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"group 1","as":"folder_for_users"}' --workspace="my ws"
-<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"my ws","as":"folder_for_users"}' --workspace="my ws"
 ```
 
-> **Note:** The node can be conveniently identified using the **percent selector** instead of numerical ID.
+Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
+Optionally use `as` to set the name of the shared folder if different from the folder name on the node:
+
+```bash
+<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+```
+
+To share with a user, group, or workspace, use the `with` parameter:
+
+```bash
+<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
+```
+
+```bash
+<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
+```
+
+```bash
+<%=cmd%> aoc admin node do 1234 perm folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+```
 
 #### Cross Organization transfers
 
