@@ -5439,7 +5439,12 @@ Or select manually from the list of nodes:
 ascli aoc admin node list --fields=id,name
 ```
 
-In the following commands, replace `1234` with the node ID and `my ws` with the workspace name.
+In the following commands, replace:
+
+- `1234` with the node ID
+- `my ws` with the workspace name
+- `folder_on_node` with the name of the folder on the node
+
 The node can also be conveniently identified using the **percent selector** instead of numerical ID: `%name:"my node"`.
 
 If the shared folder does not exist, then create it:
@@ -5449,7 +5454,8 @@ ascli aoc admin node do 1234 mkdir folder_on_node
 ```
 
 Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
-Optionally use `as` to set the name of the shared folder if different from the folder name on the node:
+Optionally use `as` to set the name of the shared folder if different from the folder name on the node.
+For other options, refer to the previous section on shared folders.
 
 ```bash
 ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"

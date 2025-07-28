@@ -7444,17 +7444,24 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb391-1"><a href
 <p>Or select manually from the list of nodes:</p>
 <div class="sourceCode" id="cb392"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb392-1"><a href="#cb392-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin node list <span class="at">--fields</span><span class="op">=</span>id,name</span></code></pre></div>
-<p>In the following commands, replace <code>1234</code> with the node ID
-and <code>my ws</code> with the workspace name. The node can also be
-conveniently identified using the <strong>percent selector</strong>
-instead of numerical ID: <code>%name:"my node"</code>.</p>
+<p>In the following commands, replace:</p>
+<ul>
+<li><code>1234</code> with the node ID</li>
+<li><code>my ws</code> with the workspace name</li>
+<li><code>folder_on_node</code> with the name of the folder on the
+node</li>
+</ul>
+<p>The node can also be conveniently identified using the
+<strong>percent selector</strong> instead of numerical ID:
+<code>%name:"my node"</code>.</p>
 <p>If the shared folder does not exist, then create it:</p>
 <div class="sourceCode" id="cb393"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb393-1"><a href="#cb393-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin node do 1234 mkdir folder_on_node</span></code></pre></div>
 <p>Create the shared folder in workspace <code>my ws</code> (set
 <code>with</code> to empty string, or do not specify it). Optionally use
 <code>as</code> to set the name of the shared folder if different from
-the folder name on the node:</p>
+the folder name on the node. For other options, refer to the previous
+section on shared folders.</p>
 <div class="sourceCode" id="cb394"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb394-1"><a href="#cb394-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> aoc admin node do 1234 perm folder_on_node create @json:<span class="st">&#39;{&quot;with&quot;:&quot;&quot;,&quot;as&quot;:&quot;folder_for_users&quot;}&#39;</span> <span class="at">--workspace</span><span class="op">=</span><span class="st">&quot;my ws&quot;</span></span></code></pre></div>
 <p>To share with a user, group, or workspace, use the <code>with</code>
