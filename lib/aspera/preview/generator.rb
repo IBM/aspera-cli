@@ -240,7 +240,7 @@ module Aspera
       # text to png
       def convert_plaintext_to_png
         # get 100 first lines of text file
-        first_lines = File.open(@source_file_path){ |f| Array.new(100){f.readline rescue ''}.join}
+        first_lines = File.foreach(@source_file_path).first(100).join
         Utils.external_command(:magick, [
           'convert',
           '-size', "#{@options.thumb_img_size}x#{@options.thumb_img_size}",
