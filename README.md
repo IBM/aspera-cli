@@ -5227,10 +5227,10 @@ ascli aoc packages recv <package id> [<file> ...]
 Where `<package id>` is the identifier of the package to receive or `ALL` to receive all packages matching the query.
 Option `once_only` is supported, see below.
 
-To download only some files from the package, just add the path of the files on the command line: `[file list]`, see option `sources`.
+To download only some files from the package, just add the path of the files on the command line: `[<file> ...]`, see option `sources`.
 By default, all files in the package are downloaded, i.e. `.` is used as the file list.
 
-Option `package_folder` define the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
+Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
 Default value is `id`, so all package files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder`.
 To not use the package ID in the folder path, set option `package_folder` to `@none:`.
 

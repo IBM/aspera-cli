@@ -32,6 +32,7 @@ module Aspera
     # Installation.instance.ascp_path=""
     class Installation
       include Singleton
+
       DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
         <?xml version='1.0' encoding='UTF-8'?>
         <CONF version="2">
@@ -213,7 +214,7 @@ module Aspera
               data['product_name'] = Regexp.last_match(1)
               data['product_version'] = Regexp.last_match(2)
             when /^LOG Initializing FASP version ([^,]+),/
-              data['sdk_ascp_version'] = Regexp.last_match(1)
+              data['ascp_version'] = Regexp.last_match(1)
             end
           end
           if !thread.value.exitstatus.eql?(1) && !data.key?('root')
@@ -228,9 +229,9 @@ module Aspera
         data = {}
         File.binread(ascp_path).scan(/[\x20-\x7E]{10,}/) do |bin_string|
           if (m = bin_string.match(/OPENSSLDIR.*"(.*)"/))
-            data['openssldir'] = m[1]
+            data['ascp_openssl_dir'] = m[1]
           elsif (m = bin_string.match(/OpenSSL (\d[^ -]+)/))
-            data['openssl_version'] = m[1]
+            data['ascp_openssl_version'] = m[1]
           end
         end if File.file?(ascp_path)
         return data
