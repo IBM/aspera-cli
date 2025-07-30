@@ -6,12 +6,14 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/oauth'
 require 'aspera/hash_ext'
+require 'aspera/timer_limiter'
 require 'net/http'
 require 'net/https'
 require 'json'
 require 'base64'
 require 'singleton'
 require 'securerandom'
+require 'fileutils'
 
 # Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
@@ -172,6 +174,10 @@ module Aspera
         return result
       end
 
+      # Parse a header string as returned by HTTP
+      # @param header [String] header string, e.g. "application/json; charset=utf-8"
+      # @return [Hash] parsed header with type and parameters
+      #   {type: 'application/json', parameters: {charset: 'utf-8'}}
       def parse_header(header)
         type, *params = header.split(/;\s*/)
         parameters = params.map do |param|
@@ -358,18 +364,18 @@ module Aspera
         http_session.request(req) do |response|
           result[:http] = response
           result_mime = self.class.parse_header(result[:http]['Content-Type'] || MIME_TEXT)[:type]
+          Log.log.debug{"response: code=#{result[:http].code}, mime=#{result_mime}, mime2= #{response['Content-Type']}"}
           # JSON data needs to be parsed, in case it contains an error code
           if !save_to_file.nil? &&
               result[:http].code.to_s.start_with?('2') &&
-              !result[:http]['Content-Length'].nil? &&
               !JSON_DECODE.include?(result_mime)
-            total_size = result[:http]['Content-Length'].to_i
+            total_size = result[:http]['Content-Length']&.to_i
             Log.log.debug('before write file')
             target_file = save_to_file
             # override user's path to path in header
             if !response['Content-Disposition'].nil?
               disposition = self.class.parse_header(response['Content-Disposition'])
-              if disposition[:parameters].key?(:filename)
+              if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
                 target_file = File.join(File.dirname(target_file), disposition[:parameters][:filename])
               end
             end
@@ -379,12 +385,14 @@ module Aspera
             written_size = 0
             session_id = SecureRandom.uuid.freeze
             RestParameters.instance.progress_bar&.event(:session_start, session_id: session_id)
-            RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size)
+            RestParameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size) if total_size
+            FileUtils.mkdir_p(File.dirname(target_file_tmp))
+            limiter = TimerLimiter.new(0.5)
             File.open(target_file_tmp, 'wb') do |file|
               result[:http].read_body do |fragment|
                 file.write(fragment)
                 written_size += fragment.length
-                RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size)
+                RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
               end
             end
             RestParameters.instance.progress_bar&.event(:end, session_id: session_id)
@@ -405,7 +413,10 @@ module Aspera
           result[:data] = result[:http].body
         end
         RestErrorAnalyzer.instance.raise_on_error(req, result)
-        File.write(save_to_file, result[:http].body, binmode: true) unless file_saved || save_to_file.nil?
+        unless file_saved || save_to_file.nil?
+          FileUtils.mkdir_p(File.dirname(save_to_file))
+          File.write(save_to_file, result[:http].body, binmode: true)
+        end
       rescue RestCallError => e
         do_retry = false
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
@@ -451,7 +462,7 @@ module Aspera
         # raise exception if could not retry and not return error in result
         raise e unless return_error
       end
-      Log.log.debug{"result=#{result}"}
+      Log.log.debug{"result=http:#{result[:http]}, data:#{result[:data].class}"}
       return result
     end
 
