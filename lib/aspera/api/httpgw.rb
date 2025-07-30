@@ -244,18 +244,22 @@ module Aspera
       end
 
       def download(transfer_spec)
-        transfer_spec['zip_required'] ||= false
         transfer_spec['source_root'] ||= '/'
+        default_file_name = transfer_spec['paths'].first['source']
+        source_is_folder = %w[. /].include?(default_file_name)
+        default_file_name = 'http_download' if source_is_folder
+        transfer_spec['zip_required'] ||= source_is_folder || transfer_spec['paths'].length > 1
         # is normally provided by application, like package name
         if !transfer_spec.key?('download_name')
           # by default it is the name of first file
-          download_name = File.basename(transfer_spec['paths'].first['source'], '.*')
-          # ands add indication of number of files if there is more than one
+          download_name = File.basename(default_file_name, '.*')
+          # add indication of number of files if there is more than one
           if transfer_spec['paths'].length > 1
             download_name += " #{transfer_spec['paths'].length} Files"
           end
           transfer_spec['download_name'] = download_name
         end
+        # start transfer session on httpgw
         creation = create('download', {'transfer_spec' => transfer_spec})
         transfer_uuid = creation['url'].split('/').last
         file_name =
@@ -264,7 +268,7 @@ module Aspera
             transfer_spec['download_name'] + '.zip'
           else
             # it is a plain file if we don't require zip and there is only one file
-            File.basename(transfer_spec['paths'].first['source'])
+            File.basename(default_file_name)
           end
         file_path = File.join(transfer_spec['destination_root'], file_name)
         call(operation: 'GET', subpath: "download/#{transfer_uuid}", save_to_file: file_path)
