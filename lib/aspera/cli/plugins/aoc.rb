@@ -913,7 +913,6 @@ module Aspera
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths})
                 transfer.option_transfer_spec['destination_root'] = File.join(destination_folder, package_info[per_package_field]) unless per_package_field.nil?
-                Log.log.debug{">>Transfer spec: #{transfer_spec}"}
                 formatter.display_status("To #{transfer_spec['destination_root']}.")
                 statuses = transfer.start(
                   transfer_spec,
