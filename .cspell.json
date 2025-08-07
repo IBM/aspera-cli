@@ -53,6 +53,10 @@
       "pattern": "/`.*?`/g"
     },
     {
+      "name": "markdown_reference",
+      "pattern": "/\\[.*?\\](\\(.*?\\))/g"
+    },
+    {
       "name": "quoted_special_words",
       "pattern": "/\".*?\"/g"
     },
@@ -72,7 +76,8 @@
         "markdown_code_block",
         "markdown_code_inline",
         "quoted_special_words",
-        "embedded_ruby_code_block"
+        "embedded_ruby_code_block",
+        "markdown_reference"
       ]
     },
     {

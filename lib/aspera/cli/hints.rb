@@ -64,7 +64,15 @@ module Aspera
           remediation: [
             'If remote node is Cloud Pak For Integration',
             'Make sure that a LoadBalancer is active on cluster',
-            'Check the external address of Aspera tcp-proxy pod'
+            'Check the external address of Aspera tcp-proxy Pod'
+          ]
+        },
+        {
+          exception:   Aspera::RestCallError,
+          match:       /Invalid subject\./,
+          remediation: [
+            'It seems that this user name is not registered on the server',
+            'Check the user name and try again'
           ]
         }
       ]

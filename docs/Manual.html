@@ -1,13 +1,11 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
-
-markdownlint-disable MD033 MD003 MD053
-cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
 subtitle: "ascli 4.23.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
+<!-- xmarkdownlint-disable MD033 MD003 MD053 -->
 <p><a href="https://badge.fury.io/rb/aspera-cli"><img
 src="https://badge.fury.io/rb/aspera-cli.svg" alt="Gem Version" /></a>
 <a href="https://github.com/IBM/aspera-cli/actions"><img
@@ -2595,10 +2593,10 @@ creates an <a href="#option-preset">Option Preset</a> with the provided
 information for a given application.</p>
 <p>It takes three optional arguments:</p>
 <ul>
-<li>the URL of the application, else it will ask for it</li>
-<li>the plugin name: it limits detection to a given plugin, else it will
+<li>The URL of the application, else it will ask for it;</li>
+<li>The plugin name: it limits detection to a given plugin, else it will
 try to detect known plugins from the URL</li>
-<li>the preset name: it will create a new <a
+<li>The preset name: it will create a new <a
 href="#option-preset">Option Preset</a> with this name, else it will use
 specific information to generate a unique preset name.</li>
 </ul>
@@ -7151,9 +7149,10 @@ downloaded, i.e. <code>.</code> is used as the file list.</p>
 used as destination sub folder in the <code>to_folder</code> path (see
 description earlier). Default value is <code>id</code>, so all package
 files will be downloaded in a folder named with the package ID inside
-the folder specified by option <code>to_folder</code>. To not use the
-package ID in the folder path, set option <code>package_folder</code> to
-<code>@none:</code>.</p>
+the folder specified by option <code>to_folder</code>. One can set this
+to <code>name</code> to use the package name instead of the ID. To not
+use the package ID in the folder path, set option
+<code>package_folder</code> to <code>@none:</code>.</p>
 <h4 data-number="5.6.2.1"
 id="example-receive-all-packages-from-a-given-shared-inbox"><span
 class="header-section-number">5.6.2.1</span> Example: Receive all
@@ -7326,6 +7325,7 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb385-1"><a href
 <p><code>ascli</code> expects the same payload for creation.
 <code>ascli</code> automatically populates some payload fields and
 provides convenient additional fields that generate native fields:</p>
+<!-- markdownlint-disable MD033 -->
 <table>
 <colgroup>
 <col style="width: 42%" />
@@ -7394,6 +7394,7 @@ shared folders.</td>
 </tr>
 </tbody>
 </table>
+<!-- markdownlint-enable MD033 -->
 <p>In order to declare/create the shared folder in the workspace, a
 special value for <code>access_id</code> is used:
 <code>ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]</code>. This is
@@ -8429,7 +8430,7 @@ command <code>asnodeadmin</code> on HSTS. Refer to the <a
 href="https://www.ibm.com/docs/en/ahts">HSTS manual</a>:
 <code>Bearer tokens</code> section. Code for token generation is
 provided in <a
-href="lib/aspera/api/node.rb">lib/aspera/api/node.rb</a></p>
+href="lib/aspera/api/node.rb"><code>lib/aspera/api/node.rb</code></a></p>
 </blockquote>
 <h3 data-number="8.12.4" id="bearer-token-user-side"><span
 class="header-section-number">8.12.4</span> Bearer token: User side</h3>

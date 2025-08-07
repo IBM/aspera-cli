@@ -1,14 +1,13 @@
 # Command Line Interface for IBM Aspera products
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
-
-markdownlint-disable MD033 MD003 MD053
-cspell:ignore Serban Antipolis
 PANDOC_META_BEGIN
 subtitle: "ascli 4.23.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
+
+<!-- xmarkdownlint-disable MD033 MD003 MD053 -->
 
 [![Gem Version](https://badge.fury.io/rb/aspera-cli.svg)](https://badge.fury.io/rb/aspera-cli)
 [![unit tests](https://github.com/IBM/aspera-cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/IBM/aspera-cli/actions)
@@ -2304,9 +2303,9 @@ The wizard is a command that asks the user for information and creates an [Optio
 
 It takes three optional arguments:
 
-- the URL of the application, else it will ask for it
-- the plugin name: it limits detection to a given plugin, else it will try to detect known plugins from the URL
-- the preset name: it will create a new [Option Preset](#option-preset) with this name, else it will use specific information to generate a unique preset name.
+- The URL of the application, else it will ask for it;
+- The plugin name: it limits detection to a given plugin, else it will try to detect known plugins from the URL
+- The preset name: it will create a new [Option Preset](#option-preset) with this name, else it will use specific information to generate a unique preset name.
 
 Special options are also available to the wizard:
 
@@ -5232,6 +5231,7 @@ By default, all files in the package are downloaded, i.e. `.` is used as the fil
 
 Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
 Default value is `id`, so all package files will be downloaded in a folder named with the package ID inside the folder specified by option `to_folder`.
+One can set this to `name` to use the package name instead of the ID.
 To not use the package ID in the folder path, set option `package_folder` to `@none:`.
 
 ##### Example: Receive all packages from a given shared inbox
@@ -5373,6 +5373,7 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 `ascli` expects the same payload for creation.
 `ascli` automatically populates some payload fields and provides convenient additional fields that generate native fields:
 
+<!-- markdownlint-disable MD033 -->
 | Field           | Type     | Description |
 |-----------------|----------|-------------|
 | `file_id`       | Native<br/>Auto     | ID of the folder to share, as specified in the command line by path. |
@@ -5383,6 +5384,7 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 | `with`          | `ascli`           | Recipient of shared folder. Can be a username, a group name, or a workspace name. `ascli` will resolve the name to the proper type and ID in fields `access_type` and `access_id`. If the value is the empty string, then it declares the shared folder in the workspace (first action to do, see below). |
 | `link_name`     |  `ascli`          | Name of the link file created in the user's home folder for private links. |
 | `as`            |  `ascli`          | Name of the link file created in the user's home folder for admin shared folders. |
+<!-- markdownlint-enable MD033 -->
 
 In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`.
 This is conveniently set by `ascli` using an empty string for the pseudo key `with`.
@@ -6338,7 +6340,7 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
   ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --output=bearer.txt
   ```
 
-> **Note:** The Bearer token can also be created using command `asnodeadmin` on HSTS. Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section. Code for token generation is provided in [lib/aspera/api/node.rb](lib/aspera/api/node.rb)
+> **Note:** The Bearer token can also be created using command `asnodeadmin` on HSTS. Refer to the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section. Code for token generation is provided in [`lib/aspera/api/node.rb`](lib/aspera/api/node.rb)
 
 #### Bearer token: User side
 
