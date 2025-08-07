@@ -8,6 +8,7 @@ module Aspera
   # a simple binary data repository
   class DataRepository
     include Singleton
+
     # in same order as elements in folder
     ELEMENTS = %i[dsa rsa uuid aspera.global-cli-client aspera.drive license]
     START_INDEX = 1

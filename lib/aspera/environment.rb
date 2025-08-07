@@ -13,6 +13,7 @@ module Aspera
   # detect OS, architecture, and specific stuff
   class Environment
     include Singleton
+
     USER_INTERFACES = %i[text graphical].freeze
 
     OS_WINDOWS = :windows

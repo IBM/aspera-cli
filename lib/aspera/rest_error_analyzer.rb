@@ -8,6 +8,7 @@ module Aspera
   # analyze error codes returned by REST calls and raise ruby exception
   class RestErrorAnalyzer
     include Singleton
+
     attr_accessor :log_file
 
     # the singleton object is registered with application specific handlers

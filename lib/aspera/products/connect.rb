@@ -7,6 +7,7 @@ module Aspera
   module Products
     class Connect
       include Singleton
+
       APP_NAME = 'IBM Aspera Connect'
 
       class << self

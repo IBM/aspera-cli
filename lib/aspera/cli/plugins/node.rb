@@ -21,6 +21,7 @@ module Aspera
     module Plugins
       class Node < Cli::BasicAuthPlugin
         include SyncActions
+
         class << self
           # directory: node, container: shares
           FOLDER_TYPES = %w[directory container].freeze

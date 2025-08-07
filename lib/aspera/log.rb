@@ -48,6 +48,7 @@ module Aspera
   # Singleton object for logging
   class Log
     include Singleton
+
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
     @@format = :json # rubocop:disable Style/ClassVars

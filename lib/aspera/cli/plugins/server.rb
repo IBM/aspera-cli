@@ -19,6 +19,7 @@ module Aspera
       # implement basic remote access with FASP/SSH
       class Server < Cli::BasicAuthPlugin
         include SyncActions
+
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
         HTTPS_SCHEME = 'https'

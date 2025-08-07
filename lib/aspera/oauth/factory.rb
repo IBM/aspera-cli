@@ -9,6 +9,7 @@ module Aspera
     # Factory to create tokens and manage their cache
     class Factory
       include Singleton
+
       # a prefix for persistency of tokens (simplify garbage collect)
       PERSIST_CATEGORY_TOKEN = 'token'
       # prefix for bearer token when in header

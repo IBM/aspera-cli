@@ -14,6 +14,7 @@ module Aspera
     FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
     private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
     include Singleton
+
     attr_accessor :cleanup_on_exit
 
     def initialize

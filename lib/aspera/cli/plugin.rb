@@ -240,7 +240,7 @@ module Aspera
       # @param default [Object] default value if not provided
       def value_create_modify(command:, description: nil, type: Hash, bulk: false, default: nil)
         value = options.get_next_argument(
-          "parameters for #{command}#{description.nil? ? '' : " (#{description})"}", mandatory: default.nil?,
+          "parameters for #{command}#{" (#{description})" unless description.nil?}", mandatory: default.nil?,
           validation: bulk ? Array : type)
         value = default if value.nil?
         unless type.nil?
