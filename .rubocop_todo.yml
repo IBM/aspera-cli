@@ -126,3 +126,5 @@ Style/NegatedWhile:
   Enabled: true
 Security/Eval:
   Enabled: true
+Naming/PredicateMethod:
+  Enabled: false
