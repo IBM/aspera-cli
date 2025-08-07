@@ -1,7 +1,7 @@
 {
   "version": "0.2",
   "ignorePaths": [
-    "*.dict",
+    "docs/dict/*.dict",
     ".cspell.json",
     "lib/aspera/data",
     "lib/transfer_pb.rb",
@@ -13,17 +13,17 @@
   "dictionaryDefinitions": [
     {
       "name": "aspera",
-      "path": ".aspera.dict",
+      "path": "docs/dict/aspera.dict",
       "addWords": true
     },
     {
       "name": "ruby",
-      "path": ".ruby.dict",
+      "path": "docs/dict/ruby.dict",
       "addWords": true
     },
     {
       "name": "tools",
-      "path": ".tools.dict",
+      "path": "docs/dict/tools.dict",
       "addWords": true
     }
   ],
