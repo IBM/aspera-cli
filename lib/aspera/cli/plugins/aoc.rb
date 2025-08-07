@@ -50,10 +50,11 @@ module Aspera
           'archived'    => false,
           'has_content' => true,
           'received'    => true,
-          'completed'   => true}.freeze
+          'completed'   => true
+        }.freeze
+        PACKAGE_LIST_DEFAULT_FIELDS = %w[id name created_at files_completed bytes_transferred].freeze
         # options and parameters for Api::AoC.new
         OPTIONS_NEW = %i[url auth client_id client_secret scope redirect_uri private_key passphrase username password workspace].freeze
-        PACKAGE_LIST_DEFAULT_FIELDS = %w[id name created_at files_completed bytes_transferred].freeze
 
         private_constant :REDIRECT_LOCALHOST, :STD_AUTH_TYPES, :ADMIN_OBJECTS, :PACKAGE_RECEIVED_BASE_QUERY, :OPTIONS_NEW, :PACKAGE_LIST_DEFAULT_FIELDS
         class << self
@@ -191,7 +192,7 @@ module Aspera
           options.declare(:auth, 'OAuth type of authentication', values: STD_AUTH_TYPES, default: :jwt)
           options.declare(:client_id, 'OAuth API client identifier')
           options.declare(:client_secret, 'OAuth API client secret')
-          options.declare(:scope, 'OAuth scope for AoC API calls', default: Api::AoC::SCOPE_FILES_USER)
+          options.declare(:scope, 'OAuth scope for AoC API calls')
           options.declare(:redirect_uri, 'OAuth API client redirect URI')
           options.declare(:private_key, 'OAuth JWT RSA private key PEM value (prefix file path with @file:)')
           options.declare(:passphrase, 'RSA private key passphrase', types: String)
@@ -204,10 +205,15 @@ module Aspera
           Node.declare_options(options)
         end
 
-        def api_from_options(new_base_path)
-          create_values = {subpath: new_base_path, secret_finder: config}
+        def api_from_options(aoc_base_path)
+          create_values = OPTIONS_NEW.each_with_object({
+            subpath:       aoc_base_path,
+            secret_finder: config}) do |i, m|
+            m[i] = options.get_option(i) unless options.get_option(i).nil?
+          end
+          create_values[:scope] = Api::AoC::SCOPE_FILES_USER if create_values[:scope].nil?
           # create an API object with the same options, but with a different subpath
-          return Api::AoC.new(**OPTIONS_NEW.each_with_object(create_values){ |i, m| m[i] = options.get_option(i) unless options.get_option(i).nil?})
+          return Api::AoC.new(**create_values)
         rescue ArgumentError => e
           if (m = e.message.match(/missing keyword: :(.*)$/))
             raise Cli::Error, "Missing option: #{m[1]}"
@@ -444,7 +450,9 @@ module Aspera
               default_fields.push('app_type', 'app_name', 'available', 'direct_authorizations_allowed', 'workspace_authorizations_allowed')
             when :client, :client_access_key, :dropbox, :group, :package, :saml_configuration, :workspace then default_fields.push('name')
             when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
-            when :contact then default_fields = %w[email name source_id source_type]
+            when :contact
+              default_fields = %w[email name source_id source_type]
+              default_query = {'include_only_user_personal_contacts' => true} if aoc_api.oauth.scope == Api::AoC::SCOPE_FILES_USER
             when :node then default_fields.push('name', 'host', 'access_key')
             when :operation then default_fields = nil
             when :short_link then default_fields.push('short_url', 'data.url_token_data.purpose')
@@ -487,8 +495,8 @@ module Aspera
         ADMIN_ACTIONS = %i[ats resource usage_reports analytics subscription auth_providers].concat(ADMIN_OBJECTS).freeze
 
         def execute_admin_action
-          # upgrade scope to admin
-          aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN
+          # default scope to admin
+          aoc_api.oauth.scope = Api::AoC::SCOPE_FILES_ADMIN if options.get_option(:scope).nil?
           command_admin = options.get_next_command(ADMIN_ACTIONS)
           case command_admin
           when :resource
@@ -802,7 +810,9 @@ module Aspera
           when :tier_restrictions
             return Main.result_single_object(aoc_api.read('tier_restrictions'))
           when :user
-            case options.get_next_command(%i[workspaces profile preferences])
+            case options.get_next_command(%i[workspaces profile preferences contact])
+            when :contact
+              return execute_resource_action(:contact)
             # when :settings
             # return Main.result_object_list(aoc_api.read('client_settings/'))
             when :workspaces
