@@ -451,7 +451,7 @@ module Aspera
             when :client, :client_access_key, :dropbox, :group, :package, :saml_configuration, :workspace then default_fields.push('name')
             when :client_registration_token then default_fields.push('value', 'data.client_subject_scopes', 'created_at')
             when :contact
-              default_fields = %w[email name source_id source_type]
+              default_fields = %w[source_type source_id name email]
               default_query = {'include_only_user_personal_contacts' => true} if aoc_api.oauth.scope == Api::AoC::SCOPE_FILES_USER
             when :node then default_fields.push('name', 'host', 'access_key')
             when :operation then default_fields = nil
@@ -810,8 +810,8 @@ module Aspera
           when :tier_restrictions
             return Main.result_single_object(aoc_api.read('tier_restrictions'))
           when :user
-            case options.get_next_command(%i[workspaces profile preferences contact])
-            when :contact
+            case options.get_next_command(%i[workspaces profile preferences contacts])
+            when :contacts
               return execute_resource_action(:contact)
             # when :settings
             # return Main.result_object_list(aoc_api.read('client_settings/'))

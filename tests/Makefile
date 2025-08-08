@@ -761,6 +761,10 @@ $(T)aocuprefmod: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc user pref modify @json:'{"default_language":"en-us"}'
 	@$(STOP_TEST) $@
+$(T)aocucontactlist: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) aoc user contacts list
+	@$(STOP_TEST) $@
 $(T)aocg7: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc packages shared_inboxes list
@@ -774,7 +778,7 @@ $(T)aoc_webauth: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) aoc --preset=aoc_web user profile show
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocgen,$(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocuprefshow $(T)aocuprefmod $(T)aocg7 $(T)aocg8))
+$(eval $(call test_suite_all,taocgen,$(T)aocg1 $(T)aocg2 $(T)aocg3 $(T)aocg4 $(T)aocg5 $(T)aocg6 $(T)aocuprefshow $(T)aocuprefmod $(T)aocucontactlist $(T)aocg7 $(T)aocg8))
 #######################################################################################################################
 $(T)aocfbr: $(TMP_EXISTS)
 	@$(START_TEST) $@
