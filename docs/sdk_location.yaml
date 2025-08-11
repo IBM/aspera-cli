@@ -179,3 +179,57 @@
   arch: s390
   platform: linux-s390
   comment: ascp 4.4.5.1669 3771cbc
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-linux-aarch64-1.1.6.tar.gz
+  version: 1.1.6
+  os: linux
+  arch: arm64
+  platform: linux-arm64
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-linux-amd64-1.1.6.tar.gz
+  version: 1.1.6
+  os: linux
+  arch: x86_64
+  platform: linux-x86_64
+  comment: ascp 4.4.6.2033 31ae48a GLIBC 2.28
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-windows-amd64-1.1.6.zip
+  version: 1.1.6
+  os: windows
+  arch: x86_64
+  platform: windows-x86_64
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-macos-amd64-1.1.6.zip
+  version: 1.1.6
+  os: osx
+  arch: x86_64
+  platform: osx-x86_64
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-macos-arm64-1.1.6.zip
+  version: 1.1.6
+  os: osx
+  arch: arm64
+  platform: osx-arm64
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-macos-universal-1.1.6.zip
+  version: 1.1.6
+  os: osx
+  arch: universal
+  platform: osx-universal
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-linux-ppc64le-1.1.6.tar.gz
+  version: 1.1.6
+  os: linux
+  arch: ppc64le
+  platform: linux-ppc64le
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://d3pgwzphl5a0ty.cloudfront.net/1.1.6/ibm-aspera-transfer-sdk-linux-s390x-1.1.6.tar.gz
+  version: 1.1.6
+  os: linux
+  arch: s390
+  platform: linux-s390
+  comment: ascp 4.4.6.2033 31ae48a
+- url: https://production-transfer-sdk.s3.us-west-2.amazonaws.com/1.1.2/aix-ppc64-1.1.2-753f662.tar.gz
+  version: 1.1.6
+  os: aix
+  arch: ppc64
+  platform: aix-ppc64
+  comment: ascp 4.4.6.2033 31ae48a
