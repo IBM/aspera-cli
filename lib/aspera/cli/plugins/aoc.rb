@@ -199,7 +199,7 @@ module Aspera
           options.declare(:workspace, 'Name of workspace', types: [String, NilClass], default: Api::AoC::DEFAULT_WORKSPACE)
           options.declare(:new_user_option, 'New user creation option for unknown package recipients', types: Hash)
           options.declare(:validate_metadata, 'Validate shared inbox metadata', values: :bool, default: true)
-          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', types: [String, NilClass], default: 'id')
+          options.declare(:package_folder, 'Field of package to use as folder name, or @none:', types: [String, NilClass])
           options.parse_options!
           # add node plugin options (for manual)
           Node.declare_options(options)
@@ -913,7 +913,6 @@ module Aspera
               result_transfer = []
               ids_to_download.each do |package_id|
                 package_info = aoc_api.read("packages/#{package_id}")
-                formatter.display_status("Downloading package: [#{package_info['id']}] #{package_info['name']}")
                 package_node_api = aoc_api.node_api_from(
                   node_id: package_info['node_id'],
                   package_info: package_info,
@@ -923,7 +922,7 @@ module Aspera
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths})
                 transfer.option_transfer_spec['destination_root'] = File.join(destination_folder, package_info[per_package_field]) unless per_package_field.nil?
-                formatter.display_status("To #{transfer_spec['destination_root']}.")
+                formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.option_transfer_spec['destination_root']}]})
                 statuses = transfer.start(
                   transfer_spec,
                   rest_token: package_node_api)

@@ -7147,12 +7147,13 @@ option <code>sources</code>. By default, all files in the package are
 downloaded, i.e. <code>.</code> is used as the file list.</p>
 <p>Option <code>package_folder</code> defines the attribute of folder
 used as destination sub folder in the <code>to_folder</code> path (see
-description earlier). Default value is <code>id</code>, so all package
-files will be downloaded in a folder named with the package ID inside
-the folder specified by option <code>to_folder</code>. One can set this
-to <code>name</code> to use the package name instead of the ID. To not
-use the package ID in the folder path, set option
-<code>package_folder</code> to <code>@none:</code>.</p>
+description earlier). The default value is <code>@none:</code> : package
+files will be downloaded directly inside the folder specified by option
+<code>to_folder</code>. The option <code>package_folder</code> can be
+set to the name of <strong>any</strong> attributes of the package.
+Notably, <code>id</code> or <code>name</code> can be used. Using option
+<code>--package-folder=id</code> ensures that every downloaded package
+is placed in a subfolder named after its unique ID.</p>
 <h4 data-number="5.6.2.1"
 id="example-receive-all-packages-from-a-given-shared-inbox"><span
 class="header-section-number">5.6.2.1</span> Example: Receive all
@@ -7662,12 +7663,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb400-1"><a href
 <span id="cb400-122"><a href="#cb400-122" aria-hidden="true" tabindex="-1"></a><span class="ex">remind</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
 <span id="cb400-123"><a href="#cb400-123" aria-hidden="true" tabindex="-1"></a><span class="ex">servers</span></span>
 <span id="cb400-124"><a href="#cb400-124" aria-hidden="true" tabindex="-1"></a><span class="ex">tier_restrictions</span></span>
-<span id="cb400-125"><a href="#cb400-125" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
-<span id="cb400-126"><a href="#cb400-126" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
-<span id="cb400-127"><a href="#cb400-127" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb400-128"><a href="#cb400-128" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
-<span id="cb400-129"><a href="#cb400-129" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
-<span id="cb400-130"><a href="#cb400-130" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
+<span id="cb400-125"><a href="#cb400-125" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> contacts list</span>
+<span id="cb400-126"><a href="#cb400-126" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
+<span id="cb400-127"><a href="#cb400-127" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
+<span id="cb400-128"><a href="#cb400-128" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb400-129"><a href="#cb400-129" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
+<span id="cb400-130"><a href="#cb400-130" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
+<span id="cb400-131"><a href="#cb400-131" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> Plugin: <code>ats</code>: IBM
 Aspera Transfer Service</h1>
