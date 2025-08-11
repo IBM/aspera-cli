@@ -2,10 +2,11 @@
 
 * 4.23.0.pre
   * New Features:
-    * `aoc`: Added `package_folder` option to place each received package in its own subfolder named after a package attribute. Default is `@none:` which means no subfolder will be created.
+    * `aoc`: #201: Added `package_folder` option to place each received package in its own subfolder named after a package attribute. Default is `@none:` which means no subfolder will be created.
     * `config`: Added `transferd` version 1.1.6.
   * Issues Fixed:
     * `server`: #209: missing home folder for transfer user shall not cause an error.
+    * `direct`: #205: `kill` blocks `cmd` on Windows.
   * Breaking Changes:
     * `config`: In `ascp info`: `openssldir` &rarr; `ascp_openssl_dir`, `openssl_version` &rarr; `ascp_openssl_version`, `sdk_ascp_version` &rarr; `ascp_version`
 
