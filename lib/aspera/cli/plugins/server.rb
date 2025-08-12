@@ -88,12 +88,21 @@ module Aspera
 
         def initialize(**env)
           super
+          @ssh_opts = {}
+          @connection_type = :ssh
           options.declare(:ssh_keys, 'SSH key path list (Array or single)')
           options.declare(:passphrase, 'SSH private key passphrase')
-          options.declare(:ssh_options, 'SSH options', types: Hash, default: {})
+          options.declare(:ssh_options, 'SSH options', types: Hash, handler: {o: self, m: :option_ssh_opts})
           SyncActions.declare_options(options)
           options.parse_options!
-          @ssh_opts = options.get_option(:ssh_options).symbolize_keys
+        end
+
+        def option_ssh_opts; @ssh_opts; end
+
+        # multiple option are merged
+        def option_ssh_opts=(value)
+          Aspera.assert_type(value, Hash)
+          @ssh_opts.deep_merge!(value.compact.symbolize_keys)
         end
 
         # Read command line options
@@ -113,10 +122,12 @@ module Aspera
             server_transfer_spec['remote_host'] = 'localhost'
             # simulate SSH environment, else ascp will fail
             ENV['SSH_CLIENT'] = 'local 0 0'
+            @connection_type = :local
             return server_transfer_spec
           elsif transfer.option_transfer_spec['token'].is_a?(String) && server_uri.scheme.eql?(HTTPS_SCHEME)
             server_transfer_spec['wss_enabled'] = true
             server_transfer_spec['wss_port'] = server_uri.port
+            @connection_type = :wss
             # Using WSS
             return server_transfer_spec
           end
@@ -188,12 +199,11 @@ module Aspera
 
         def execute_action
           server_transfer_spec = options_to_base_transfer_spec
-          ascmd_executor = if !@ssh_opts.empty?
-            Ssh.new(server_transfer_spec['remote_host'], server_transfer_spec['remote_user'], @ssh_opts)
-          elsif server_transfer_spec.key?('wss_enabled')
-            nil
-          else
-            LocalExecutor.new
+          ascmd_executor = case @connection_type
+          when :local then LocalExecutor.new
+          when :wss then nil
+          when :ssh then Ssh.new(server_transfer_spec['remote_host'], server_transfer_spec['remote_user'], @ssh_opts)
+          else Aspera.error_unexpected_value(@connection_type){'connection type'}
           end
           # the set of available commands depends on SSH executor availability (i.e. no WSS)
           available_commands = ascmd_executor.nil? ? BASE_ACTIONS : ACTIONS

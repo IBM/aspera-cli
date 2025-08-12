@@ -5185,7 +5185,7 @@ Examples:
 <%=cmd%> server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-For file operation command (browse, delete), the Ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
+For file operation command (browse, delete), the Ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options` (additive option like `ts`).
 
 For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start).
 
