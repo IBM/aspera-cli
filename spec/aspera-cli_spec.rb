@@ -26,7 +26,19 @@ end
 ssh_url = URI.parse(RSpec.configuration.url)
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN = '/'
-demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, {password: RSpec.configuration.password, port: ssh_url.port, use_agent: false})
+ssh_options = {
+  password:  RSpec.configuration.password,
+  port:      ssh_url.port,
+  use_agent: false
+}
+if defined?(JRUBY_VERSION)
+  ssh_options.merge!({
+    host_key:   %w[rsa-sha2-512 rsa-sha2-256],
+    kex:        %w[curve25519-sha256 diffie-hellman-group14-sha256],
+    encryption: %w[aes256-ctr aes192-ctr aes128-ctr]
+  })
+end
+demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, **ssh_options)
 
 # to use a local executor, set PATH_FOLDER_MAIN to the pseudo docroot (local) folder
 # PATH_FOLDER_MAIN='/pseudo/docroot'

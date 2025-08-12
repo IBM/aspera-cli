@@ -7279,3 +7279,13 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 
 In addition, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
 To re-activate, set env var `<%=opt_env(%Q`enable_ecdsha`)%>2` to `true`.
+
+### JRuby: net-ssh: unsupported algorithm
+
+JRuby may not implement all the algorithms supported by OpenSSH.
+
+Add the following options:
+
+```json
+--ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
+```
