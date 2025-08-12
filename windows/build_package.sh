@@ -1,9 +1,10 @@
 #!/bin/bash
-# Usage: ./build_package.sh <gem_name> <gem_version>
+# Usage: ./build_package.sh <gem_name> <gem_version> [zip|tgz]
 # Example: ./build_package.sh aspera-cli 4.18.0
+# Build an archive with all gems needed for aspera-cli
 set -e
 if [ "$#" -lt 2 -o "$#" -gt 3 ]; then
-    echo "Usage: $0 <gem_name> <gem_version> [<method>]"
+    echo "Usage: $0 <gem_name> <gem_version> [zip|tgz]"
     exit 1
 fi
 gem_name=$1
@@ -11,10 +12,10 @@ gem_version=$2
 archtype=${3:-tgz}
 echo $archtype
 # on macOS, GNU tar is gtar
-GNU_TAR=tar
-if [ "$(uname)" == "Darwin" ]; then
-    GNU_TAR=gtar
-fi
+case $(uname) in
+  Darwin) GNU_TAR=gtar ;;
+  *) GNU_TAR=tar ;;
+esac
 # temp folder to install gems
 tmp_dir_install=.tmp_install
 # clean, if there were left overs
