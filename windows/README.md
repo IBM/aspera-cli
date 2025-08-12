@@ -13,7 +13,7 @@ It will install all the necessary components:
 
 - Ruby
 - Gems
-- MS C++ libs
+- MS C++ libraries
 - `ascp`
 
 Then add the path to bin to your PATH to find `ascli`.
