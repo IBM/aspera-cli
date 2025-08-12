@@ -149,8 +149,10 @@ end
 def generate_help(varname)
   raise "missing #{varname}" unless @env.key?(varname)
   exec_path = @env[varname]
-  output = %x(#{exec_path} -h 2>&1)
-  raise "Error executing: #{exec_path} -h" unless $CHILD_STATUS.success?
+  # Add library path for Ruby CLI execution
+  lib_path = File.expand_path('../lib', File.dirname(exec_path))
+  output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1)
+  raise "Error executing: ruby -I #{lib_path} #{exec_path} -h" unless $CHILD_STATUS.success?
   return output
 end
 
