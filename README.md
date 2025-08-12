@@ -2,7 +2,7 @@
 <!--
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md, for details, read docs/README.md
 PANDOC_META_BEGIN
-subtitle: "ascli 4.23.0"
+subtitle: "ascli 4.24.0.pre"
 author: "Laurent MARTIN"
 PANDOC_META_END
 -->
@@ -15,7 +15,7 @@ PANDOC_META_END
 
 ## Introduction
 
-Version : 4.23.0
+Version : 4.24.0.pre
 
 Laurent/2016-2025
 
@@ -115,7 +115,7 @@ Once the gem is installed, `ascli` shall be accessible:
 
 ```console
 $ ascli --version
-4.23.0
+4.24.0.pre
 ```
 
 ### First use
@@ -560,7 +560,7 @@ gem install bigdecimal -v '~> 3.1.9'
 Once you have Ruby and rights to install gems, install the `aspera-cli` gem and its dependencies:
 
 ```bash
-gem install aspera-cli
+gem install aspera-cli --pre
 ```
 
 To upgrade to the latest version:
@@ -837,7 +837,7 @@ ascli -v
 ```
 
 ```text
-4.23.0
+4.24.0.pre
 ```
 
 In order to keep persistency of configuration on the host, you should specify your user's configuration folder as a volume for the container.
@@ -3924,7 +3924,7 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.23.0)
+        ascli -- a command line tool for Aspera Applications (v4.24.0.pre)
 
 SYNOPSIS
         ascli COMMANDS [OPTIONS] [ARGS]

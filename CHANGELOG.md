@@ -1,5 +1,8 @@
 # Changes (Release notes)
 
+* 4.24.0.pre
+  * New Features:
+
 * 4.23.0 2025-08-11
   * New Features:
     * `aoc`: #201: Added `package_folder` option to place each received package in its own subfolder named after a package attribute. Default is `@none:` which means no subfolder will be created.
