@@ -77,7 +77,11 @@ RUBY_WARN=ruby -w $(DIR_TST)warning_exit_wrapper.rb
 CLI_NOCONF=$(RUBY_WARN) $(CLI_PATH) --home=$(CLI_HOME)
 # "CLI_TEST" is used to call the tool in the testing environment
 CLI_TEST=$(CLI_NOCONF) --config-file=$(ASPERA_CLI_TEST_CONF_FILE)
-# "INCMAN" is used to generate sample commands in documentation (see in docs/Makefile)
+# JRuby does not support some encryptions
+ifneq (,$(findstring jruby,$(shell ruby -v)))
+CLI_TEST+= -Pjns
+endif
+# "INCMAN" is a tag used to generate sample commands in documentation (see in docs/Makefile)
 INCMAN=
 # exec begin error: enclose tests that shall result in error
 BEG_ERR=if 
