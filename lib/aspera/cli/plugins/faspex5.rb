@@ -595,8 +595,13 @@ module Aspera
           res_command = options.get_next_command(available_commands)
           case res_command
           when *Plugin::ALL_OPS
-            return entity_command(
-              res_command, adm_api, res_path, item_list_key: list_key, display_fields: display_fields, id_as_arg: id_as_arg,
+            return entity_execute(
+              adm_api,
+              res_path,
+              command: res_command,
+              item_list_key: list_key,
+              display_fields: display_fields,
+              id_as_arg: id_as_arg,
               delete_style: delete_style) do |field, value|
                      lookup_entity_by_field(
                        type: res_type, value: value, field: field, real_path: res_path, item_list_key: list_key, query: res_id_query)['id']
@@ -609,7 +614,11 @@ module Aspera
             sh_command = options.get_next_command([:user].concat(Plugin::ALL_OPS))
             case sh_command
             when *Plugin::ALL_OPS
-              return entity_command(sh_command, adm_api, sh_path, item_list_key: 'shared_folders') do |field, value|
+              return entity_execute(
+                adm_api,
+                sh_path,
+                command: sh_command,
+                item_list_key: 'shared_folders') do |field, value|
                        lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
                      end
             when :user
@@ -617,7 +626,7 @@ module Aspera
                 lookup_entity_by_field(type: 'shared_folders', real_path: sh_path, field: field, value: value)['id']
               end
               user_path = "#{sh_path}/#{sh_id}/custom_access_users"
-              return entity_action(adm_api, user_path, item_list_key: 'users') do |field, value|
+              return entity_execute(adm_api, user_path, item_list_key: 'users') do |field, value|
                        lookup_entity_by_field(type: 'users', real_path: user_path, field: field, value: value)['id']
                      end
 
@@ -667,7 +676,11 @@ module Aspera
               access = options.get_next_argument('level', mandatory: false, accept_list: %i[submit_only standard shared_inbox_admin], default: :standard)
               options.unshift_next_argument({user: users.map{ |u| {id: u, access: access}}})
             end
-            return entity_command(sub_command, adm_api, res_path, item_list_key: list_key) do |field, value|
+            return entity_execute(
+              adm_api,
+              res_path,
+              command: sub_command,
+              item_list_key: list_key) do |field, value|
                      lookup_entity_by_field(
                        type: 'accounts',
                        field: field,
@@ -807,8 +820,11 @@ module Aspera
               @api_v5.create("#{invitation_endpoint}/#{instance_identifier}/resend")
               return Main.result_status('Invitation resent')
             else
-              return entity_command(
-                invitation_command, @api_v5, invitation_endpoint, item_list_key: invitation_endpoint,
+              return entity_execute(
+                @api_v5,
+                invitation_endpoint,
+                command: invitation_command,
+                item_list_key: invitation_endpoint,
                 display_fields: %w[id public recipient_type recipient_name email_address]) do |field, value|
                   lookup_entity_by_field(type: invitation_endpoint, field: field, value: value, query: {})['id']
                 end

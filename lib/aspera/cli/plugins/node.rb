@@ -393,7 +393,10 @@ module Aspera
             ak_command = options.get_next_command(%i[do set_bearer_key].concat(Plugin::ALL_OPS))
             case ak_command
             when *Plugin::ALL_OPS
-              return entity_command(ak_command, @api_node, 'access_keys') do |field, value|
+              return entity_execute(
+                @api_node,
+                'access_keys',
+                command: ak_command) do |field, value|
                        raise Cli::BadIdentifier, 'only selector: %id:self' unless field.eql?('id') && value.eql?('self')
                        @api_node.read('access_keys/self')['id']
                      end
@@ -785,6 +788,40 @@ module Aspera
           raise Cli::BadIdentifier, "no such sync: #{field}=#{value}"
         end
 
+        WATCH_FOLDER_MUL = %i[create list].freeze
+        WATCH_FOLDER_SING = %i[show modify delete state].freeze
+        private_constant :WATCH_FOLDER_MUL, :WATCH_FOLDER_SING
+
+        def watch_folder_action
+          res_class_path = 'v3/watchfolders'
+          command = options.get_next_command(WATCH_FOLDER_MUL + WATCH_FOLDER_SING)
+          if WATCH_FOLDER_SING.include?(command)
+            one_res_id = instance_identifier
+            one_res_path = "#{res_class_path}/#{one_res_id}"
+          end
+          # hum, to avoid: Unable to convert 2016_09_14 configuration
+          @api_node.params[:headers] ||= {}
+          @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
+          case command
+          when :create
+            resp = @api_node.create(res_class_path, value_create_modify(command: command))
+            return Main.result_status("#{resp['id']} created")
+          when :list
+            resp = @api_node.read(res_class_path, query_read_delete)
+            return Main.result_value_list(resp['ids'], name: 'id')
+          when :show
+            return Main.result_single_object(@api_node.read(one_res_path))
+          when :modify
+            @api_node.update(one_res_path, options.get_option(:query, mandatory: true))
+            return Main.result_status("#{one_res_id} updated")
+          when :delete
+            @api_node.delete(one_res_path)
+            return Main.result_status("#{one_res_id} deleted")
+          when :state
+            return Main.result_single_object(@api_node.read("#{one_res_path}/state"))
+          end
+        end
+
         ACTIONS = %i[
           async
           ssync
@@ -809,7 +846,12 @@ module Aspera
             # newer API
             sync_command = options.get_next_command(%i[start stop bandwidth counters files state summary].concat(Plugin::ALL_OPS) - %i[modify])
             case sync_command
-            when *Plugin::ALL_OPS then return entity_command(sync_command, @api_node, 'asyncs', item_list_key: 'ids'){ |field, value| ssync_lookup(field, value)}
+            when *Plugin::ALL_OPS
+              return entity_execute(
+                @api_node,
+                'asyncs',
+                command: sync_command,
+                item_list_key: 'ids'){ |field, value| ssync_lookup(field, value)}
             else
               asyncs_id = instance_identifier{ |field, value| ssync_lookup(field, value)}
               if %i[start stop].include?(sync_command)
@@ -962,33 +1004,7 @@ module Aspera
               return Main.result_status("#{service_id} deleted")
             end
           when :watch_folder
-            res_class_path = 'v3/watchfolders'
-            command = options.get_next_command(%i[create list show modify delete state])
-            if %i[show modify delete state].include?(command)
-              one_res_id = instance_identifier
-              one_res_path = "#{res_class_path}/#{one_res_id}"
-            end
-            # hum, to avoid: Unable to convert 2016_09_14 configuration
-            @api_node.params[:headers] ||= {}
-            @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
-            case command
-            when :create
-              resp = @api_node.create(res_class_path, value_create_modify(command: command))
-              return Main.result_status("#{resp['id']} created")
-            when :list
-              resp = @api_node.read(res_class_path, query_read_delete)
-              return Main.result_value_list(resp['ids'], name: 'id')
-            when :show
-              return Main.result_single_object(@api_node.read(one_res_path))
-            when :modify
-              @api_node.update(one_res_path, options.get_option(:query, mandatory: true))
-              return Main.result_status("#{one_res_id} updated")
-            when :delete
-              @api_node.delete(one_res_path)
-              return Main.result_status("#{one_res_id} deleted")
-            when :state
-              return Main.result_single_object(@api_node.read("#{one_res_path}/state"))
-            end
+            return watch_folder_action
           when :central
             command = options.get_next_command(%i[session file])
             validator_id = options.get_option(:validator)
