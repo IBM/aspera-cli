@@ -125,23 +125,29 @@ module Aspera
         end
       end
 
-      # @param command [Symbol] command to execute: create show list modify delete
-      # @param rest_api [Rest] api to use
-      # @param res_class_path [String] sub path in URL to resource relative to base url
-      # @param display_fields [Array] fields to display by default
-      # @param item_list_key [String] result is in a sub key of the json
-      # @param id_as_arg [String] if set, the id is provided as url argument ?<id_as_arg>=<id>
-      # @param is_singleton [Boolean] if true, res_class_path is the full path to the resource
-      # @param delete_style [String] if set, the delete operation by array in payload
-      # @param block [Proc] block to search for identifier based on attribute value
+      # Operations: Create, Delete, Show, List, Modify
+      # @param rest_api       [Rest]    api to use
+      # @param res_class_path [String]  sub path in URL to resource relative to base url
+      # @param command        [Symbol]  command to execute: create show list modify delete
+      # @param display_fields [Array]   fields to display by default
+      # @param item_list_key  [String]  result is in a sub key of the json
+      # @param id_as_arg      [String]  if set, the id is provided as url argument ?<id_as_arg>=<id>
+      # @param is_singleton   [Boolean] if true, res_class_path is the full path to the resource
+      # @param delete_style   [String]  if set, the delete operation by array in payload
+      # @param block          [Proc]    block to search for identifier based on attribute value
       # @return result suitable for CLI result
-      def entity_command(command, rest_api, res_class_path,
+      def entity_execute(
+        rest_api,
+        res_class_path,
+        command: nil,
         display_fields: nil,
         item_list_key: false,
         id_as_arg: false,
         is_singleton: false,
         delete_style: nil,
-        &block)
+        &block
+      )
+        command = options.get_next_command(ALL_OPS) if command.nil?
         if is_singleton
           one_res_path = res_class_path
         elsif INSTANCE_OPS.include?(command)
@@ -209,13 +215,6 @@ module Aspera
         else
           raise "unknown action: #{command}"
         end
-      end
-
-      # implement generic rest operations on given resource path
-      def entity_action(rest_api, res_class_path, **opts, &block)
-        # res_name=res_class_path.gsub(%r{^.*/},'').gsub(%r{s$},'').gsub('_',' ')
-        command = options.get_next_command(ALL_OPS)
-        return entity_command(command, rest_api, res_class_path, **opts, &block)
       end
 
       # query parameters in URL suitable for REST: list/GET and delete/DELETE
