@@ -49,7 +49,10 @@ module Aspera
         @opt_mgr = opt_mgr
         @config = config_plugin
         # command line can override transfer spec
-        @transfer_spec_command_line = {'create_dir' => true}
+        @transfer_spec_command_line = {
+          'create_dir'    => true,
+          'resume_policy' => 'sparse_csum'
+        }
         # options for transfer agent
         @transfer_info = {}
         # the currently selected transfer agent
