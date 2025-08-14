@@ -19,7 +19,7 @@ Version : <%=gemspec.version.to_s%>
 
 Laurent/2016-<%=Time.new.year%>
 
-This gem provides the <%=tool%> CLI (Command Line Interface) to IBM Aspera software.
+This Ruby gem provides the <%=tool%> command-line interface (CLI) for IBM Aspera software, enabling easy interaction with Aspera APIs and efficient file transfers.
 
 <%=tool%> is also great tool to learn Aspera APIs.
 
@@ -40,10 +40,10 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-This documentation does not provide ALL the detailed description of all options and commands.
-The reason is that most commands and payloads are directly Rest API calls on the various Aspera products.
-So, to get the full description of all options and commands, refer to the official Aspera API documentation.
-(To see which API is used, set option `--log-level=debug`)
+This documentation does not provide exhaustive details for all commands and options.
+Most commands correspond directly to REST API calls on Aspera products.
+For detailed information, consult the official Aspera API documentation.
+For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
@@ -639,7 +639,7 @@ To download it, pipe to `config download`:
 <%=cmd%> config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | <%=cmd%> config download @stdin:
 ```
 
-If installation from a local file preferred (airgap installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+If installation from a local file preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```bash
 <%=cmd%> config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
@@ -3158,7 +3158,11 @@ The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) contai
 Multiple `ts` options on command line are cumulative, and the `Hash` value is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
 
-> **Note:** Default transfer spec values can be displayed with command: `config ascp info --flat-hash=no` under field `ts`.
+> **Note:** Default transfer spec values can be displayed with command:
+
+```bash
+<%=cmd%> config ascp info --fields=ts --flat-hash=no
+```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
