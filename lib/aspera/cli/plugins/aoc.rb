@@ -921,7 +921,16 @@ module Aspera
                   package_info['contents_file_id'],
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths})
-                transfer.option_transfer_spec['destination_root'] = File.join(destination_folder, package_info[per_package_field]) unless per_package_field.nil?
+                unless per_package_field.nil?
+                  # build new destination folder from sanitized package field, and override
+                  transfer.option_transfer_spec['destination_root'] =
+                    File.join(destination_folder, package_info[per_package_field])
+                      .gsub(%r{[/\\:*?"<>|]}, '_') # remove invalid characters
+                      .squeeze('_')                # single underscore
+                      .gsub(/\.+$/, '')            # remove trailing dots
+                      .gsub(/\s+/, ' ')            # collapse multiple spaces
+                      .strip                       # remove leading/trailing spaces
+                end
                 formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.option_transfer_spec['destination_root']}]})
                 statuses = transfer.start(
                   transfer_spec,
