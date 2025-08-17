@@ -3,17 +3,19 @@
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/keychain/base'
 require 'vault'
 
 module Aspera
   module Keychain
     # Manage secrets in a Hashicorp Vault
-    class HashicorpVault
+    class HashicorpVault < Base
       SECRET_PATH = 'secret/data/'
 
       private_constant :SECRET_PATH
 
       def initialize(url:, token:)
+        super()
         Vault.configure do |config|
           config.address = url
           config.token = token
@@ -37,6 +39,7 @@ module Aspera
       # Set a secret
       # @param options [Hash] with keys :label, :username, :password, :url, :description
       def set(options)
+        validate_set(options)
         label = options.fetch(:label)
         data = {
           username:    options[:username],

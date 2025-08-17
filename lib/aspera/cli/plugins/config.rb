@@ -1256,11 +1256,7 @@ module Aspera
           when :show
             return Main.result_single_object(vault.get(label: options.get_next_argument('label')))
           when :create
-            label = options.get_next_argument('label', validation: String)
-            info = options.get_next_argument('info', validation: Hash)
-            info = info.symbolize_keys
-            info[:label] = label
-            vault.set(info)
+            vault.set(options.get_next_argument('info', validation: Hash).symbolize_keys)
             return Main.result_status('Secret added')
           when :delete
             label_to_delete = options.get_next_argument('label')

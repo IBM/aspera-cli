@@ -4,20 +4,21 @@ require 'aspera/hash_ext'
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/keychain/base'
 require 'symmetric_encryption/core'
 require 'yaml'
 
 module Aspera
   module Keychain
     # Manage secrets in a simple Hash
-    class EncryptedHash
+    class EncryptedHash < Base
       LEGACY_CIPHER_NAME = 'aes-256-cbc'
       DEFAULT_CIPHER_NAME = 'aes-256-cbc'
       FILE_TYPE = 'encrypted_hash_vault'
-      CONTENT_KEYS = %i[label username password url description].freeze
       FILE_KEYS = %w[version type cipher data].sort.freeze
-      private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :CONTENT_KEYS, :FILE_KEYS
+      private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :FILE_KEYS
       def initialize(file:, password:)
+        super()
         Aspera.assert_type(file, String){'path to vault file'}
         @path = file
         @all_secrets = {}
@@ -63,12 +64,7 @@ module Aspera
       # set a secret
       # @param options [Hash] with keys :label, :username, :password, :url, :description
       def set(options)
-        Aspera.assert_type(options, Hash){'options'}
-        unsupported = options.keys - CONTENT_KEYS
-        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}"}
-        options.each_pair do |k, v|
-          Aspera.assert_type(v, String){k.to_s}
-        end
+        validate_set(options)
         label = options.delete(:label)
         raise "secret #{label} already exist, delete first" if @all_secrets.key?(label)
         @all_secrets[label] = options.symbolize_keys
