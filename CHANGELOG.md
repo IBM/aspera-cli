@@ -8,6 +8,7 @@
   * Breaking Changes:
     * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
     * `ssh_options` : Now additive option, like `ts`.
+    * `vault`: When creating an entry, the `label` field is now part of the creation Hash.
 
 * 4.23.0 2025-08-11
 

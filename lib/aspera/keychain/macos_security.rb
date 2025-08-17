@@ -5,6 +5,7 @@ require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
+require 'aspera/keychain/base'
 
 # enhance the gem to support other key chains
 module Aspera
@@ -122,9 +123,9 @@ module Aspera
       end
     end
 
-    class MacosSystem
-      OPTIONS = %i[label username password url description].freeze
+    class MacosSystem < Base
       def initialize(name: nil)
+        super()
         @keychain_name = name.nil? ? 'default keychain' : name
         @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
         raise "no such keychain #{name}" if @keychain.nil?
@@ -142,9 +143,7 @@ module Aspera
       end
 
       def set(options)
-        Aspera.assert_type(options, Hash){'options'}
-        unsupported = options.keys - OPTIONS
-        Aspera.assert(unsupported.empty?){"unsupported options: #{unsupported}, use #{OPTIONS.join(', ')}"}
+        validate_set(options)
         @keychain.password(
           :add, :generic, service: options[:label],
           account: options[:username] || 'none', password: options[:password], comment: options[:description])

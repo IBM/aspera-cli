@@ -46,7 +46,7 @@ interactive: $(T)f5_webauth $(T)aoc_webauth $(T)conf_interactive $(T)conf_vault_
 use_rmagick: optional_gems $(T)aoc_file_id_10 $(T)aoc_file_id_11 $(T)aoc_file_id_12 $(T)conf_coffee_3 $(T)conf_image
 use_grpc: optional_gems $(T)serv_upload4
 use_mimemagic: optional_gems $(T)prev_dcm_mm $(T)prev_jpg_unk_mm 
-use_sym_encryption: optional_gems $(T)conf_vault
+use_sym_encryption: optional_gems $(T)conf_vault_file
 
 # test group: require optional gems
 optional: use_rmagick use_grpc use_mimemagic use_sym_encryption
@@ -1513,18 +1513,18 @@ $(T)conf_gem: $(TMP_EXISTS)
 $(T)conf_vault_macos: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(CLI_TEST) -N config vault info --vault=@json:'{"type":"system"}'
-	$(BEG_IGN)$(CLI_TEST) -N config vault create foo @json:'{}' --vault=@json:'{"type":"system"}'$(END_IGN)
+	$(BEG_IGN)$(CLI_TEST) -N config vault create @json:'{"label":"foo"}' --vault=@json:'{"type":"system"}'$(END_IGN)
 	$(CLI_TEST) -N config vault show foo --vault=@json:'{"type":"system"}'
 	$(BEG_IGN)$(CLI_TEST) -N config vault delete foo --vault=@json:'{"type":"system"}'$(END_IGN)
 	@$(STOP_TEST) $@
 VAULT_FILE=$(shell realpath $(DIR_TOP))/tmp/sample_vault.bin
 NEW_VAULT_PASS=_other_one_
-$(T)conf_vault: $(TMP_EXISTS)
+$(T)conf_vault_file: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -f $(VAULT_FILE)
+	rm -f $(VAULT_FILE) $(TEST_CONFIG)
 	$(CLI_TMP_CONF) config preset set GLOBAL vault @json:'{"type":"file","file":"'"$(VAULT_FILE)"'"}'
 	$(CLI_TMP_CONF) config preset set GLOBAL vault_password _simple_one_
-	$(INCMAN)$(CLI_TMP_CONF) config vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
+	$(INCMAN)$(CLI_TMP_CONF) config vault create @json:'{"label":"my_label","password":"my_password_here","description":"my secret"}'
 	$(INCMAN)$(CLI_TMP_CONF) config vault info
 	$(INCMAN)$(CLI_TMP_CONF) config vault list
 	$(INCMAN)$(CLI_TMP_CONF) config vault show my_label
