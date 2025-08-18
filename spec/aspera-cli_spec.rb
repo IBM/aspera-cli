@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 # top folder of project
-project_top_folder = File.dirname(File.dirname(File.realpath(__FILE__)))
+project_top_folder = File.dirname(File.realpath(__FILE__), 2)
 
 require 'aspera/log'
 # Aspera::Log.instance.level = :debug
