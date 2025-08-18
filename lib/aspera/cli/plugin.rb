@@ -18,7 +18,7 @@ module Aspera
       # special query parameter: max number of pages for list command
       MAX_PAGES = 'pmax'
       # special identifier format: look for this name to find where supported
-      REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/.freeze
+      REGEX_LOOKUP_ID_BY_FIELD = /^%([^:]+):(.*)$/
 
       class << self
         def declare_generic_options(options)
