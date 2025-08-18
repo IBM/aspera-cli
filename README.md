@@ -19,7 +19,7 @@ Version : 4.24.0.pre
 
 Laurent/2016-2025
 
-This gem provides the `ascli` CLI (Command Line Interface) to IBM Aspera software.
+This Ruby gem provides the `ascli` command-line interface (CLI) for IBM Aspera software, enabling easy interaction with Aspera APIs and efficient file transfers.
 
 `ascli` is also great tool to learn Aspera APIs.
 
@@ -42,10 +42,10 @@ A PDF version of this documentation is available here: [docs/Manual.pdf](docs/Ma
 
 Refer to [BUGS.md](BUGS.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-This documentation does not provide ALL the detailed description of all options and commands.
-The reason is that most commands and payloads are directly Rest API calls on the various Aspera products.
-So, to get the full description of all options and commands, refer to the official Aspera API documentation.
-(To see which API is used, set option `--log-level=debug`)
+This documentation does not provide exhaustive details for all commands and options.
+Most commands correspond directly to REST API calls on Aspera products.
+For detailed information, consult the official Aspera API documentation.
+For debugging, use `--log-level=debug` to view the underlying API calls.
 
 ### When to use and when not to use
 
@@ -655,7 +655,7 @@ To download it, pipe to `config download`:
 ascli config transferd list --select=@json:'{"platform":"osx-arm64","version":"1.1.3"}' --fields=url | ascli config download @stdin:
 ```
 
-If installation from a local file preferred (airgap installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
+If installation from a local file preferred (air-gapped installation) instead of fetching from internet: one can specify the location of the SDK file with option `sdk_url`:
 
 ```bash
 ascli config ascp install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
@@ -2184,7 +2184,7 @@ smtp_settings
 tokens flush
 transferd install
 transferd list
-vault create my_label @json:'{"password":"my_password_here","description":"my secret"}'
+vault create @json:'{"label":"my_label","password":"my_password_here","description":"my secret"}'
 vault delete my_label
 vault info
 vault list
@@ -2386,12 +2386,12 @@ For security reasons, those secrets shall not be exposed in clear, either:
 - In logs
 - In command output
 
-Instead, they shall be hidden (logs) or encrypted (configuration).
+Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
-Terminal output secret removal is controlled by option `show_secrets` (default: `no`).
+Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
-Or it is possible to use extended value `@secret:[name]` to ask for a secret interactively.
+It is possible to use extended value `@secret:[name]` to ask for a secret interactively.
 It is also possible to enter an option as an environment variable, e.g. `ASCLI_PASSWORD` for option `password` and read the env var like this:
 
 ```bash
@@ -2426,10 +2426,19 @@ export ASCLI_VAULT_PASSWORD
 Quick start macOS:
 
 ```bash
-gem install vault
 brew tap hashicorp/tap
 brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=dev-only-token
+```
+
+| Parameter | Example  | Description |
+|-----------|----------|-------------|
+| `type`    | `vault`                 | The type of the vault |
+| `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
+| `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
+
+```json
+--vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
 ```
 
 #### Vault: System keychain
@@ -2438,7 +2447,12 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
-```bash
+| Parameter | Example  | Description |
+|-----------|----------|-------------|
+| `type`    | `system` | The type of the vault |
+| `name`    | `ascli`  | The name of the keychain to use |
+
+```json
 --vault=@json:'{"type":"system","name":"ascli"}'
 ```
 
@@ -2450,7 +2464,10 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 {"type":"file","name":"vault.bin"}
 ```
 
-`name` is the file path, absolute or relative to the configuration folder `ASCLI_HOME`.
+| Parameter | Example      | Description |
+|-----------|--------------|-------------|
+| `type`    | `file`       | The type of the vault |
+| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `ASCLI_HOME` |
 
 #### Vault: Operations
 
@@ -2464,7 +2481,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-ascli config vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
+ascli config vault create @json:'{"label":"mylabel","password":"my_password_here","description":"for this account"}'
 ```
 
 #### Configuration Finder
@@ -2489,7 +2506,7 @@ ascli config preset update myconf --url=... --username=... --password=@val:@vaul
 ```
 
 ```bash
-ascli config vault create myconf @json:'{"password":"my_password_here"}'
+ascli config vault create @json:'{"label":"myconf","password":"my_password_here"}'
 ```
 
 > **Note:** Use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -3270,7 +3287,11 @@ The `ts` option accepts a [`Hash` Extended Value](#extended-value-syntax) contai
 Multiple `ts` options on command line are cumulative, and the `Hash` value is deeply merged.
 To remove a (deep) key from transfer spec, set the value to `null`.
 
-> **Note:** Default transfer spec values can be displayed with command: `config ascp info --flat-hash=no` under field `ts`.
+> **Note:** Default transfer spec values can be displayed with command:
+
+```bash
+ascli config ascp info --fields=ts --flat-hash=no
+```
 
 It is possible to specify `ascp` options when the `transfer` option is set to [`direct`](#agent-direct) using `transfer_info` option parameter: `ascp_args`.
 Example: `--transfer-info=@json:'{"ascp_args":["-l","100m"]}'`.
@@ -4044,6 +4065,7 @@ OPTIONS:
         --default-ports=ENUM         Use standard FASP ports or get from node api (gen4): no, [yes]
         --node-cache=ENUM            Set to no to force actual file system read (gen4): no, [yes]
         --root-id=VALUE              File id of top folder when using access key (override AK root id)
+        --dynamic-key=VALUE          Private key PEM to use for dynamic key auth
         --sync-info=VALUE            Information for sync instance and sessions (Hash)
 
 
@@ -5888,7 +5910,7 @@ ascli server --ssh-keys=@list:,~/.ssh/id_rsa
 ascli server --ssh-keys=@json:'["~/.ssh/id_rsa"]'
 ```
 
-For file operation command (browse, delete), the Ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options`.
+For file operation command (browse, delete), the Ruby SSH client library `Net::SSH` is used and provides several options settable using option `ssh_options` (additive option like `ts`).
 
 For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](http://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start).
 
@@ -6452,7 +6474,7 @@ The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default |  Description                                      |
+| Parameter   | Type     | Default | Description                                      |
 |-------------|----------|---------|---------------------------------------------------|
 | `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.        |
 | `key`       | `String` | -       | Agent key for the backend.                        |
@@ -8306,3 +8328,13 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 
 In addition, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
 To re-activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.
+
+### JRuby: net-ssh: unsupported algorithm
+
+JRuby may not implement all the algorithms supported by OpenSSH.
+
+Add the following options:
+
+```json
+--ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
+```
