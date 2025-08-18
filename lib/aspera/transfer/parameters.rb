@@ -111,7 +111,7 @@ module Aspera
         @builder.add_command_line_options(["#{file_list_option}=#{file_list_file}"]) unless file_list_option.nil?
       end
 
-      # @return the list of certificates to use when token/ssh or wss are used
+      # @return the list of certificates (option `-i`) to use when token/ssh or wss are used
       def remote_certificates
         certificates_to_use = []
         # use web socket secure for session ?
@@ -139,7 +139,7 @@ module Aspera
           # remove unused parameter (avoid warning)
           @job_spec.delete('wss_port')
           # add SSH bypass keys when authentication is token and no auth is provided
-          if @job_spec.key?('token') && !@job_spec.key?('remote_password')
+          if @job_spec.key?('token') && !@job_spec.key?('remote_password') && !@job_spec.key?('ssh_private_key')
             # @job_spec['remote_password'] = Ascp::Installation.instance.ssh_cert_uuid # not used: no passphrase
             certificates_to_use.concat(Ascp::Installation.instance.aspera_token_ssh_key_paths(@client_ssh_key))
           end
