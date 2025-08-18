@@ -77,6 +77,7 @@ module Aspera
           def declare_options(options)
             return if @options_declared
             @options_declared = true
+            @dynamic_key = nil
             options.declare(:validator, 'Identifier of validator (optional for central)')
             options.declare(:asperabrowserurl, 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net')
             options.declare(:sync_name, 'Sync name')
@@ -87,6 +88,7 @@ module Aspera
               :node_cache, 'Set to no to force actual file system read (gen4)', values: :bool,
               handler: {o: Api::Node, m: :use_node_cache})
             options.declare(:root_id, 'File id of top folder when using access key (override AK root id)')
+            options.declare(:dynamic_key, 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key})
             SyncActions.declare_options(options)
             options.parse_options!
           end
@@ -364,10 +366,12 @@ module Aspera
             end
             # add fixed parameters if any (for COS)
             @api_node.add_tspec_info(request_transfer_spec) if @api_node.respond_to?(:add_tspec_info)
+            Api::Node.add_public_key(request_transfer_spec)
             # prepare payload for single request
             setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
             # only one request, so only one answer
             transfer_spec = @api_node.create("files/#{command}_setup", setup_payload)['transfer_specs'].first['transfer_spec']
+            Api::Node.add_private_key(transfer_spec)
             # delete this part, as the returned value contains only destination, and not sources
             transfer_spec.delete('paths') if command.eql?(:upload)
             return Main.result_transfer(transfer.start(transfer_spec))
