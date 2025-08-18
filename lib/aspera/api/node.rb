@@ -9,6 +9,8 @@ require 'aspera/assert'
 require 'aspera/environment'
 require 'zlib'
 require 'base64'
+require 'openssl'
+require 'net/ssh/buffer'
 
 module Aspera
   module Api
@@ -49,6 +51,37 @@ module Aspera
         attr_accessor :use_standard_ports
         # set to false to bypass cache in redis
         attr_accessor :use_node_cache
+        attr_reader :use_dynamic_key
+
+        # set private key to be used
+        # @param pem_content [String] PEM encoded private key
+        def use_dynamic_key=(pem_content)
+          Aspera.assert_type(pem_content, String)
+          @dynamic_key = OpenSSL::PKey.read(pem_content)
+        end
+
+        # Adds fields `public_keys` in provided Hash, if dynamic key is set.
+        # @param h [Hash] Hash to add public key to
+        def add_public_key(h)
+          if @dynamic_key
+            ssh_key = Net::SSH::Buffer.from(:key, @dynamic_key)
+            # get pub key in OpenSSH public key format (authorized_keys)
+            h['public_keys'] = [
+              ssh_key.read_string,
+              Base64.strict_encode64(ssh_key.to_s)
+            ].join(' ')
+          end
+          return h
+        end
+
+        # Adds fields `ssh_private_key` in provided Hash, if dynamic key is set.
+        # @param h [Hash] Hash to add private key to
+        def add_private_key(h)
+          if @dynamic_key
+            h['ssh_private_key'] = @dynamic_key.to_pem
+          end
+          return h
+        end
 
         # For access keys: provide expression to match entry in folder
         # @param match_expression one of supported types
