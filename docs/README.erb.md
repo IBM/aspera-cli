@@ -2274,12 +2274,12 @@ For security reasons, those secrets shall not be exposed in clear, either:
 - In logs
 - In command output
 
-Instead, they shall be hidden (logs) or encrypted (configuration).
+Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
-Terminal output secret removal is controlled by option `show_secrets` (default: `no`).
+Terminal output (command result) secret removal is controlled by option `show_secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (e.g. password) using option `interactive`.
-Or it is possible to use extended value `@secret:[name]` to ask for a secret interactively.
+It is possible to use extended value `@secret:[name]` to ask for a secret interactively.
 It is also possible to enter an option as an environment variable, e.g. `<%=opt_env(%Q`password`)%>` for option `password` and read the env var like this:
 
 ```bash
@@ -2314,10 +2314,19 @@ export <%=opt_env(%Q`vault_password`)%>
 Quick start macOS:
 
 ```bash
-gem install vault
 brew tap hashicorp/tap
 brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=dev-only-token
+```
+
+| Parameter | Example  | Description |
+|-----------|----------|-------------|
+| `type`    | `vault`                 | The type of the vault |
+| `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
+| `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
+
+```json
+--vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
 ```
 
 #### Vault: System keychain
@@ -2326,7 +2335,12 @@ vault server -dev -dev-root-token-id=dev-only-token
 
 It is possible to manage secrets in macOS keychain (only read supported currently).
 
-```bash
+| Parameter | Example  | Description |
+|-----------|----------|-------------|
+| `type`    | `system` | The type of the vault |
+| `name`    | `ascli`  | The name of the keychain to use |
+
+```json
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'
 ```
 
@@ -2338,7 +2352,10 @@ It is possible to store and use secrets encrypted in a file using option `vault`
 {"type":"file","name":"vault.bin"}
 ```
 
-`name` is the file path, absolute or relative to the configuration folder `<%=opt_env(%Q`home`)%>`.
+| Parameter | Example      | Description |
+|-----------|--------------|-------------|
+| `type`    | `file`       | The type of the vault |
+| `name`    | `vault.bin`  | File path, absolute, or relative to the configuration folder `<%=opt_env(%Q`home`)%>` |
 
 #### Vault: Operations
 
@@ -2352,7 +2369,7 @@ Then secrets can be manipulated using commands:
 - `delete`
 
 ```bash
-<%=cmd%> config vault create mylabel @json:'{"password":"my_password_here","description":"for this account"}'
+<%=cmd%> config vault create @json:'{"label":"mylabel","password":"my_password_here","description":"for this account"}'
 ```
 
 #### Configuration Finder
@@ -2377,7 +2394,7 @@ For a more secure storage one can do:
 ```
 
 ```bash
-<%=cmd%> config vault create myconf @json:'{"password":"my_password_here"}'
+<%=cmd%> config vault create @json:'{"label":"myconf","password":"my_password_here"}'
 ```
 
 > **Note:** Use `@val:` in front of `@vault:` so that the extended value is not evaluated.
@@ -5671,7 +5688,7 @@ The `node` plugin supports Open Telemetry (OTel) for monitoring and tracing.
 
 The command expects the following parameters provided as a `Hash` positional parameter:
 
-| Parameter   | Type     | Default |  Description                                      |
+| Parameter   | Type     | Default | Description                                      |
 |-------------|----------|---------|---------------------------------------------------|
 | `url`       | `String` | -       | URL of the Instana HTTPS backend for OTel.        |
 | `key`       | `String` | -       | Agent key for the backend.                        |
