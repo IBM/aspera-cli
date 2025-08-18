@@ -510,8 +510,10 @@ module Aspera
         transfer_spec.deep_merge!({
           'tags' => {
             Transfer::Spec::TAG_RESERVED => {
+              'app'      => app_info[:app],
               'usage_id' => "aspera.files.workspace.#{app_info[:workspace_id]}", # activity tracking
               'files'    => {
+                'node_id'               => app_info[:node_info]['id'],
                 'files_transfer_action' => "#{transfer_type}_#{app_info[:app].gsub(/s$/, '')}",
                 'workspace_name'        => app_info[:workspace_name], # activity tracking
                 'workspace_id'          => app_info[:workspace_id]
@@ -530,8 +532,15 @@ module Aspera
         case app_info[:app]
         when FILES_APP
           file_id = transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['node']['file_id']
-          transfer_spec.deep_merge!({'tags' => {Transfer::Spec::TAG_RESERVED => {'files' => {'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"}}}}) \
-            unless transfer_spec.key?('remote_access_key')
+          transfer_spec.deep_merge!({
+            'tags' => {
+              Transfer::Spec::TAG_RESERVED => {
+                'files' => {
+                  'parentCwd' => "#{app_info[:node_info]['id']}:#{file_id}"
+                }
+              }
+            }
+          }) unless transfer_spec.key?('remote_access_key')
         when PACKAGES_APP
           transfer_spec.deep_merge!({
             'tags' => {
@@ -545,8 +554,6 @@ module Aspera
             }
           })
         end
-        transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['files']['node_id'] = app_info[:node_info]['id']
-        transfer_spec['tags'][Transfer::Spec::TAG_RESERVED]['app'] = app_info[:app]
       end
 
       # Callback from Plugins::Node
