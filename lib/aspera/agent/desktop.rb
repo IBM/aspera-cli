@@ -5,6 +5,7 @@ require 'aspera/rest'
 require 'aspera/environment'
 require 'aspera/json_rpc'
 require 'aspera/products/desktop'
+require 'aspera/transfer/spec'
 require 'securerandom'
 
 module Aspera
@@ -46,6 +47,7 @@ module Aspera
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
+        Transfer::Spec.fix_transferd_resume_policy(transfer_spec)
         @request_id = SecureRandom.uuid
         # if there is a token, we ask the client app to use well known ssh private keys
         # instead of asking password
