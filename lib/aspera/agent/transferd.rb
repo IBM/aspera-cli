@@ -18,7 +18,15 @@ module Aspera
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
 
-      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
+      # wrong def in transferd
+      POLICY_FIX = {
+        'none'        => 'none',
+        'attrs'       => 'attributes',
+        'sparse_csum' => 'sparse_checksum',
+        'full_csum'   => 'full_checksum'
+      }
+
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :POLICY_FIX
 
       # @param url   [String] URL of the transfer manager daemon
       # @param start [Bool]   if false, expect that an external daemon is already running
@@ -105,15 +113,20 @@ module Aspera
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
+        # Fix discrepency in transfer spec
+        if transfer_spec.key?('resume_policy')
+          transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']]
+        end
         # create a transfer request
         transfer_request = ::Transferd::Api::TransferRequest.new(
           transferType: ::Transferd::Api::TransferType::FILE_REGULAR, # transfer type (file/stream)
           config: ::Transferd::Api::TransferConfig.new, # transfer configuration
           transferSpec: transfer_spec.to_json) # transfer definition
         # send start transfer request to the transfer manager daemon
-        start_transfer_response = @transfer_client.start_transfer(transfer_request)
-        Log.log.debug{"start transfer response #{start_transfer_response}"}
-        @transfer_id = start_transfer_response.transferId
+        start_response = @transfer_client.start_transfer(transfer_request)
+        raise Transfer::Error, start_response.error.description if start_response.status.eql?(:FAILED)
+        Log.log.debug{"start transfer response #{start_response}"}
+        @transfer_id = start_response.transferId
         Log.log.debug{"transfer started with id #{@transfer_id}"}
       end
 

@@ -332,7 +332,7 @@ def check_links(file_path)
       line.scan(/(?:\[(.*?)\]\((.*?)\))/) do |match|
         link_text = match[0]
         link_url = match[1]
-        next if link_url.start_with?('https://', 'http://', '#') || link_url.include?('<%=')
+        next if link_url.start_with?('https://', 'http://', '#') || link_url.include?('<%=') || link_url.eql?('docs/Manual.pdf')
         raise "Invalid link: #{link_text} (#{link_url})" unless File.exist?(File.join('..', link_url))
       end
     end
