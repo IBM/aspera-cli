@@ -25,6 +25,14 @@ module Aspera
       # reserved tag for Aspera
       TAG_RESERVED = 'aspera'
       class << self
+        # wrong def in transferd
+        POLICY_FIX = {
+          'none'        => 'none',
+          'attrs'       => 'attributes',
+          'sparse_csum' => 'sparse_checksum',
+          'full_csum'   => 'full_checksum'
+        }
+        private_constant :POLICY_FIX
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)
           XFER_TYPE_TO_DIR.fetch(transfer_type)
@@ -33,6 +41,13 @@ module Aspera
         # translate send/receive to upload/download
         def direction_to_transfer_type(direction)
           XFER_DIR_TO_TYPE.fetch(direction)
+        end
+
+        def fix_transferd_resume_policy(transfer_spec)
+          # Fix discrepency in transfer spec
+          if transfer_spec.key?('resume_policy')
+            transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']]
+          end
         end
       end
       SCHEMA = CommandLineBuilder.read_schema(__FILE__)

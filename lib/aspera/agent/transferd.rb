@@ -4,6 +4,7 @@ require 'aspera/environment'
 require 'aspera/agent/base'
 require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
+require 'aspera/transfer/spec'
 require 'json'
 require 'uri'
 require 'transferd_services_pb'
@@ -18,15 +19,7 @@ module Aspera
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
 
-      # wrong def in transferd
-      POLICY_FIX = {
-        'none'        => 'none',
-        'attrs'       => 'attributes',
-        'sparse_csum' => 'sparse_checksum',
-        'full_csum'   => 'full_checksum'
-      }
-
-      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :POLICY_FIX
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
 
       # @param url   [String] URL of the transfer manager daemon
       # @param start [Bool]   if false, expect that an external daemon is already running
@@ -113,10 +106,7 @@ module Aspera
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
-        # Fix discrepency in transfer spec
-        if transfer_spec.key?('resume_policy')
-          transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']]
-        end
+        Transfer::Spec.fix_transferd_resume_policy(transfer_spec)
         # create a transfer request
         transfer_request = ::Transferd::Api::TransferRequest.new(
           transferType: ::Transferd::Api::TransferType::FILE_REGULAR, # transfer type (file/stream)
