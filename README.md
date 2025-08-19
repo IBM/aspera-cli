@@ -69,9 +69,9 @@ It is designed for:
 If the need is to perform operations programmatically in languages such as: C/C++, Go, Python, NodeJS, ... then it is better to directly use [Aspera APIs](https://ibm.biz/aspera_api)
 
 - Product APIs (REST) : e.g. AoC, Faspex, node
-- Transfer SDK : with gRPC interface and language stubs (C/C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
+- Transfer Daemon : with gRPC interface and language stubs (C/C++, Python, .NET/C#, java, Go, Ruby, Rust, etc...)
 
-Using APIs (application REST API and transfer SDK) will prove to be easier to develop and maintain.
+Using APIs (application REST API and Transfer Daemon) will prove to be easier to develop and maintain.
 Code examples here: <https://github.com/laurent-martin/aspera-api-examples>
 
 For scripting and ad'hoc command line operations, `ascli` is perfect.
@@ -211,7 +211,7 @@ The direct installation is recommended and consists in installing:
 
 - [Ruby](#ruby)
 - [aspera-cli](#ruby-gem-aspera-cli) <!-- markdownlint-disable-line -->
-- [Aspera SDK (`ascp`)](#fasp-protocol-ascp)
+- [Aspera Transfer Daemon (`ascp`)](#fasp-protocol-ascp)
 
 Ruby version: >= 3.1.
 
@@ -266,7 +266,7 @@ Required Ruby version: >= 3.1.
 
 > **Deprecation notice**: the minimum Ruby version will be 3.2 in a future version.
 
-**Ruby can be installed using any method** : `rpm`, `yum`, `dnf`, `rvm`, `brew`, Windows installer, ...
+**Ruby can be installed using any method** : `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 
 **In priority**, refer to the official Ruby documentation:
 
@@ -276,7 +276,7 @@ Required Ruby version: >= 3.1.
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
 Latest version of `ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
-If an older Ruby version is needed, then use an older version of `ascli` that supports it.
+If only an older Ruby version is available due to system constraints, then use an older version of `ascli` that supports it.
 
 #### Windows: Installer
 
@@ -286,7 +286,7 @@ Manual installation:
 - Download the latest Ruby installer **"with devkit"**. (`Msys2` is needed to install some native extensions, such as `grpc`)
 - Execute the installer which installs by default in: `C:\RubyVV-x64` (`VV` is the version number)
 - At the end of the installation procedure, the `Msys2` installer is automatically executed, select option 3 (`Msys2` and `mingw`)
-- Then install the `aspera-cli` gem and Aspera SDK (see next sections)
+- Then install the `aspera-cli` gem and Aspera Transfer Daemon (see next sections)
 
 Automated installation, with internet access:
 
@@ -317,9 +317,12 @@ To add PATH to Ruby on Apple Silicon, add this in your shell configuration file 
 
 ```bash
 use_ruby(){
-    version=$1
+    local version=$1
+    case $version in list) for r in $(brew list -1 | grep '^ruby'); do
+      echo "$(brew info --json=v1 $r | jq -r '.[0].installed[0].version') : use_ruby $r"
+    done|gsort -k1,1V;return;;; esac
     local prefix=$(brew --prefix ruby${version:+@}$version)
-    if ! test -d $prefix;then
+    if ! test -d "$prefix";then
         echo "No such ruby version: $version"
         brew list|grep ruby
         return 1
@@ -333,12 +336,6 @@ use_ruby(){
     ruby -v
 }
 use_ruby
-```
-
-If using [RVM](https://rvm.io/), one way to force use of OpenSSL 3.0 is:
-
-```bash
-RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
 ```
 
 #### Linux: Package
@@ -453,7 +450,13 @@ source /etc/profile.d/rvm.sh.ok
 rvm version
 ```
 
-#### Linux as non-root
+On macOS, one way to force use of OpenSSL 3.0 is:
+
+```bash
+RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@3.0)" rvm install 3.4.0
+```
+
+#### Unix-like: `rbenv`
 
 If you don't have root access, you can install Ruby in your home directory using `rbenv` see [`rbenv-installer`](https://github.com/rbenv/rbenv-installer#rbenv-installer):
 
@@ -600,7 +603,7 @@ gem install -P MediumSecurity aspera-cli
 ### FASP Protocol: `ascp`
 
 Most file transfers will be executed using the **FASP** protocol, using `ascp`.
-Only two additional files are required to perform an Aspera Transfer, which are part of Aspera SDK:
+Only two additional files are required to perform an Aspera Transfer, which are part of Aspera Transfer Daemon:
 
 - `ascp`
 - `aspera-license` (in same folder, or `../etc`)
@@ -631,7 +634,7 @@ The installation of the transfer binaries follows those steps:
 
 | Option          | Default | Description |
 |-----------------|---------|-------------|
-| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer SDK archive. `DEF` means: select from available archives. |
+| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive. `DEF` means: select from available archives. |
 | `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
 | `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
 
@@ -712,7 +715,7 @@ The procedure:
 cd $HOME && tar zcvf rvm-ascli.tgz .rvm
 ```
 
-- Download the SDK archive for the selected architecture, follow [Install `ascp`](#installation-of-ascp-through-transferd)
+- Download the Transfer Daemon archive for the selected architecture, follow [Install `ascp`](#installation-of-ascp-through-transferd)
 
 - Transfer those 2 files to the target system
 
@@ -749,7 +752,7 @@ It is essentially the same procedure as installation for Windows with internet, 
 
 - Create an archive with necessary gems like in previous section
 
-- Download the SDK following: [Install `ascp`](#installation-of-ascp-through-transferd)
+- Download the Transfer Daemon following: [Install `ascp`](#installation-of-ascp-through-transferd)
 
 - Create a Zip with all those files and transfer to the target system.
 
@@ -768,7 +771,7 @@ rubyinstaller-devkit-3.2.2-1-x64.exe /silent /currentuser /noicons /dir=C:\asper
 gem install --force --local *.gem
 ```
 
-- Install the SDK
+- Install the Aspera Transfer Daemon SDK
 
 ```bash
 ascli config ascp install --sdk-url=file:///sdk.zip
@@ -779,7 +782,7 @@ ascli config ascp install --sdk-url=file:///sdk.zip
 ### Container
 
 The container image is: [`docker.io/martinlaurent/ascli`](https://hub.docker.com/r/docker.io/martinlaurent/ascli).
-The container contains: Ruby, `ascli` and the Aspera Transfer SDK.
+The container contains: Ruby, `ascli` and the Aspera Transfer Daemon.
 To use the container, ensure that you have `podman` (or `docker`) installed.
 
 ```bash
@@ -2848,7 +2851,7 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 By default, it uses the `direct` agent, which is basically a local `ascp`.
 Nevertheless, `ascli` does not come with `ascp` installed.
-This is the reason why it is advised to install the Aspera Transfer SDK during installation (`ascli config ascp install`).
+This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`ascli config ascp install`).
 
 By default, `ascli` uses the `ascp` binary found in **well known locations**, i.e. typical Aspera product installation paths.
 
@@ -2890,7 +2893,7 @@ ascli config ascp info
 
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
-By default, `ascli` uses any found local product with `ascp`, including Transfer SDK.
+By default, `ascli` uses any found local product with `ascp`, including Transfer Daemon.
 
 To override and use an alternate `ascp` path use option `ascp_path` (`--ascp-path=`)
 
@@ -3006,7 +3009,7 @@ The following agents are supported and selected with option `transfer`:
 | `transfer`                         | location | Description of agent          |
 |------------------------------------|----------|-------------------------------|
 | [`direct`](#agent-direct)          | local    | direct execution of `ascp`    |
-| [`transferd`](#agent-transfer-sdk) | local    | Aspera Transfer Daemon        |
+| [`transferd`](#agent-transfer-daemon) | local    | Aspera Transfer Daemon        |
 | [`connect`](#agent-connect-client) | local    | Aspera Connect Client         |
 | [`desktop`](#agent-desktop-client) | local    | Aspera for Desktop            |
 | [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
@@ -3232,9 +3235,9 @@ ascli faspex package recv 323 --transfer=httpgw --transfer-info=@json:'{"url":"h
 
 If the application, e.g. AoC or Faspex 5, is configured to use the HTTP Gateway, then `ascli` will automatically use the gateway URL if `--transfer=httpgw` is specified, so `transfer_info` becomes optional.
 
-#### Agent: Transfer SDK
+#### Agent: Transfer Daemon
 
-Another possibility is to use the Transfer SDK daemon (`asperatransferd`).
+Another possibility is to use the Transfer Daemon (`transferd`).
 Set option `transfer` to `transferd`.
 
 Options for `transfer_info` are:
@@ -3247,11 +3250,25 @@ Options for `transfer_info` are:
 
 > **Note:** If port zero is specified in the URL, then the daemon will listen on a random available port. If no address is specified, then `127.0.0.1` is used.
 
-The gem `grpc` was removed from dependencies, as it requires compilation of a native part.
-So, to use the Transfer SDK you should install this gem:
+For example, to use an external, already running `transferd`, use option:
+
+```json
+--transfer-info=@json:'{"url":":55002","start":false,"stop":false}'
+```
+
+The gem `grpc` is not part of default dependencies, as it requires compilation of a native part.
+So, to use the Transfer Daemon you should install this gem:
 
 ```bash
 gem install grpc
+```
+
+If the execution complains about incompatible libraries, then force recompilation of the native part:
+
+```bash
+gem uninstall grpc
+
+gem install grpc --platform ruby
 ```
 
 On Windows the compilation may fail for various reasons (3.1.1):
@@ -3310,7 +3327,7 @@ A [**transfer-spec**](#transfer-specification) can also be saved/overridden in t
 References:
 
 - [Aspera Node API Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20node%20api%22) &rarr; /opt/transfers
-- [Aspera Transfer SDK Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20sdk%22) &rarr; Guides &rarr; API Ref &rarr; Transfer Spec V1
+- [Aspera Transfer Daemon Documentation](https://developer.ibm.com/apis/catalog?search=%22aspera%20transfer%20sdk%22) &rarr; Guides &rarr; API Ref &rarr; Transfer Spec V1
 - [Aspera Connect SDK](https://d3gcli72yxqn2z.cloudfront.net/connect/v4/asperaweb-4.js) &rarr; search `The parameters for starting a transfer.`
 
 Parameters can be displayed with commands:
@@ -4313,6 +4330,16 @@ Created ./foo.rb
 ```bash
 ascli --plugin-folder=. foo
 ```
+
+### Plugins vs Transfer Agents
+
+Plugins typically represent a specific remote application on which `ascli` can operate, while transfer agents are the underlying components that handle the actual data transfer.
+
+A given remote application can sometimes be both a plugin and a transfer agent.
+For example: `node` and `httpgw` are both plugins and transfer agents.
+
+A plugin is invoked as the first positional argument in a command line.
+A Transfer Agent is used by setting the option `transfer` (e.g. `--transfer=node`).
 
 ## Plugin: `aoc`: IBM Aspera on Cloud
 
@@ -7894,10 +7921,10 @@ Moreover, `ascli` supports sync with application requiring token-based authoriza
 
 Some `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
-> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer SDK 1.3+ includes this.
+> **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer Daemon 1.3+ includes this.
 
 `sync` supports 0 or 3 arguments.
-If 3 arguments are provided, they are applied to the first (and only) session and mapped, in that order, to:
+If 3 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
 
 - `direction`
 - `local.path`
@@ -8172,7 +8199,7 @@ Top level parameters supported by `asession`:
 
 ### Comparison of interfaces
 
-| feature/tool          | Transfer SDK | FASPManager                      | `ascp` | `asession` |
+| feature/tool          | Transfer Daemon | FASPManager                      | `ascp` | `asession` |
 |-----------------------|--------------|---------------------------------|--------|------------|
 | language integration  | Many         | C/C++<br/>C#/.net<br/>Go<br/>Python<br/>java<br/> | Any    | Any        |
 | required additional components to `ascp` | Daemon       | Library<br/>(+headers) | - | Ruby<br/>Aspera gem |
@@ -8329,7 +8356,7 @@ You may either install the suggested Gems, or remove your ed25519 key from your 
 In addition, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
 To re-activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.
 
-### JRuby: net-ssh: unsupported algorithm
+### JRuby: `net-ssh`: Unsupported algorithm
 
 JRuby may not implement all the algorithms supported by OpenSSH.
 
