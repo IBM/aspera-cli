@@ -5403,12 +5403,12 @@ Like in AoC web UI, "Shared Folders" can be created and shared with either **Pri
 Shared folders can be created either:
 
 - by users in a workspace: they can share personal folders with other users in the same workspace: `aoc files perm`
-- by administrators: they can share a folder with users in any workspace: `aoc admin node do [node ID] perm`
+- by administrators: they can share a folder with users in any workspace: `aoc admin node do <node ID> perm`
 
 Technically (API), shared folder are managed through [permissions](https://developer.ibm.com/apis/catalog/aspera--aspera-node-api/Introduction) on node and an event is sent to AoC to create a **link** in the user's home folder to the shared folder.
 In both cases, it is necessary to specify a workspace.
 
-The basic payload (last argument at creation usually specified with `@json:`) is:
+The basic payload to create a permission, i.e. a Shared Folder (last argument at creation usually specified with `@json:`) is:
 
 ```json
 {
@@ -5437,25 +5437,47 @@ The basic payload (last argument at creation usually specified with `@json:`) is
 <!-- markdownlint-enable MD033 -->
 
 In order to declare/create the shared folder in the workspace, a special value for `access_id` is used: `ASPERA_ACCESS_KEY_ADMIN_WS_[workspace ID]]`.
-This is conveniently set by `ascli` using an empty string for the pseudo key `with`.
-In order to share a folder with a different, special tags are set, but this is conveniently done by `ascli` using the `as` key.
+This is conveniently set by `ascli` using an empty string for field `with`.
+In order to share a folder with a different, special tags are set, but this is conveniently done by `ascli` using the `as` field.
+
+##### User Shared Folders
+
+Personal shared folders, created by users in a workspace follow the syntax:
+
+```bash
+ascli aoc files permission --workspace=<workspace name> <path to folder> ...
+```
+
+> **Note:** The workspace is identified by name, and folder by path, relative to the user's home.
+To use an identifier instead, one can use the percent selector, like `%id:1234`
+
+##### Admin Shared Folders
+
+Admin shared folders, created by administrators in a workspace follow the syntax:
+
+```bash
+ascli aoc admin node do <node ID> permission --workspace=<workspace name> <path to folder>
+```
+
+> **Note:** The node is identified by identifier.
+To use an name instead, one can use the percent selector, like `%name:"my node"`
 
 ##### Example: List permissions on a shared folder
 
 ```bash
-ascli aoc files perm /shared_folder_test1 list
+ascli aoc files permission /shared_folder_test1 list
 ```
 
 ##### Example: Share a personal folder with other users
 
 ```bash
-ascli aoc files perm /shared_folder_test1 create @json:'{"with":"laurent"}'
+ascli aoc files permission /shared_folder_test1 create @json:'{"with":"laurent"}'
 ```
 
 ##### Example: Revoke shared access
 
 ```bash
-ascli aoc files perm /shared_folder_test1 delete 6161
+ascli aoc files permission /shared_folder_test1 delete 6161
 ```
 
 ##### Example: Public and Private short links
@@ -5463,17 +5485,17 @@ ascli aoc files perm /shared_folder_test1 delete 6161
 They can be managed with commands:
 
 ```bash
-ascli aoc files short_link _path_here_ private create
-ascli aoc files short_link _path_here_ private list
-ascli aoc files short_link _path_here_ public list
-ascli aoc files short_link public delete _id_
+ascli aoc files short_link <path to folder> private create
+ascli aoc files short_link <path to folder> private list
+ascli aoc files short_link <path to folder> public list
+ascli aoc files short_link public delete <id>
 ```
 
-##### Example: Create a workspace shared folder
+##### Example: Create a workspace admin shared folder
 
 First, identify the node ID where the shared folder will be created.
 
-To use the default node for workspace `my ws`, use the command:
+To get the node ID of the default node for workspace `my ws`, use the command:
 
 ```bash
 ascli aoc admin workspace show %name:'my ws' --fields=node_id
@@ -5485,7 +5507,7 @@ Alternatively (longer):
 ascli aoc admin workspace list --select=@json:'{"name":"my ws"}' --fields=node_id
 ```
 
-Or select manually from the list of nodes:
+Or select a node identifier manually from the list of nodes:
 
 ```bash
 ascli aoc admin node list --fields=id,name
@@ -5495,14 +5517,14 @@ In the following commands, replace:
 
 - `1234` with the node ID
 - `my ws` with the workspace name
-- `folder_on_node` with the name of the folder on the node
+- `/folder_on_node` with the name of the folder on the node: it can also be a folder deeper than level 1.
 
 The node can also be conveniently identified using the **percent selector** instead of numerical ID: `%name:"my node"`.
 
 If the shared folder does not exist, then create it:
 
 ```bash
-ascli aoc admin node do 1234 mkdir folder_on_node
+ascli aoc admin node do 1234 mkdir /folder_on_node
 ```
 
 Create the shared folder in workspace `my ws` (set `with` to empty string, or do not specify it).
@@ -5510,22 +5532,28 @@ Optionally use `as` to set the name of the shared folder if different from the f
 For other options, refer to the previous section on shared folders.
 
 ```bash
-ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
+ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"","as":"folder_for_users"}' --workspace="my ws"
 ```
 
-To share with a user, group, or workspace, use the `with` parameter:
+> **Note:** The previous command only declares the shared folder in the workspace, but does not share it with anybody.
 
-```bash
-ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
-```
-
-```bash
-ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
-```
+To share with a user, group, or workspace, use the `with` parameter with the name of a entity to share with (non-empty value).
+The `"with"` parameter will perform a lookup, and set fields `access_type` and `access_id` accordingly.
+The native fields `access_type` and `access_id` can also be used, instead of `with`.
 
 ```bash
-ascli aoc admin node do 1234 perm folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"john@example.com","as":"folder_for_one_user"}' --workspace="my ws"
 ```
+
+```bash
+ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"group 1","as":"folder_for_a_group"}' --workspace="my ws"
+```
+
+```bash
+ascli aoc admin node do 1234 permission /folder_on_node create @json:'{"with":"my ws","as":"folder_for_all_workspace"}' --workspace="my ws"
+```
+
+> **Note:** In the previous commands, field `as` is optional.
 
 #### Cross Organization transfers
 
