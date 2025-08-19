@@ -5,6 +5,7 @@
   * New Features:
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
+    * `transferd`, `desktop`: Fixed discrepancies in transfer spec resume policies.
   * Breaking Changes:
     * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
     * `ssh_options` : Now additive option, like `ts`.
