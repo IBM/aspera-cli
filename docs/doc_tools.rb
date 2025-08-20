@@ -188,7 +188,7 @@ REPLACEMENTS = [
   # remove extraneous quotes on JSON
   [/("?)'"([a-z_.]+)"'("?)/, '\1\2\3'],
   [/TST_([A-Z]{3})_(FILENAME|LCL_PATH)/, 'test_file.bin'],
-  ['TST_SYNC_LCL_DIR', '/data/local_sync'],
+  [/TMP_SYNCS[a-z_0-9]*/, '/data/local_sync'],
   ['HSTS_UPLOADED_FILE', 'test_file.bin'],
   ['HSTS_FOLDER_UPLOAD', 'folder_1'],
   [%q['"CF_LOCAL_SYNC_DIR"'], 'sync_dir'],
