@@ -468,12 +468,12 @@ module Aspera
             return Main.result_single_object(object, fields: fields)
           when :modify
             changes = options.get_next_argument('properties', validation: Hash)
-            return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
+            return do_bulk_operation(command: command, values: res_id) do |one_id|
               aoc_api.update("#{resource_class_path}/#{one_id}", changes)
               {'id' => one_id}
             end
           when :delete
-            return do_bulk_operation(command: command, descr: 'identifier', values: res_id) do |one_id|
+            return do_bulk_operation(command: command, values: res_id) do |one_id|
               aoc_api.delete("#{resource_class_path}/#{one_id}")
               {'id' => one_id}
             end
@@ -955,7 +955,7 @@ module Aspera
               display_fields += ['workspace_id'] if aoc_api.workspace[:id].nil?
               return Main.result_object_list(result[:items], fields: display_fields, total: result[:total])
             when :delete
-              return do_bulk_operation(command: package_command, descr: 'identifier', values: instance_identifier) do |id|
+              return do_bulk_operation(command: package_command, values: instance_identifier) do |id|
                 Aspera.assert_values(id.class, [String, Integer]){'identifier'}
                 aoc_api.delete("packages/#{id}")
               end
