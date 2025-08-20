@@ -5713,7 +5713,7 @@ class="header-section-number">4.26</span> Running as service</h2>
 <p>Some commands result in <code>ascli</code> running as a server,
 listening on a port. In this case, it is usually desirable to run
 <code>ascli</code> as a service. On Linux, typically, <a
-href="https://systemd.io/">SystemD</a> is used.</p>
+href="https://systemd.io/">systemd</a> is used.</p>
 <p>A convenient way is to write a startup script, and run this script as
 a service.</p>
 <p>Let’s give a base name for our service: <code>my_ascli_svc</code></p>
@@ -7643,8 +7643,10 @@ href="#option-preset">Option Preset</a>: e.g. <code>org2</code></li>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb404-1"><a href="#cb404-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-Porg1</span> aoc files node_info /mydestfolder <span class="at">--format</span><span class="op">=</span>json <span class="at">--display</span><span class="op">=</span>data <span class="kw">|</span> <span class="ex">ascli</span> <span class="at">-Porg2</span> aoc files upload mysourcefile <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span></code></pre></div>
 <p>Explanation:</p>
 <ul>
-<li><code>-Porg1 aoc</code> use Aspera on Cloud plugin and load
-credentials for <code>org1</code></li>
+<li><code>ascli</code> is the command to execute by the shell</li>
+<li><code>-Porg1</code> load options for preset <code>org1</code> (url
+and credentials)</li>
+<li><code>aoc</code> use Aspera on Cloud plugin</li>
 <li><code>files node_info /mydestfolder</code> generate transfer
 information including Node API credential and root ID, suitable for the
 next command</li>
@@ -7657,7 +7659,8 @@ the second one</li>
 <li><code>-Porg2 aoc</code> use Aspera on Cloud plugin and load
 credentials for <code>org2</code></li>
 <li><code>files upload mysourcefile</code> upload the file named
-<code>mysourcefile</code> (located in <code>org1</code>)</li>
+<code>mysourcefile</code> (located in <code>org2</code>) to
+<code>org1</code></li>
 <li><code>--transfer=node</code> use transfer agent type
 <code>node</code> instead of default <a
 href="#agent-direct"><code>direct</code></a></li>
@@ -7833,7 +7836,7 @@ not IBM Cloud.</p>
 using the IBM Cloud web interface, or using command line:</p>
 <div class="sourceCode" id="cb407"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb407-1"><a href="#cb407-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ibmcloud</span> iam api-key-create mykeyname <span class="at">-d</span> <span class="st">&#39;my sample key&#39;</span></span></code></pre></div>
-<pre class="output"><code>OK
+<pre class="console"><code>OK
 API key mykeyname was created
 
 Please preserve the API key! It cannot be retrieved after it&#39;s created.
@@ -7843,13 +7846,15 @@ Description   my sample key
 Created At    2019-09-30T12:17+0000
 API Key       my_secret_api_key_here
 Locked        false
-UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f</code></pre>
+UUID          ApiKey-05b8fadf-e7fe-abcd-93a9-6fd348c5ab1f</code></pre>
 <p>References: <!-- spellchecker: disable --></p>
 <ul>
 <li><a
-href="https://console.bluemix.net/docs/iam/userid_keys.html#userapikey">https://console.bluemix.net/docs/iam/userid_keys.html#userapikey</a></li>
+href="https://cloud.ibm.com/docs/account?topic=account-userapikey&amp;interface=cli">IBM
+Cloud Managing user API keys</a></li>
 <li><a
-href="https://ibm.ibmaspera.com/helpcenter/transfer-service">https://ibm.ibmaspera.com/helpcenter/transfer-service</a></li>
+href="https://ibmaspera.com/help/cloud_platforms_and_regions_supported">IBM
+Aspera on Cloud regions</a></li>
 </ul>
 <!-- spellchecker: enable -->
 <p>Then, to register the key by default for the <code>ats</code> plugin,
@@ -7949,8 +7954,8 @@ then commands <code>ascp</code> (for transfers) and <code>ascmd</code>
 either option <code>password</code> or <code>ssh_keys</code> (with one
 or several paths) for the authentication.</p>
 <p>Typically:</p>
-<pre class="console"><code>`ascli` server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
-`ascli` server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...</code></pre>
+<pre class="console"><code>ascli server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...</code></pre>
 <h2 data-number="7.1" id="server-sample-commands"><span
 class="header-section-number">7.1</span> Server sample commands</h2>
 <blockquote>
