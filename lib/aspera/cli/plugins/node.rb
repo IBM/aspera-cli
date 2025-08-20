@@ -62,7 +62,7 @@ module Aspera
             return nil
           end
 
-          def wizard(object:, private_key_path: nil, pub_key_pem: nil)
+          def wizard(object:, _private_key_path: nil, _pub_key_pem: nil)
             options = object.options
             return {
               preset_value: {
@@ -673,7 +673,7 @@ module Aspera
               perm_id = instance_identifier
               return Main.result_single_object(apifid[:api].read("permissions/#{perm_id}"))
             when :delete
-              return do_bulk_operation(command: command_perm, descr: 'identifier', values: :identifier) do |one_id|
+              return do_bulk_operation(command: command_perm, values: :identifier) do |one_id|
                 apifid[:api].delete("permissions/#{one_id}")
                 # notify application of deletion
                 the_app = apifid[:api].app_info

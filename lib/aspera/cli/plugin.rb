@@ -84,14 +84,15 @@ module Aspera
       # @param values [Object] the value(s), or the type of value to get from user
       # @param id_result [String] key in result hash to use as identifier
       # @param fields [Array] fields to display
-      def do_bulk_operation(command:, descr:, values: Hash, id_result: 'id', fields: :default)
+      # @param &block [Proc] block to execute for each value
+      def do_bulk_operation(command:, descr: nil, values: Hash, id_result: 'id', fields: :default)
         Aspera.assert(block_given?){'missing block'}
         is_bulk = options.get_option(:bulk)
         case values
         when :identifier
-          values = instance_identifier
+          values = instance_identifier(description: descr)
         when Class
-          values = value_create_modify(command: command, type: values, bulk: is_bulk)
+          values = value_create_modify(command: command, description: descr, type: values, bulk: is_bulk)
         end
         # if not bulk, there is a single value
         params = is_bulk ? values : [values]
@@ -176,7 +177,7 @@ module Aspera
             )
             return Main.result_status('deleted')
           end
-          return do_bulk_operation(command: command, descr: 'identifier', values: one_res_id) do |one_id|
+          return do_bulk_operation(command: command, values: one_res_id) do |one_id|
             rest_api.delete("#{res_class_path}/#{one_id}", query_read_delete)
             {'id' => one_id}
           end

@@ -234,7 +234,7 @@ module Aspera
       # @param state [Object] state object sent to processing method
       # @param top_file_id [String] file id to start at (default = access key root file id)
       # @param top_file_path [String] path of top folder (default = /)
-      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/', query: nil)
+      def process_folder_tree(method_sym:, state:, top_file_id:, top_file_path: '/')
         Aspera.assert(!top_file_path.nil?){'top_file_path not set'}
         Log.log.debug{"process_folder_tree: node=#{@app_info ? @app_info[:node_info]['id'] : 'nil'}, file id=#{top_file_id},  path=#{top_file_path}"}
         # start at top folder
