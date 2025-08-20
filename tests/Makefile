@@ -111,7 +111,7 @@ TEMPORIZE_CREATE=sleep 10
 TEMPORIZE_FILE=sleep 30
 
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder should exist
-TMP_ABS=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/syncs/
+TMP_SYNCS=$(shell realpath $$(dirname $(DIR_TMP)))/$(shell basename $(DIR_TMP))/syncs/
 
 ifdef ASPERA_CLI_TEST_MACOS
 all:: $(T).ssh_ok
@@ -285,10 +285,10 @@ $(T)shares_10: $(T)shares_9
 	@$(STOP_TEST) $@
 $(T)shares_sync: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	mkdir -p $(TMP_ABS)shares_sync
+	mkdir -p $(TMP_SYNCS)shares_sync
 	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_ABS)shares_sync /london-sh1/synctst --sync-info=@json:'{"reset":true}'
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_ABS)shares_sync /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:'{"reset":true}'
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10 $(T)shares_sync))
 #######################################################################################################################
@@ -333,22 +333,22 @@ $(T)serv_upload5: $(T)serv_mkdir
 	@$(STOP_TEST) $@
 $(T)serv_sync_old: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)serv_sync_old
-	mkdir -p $(TMP_ABS)serv_sync_old
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_ABS)serv_sync_old","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"$(TMP_ABS)serv_sync_old"}]}'
+	rm -fr $(TMP_SYNCS)serv_sync_old
+	mkdir -p $(TMP_SYNCS)serv_sync_old
+	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_old","reset":true}]}'
+	$(INCMAN)$(CLI_TEST) server sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"$(TMP_SYNCS)serv_sync_old"}]}'
 	@$(STOP_TEST) $@
 $(T)serv_sync_push_new: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)serv_sync_push_new
-	mkdir -p $(TMP_ABS)serv_sync_push_new
-	echo "New file 1" > $(TMP_ABS)serv_sync_push_new/new_file1.txt
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_ABS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2"}'$(END_FAI)
-	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_ABS)serv_sync_push_new"}}'
-	echo "New file 2" > $(TMP_ABS)serv_sync_push_new/new_file2.txt
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_ABS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"quiet":false}'
-	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_ABS)serv_sync_push_new"}}'
+	rm -fr $(TMP_SYNCS)serv_sync_push_new
+	mkdir -p $(TMP_SYNCS)serv_sync_push_new
+	echo "New file 1" > $(TMP_SYNCS)serv_sync_push_new/new_file1.txt
+	$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
+	$(BEG_FAI)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2"}'$(END_FAI)
+	$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"}}'
+	echo "New file 2" > $(TMP_SYNCS)serv_sync_push_new/new_file2.txt
+	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"quiet":false}'
+	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"}}'
 	@$(STOP_TEST) $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	@$(START_TEST) $@
@@ -876,20 +876,20 @@ $(T)aocfv3inf: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(T)aocfsync1: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)aocfsync1
-	mkdir -p $(TMP_ABS)aocfsync1
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_ABS)aocfsync1 /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_ABS)aocfsync1 /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"$(TMP_ABS)aocfsync1"},"remote":{"path":"/testdst"}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_ABS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_ABS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
+	rm -fr $(TMP_SYNCS)aocfsync1
+	mkdir -p $(TMP_SYNCS)aocfsync1
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aocfsync1 /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aocfsync1 /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
+	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync1"},"remote":{"path":"/testdst"}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
 	@$(STOP_TEST) $@
 $(T)aocfsync2: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)aocfsync2
-	mkdir -p $(TMP_ABS)aocfsync2
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_ABS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_ABS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
+	rm -fr $(TMP_SYNCS)aocfsync2
+	mkdir -p $(TMP_SYNCS)aocfsync2
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
 	@$(STOP_TEST) $@
 $(T)aoc_file_id_1: $(T)aocftr
 	@$(START_TEST) $@
@@ -1361,17 +1361,17 @@ $(T)sy5: $(TMP_EXISTS)
 	@$(STOP_TEST) $@
 $(T)ndsyncv1: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)ndsyncv1
-	mkdir -p $(TMP_ABS)ndsyncv1
-	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TMP_ABS)ndsyncv1"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TMP_ABS)ndsyncv1","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
+	rm -fr $(TMP_SYNCS)ndsyncv1
+	mkdir -p $(TMP_SYNCS)ndsyncv1
+	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync1","reset":true,"quiet":false,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv1"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"sessions":[{"name":"my_node_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)ndsyncv1","remote_dir":"/aspera-test-dir-tiny","reset":true}]}'
 	@$(STOP_TEST) $@
 $(T)ndsyncv2: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_ABS)ndsyncv2
-	mkdir -p $(TMP_ABS)ndsyncv2
-	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_ABS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
-	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_ABS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	rm -fr $(TMP_SYNCS)ndsyncv2
+	mkdir -p $(TMP_SYNCS)ndsyncv2
+	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsync,$(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2))
 #######################################################################################################################
