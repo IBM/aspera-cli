@@ -3527,7 +3527,7 @@ EOF
 
 Some commands result in <%=tool%> running as a server, listening on a port.
 In this case, it is usually desirable to run <%=tool%> as a service.
-On Linux, typically, [SystemD](https://systemd.io/) is used.
+On Linux, typically, [systemd](https://systemd.io/) is used.
 
 A convenient way is to write a startup script, and run this script as a service.
 
@@ -5065,13 +5065,15 @@ Procedure to send a file from org1 to org2:
 
 Explanation:
 
-- `-Porg1 aoc` use Aspera on Cloud plugin and load credentials for `org1`
+- <%=tool%> is the command to execute by the shell
+- `-Porg1` load options for preset `org1` (url and credentials)
+- `aoc` use Aspera on Cloud plugin
 - `files node_info /mydestfolder` generate transfer information including Node API credential and root ID, suitable for the next command
 - `--format=json` format the output in JSON (instead of default text table)
 - `--display=data` display only the result, and remove other information, such as workspace name
 - `|` the standard output of the first command is fed into the second one
 - `-Porg2 aoc` use Aspera on Cloud plugin and load credentials for `org2`
-- `files upload mysourcefile` upload the file named `mysourcefile` (located in `org1`)
+- `files upload mysourcefile` upload the file named `mysourcefile` (located in `org2`) to `org1`
 - `--transfer=node` use transfer agent type `node` instead of default [`direct`](#agent-direct)
 - `--transfer-info=@json:@stdin:` provide `node` transfer agent information, i.e. Node API credentials, those are expected in JSON format and read from standard input
 
@@ -5108,7 +5110,7 @@ First get your IBM Cloud API key. For instance, it can be created using the IBM 
 ibmcloud iam api-key-create mykeyname -d 'my sample key'
 ```
 
-```output
+```console
 OK
 API key mykeyname was created
 
@@ -5119,14 +5121,14 @@ Description   my sample key
 Created At    2019-09-30T12:17+0000
 API Key       my_secret_api_key_here
 Locked        false
-UUID          ApiKey-05b8fadf-e7fe-4bc4-93a9-6fd348c5ab1f
+UUID          ApiKey-05b8fadf-e7fe-abcd-93a9-6fd348c5ab1f
 ```
 
 References:
 <!-- spellchecker: disable -->
 
-- [https://console.bluemix.net/docs/iam/userid_keys.html#userapikey](https://console.bluemix.net/docs/iam/userid_keys.html#userapikey)
-- [https://ibm.ibmaspera.com/helpcenter/transfer-service](https://ibm.ibmaspera.com/helpcenter/transfer-service)
+- [IBM Cloud Managing user API keys](https://cloud.ibm.com/docs/account?topic=account-userapikey&interface=cli)
+- [IBM Aspera on Cloud regions](https://ibmaspera.com/help/cloud_platforms_and_regions_supported)
 
 <!-- spellchecker: enable -->
 
@@ -5225,8 +5227,8 @@ The URL to be provided with option `url` shall be like `ssh://_server_address_:3
 Typically:
 
 ```console
-<%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
-<%=tool%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
+<%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --password=_something_here_ ...
+<%=cmd%> server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ssh/id_rsa ...
 ```
 
 <%=include_commands_for_plugin(:server)%>
