@@ -248,7 +248,7 @@ module Aspera
       # @return the url for download of SDK archive for the given platform and version
       def sdk_url_for_platform(platform: nil, version: nil)
         locations = sdk_locations
-        platform = Environment.architecture if platform.nil?
+        platform = Environment.instance.architecture if platform.nil?
         locations = locations.select{ |l| l['platform'].eql?(platform)}
         raise "No SDK for platform: #{platform}" if locations.empty?
         version = locations.max_by{ |entry| Gem::Version.new(entry['version'])}['version'] if version.nil?
@@ -333,7 +333,7 @@ module Aspera
         # ensure license file are generated so that ascp invocation for version works
         path(:aspera_license)
         path(:aspera_conf)
-        sdk_ascp_file = Environment.exe_file('ascp')
+        sdk_ascp_file = Environment.instance.exe_file('ascp')
         sdk_ascp_path = File.join(folder, sdk_ascp_file)
         raise "No #{sdk_ascp_file} found in SDK archive" unless File.exist?(sdk_ascp_path)
         EXE_FILES.each do |exe_sym|

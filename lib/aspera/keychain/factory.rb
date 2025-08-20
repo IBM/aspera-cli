@@ -27,7 +27,7 @@ module Aspera
             require 'aspera/keychain/encrypted_hash'
             @vault = Keychain::EncryptedHash.new(**info)
           when 'system'
-            case Environment.os
+            case Environment.instance.os
             when Environment::OS_MACOS
               info[:name] ||= name
               @vault = Keychain::MacosSystem.new(**info)

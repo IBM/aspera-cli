@@ -13,7 +13,7 @@ module Aspera
       class << self
         # standard folder locations
         def locations
-          case Aspera::Environment.os
+          case Aspera::Environment.instance.os
           when Aspera::Environment::OS_WINDOWS then [{
             app_root: File.join(ENV.fetch('LOCALAPPDATA', nil), 'Programs', 'Aspera', 'Aspera Connect'),
             log_root: File.join(ENV.fetch('LOCALAPPDATA', nil), 'Aspera', 'Aspera Connect', 'var', 'log'),

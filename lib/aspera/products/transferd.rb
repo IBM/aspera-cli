@@ -33,9 +33,9 @@ module Aspera
         end
 
         def transferd_path
-          v1_path = File.join(sdk_directory, Environment.exe_file(V1_DAEMON_NAME))
+          v1_path = File.join(sdk_directory, Environment.instance.exe_file(V1_DAEMON_NAME))
           return v1_path if File.exist?(v1_path)
-          return File.join(sdk_directory, Environment.exe_file(V2_DAEMON_NAME))
+          return File.join(sdk_directory, Environment.instance.exe_file(V2_DAEMON_NAME))
         end
 
         # Well, the port number is only in log file
