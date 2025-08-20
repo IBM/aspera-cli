@@ -43,8 +43,9 @@ module Aspera
       COMMAND_CONFIG = :config
       COMMAND_HELP = :help
       SCALAR_TYPES = [String, Integer, Symbol].freeze
+      USER_INTERFACES = %i[text graphical].freeze
 
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES
 
       class << self
         # expect some list, but nothing to display
@@ -309,9 +310,8 @@ module Aspera
         @env.options.declare(:version, 'Display version', values: :none, short: 'v'){@env.formatter.display_message(:data, Cli::VERSION); Process.exit(0)} # rubocop:disable Style/Semicolon, Layout/LineLength
         @env.options.declare(
           :ui, 'Method to start browser',
-          values: Environment::USER_INTERFACES,
-          handler: {o: Environment.instance, m: :url_method},
-          default: Environment.default_gui_mode)
+          values: USER_INTERFACES,
+          handler: {o: Environment.instance, m: :url_method})
         @env.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         @env.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @env.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)

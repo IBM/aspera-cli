@@ -14,13 +14,12 @@ module Aspera
   class Environment
     include Singleton
 
-    USER_INTERFACES = %i[text graphical].freeze
-
     OS_WINDOWS = :windows
     OS_MACOS = :osx
     OS_LINUX = :linux
     OS_AIX = :aix
     OS_LIST = [OS_WINDOWS, OS_MACOS, OS_LINUX, OS_AIX].freeze
+
     CPU_X86_64 = :x86_64
     CPU_ARM64 = :arm64
     CPU_PPC64 = :ppc64
@@ -35,55 +34,6 @@ module Aspera
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
-      end
-
-      def os
-        case RbConfig::CONFIG['host_os']
-        when /mswin/, /msys/, /mingw/, /cygwin/, /bccwin/, /wince/, /emc/
-          return OS_WINDOWS
-        when /darwin/, /mac os/
-          return OS_MACOS
-        when /linux/
-          return OS_LINUX
-        when /aix/
-          return OS_AIX
-        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_os']){'host_os'}
-        end
-      end
-
-      def cpu
-        case RbConfig::CONFIG['host_cpu']
-        when /x86_64/, /x64/
-          return CPU_X86_64
-        when /powerpc/, /ppc64/
-          return CPU_PPC64LE if os.eql?(OS_LINUX)
-          return CPU_PPC64
-        when /s390/
-          return CPU_S390
-        when /arm/, /aarch64/
-          return CPU_ARM64
-        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']){'host_cpu'}
-        end
-      end
-
-      # normalized architecture name
-      # see constants: OS_* and CPU_*
-      def architecture
-        return "#{os}-#{cpu}"
-      end
-
-      # executable file extension for current OS
-      def exe_file(name='')
-        return "#{name}.exe" if os.eql?(OS_WINDOWS)
-        return name
-      end
-
-      # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
-      # so, tell Ruby the right way
-      def fix_home
-        return unless os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
-        ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
-        Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
       end
 
       # empty variable binding for secure eval
@@ -213,57 +163,110 @@ module Aspera
       def terminal?
         $stdout.tty?
       end
-
-      # @return :text or :graphical depending on the environment
-      def default_gui_mode
-        # assume not remotely connected on macos and windows
-        return :graphical if [Environment::OS_WINDOWS, Environment::OS_MACOS].include?(Environment.os)
-        # unix family
-        return :graphical if ENV.key?('DISPLAY') && !ENV['DISPLAY'].empty?
-        return :text
-      end
-
-      # open a URI in a graphical browser
-      # command must be non blocking
-      def open_uri_graphical(uri)
-        case Environment.os
-        when Environment::OS_MACOS then return system('open', uri.to_s)
-        when Environment::OS_WINDOWS then return system('start', 'explorer', %Q{"#{uri}"})
-        when Environment::OS_LINUX   then return system('xdg-open', uri.to_s)
-        else
-          raise "no graphical open method for #{Environment.os}"
-        end
-      end
-
-      # open a file in an editor
-      def open_editor(file_path)
-        if ENV.key?('EDITOR')
-          system(ENV['EDITOR'], file_path.to_s)
-        elsif Environment.os.eql?(Environment::OS_WINDOWS)
-          system('notepad.exe', %Q{"#{file_path}"})
-        else
-          open_uri_graphical(file_path.to_s)
-        end
-      end
     end
     attr_accessor :url_method
+    attr_reader :os, :cpu, :executable_extension, :default_gui_mode
 
     def initialize
-      @url_method = self.class.default_gui_mode
-      @terminal_supports_unicode = nil
+      initialize_fields
+    end
+
+    # initialize fields from environment
+    def initialize_fields
+      @os =
+        case RbConfig::CONFIG['host_os']
+        when /mswin/, /msys/, /mingw/, /cygwin/, /bccwin/, /wince/, /emc/
+          OS_WINDOWS
+        when /darwin/, /mac os/
+          OS_MACOS
+        when /linux/
+          OS_LINUX
+        when /aix/
+          OS_AIX
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_os']){'host_os'}
+        end
+      @cpu =
+        case RbConfig::CONFIG['host_cpu']
+        when /x86_64/, /x64/
+          CPU_X86_64
+        when /powerpc/, /ppc64/
+          @os.eql?(OS_LINUX) ? CPU_PPC64LE : CPU_PPC64
+        when /s390/
+          CPU_S390
+        when /arm/, /aarch64/
+          CPU_ARM64
+        else Aspera.error_unexpected_value(RbConfig::CONFIG['host_cpu']){'host_cpu'}
+        end
+      @executable_extension = @os.eql?(OS_WINDOWS) ? 'exe' : nil
+      # :text or :graphical depending on the environment
+      @default_gui_mode =
+        if [Environment::OS_WINDOWS, Environment::OS_MACOS].include?(os) ||
+            (ENV.key?('DISPLAY') && !ENV['DISPLAY'].empty?)
+          # assume not remotely connected on macos and windows or unix family
+          :graphical
+        else
+          :text
+        end
+      @url_method = @default_gui_mode
+      nil
+    end
+
+    # Normalized architecture name
+    # See constants: OS_* and CPU_*
+    def architecture
+      "#{@os}-#{@cpu}"
+    end
+
+    # executable file extension for current OS
+    def exe_file(name)
+      return name unless @executable_extension
+      return "#{name}#{@executable_extension}"
+    end
+
+    # on Windows, the env var %USERPROFILE% provides the path to user's home more reliably than %HOMEDRIVE%%HOMEPATH%
+    # so, tell Ruby the right way
+    def fix_home
+      return unless @os.eql?(OS_WINDOWS) && ENV.key?('USERPROFILE') && Dir.exist?(ENV.fetch('USERPROFILE', nil))
+      ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
+      Log.log.debug{"Windows: set HOME to USERPROFILE: #{Dir.home}"}
+    end
+
+    def graphical?
+      @default_gui_mode == :graphical
+    end
+
+    # open a URI in a graphical browser
+    # command must be non blocking
+    def open_uri_graphical(uri)
+      case @os
+      when Environment::OS_MACOS then return self.class.secure_execute(exec: 'open', args: [uri.to_s])
+      when Environment::OS_WINDOWS then return self.class.secure_execute(exec: 'start', args: ['explorer', %Q{"#{uri}"}])
+      when Environment::OS_LINUX   then return self.class.secure_execute(exec: 'xdg-open', args: [uri.to_s])
+      else Assert.error_unexpected_value(os){'no graphical open method'}
+      end
+    end
+
+    # open a file in an editor
+    def open_editor(file_path)
+      if ENV.key?('EDITOR')
+        self.class.secure_execute(exec: ENV['EDITOR'], args: [file_path.to_s])
+      elsif @os.eql?(Environment::OS_WINDOWS)
+        self.class.secure_execute(exec: 'notepad.exe', args: [%Q{"#{file_path}"}])
+      else
+        open_uri_graphical(file_path.to_s)
+      end
     end
 
     # @return true if we can display Unicode characters
     # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
     # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
     def terminal_supports_unicode?
-      @terminal_supports_unicode = self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{ |var| ENV[var]&.include?('UTF-8')} if @terminal_supports_unicode.nil?
-      return @terminal_supports_unicode
+      self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{ |var| ENV[var]&.include?('UTF-8')}
     end
 
-    # Allows a user to open a Url
-    # if method is "text", then URL is displayed on terminal
-    # if method is "graphical", then the URL will be opened with the default browser.
+    # Allows a user to open a URL
+    # if method is :text, then URL is displayed on terminal
+    # if method is :graphical, then the URL will be opened with the default browser.
     # this is non blocking
     def open_uri(the_url)
       case @url_method
@@ -276,8 +279,7 @@ module Aspera
         else
           puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
         end
-      else
-        raise StandardError, "unsupported url open method: #{@url_method}"
+      else Aspera.error_unexpected_value(@url_method){'unknown url open method'}
       end
     end
   end

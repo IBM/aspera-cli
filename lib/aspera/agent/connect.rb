@@ -21,7 +21,7 @@ module Aspera
         @connect_settings = {
           'app_id' => SecureRandom.uuid
         }
-        raise 'Using connect requires a graphical environment' if !Environment.default_gui_mode.eql?(:graphical)
+        raise 'Using connect requires a graphical environment' unless Environment.instance.graphical?
         method_index = 0
         begin
           connect_url = connect_api_url

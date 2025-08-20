@@ -11,7 +11,7 @@ module Aspera
       class << self
         # standard folder locations
         def locations
-          case Aspera::Environment.os
+          case Aspera::Environment.instance.os
           when Aspera::Environment::OS_MACOS then [{
             app_root: File.join('', 'Applications', 'IBM Aspera.app'),
             log_root: File.join(Dir.home, 'Library', 'Logs', APP_IDENTIFIER),

@@ -21,7 +21,7 @@ module Aspera
       # :log_root  O location of log files (Linux uses syslog)
       # :run_root  O only for Connect Client, location of http port file
       # :sub_bin   O subfolder with executables, default : bin
-      LOCATION_ON_THIS_OS = case Aspera::Environment.os
+      LOCATION_ON_THIS_OS = case Aspera::Environment.instance.os
       when Aspera::Environment::OS_WINDOWS then [{
         expected: CLI_V3,
         app_root: File.join('C:', 'Program Files', 'Aspera', 'cli'),
@@ -61,7 +61,7 @@ module Aspera
             next false unless Dir.exist?(item[:app_root])
             Log.log.debug{"Found #{item[:expected]}"}
             sub_bin = item[:sub_bin] || 'bin'
-            item[:ascp_path] = File.join(item[:app_root], sub_bin, Environment.exe_file('ascp'))
+            item[:ascp_path] = File.join(item[:app_root], sub_bin, Environment.instance.exe_file('ascp'))
             # skip if no ascp
             next false unless File.exist?(item[:ascp_path])
             # read info from product info file if present

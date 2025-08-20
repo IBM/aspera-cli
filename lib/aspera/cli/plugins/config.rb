@@ -901,7 +901,7 @@ module Aspera
           when :preset # newer syntax
             return execute_preset
           when :open
-            Environment.open_editor(@option_config_file.to_s)
+            Environment.instance.open_editor(@option_config_file.to_s)
             return Main.result_nothing
           when :documentation
             section = options.get_next_argument('private key file path', mandatory: false)
@@ -1047,7 +1047,7 @@ module Aspera
           when :vault then execute_vault
           when :test then return execute_test
           when :platform
-            return Main.result_status(Environment.architecture)
+            return Main.result_status(Environment.instance.architecture)
           else Aspera.error_unreachable_line
           end
         end
