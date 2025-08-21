@@ -49,9 +49,9 @@ module Aspera
       end
 
       # Called by provider of definition before constructor of this class so that schema has all mandatory fields
-      def read_schema(source_path, suffix=nil)
-        suffix = "_#{suffix}" unless suffix.nil?
-        schema = YAML.load_file("#{source_path[0..-4]}#{suffix}.schema.yaml")
+      def read_schema(source_path, suffix: nil, folder: false)
+        base = folder ? File.dirname(source_path) : source_path[0..-4]
+        schema = YAML.load_file("#{base}#{suffix}.schema.yaml")
         schema['properties'].each do |name, properties|
           Aspera.assert_type(properties, Hash){name}
           unsupported_keys = properties.keys - SCHEMA_KEYS

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/transfer/sync'
-require 'aspera/transfer/sync_database'
+require 'aspera/sync/operations'
+require 'aspera/sync/database'
 require 'aspera/assert'
 
 module Aspera
@@ -20,7 +20,7 @@ module Aspera
         async_params = options.get_option(:sync_info, default: {})
         # named arguments, or empty
         arguments = []
-        Transfer::Sync::SYNC_PARAMETERS.each do |info|
+        Sync::Operations::SYNC_PARAMETERS.each do |info|
           value = options.get_next_argument(
             info[:name],
             mandatory: false,
@@ -29,7 +29,7 @@ module Aspera
           break if value.nil?
           arguments.push(value.to_s)
         end
-        raise Cli::BadArgument, "Provide 0, 3 or 4 arguments, not #{arguments.length} for: #{Transfer::Sync::SYNC_PARAMETERS.map{ |i| "<#{i[:name]}>"}.join(', ')}" unless [0, 3, 4].include?(arguments.length)
+        raise Cli::BadArgument, "Provide 0, 3 or 4 arguments, not #{arguments.length} for: #{Sync::Operations::SYNC_PARAMETERS.map{ |i| "<#{i[:name]}>"}.join(', ')}" unless [0, 3, 4].include?(arguments.length)
         Log.log.debug{Log.dump('arguments', arguments)}
         return [async_params, arguments]
       end
@@ -41,20 +41,20 @@ module Aspera
         # try to get 3 arguments as simple arguments
         case command
         when :start
-          Transfer::Sync.start(Transfer::Sync.validated_sync_info(*sync_info_from_cli, sync: true), &block)
+          Sync::Operations.start(Sync::Operations.validated_sync_info(*sync_info_from_cli), &block)
           return Main.result_success
         when :admin
           command2 = options.get_next_command(%i[status])
           case command2
           when :status
-            return Main.result_single_object(Transfer::Sync.admin_status(Transfer::Sync.validated_sync_info(*sync_info_from_cli)))
+            return Main.result_single_object(Sync::Operations.admin_status(Sync::Operations.validated_sync_info(*sync_info_from_cli, admin: true)))
           else Aspera.error_unexpected_value(command2)
           end
         when :db
           command2 = options.get_next_command(%i[meta counters])
           case command2
           when :meta, :counters
-            return Main.result_single_object(Transfer::SyncDatabase.new(Transfer::Sync.session_db_file(Transfer::Sync.validated_sync_info(*sync_info_from_cli))).send(command2))
+            return Main.result_single_object(Sync::Database.new(Sync::Operations.session_db_file(Sync::Operations.validated_sync_info(*sync_info_from_cli, admin: true))).send(command2))
           else Aspera.error_unexpected_value(command2)
           end
         else Aspera.error_unexpected_value(command)

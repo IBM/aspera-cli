@@ -10,7 +10,7 @@ require 'aspera/transfer/spec_doc'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
-require 'aspera/transfer/sync'
+require 'aspera/sync/operations'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -56,7 +56,7 @@ def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 def container_image; Aspera::Cli::Info::CONTAINER; end
 
 def sync_arguments_list(format: nil, admin: false)
-  params = admin ? Aspera::Transfer::Sync::ADMIN_PARAMETERS : Aspera::Transfer::Sync::SYNC_PARAMETERS
+  params = admin ? Aspera::Sync::Operations::ADMIN_PARAMETERS : Aspera::Sync::Operations::SYNC_PARAMETERS
   markdown_list(case format
   when nil
     params.map{ |i| i[:name]}

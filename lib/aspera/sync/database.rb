@@ -3,9 +3,9 @@
 require 'sqlite3'
 
 module Aspera
-  module Transfer
+  module Sync
     # builds command line arg for async and execute it
-    class SyncDatabase
+    class Database
       def initialize(db_path)
         @db_path = db_path
       end
