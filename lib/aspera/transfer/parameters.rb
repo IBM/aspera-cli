@@ -6,7 +6,7 @@ require 'aspera/command_line_builder'
 require 'aspera/temp_file_manager'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
-require 'aspera/transfer/convert'
+require 'aspera/command_line_converter'
 require 'aspera/ascp/installation'
 require 'aspera/cli/formatter'
 require 'aspera/rest'
@@ -70,7 +70,7 @@ module Aspera
         Aspera.assert(@ascp_args.all?(String)){'all ascp arguments must be String'}
         Aspera.assert_type(@trusted_certs, Array){'trusted_certs'}
         Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
-        @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, Convert)
+        @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, CommandLineConverter)
       end
 
       # either place source files on command line, or add file list file
