@@ -98,6 +98,8 @@ module Aspera
         end
 
         def result_value_list(data, name)
+          Aspera.assert_type(data, Array)
+          Aspera.assert_type(name, String)
           return {type: :value_list, data: data, name: name}
         end
 

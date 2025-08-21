@@ -203,7 +203,7 @@ module Aspera
             return Main.result_single_object(data, fields: display_fields)
           when Array
             return Main.result_object_list(data, fields: display_fields) if data.empty? || data.first.is_a?(Hash)
-            return Main.result_value_list(data, name: 'id')
+            return Main.result_value_list(data, 'id')
           else
             raise "An error occurred: unexpected result type for list: #{data.class}"
           end
