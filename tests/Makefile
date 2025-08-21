@@ -339,7 +339,6 @@ $(T)serv_sync_pull_args: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)
 	rm -fr $(TMP_SYNCS)serv_sync_pull_args
 	mkdir -p $(TMP_SYNCS)serv_sync_pull_args
 	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin status serv_sync_pull_args --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
 	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
 	$(INCMAN)$(CLI_TEST) server sync db meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
 	$(INCMAN)$(CLI_TEST) server sync db counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
@@ -883,7 +882,7 @@ $(T)aoc_sync_conf_pull: $(TMP_EXISTS)
 	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull
 	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull
 	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aoc_sync_conf_pull /testdst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status pull $(TMP_SYNCS)aoc_sync_conf_pull /testdst
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status $(TMP_SYNCS)aoc_sync_conf_pull
 	@$(STOP_TEST) $@
 $(T)aocfsync2: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -1371,7 +1370,7 @@ $(T)ndsyncv2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)ndsyncv2
 	mkdir -p $(TMP_SYNCS)ndsyncv2
-	$(INCMAN)$(CLI_TEST) node sync start --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
+	$(INCMAN)$(CLI_TEST) node sync start        --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	$(INCMAN)$(CLI_TEST) node sync admin status --sync-info=@json:'{"name":"my_node_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)ndsyncv2"},"remote":{"path":"/aspera-test-dir-tiny"}}'
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tnsync,$(T)sy1 $(T)sy2 $(T)sy3 $(T)sy4 $(T)sy5 $(T)ndsyncv1 $(T)ndsyncv2))

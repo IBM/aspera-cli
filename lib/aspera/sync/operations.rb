@@ -28,7 +28,7 @@ module Aspera
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
       # Translation of transfer spec parameters to async v2 API (asyncs)
-      # TODO: complete this list with all transfer spec parameters or include in async json schema with x- parameters
+      # TODO: complete this list with all transfer spec parameters or include in async json schema with x-tspec parameter
       TSPEC_TO_ASYNC_CONF = {
         'remote_host'     => 'remote.host',
         'remote_user'     => 'remote.user',
@@ -149,7 +149,6 @@ module Aspera
         def start(sync_params)
           Log.log.debug{Log.dump(:sync_params_initial, sync_params)}
           Aspera.assert_type(sync_params, Hash)
-          Aspera.assert(%w[local sessions].any?{ |k| sync_params.key?(k)}){'At least one of `local` or `sessions` must be present in async parameters'}
           env_args = {
             args: [],
             env:  {}
@@ -186,8 +185,7 @@ module Aspera
             agent = Agent::Direct.new
             agent.start_and_monitor_process(session: {}, name: :async, **env_args)
           elsif sync_params.key?('sessions')
-            # key 'sessions' is present
-            # ascli JSON format (cmdline)
+            # "args" format
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
               sync_params.keys.push('instance').uniq.sort.eql?(CMDLINE_PARAMS_KEYS)
             Aspera.assert_type(sync_params['sessions'], Array)
@@ -246,7 +244,7 @@ module Aspera
         end
 
         # Takes potentially empty params or arguments and ensures viable configuration
-        def validated_sync_info(async_params, arguments, admin: false)
+        def validated_sync_info(async_params, arguments)
           info_type = if async_params.key?('sessions') || async_params.key?('instance')
             async_params['sessions'] ||= [{}]
             Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported'}
@@ -289,6 +287,35 @@ module Aspera
               value&.split(File::SEPARATOR)&.last(2)&.join('_')&.gsub(/[^a-zA-Z0-9]+/, '_')
             end.compact.join('_').gsub(/__+/, '_')
           end
+          return async_params
+        end
+
+        def validated_admin_info(async_params, arguments)
+          info_type = if async_params.key?('sessions') || async_params.key?('instance')
+            async_params['sessions'] ||= [{}]
+            Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported'}
+            session = async_params['sessions'].first
+            :args
+          else
+            session = async_params
+            :conf
+          end
+          if !arguments.empty?
+            # there must be exactly 3 or 4 args
+            # copy arguments to async_params
+            arguments.each_with_index do |arg, index|
+              key_path = ADMIN_PARAMETERS[index][info_type].split('.')
+              hash_for_key = session
+              if key_path.length > 1
+                first = key_path.shift
+                hash_for_key[first] ||= {}
+                hash_for_key = hash_for_key[first]
+              end
+              raise "Parameter #{SYNC_PARAMETERS[index][info_type]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
+              hash_for_key[key_path.last] = arg
+            end
+          end
+          # if name not provided, check in db folder if there is only one name
           return async_params
         end
 
