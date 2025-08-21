@@ -5484,9 +5484,11 @@ By providing the `validator` option, offline transfer validation can be done.
 
 There are three sync types of operations:
 
-- `sync`: perform a local sync, by executing `async` locally
-- `async`: calls legacy `async` API on node : `/async`
-- `ssync` : calls newer `async` API on node : `/asyncs`
+- `sync`: Perform a local sync, by executing `async` locally.
+- `async`: Calls the legacy `async` API on node : `/async` : get status on sync operation on server side, like Aspera Console.
+- `ssync` : Calls the newer `async` API on node : `/asyncs` : it can start a sync operation on the server side, and monitor only those.
+
+For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
 ### FASP Stream
 
@@ -6943,9 +6945,15 @@ If the preview generator does not have access to files on the file system (it is
 An interface for the `async` utility is provided in the following plugins:
 
 - `server sync`
-- `node sync`
+- `node sync` (use token)
 - `aoc files sync` (uses node)
 - `shares files sync` (uses node)
+
+The `sync` command performs the following actions:
+
+- Start a local Sync session by executing the `async` command with the appropriate parameters.
+- Get local Sync session information using the `asyncadmin` command, if available.
+- Get local Sync session information accessing directly the Async snap database.
 
 One advantage of using <%=tool%> over the `async` command line is the possibility to use a configuration file, using standard options of <%=tool%>.
 Moreover, <%=tool%> supports sync with application requiring token-based authorization.
@@ -6954,35 +6962,53 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer Daemon 1.3+ includes this.
 
-`sync` supports 0 or 3 arguments.
-If 3 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
+`sync start` supports 0, 3 or 4 positional arguments.
+If 3 or 4 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
 
 <%=sync_arguments_list%>
 
-Additional options can be provided with option `sync_info`, for which two syntax are possible, as follows.
+Additional options can be provided with option `sync_info`, for which two syntax are possible, as described below.
 
-### `async` API and `conf` format
+`sync admin` supports 0, 1 or 2 positional arguments.
+If 1 or 2 arguments are provided they are mapped to:
 
-It is the same payload as specified on the option `--conf` of `async` or in Node API `/asyncs`.
-This is the **preferred** syntax and allows a single session definition.
+<%=sync_arguments_list(admin: true)%>
 
-> **Note:** By default, no progress, nor error messages is provided on terminal. To activate messages, set option `sync_info` parameter `quiet` to `false`.
+### `sync_info`: `conf` format
+
+It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
+This is the **preferred** syntax and only allows a single session definition.
+
+> **Note:** By default, no progress, nor error messages is provided on terminal.
+To activate messages, set option `sync_info` parameter `quiet` to `false`.
 
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-If 3 arguments are provided they are mapped to:
+For sync, if 3 or 4 arguments are provided they are mapped to:
 
-<%=sync_arguments_list%>
+<%=sync_arguments_list(format: :conf)%>
 
-### `async` options mapping
+For admin, if 1 or 2 arguments are provided they are mapped to:
+
+<%=sync_arguments_list(format: :conf, admin: true)%>
+
+### `sync_info`: `args` format
 
 <%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
-It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+Technically it allows definition of multiple sync sessions in a single command, but <%=tool%> only accepts a single session for consistency with the previous syntax.
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
 > **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
+
+For sync, if 3 or 4 arguments are provided they are mapped to:
+
+<%=sync_arguments_list(format: :args)%>
+
+For admin, if 1 or 2 arguments are provided they are mapped to:
+
+<%=sync_arguments_list(format: :args, admin: true)%>
 
 ## Hot folder
 

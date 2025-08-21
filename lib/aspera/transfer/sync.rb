@@ -2,10 +2,10 @@
 
 # cspell:words logdir bidi watchd cooloff asyncadmin
 
-require 'aspera/command_line_builder'
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
 require 'aspera/transfer/convert'
+require 'aspera/command_line_builder'
 require 'aspera/log'
 require 'aspera/assert'
 require 'json'
@@ -41,7 +41,50 @@ module Aspera
         'tags'            => 'tags'
       }.freeze
 
+      # Optional simple command line arguments for sync
+      # in Array to keep order as on command line
+      # name: just generic name
+      # conf: key in option --conf
+      # args: key for command line args
+      # values: possible values for argument
+      # type: type for validation
+      SYNC_PARAMETERS = [
+        {
+          name:   'direction',
+          conf:   'direction',
+          args:   'direction',
+          values: DIRECTIONS
+        }, {
+          name: 'local folder',
+          conf: 'local.path',
+          args: 'local_dir',
+          type: String
+        }, {
+          name: 'remote folder',
+          conf: 'remote.path',
+          args: 'remote_dir',
+          type: String
+        }
+      ].freeze
+      ADMIN_PARAMETERS = [
+        {
+          name: 'local folder',
+          conf: 'local.path',
+          args: 'local_dir',
+          type: String
+        }, {
+          name:     'name',
+          conf:     'name',
+          args:     'name',
+          type:     String,
+          optional: true
+        }
+      ].freeze
+
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
+
+      PRIVATE_FOLDER = '.private-asp'
+      ASYNC_DB = 'snap.db'
 
       private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :TSPEC_TO_ASYNC_CONF, :ASYNC_ADMIN_EXECUTABLE
 
@@ -64,6 +107,9 @@ module Aspera
           nil
         end
 
+        # Get certificates to use for remote connection
+        # @param remote [Hash] remote connection parameters
+        # @return [Array<String>] list of certificate file paths
         def remote_certificates(remote)
           certificates_to_use = []
           # use web socket secure for session ?
@@ -97,6 +143,7 @@ module Aspera
           (params['direction'] || DEFAULT_DIRECTION).to_sym
         end
 
+        # Start the sync process
         # @param sync_params [Hash] sync parameters, old or new format
         # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
         def start(sync_params)
@@ -108,7 +155,7 @@ module Aspera
             env:  {}
           }
           if sync_params.key?('local')
-            # async native JSON format (conf option)
+            # "conf" format
             Aspera.assert_type(sync_params['local'], Hash){'local'}
             remote = sync_params['remote']
             Aspera.assert_type(remote, Hash){'remote'}
@@ -138,7 +185,7 @@ module Aspera
             Log.log.debug{Log.dump(:sync_conf, sync_params)}
             agent = Agent::Direct.new
             agent.start_and_monitor_process(session: {}, name: :async, **env_args)
-          else
+          elsif sync_params.key?('sessions')
             # key 'sessions' is present
             # ascli JSON format (cmdline)
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
@@ -174,10 +221,13 @@ module Aspera
               session_builder.add_env_args(env_args)
             end
             Environment.secure_execute(exec: Ascp::Installation.instance.path(:async), **env_args)
+          else
+            raise 'At least one of `local` or `sessions` must be present in async parameters'
           end
           return nil
         end
 
+        # Parse output of asyncadmin
         def parse_status(stdout)
           Log.log.trace1{"stdout=#{stdout}"}
           result = {}
@@ -195,11 +245,57 @@ module Aspera
           return result
         end
 
-        def admin_status(sync_params, session_name)
+        # Takes potentially empty params or arguments and ensures viable configuration
+        def validated_sync_info(async_params, arguments, admin: false)
+          info_type = if async_params.key?('sessions') || async_params.key?('instance')
+            async_params['sessions'] ||= [{}]
+            Aspera.assert(async_params['sessions'].length == 1){'Only one session is supported'}
+            session = async_params['sessions'].first
+            :args
+          else
+            session = async_params
+            :conf
+          end
+          if !arguments.empty?
+            # there must be exactly 3 or 4 args
+            # copy arguments to async_params
+            arguments.each_with_index do |arg, index|
+              key_path = SYNC_PARAMETERS[index][info_type].split('.')
+              hash_for_key = session
+              if key_path.length > 1
+                first = key_path.shift
+                hash_for_key[first] ||= {}
+                hash_for_key = hash_for_key[first]
+              end
+              raise "Parameter #{SYNC_PARAMETERS[index][info_type]} is also set in sync_info, remove from sync_info" if hash_for_key.key?(key_path.last)
+              hash_for_key[key_path.last] = arg
+            end
+          end
+
+          # generate default session names if necessary
+          # check if name is already provided, else define an automatic one
+          if !session.key?('name')
+            # if no name is specified, generate one from simple arguments
+            session['name'] = SYNC_PARAMETERS.filter_map do |arg_info|
+              key_path = arg_info[info_type].split('.')
+              hash_for_key = session
+              if key_path.length > 1
+                first = key_path.shift
+                hash_for_key[first] ||= {}
+                hash_for_key = hash_for_key[first]
+              end
+              value = hash_for_key[key_path.last]
+              Aspera.assert(!value.nil?){"Missing value for #{key_path.last} to generate name"}
+              value&.split(File::SEPARATOR)&.last(2)&.join('_')&.gsub(/[^a-zA-Z0-9]+/, '_')
+            end.compact.join('_').gsub(/__+/, '_')
+          end
+          return async_params
+        end
+
+        def admin_status(sync_params)
           arguments = ['--quiet']
           if sync_params.key?('local')
-            Aspera.assert(!sync_params['name'].nil?){'Missing session name'}
-            Aspera.assert(session_name.nil? || session_name.eql?(sync_params['name'])){'Session not found'}
+            # "conf" format
             arguments.push("--name=#{sync_params['name']}")
             if sync_params.key?('local_db_dir')
               arguments.push("--local-db-dir=#{sync_params['local_db_dir']}")
@@ -209,9 +305,8 @@ module Aspera
               raise 'Missing either local_db_dir or local.path'
             end
           elsif sync_params.key?('sessions')
-            session = session_name.nil? ? sync_params['sessions'].first : sync_params['sessions'].find{ |s| s['name'].eql?(session_name)}
-            raise "Session #{session_name} not found in #{sync_params['sessions'].map{ |s| s['name']}.join(',')}" if session.nil?
-            raise 'Missing session name' if session['name'].nil?
+            # "args" format
+            session = sync_params['sessions'].first
             arguments.push("--name=#{session['name']}")
             if session.key?('local_db_dir')
               arguments.push("--local-db-dir=#{session['local_db_dir']}")
@@ -225,6 +320,51 @@ module Aspera
           end
           stdout = Environment.secure_capture(exec: ASYNC_ADMIN_EXECUTABLE, args: arguments)
           return parse_status(stdout)
+        end
+
+        # Find the local database folder based on sync_params
+        def local_db_folder(sync_params, exception: true)
+          if sync_params.key?('local')
+            # "conf" format
+            if sync_params.key?('local_db_dir')
+              return sync_params['local_db_dir']
+            elsif (local_path = sync_params.dig('local', 'path'))
+              return local_path
+            elsif exception
+              raise 'Missing either local_db_dir or local.path'
+            end
+          elsif sync_params.key?('sessions')
+            # "args" format
+            session = sync_params['sessions'].first
+            if session.key?('local_db_dir')
+              return session['local_db_dir']
+            elsif session.key?('local_dir')
+              return session['local_dir']
+            elsif exception
+              raise 'Missing either local_db_dir or local_dir'
+            end
+          elsif exception
+            raise 'At least one of `local` or `sessions` must be present in async parameters'
+          end
+          nil
+        end
+
+        def session_name(sync_params)
+          if sync_params.key?('local')
+            # "conf" format
+            return sync_params['name']
+          elsif sync_params.key?('sessions')
+            # "args" format
+            return sync_params['sessions'].first['name']
+          else
+            raise 'At least one of `local` or `sessions` must be present in async parameters'
+          end
+        end
+
+        def session_db_file(sync_params)
+          db_file = File.join(local_db_folder(sync_params), PRIVATE_FOLDER, session_name(sync_params), ASYNC_DB)
+          Aspera.assert(File.exist?(db_file)){"Database file #{db_file} does not exist"}
+          db_file
         end
       end
     end

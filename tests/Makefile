@@ -59,7 +59,9 @@ full: all interactive optional
 # just to test nagios, but those are tested in the respective plugins
 only_nagios: $(T)f4_nagios $(T)shares_nagios $(T)cons_nagios $(T)f5_nagios $(T)sadm_nagios_hsts $(T)serv_nagios_transfer $(T)nd_nagios
 
-only_sync: tnsync tnsyncs $(T)serv_sync_old $(T)serv_sync_push_new $(T)aocfsync1 $(T)aocfsync2 $(T)shares_sync
+only_sync_local: $(T)serv_sync_pull_args $(T)serv_sync_pull_conf $(T)aoc_sync_conf_pull $(T)aocfsync2 $(T)shares_sync
+
+only_sync: tnsync tnsyncs only_sync_local
 
 only_progress: $(T)serv_upload1 $(T)serv_upload3
 
@@ -287,8 +289,9 @@ $(T)shares_sync: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	mkdir -p $(TMP_SYNCS)shares_sync
 	$(BEG_IGN)$(CLI_TEST) shares files mkdir /london-sh1/synctst$(END_IGN)
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:'{"reset":true}'
-	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
+	echo "Some sample file" > $(TMP_SYNCS)shares_sync/sample_file.txt
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) shares files sync start push $(TMP_SYNCS)shares_sync /london-sh1/synctst
 	@$(STOP_TEST) $@
 $(eval $(call test_suite_all,tshares,$(T)shares_nagios $(T)shares_detect $(T)shares_wizard $(T)shares_admin_1 $(T)shares_admin_2 $(T)shares_admin_3 $(T)shares_admin_4 $(T)shares_admin_5 $(T)shares_admin_6 $(T)shares_admin_7 $(T)shares_admin_8 $(T)shares_admin_9 $(T)shares_admin_10 $(T)shares_admin_11 $(T)shares_admin_12 $(T)shares_1 $(T)shares_2 $(T)shares_3 $(T)shares_4 $(T)shares_5 $(T)shares_6 $(T)shares_6bis $(T)shares_7 $(T)shares_8 $(T)shares_9 $(T)shares_10 $(T)shares_sync))
 #######################################################################################################################
@@ -331,24 +334,25 @@ $(T)serv_upload5: $(T)serv_mkdir
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server upload --src-type=pair $(TST_ASC_LCL_PATH) @extend:@preset:server.upload_folder@/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum","symlink_policy":"follow"}'
 	@$(STOP_TEST) $@
-$(T)serv_sync_old: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
+$(T)serv_sync_pull_args: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)serv_sync_old
-	mkdir -p $(TMP_SYNCS)serv_sync_old
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_old","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) server sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"$(TMP_SYNCS)serv_sync_old"}]}'
+	rm -fr $(TMP_SYNCS)serv_sync_pull_args
+	mkdir -p $(TMP_SYNCS)serv_sync_pull_args
+	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
+	$(INCMAN)$(CLI_TEST) server sync admin status serv_sync_pull_args --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(INCMAN)$(CLI_TEST) server sync db meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(INCMAN)$(CLI_TEST) server sync db counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
 	@$(STOP_TEST) $@
-$(T)serv_sync_push_new: $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5
+$(T)serv_sync_pull_conf: $(T)serv_sync_pull_args
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)serv_sync_push_new
-	mkdir -p $(TMP_SYNCS)serv_sync_push_new
-	echo "New file 1" > $(TMP_SYNCS)serv_sync_push_new/new_file1.txt
-	$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"reset":true,"quiet":false}'
-	$(BEG_FAI)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2"}'$(END_FAI)
-	$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"}}'
-	echo "New file 2" > $(TMP_SYNCS)serv_sync_push_new/new_file2.txt
-	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"},"remote":{"path":"@preset:server.inside_folder@"},"quiet":false}'
-	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"$(TMP_SYNCS)serv_sync_push_new"}}'
+	rm -fr $(TMP_SYNCS)serv_sync_pull_conf
+	mkdir -p $(TMP_SYNCS)serv_sync_pull_conf
+	$(CLI_TEST) server sync start pull $(TMP_SYNCS)serv_sync_pull_conf @preset:server.inside_folder --sync-info=@json:@extend:'{"name":"serv_sync_pull_conf","reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(BEG_FAI)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf"}'$(END_FAI)
+	$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"}}'
+	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"name":"serv_sync_pull_conf","direction":"pull","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"},"remote":{"path":"@preset:server.inside_folder@"},"quiet":false}'
+	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"$(TMP_SYNCS)serv_sync_pull_conf"}}'
 	@$(STOP_TEST) $@
 $(T)serv_upload_ex: $(T)serv_mkdir
 	@$(START_TEST) $@
@@ -433,7 +437,7 @@ $(T)serv_pr2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) server upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tserver,$(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5 $(T)serv_sync_old $(T)serv_sync_push_new $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_down_from_node_fail $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key))
+$(eval $(call test_suite_all,tserver,$(T)serv_error $(T)serv_browse $(T)serv_mkdir $(T)serv_upload1 $(T)serv_upload2 $(T)serv_upload3 $(T)serv_upload5 $(T)serv_sync_pull_args $(T)serv_sync_pull_conf $(T)serv_upload_ex $(T)serv_md5 $(T)serv_down_lcl $(T)serv_down_from_node $(T)serv_down_from_node_fail $(T)serv_cp $(T)serv_mv $(T)serv_delete $(T)serv_cleanup1 $(T)serv_info $(T)serv_du $(T)serv_df $(T)asession $(T)serv_nagios_transfer $(T)serv_key))
 #######################################################################################################################
 $(T)f4_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@
@@ -874,22 +878,19 @@ $(T)aocfv3inf: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files v3 info
 	@$(STOP_TEST) $@
-$(T)aocfsync1: $(TMP_EXISTS)
+$(T)aoc_sync_conf_pull: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)aocfsync1
-	mkdir -p $(TMP_SYNCS)aocfsync1
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aocfsync1 /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aocfsync1 /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync1"},"remote":{"path":"/testdst"}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"$(TMP_SYNCS)aocfsync1","remote_dir":"/testdst","reset":true}]}'
+	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull
+	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aoc_sync_conf_pull /testdst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status pull $(TMP_SYNCS)aoc_sync_conf_pull /testdst
 	@$(STOP_TEST) $@
 $(T)aocfsync2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)aocfsync2
 	mkdir -p $(TMP_SYNCS)aocfsync2
 	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
+	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"$(TMP_SYNCS)aocfsync2"}}'$(END_FAI)
 	@$(STOP_TEST) $@
 $(T)aoc_file_id_1: $(T)aocftr
 	@$(START_TEST) $@
@@ -964,7 +965,7 @@ $(T)aocshlk1: $(T)aocshlk2 $(T)aocshlk3
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files short_link /testdst private list
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbr1 $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aocfsync1 $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(T)aocfbr $(T)aocfbr1 $(T)aocfbt $(T)aocffin $(T)aoc_tstsrc $(T)aoc_tstdst $(T)aocfupl $(T)aocftr $(T)aocndinf $(T)aocfdel $(T)aocfbearnode $(T)aocfdownc $(T)aocfdowna $(T)aocfhttpd $(T)aocfv3inf $(T)aoc_sync_conf_pull $(T)aocfsync2 $(T)aoc_file_id_1 $(T)aoc_file_id_2 $(T)aoc_file_id_3 $(T)aoc_file_id_4 $(T)aoc_file_id_5 $(T)aoc_file_id_6 $(T)aoc_file_id_7 $(T)aoc_file_id_8 $(T)aoc_file_id_9 $(T)aocfpub $(T)aoc_lnk_priv $(T)aocshlk1 $(T)aocshlk2 $(T)aocshlk3 $(T)aocfxgw))
 #######################################################################################################################
 $(T)aoc_pack_send1: $(TMP_EXISTS)
 	@$(START_TEST) $@
