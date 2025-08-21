@@ -3,6 +3,7 @@
 * 4.24.0.pre
 
   * New Features:
+    * `sync`: Added operations on sync database with command: `db`.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`, `desktop`: Fixed discrepancies in transfer spec resume policies.

@@ -10,7 +10,7 @@ require 'aspera/transfer/spec_doc'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
-require 'aspera/cli/sync_actions'
+require 'aspera/transfer/sync'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -55,7 +55,15 @@ def opt_env(option); "#{cmd.upcase}_#{option.to_s.upcase}"; end
 # container image in docker hub
 def container_image; Aspera::Cli::Info::CONTAINER; end
 
-def sync_arguments_list; Aspera::Cli::SyncActions::ARGUMENTS_LIST.map{ |i| "- `#{i}`"}.join("\n"); end
+def sync_arguments_list(format: nil, admin: false)
+  params = admin ? Aspera::Transfer::Sync::ADMIN_PARAMETERS : Aspera::Transfer::Sync::SYNC_PARAMETERS
+  markdown_list(case format
+  when nil
+    params.map{ |i| i[:name]}
+  else
+    params.map{ |i| i[format].split('.').map{ |j| "`#{j}`"}.join('->')}
+  end)
+end
 
 def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
 
@@ -115,6 +123,10 @@ def markdown_table(table)
   table.unshift(headings.map{ |col_name| '-' * col_name.length})
   table.unshift(headings)
   return table.map{ |line| "| #{line.map{ |i| i.to_s.gsub('|', '\|')}.join(' | ')} |\n"}.join.chomp
+end
+
+def markdown_list(items)
+  items.map{ |i| "- #{i}"}.join("\n")
 end
 
 # Transfer spec description generation for markdown manual
