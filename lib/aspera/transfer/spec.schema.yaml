@@ -206,8 +206,26 @@ properties:
     - transferd
   move_after_transfer:
     description: >-
-      The relative path to which the files will be moved after the transfer at the source side.
+      Move source files to the specified directory after they are transferred correctly.
+      
       Available as of 3.8.0.
+      Details in ascp manual.
+      
+      Requires write permissions on the source.
+
+      If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.
+
+      `archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.
+
+      `archive-dir` is subject to the same docroot restrictions as source files.
+
+      `move_after_transfer` and `remove_after_transfer` are mutually exclusive options.
+
+      After files have been moved to the archive, the original source directory structure is left in place.
+      Empty directories are not saved to `archive-dir`.
+      To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`.
+      When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories.
+      If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.
     type: string
     x-agents:
     - direct
