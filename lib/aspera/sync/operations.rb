@@ -4,7 +4,7 @@
 
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
-require 'aspera/transfer/convert'
+require 'aspera/command_line_converter'
 require 'aspera/command_line_builder'
 require 'aspera/log'
 require 'aspera/assert'
@@ -209,14 +209,14 @@ module Aspera
             end
             if sync_params.key?('instance')
               Aspera.assert_type(sync_params['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(sync_params['instance'], INSTANCE_SCHEMA, Convert)
+              instance_builder = CommandLineBuilder.new(sync_params['instance'], INSTANCE_SCHEMA, CommandLineConverter)
               instance_builder.process_params
               instance_builder.add_env_args(env_args)
             end
             sync_params['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name')){'session must contain at least: name'}
-              session_builder = CommandLineBuilder.new(session_params, SESSION_SCHEMA, Convert)
+              session_builder = CommandLineBuilder.new(session_params, SESSION_SCHEMA, CommandLineConverter)
               session_builder.process_params
               session_builder.add_env_args(env_args)
             end
