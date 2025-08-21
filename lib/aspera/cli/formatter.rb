@@ -412,9 +412,13 @@ module Aspera
       def filter_columns_on_select(data)
         case @options[:select]
         when Proc
-          data.select!{ |i| @options[:select].call(i)}
+          begin
+            data.select!{ |i| @options[:select].call(i)}
+          rescue Exception => e # rubocop:disable Lint/RescueException
+            raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
+          end
         when Hash
-          @options[:select].each{ |k, v| data.select!{ |i| i[k].eql?(v)}}
+          @options[:select].each{ |k, v| data.select!{ |i| i[k]&.eql?(v)}}
         end
       end
 
