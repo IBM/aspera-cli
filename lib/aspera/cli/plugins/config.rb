@@ -944,7 +944,7 @@ module Aspera
             require 'aspera/api/node'
             case options.get_next_command(%i{flush list show})
             when :flush
-              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, name: 'file')
+              return Main.result_value_list(OAuth::Factory.instance.flush_tokens, 'file')
             when :list
               return Main.result_object_list(OAuth::Factory.instance.persisted_tokens)
             when :show
