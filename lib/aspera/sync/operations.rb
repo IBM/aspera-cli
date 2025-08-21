@@ -14,16 +14,16 @@ require 'open3'
 require 'English'
 
 module Aspera
-  module Transfer
+  module Sync
     # builds command line arg for async and execute it
-    module Sync
+    module Operations
       # sync direction
       DIRECTIONS = %i[push pull bidi].freeze
       # default direction for sync
       DEFAULT_DIRECTION = :push
       # JSON for async instance command line options
-      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'instance')
-      SESSION_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'session')
+      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, suffix: '/args_instance', folder: true)
+      SESSION_SCHEMA = CommandLineBuilder.read_schema(__FILE__, suffix: '/args_session', folder: true)
 
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
