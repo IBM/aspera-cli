@@ -4516,9 +4516,27 @@ no cap to the minimum rate. (Default: 0)</td>
 <td> </td>
 <td>Y</td>
 <td>Y</td>
-<td>The relative path to which the files will be moved after the
-transfer at the source side. Available as of
-3.8.0.<br/>(–move-after-transfer={string})</td>
+<td>Move source files to the specified directory after they are
+transferred correctly.<br/>Available as of 3.8.0. Details in ascp
+manual.<br/>Requires write permissions on the source.<br/>If
+<code>src_base</code> is specified, files are moved to
+<code>archive-dir</code>/<code>path-relative-to-srcbase</code>.<br/><code>archive-dir</code>
+must be in the same file system (or cloud storage account) as the source
+files being transferred.<br/><code>archive-dir</code> is subject to the
+same docroot restrictions as source
+files.<br/><code>move_after_transfer</code> and
+<code>remove_after_transfer</code> are mutually exclusive
+options.<br/>After files have been moved to the archive, the original
+source directory structure is left in place. Empty directories are not
+saved to <code>archive-dir</code>. To remove empty source directories
+after a successful move operation, also set
+<code>remove_empty_directories</code> to <code>true</code>. When using
+<code>remove_empty_directories</code>, empty directory removal
+examination starts at the <code>srcbase</code> and proceeds down any
+subdirectories. If no <code>srcbase</code> is used and a file path (as
+opposed to a directory path) is specified, then only the immediate
+parent directory is examined and removed if it is empty following the
+move of the source file.<br/>(–move-after-transfer={string})</td>
 </tr>
 <tr>
 <td>multi_session</td>
@@ -7771,51 +7789,48 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb406-1"><a href
 <span id="cb406-84"><a href="#cb406-84" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show %id:aoc_file_id</span>
 <span id="cb406-85"><a href="#cb406-85" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show /</span>
 <span id="cb406-86"><a href="#cb406-86" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> show testdst/test_file.bin</span>
-<span id="cb406-87"><a href="#cb406-87" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
-<span id="cb406-88"><a href="#cb406-88" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb406-89"><a href="#cb406-89" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
-<span id="cb406-90"><a href="#cb406-90" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
-<span id="cb406-91"><a href="#cb406-91" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_aoc_sync1&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;remote_dir&quot;:&quot;/testdst&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb406-92"><a href="#cb406-92" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /data/local_sync /testdst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;quiet&quot;:false}&#39;</span></span>
-<span id="cb406-93"><a href="#cb406-93" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /data/local_sync /testdst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb406-94"><a href="#cb406-94" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg</span>
-<span id="cb406-95"><a href="#cb406-95" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
-<span id="cb406-96"><a href="#cb406-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> transfer push /testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst test_file.bin</span>
-<span id="cb406-97"><a href="#cb406-97" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/ test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_folder_no_pass</span>
-<span id="cb406-98"><a href="#cb406-98" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc test_file.bin</span>
-<span id="cb406-99"><a href="#cb406-99" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
-<span id="cb406-100"><a href="#cb406-100" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> v3 info</span>
-<span id="cb406-101"><a href="#cb406-101" aria-hidden="true" tabindex="-1"></a><span class="ex">gateway</span> <span class="at">--pid-file</span><span class="op">=</span>pid_aocfxgw @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:12345/aspera/faspex&quot;}&#39;</span> <span class="kw">&amp;</span></span>
-<span id="cb406-102"><a href="#cb406-102" aria-hidden="true" tabindex="-1"></a><span class="ex">org</span> <span class="at">--url</span><span class="op">=</span>my_public_link_recv_from_aoc_user</span>
-<span id="cb406-103"><a href="#cb406-103" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span></span>
-<span id="cb406-104"><a href="#cb406-104" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> browse package_id3 /</span>
-<span id="cb406-105"><a href="#cb406-105" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list</span>
-<span id="cb406-106"><a href="#cb406-106" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;sort&quot;:&quot;-received_at&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false}&#39;</span></span>
-<span id="cb406-107"><a href="#cb406-107" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345</span>
-<span id="cb406-108"><a href="#cb406-108" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
-<span id="cb406-109"><a href="#cb406-109" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive INIT <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;}&#39;</span></span>
-<span id="cb406-110"><a href="#cb406-110" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>.</span>
-<span id="cb406-111"><a href="#cb406-111" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>. / <span class="at">--package-folder</span><span class="op">=</span>name</span>
-<span id="cb406-112"><a href="#cb406-112" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> test_file.bin</span>
-<span id="cb406-113"><a href="#cb406-113" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
-<span id="cb406-114"><a href="#cb406-114" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
-<span id="cb406-115"><a href="#cb406-115" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;]}&#39;</span> test_file.bin</span>
-<span id="cb406-116"><a href="#cb406-116" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> test_file.bin</span>
-<span id="cb406-117"><a href="#cb406-117" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> test_file.bin</span>
-<span id="cb406-118"><a href="#cb406-118" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_public_link_send_use_pass</span>
-<span id="cb406-119"><a href="#cb406-119" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_shared_inbox</span>
-<span id="cb406-120"><a href="#cb406-120" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes list</span>
-<span id="cb406-121"><a href="#cb406-121" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes show %name:my_shared_inbox_name</span>
-<span id="cb406-122"><a href="#cb406-122" aria-hidden="true" tabindex="-1"></a><span class="ex">remind</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
-<span id="cb406-123"><a href="#cb406-123" aria-hidden="true" tabindex="-1"></a><span class="ex">servers</span></span>
-<span id="cb406-124"><a href="#cb406-124" aria-hidden="true" tabindex="-1"></a><span class="ex">tier_restrictions</span></span>
-<span id="cb406-125"><a href="#cb406-125" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> contacts list</span>
-<span id="cb406-126"><a href="#cb406-126" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
-<span id="cb406-127"><a href="#cb406-127" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
-<span id="cb406-128"><a href="#cb406-128" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
-<span id="cb406-129"><a href="#cb406-129" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
-<span id="cb406-130"><a href="#cb406-130" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
-<span id="cb406-131"><a href="#cb406-131" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
+<span id="cb406-87"><a href="#cb406-87" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;}}&#39;</span></span>
+<span id="cb406-88"><a href="#cb406-88" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync admin status /data/local_sync</span>
+<span id="cb406-89"><a href="#cb406-89" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;my_aoc_sync2&quot;,&quot;reset&quot;:true,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;/testdst&quot;}}&#39;</span></span>
+<span id="cb406-90"><a href="#cb406-90" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start pull /data/local_sync /testdst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;quiet&quot;:false,&quot;transport&quot;:{&quot;target_rate&quot;:my_bps}}&#39;</span></span>
+<span id="cb406-91"><a href="#cb406-91" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg</span>
+<span id="cb406-92"><a href="#cb406-92" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> thumbnail my_test_folder/video_file.mpg <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;text&quot;:true,&quot;double&quot;:true}&#39;</span></span>
+<span id="cb406-93"><a href="#cb406-93" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> transfer push /testsrc <span class="at">--to-folder</span><span class="op">=</span>/testdst test_file.bin</span>
+<span id="cb406-94"><a href="#cb406-94" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/ test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_folder_no_pass</span>
+<span id="cb406-95"><a href="#cb406-95" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>/testsrc test_file.bin</span>
+<span id="cb406-96"><a href="#cb406-96" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--workspace</span><span class="op">=</span>my_other_workspace <span class="at">--to-folder</span><span class="op">=</span>my_other_folder test_file.bin <span class="at">--transfer</span><span class="op">=</span>node <span class="at">--transfer-info</span><span class="op">=</span>@json:@stdin:</span>
+<span id="cb406-97"><a href="#cb406-97" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> v3 info</span>
+<span id="cb406-98"><a href="#cb406-98" aria-hidden="true" tabindex="-1"></a><span class="ex">gateway</span> <span class="at">--pid-file</span><span class="op">=</span>pid_aocfxgw @json:<span class="st">&#39;{&quot;url&quot;:&quot;https://localhost:12345/aspera/faspex&quot;}&#39;</span> <span class="kw">&amp;</span></span>
+<span id="cb406-99"><a href="#cb406-99" aria-hidden="true" tabindex="-1"></a><span class="ex">org</span> <span class="at">--url</span><span class="op">=</span>my_public_link_recv_from_aoc_user</span>
+<span id="cb406-100"><a href="#cb406-100" aria-hidden="true" tabindex="-1"></a><span class="ex">organization</span></span>
+<span id="cb406-101"><a href="#cb406-101" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> browse package_id3 /</span>
+<span id="cb406-102"><a href="#cb406-102" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list</span>
+<span id="cb406-103"><a href="#cb406-103" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> list <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;sort&quot;:&quot;-received_at&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false}&#39;</span></span>
+<span id="cb406-104"><a href="#cb406-104" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345</span>
+<span id="cb406-105"><a href="#cb406-105" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive ALL <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--to-folder</span><span class="op">=</span>. <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;,&quot;archived&quot;:false,&quot;received&quot;:true,&quot;has_content&quot;:true,&quot;exclude_dropbox_packages&quot;:false,&quot;include_draft&quot;:false}&#39;</span> <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;target_rate_kbps&quot;:50000}&#39;</span></span>
+<span id="cb406-106"><a href="#cb406-106" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive INIT <span class="at">--once-only</span><span class="op">=</span>yes <span class="at">--query</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;dropbox_name&quot;:&quot;my_shared_inbox_name&quot;}&#39;</span></span>
+<span id="cb406-107"><a href="#cb406-107" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>.</span>
+<span id="cb406-108"><a href="#cb406-108" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> receive package_id3 <span class="at">--to-folder</span><span class="op">=</span>. / <span class="at">--package-folder</span><span class="op">=</span>name</span>
+<span id="cb406-109"><a href="#cb406-109" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:[{&quot;input_type&quot;:&quot;single-text&quot;,&quot;name&quot;:&quot;Project Id&quot;,&quot;values&quot;:[&quot;123&quot;]},{&quot;input_type&quot;:&quot;single-dropdown&quot;,&quot;name&quot;:&quot;Type&quot;,&quot;values&quot;:[&quot;Opt2&quot;]},{&quot;input_type&quot;:&quot;multiple-checkbox&quot;,&quot;name&quot;:&quot;CheckThose&quot;,&quot;values&quot;:[&quot;Check1&quot;,&quot;Check2&quot;]},{&quot;input_type&quot;:&quot;date&quot;,&quot;name&quot;:&quot;Optional Date&quot;,&quot;values&quot;:[&quot;2021-01-13T15:02:00.000Z&quot;]}]}&#39;</span> test_file.bin</span>
+<span id="cb406-110"><a href="#cb406-110" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Project Id&quot;:&quot;456&quot;,&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
+<span id="cb406-111"><a href="#cb406-111" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox <span class="at">--validate-metadata</span><span class="op">=</span>yes @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_meta&quot;],&quot;metadata&quot;:{&quot;Type&quot;:&quot;Opt2&quot;,&quot;CheckThose&quot;:[&quot;Check1&quot;,&quot;Check2&quot;],&quot;Optional Date&quot;:&quot;2021-01-13T15:02:00.000Z&quot;}}&#39;</span> test_file.bin</span>
+<span id="cb406-112"><a href="#cb406-112" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send <span class="at">--workspace</span><span class="op">=</span>my_workspace_shared_inbox @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_shared_inbox_name&quot;]}&#39;</span> test_file.bin</span>
+<span id="cb406-113"><a href="#cb406-113" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_external&quot;]}&#39;</span> <span class="at">--new-user-option</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;package_contact&quot;:true}&#39;</span> test_file.bin</span>
+<span id="cb406-114"><a href="#cb406-114" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;,&quot;recipients&quot;:[&quot;my_email_internal&quot;],&quot;note&quot;:&quot;my note&quot;}&#39;</span> test_file.bin</span>
+<span id="cb406-115"><a href="#cb406-115" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_aoc_user <span class="at">--password</span><span class="op">=</span>my_public_link_send_use_pass</span>
+<span id="cb406-116"><a href="#cb406-116" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> send @json:<span class="st">&#39;{&quot;name&quot;:&quot;$(notdir test) PACKAGE_TITLE_BASE&quot;}&#39;</span> test_file.bin <span class="at">--url</span><span class="op">=</span>my_public_link_send_shared_inbox</span>
+<span id="cb406-117"><a href="#cb406-117" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes list</span>
+<span id="cb406-118"><a href="#cb406-118" aria-hidden="true" tabindex="-1"></a><span class="ex">packages</span> shared_inboxes show %name:my_shared_inbox_name</span>
+<span id="cb406-119"><a href="#cb406-119" aria-hidden="true" tabindex="-1"></a><span class="ex">remind</span> <span class="at">--username</span><span class="op">=</span>my_user_email</span>
+<span id="cb406-120"><a href="#cb406-120" aria-hidden="true" tabindex="-1"></a><span class="ex">servers</span></span>
+<span id="cb406-121"><a href="#cb406-121" aria-hidden="true" tabindex="-1"></a><span class="ex">tier_restrictions</span></span>
+<span id="cb406-122"><a href="#cb406-122" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> contacts list</span>
+<span id="cb406-123"><a href="#cb406-123" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref modify @json:<span class="st">&#39;{&quot;default_language&quot;:&quot;en-us&quot;}&#39;</span></span>
+<span id="cb406-124"><a href="#cb406-124" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> pref show</span>
+<span id="cb406-125"><a href="#cb406-125" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile modify @json:<span class="st">&#39;{&quot;name&quot;:&quot;dummy change&quot;}&#39;</span></span>
+<span id="cb406-126"><a href="#cb406-126" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> profile show</span>
+<span id="cb406-127"><a href="#cb406-127" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces current</span>
+<span id="cb406-128"><a href="#cb406-128" aria-hidden="true" tabindex="-1"></a><span class="ex">user</span> workspaces list</span></code></pre></div>
 <h1 data-number="6" id="plugin-ats-ibm-aspera-transfer-service"><span
 class="header-section-number">6</span> Plugin: <code>ats</code>: IBM
 Aspera Transfer Service</h1>
@@ -7980,20 +7995,22 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb423-1"><a href
 <span id="cb423-15"><a href="#cb423-15" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_inside_folder <span class="at">--logger</span><span class="op">=</span>stdout</span>
 <span id="cb423-16"><a href="#cb423-16" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> my_upload_folder/target_hot</span>
 <span id="cb423-17"><a href="#cb423-17" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> my_upload_folder/200KB.2 my_upload_folder/to.delete</span>
-<span id="cb423-18"><a href="#cb423-18" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;}}&#39;</span></span>
-<span id="cb423-19"><a href="#cb423-19" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status my_srv_sync <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_srv_sync&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;}]}&#39;</span></span>
-<span id="cb423-20"><a href="#cb423-20" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;instance&quot;:{&quot;quiet&quot;:false},&quot;sessions&quot;:[{&quot;name&quot;:&quot;my_srv_sync&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;remote_dir&quot;:&quot;my_inside_folder&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
-<span id="cb423-21"><a href="#cb423-21" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;sync2&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;my_inside_folder&quot;},&quot;quiet&quot;:false}&#39;</span></span>
-<span id="cb423-22"><a href="#cb423-22" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span></span>
-<span id="cb423-23"><a href="#cb423-23" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
-<span id="cb423-24"><a href="#cb423-24" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;test_file.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress-bar</span><span class="op">=</span>yes</span>
-<span id="cb423-25"><a href="#cb423-25" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;filelist.txt&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder</span>
-<span id="cb423-26"><a href="#cb423-26" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-pair-list&quot;,&quot;file_pair_list.txt&quot;]}&#39;</span></span>
-<span id="cb423-27"><a href="#cb423-27" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>transferd</span>
-<span id="cb423-28"><a href="#cb423-28" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;test_file.bin&#39;</span> my_inside_folder/other_name_2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
-<span id="cb423-29"><a href="#cb423-29" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;test_file.bin&quot;,&quot;my_inside_folder/other_name_3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
-<span id="cb423-30"><a href="#cb423-30" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:&quot;-1&quot;,&quot;exclude_older_than&quot;:&quot;-10000&quot;,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
-<span id="cb423-31"><a href="#cb423-31" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--remove-after-transfer&quot;,&quot;--remove-empty-directories&quot;,&quot;--exclude-newer-than=-8&quot;,&quot;--src-base&quot;,&quot;source_hot&quot;]}&#39;</span> source_hot</span></code></pre></div>
+<span id="cb423-18"><a href="#cb423-18" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;serv_sync_pull_conf&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;}}&#39;</span></span>
+<span id="cb423-19"><a href="#cb423-19" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> admin status <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;serv_sync_pull_args&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;}]}&#39;</span></span>
+<span id="cb423-20"><a href="#cb423-20" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> db counters <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;serv_sync_pull_args&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;}]}&#39;</span></span>
+<span id="cb423-21"><a href="#cb423-21" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> db meta <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;sessions&quot;:[{&quot;name&quot;:&quot;serv_sync_pull_args&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;}]}&#39;</span></span>
+<span id="cb423-22"><a href="#cb423-22" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;instance&quot;:{&quot;quiet&quot;:false},&quot;sessions&quot;:[{&quot;name&quot;:&quot;serv_sync_pull_args&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;remote_dir&quot;:&quot;my_inside_folder&quot;,&quot;local_dir&quot;:&quot;/data/local_sync&quot;,&quot;target_rate&quot;:&quot;my_bps&quot;,&quot;reset&quot;:true}]}&#39;</span></span>
+<span id="cb423-23"><a href="#cb423-23" aria-hidden="true" tabindex="-1"></a><span class="fu">sync</span> start <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;name&quot;:&quot;serv_sync_pull_conf&quot;,&quot;direction&quot;:&quot;pull&quot;,&quot;local&quot;:{&quot;path&quot;:&quot;/data/local_sync&quot;},&quot;remote&quot;:{&quot;path&quot;:&quot;my_inside_folder&quot;},&quot;quiet&quot;:false}&#39;</span></span>
+<span id="cb423-24"><a href="#cb423-24" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span></span>
+<span id="cb423-25"><a href="#cb423-25" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;faux:///test1?100m&#39;</span> <span class="st">&#39;faux:///test2?100m&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;target_rate_kbps&quot;:1000000,&quot;resume_policy&quot;:&quot;none&quot;,&quot;precalculate_job_size&quot;:true}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
+<span id="cb423-26"><a href="#cb423-26" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="st">&#39;test_file.bin&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;multi_session&quot;:3,&quot;multi_session_threshold&quot;:1,&quot;resume_policy&quot;:&quot;none&quot;,&quot;target_rate_kbps&quot;:100000}&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;spawn_delay_sec&quot;:2.5,&quot;multi_incr_udp&quot;:false}&#39;</span> <span class="at">--progress-bar</span><span class="op">=</span>yes</span>
+<span id="cb423-27"><a href="#cb423-27" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-list&quot;,&quot;filelist.txt&quot;]}&#39;</span> <span class="at">--to-folder</span><span class="op">=</span>my_inside_folder</span>
+<span id="cb423-28"><a href="#cb423-28" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--file-pair-list&quot;,&quot;file_pair_list.txt&quot;]}&#39;</span></span>
+<span id="cb423-29"><a href="#cb423-29" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--sources</span><span class="op">=</span>@ts <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;paths&quot;:[{&quot;source&quot;:&quot;test_file.bin&quot;,&quot;destination&quot;:&quot;my_inside_folder/other_name_4&quot;}]}&#39;</span> <span class="at">--transfer</span><span class="op">=</span>transferd</span>
+<span id="cb423-30"><a href="#cb423-30" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="st">&#39;test_file.bin&#39;</span> my_inside_folder/other_name_2 <span class="at">--notify-to</span><span class="op">=</span>my_email_external <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;-l&quot;,&quot;100m&quot;]}&#39;</span></span>
+<span id="cb423-31"><a href="#cb423-31" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair <span class="at">--sources</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;test_file.bin&quot;,&quot;my_inside_folder/other_name_3&quot;]&#39;</span> <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span> <span class="at">--progress</span><span class="op">=</span>no</span>
+<span id="cb423-32"><a href="#cb423-32" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--src-type</span><span class="op">=</span>pair test_file.bin my_upload_folder/other_name_5 <span class="at">--ts</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;cipher&quot;:&quot;aes-192-gcm&quot;,&quot;content_protection&quot;:&quot;encrypt&quot;,&quot;content_protection_password&quot;:&quot;my_secret_here&quot;,&quot;cookie&quot;:&quot;biscuit&quot;,&quot;create_dir&quot;:true,&quot;delete_before_transfer&quot;:false,&quot;delete_source&quot;:false,&quot;exclude_newer_than&quot;:&quot;-1&quot;,&quot;exclude_older_than&quot;:&quot;-10000&quot;,&quot;fasp_port&quot;:33001,&quot;http_fallback&quot;:false,&quot;multi_session&quot;:0,&quot;overwrite&quot;:&quot;diff+older&quot;,&quot;precalculate_job_size&quot;:true,&quot;preserve_access_time&quot;:true,&quot;preserve_creation_time&quot;:true,&quot;rate_policy&quot;:&quot;fair&quot;,&quot;resume_policy&quot;:&quot;sparse_csum&quot;,&quot;symlink_policy&quot;:&quot;follow&quot;}&#39;</span></span>
+<span id="cb423-33"><a href="#cb423-33" aria-hidden="true" tabindex="-1"></a><span class="ex">upload</span> <span class="at">--to-folder</span><span class="op">=</span>my_upload_folder/target_hot <span class="at">--lock-port</span><span class="op">=</span>12345 <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--remove-after-transfer&quot;,&quot;--remove-empty-directories&quot;,&quot;--exclude-newer-than=-8&quot;,&quot;--src-base&quot;,&quot;source_hot&quot;]}&#39;</span> source_hot</span></code></pre></div>
 <h2 data-number="7.2"
 id="authentication-on-server-with-ssh-session"><span
 class="header-section-number">7.2</span> Authentication on Server with
@@ -8274,13 +8291,17 @@ validation can be done.</p>
 class="header-section-number">8.5</span> Sync</h2>
 <p>There are three sync types of operations:</p>
 <ul>
-<li><code>sync</code>: perform a local sync, by executing
-<code>async</code> locally</li>
-<li><code>async</code>: calls legacy <code>async</code> API on node :
-<code>/async</code></li>
-<li><code>ssync</code> : calls newer <code>async</code> API on node :
-<code>/asyncs</code></li>
+<li><code>sync</code>: Perform a local sync, by executing
+<code>async</code> locally.</li>
+<li><code>async</code>: Calls the legacy <code>async</code> API on node
+: <code>/async</code> : get status on sync operation on server side,
+like Aspera Console.</li>
+<li><code>ssync</code> : Calls the newer <code>async</code> API on node
+: <code>/asyncs</code> : it can start a sync operation on the server
+side, and monitor only those.</li>
 </ul>
+<p>For details on the <code>sync</code> action, refer to <a
+href="#ibm-aspera-sync">IBM Aspera Sync</a>.</p>
 <h2 data-number="8.6" id="fasp-stream"><span
 class="header-section-number">8.6</span> FASP Stream</h2>
 <p>It is possible to start a faspstream session using the Node API:</p>
@@ -9806,8 +9827,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb515-1"><a href
 <span id="cb515-16"><a href="#cb515-16" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin</span>
 <span id="cb515-17"><a href="#cb515-17" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> download <span class="at">--to-folder</span><span class="op">=</span>. my_share1/test_file.bin my_share1/test_file.bin <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;https://tst.example.com/path@&quot;}&#39;</span></span>
 <span id="cb515-18"><a href="#cb515-18" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> mkdir my_share1/new_folder</span>
-<span id="cb515-19"><a href="#cb515-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_sync /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;quiet&quot;:false}&#39;</span></span>
-<span id="cb515-20"><a href="#cb515-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_sync /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true}&#39;</span></span>
+<span id="cb515-19"><a href="#cb515-19" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_sync /london-sh1/synctst</span>
+<span id="cb515-20"><a href="#cb515-20" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> sync start push /data/local_sync /london-sh1/synctst <span class="at">--sync-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;reset&quot;:true,&quot;quiet&quot;:false,&quot;transport&quot;:{&quot;target_rate&quot;:my_bps}}&#39;</span></span>
 <span id="cb515-21"><a href="#cb515-21" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 <span class="st">&#39;faux:///testfile?1m&#39;</span> <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
 <span id="cb515-22"><a href="#cb515-22" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>https://shares.share1 sendfolder <span class="at">--transfer</span><span class="op">=</span>httpgw <span class="at">--transfer-info</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;my_example.com/path@&quot;,&quot;synchronous&quot;:true,&quot;api_version&quot;:&quot;v1&quot;,&quot;upload_chunk_size&quot;:100000}&#39;</span></span>
 <span id="cb515-23"><a href="#cb515-23" aria-hidden="true" tabindex="-1"></a><span class="ex">files</span> upload <span class="at">--to-folder</span><span class="op">=</span>my_share1 test_file.bin</span>
@@ -10366,9 +10387,18 @@ class="header-section-number">19</span> IBM Aspera Sync</h1>
 following plugins:</p>
 <ul>
 <li><code>server sync</code></li>
-<li><code>node sync</code></li>
+<li><code>node sync</code> (use token)</li>
 <li><code>aoc files sync</code> (uses node)</li>
 <li><code>shares files sync</code> (uses node)</li>
+</ul>
+<p>The <code>sync</code> command performs the following actions:</p>
+<ul>
+<li>Start a local Sync session by executing the <code>async</code>
+command with the appropriate parameters.</li>
+<li>Get local Sync session information using the <code>asyncadmin</code>
+command, if available.</li>
+<li>Get local Sync session information accessing directly the Async snap
+database.</li>
 </ul>
 <p>One advantage of using <code>ascli</code> over the <code>async</code>
 command line is the possibility to use a configuration file, using
@@ -10382,23 +10412,29 @@ using transfer spec parameters (e.g. including token).</p>
 <code>async</code> executable (and <code>asyncadmin</code>). The Aspera
 Transfer Daemon 1.3+ includes this.</p>
 </blockquote>
-<p><code>sync</code> supports 0 or 3 arguments. If 3 arguments are
-provided, they are applied to the first (and only) session and mapped to
-(in that order):</p>
+<p><code>sync start</code> supports 0, 3 or 4 positional arguments. If 3
+or 4 arguments are provided, they are applied to the first (and only)
+session and mapped to (in that order):</p>
 <ul>
-<li><code>direction</code></li>
-<li><code>local.path</code></li>
-<li><code>remote.path</code></li>
+<li>direction</li>
+<li>local folder</li>
+<li>remote folder</li>
 </ul>
 <p>Additional options can be provided with option
-<code>sync_info</code>, for which two syntax are possible, as
-follows.</p>
-<h2 data-number="19.1" id="async-api-and-conf-format"><span
-class="header-section-number">19.1</span> <code>async</code> API and
+<code>sync_info</code>, for which two syntax are possible, as described
+below.</p>
+<p><code>sync admin</code> supports 0, 1 or 2 positional arguments. If 1
+or 2 arguments are provided they are mapped to:</p>
+<ul>
+<li>local folder</li>
+<li>name</li>
+</ul>
+<h2 data-number="19.1" id="sync_info-conf-format"><span
+class="header-section-number">19.1</span> <code>sync_info</code>:
 <code>conf</code> format</h2>
-<p>It is the same payload as specified on the option <code>--conf</code>
-of <code>async</code> or in Node API <code>/asyncs</code>. This is the
-<strong>preferred</strong> syntax and allows a single session
+<p>It is the same payload as specified on the <code>async</code> option
+<code>--conf</code> or in Node API <code>/asyncs</code>. This is the
+<strong>preferred</strong> syntax and only allows a single session
 definition.</p>
 <blockquote>
 <p><strong>Note:</strong> By default, no progress, nor error messages is
@@ -10409,20 +10445,26 @@ provided on terminal. To activate messages, set option
 <p>Documentation on Async Node API can be found on <a
 href="https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22">IBM
 Developer Portal</a>.</p>
-<p>If 3 arguments are provided they are mapped to:</p>
+<p>For sync, if 3 or 4 arguments are provided they are mapped to:</p>
 <ul>
 <li><code>direction</code></li>
-<li><code>local.path</code></li>
-<li><code>remote.path</code></li>
+<li><code>local</code>-&gt;<code>path</code></li>
+<li><code>remote</code>-&gt;<code>path</code></li>
 </ul>
-<h2 data-number="19.2" id="async-options-mapping"><span
-class="header-section-number">19.2</span> <code>async</code> options
-mapping</h2>
+<p>For admin, if 1 or 2 arguments are provided they are mapped to:</p>
+<ul>
+<li><code>local</code>-&gt;<code>path</code></li>
+<li><code>name</code></li>
+</ul>
+<h2 data-number="19.2" id="sync_info-args-format"><span
+class="header-section-number">19.2</span> <code>sync_info</code>:
+<code>args</code> format</h2>
 <p><code>ascli</code> defines a JSON equivalent to regular
 <code>async</code>options. It is based on a JSON representation of
-<code>async</code> command line options. It allows definition of
-multiple sync sessions in a single command, although usually only one
-sync session is defined.</p>
+<code>async</code> command line options. Technically, it allows
+definition of multiple sync sessions in a single command, but
+<code>ascli</code> only accepts a single session for consistency with
+the previous syntax.</p>
 <p>This is the mode selection if there are either keys
 <code>sessions</code> or <code>instance</code> in option
 <code>sync_info</code>.</p>
@@ -10430,6 +10472,17 @@ sync session is defined.</p>
 <p><strong>Note:</strong> Progress and error messages are provided on
 terminal like regular command line invocation of <code>async</code>.</p>
 </blockquote>
+<p>For sync, if 3 or 4 arguments are provided they are mapped to:</p>
+<ul>
+<li><code>direction</code></li>
+<li><code>local_dir</code></li>
+<li><code>remote_dir</code></li>
+</ul>
+<p>For admin, if 1 or 2 arguments are provided they are mapped to:</p>
+<ul>
+<li><code>local_dir</code></li>
+<li><code>name</code></li>
+</ul>
 <h1 data-number="20" id="hot-folder"><span
 class="header-section-number">20</span> Hot folder</h1>
 <h2 data-number="20.1" id="requirements"><span

@@ -6996,7 +6996,7 @@ For admin, if 1 or 2 arguments are provided they are mapped to:
 
 <%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
-Technically it allows definition of multiple sync sessions in a single command, but <%=tool%> only accepts a single session for consistency with the previous syntax.
+Technically, it allows definition of multiple sync sessions in a single command, but <%=tool%> only accepts a single session for consistency with the previous syntax.
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 

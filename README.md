@@ -3396,7 +3396,7 @@ ascli config ascp schema transferd --format=jsonpp
 | lock_target_rate_kbps | boolean | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | If true, lock the target transfer rate to the default value set for target_rate_kbps.<br/>If false, users can adjust the transfer rate up to the value set for target_rate_cap_kbps. |
 | min_rate_cap_kbps | integer | &nbsp; | Y | &nbsp; | &nbsp; | &nbsp; | Y | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0) |
 | min_rate_kbps | integer | Y | Y | Y | Y | Y | Y | Set the minimum transfer rate in kilobits per second.<br/>(-m {integer}) |
-| move_after_transfer | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | The relative path to which the files will be moved after the transfer at the source side. Available as of 3.8.0.<br/>(--move-after-transfer={string}) |
+| move_after_transfer | string | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Move source files to the specified directory after they are transferred correctly.<br/>Available as of 3.8.0. Details in ascp manual.<br/>Requires write permissions on the source.<br/>If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.<br/>`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.<br/>`archive-dir` is subject to the same docroot restrictions as source files.<br/>`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.<br/>After files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.<br/>(--move-after-transfer={string}) |
 | multi_session | integer | Y | Y | Y | Y | Y | Y | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with resume_policy=none.<br/>(&lt;special&gt;) |
 | multi_session_threshold | integer | Y | &nbsp; | &nbsp; | &nbsp; | Y | Y | Split files across multiple ascp sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(--multi-session-threshold={integer}) |
 | obfuscate_file_names | boolean | &nbsp; | &nbsp; | &nbsp; | Y | &nbsp; | &nbsp; | HTTP Gateway obfuscates file names when set to true. |
@@ -5690,13 +5690,10 @@ files short_link /testdst public create
 files show %id:aoc_file_id
 files show /
 files show testdst/test_file.bin
-files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
-files sync admin status --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-files sync start --sync-info=@json:'{"name":"my_aoc_sync1","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"/data/local_sync"}}'
+files sync admin status /data/local_sync
 files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
-files sync start --sync-info=@json:'{"sessions":[{"name":"my_aoc_sync1","direction":"pull","local_dir":"/data/local_sync","remote_dir":"/testdst","reset":true}]}'
-files sync start pull /data/local_sync /testdst --sync-info=@json:'{"reset":true,"quiet":false}'
-files sync start pull /data/local_sync /testdst --sync-info=@json:'{"sessions":[{"reset":true}]}'
+files sync start pull /data/local_sync /testdst --sync-info=@json:'{"reset":true,"quiet":false,"transport":{"target_rate":my_bps}}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
 files transfer push /testsrc --to-folder=/testdst test_file.bin
@@ -5920,11 +5917,12 @@ md5sum my_inside_folder/test_file.bin
 mkdir my_inside_folder --logger=stdout
 mkdir my_upload_folder/target_hot
 mv my_upload_folder/200KB.2 my_upload_folder/to.delete
-sync admin status --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"}}'
-sync admin status --sync-info=@json:'{"name":"sync2"}'
-sync admin status my_srv_sync --sync-info=@json:'{"sessions":[{"name":"my_srv_sync","local_dir":"/data/local_sync"}]}'
-sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"my_srv_sync","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","reset":true}]}'
-sync start --sync-info=@json:'{"name":"sync2","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"reset":true,"quiet":false}'
+sync admin status --sync-info=@json:'{"name":"serv_sync_pull_conf","local":{"path":"/data/local_sync"}}'
+sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
+sync db counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
+sync db meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"/data/local_sync"}]}'
+sync start --sync-info=@json:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"my_inside_folder","local_dir":"/data/local_sync","target_rate":"my_bps","reset":true}]}'
+sync start --sync-info=@json:'{"name":"serv_sync_pull_conf","direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"my_inside_folder"},"quiet":false}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}'
 upload 'faux:///test1?100m' 'faux:///test2?100m' --to-folder=/Upload --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}' --transfer-info=@json:'{"quiet":false}' --progress=no
 upload 'test_file.bin' --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer-info=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
@@ -6188,9 +6186,11 @@ By providing the `validator` option, offline transfer validation can be done.
 
 There are three sync types of operations:
 
-- `sync`: perform a local sync, by executing `async` locally
-- `async`: calls legacy `async` API on node : `/async`
-- `ssync` : calls newer `async` API on node : `/asyncs`
+- `sync`: Perform a local sync, by executing `async` locally.
+- `async`: Calls the legacy `async` API on node : `/async` : get status on sync operation on server side, like Aspera Console.
+- `ssync` : Calls the newer `async` API on node : `/asyncs` : it can start a sync operation on the server side, and monitor only those.
+
+For details on the `sync` action, refer to [IBM Aspera Sync](#ibm-aspera-sync).
 
 ### FASP Stream
 
@@ -7409,8 +7409,8 @@ files delete my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin
 files download --to-folder=. my_share1/test_file.bin my_share1/test_file.bin --transfer=httpgw --transfer-info=@json:'{"url":"https://tst.example.com/path@"}'
 files mkdir my_share1/new_folder
-files sync start push /data/local_syncsynctst /london-sh1/synctst --sync-info=@json:'{"quiet":false}'
-files sync start push /data/local_syncsynctst /london-sh1/synctst --sync-info=@json:'{"reset":true}'
+files sync start push /data/local_sync /london-sh1/synctst
+files sync start push /data/local_sync /london-sh1/synctst --sync-info=@json:'{"reset":true,"quiet":false,"transport":{"target_rate":my_bps}}'
 files upload --to-folder=https://shares.share1 'faux:///testfile?1m' --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=https://shares.share1 sendfolder --transfer=httpgw --transfer-info=@json:'{"url":"my_example.com/path@","synchronous":true,"api_version":"v1","upload_chunk_size":100000}'
 files upload --to-folder=my_share1 test_file.bin
@@ -7942,9 +7942,15 @@ trevents --once-only=yes --skip-types=office --log-level=info
 An interface for the `async` utility is provided in the following plugins:
 
 - `server sync`
-- `node sync`
+- `node sync` (use token)
 - `aoc files sync` (uses node)
 - `shares files sync` (uses node)
+
+The `sync` command performs the following actions:
+
+- Start a local Sync session by executing the `async` command with the appropriate parameters.
+- Get local Sync session information using the `asyncadmin` command, if available.
+- Get local Sync session information accessing directly the Async snap database.
 
 One advantage of using `ascli` over the `async` command line is the possibility to use a configuration file, using standard options of `ascli`.
 Moreover, `ascli` supports sync with application requiring token-based authorization.
@@ -7953,39 +7959,62 @@ Some `sync` parameters are filled by the related plugin using transfer spec para
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer Daemon 1.3+ includes this.
 
-`sync` supports 0 or 3 arguments.
-If 3 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
+`sync start` supports 0, 3 or 4 positional arguments.
+If 3 or 4 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
 
-- `direction`
-- `local.path`
-- `remote.path`
+- direction
+- local folder
+- remote folder
 
-Additional options can be provided with option `sync_info`, for which two syntax are possible, as follows.
+Additional options can be provided with option `sync_info`, for which two syntax are possible, as described below.
 
-### `async` API and `conf` format
+`sync admin` supports 0, 1 or 2 positional arguments.
+If 1 or 2 arguments are provided they are mapped to:
 
-It is the same payload as specified on the option `--conf` of `async` or in Node API `/asyncs`.
-This is the **preferred** syntax and allows a single session definition.
+- local folder
+- name
 
-> **Note:** By default, no progress, nor error messages is provided on terminal. To activate messages, set option `sync_info` parameter `quiet` to `false`.
+### `sync_info`: `conf` format
+
+It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
+This is the **preferred** syntax and only allows a single session definition.
+
+> **Note:** By default, no progress, nor error messages is provided on terminal.
+To activate messages, set option `sync_info` parameter `quiet` to `false`.
 
 Documentation on Async Node API can be found on [IBM Developer Portal](https://developer.ibm.com/apis/catalog?search=%22aspera%20sync%20api%22).
 
-If 3 arguments are provided they are mapped to:
+For sync, if 3 or 4 arguments are provided they are mapped to:
 
 - `direction`
-- `local.path`
-- `remote.path`
+- `local`->`path`
+- `remote`->`path`
 
-### `async` options mapping
+For admin, if 1 or 2 arguments are provided they are mapped to:
+
+- `local`->`path`
+- `name`
+
+### `sync_info`: `args` format
 
 `ascli` defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
-It allows definition of multiple sync sessions in a single command, although usually only one sync session is defined.
+Technically, it allows definition of multiple sync sessions in a single command, but `ascli` only accepts a single session for consistency with the previous syntax.
 
 This is the mode selection if there are either keys `sessions` or `instance` in option `sync_info`.
 
 > **Note:** Progress and error messages are provided on terminal like regular command line invocation of `async`.
+
+For sync, if 3 or 4 arguments are provided they are mapped to:
+
+- `direction`
+- `local_dir`
+- `remote_dir`
+
+For admin, if 1 or 2 arguments are provided they are mapped to:
+
+- `local_dir`
+- `name`
 
 ## Hot folder
 
