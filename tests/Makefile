@@ -92,7 +92,7 @@ END_ERR_SHOW=;then echo "No error: problem";exit 1;else echo "Test ok";fi
 END_ERR_HIDE=>/dev/null 2>&1$(END_ERR_SHOW)
 # enclose tests that fail, but should not
 BEG_FAI=if 
-END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";else echo "Test known to fail";fi
+END_FAI=>/dev/null 2>&1;then echo "TODO: test worked, restore test?";exit 1;else echo "Test known to fail";fi
 # enclose tests whose status is ignored, mainly optional cleanups, for restarts
 BEG_IGN=
 END_IGN=>/dev/null 2>&1 || true
