@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'aspera/sync/operations'
-require 'aspera/sync/database'
 require 'aspera/assert'
 
 module Aspera
@@ -51,6 +50,7 @@ module Aspera
           end
         when :db
           command2 = options.get_next_command(%i[meta counters])
+          require 'aspera/sync/database'
           case command2
           when :meta, :counters
             return Main.result_single_object(Sync::Database.new(Sync::Operations.session_db_file(Sync::Operations.validated_admin_info(*sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).send(command2))
