@@ -126,13 +126,25 @@ Then tell where this file is located:
 export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
 ```
 
-This project uses a `Makefile` for tests:
+This project uses a `Makefile` for tests, in main folder:
 
 ```bash
 make test
 ```
 
 When new commands are added to the CLI, new tests shall be added to the test suite in `tests/Makefile`.
+
+One can also go to the `tests` folder:
+
+```bash
+cd tests
+make
+make full
+make list
+make torc
+make skip_torc
+make skip T=orch_wizard
+```
 
 ### Special tests
 
