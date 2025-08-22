@@ -321,8 +321,8 @@ use_ruby(){
         brew list|grep ruby
         return 1
     fi
-    export PATH="$prefix/bin:$PATH"
-    export PATH="$(gem env gemdir)/bin:$PATH"
+    PATH="$prefix/bin:$(echo "$PATH" | tr ':' '\n' | grep -v '/ruby' | paste -sd ':' -)"
+    PATH="$(gem env gemdir)/bin:$PATH"
     export LDFLAGS="-L$prefix/lib"
     export CPPFLAGS="-I$prefix/include"
     export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
@@ -7358,7 +7358,7 @@ Workaround on server side: Either remove the fingerprint from `aspera.conf`, or 
 
 References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
-### Error "can't find header files for ruby"
+### Error: "can't find header files for ruby"
 
 Some Ruby gems dependencies require compilation of native parts (C).
 This also requires Ruby header files.
@@ -7393,3 +7393,8 @@ Add the following options:
 ```json
 --ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
 ```
+
+### Error: "SSL_read: unexpected eof while reading"
+
+Newer OpenSSL library expects a clean SSL close.
+To deactivate this error, set env var `ASCLI_IGNORE_UNEXPECTED_EOF` to `true`.
