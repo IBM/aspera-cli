@@ -271,7 +271,7 @@ module Aspera
     def open_uri(the_url)
       case @url_method
       when :graphical
-        self.class.open_uri_graphical(the_url)
+        open_uri_graphical(the_url)
       when :text
         case the_url.to_s
         when /^http/
