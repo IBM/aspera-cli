@@ -378,13 +378,33 @@ module Aspera
           # Rest.io_http_session(http_session).debug_output = Log.log
           http_session.verify_mode = SELF_SIGNED_CERT if http_session.use_ssl? && ignore_cert?(http_session.address, http_session.port)
           http_session.cert_store = @certificate_store if @certificate_store
-          Log.log.debug{"using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
+          Log.log.debug{"Using cert store #{http_session.cert_store} (#{@certificate_store})"} unless http_session.cert_store.nil?
+          # http_session.ssl_context.options |= OpenSSL::SSL::OP_IGNORE_UNEXPECTED_EOF
+          # Log.log.error{">>>#{http_session.instance_variable_get(:@ssl_context).class}"}
+          # http_session.ssl_options = OpenSSL::SSL::OP_IGNORE_UNEXPECTED_EOF
           @option_http_options.each do |k, v|
             method = "#{k}=".to_sym
             # check if accessor is a method of Net::HTTP
             # continue_timeout= read_timeout= write_timeout=
             if http_session.respond_to?(method)
               http_session.send(method, v)
+            elsif k.eql?('ssl_options')
+              # NOTE: here is a hack that allows setting SSLContext options
+              Aspera.assert_type(v, Array){'ssl_options'}
+              # more dynamic method, but more complex:
+              # Net::HTTP::SSL_ATTRIBUTES.push(:options) unless Net::HTTP::SSL_ATTRIBUTES.include?(:options)
+              # Net::HTTP::SSL_IVNAMES.push(:@options) unless Net::HTTP::SSL_IVNAMES.include?(:@options)
+              # Start with default options
+              ssl_options = OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options]
+              v.each do |opt|
+                if opt.start_with?('-')
+                  ssl_options &= ~OpenSSL::SSL.const_get("OP_#{opt[1..].upcase}")
+                else
+                  ssl_options |= OpenSSL::SSL.const_get("OP_#{opt.upcase}")
+                end
+              end
+              # http_session.instance_variable_set(:@options, ssl_options)
+              OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options] = ssl_options
             else
               Log.log.error{"no such HTTP session attribute: #{k}"}
             end
