@@ -4,6 +4,7 @@
 
   * New Features:
     * `sync`: Added operations on sync database with command: `db`.
+    * `http_options`: New field `ssl_options` allows setting openssl options.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`, `desktop`: Fixed discrepancies in transfer spec resume policies.

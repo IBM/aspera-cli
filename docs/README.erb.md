@@ -2604,19 +2604,20 @@ To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type | Default         | Handler   |
-|---------------------------|------|-----------------|-----------|
-| `read_timeout`            | int  | `60`            | Ruby      |
-| `write_timeout`           | int  | `60`            | Ruby      |
-| `open_timeout`            | int  | `60`            | Ruby      |
-| `keep_alive_timeout`      | int  | `2`             | Ruby      |
-| `user_agent`              | int  | <%=tool%>       | <%=tool%> |
-| `download_partial_suffix` | int  | `.http_partial` | <%=tool%> |
-| `retry_on_error`          | bool | `false`         | <%=tool%> |
-| `retry_on_timeout`        | bool | `true`          | <%=tool%> |
-| `retry_on_unavailable`    | bool | `true`          | <%=tool%> |
-| `retry_max`               | int  | `1`             | <%=tool%> |
-| `retry_sleep`             | int  | `4`             | <%=tool%> |
+| Parameter                 | Type      | Default         | Handler   |
+|---------------------------|-----------|-----------------|-----------|
+| `read_timeout`            | `Integer` | `60`            | Ruby      |
+| `write_timeout`           | `Integer` | `60`            | Ruby      |
+| `open_timeout`            | `Integer` | `60`            | Ruby      |
+| `keep_alive_timeout`      | `Integer` | `2`             | Ruby      |
+| `ssl_options`             | `Array`   | See below       | Ruby      |
+| `user_agent`              | `Integer` | <%=tool%>       | <%=tool%> |
+| `download_partial_suffix` | `Integer` | `.http_partial` | <%=tool%> |
+| `retry_on_error`          | `Bool`    | `false`         | <%=tool%> |
+| `retry_on_timeout`        | `Bool`    | `true`          | <%=tool%> |
+| `retry_on_unavailable`    | `Bool`    | `true`          | <%=tool%> |
+| `retry_max`               | `Integer` | `1`             | <%=tool%> |
+| `retry_sleep`             | `Integer` | `4`             | <%=tool%> |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -2628,6 +2629,20 @@ Example:
 
 ```bash
 <%=cmd%> aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
+```
+
+`ssl_options` corresponds to a list of options as listed in `SSL_CTX_set_options`.
+The default value is the one of Ruby as specified in `openssl/ssl.rb`.
+Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`.
+If the name appears in the list, the option is set.
+If the name appears in the list prefixed with a hyphen (`-`), the option is unset.
+For example to enable option `SSL_OP_CIPHER_SERVER_PREFERENCE`, add it to the list as `CIPHER_SERVER_PREFERENCE`.
+To disable option `SSL_OP_SAFARI_ECDHE_ECDSA_BUG`, add it as `-SAFARI_ECDHE_ECDSA_BUG`.
+
+Example:
+
+```json
+{"ssl_options":["CIPHER_SERVER_PREFERENCE","-SAFARI_ECDHE_ECDSA_BUG"]}
 ```
 
 ### Proxy
@@ -7397,4 +7412,8 @@ Add the following options:
 ### Error: "SSL_read: unexpected eof while reading"
 
 Newer OpenSSL library expects a clean SSL close.
-To deactivate this error, set env var `ASCLI_IGNORE_UNEXPECTED_EOF` to `true`.
+To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options` in option `http_options`.
+
+```json
+--http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
+```
