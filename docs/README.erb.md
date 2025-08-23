@@ -2631,9 +2631,9 @@ Example:
 <%=cmd%> aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
 ```
 
-`ssl_options` corresponds to a list of options as listed in `SSL_CTX_set_options`.
-The default value is the one of Ruby as specified in `openssl/ssl.rb`.
-Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`.
+`ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
+The default initial value is the default of Ruby as specified in `openssl/ssl.rb`.
+Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`, or an `Integer` (e.g. `0` resets to no option).
 If the name appears in the list, the option is set.
 If the name appears in the list prefixed with a hyphen (`-`), the option is unset.
 For example to enable option `SSL_OP_CIPHER_SERVER_PREFERENCE`, add it to the list as `CIPHER_SERVER_PREFERENCE`.
