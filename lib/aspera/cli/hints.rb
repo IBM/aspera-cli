@@ -82,6 +82,15 @@ module Aspera
             'If using JRuby, refer to aspera-cli documentation.',
             'Look for "unsupported algorithm".'
           ]
+        },
+        {
+          exception:   OpenSSL::SSL::SSLError,
+          match:       /unexpected eof while reading/,
+          remediation: [
+            'Look at parameter ssl_options in http_options.',
+            'Refer to the manual for more information.',
+            %q{Try: --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'}
+          ]
         }
       ]
       private_constant :ERROR_HINTS
