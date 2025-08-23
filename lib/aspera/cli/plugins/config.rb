@@ -397,10 +397,17 @@ module Aspera
               # Start with default options
               ssl_options = OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options]
               v.each do |opt|
-                if opt.start_with?('-')
-                  ssl_options &= ~OpenSSL::SSL.const_get("OP_#{opt[1..].upcase}")
+                case opt
+                when Integer
+                  ssl_options = opt
+                when String
+                  if opt.start_with?('-')
+                    ssl_options &= ~OpenSSL::SSL.const_get("OP_#{opt[1..].upcase}")
+                  else
+                    ssl_options |= OpenSSL::SSL.const_get("OP_#{opt.upcase}")
+                  end
                 else
-                  ssl_options |= OpenSSL::SSL.const_get("OP_#{opt.upcase}")
+                  Aspera.error_unexpected_value(opt.class.name){'Expected String or Integer in ssl_options'}
                 end
               end
               # http_session.instance_variable_set(:@options, ssl_options)
