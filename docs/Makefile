@@ -50,8 +50,11 @@ $(MANUAL_HTML): $(DIR_TOP)README.md
 #.PHONY: $(DIR_TOP)README.md
 DOC_FILES=$(DIR_DOC)README.erb.md $(CLI_PATH) $(DIR_BIN)asession $(DIR_TST)Makefile $(GEMSPEC) $(DIR_TOP)Gemfile
 $(DIR_TOP)README.md: $(DOC_FILES) $(DIR_DOC)doc_tools.rb $(DIR_LIB)aspera/cli/info.rb $(DIR_LIB)aspera/cli/version.rb $(DIR_LIB)aspera/cli/manager.rb $(DIR_LIB)aspera/transfer/spec.schema.yaml $(GEMSPEC)
-	$(DOC_TOOL) generate_doc $(DOC_FILES) > $@
-	! grep '^#.*: [a-z]' README.erb.md
+	@if grep '^#[^:]*: [a-z]' README.erb.md;then \
+	  echo "Titles must have upper case after colon in line above."; \
+	  exit 1; \
+	fi
+	$(DOC_TOOL) generate_doc $@ $(DOC_FILES)
 
 clean_doc::
 	rm -f $(MANUAL_PDF) $(MANUAL_HTML) $(DIR_TOP)README.md

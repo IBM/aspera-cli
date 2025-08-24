@@ -105,9 +105,9 @@ module Aspera
           return list.map{ |i| "#{FIELDS_LESS}#{i}"}.unshift(SpecialValues::ALL)
         end
 
-        def tick(yes)
+        def tick(yes, color: true)
           result =
-            if Environment.instance.terminal_supports_unicode?
+            if Environment.terminal_supports_unicode?
               if yes
                 "\u2713"
               else
@@ -118,6 +118,7 @@ module Aspera
             else
               ' '
             end
+          return result if !color
           return result.green if yes
           return result.red
         end
@@ -159,7 +160,7 @@ module Aspera
       end
 
       def declare_options(options)
-        default_table_style = if Environment.instance.terminal_supports_unicode?
+        default_table_style = if Environment.terminal_supports_unicode?
           {border: :unicode_round}
         else
           {}
