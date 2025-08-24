@@ -2442,7 +2442,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 | `url`     | `http://127.0.0.1:8200` | The URL of the vault  |
 | `token`   | `dev-only-token`        | The token for the vault, by default uses parameter `vault_password` |
 
-```json
+```bash
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
 ```
 
@@ -2457,7 +2457,7 @@ It is possible to manage secrets in macOS keychain (only read supported currentl
 | `type`    | `system` | The type of the vault |
 | `name`    | `ascli`  | The name of the keychain to use |
 
-```json
+```bash
 --vault=@json:'{"type":"system","name":"ascli"}'
 ```
 
@@ -3269,7 +3269,7 @@ Options for `transfer_info` are:
 
 For example, to use an external, already running `transferd`, use option:
 
-```json
+```bash
 --transfer-info=@json:'{"url":":55002","start":false,"stop":false}'
 ```
 
@@ -6240,7 +6240,7 @@ Follow the Aspera Transfer Server configuration to activate this feature.
 
 The following command lists one file that requires validation, and assign it to the unique validator identifier provided:
 
-```json
+```bash
 ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"max_result":1}}'
 ```
 
@@ -6254,7 +6254,7 @@ ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"
 
 To update the status of the file, use the following command:
 
-```json
+```bash
 ascli node central file update --validator=ascli @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
@@ -8436,9 +8436,15 @@ To re-activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.
 
 JRuby may not implement all the algorithms supported by OpenSSH.
 
-Add the following options:
+Add the following to option `ssh_options`:
 
 ```json
+{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}
+```
+
+e.g.
+
+```bash
 --ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
 ```
 
@@ -8447,6 +8453,6 @@ Add the following options:
 Newer OpenSSL library expects a clean SSL close.
 To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options` in option `http_options`.
 
-```json
+```bash
 --http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```

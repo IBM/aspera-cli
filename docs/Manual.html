@@ -2780,7 +2780,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb187-1"><a href
 </tbody>
 </table>
 <div class="sourceCode" id="cb188"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="er">--vault=@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;vault&quot;</span><span class="fu">,</span><span class="dt">&quot;url&quot;</span><span class="fu">:</span><span class="st">&quot;http://127.0.0.1:8200&quot;</span><span class="fu">}</span><span class="er">&#39;</span> <span class="er">--vault_password=dev-only-token</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--vault=@json:</span><span class="st">&#39;{&quot;type&quot;:&quot;vault&quot;,&quot;url&quot;:&quot;http://127.0.0.1:8200&quot;}&#39;</span> <span class="at">--vault_password</span><span class="op">=</span>dev-only-token</span></code></pre></div>
 <h3 data-number="4.11.2" id="vault-system-keychain"><span
 class="header-section-number">4.11.2</span> Vault: System keychain</h3>
 <blockquote>
@@ -2810,7 +2810,7 @@ supported currently).</p>
 </tbody>
 </table>
 <div class="sourceCode" id="cb189"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="er">--vault=@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;type&quot;</span><span class="fu">:</span><span class="st">&quot;system&quot;</span><span class="fu">,</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span><span class="st">&quot;ascli&quot;</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--vault=@json:</span><span class="st">&#39;{&quot;type&quot;:&quot;system&quot;,&quot;name&quot;:&quot;ascli&quot;}&#39;</span></span></code></pre></div>
 <h3 data-number="4.11.3" id="vault-encrypted-file"><span
 class="header-section-number">4.11.3</span> Vault: Encrypted file</h3>
 <p>It is possible to store and use secrets encrypted in a file using
@@ -3955,7 +3955,7 @@ specified, then <code>127.0.0.1</code> is used.</p>
 <p>For example, to use an external, already running
 <code>transferd</code>, use option:</p>
 <div class="sourceCode" id="cb250"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb250-1"><a href="#cb250-1" aria-hidden="true" tabindex="-1"></a><span class="er">--transfer-info=@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;url&quot;</span><span class="fu">:</span><span class="st">&quot;:55002&quot;</span><span class="fu">,</span><span class="dt">&quot;start&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">,</span><span class="dt">&quot;stop&quot;</span><span class="fu">:</span><span class="kw">false</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb250-1"><a href="#cb250-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;url&quot;:&quot;:55002&quot;,&quot;start&quot;:false,&quot;stop&quot;:false}&#39;</span></span></code></pre></div>
 <p>The gem <code>grpc</code> is not part of default dependencies, as it
 requires compilation of a native part. So, to use the Transfer Daemon
 you should install this gem:</p>
@@ -8363,7 +8363,7 @@ feature.</p>
 <p>The following command lists one file that requires validation, and
 assign it to the unique validator identifier provided:</p>
 <div class="sourceCode" id="cb445"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb445-1"><a href="#cb445-1" aria-hidden="true" tabindex="-1"></a><span class="er">ascli</span> <span class="er">node</span> <span class="er">central</span> <span class="er">file</span> <span class="er">list</span> <span class="er">--validator=ascli</span> <span class="er">@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;file_transfer_filter&quot;</span><span class="fu">:{</span><span class="dt">&quot;max_result&quot;</span><span class="fu">:</span><span class="dv">1</span><span class="fu">}}</span><span class="er">&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb445-1"><a href="#cb445-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file list <span class="at">--validator</span><span class="op">=</span>ascli @json:<span class="st">&#39;{&quot;file_transfer_filter&quot;:{&quot;max_result&quot;:1}}&#39;</span></span></code></pre></div>
 <pre class="output"><code>+--------------+--------------+------------+--------------------------------------+
 | session_uuid |    file_id   |   status   |              path                    |
 +--------------+--------------+------------+--------------------------------------+
@@ -8371,7 +8371,7 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb445-1"><a href
 +--------------+--------------+------------+--------------------------------------+</code></pre>
 <p>To update the status of the file, use the following command:</p>
 <div class="sourceCode" id="cb447"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb447-1"><a href="#cb447-1" aria-hidden="true" tabindex="-1"></a><span class="er">ascli</span> <span class="er">node</span> <span class="er">central</span> <span class="er">file</span> <span class="er">update</span> <span class="er">--validator=ascli</span> <span class="er">@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;files&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;session_uuid&quot;</span><span class="fu">:</span> <span class="st">&quot;1a74444c-...&quot;</span><span class="fu">,</span><span class="dt">&quot;file_id&quot;</span><span class="fu">:</span> <span class="st">&quot;084fb181-...&quot;</span><span class="fu">,</span><span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;completed&quot;</span><span class="fu">}</span><span class="ot">]</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb447-1"><a href="#cb447-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> node central file update <span class="at">--validator</span><span class="op">=</span>ascli @json:<span class="st">&#39;{&quot;files&quot;:[{&quot;session_uuid&quot;: &quot;1a74444c-...&quot;,&quot;file_id&quot;: &quot;084fb181-...&quot;,&quot;status&quot;: &quot;completed&quot;}]}&#39;</span></span></code></pre></div>
 <pre class="output"><code>updated</code></pre>
 <h2 data-number="8.9" id="example-shod-to-ats"><span
 class="header-section-number">8.9</span> Example: SHOD to ATS</h2>
@@ -11096,9 +11096,12 @@ set env var <code>ASCLI_ENABLE_ECDSHA2</code> to <code>true</code>.</p>
 class="header-section-number">26.4</span> JRuby: <code>net-ssh</code>:
 Unsupported algorithm</h2>
 <p>JRuby may not implement all the algorithms supported by OpenSSH.</p>
-<p>Add the following options:</p>
+<p>Add the following to option <code>ssh_options</code>:</p>
 <div class="sourceCode" id="cb568"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb568-1"><a href="#cb568-1" aria-hidden="true" tabindex="-1"></a><span class="er">--ssh-options=@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;host_key&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;rsa-sha2-512&quot;</span><span class="ot">,</span><span class="st">&quot;rsa-sha2-256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;kex&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;curve25519-sha256&quot;</span><span class="ot">,</span><span class="st">&quot;diffie-hellman-group14-sha256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;encryption&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;aes256-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes192-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes128-ctr&quot;</span><span class="ot">]</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
+class="sourceCode json"><code class="sourceCode json"><span id="cb568-1"><a href="#cb568-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;host_key&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;rsa-sha2-512&quot;</span><span class="ot">,</span><span class="st">&quot;rsa-sha2-256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;kex&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;curve25519-sha256&quot;</span><span class="ot">,</span><span class="st">&quot;diffie-hellman-group14-sha256&quot;</span><span class="ot">]</span><span class="fu">,</span><span class="dt">&quot;encryption&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;aes256-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes192-ctr&quot;</span><span class="ot">,</span> <span class="st">&quot;aes128-ctr&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
+<p>e.g.</p>
+<div class="sourceCode" id="cb569"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb569-1"><a href="#cb569-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ssh-options=@json:</span><span class="st">&#39;{&quot;host_key&quot;:[&quot;rsa-sha2-512&quot;,&quot;rsa-sha2-256&quot;],&quot;kex&quot;:[&quot;curve25519-sha256&quot;,&quot;diffie-hellman-group14-sha256&quot;],&quot;encryption&quot;: [&quot;aes256-ctr&quot;, &quot;aes192-ctr&quot;, &quot;aes128-ctr&quot;]}&#39;</span></span></code></pre></div>
 <h2 data-number="26.5"
 id="error-ssl_read-unexpected-eof-while-reading"><span
 class="header-section-number">26.5</span> Error: “SSL_read: unexpected
@@ -11106,5 +11109,5 @@ eof while reading”</h2>
 <p>Newer OpenSSL library expects a clean SSL close. To deactivate this
 error, enable option <code>IGNORE_UNEXPECTED_EOF</code> for
 <code>ssl_options</code> in option <code>http_options</code>.</p>
-<div class="sourceCode" id="cb569"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb569-1"><a href="#cb569-1" aria-hidden="true" tabindex="-1"></a><span class="er">--http-options=@json:&#39;</span><span class="fu">{</span><span class="dt">&quot;ssl_options&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;IGNORE_UNEXPECTED_EOF&quot;</span><span class="ot">]</span><span class="fu">}</span><span class="er">&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb570"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb570-1"><a href="#cb570-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--http-options=@json:</span><span class="st">&#39;{&quot;ssl_options&quot;:[&quot;IGNORE_UNEXPECTED_EOF&quot;]}&#39;</span></span></code></pre></div>
