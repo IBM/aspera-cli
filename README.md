@@ -327,8 +327,8 @@ use_ruby(){
         brew list|grep ruby
         return 1
     fi
-    export PATH="$prefix/bin:$PATH"
-    export PATH="$(gem env gemdir)/bin:$PATH"
+    PATH="$prefix/bin:$(echo "$PATH" | tr ':' '\n' | grep -v '/ruby' | paste -sd ':' -)"
+    PATH="$(gem env gemdir)/bin:$PATH"
     export LDFLAGS="-L$prefix/lib"
     export CPPFLAGS="-I$prefix/include"
     export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
@@ -545,6 +545,7 @@ Some additional gems are required for some specific features, see [Gemfile](Gemf
 | rmagick | ~> 6.1 | for terminal view |
 | symmetric-encryption | ~> 4.6 | for encrypted hash file secrets |
 | bigdecimal | ~> 3.1.9 | if RUBY_VERSION >= '3.4' for symmetric-encryption ? |
+| sqlite3 | ~> 2.7 |  |
 
 Install like this:
 
@@ -554,6 +555,7 @@ gem install mimemagic -v '~> 0.4'
 gem install rmagick -v '~> 6.1'
 gem install symmetric-encryption -v '~> 4.6'
 gem install bigdecimal -v '~> 3.1.9'
+gem install sqlite3 -v '~> 2.7'
 ```
 
 > **Note:** Those are not installed as part of dependencies because they involve compilation of native code.
@@ -2716,19 +2718,20 @@ To disable the warning, use option `silent_insecure` set to `no`.
 
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
-| Parameter                 | Type | Default         | Handler   |
-|---------------------------|------|-----------------|-----------|
-| `read_timeout`            | int  | `60`            | Ruby      |
-| `write_timeout`           | int  | `60`            | Ruby      |
-| `open_timeout`            | int  | `60`            | Ruby      |
-| `keep_alive_timeout`      | int  | `2`             | Ruby      |
-| `user_agent`              | int  | `ascli`       | `ascli` |
-| `download_partial_suffix` | int  | `.http_partial` | `ascli` |
-| `retry_on_error`          | bool | `false`         | `ascli` |
-| `retry_on_timeout`        | bool | `true`          | `ascli` |
-| `retry_on_unavailable`    | bool | `true`          | `ascli` |
-| `retry_max`               | int  | `1`             | `ascli` |
-| `retry_sleep`             | int  | `4`             | `ascli` |
+| Parameter                 | Type      | Default         | Handler   |
+|---------------------------|-----------|-----------------|-----------|
+| `read_timeout`            | `Integer` | `60`            | Ruby      |
+| `write_timeout`           | `Integer` | `60`            | Ruby      |
+| `open_timeout`            | `Integer` | `60`            | Ruby      |
+| `keep_alive_timeout`      | `Integer` | `2`             | Ruby      |
+| `ssl_options`             | `Array`   | See below       | Ruby      |
+| `user_agent`              | `Integer` | `ascli`       | `ascli` |
+| `download_partial_suffix` | `Integer` | `.http_partial` | `ascli` |
+| `retry_on_error`          | `Bool`    | `false`         | `ascli` |
+| `retry_on_timeout`        | `Bool`    | `true`          | `ascli` |
+| `retry_on_unavailable`    | `Bool`    | `true`          | `ascli` |
+| `retry_max`               | `Integer` | `1`             | `ascli` |
+| `retry_sleep`             | `Integer` | `4`             | `ascli` |
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
@@ -2740,6 +2743,20 @@ Example:
 
 ```bash
 ascli aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
+```
+
+`ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
+The default initial value is the default of Ruby as specified in `openssl/ssl.rb`.
+Each option can be specified as a `String` with the same name as in the OpenSSL library by removing the prefix: `SSL_OP_`, or an `Integer` (e.g. `0` resets to no option).
+If the name appears in the list, the option is set.
+If the name appears in the list prefixed with a hyphen (`-`), the option is unset.
+For example to enable option `SSL_OP_CIPHER_SERVER_PREFERENCE`, add it to the list as `CIPHER_SERVER_PREFERENCE`.
+To disable option `SSL_OP_SAFARI_ECDHE_ECDSA_BUG`, add it as `-SAFARI_ECDHE_ECDSA_BUG`.
+
+Example:
+
+```json
+{"ssl_options":["CIPHER_SERVER_PREFERENCE","-SAFARI_ECDHE_ECDSA_BUG"]}
 ```
 
 ### Proxy
@@ -8389,7 +8406,7 @@ Workaround on server side: Either remove the fingerprint from `aspera.conf`, or 
 
 References: ES-1944 in release notes of 4.1 and to [HSTS admin manual section "Configuring Transfer Server Authentication With a Host-Key Fingerprint"](https://www.ibm.com/docs/en/ahts/4.2?topic=upgrades-configuring-ssh-server).
 
-### Error "can't find header files for ruby"
+### Error: "can't find header files for ruby"
 
 Some Ruby gems dependencies require compilation of native parts (C).
 This also requires Ruby header files.
@@ -8423,4 +8440,13 @@ Add the following options:
 
 ```json
 --ssh-options=@json:'{"host_key":["rsa-sha2-512","rsa-sha2-256"],"kex":["curve25519-sha256","diffie-hellman-group14-sha256"],"encryption": ["aes256-ctr", "aes192-ctr", "aes128-ctr"]}'
+```
+
+### Error: "SSL_read: unexpected eof while reading"
+
+Newer OpenSSL library expects a clean SSL close.
+To deactivate this error, enable option `IGNORE_UNEXPECTED_EOF` for `ssl_options` in option `http_options`.
+
+```json
+--http-options=@json:'{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
 ```
