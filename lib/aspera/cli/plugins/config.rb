@@ -401,10 +401,14 @@ module Aspera
                 when Integer
                   ssl_options = opt
                 when String
+                  name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
+                  if !OpenSSL::SSL.const_defined?(name)
+                    raise Cli::BadArgument, "No such ssl_option: #{opt}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map{ |c| c.to_s.sub(/^OP_/, '')}.join(', ')}"
+                  end
                   if opt.start_with?('-')
-                    ssl_options &= ~OpenSSL::SSL.const_get("OP_#{opt[1..].upcase}")
+                    ssl_options &= ~OpenSSL::SSL.const_get(name)
                   else
-                    ssl_options |= OpenSSL::SSL.const_get("OP_#{opt.upcase}")
+                    ssl_options |= OpenSSL::SSL.const_get(name)
                   end
                 else
                   Aspera.error_unexpected_value(opt.class.name){'Expected String or Integer in ssl_options'}
