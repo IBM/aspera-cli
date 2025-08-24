@@ -6,11 +6,12 @@
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
-require 'aspera/transfer/spec_doc'
+require 'aspera/environment'
 require 'aspera/cli/info'
 require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/sync/operations'
+require 'aspera/transfer/spec_doc'
 require 'yaml'
 require 'erb'
 require 'English'
@@ -133,7 +134,7 @@ end
 def spec_table
   agents = Aspera::Transfer::SpecDoc::AGENT_LIST.map{ |i| [i.last.upcase, i[1]]}
   agents.unshift(%w[ID Name])
-  props = Aspera::Transfer::SpecDoc.man_table(HtmlFormatter).map do |param|
+  props = Aspera::Transfer::SpecDoc.man_table(HtmlFormatter, color: false).map do |param|
     Aspera::Transfer::SpecDoc::TABLE_COLUMNS.map{ |field_name| param[field_name]}
   end
   # Column titles
@@ -354,22 +355,29 @@ end
 # main function to generate README.md
 def generate_doc
   # parameters
+  outfile = ARGV.shift
   @env = {}
   %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC GEMFILE].each do |var|
     @env[var] = ARGV.shift
     raise "Missing arg: #{var}" if @env[var].nil?
   end
+  # no unicode
+  Aspera::Environment.force_terminal_c
   check_links(@env[:TEMPLATE])
   # get current plugins
   plugin_manager = Aspera::Cli::PluginFactory.instance
   plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
   plugin_manager.add_plugins_from_lookup_folders
   @undocumented_plugins = plugin_manager.plugin_list
-  puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
+  tmp_file = [outfile, 'tmp'].join('.')
+  File.open(tmp_file, 'w') do |f|
+    f.puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
+  end
   $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
   # check that all test commands are included in the doc
   if !all_test_commands_by_plugin.empty?
     $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
     raise 'Remediate: remove from doc using EXE_NO_MAN or add section in doc'
   end
+  File.rename(tmp_file, outfile)
 end

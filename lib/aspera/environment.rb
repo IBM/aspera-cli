@@ -31,6 +31,8 @@ module Aspera
     MEBI = 1024 * 1024
     BYTES_PER_MEBIBIT = MEBI / BITS_PER_BYTE
 
+    I18N_VARS = %w(LC_ALL LC_CTYPE LANG).freeze
+
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
@@ -163,6 +165,18 @@ module Aspera
       def terminal?
         $stdout.tty?
       end
+
+      # force locale to C so that unicode characters are not used
+      def force_terminal_c
+        I18N_VARS.each{ |var| ENV[var] = 'C'}
+      end
+
+      # @return true if we can display Unicode characters
+      # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
+      # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
+      def terminal_supports_unicode?
+        terminal? && I18N_VARS.any?{ |var| ENV[var]&.include?('UTF-8')}
+      end
     end
     attr_accessor :url_method
     attr_reader :os, :cpu, :executable_extension, :default_gui_mode
@@ -255,13 +269,6 @@ module Aspera
       else
         open_uri_graphical(file_path.to_s)
       end
-    end
-
-    # @return true if we can display Unicode characters
-    # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
-    # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
-    def terminal_supports_unicode?
-      self.class.terminal? && %w(LC_ALL LC_CTYPE LANG).any?{ |var| ENV[var]&.include?('UTF-8')}
     end
 
     # Allows a user to open a URL
