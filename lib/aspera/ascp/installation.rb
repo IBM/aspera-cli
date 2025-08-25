@@ -44,12 +44,12 @@ module Aspera
         </default>
         </CONF>
       END_OF_CONFIG_FILE
-      # all ascp files (in SDK)
-      EXE_FILES = %i[ascp ascp4 async].freeze
-      FILES = %i[transferd ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
-      TRANSFER_SDK_LOCATION_URL = 'https://ibm.biz/sdk_location'
+      # all executable files from SDK
+      EXE_FILES = %i[ascp ascp4 async transferd].freeze
+      SDK_FILES = %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key].unshift(*EXE_FILES).freeze
+      TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :FILES, :TRANSFER_SDK_LOCATION_URL
+      private_constant :DEFAULT_ASPERA_CONF, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
       # options for SSH client private key
       CLIENT_SSH_KEY_OPTIONS = %i{dsa_rsa rsa per_client}.freeze
 
@@ -99,7 +99,7 @@ module Aspera
 
       # @return [Hash] with key = file name (String), and value = path to file
       def file_paths
-        return FILES.each_with_object({}) do |v, m|
+        return SDK_FILES.each_with_object({}) do |v, m|
           m[v.to_s] =
             begin
               path(v)
@@ -115,19 +115,23 @@ module Aspera
         return Environment.write_file_restricted(File.join(Products::Transferd.sdk_directory, filename), force: force, mode: 0o644, &block)
       end
 
-      # get path of one resource file of currently activated product
+      # Get path of one resource file of currently activated product
       # keys and certs are generated locally... (they are well known values, arch. independent)
+      # @param k [Symbol] key of the resource file
+      # @return [String, nil] Full path to the resource file or nil if not found
       def path(k)
-        file_is_optional = false
+        file_is_required = true
         case k
         when *EXE_FILES
-          file_is_optional = k.eql?(:async)
-          use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
-          # NOTE: that there might be a .exe at the end
-          file = @path_to_ascp.gsub('ascp', k.to_s)
-        when :transferd
-          file_is_optional = true
-          file = Products::Transferd.transferd_path
+          file_is_required = k.eql?(:ascp)
+          file = if k.eql?(:transferd)
+            Products::Transferd.transferd_path
+          else
+            # ensure at least ascp is found
+            use_ascp_from_product(FIRST_FOUND) if @path_to_ascp.nil?
+            # NOTE: that there might be a .exe at the end
+            @path_to_ascp.gsub('ascp', k.to_s)
+          end
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = k.to_s[-3..-1].to_sym
@@ -150,7 +154,7 @@ module Aspera
           file = k.eql?(:fallback_certificate) ? file_cert : file_key
         else Aspera.error_unexpected_value(k)
         end
-        return nil if file_is_optional && !File.exist?(file)
+        return nil unless file_is_required || File.exist?(file)
         Aspera.assert(File.exist?(file), exception_class: Errno::ENOENT){"#{k} not found (#{file})"}
         return file
       end
@@ -330,21 +334,15 @@ module Aspera
           end
         end
         return unless with_exe
-        # ensure license file are generated so that ascp invocation for version works
-        path(:aspera_license)
-        path(:aspera_conf)
-        sdk_ascp_file = Environment.instance.exe_file('ascp')
-        sdk_ascp_path = File.join(folder, sdk_ascp_file)
-        raise "No #{sdk_ascp_file} found in SDK archive" unless File.exist?(sdk_ascp_path)
-        EXE_FILES.each do |exe_sym|
-          exe_path = sdk_ascp_path.gsub('ascp', exe_sym.to_s)
-          Environment.restrict_file_access(exe_path, mode: 0o755) if File.exist?(exe_path)
+        # ensure necessary files are there, or generate them
+        SDK_FILES.each do |file_id_sym|
+          file_path = path(file_id_sym)
+          if file_path && EXE_FILES.include?(file_id_sym)
+            Environment.restrict_file_access(file_path, mode: 0o755) if File.exist?(file_path)
+          end
         end
-        sdk_ascp_version = get_ascp_version(sdk_ascp_path)
-        transferd_exe_path = Products::Transferd.transferd_path
-        Log.log.warn{"No #{transferd_exe_path} in SDK archive"} unless File.exist?(transferd_exe_path)
-        Environment.restrict_file_access(transferd_exe_path, mode: 0o755) if File.exist?(transferd_exe_path)
-        transferd_version = get_exe_version(transferd_exe_path, 'version')
+        sdk_ascp_version = get_ascp_version(path(:ascp))
+        transferd_version = get_exe_version(path(:transferd), 'version')
         sdk_name = 'IBM Aspera Transfer SDK'
         sdk_version = transferd_version || sdk_ascp_version
         File.write(File.join(folder, Products::Other::INFO_META_FILE), "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
@@ -362,7 +360,7 @@ module Aspera
         @path_to_ascp = nil
         @sdk_dir = nil
         @found_products = nil
-        @transferd_urls = TRANSFER_SDK_LOCATION_URL
+        @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URL
       end
 
       public
