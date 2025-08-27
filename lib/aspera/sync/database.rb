@@ -10,6 +10,8 @@ module Aspera
         @db_path = db_path
       end
 
+      # Execute block with database connection
+      # @param block [Proc] bloc to be executed within database
       # @raise [SQLite3::Exception] if database access fails
       def with_db
         db = SQLite3::Database.new(@db_path)
@@ -46,6 +48,7 @@ module Aspera
         end
       end
 
+      # Get data from table with single row
       def single_table(table_name)
         with_db do |db|
           return db.get_first_row("SELECT * FROM #{table_name} LIMIT 1")
