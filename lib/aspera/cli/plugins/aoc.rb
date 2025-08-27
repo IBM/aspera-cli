@@ -631,7 +631,7 @@ module Aspera
               base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
               auth:     {scope: Api::AoC::SCOPE_FILES_ADMIN_USER}
             }))
-            command_analytics = options.get_next_command(%i[application_events transfers])
+            command_analytics = options.get_next_command(%i[application_events transfers files])
             case command_analytics
             when :application_events
               event_type = command_analytics.to_s
@@ -639,15 +639,15 @@ module Aspera
               return Main.result_object_list(events)
             when :transfers
               event_type = command_analytics.to_s
-              filter_resource = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
-              filter_id = options.get_next_argument('identifier', mandatory: false) ||
-                case filter_resource
+              event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
+              event_resource_id = options.get_next_argument("#{event_resource_type} identifier", mandatory: false) ||
+                case event_resource_type
                 when :organizations then aoc_api.current_user_info['organization_id']
                 when :users then aoc_api.current_user_info['id']
-                when :nodes then aoc_api.current_user_info['id'] # TODO: consistent ? # rubocop:disable Lint/DuplicateBranch
+                when :nodes then aoc_api.current_user_info['read_only_home_node_id']
                 else Aspera.error_unreachable_line
                 end
-              filter = options.get_option(:query) || {}
+              filter = query_read_delete(default: {})
               filter['limit'] ||= 100
               if options.get_option(:once_only, mandatory: true)
                 aoc_api.context = :files
@@ -659,24 +659,38 @@ module Aspera
                     'aoc_ana_date',
                     options.get_option(:url, mandatory: true),
                     aoc_api.workspace[:name],
-                    filter_resource.to_s,
-                    filter_id
+                    event_resource_type.to_s,
+                    event_resource_id
                   ]))
                 start_date_time = saved_date.first
                 stop_date_time = Time.now.utc.strftime('%FT%T.%LZ')
-                # Log.log().error("start: #{start_date_time}")
-                # Log.log().error("end:   #{stop_date_time}")
                 saved_date[0] = stop_date_time
                 filter['start_time'] = start_date_time unless start_date_time.nil?
                 filter['stop_time'] = stop_date_time
               end
-              events = analytics_api.read("#{filter_resource}/#{filter_id}/#{event_type}", query_read_delete(default: filter))[event_type]
+              events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/#{event_type}", filter)[event_type]
               start_date_persistency&.save
               if !options.get_option(:notify_to).nil?
                 events.each do |tr_event|
                   config.send_email_template(values: {ev: tr_event})
                 end
               end
+              return Main.result_object_list(events)
+            when :files
+              event_type = command_analytics.to_s
+              event_resource_type = options.get_next_argument('resource', accept_list: %i[organizations users nodes])
+              event_resource_id = instance_identifier(description: "#{event_resource_type} identifier")
+              event_resource_id =
+                case event_resource_type
+                when :organizations then aoc_api.current_user_info['organization_id']
+                when :users then aoc_api.current_user_info['id']
+                when :nodes then aoc_api.current_user_info['read_only_home_node_id']
+                else Aspera.error_unreachable_line
+                end if event_resource_id.empty?
+              event_uuid = instance_identifier(description: 'event uuid')
+              filter = query_read_delete(default: {})
+              filter['limit'] ||= 100
+              events = analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/#{event_type}", filter)[event_type]
               return Main.result_object_list(events)
             end
           when :usage_reports
