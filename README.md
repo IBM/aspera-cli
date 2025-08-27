@@ -3125,6 +3125,8 @@ In addition to standard methods described in section [File List](#list-of-files-
 >
 > **Note:** Those methods have limitations: they apply **only** to the [`direct`](#agent-direct) transfer agent (i.e. local `ascp`) and not for Aspera on Cloud.
 
+##### Agent: Direct: `aspera.conf`: Virtual Links
+
 This agent supports a local configuration file: `aspera.conf` where Virtual links can be configured:
 
 On a server (HSTS), the following commands can be used to set a global virtual link:
@@ -3185,6 +3187,70 @@ It is also possible to set a schedule with different time and days, for example 
 ```text
 start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000
 ```
+
+##### Agent: Direct: `aspera.conf`: File name with special characters
+
+By default, `ascp` replaces file system disallowed characters in transferred file names with `_`.
+On Windows, it concerns: `* : | < > " ' ?`.
+
+Replacing illegal characters in transferred file names is a built-in feature of Aspera transfers.
+This behavior can be customized with the `aspera.conf` configuration file.
+For example, let's assume we want to replace illegal character: `|` with an underscore `_`.
+
+1. First, locate the configuration file with:
+
+```bash
+ascli conf ascp info --fields=aspera_conf
+```
+
+Typically, it is located at `$HOME/sdk/aspera.conf`
+
+1. Edit this file, and add the following line inside the XML section `CONF.default.file_system`:
+
+```xml
+        <replace_illegal_chars>_|</replace_illegal_chars>
+```
+
+The result should look like this:
+
+```xml
+<?xml version='1.0' encoding='UTF-8'?>
+<CONF version="2">
+<default>
+    <file_system>
+        <resume_suffix>.aspera-ckpt</resume_suffix>
+        <partial_file_suffix>.partial</partial_file_suffix>
+        <replace_illegal_chars>_|</replace_illegal_chars>
+    </file_system>
+</default>
+</CONF>
+```
+
+1. According to the [documentation](https://www.ibm.com/docs/en/ahts/4.4.x?topic=reference-user-group-default-configurations)
+
+The parameter works as follows:
+
+- The first character in the value is the replacement character.
+- All other characters listed after it are the **illegal** ones to be replaced.
+
+So in this example: `|` will be replaced with `_`.
+
+If the mounted target file system is **Windows** but `ascli` runs on Linux, there are several additional illegal characters you need to handle.
+In that case, you can set the parameter like this (note that XML special characters such as `<`, `>`, `"` and `'` must be escaped properly):
+
+```xml
+<replace_illegal_chars>_*:|&lt;&gt;&quot;&apos;?</replace_illegal_chars>
+```
+
+In this example:
+
+- `_` is the replacement character.
+- The list of characters that will be replaced is: `*:|<>"'?`
+
+So, for example:
+
+- `report|final?.txt` → `report_final_.txt`
+- `data*backup"2025".csv` → `data_backup_2025_.csv`
 
 #### Agent: Connect Client
 
@@ -5190,7 +5256,7 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 Source files are provided as a list with the `sources` option.
 Refer to section [File list](#list-of-files-for-transfers)
 
-> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file ID` API).
+> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the file ID API).
 
 Source files are located on **Aspera on cloud**, when :
 
@@ -5201,9 +5267,11 @@ In this case:
 
 - If there is a single file : specify the full path
 - Else, if there are multiple files:
-  - All source files must be in the same source folder
-  - Specify the source folder as first item in the list
-  - followed by the list of file names.
+  - The first item in the list must be the base source folder
+  - followed by the list of file relative paths
+
+If all files are located in the same folder, you can simply specify the folder path followed by the file names.
+If files are in different folders, then the base folder must be the common parent folder of all files, e.g. `/`, followed by the relative paths to each file to that base folder.
 
 ### Packages app
 

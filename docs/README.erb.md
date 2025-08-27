@@ -4744,7 +4744,7 @@ Creation of a node with a self-managed node is similar, but the command `aoc adm
 Source files are provided as a list with the `sources` option.
 Refer to section [File list](#list-of-files-for-transfers)
 
-> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the `file ID` API).
+> **Note:** A special case is when the source files are located on **Aspera on Cloud** (i.e. using access keys and the file ID API).
 
 Source files are located on **Aspera on cloud**, when :
 
@@ -4755,9 +4755,11 @@ In this case:
 
 - If there is a single file : specify the full path
 - Else, if there are multiple files:
-  - All source files must be in the same source folder
-  - Specify the source folder as first item in the list
-  - followed by the list of file names.
+  - The first item in the list must be the base source folder
+  - followed by the list of file relative paths
+
+If all files are located in the same folder, you can simply specify the folder path followed by the file names.
+If files are in different folders, then the base folder must be the common parent folder of all files, e.g. `/`, followed by the relative paths to each file to that base folder.
 
 ### Packages app
 
