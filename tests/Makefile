@@ -1093,6 +1093,14 @@ $(F)aoc15: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=@preset:misc.email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 	@$(STOP_TEST) $@
+$(F)aoc_ana_tr: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(CLI_TEST) --preset=aoc_admin aoc admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":1}' --fields=uuid --output=$(STATE)aoc_transfer_id
+	@$(STOP_TEST) $@
+$(F)aoc_ana_files: $(F)aoc_ana_tr
+	@$(START_TEST) $@
+	$(CLI_TEST) --preset=aoc_admin aoc admin analytics files organization '' @ruby:'File.read("$(STATE)aoc_transfer_id").chomp'
+	@$(STOP_TEST) $@
 $(F)aoc16: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin analytics transfers users --once-only=yes
@@ -1161,7 +1169,7 @@ $(F)aocadmndsh4: $(F)aocadmndsh2 $(F)aocadmndsh3
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) --preset=aoc_admin aoc admin node do %name:@preset:aoc.node_name delete test_shared_folder
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocadm,$(F)aoc_adm_authp_lst $(F)aoc_adm_ws_lst $(F)aoc_adm_nd_events $(F)aoc_adm_nd_br $(F)aoc_adm_nd_mkdir $(F)aoc_adm_ak_create $(F)aoc_adm_ak_del $(F)aoc_adm_ak_dir_del $(F)aoc_adm_nd_rmdir $(F)aoc_adm_wsm_lst $(F)aoc15 $(F)aoc16 $(F)aoc_adm_res_01 $(F)aoc_adm_res_02 $(F)aoc_adm_res_03 $(F)aoc_adm_res_04 $(F)aoc_adm_res_05 $(F)aoccltreg $(F)aocadmndsh4))
+$(eval $(call test_suite_all,taocadm,$(F)aoc_adm_authp_lst $(F)aoc_adm_ws_lst $(F)aoc_adm_nd_events $(F)aoc_adm_nd_br $(F)aoc_adm_nd_mkdir $(F)aoc_adm_ak_create $(F)aoc_adm_ak_del $(F)aoc_adm_ak_dir_del $(F)aoc_adm_nd_rmdir $(F)aoc_adm_wsm_lst $(F)aoc15 $(F)aoc_ana_files $(F)aoc16 $(F)aoc_adm_res_01 $(F)aoc_adm_res_02 $(F)aoc_adm_res_03 $(F)aoc_adm_res_04 $(F)aoc_adm_res_05 $(F)aoccltreg $(F)aocadmndsh4))
 #######################################################################################################################
 $(F)aocat4: $(TMP_EXISTS)
 	@$(START_TEST) $@
