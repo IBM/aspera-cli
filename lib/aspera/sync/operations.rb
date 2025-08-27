@@ -290,6 +290,7 @@ module Aspera
           return async_params
         end
 
+        # Takes potentially empty params or arguments and ensures viable configuration for admin
         def validated_admin_info(async_params, arguments)
           info_type = if async_params.key?('sessions') || async_params.key?('instance')
             async_params['sessions'] ||= [{}]
@@ -301,7 +302,7 @@ module Aspera
             :conf
           end
           if !arguments.empty?
-            # there must be exactly 3 or 4 args
+            # there must be exactly 1 or 2 args
             # copy arguments to async_params
             arguments.each_with_index do |arg, index|
               key_path = ADMIN_PARAMETERS[index][info_type].split('.')
@@ -316,9 +317,18 @@ module Aspera
             end
           end
           # if name not provided, check in db folder if there is only one name
+          if !session.key?('name')
+            local_db_dir = local_db_folder(async_params)
+            dbs = list_db_files(local_db_dir)
+            raise "#{dbs.length} session found in #{local_db_dir}, please provide a name" unless dbs.length == 1
+            session['name'] = dbs.keys.first
+          end
           return async_params
         end
 
+        # Run `asyncadmin` to get status of sync session
+        # @param sync_params [Hash] sync parameters in conf or args format
+        # @return [Hash] parsed output of asyncadmin
         def admin_status(sync_params)
           arguments = ['--quiet']
           if sync_params.key?('local')
@@ -350,6 +360,9 @@ module Aspera
         end
 
         # Find the local database folder based on sync_params
+        # @param sync_params [Hash] sync parameters in conf or args format
+        # @param exception [Bool] Raise exception in case of problem, else return nil
+        # @return [String, nil] path to "local DB dir", i.e. folder that contains folders that contain snap.db
         def local_db_folder(sync_params, exception: true)
           if sync_params.key?('local')
             # "conf" format
@@ -392,6 +405,14 @@ module Aspera
           db_file = File.join(local_db_folder(sync_params), PRIVATE_FOLDER, session_name(sync_params), ASYNC_DB)
           Aspera.assert(File.exist?(db_file)){"Database file #{db_file} does not exist"}
           db_file
+        end
+
+        def list_db_files(local_db_dir)
+          private = File.join(local_db_dir, PRIVATE_FOLDER)
+          Dir.children(private).filter_map do |name|
+            db_file = File.join(private, name, ASYNC_DB)
+            [name, db_file] if File.exist?(db_file)
+          end.to_h
         end
       end
     end

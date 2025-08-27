@@ -49,11 +49,19 @@ module Aspera
           else Aspera.error_unexpected_value(command2)
           end
         when :db
-          command2 = options.get_next_command(%i[meta counters])
+          command2 = options.get_next_command(%i[find meta counters])
           require 'aspera/sync/database'
           case command2
+          when :find
+            folder = options.get_next_argument('path')
+            dbs = Sync::Operations.list_db_files(folder)
+            return Main.result_object_list(dbs.keys.map{ |n| {name: n, path: dbs[n]}})
           when :meta, :counters
-            return Main.result_single_object(Sync::Database.new(Sync::Operations.session_db_file(Sync::Operations.validated_admin_info(*sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).send(command2))
+            return Main.result_single_object(
+              Sync::Database.new(
+                Sync::Operations.session_db_file(
+                  Sync::Operations.validated_admin_info(
+                    *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).send(command2))
           else Aspera.error_unexpected_value(command2)
           end
         else Aspera.error_unexpected_value(command)
