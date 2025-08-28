@@ -1936,6 +1936,15 @@ The command `config tokens flush` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
 When a token has expired, then a new token is generated, either using a refresh_token if it is available, or by the default method.
 
+### Invalid Filename Characters
+
+The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
+
+The first character specifies the replacement character, and the following characters are the invalid ones.
+This is used when a folder or file is created from a value that potentially contains invalid characters.
+For example, using the option `package_folder`.
+The default value is `_<>:"/\|?*`, corresponding to characters not allowed on Windows.
+
 ### Temporary files
 
 Some temporary files may be needed during runtime.
@@ -4852,10 +4861,28 @@ To download only some files from the package, just add the path of the files on 
 By default, all files in the package are downloaded, i.e. `.` is used as the file list.
 
 Option `package_folder` defines the attribute of folder used as destination sub folder in the `to_folder` path (see description earlier).
-The default value is `@none:` : package files will be downloaded directly inside the folder specified by option `to_folder`.
-The option `package_folder` can be set to the name of **any** attributes of the package.
-Notably, `id` or `name` can be used.
-Using option `--package-folder=id` ensures that every downloaded package is placed in a subfolder named after its unique ID.
+The following syntax is supported
+
+| Syntax | Description |
+|--------|-------------|
+| `@none:` | No subfolder is created, files are downloaded directly into the specified `to_folder`. |
+| `<field>` | A subfolder named after the package's specified field is created inside `to_folder`. |
+| `<field1>+<field2>` | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
+| `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists. Else it falls back to the combination of both fields with `.`. |
+
+The special value `increment` for `<field2>` will append an incrementing number to the folder name starting at `1`.
+If `?` is used, then the increment is used only if the folder already exists.
+
+Examples:
+
+- `id` : subfolder named after package ID. If the same package is downloaded several times, it will always be placed in the same folder.
+- `name` : subfolder named after package name. If two packages with the same name are downloaded, they will be combined in the same folder.
+- `name+id` : subfolder named after the combination of package name and ID.
+- `name+id?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of both fields with `.`.
+- `name+increment?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of name and an incrementing number.
+
+> **Note:** When `<field1>+<field2>?` is used, if the same package is downloaded multiple times, it will be downloaded twice.
+If `name+increment?` is used, if the same package is downloaded multiple times, it will be placed in folders with an incrementing number.
 
 ##### Example: Receive all packages from a given shared inbox
 

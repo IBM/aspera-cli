@@ -6,10 +6,13 @@
     * `sync`: Added operations on sync database with command: `db`.
     * `http_options`: New field `ssl_options` allows setting SSL Context options.
     * `console`: Added support for extended filters in transfer queries.
+    * **global**: New option `invalid_characters`.
+    * `aoc`: Option `package_folder` allows specification of secondary field.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
-    * `transferd`, `desktop`: Fixed discrepancies in transfer spec resume policies.
-    * **formatter**: Value list now properly display column header.
+    * `transferd`: Fixed discrepancies in transfer spec resume policies.
+    * `desktop`: Fixed discrepancies in transfer spec resume policies.
+    * `format`: Value list now properly display column header.
   * Breaking Changes:
     * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
     * `ssh_options` : Now additive option, like `ts`.
