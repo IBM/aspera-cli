@@ -22,7 +22,7 @@ doc: all
 
 # generate template configuration file for tests, remove own secrets
 $(TMPL_CONF_FILE_PATH): $(DIR_DOC)doc_tools.rb
-	$(DOC_TOOL) generate_generic_conf > $@
+	$(DOC_TOOL) generate_generic_conf $@
 clean_doc::
 	rm -f $(TMPL_CONF_FILE_PATH)
 

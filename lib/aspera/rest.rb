@@ -293,7 +293,7 @@ module Aspera
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
-      Log.log.debug{"#{operation} [#{subpath}]".red.bold.bg_green}
+      Log.log.debug{"call #{operation} [#{subpath}]".red.bold.bg_green}
       Log.log.debug{Log.dump(:body, body)}
       Aspera.assert_type(subpath, String)
       if headers.nil?
@@ -447,7 +447,7 @@ module Aspera
         if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
           tries_remain_redirect -= 1
           current_uri = URI.parse(@base_url)
-          new_url = e.response['location']
+          new_url = e.response['Location']
           # special case: relative redirect
           if URI.parse(new_url).host.nil?
             # we don't manage relative redirects with non-absolute path
@@ -455,9 +455,17 @@ module Aspera
             new_url = "#{current_uri.scheme}://#{current_uri.host}#{new_url}"
           end
           # forwards the request to the new location
-          return self.class.new(base_url: new_url, redirect_max: tries_remain_redirect).call(
-            operation: operation, query: query, body: body, content_type: content_type,
-            save_to_file: save_to_file, return_error: return_error, headers: headers)
+          return self.class.new(
+            base_url: new_url,
+            redirect_max: tries_remain_redirect).call(
+              operation: operation,
+              subpath: new_url.end_with?('/') ? '/' : nil,
+              query: query,
+              body: body,
+              content_type: content_type,
+              save_to_file: save_to_file,
+              return_error: return_error,
+              headers: headers)
         end
         # raise exception if could not retry and not return error in result
         raise e unless return_error
