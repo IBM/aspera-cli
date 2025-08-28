@@ -27,9 +27,9 @@ module Aspera
           if tables.empty?
             puts 'No tables found in the database.'
           else
-            puts 'Tables in the database:'
+            puts "Tables in the database: #{tables}"
             tables.each do |table_row|
-              table_name = table_row[0]
+              table_name = table_row['name']
               puts "  - #{table_name}"
               # Execute a COUNT(*) query to get the number of rows
               row_count = db.get_first_value("SELECT COUNT(*) FROM #{table_name};")
@@ -39,8 +39,8 @@ module Aspera
               puts '    Columns:'
               column_info.each do |column|
                 # Column information is returned as an array: [cid, name, type, notnull, dflt_value, pk]
-                column_name = column[1]
-                column_type = column[2]
+                column_name = column['name']
+                column_type = column['type']
                 puts "      - #{column_name} (#{column_type})"
               end
             end
@@ -55,12 +55,22 @@ module Aspera
         end
       end
 
+      def full_table(table_name)
+        with_db do |db|
+          return db.execute("SELECT * FROM #{table_name}")
+        end
+      end
+
       def meta
         single_table('sync_snapmeta_table')
       end
 
       def counters
         single_table('sync_snap_counters_table')
+      end
+
+      def file_info
+        full_table('sync_snapdb_table')
       end
     end
   end
