@@ -5,6 +5,7 @@
   * New Features:
     * `sync`: Added operations on sync database with command: `db`.
     * `http_options`: New field `ssl_options` allows setting SSL Context options.
+    * `console`: Added support for extended filters in transfer queries.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`, `desktop`: Fixed discrepancies in transfer spec resume policies.
@@ -13,6 +14,7 @@
     * `ts` : Default transfer spec includes `resume_policy=sparse_csum`
     * `ssh_options` : Now additive option, like `ts`.
     * `vault`: When creating an entry, the `label` field is now part of the creation Hash.
+    * `console`: Replaced options `filter_from` and `filter_to` with standard option `query`.
 
 * 4.23.0 2025-08-11
 

@@ -6586,6 +6586,16 @@ To figure out an entity's payload, for example for creation, refer to the API do
 
 ## Plugin: `console`: IBM Aspera Console
 
+### Transfer filter
+
+Listing transfers supports the API syntax.
+
+In addition, it is possible to place a single `query` parameter in the request to filter the results : `filter`, following the syntax:
+
+```console
+(field operator value)and(field operator value)...
+```
+
 <%=include_commands_for_plugin(:console)%>
 
 ## Plugin: `orchestrator`:IBM Aspera Orchestrator
