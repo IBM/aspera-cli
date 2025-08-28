@@ -546,19 +546,23 @@ $(F)cons_wizard: $(TMP_EXISTS)
 	$(CLI_TEST) config detect @preset:console_admin.url
 	$(INCMAN)$(CLI_TEST) config wizard $(WIZ_TEST) @preset:console_admin.url console --preset=console_admin
 	@$(STOP_TEST) $@
-$(F)cons1: $(TMP_EXISTS)
+$(F)cons_cur_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	$(INCMAN)$(CLI_TEST) console transfer current list
+	$(INCMAN)$(CLI_TEST) console transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
 	@$(STOP_TEST) $@
-$(F)cons2: $(TMP_EXISTS)
+$(F)cons_cur_lst_ex: $(TMP_EXISTS)
+	@$(START_TEST) $@
+	$(INCMAN)$(CLI_TEST) console transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
+	@$(STOP_TEST) $@
+$(F)cons_sma_lst: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) console transfer smart list
 	@$(STOP_TEST) $@
-$(F)cons3: $(TMP_EXISTS)
+$(F)cons_sma_sta: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(BEG_FAI)$(CLI_TEST) console transfer smart sub @preset:console.smart_id @json:@extend:'{"source":{"paths":["@preset:console.smart_file@"]},"source_type":"user_selected"}'$(END_FAI)
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,tconsole,$(F)cons_nagios $(F)cons_wizard $(F)cons1 $(F)cons2 $(F)cons3))
+$(eval $(call test_suite_all,tconsole,$(F)cons_nagios $(F)cons_wizard $(F)cons_cur_lst $(F)cons_cur_lst_ex $(F)cons_sma_lst $(F)cons_sma_sta))
 #######################################################################################################################
 $(F)nd_nagios: $(TMP_EXISTS)
 	@$(START_TEST) $@

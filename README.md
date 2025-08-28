@@ -4335,8 +4335,6 @@ OPTIONS:
         --url=VALUE                  URL of application, e.g. https://faspex.example.com/aspera/faspex
         --username=VALUE             User's name to log in
         --password=VALUE             User's password
-        --filter-from=DATE           Only after date
-        --filter-to=DATE             Only before date
 
 
 ```
@@ -7505,13 +7503,24 @@ health
 
 ## Plugin: `console`: IBM Aspera Console
 
+### Transfer filter
+
+Listing transfers supports the API syntax.
+
+In addition, it is possible to place a single `query` parameter in the request to filter the results : `filter`, following the syntax:
+
+```console
+(field operator value)and(field operator value)...
+```
+
 ### Console sample commands
 
 > **Note:** Add `ascli console` in front of the commands:
 
 ```bash
 health
-transfer current list
+transfer current list --query=@json:'{"filter":"(transfer_name contain aoc)"}'
+transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
 transfer smart list
 transfer smart sub my_smart_id @json:'{"source":{"paths":["my_smart_file"]},"source_type":"user_selected"}'
 ```

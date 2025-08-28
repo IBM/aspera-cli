@@ -8,6 +8,10 @@ module Aspera
     module Plugins
       class Console < Cli::BasicAuthPlugin
         STANDARD_PATH = '/aspera/console'
+        DEFAULT_FILTER_AGE_SECONDS = 24 * 3600
+        EXPR_RE = /\A(\S+) (\S+) (.*)\z/
+        private_constant :STANDARD_PATH, :DEFAULT_FILTER_AGE_SECONDS, :EXPR_RE
+
         class << self
           def detect(address_or_url)
             address_or_url = "https://#{address_or_url}" unless address_or_url.match?(%r{^[a-z]{1,6}://})
@@ -54,14 +58,22 @@ module Aspera
             }
           end
         end
-        DEFAULT_FILTER_AGE_SECONDS = 3 * 3600
-        private_constant :DEFAULT_FILTER_AGE_SECONDS
+
         def initialize(**env)
           super
-          time_now = Time.now
-          options.declare(:filter_from, 'Only after date', values: :date, default: Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS))
-          options.declare(:filter_to, 'Only before date', values: :date, default: Manager.time_to_string(time_now))
-          options.parse_options!
+        end
+
+        def parse_extended_filter(filter, query)
+          raise BadArgument, "Invalid filter syntax: #{filter}, shall be (field op val)and(field op val)..." unless filter.start_with?('(') && filter.end_with?(')')
+          filter[1..-2].split(')and(').each_with_index do |expr, i|
+            m = expr.match(EXPR_RE)
+            raise BadArgument, "Invalid expression: #{expr}, shall be: <field> <op> <val>" unless m
+            t = m.captures
+            i += 1
+            query["filter#{i}"] = t[0]
+            query["comp#{i}"]   = t[1]
+            query["val#{i}"]    = t[2]
+          end
         end
 
         ACTIONS = %i[transfer health].freeze
@@ -93,16 +105,34 @@ module Aspera
                 return Main.result_object_list(api_console.create("smart_transfers/#{smart_id}", params))
               end
             when :current
-              command = options.get_next_command([:list])
+              command = options.get_next_command(%i[list show files start pause cancel resume rerun change_rate change_policy move_forwards move_back])
               case command
               when :list
-                return {
-                  type:   :object_list,
-                  data:   api_console.read('transfers', {
-                    'from' => options.get_option(:filter_from, mandatory: true),
-                    'to'   => options.get_option(:filter_to, mandatory: true)
-                  }),
-                  fields: %w[id contact name status]}
+                # https://developer.ibm.com/apis/catalog/aspera--aspera-console-rest-api/Developer+Guides#transfer-list
+                query = query_read_delete(default: {})
+                if query['from'].nil? && query['to'].nil?
+                  time_now = Time.now
+                  query['from'] = Manager.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
+                  query['to'] = Manager.time_to_string(time_now)
+                end
+                if (filter = query.delete('filter'))
+                  parse_extended_filter(filter, query)
+                end
+                return Main.result_object_list(
+                  api_console.read('transfers', query),
+                  fields: %w[id contact name status]
+                )
+              when :show
+                transfer_id = instance_identifier(description: 'transfer ID')
+                return Main.result_single_object(api_console.read("transfers/#{transfer_id}"))
+              when :files
+                transfer_id = instance_identifier(description: 'transfer ID')
+                query = query_read_delete(default: {})
+                query['limit'] ||= 100
+                return Main.result_object_list(api_console.read("transfers/#{transfer_id}/files", query))
+              when :start, :pause, :cancel, :resume, :rerun, :change_rate, :change_policy, :move_forwards, :move_back
+                transfer_id = instance_identifier(description: 'transfer ID')
+                return Main.result_single_object(api_console.update("transfers/#{transfer_id}/#{command}", query_read_delete))
               end
             end
           end
