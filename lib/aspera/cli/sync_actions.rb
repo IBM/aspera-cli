@@ -7,6 +7,10 @@ module Aspera
   module Cli
     # Module for sync actions
     module SyncActions
+      STATE_STR = (['Nil'] +
+        (1..18).map{ |i| "P(#{i})"} +
+        %w[Syncd Error Confl Pconf] +
+        (23..24).map{ |i| "P(#{i})"}).freeze
       class << self
         def declare_options(options)
           options.declare(:sync_info, 'Information for sync instance and sessions', types: Hash, default: {})
@@ -49,7 +53,7 @@ module Aspera
           else Aspera.error_unexpected_value(command2)
           end
         when :db
-          command2 = options.get_next_command(%i[find meta counters])
+          command2 = options.get_next_command(%i[overview find meta counters file_info])
           require 'aspera/sync/database'
           case command2
           when :find
@@ -62,6 +66,23 @@ module Aspera
                 Sync::Operations.session_db_file(
                   Sync::Operations.validated_admin_info(
                     *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).send(command2))
+          when :file_info
+            result =
+              Sync::Database.new(
+                Sync::Operations.session_db_file(
+                  Sync::Operations.validated_admin_info(
+                    *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).send(command2)
+            result.each do |r|
+              r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
+            end
+            return Main.result_object_list(
+              result,
+              fields: %w[sstate record_id f_meta_path message])
+          when :overview
+            Sync::Database.new(
+              Sync::Operations.session_db_file(
+                Sync::Operations.validated_admin_info(
+                  *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).overview
           else Aspera.error_unexpected_value(command2)
           end
         else Aspera.error_unexpected_value(command)
