@@ -33,6 +33,11 @@ module Aspera
 
     I18N_VARS = %w(LC_ALL LC_CTYPE LANG).freeze
 
+    # "/" is invalid on both Unix and Windows, other are Windows special characters
+    # See: https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+    INVALID_FILENAME_CHARACTERS = '<>:"/\\|?*'
+    REPLACE_CHARACTER = '_'
+
     class << self
       def ruby_version
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
@@ -178,7 +183,7 @@ module Aspera
         terminal? && I18N_VARS.any?{ |var| ENV[var]&.include?('UTF-8')}
       end
     end
-    attr_accessor :url_method
+    attr_accessor :url_method, :file_illegal_characters
     attr_reader :os, :cpu, :executable_extension, :default_gui_mode
 
     def initialize
@@ -222,6 +227,7 @@ module Aspera
           :text
         end
       @url_method = @default_gui_mode
+      @file_illegal_characters = REPLACE_CHARACTER + INVALID_FILENAME_CHARACTERS
       nil
     end
 
@@ -288,6 +294,17 @@ module Aspera
         end
       else Aspera.error_unexpected_value(@url_method){'unknown url open method'}
       end
+    end
+
+    # Sanitize a filename by replacing illegal characters
+    # @param filename [String] the original filename
+    # @return [String] the sanitized filename
+    def sanitized_filename(filename)
+      return filename if @file_illegal_characters.nil? || @file_illegal_characters.length < 2
+      replacement = @file_illegal_characters[0]
+      illegal_characters = @file_illegal_characters[1..-1]
+      pattern = Regexp.union(illegal_characters.chars)
+      filename.gsub(pattern, replacement)
     end
   end
 end

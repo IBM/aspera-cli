@@ -314,6 +314,9 @@ module Aspera
           :ui, 'Method to start browser',
           values: USER_INTERFACES,
           handler: {o: Environment.instance, m: :url_method})
+        @env.options.declare(
+          :invalid_characters, 'Replacement character and invalid filename characters',
+          handler: {o: Environment.instance, m: :file_illegal_characters})
         @env.options.declare(:log_level, 'Log level', values: Log.levels, handler: {o: Log.instance, m: :level})
         @env.options.declare(:logger, 'Logging method', values: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
         @env.options.declare(:lock_port, 'Prevent dual execution of a command, e.g. in cron', coerce: Integer, types: Integer)

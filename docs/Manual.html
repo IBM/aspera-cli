@@ -2242,14 +2242,27 @@ disk for a maximum of 30 minutes (<code>TOKEN_CACHE_EXPIRY_SEC</code>)
 and garbage collected after that. When a token has expired, then a new
 token is generated, either using a refresh_token if it is available, or
 by the default method.</p>
-<h2 data-number="4.8" id="temporary-files"><span
-class="header-section-number">4.8</span> Temporary files</h2>
+<h2 data-number="4.8" id="invalid-filename-characters"><span
+class="header-section-number">4.8</span> Invalid Filename
+Characters</h2>
+<p>The option <code>invalid_characters</code> allows specifying a
+replacement character for a list of characters that are invalid in
+filenames on the local file system and replaces them with the specified
+character.</p>
+<p>The first character specifies the replacement character, and the
+following characters are the invalid ones. This is used when a folder or
+file is created from a value that potentially contains invalid
+characters. For example, using the option <code>package_folder</code>.
+The default value is <code>_&lt;&gt;:"/\|?*</code>, corresponding to
+characters not allowed on Windows.</p>
+<h2 data-number="4.9" id="temporary-files"><span
+class="header-section-number">4.9</span> Temporary files</h2>
 <p>Some temporary files may be needed during runtime. The temporary
 folder may be specified with option: <code>temp_folder</code>. Temporary
 files are deleted at the end of execution unless option:
 <code>clean_temp</code> is set to <code>no</code>.</p>
-<h2 data-number="4.9" id="configuration-file"><span
-class="header-section-number">4.9</span> Configuration file</h2>
+<h2 data-number="4.10" id="configuration-file"><span
+class="header-section-number">4.10</span> Configuration file</h2>
 <p>On the first execution of <code>ascli</code>, an empty configuration
 file is created in the configuration folder
 (<code>ascli config folder</code>). There is no mandatory information
@@ -2274,8 +2287,8 @@ credentials), it is possible to invoke the ones of an <a
 href="#option-preset">Option Preset</a> (e.g. <code>mypreset</code>)
 using the option <code>preset</code>: <code>--preset=mypreset</code> or
 its shortcut: <code>-Pmypreset</code>.</p>
-<h3 data-number="4.9.1" id="option-preset"><span
-class="header-section-number">4.9.1</span> Option Preset</h3>
+<h3 data-number="4.10.1" id="option-preset"><span
+class="header-section-number">4.10.1</span> Option Preset</h3>
 <p>An <a href="#option-preset">Option Preset</a> is a collection of
 options and their associated values in a named section in the
 configuration file.</p>
@@ -2336,14 +2349,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb160-1"><a href
 <p>When <code>pspecific</code> is loaded, then cumulative option
 <code>preset</code> will be set, and it will also load
 <code>pcommon</code>.</p>
-<h3 data-number="4.9.2" id="special-option-preset-config"><span
-class="header-section-number">4.9.2</span> Special Option Preset:
+<h3 data-number="4.10.2" id="special-option-preset-config"><span
+class="header-section-number">4.10.2</span> Special Option Preset:
 <code>config</code></h3>
 <p>This preset name is reserved and contains a single key:
 <code>version</code>. This is the version of <code>ascli</code> which
 created the file.</p>
-<h3 data-number="4.9.3" id="special-option-preset-default"><span
-class="header-section-number">4.9.3</span> Special Option Preset:
+<h3 data-number="4.10.3" id="special-option-preset-default"><span
+class="header-section-number">4.10.3</span> Special Option Preset:
 <code>default</code></h3>
 <p>This preset name is reserved and contains an array of key-value,
 where the key is the name of a plugin, and the value is the name of
@@ -2363,8 +2376,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb161-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb162-1"><a href="#cb162-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset get default _plugin_name_</span></code></pre></div>
 <div class="sourceCode" id="cb163"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb163-1"><a href="#cb163-1" aria-hidden="true" tabindex="-1"></a><span class="er">&quot;_default_preset_for_plugin_&quot;</span></span></code></pre></div>
-<h3 data-number="4.9.4" id="plugin-config-configuration"><span
-class="header-section-number">4.9.4</span> Plugin: <code>config</code>:
+<h3 data-number="4.10.4" id="plugin-config-configuration"><span
+class="header-section-number">4.10.4</span> Plugin: <code>config</code>:
 Configuration</h3>
 <p>Plugin <code>config</code> provides general commands for
 <code>ascli</code>:</p>
@@ -2398,8 +2411,8 @@ different name:</p>
 <div class="sourceCode" id="cb166"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb166-1"><a href="#cb166-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set GLOBAL version_check_days 0</span>
 <span id="cb166-2"><a href="#cb166-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config preset set default config my_common_defaults</span></code></pre></div>
-<h2 data-number="4.10" id="config-sample-commands"><span
-class="header-section-number">4.10</span> Config sample commands</h2>
+<h2 data-number="4.11" id="config-sample-commands"><span
+class="header-section-number">4.11</span> Config sample commands</h2>
 <blockquote>
 <p><strong>Note:</strong> Add <code>ascli config</code> in front of the
 commands:</p>
@@ -2496,8 +2509,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb167-1"><a href
 <span id="cb167-89"><a href="#cb167-89" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> https://shares.example.com/path shares <span class="at">--username</span><span class="op">=</span>test <span class="at">--password</span><span class="op">=</span>test</span>
 <span id="cb167-90"><a href="#cb167-90" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email</span>
 <span id="cb167-91"><a href="#cb167-91" aria-hidden="true" tabindex="-1"></a><span class="ex">wizard</span> my_org aoc <span class="at">--key-path</span><span class="op">=</span>my_private_key <span class="at">--username</span><span class="op">=</span>my_user_email <span class="at">--use-generic-client</span><span class="op">=</span>yes</span></code></pre></div>
-<h3 data-number="4.10.1" id="format-of-file"><span
-class="header-section-number">4.10.1</span> Format of file</h3>
+<h3 data-number="4.11.1" id="format-of-file"><span
+class="header-section-number">4.11.1</span> Format of file</h3>
 <p>The configuration file is a <code>Hash</code> in a YAML file.
 Example:</p>
 <div class="sourceCode" id="cb168"><pre
@@ -2553,8 +2566,8 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb170-1"><a href
 <span id="cb170-2"><a href="#cb170-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">private_key</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;@file:/Users/laurent/.aspera/ascli/my_private_key&quot;</span></span></code></pre></div>
 <p>So, the key file will be read only at execution time, but not be
 embedded in the configuration file.</p>
-<h3 data-number="4.10.2" id="evaluation-order-of-options"><span
-class="header-section-number">4.10.2</span> Evaluation order of
+<h3 data-number="4.11.2" id="evaluation-order-of-options"><span
+class="header-section-number">4.11.2</span> Evaluation order of
 options</h3>
 <p>Some options are global, some options are available only for some
 plugins. (the plugin is the first level command).</p>
@@ -2597,8 +2610,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb174-1"><a href
 <p>Example: Define options using a <code>Hash</code>:</p>
 <div class="sourceCode" id="cb175"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb175-1"><a href="#cb175-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">-N</span> <span class="at">--preset</span><span class="op">=</span>@json:<span class="st">&#39;{&quot;url&quot;:&quot;_url_here_&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;username&quot;:&quot;_name_here_&quot;}&#39;</span> node <span class="at">--show-config</span></span></code></pre></div>
-<h3 data-number="4.10.3" id="wizard"><span
-class="header-section-number">4.10.3</span> Wizard</h3>
+<h3 data-number="4.11.3" id="wizard"><span
+class="header-section-number">4.11.3</span> Wizard</h3>
 <p>The wizard is a command that asks the user for information and
 creates an <a href="#option-preset">Option Preset</a> with the provided
 information for a given application.</p>
@@ -2655,9 +2668,9 @@ href="#option-preset">Option Preset</a> created by the wizard.</p>
 <p>The simplest invocation is:</p>
 <div class="sourceCode" id="cb176"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb176-1"><a href="#cb176-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config wizard</span></code></pre></div>
-<h3 data-number="4.10.4"
+<h3 data-number="4.11.4"
 id="example-of-configuration-for-a-plugin"><span
-class="header-section-number">4.10.4</span> Example of configuration for
+class="header-section-number">4.11.4</span> Example of configuration for
 a plugin</h3>
 <p>For Faspex, Shares, Node (including ATS, Aspera Transfer Service),
 Console, only username/password and URL are required (either on command
@@ -2697,8 +2710,8 @@ default options</li>
 </ul>
 <div class="sourceCode" id="cb183"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb183-1"><a href="#cb183-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> shares repo browse /</span></code></pre></div>
-<h2 data-number="4.11" id="secret-vault"><span
-class="header-section-number">4.11</span> Secret Vault</h2>
+<h2 data-number="4.12" id="secret-vault"><span
+class="header-section-number">4.12</span> Secret Vault</h2>
 <p>Secrets, e.g. passwords, keys, are needed when connecting to
 applications. Those secrets are usually provided as command options, on
 command line, env vars, files etc.</p>
@@ -2737,8 +2750,8 @@ specified on command line like this:</p>
 <div class="sourceCode" id="cb186"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="bu">read</span> <span class="at">-s</span> <span class="va">ASCLI_VAULT_PASSWORD</span></span>
 <span id="cb186-2"><a href="#cb186-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ASCLI_VAULT_PASSWORD</span></span></code></pre></div>
-<h3 data-number="4.11.1" id="vault-ibm-hashicorp-vault"><span
-class="header-section-number">4.11.1</span> Vault: IBM HashiCorp
+<h3 data-number="4.12.1" id="vault-ibm-hashicorp-vault"><span
+class="header-section-number">4.12.1</span> Vault: IBM HashiCorp
 Vault</h3>
 <p><a href="https://developer.hashicorp.com/vault"
 class="uri">https://developer.hashicorp.com/vault</a></p>
@@ -2781,8 +2794,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb187-1"><a href
 </table>
 <div class="sourceCode" id="cb188"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--vault=@json:</span><span class="st">&#39;{&quot;type&quot;:&quot;vault&quot;,&quot;url&quot;:&quot;http://127.0.0.1:8200&quot;}&#39;</span> <span class="at">--vault_password</span><span class="op">=</span>dev-only-token</span></code></pre></div>
-<h3 data-number="4.11.2" id="vault-system-keychain"><span
-class="header-section-number">4.11.2</span> Vault: System keychain</h3>
+<h3 data-number="4.12.2" id="vault-system-keychain"><span
+class="header-section-number">4.12.2</span> Vault: System keychain</h3>
 <blockquote>
 <p><strong>Note:</strong> <strong>macOS only</strong></p>
 </blockquote>
@@ -2811,8 +2824,8 @@ supported currently).</p>
 </table>
 <div class="sourceCode" id="cb189"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--vault=@json:</span><span class="st">&#39;{&quot;type&quot;:&quot;system&quot;,&quot;name&quot;:&quot;ascli&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="4.11.3" id="vault-encrypted-file"><span
-class="header-section-number">4.11.3</span> Vault: Encrypted file</h3>
+<h3 data-number="4.12.3" id="vault-encrypted-file"><span
+class="header-section-number">4.12.3</span> Vault: Encrypted file</h3>
 <p>It is possible to store and use secrets encrypted in a file using
 option <code>vault</code> set to:</p>
 <div class="sourceCode" id="cb190"><pre
@@ -2844,8 +2857,8 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb190-1"><a href
 </tr>
 </tbody>
 </table>
-<h3 data-number="4.11.4" id="vault-operations"><span
-class="header-section-number">4.11.4</span> Vault: Operations</h3>
+<h3 data-number="4.12.4" id="vault-operations"><span
+class="header-section-number">4.12.4</span> Vault: Operations</h3>
 <p>For this use the <code>config vault</code> command.</p>
 <p>Then secrets can be manipulated using commands:</p>
 <ul>
@@ -2856,14 +2869,14 @@ class="header-section-number">4.11.4</span> Vault: Operations</h3>
 </ul>
 <div class="sourceCode" id="cb191"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config vault create @json:<span class="st">&#39;{&quot;label&quot;:&quot;mylabel&quot;,&quot;password&quot;:&quot;my_password_here&quot;,&quot;description&quot;:&quot;for this account&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="4.11.5" id="configuration-finder"><span
-class="header-section-number">4.11.5</span> Configuration Finder</h3>
+<h3 data-number="4.12.5" id="configuration-finder"><span
+class="header-section-number">4.12.5</span> Configuration Finder</h3>
 <p>When a secret is needed by a sub command, the command can search for
 existing configurations in the configuration file.</p>
 <p>The lookup is done by comparing the service URL and username (or
 access key).</p>
-<h3 data-number="4.11.6" id="securing-passwords-and-secrets"><span
-class="header-section-number">4.11.6</span> Securing passwords and
+<h3 data-number="4.12.6" id="securing-passwords-and-secrets"><span
+class="header-section-number">4.12.6</span> Securing passwords and
 secrets</h3>
 <p>A password can be saved in clear in an <a
 href="#option-preset">Option Preset</a> together with other account
@@ -2879,8 +2892,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb194-1"><a href
 <p><strong>Note:</strong> Use <code>@val:</code> in front of
 <code>@vault:</code> so that the extended value is not evaluated.</p>
 </blockquote>
-<h2 data-number="4.12" id="private-key"><span
-class="header-section-number">4.12</span> Private Key</h2>
+<h2 data-number="4.13" id="private-key"><span
+class="header-section-number">4.13</span> Private Key</h2>
 <p>Some Aspera applications allow the user to be authenticated using <a
 href="https://en.wikipedia.org/wiki/Public-key_cryptography">Public Key
 Cryptography</a>:</p>
@@ -2905,8 +2918,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb195-1"><a href
 href="https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail">PEM</a>.</p>
 <p>If another format is used, such as <code>DER</code>, it can be
 converted to <code>PEM</code>, e.g. using <code>openssl</code>.</p>
-<h3 data-number="4.12.1" id="ascli-for-key-generation"><span
-class="header-section-number">4.12.1</span> <code>ascli</code> for key
+<h3 data-number="4.13.1" id="ascli-for-key-generation"><span
+class="header-section-number">4.13.1</span> <code>ascli</code> for key
 generation</h3>
 <p>The generated key is of type <code>RSA</code>, by default:
 <strong>4096</strong> bit. For convenience, the public key is also
@@ -2917,14 +2930,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb196-1"><a href
 <p>To display the public key of a private key:</p>
 <div class="sourceCode" id="cb197"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config pubkey @file:<span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
-<h3 data-number="4.12.2" id="ssh-keygen"><span
-class="header-section-number">4.12.2</span> <code>ssh-keygen</code></h3>
+<h3 data-number="4.13.2" id="ssh-keygen"><span
+class="header-section-number">4.13.2</span> <code>ssh-keygen</code></h3>
 <p>Both private and public keys are generated, option <code>-N</code> is
 for passphrase.</p>
 <div class="sourceCode" id="cb198"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb198-1"><a href="#cb198-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh-keygen</span> <span class="at">-t</span> rsa <span class="at">-b</span> 4096 <span class="at">-m</span> PEM <span class="at">-N</span> <span class="st">&#39;&#39;</span> <span class="at">-f</span> <span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
-<h3 data-number="4.12.3" id="openssl"><span
-class="header-section-number">4.12.3</span> <code>openssl</code></h3>
+<h3 data-number="4.13.3" id="openssl"><span
+class="header-section-number">4.13.3</span> <code>openssl</code></h3>
 <p>To generate a key pair with a passphrase the following can be used on
 any system:</p>
 <div class="sourceCode" id="cb199"><pre
@@ -2944,9 +2957,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb200-1"><a href
 <div class="sourceCode" id="cb201"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> rsa <span class="at">-des3</span> <span class="at">-in</span> <span class="va">${KEY_PAIR_PATH}</span> <span class="at">-out</span> <span class="va">${KEY_PAIR_PATH}</span>.with_des</span>
 <span id="cb201-2"><a href="#cb201-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> <span class="va">${KEY_PAIR_PATH}</span>.with_des <span class="va">${KEY_PAIR_PATH}</span></span></code></pre></div>
-<h3 data-number="4.12.4"
+<h3 data-number="4.13.4"
 id="using-an-application-to-generate-a-key-pair"><span
-class="header-section-number">4.12.4</span> Using an application to
+class="header-section-number">4.13.4</span> Using an application to
 generate a key pair</h3>
 <p>Many applications are available, including on internet, to generate
 key pairs. For example: <a href="https://cryptotools.net/rsagen"
@@ -2956,8 +2969,8 @@ class="uri">https://cryptotools.net/rsagen</a></p>
 information, and shall be kept secret (like a password), so using online
 tools is risky.</p>
 </blockquote>
-<h2 data-number="4.13" id="web-service"><span
-class="header-section-number">4.13</span> Web service</h2>
+<h2 data-number="4.14" id="web-service"><span
+class="header-section-number">4.14</span> Web service</h2>
 <p>Some plugins start a local web server. This server can server HTTP or
 HTTPS (with certificate):</p>
 <p>The following parameters are supported:</p>
@@ -3013,8 +3026,8 @@ PKCS12</td>
 <li>The <strong>base path</strong>, i.e. the path under which requests
 are received, if a reverse proxy is used this can be used to route.</li>
 </ul>
-<h2 data-number="4.14" id="image-and-video-thumbnails"><span
-class="header-section-number">4.14</span> Image and video
+<h2 data-number="4.15" id="image-and-video-thumbnails"><span
+class="header-section-number">4.15</span> Image and video
 thumbnails</h2>
 <p><code>ascli</code> can display thumbnails for images and videos in
 the terminal. This is available:</p>
@@ -3072,9 +3085,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb203-1"><a href="#cb203-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-so</span> <span class="at">-</span> https://eudemo.asperademo.com/wallpaper.jpg <span class="kw">|</span> <span class="ex">ascli</span> config image @stdbin:</span></code></pre></div>
 <div class="sourceCode" id="cb204"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb204-1"><a href="#cb204-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-n</span> https://eudemo.asperademo.com/wallpaper.jpg <span class="kw">|</span> <span class="ex">ascli</span> config image @uri:@stdin:</span></code></pre></div>
-<h2 data-number="4.15"
+<h2 data-number="4.16"
 id="graphical-interactions-browser-and-text-editor"><span
-class="header-section-number">4.15</span> Graphical Interactions:
+class="header-section-number">4.16</span> Graphical Interactions:
 Browser and Text Editor</h2>
 <p>Some actions may require the use of a graphical tool:</p>
 <ul>
@@ -3091,8 +3104,8 @@ browser will be opened for URLs or a text editor for file edition.</li>
 <li><code>--ui=text</code> forces a text environment, the URL or file
 path to open is displayed on terminal.</li>
 </ul>
-<h2 data-number="4.16" id="logging-debugging"><span
-class="header-section-number">4.16</span> Logging, Debugging</h2>
+<h2 data-number="4.17" id="logging-debugging"><span
+class="header-section-number">4.17</span> Logging, Debugging</h2>
 <p>The gem is equipped with traces, mainly for debugging and learning
 APIs. By default, logging level is <code>warn</code> and the output
 channel is <code>stderr</code>. To increase debug level, use option
@@ -3125,8 +3138,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb205-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb206-1"><a href="#cb206-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config pre over <span class="at">--log-level</span><span class="op">=</span>error <span class="at">--logger</span><span class="op">=</span>syslog</span></code></pre></div>
 <p>When <code>ascli</code> is used interactively in a shell, the shell
 itself will usually log executed commands in the history file.</p>
-<h2 data-number="4.17" id="learning-aspera-product-apis-rest"><span
-class="header-section-number">4.17</span> Learning Aspera Product APIs
+<h2 data-number="4.18" id="learning-aspera-product-apis-rest"><span
+class="header-section-number">4.18</span> Learning Aspera Product APIs
 (REST)</h2>
 <p><code>ascli</code> uses mainly REST APIs to interact with Aspera
 applications.</p>
@@ -3135,8 +3148,8 @@ applications.</p>
 <p>To display HTTP/S traffic set option <code>log_level</code> to
 <code>trace2</code>: <code>--log-level=trace2</code>. It will display
 the exact content of HTTP requests and responses.</p>
-<h2 data-number="4.18" id="http-socket-parameters"><span
-class="header-section-number">4.18</span> HTTP socket parameters</h2>
+<h2 data-number="4.19" id="http-socket-parameters"><span
+class="header-section-number">4.19</span> HTTP socket parameters</h2>
 <p>To ignore SSL certificate for <strong>any</strong> address/port, use
 option: <code>insecure</code>, i.e. <code>--insecure=yes</code>. To
 ignore SSL certificate for a list of specific address/port, use option
@@ -3241,7 +3254,7 @@ adjusted using option <code>http_options</code>:</p>
 <p>Time values are in set <strong>seconds</strong> and can be of type
 either <code>Integer</code> or <code>Float</code>. Default values are
 the ones of Ruby: For a full list, refer to the Ruby library: <a
-href="https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html"><code>Net::HTTP</code></a>.</p>
+href="https://github.com/ruby/net-http/blob/master/lib/net/http.rb"><code>Net::HTTP</code></a>.</p>
 <p>Like any other option, those can be set either on command line, or in
 configuration file, either in a global preset or server-specific
 one.</p>
@@ -3264,8 +3277,8 @@ For example to enable option
 <p>Example:</p>
 <div class="sourceCode" id="cb208"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb208-1"><a href="#cb208-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;ssl_options&quot;</span><span class="fu">:</span><span class="ot">[</span><span class="st">&quot;CIPHER_SERVER_PREFERENCE&quot;</span><span class="ot">,</span><span class="st">&quot;-SAFARI_ECDHE_ECDSA_BUG&quot;</span><span class="ot">]</span><span class="fu">}</span></span></code></pre></div>
-<h2 data-number="4.19" id="proxy"><span
-class="header-section-number">4.19</span> Proxy</h2>
+<h2 data-number="4.20" id="proxy"><span
+class="header-section-number">4.20</span> Proxy</h2>
 <p>There are several types of network connections, each of them use a
 different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <ul>
@@ -3274,8 +3287,8 @@ different mechanism to define a (forward) <strong>proxy</strong>:</p>
 <li><code>ascp</code> SSH and UDP (Aspera FASP)</li>
 </ul>
 <p>Refer to the following sections.</p>
-<h3 data-number="4.19.1" id="proxy-for-rest-and-http-gateway"><span
-class="header-section-number">4.19.1</span> Proxy for REST and HTTP
+<h3 data-number="4.20.1" id="proxy-for-rest-and-http-gateway"><span
+class="header-section-number">4.20.1</span> Proxy for REST and HTTP
 Gateway</h3>
 <p>REST API calls and transfers based on HTTP Gateway both use Ruby’s
 <code>Net::HTTP</code> class. Refer to <a
@@ -3329,16 +3342,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb216-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb218-1"><a href="#cb218-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@json:<span class="st">&#39;[&quot;__username_here__&quot;,&quot;__password_here__&quot;]&#39;</span> ...</span></code></pre></div>
 <div class="sourceCode" id="cb219"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb219-1"><a href="#cb219-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--proxy-credentials</span><span class="op">=</span>@list::__username_here__:__password_here__ ...</span></code></pre></div>
-<h3 data-number="4.19.2"
+<h3 data-number="4.20.2"
 id="proxy-for-legacy-aspera-https-fallback"><span
-class="header-section-number">4.19.2</span> Proxy for Legacy Aspera
+class="header-section-number">4.20.2</span> Proxy for Legacy Aspera
 HTTP/S Fallback</h3>
 <p>Only supported with the <code>direct</code> agent: To specify a proxy
 for legacy HTTP fallback, use <code>ascp</code> native option
 <code>-x</code> and <code>ascp_args</code>:
 <code>--transfer-info=@json:'{"ascp_args":["-x","url_here"]}'</code>.</p>
-<h3 data-number="4.19.3" id="fasp-proxy-forward-for-transfers"><span
-class="header-section-number">4.19.3</span> FASP proxy (forward) for
+<h3 data-number="4.20.3" id="fasp-proxy-forward-for-transfers"><span
+class="header-section-number">4.20.3</span> FASP proxy (forward) for
 transfers</h3>
 <p>To specify a FASP proxy (forward), set the <a
 href="#transfer-specification"><strong>transfer-spec</strong></a>
@@ -3351,8 +3364,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb220-1"><a href
 <p>Or, alternatively, (prefer transfer spec like above, generally):</p>
 <div class="sourceCode" id="cb221"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb221-1"><a href="#cb221-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--transfer-info=@json:</span><span class="st">&#39;{&quot;ascp_args&quot;:[&quot;--proxy&quot;,&quot;dnat://proxy.example.org:9091&quot;]}&#39;</span></span></code></pre></div>
-<h2 data-number="4.20" id="fasp-configuration"><span
-class="header-section-number">4.20</span> FASP configuration</h2>
+<h2 data-number="4.21" id="fasp-configuration"><span
+class="header-section-number">4.21</span> FASP configuration</h2>
 <p><code>ascli</code> uses one of the transfer agents to execute
 transfers.</p>
 <p>By default, it uses the <code>direct</code> agent, which is basically
@@ -3380,8 +3393,8 @@ locally</li>
 <li><code>connect</code> : list and download connect client versions
 available on internet</li>
 </ul>
-<h3 data-number="4.20.1" id="show-path-of-currently-used-ascp"><span
-class="header-section-number">4.20.1</span> Show path of currently used
+<h3 data-number="4.21.1" id="show-path-of-currently-used-ascp"><span
+class="header-section-number">4.21.1</span> Show path of currently used
 <code>ascp</code></h3>
 <div class="sourceCode" id="cb222"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb222-1"><a href="#cb222-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp show</span></code></pre></div>
@@ -3394,9 +3407,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb224-1"><a href
 │ ascp    │ /Users/john/.aspera/sdk/ascp                     │
 ...
 ╰─────────┴──────────────────────────────────────────────────╯</code></pre>
-<h3 data-number="4.20.2"
+<h3 data-number="4.21.2"
 id="selection-of-ascp-location-for-direct-agent"><span
-class="header-section-number">4.20.2</span> Selection of
+class="header-section-number">4.21.2</span> Selection of
 <code>ascp</code> location for <a
 href="#agent-direct"><code>direct</code></a> agent</h3>
 <p>By default, <code>ascli</code> uses any found local product with
@@ -3441,9 +3454,9 @@ binary of the selected product.</p>
 <div class="sourceCode" id="cb232"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb232-1"><a href="#cb232-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp products use <span class="st">&#39;Aspera Connect&#39;</span></span>
 <span id="cb232-2"><a href="#cb232-2" aria-hidden="true" tabindex="-1"></a><span class="ex">saved</span> to default global preset /Users/laurent/Applications/Aspera Connect.app/Contents/Resources/ascp</span></code></pre></div>
-<h3 data-number="4.20.3"
+<h3 data-number="4.21.3"
 id="installation-of-connect-client-on-command-line"><span
-class="header-section-number">4.20.3</span> Installation of Connect
+class="header-section-number">4.21.3</span> Installation of Connect
 Client on command line</h3>
 <div class="sourceCode" id="cb233"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb233-1"><a href="#cb233-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect list</span></code></pre></div>
@@ -3471,8 +3484,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb235-1"><a href
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb237-1"><a href="#cb237-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> config ascp connect version <span class="st">&#39;Aspera Connect for Mac Intel&#39;</span> download enclosure <span class="at">--to-folder</span><span class="op">=</span>.</span></code></pre></div>
 <pre class="output"><code>Time: 00:00:02 ============================================= 100% 27766 KB/sec Time: 00:00:02
 Downloaded: IBMAsperaConnectInstaller-3.11.2.63.dmg</code></pre>
-<h2 data-number="4.21" id="transfer-clients-agents"><span
-class="header-section-number">4.21</span> Transfer Clients: Agents</h2>
+<h2 data-number="4.22" id="transfer-clients-agents"><span
+class="header-section-number">4.22</span> Transfer Clients: Agents</h2>
 <p>Some actions on Aspera Applications lead to file transfers (upload
 and download) using the FASP protocol (<code>ascp</code>). Transfers
 will be executed by a transfer client, here called <strong>Transfer
@@ -3544,8 +3557,8 @@ Parameters in transfer-spec can be modified with option
 specific for each agent type and are described in the agents respective
 sections.</p>
 </blockquote>
-<h3 data-number="4.21.1" id="agent-direct"><span
-class="header-section-number">4.21.1</span> Agent: Direct</h3>
+<h3 data-number="4.22.1" id="agent-direct"><span
+class="header-section-number">4.22.1</span> Agent: Direct</h3>
 <p>The <code>direct</code> agent directly executes a local
 <code>ascp</code> in <code>ascli</code>. This is the default agent for
 <code>ascli</code> (option <code>--transfer=direct</code>).
@@ -3722,9 +3735,9 @@ temporary folder.</p>
 href="#agent-direct"><code>direct</code></a> transfer agent (i.e. local
 <code>ascp</code>) and not for Aspera on Cloud.</p>
 </blockquote>
-<h4 data-number="4.21.1.1"
+<h4 data-number="4.22.1.1"
 id="agent-direct-aspera.conf-virtual-links"><span
-class="header-section-number">4.21.1.1</span> Agent: Direct:
+class="header-section-number">4.22.1.1</span> Agent: Direct:
 <code>aspera.conf</code>: Virtual Links</h4>
 <p>This agent supports a local configuration file:
 <code>aspera.conf</code> where Virtual links can be configured:</p>
@@ -3783,9 +3796,9 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb245-1"><a href="
 <p>It is also possible to set a schedule with different time and days,
 for example for the value of <code>schedule</code>:</p>
 <pre class="text"><code>start=08 end=19 days=mon,tue,wed,thu capacity=900000;1000000</code></pre>
-<h4 data-number="4.21.1.2"
+<h4 data-number="4.22.1.2"
 id="agent-direct-aspera.conf-file-name-with-special-characters"><span
-class="header-section-number">4.21.1.2</span> Agent: Direct:
+class="header-section-number">4.22.1.2</span> Agent: Direct:
 <code>aspera.conf</code>: File name with special characters</h4>
 <p>By default, <code>ascp</code> replaces file system disallowed
 characters in transferred file names with <code>_</code>. On Windows, it
@@ -3851,20 +3864,20 @@ class="sourceCode xml"><code class="sourceCode xml"><span id="cb250-1"><a href="
 <li><code>data*backup"2025".csv</code> →
 <code>data_backup_2025_.csv</code></li>
 </ul>
-<h3 data-number="4.21.2" id="agent-connect-client"><span
-class="header-section-number">4.21.2</span> Agent: Connect Client</h3>
+<h3 data-number="4.22.2" id="agent-connect-client"><span
+class="header-section-number">4.22.2</span> Agent: Connect Client</h3>
 <p>By specifying option: <code>--transfer=connect</code>,
 <code>ascli</code> will start transfers using the locally installed
 <strong>IBM Aspera Connect Client</strong>. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.21.3" id="agent-desktop-client"><span
-class="header-section-number">4.21.3</span> Agent: Desktop Client</h3>
+<h3 data-number="4.22.3" id="agent-desktop-client"><span
+class="header-section-number">4.22.3</span> Agent: Desktop Client</h3>
 <p>By specifying option: <code>--transfer=desktop</code>,
 <code>ascli</code> will start transfers using the locally installed
 <strong>IBM Aspera Desktop Client</strong>. There are no option for
 <code>transfer_info</code>.</p>
-<h3 data-number="4.21.4" id="agent-node-api"><span
-class="header-section-number">4.21.4</span> Agent: Node API</h3>
+<h3 data-number="4.22.4" id="agent-node-api"><span
+class="header-section-number">4.22.4</span> Agent: Node API</h3>
 <p>By specifying option: <code>--transfer=node</code>,
 <code>ascli</code> starts transfers in an Aspera Transfer Server using
 the Node API, either on a local or remote node. This is especially
@@ -3922,8 +3935,8 @@ parameter <code>root_id</code> is mandatory and specifies the file ID of
 the top folder to use on the node using this access key. It can be
 either the access key’s root file ID, or any authorized file ID
 underneath it.</p>
-<h3 data-number="4.21.5" id="agent-http-gateway"><span
-class="header-section-number">4.21.5</span> Agent: HTTP Gateway</h3>
+<h3 data-number="4.22.5" id="agent-http-gateway"><span
+class="header-section-number">4.22.5</span> Agent: HTTP Gateway</h3>
 <p>The Aspera HTTP Gateway is a service that allows to send and receive
 files using HTTPS.</p>
 <p>By specifying option: <code>--transfer=httpgw</code>,
@@ -3980,8 +3993,8 @@ with a token.</p>
 HTTP Gateway, then <code>ascli</code> will automatically use the gateway
 URL if <code>--transfer=httpgw</code> is specified, so
 <code>transfer_info</code> becomes optional.</p>
-<h3 data-number="4.21.6" id="agent-transfer-daemon"><span
-class="header-section-number">4.21.6</span> Agent: Transfer Daemon</h3>
+<h3 data-number="4.22.6" id="agent-transfer-daemon"><span
+class="header-section-number">4.22.6</span> Agent: Transfer Daemon</h3>
 <p>Another possibility is to use the Transfer Daemon
 (<code>transferd</code>). Set option <code>transfer</code> to
 <code>transferd</code>.</p>
@@ -4055,8 +4068,8 @@ change the signature of <code>gettimeofday</code> to
 <code>struct timezone</code> to <code>void</code></p></li>
 </ul>
 <!-- spellchecker: enable -->
-<h2 data-number="4.22" id="transfer-specification"><span
-class="header-section-number">4.22</span> Transfer Specification</h2>
+<h2 data-number="4.23" id="transfer-specification"><span
+class="header-section-number">4.23</span> Transfer Specification</h2>
 <p>Some commands lead to file transfer (upload/download). All parameters
 necessary for this transfer are described in a <a
 href="#transfer-specification"><strong>transfer-spec</strong></a>
@@ -4104,8 +4117,8 @@ of:</p>
 Agent</a></li>
 <li>Not dependent on command line limitations (special characters…)</li>
 </ul>
-<h2 data-number="4.23" id="transfer-parameters"><span
-class="header-section-number">4.23</span> Transfer Parameters</h2>
+<h2 data-number="4.24" id="transfer-parameters"><span
+class="header-section-number">4.24</span> Transfer Parameters</h2>
 <p>All standard <a
 href="#transfer-specification"><strong>transfer-spec</strong></a>
 parameters can be specified. A <a
@@ -5419,8 +5432,8 @@ not exceed aspera.conf <code>transfer_manager_max_retries</code>
 </tr>
 </tbody>
 </table>
-<h3 data-number="4.23.1" id="destination-folder-for-transfers"><span
-class="header-section-number">4.23.1</span> Destination folder for
+<h3 data-number="4.24.1" id="destination-folder-for-transfers"><span
+class="header-section-number">4.24.1</span> Destination folder for
 transfers</h3>
 <p>The destination folder is set by <code>ascli</code> by default
 to:</p>
@@ -5435,8 +5448,8 @@ with option:
 <code>--ts=@json:'{"destination_root":"&lt;path&gt;"}'</code>. The
 option <code>to_folder</code> provides an equivalent and convenient way
 to change this parameter: <code>--to-folder=&lt;path&gt;</code>.</p>
-<h3 data-number="4.23.2" id="list-of-files-for-transfers"><span
-class="header-section-number">4.23.2</span> List of files for
+<h3 data-number="4.24.2" id="list-of-files-for-transfers"><span
+class="header-section-number">4.24.2</span> List of files for
 transfers</h3>
 <p>When uploading, downloading or sending files, the user must specify
 the list of files to transfer.</p>
@@ -5529,9 +5542,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb269-1"><a href
 file list when using <strong>Aspera on Cloud</strong>, refer to the AoC
 plugin section.</p>
 </blockquote>
-<h3 data-number="4.23.3"
+<h3 data-number="4.24.3"
 id="source-directory-structure-on-destination"><span
-class="header-section-number">4.23.3</span> Source directory structure
+class="header-section-number">4.24.3</span> Source directory structure
 on destination</h3>
 <p>This section is not specific to <code>ascli</code> it is
 <code>ascp</code> behavior.</p>
@@ -5704,8 +5717,8 @@ the list of files in the <code>paths</code> field of transfer spec with
 both <code>source</code> and <code>destination</code> for each
 file.</p></li>
 </ul>
-<h3 data-number="4.23.4" id="multi-session-transfer"><span
-class="header-section-number">4.23.4</span> Multi-session transfer</h3>
+<h3 data-number="4.24.4" id="multi-session-transfer"><span
+class="header-section-number">4.24.4</span> Multi-session transfer</h3>
 <p>Multi session, i.e. starting a transfer of a file set using multiple
 sessions (one <code>ascp</code> process per session) is supported on
 <code>direct</code> and <code>node</code> agents, not yet on
@@ -5730,8 +5743,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb271-1"><a href
 Multi-session using <code>direct</code> agent.</p>
 <p>When multi-session is used, one separate UDP port is used per session
 (refer to <code>ascp</code> manual page).</p>
-<h3 data-number="4.23.5" id="content-protection"><span
-class="header-section-number">4.23.5</span> Content protection</h3>
+<h3 data-number="4.24.5" id="content-protection"><span
+class="header-section-number">4.24.5</span> Content protection</h3>
 <p>Also known as Client-side encryption at rest (CSEAR), content
 protection allows a client to send files to a server which will store
 them encrypted (upload), and decrypt files as they are being downloaded
@@ -5749,8 +5762,8 @@ used.</li>
 fly</p>
 <div class="sourceCode" id="cb272"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb272-1"><a href="#cb272-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;content_protection&quot;:&quot;decrypt&quot;,&quot;content_protection_password&quot;:&quot;my_password_here&quot;}&#39;</span></span></code></pre></div>
-<h3 data-number="4.23.6" id="transfer-spec-examples"><span
-class="header-section-number">4.23.6</span> Transfer Spec Examples</h3>
+<h3 data-number="4.24.6" id="transfer-spec-examples"><span
+class="header-section-number">4.24.6</span> Transfer Spec Examples</h3>
 <ul>
 <li>Change target rate</li>
 </ul>
@@ -5771,21 +5784,21 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb275-1"><a href
 </ul>
 <div class="sourceCode" id="cb276"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb276-1"><a href="#cb276-1" aria-hidden="true" tabindex="-1"></a><span class="ex">--ts=@json:</span><span class="st">&#39;{&quot;precalculate_job_size&quot;:true}&#39;</span></span></code></pre></div>
-<h2 data-number="4.24" id="transfer-progress-bar"><span
-class="header-section-number">4.24</span> Transfer progress bar</h2>
+<h2 data-number="4.25" id="transfer-progress-bar"><span
+class="header-section-number">4.25</span> Transfer progress bar</h2>
 <p>File transfer operations are monitored, and a progress bar is
 displayed on the terminal if option <code>progress_bar</code>
 (<code>Bool</code>) is set to <code>yes</code> (default if the output is
 a terminal).</p>
 <p>The same progress bar is used for any type of transfer, using
 <code>ascp</code>, server to server, using HTTPS, etc…</p>
-<h2 data-number="4.25" id="scheduler"><span
-class="header-section-number">4.25</span> Scheduler</h2>
+<h2 data-number="4.26" id="scheduler"><span
+class="header-section-number">4.26</span> Scheduler</h2>
 <p>It is useful to configure automated scheduled execution.
 <code>ascli</code> does not provide an internal scheduler. Instead, use
 the service provided by the Operating system:</p>
-<h3 data-number="4.25.1" id="windows-scheduler"><span
-class="header-section-number">4.25.1</span> Windows Scheduler</h3>
+<h3 data-number="4.26.1" id="windows-scheduler"><span
+class="header-section-number">4.26.1</span> Windows Scheduler</h3>
 <p>Windows provides the <a
 href="https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page">Task
 Scheduler</a>. It can be configured:</p>
@@ -5796,8 +5809,8 @@ href="https://learn.microsoft.com/fr-fr/windows-server/administration/windows-co
 href="https://learn.microsoft.com/en-us/powershell/module/scheduledtasks"><code>scheduletasks</code></a></p></li>
 <li><p>Using <code>taskschd.msc</code> (UI)</p></li>
 </ul>
-<h3 data-number="4.25.2" id="unix-like-scheduler"><span
-class="header-section-number">4.25.2</span> Unix-like Scheduler</h3>
+<h3 data-number="4.26.2" id="unix-like-scheduler"><span
+class="header-section-number">4.26.2</span> Unix-like Scheduler</h3>
 <p>Unix-like systems (Linux, …) provide <code>cron</code>, configured
 using a <a
 href="https://www.man7.org/linux/man-pages/man5/crontab.5.html"><code>crontab</code></a></p>
@@ -5826,8 +5839,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb278-1"><a href
 <code>cron</code> file instead of configuration file to allow execution
 on command line with output on command line.</p>
 </blockquote>
-<h2 data-number="4.26" id="running-as-service"><span
-class="header-section-number">4.26</span> Running as service</h2>
+<h2 data-number="4.27" id="running-as-service"><span
+class="header-section-number">4.27</span> Running as service</h2>
 <p>Some commands result in <code>ascli</code> running as a server,
 listening on a port. In this case, it is usually desirable to run
 <code>ascli</code> as a service. On Linux, typically, <a
@@ -5872,8 +5885,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb282-1"><a href
 <span id="cb282-2"><a href="#cb282-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable <span class="at">--now</span> my_ascli_svc.service</span>
 <span id="cb282-3"><a href="#cb282-3" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> status my_ascli_svc.service</span>
 <span id="cb282-4"><a href="#cb282-4" aria-hidden="true" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">-u</span> my_ascli_svc.service</span></code></pre></div>
-<h2 data-number="4.27" id="locking-for-exclusive-execution"><span
-class="header-section-number">4.27</span> Locking for exclusive
+<h2 data-number="4.28" id="locking-for-exclusive-execution"><span
+class="header-section-number">4.28</span> Locking for exclusive
 execution</h2>
 <p>In some cases one needs to ensure that <code>ascli</code> is not
 executed several times in parallel.</p>
@@ -5893,8 +5906,8 @@ protection against parallel execution:</p>
 <ul>
 <li>The Windows scheduler does this by default</li>
 <li>Linux <code>cron</code> can leverage the utility <a
-href="https://linux.die.net/man/1/flock"><code>flock</code></a> to do
-the same:</li>
+href="https://man.cx/flock%281%29"><code>flock</code></a> to do the
+same:</li>
 </ul>
 <div class="sourceCode" id="cb283"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb283-1"><a href="#cb283-1" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/flock</span> <span class="at">-w</span> 0 /var/cron.lock ascli ...</span></code></pre></div>
@@ -5911,8 +5924,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb284-1"><a href
 immediately exit like this:</p>
 <div class="sourceCode" id="cb285"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb285-1"><a href="#cb285-1" aria-hidden="true" tabindex="-1"></a><span class="ex">WARN</span> <span class="at">--</span> : Another instance is already running <span class="er">(</span><span class="ex">Address</span> already in use <span class="at">-</span> bind<span class="er">(</span><span class="ex">2</span><span class="kw">)</span> <span class="cf">for</span> <span class="st">&quot;127.0.0.1&quot;</span> port 12345<span class="kw">)</span><span class="bu">.</span></span></code></pre></div>
-<h2 data-number="4.28" id="provençal"><span
-class="header-section-number">4.28</span> “Provençal”</h2>
+<h2 data-number="4.29" id="provençal"><span
+class="header-section-number">4.29</span> “Provençal”</h2>
 <p><code>ascp</code>, the underlying executable implementing Aspera file
 transfer using FASP, has a capability to not only access the local file
 system (using system’s
@@ -5946,8 +5959,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb288-1"><a href
 <p>One of the adapters, used in this manual, for testing, is
 <code>faux</code>. It is a pseudo file system allowing generation of
 file data without actual storage (on source or destination).</p>
-<h2 data-number="4.29" id="faux-for-testing"><span
-class="header-section-number">4.29</span> <code>faux:</code> for
+<h2 data-number="4.30" id="faux-for-testing"><span
+class="header-section-number">4.30</span> <code>faux:</code> for
 testing</h2>
 <p>This adapter can be used to simulate a file or a directory. This is a
 feature of <code>ascp</code>, not <code>ascli</code>. The following is
@@ -6092,8 +6105,8 @@ to /Upload</li>
 </ul>
 <div class="sourceCode" id="cb294"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb294-1"><a href="#cb294-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> server upload <span class="st">&quot;faux:///mydir?file=testfile&amp;count=1000&amp;size=1&quot;</span> <span class="at">--to-folder</span><span class="op">=</span>/Upload</span></code></pre></div>
-<h2 data-number="4.30" id="usage"><span
-class="header-section-number">4.30</span> Usage</h2>
+<h2 data-number="4.31" id="usage"><span
+class="header-section-number">4.31</span> Usage</h2>
 <pre class="text"><code>ascli -h
 NAME
         ascli -- a command line tool for Aspera Applications (v4.24.0.pre)
@@ -6143,6 +6156,7 @@ OPTIONS: global
         --show-config                Display parameters used for the provided action
     -v, --version                    Display version
         --ui=ENUM                    Method to start browser: text, [graphical]
+        --invalid-characters=VALUE   Replacement character and invalid filename characters
         --log-level=ENUM             Log level: trace2, trace1, debug, info, [warn], error, fatal, unknown
         --logger=ENUM                Logging method: [stderr], stdout, syslog
         --lock-port=VALUE            Prevent dual execution of a command, e.g. in cron (Integer)
@@ -6392,9 +6406,9 @@ OPTIONS:
 <p><strong>Note:</strong> Commands and parameter values can be written
 in short form.</p>
 </blockquote>
-<h2 data-number="4.31"
+<h2 data-number="4.32"
 id="bulk-creation-and-deletion-of-resources"><span
-class="header-section-number">4.31</span> Bulk creation and deletion of
+class="header-section-number">4.32</span> Bulk creation and deletion of
 resources</h2>
 <p>Bulk creation and deletion of resources are possible using option
 <code>bulk</code> (<code>yes</code>,<code>no</code>(default)). In that
@@ -6403,8 +6417,8 @@ instead of a simple <code>Hash</code> using the <a
 href="#extended-value-syntax">Extended Value Syntax</a>. This option is
 available only for some resources: if you need it: try and see if the
 entities you try to create or delete support this option.</p>
-<h2 data-number="4.32" id="option-query"><span
-class="header-section-number">4.32</span> Option:
+<h2 data-number="4.33" id="option-query"><span
+class="header-section-number">4.33</span> Option:
 <code>query</code></h2>
 <p>The <code>query</code> option can generally be used to add URL
 parameters to commands that list resources. It takes either a
@@ -6423,8 +6437,8 @@ same result as previously.</p>
 <li><code>--query=@json:'[["a[]","v1"],["a[]","v2"]]'</code></li>
 </ul>
 <p>Both result in: <code>?a[]=v1&amp;a[]=v2</code>.</p>
-<h2 data-number="4.33" id="plugins"><span
-class="header-section-number">4.33</span> Plugins</h2>
+<h2 data-number="4.34" id="plugins"><span
+class="header-section-number">4.34</span> Plugins</h2>
 <p><code>ascli</code> uses a plugin mechanism. The first level command
 (just after <code>ascli</code> on the command line) is the name of the
 concerned plugin which will execute the command. Each plugin usually
@@ -6458,8 +6472,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb299-1"><a href
 <pre class="output"><code>Created ./foo.rb</code></pre>
 <div class="sourceCode" id="cb301"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb301-1"><a href="#cb301-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ascli</span> <span class="at">--plugin-folder</span><span class="op">=</span>. foo</span></code></pre></div>
-<h2 data-number="4.34" id="plugins-vs-transfer-agents"><span
-class="header-section-number">4.34</span> Plugins vs Transfer
+<h2 data-number="4.35" id="plugins-vs-transfer-agents"><span
+class="header-section-number">4.35</span> Plugins vs Transfer
 Agents</h2>
 <p>Plugins typically represent a specific remote application on which
 <code>ascli</code> can operate, while transfer agents are the underlying
@@ -7375,13 +7389,71 @@ option <code>sources</code>. By default, all files in the package are
 downloaded, i.e. <code>.</code> is used as the file list.</p>
 <p>Option <code>package_folder</code> defines the attribute of folder
 used as destination sub folder in the <code>to_folder</code> path (see
-description earlier). The default value is <code>@none:</code> : package
-files will be downloaded directly inside the folder specified by option
-<code>to_folder</code>. The option <code>package_folder</code> can be
-set to the name of <strong>any</strong> attributes of the package.
-Notably, <code>id</code> or <code>name</code> can be used. Using option
-<code>--package-folder=id</code> ensures that every downloaded package
-is placed in a subfolder named after its unique ID.</p>
+description earlier). The following syntax is supported</p>
+<table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@none:</code></td>
+<td>No subfolder is created, files are downloaded directly into the
+specified <code>to_folder</code>.</td>
+</tr>
+<tr>
+<td><code>&lt;field&gt;</code></td>
+<td>A subfolder named after the package’s specified field is created
+inside <code>to_folder</code>.</td>
+</tr>
+<tr>
+<td><code>&lt;field1&gt;+&lt;field2&gt;</code></td>
+<td>A subfolder named after the combination of two package fields with a
+<code>.</code> is created inside <code>to_folder</code>.</td>
+</tr>
+<tr>
+<td><code>&lt;field1&gt;+&lt;field2&gt;?</code></td>
+<td>A subfolder named after the package’s specified field1 is created,
+unless it already exists. Else it falls back to the combination of both
+fields with <code>.</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The special value <code>increment</code> for
+<code>&lt;field2&gt;</code> will append an incrementing number to the
+folder name starting at <code>1</code>. If <code>?</code> is used, then
+the increment is used only if the folder already exists.</p>
+<p>Examples:</p>
+<ul>
+<li><code>id</code> : subfolder named after package ID. If the same
+package is downloaded several times, it will always be placed in the
+same folder.</li>
+<li><code>name</code> : subfolder named after package name. If two
+packages with the same name are downloaded, they will be combined in the
+same folder.</li>
+<li><code>name+id</code> : subfolder named after the combination of
+package name and ID.</li>
+<li><code>name+id?</code> : subfolder named after the package’s name is
+created, unless it already exists. Else it falls back to the combination
+of both fields with <code>.</code>.</li>
+<li><code>name+increment?</code> : subfolder named after the package’s
+name is created, unless it already exists. Else it falls back to the
+combination of name and an incrementing number.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> When
+<code>&lt;field1&gt;+&lt;field2&gt;?</code> is used, if the same package
+is downloaded multiple times, it will be downloaded twice. If
+<code>name+increment?</code> is used, if the same package is downloaded
+multiple times, it will be placed in folders with an incrementing
+number.</p>
+</blockquote>
 <h4 data-number="5.6.2.1"
 id="example-receive-all-packages-from-a-given-shared-inbox"><span
 class="header-section-number">5.6.2.1</span> Example: Receive all
@@ -8176,8 +8248,8 @@ don’t have such an SSH agent running, then:</p>
 <li>Check if the SSH key is protected with a passphrase (then, use the
 <code>passphrase</code> SSH option)</li>
 <li><a
-href="https://www.rubydoc.info/github/net-ssh/net-ssh/Net%2FSSH.start">Check
-the Ruby SSH manual</a></li>
+href="https://github.com/net-ssh/net-ssh/blob/master/lib/net/ssh.rb">Check
+the Ruby SSH options in start method</a></li>
 <li>To disable the use of <code>ssh-agent</code>, use the option
 <code>ssh_options</code> like this:</li>
 </ul>
@@ -8415,8 +8487,10 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb447-1"><a href
 <h2 data-number="8.7" id="watchfolder"><span
 class="header-section-number">8.7</span> Watchfolder</h2>
 <p>Refer to <a
-href="https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html">Aspera
-documentation</a> for watch folder creation.</p>
+href="https://www.ibm.com/docs/en/ahte/4.4.x?topic=wffcl-watch-folder-json-configuration-file-reference">Aspera
+Server documentation</a>, or <a
+href="https://developer.ibm.com/apis/catalog/aspera--aspera-watch-folders-api/api/API--aspera--ibm-aspera-watch-folders-api">Aspera
+Watchfolder API Documentation</a> for watch folder creation.</p>
 <p><code>ascli</code> supports remote operations through the Node API.
 Operations are:</p>
 <ul>

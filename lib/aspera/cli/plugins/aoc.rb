@@ -182,6 +182,37 @@ module Aspera
               test_args:    'user profile show'
             }
           end
+
+          def next_available_folder(base, always: false)
+            result = base
+            counter = 1
+
+            if always
+              result = "#{base}.#{counter}"
+              counter += 1
+            end
+
+            while Dir.exist?(result)
+              result = "#{base}.#{counter}"
+              counter += 1
+            end
+
+            result
+          end
+
+          def folder_extension(folder, subfield, always:, package_info:)
+            case subfield
+            when nil
+              nil
+            when 'increment'
+              # reuse helper
+              next_available_folder(folder, always: always).sub(folder, '')
+            else
+              if Dir.exist?(folder) || always
+                '.' + Environment.instance.sanitized_filename(package_info[subfield])
+              end
+            end
+          end
         end
 
         def initialize(**_)
@@ -923,6 +954,14 @@ module Aspera
               # download all files, or specified list only
               ts_paths = transfer.ts_source_paths(default: ['.'])
               per_package_field = options.get_option(:package_folder)
+              per_package_subfield = nil
+              unless per_package_field.nil?
+                raise Cli::BadArgument, "Invalid package folder option : #{per_package_field}" unless per_package_field =~ /\A([^+]+)(?:\+([^?]+)(\?)?)?\z/
+                per_package_field = Regexp.last_match(1)
+                per_package_subfield = Regexp.last_match(2)
+                per_package_sub_always = Regexp.last_match(3).nil?
+              end
+              # get value outside of loop
               destination_folder = transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE)
               result_transfer = []
               ids_to_download.each do |package_id|
@@ -936,17 +975,16 @@ module Aspera
                   Transfer::Spec::DIRECTION_RECEIVE,
                   {'paths'=> ts_paths})
                 unless per_package_field.nil?
-                  # build new destination folder from sanitized package field, and override
-                  transfer.option_transfer_spec['destination_root'] =
-                    File.join(
-                      destination_folder,
-                      package_info[per_package_field]
-                      .gsub(%r{[/\\:*?"<>|]}, '_') # remove invalid characters
-                      .squeeze('_')                # single underscore
-                      .gsub(/\.+$/, '')            # remove trailing dots
-                      .gsub(/\s+/, ' ')            # collapse multiple spaces
-                      .strip                       # remove leading/trailing spaces
-                    )
+                  folder = File.join(
+                    destination_folder,
+                    Environment.instance.sanitized_filename(package_info[per_package_field])
+                  )
+                  ext = self.class.folder_extension(
+                    folder,
+                    per_package_subfield,
+                    always: per_package_sub_always,
+                    package_info: package_info)
+                  transfer.option_transfer_spec['destination_root'] = "#{folder}#{ext}"
                 end
                 formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{transfer.option_transfer_spec['destination_root']}]})
                 statuses = transfer.start(
