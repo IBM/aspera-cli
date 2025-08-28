@@ -1961,7 +1961,7 @@ The option `invalid_characters` allows specifying a replacement character for a 
 The first character specifies the replacement character, and the following characters are the invalid ones.
 This is used when a folder or file is created from a value that potentially contains invalid characters.
 For example, using the option `package_folder`.
-The default value is `_<>:"/\|?*`, corresponding to characters not allowed on Windows.
+The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
 
 ### Temporary files
 
