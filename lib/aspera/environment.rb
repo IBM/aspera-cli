@@ -255,8 +255,9 @@ module Aspera
       @default_gui_mode == :graphical
     end
 
-    # open a URI in a graphical browser
-    # command must be non blocking
+    # Open a URI in a graphical browser
+    # Command must be non blocking
+    # @param uri [String] the URI to open
     def open_uri_graphical(uri)
       case @os
       when Environment::OS_MACOS then return self.class.secure_execute(exec: 'open', args: [uri.to_s])
