@@ -12,9 +12,14 @@ require 'aspera/cli/plugin_factory'
 require 'aspera/cli/plugins/config'
 require 'aspera/sync/operations'
 require 'aspera/transfer/spec_doc'
+require 'aspera/log'
 require 'yaml'
 require 'erb'
 require 'English'
+
+Aspera::Log.instance.level = :info
+Aspera::Log.instance.level = ENV['DEBUG'].to_sym if ENV['DEBUG']
+Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 # format special value depending on context
 class HtmlFormatter
@@ -235,7 +240,7 @@ def all_test_commands_by_plugin
         line = line.chomp
         REPLACEMENTS.each{ |replace| line = line.gsub(replace.first, replace.last)}
         line = line.strip.squeeze(' ')
-        $stderr.puts line if ENV['DEBUG']
+        Aspera::Log.log.debug(line)
         # plugin name shall be the first argument: command
         plugin = line.split(' ').first
         commands[plugin] ||= []
@@ -332,7 +337,9 @@ def generate_generic_conf
       next unless param_value.start_with?('https://')
     end
   end
-  puts(configuration.to_yaml)
+  File.open(ARGV.shift, 'w') do |f|
+    f.puts(configuration.to_yaml)
+  end
 end
 
 def check_links(file_path)
@@ -345,7 +352,15 @@ def check_links(file_path)
       line.scan(/(?:\[(.*?)\]\((.*?)\))/) do |match|
         link_text = match[0]
         link_url = match[1]
-        next if link_url.start_with?('https://', 'http://', '#') || link_url.include?('<%=') || link_url.eql?('docs/Manual.pdf')
+        next if link_url.include?('<%=')
+        next if link_url.start_with?('#')
+        next if link_url.eql?('docs/Manual.pdf')
+        next if link_url.start_with?('https://cloud.ibm.com/')
+        if link_url.start_with?('https://', 'http://')
+          Aspera::Log.log.info("Checking: #{link_url}")
+          Aspera::Rest.new(base_url: link_url, redirect_max: 5).call(operation: 'GET')
+          next
+        end
         raise "Invalid link: #{link_text} (#{link_url})" unless File.exist?(File.join('..', link_url))
       end
     end
@@ -371,12 +386,12 @@ def generate_doc
   @undocumented_plugins = plugin_manager.plugin_list
   tmp_file = [outfile, 'tmp'].join('.')
   File.open(tmp_file, 'w') do |f|
-    f.puts ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding)
+    f.puts(ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding))
   end
-  $stderr.puts("Warning: Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
+  Aspera::Log.log.warn("Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
   # check that all test commands are included in the doc
   if !all_test_commands_by_plugin.empty?
-    $stderr.puts("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
+    Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.join(', ')}".red)
     raise 'Remediate: remove from doc using EXE_NO_MAN or add section in doc'
   end
   File.rename(tmp_file, outfile)

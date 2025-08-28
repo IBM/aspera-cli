@@ -2621,7 +2621,7 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 
 Time values are in set **seconds** and can be of type either `Integer` or `Float`.
 Default values are the ones of Ruby:
-For a full list, refer to the Ruby library: [`Net::HTTP`](https://ruby-doc.org/stdlib/libdoc/net/http/rdoc/Net/HTTP.html).
+For a full list, refer to the Ruby library: [`Net::HTTP`](https://github.com/ruby/net-http/blob/master/lib/net/http.rb).
 
 Like any other option, those can be set either on command line, or in configuration file, either in a global preset or server-specific one.
 
@@ -3674,7 +3674,7 @@ When <%=tool%> is executed automatically on a schedule basis, one generally desi
 Usually the OS native scheduler already provides some sort of protection against parallel execution:
 
 - The Windows scheduler does this by default
-- Linux `cron` can leverage the utility [`flock`](https://linux.die.net/man/1/flock) to do the same:
+- Linux `cron` can leverage the utility [`flock`](https://man.cx/flock%281%29) to do the same:
 
 ```bash
 /usr/bin/flock -w 0 /var/cron.lock <%=cmd%> ...
@@ -5375,7 +5375,7 @@ This means that your environment suggests using an agent, but you don't have suc
 - Check env var: `SSH_AGENT_SOCK`
 - Check your file: `$HOME/.ssh/config`
 - Check if the SSH key is protected with a passphrase (then, use the `passphrase` SSH option)
-- [Check the Ruby SSH manual](https://www.rubydoc.info/github/net-ssh/net-ssh/Net%2FSSH.start)
+- [Check the Ruby SSH options in start method](https://github.com/net-ssh/net-ssh/blob/master/lib/net/ssh.rb)
 - To disable the use of `ssh-agent`, use the option `ssh_options` like this:
 
 ```bash
@@ -5585,7 +5585,7 @@ Use the command `<%=cmd%> node stream create --ts=@json:<value>`, with [**transf
 
 ### Watchfolder
 
-Refer to [Aspera documentation](https://download.asperasoft.com/download/docs/entsrv/3.7.4/es_admin_linux/webhelp/index.html#watchfolder_external/dita/json_conf.html) for watch folder creation.
+Refer to [Aspera Server documentation](https://www.ibm.com/docs/en/ahte/4.4.x?topic=wffcl-watch-folder-json-configuration-file-reference), or [Aspera Watchfolder API Documentation](https://developer.ibm.com/apis/catalog/aspera--aspera-watch-folders-api/api/API--aspera--ibm-aspera-watch-folders-api) for watch folder creation.
 
 <%=tool%> supports remote operations through the Node API. Operations are:
 
