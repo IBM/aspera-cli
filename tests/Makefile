@@ -900,8 +900,8 @@ $(F)aocfsync2: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	rm -fr $(TMP_SYNCS)aocfsync2
 	mkdir -p $(TMP_SYNCS)aocfsync2
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'$(END_FAI)
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"$(TMP_SYNCS)aocfsync2"}}'$(END_FAI)
+	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"$(TMP_SYNCS)aocfsync2"}}'
 	@$(STOP_TEST) $@
 $(F)aoc_file_id_1: $(F)aocftr
 	@$(START_TEST) $@
@@ -1327,7 +1327,8 @@ $(F)at3: $(TMP_EXISTS)
 $(F)at8: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(BEG_IGN)$(CLI_TEST) ats access_key delete ak2ibmcloud$(END_IGN)
-	$(INCMAN)$(BEG_FAI)$(CLI_TEST) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'$(END_FAI)
+	$(TEMPORIZE_CREATE)
+	$(INCMAN)$(CLI_TEST) ats access_key create --cloud=softlayer --region=@preset:icos.region --params=@json:@extend:'{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
 	$(TEMPORIZE_CREATE)
 	$(INCMAN)$(CLI_TEST) ats access_key show ak2ibmcloud
 	$(INCMAN)$(CLI_TEST) ats access_key entitlement ak2ibmcloud
