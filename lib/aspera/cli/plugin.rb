@@ -56,11 +56,13 @@ module Aspera
         return {broker: @broker}
       end
 
-      # must be called AFTER the instance action, ... folder browse <call instance_identifier>
+      # Must be called AFTER the instance action:
+      # ... folder browse _call_instance_identifier
+      #
       # @param description [String] description of the identifier
-      # @param as_option [Symbol] option name to use if identifier is an option
-      # @param block [Proc] block to search for identifier based on attribute value
-      # @return [String, Array] identifier or list of ids
+      # @param as_option   [Symbol] option name to use if identifier is an option
+      # @param block       [Proc] block to search for identifier based on attribute value
+      # @return   [String, Array] identifier or list of ids
       def instance_identifier(description: 'identifier', as_option: nil, &block)
         if as_option.nil?
           res_id = options.get_next_argument(description, multiple: options.get_option(:bulk)) if res_id.nil?
