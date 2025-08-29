@@ -200,11 +200,13 @@ module Aspera
             result
           end
 
+          # Get the folder extension for a specific subfield if folder exists
+          # @param folder [String] base folder
           def folder_extension(folder, subfield, always:, package_info:)
             case subfield
             when nil
               nil
-            when 'increment'
+            when 'seq'
               # reuse helper
               next_available_folder(folder, always: always).sub(folder, '')
             else
