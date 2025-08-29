@@ -748,20 +748,21 @@ module Aspera
           when :private then 'shared_folder_auth_link'
           else Aspera.error_unreachable_line
           end
-          case options.get_next_command(%i[create delete list])
+          command = options.get_next_command(%i[create delete list show modify])
+          case command
           when :create
-            creation_params = {
+            entity_data = {
               purpose:            purpose_local,
               user_selected_name: nil
             }
             case link_type
             when :private
-              creation_params[:data] = shared_data
+              entity_data[:data] = shared_data
             when :public
-              creation_params[:expires_at]       = nil
-              creation_params[:password_enabled] = false
+              entity_data[:expires_at]       = nil
+              entity_data[:password_enabled] = false
               shared_data[:name] = ''
-              creation_params[:data] = {
+              entity_data[:data] = {
                 aoc:            true,
                 url_token_data: {
                   data:    shared_data,
@@ -769,11 +770,17 @@ module Aspera
                 }
               }
             end
-            result_create_short_link = aoc_api.create('short_links', creation_params)
+            custom_data = value_create_modify(command: command, default: {})
+            if (pass = custom_data.delete('password'))
+              entity_data[:data][:url_token_data][:password] = pass
+              entity_data[:password_enabled] = true
+            end
+            entity_data.deep_merge!(custom_data)
+            result_create_short_link = aoc_api.create('short_links', entity_data)
             # public: Creation: permission on node
             yield(result_create_short_link['resource_id']) if block_given? && link_type.eql?(:public)
             return Main.result_single_object(result_create_short_link)
-          when :list
+          when :list, :show
             query = if link_type.eql?(:private)
               shared_data
             else
@@ -791,7 +798,33 @@ module Aspera
               # embed: 'updated_by_user',
               sort:        '-created_at'
             }
-            return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
+            if command.eql?(:list)
+              return result_list('short_links', fields: Formatter.all_but('data'), base_query: list_params)
+            end
+            one_id = instance_identifier
+            found = api_read_all('short_links', list_params)[:items].find{ |item| item['id'].eql?(one_id)}
+            raise Cli::BadIdentifier.new('Short link', one_id) if found.nil?
+            return Main.result_single_object(found, fields: Formatter.all_but('data'))
+          when :modify
+            raise Cli::BadArgument, 'Only public links can be modified' unless link_type.eql?(:public)
+            node_file = shared_data.slice(:node_id, :file_id)
+            entity_data = {
+              data:       {
+                url_token_data: {
+                  data: node_file
+                }
+              },
+              json_query: node_file
+            }
+            one_id = instance_identifier
+            custom_data = value_create_modify(command: command, default: {})
+            if (pass = custom_data.delete('password'))
+              entity_data[:data][:url_token_data][:password] = pass
+              entity_data[:password_enabled] = true
+            end
+            entity_data.deep_merge!(custom_data)
+            aoc_api.update("short_links/#{one_id}", entity_data)
+            return Main.result_status('modified')
           when :delete
             one_id = instance_identifier
             shared_data.delete(:workspace_id)
