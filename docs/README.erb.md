@@ -5090,7 +5090,27 @@ They can be managed with commands:
 <%=cmd%> aoc files short_link <path to folder> private list
 <%=cmd%> aoc files short_link <path to folder> public list
 <%=cmd%> aoc files short_link public delete <id>
+<%=cmd%> aoc files short_link public modify <id> @json:'{...}'
 ```
+
+Only `public` short links can be modified.
+An optional payload can be provided at creation, for example to protect with a password, or set an expiry date.
+A password can be provided on `create` and `modify` for `public` links:
+
+```json
+{"password":"my_password"}
+```
+
+To remove a password:
+
+```json
+{"password_enabled":false}
+```
+
+> **Note:** Access level cannot be customized in this version.
+
+An expiration date can be set with parameter `expires_at`, using ISO 8601 format.
+E.g. `2025-08-29T08:10:31.000Z`. If only a date is provided, it will be set to midnight UTC of that date.
 
 ##### Example: Create a workspace admin shared folder
 
