@@ -1023,16 +1023,17 @@ dnf install -y ca-certificates
 update-ca-trust extract
 ```
 
-The SSL CA certificate bundle can be specified using option `cert_stores`, which is a list of files or folders.
-By default, it uses Ruby's default certificate store.
+The SSL CA certificate bundle can be specified using the `cert_stores` option, which accepts a list of files or directories.
+By default, Ruby’s system certificate store is used.
 
-If you use this option, then default locations are not used.
-Default locations can be added using special value `DEF`.
-The value can be either an `Array` or `String` (path).
-Successive options add paths incrementally.
-All files of a folder are added.
+When `cert_stores` is provided:
 
-JRuby uses its own implementation and CA bundles.
+- It overrides the default locations, which can still be included explicitly using the special value `DEF`.
+- The option accepts either a `String` (single path) or an `Array` (multiple paths).
+- Each use of the option appends to the list of search paths incrementally.
+- If a directory is specified, all files within that directory are automatically included.
+
+> **Note:** JRuby uses its own implementation and CA bundles.
 
 For example, on Linux to force the use the system's certificate store:
 
@@ -4870,8 +4871,8 @@ The following syntax is supported
 | `<field1>+<field2>` | A subfolder named after the combination of two package fields with a `.` is created inside `to_folder`. |
 | `<field1>+<field2>?` | A subfolder named after the package's specified field1 is created, unless it already exists. Else it falls back to the combination of both fields with `.`. |
 
-The special value `increment` for `<field2>` will append an incrementing number to the folder name starting at `1`.
-If `?` is used, then the increment is used only if the folder already exists.
+The special value `seq` for `<field2>` will append an incrementing number to the folder name starting at `1`.
+If `?` is used, then the sequence number is used only if the folder already exists.
 
 Examples:
 
@@ -4879,10 +4880,10 @@ Examples:
 - `name` : subfolder named after package name. If two packages with the same name are downloaded, they will be combined in the same folder.
 - `name+id` : subfolder named after the combination of package name and ID.
 - `name+id?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of both fields with `.`.
-- `name+increment?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of name and an incrementing number.
+- `name+seq?` : subfolder named after the package's name is created, unless it already exists. Else it falls back to the combination of name and sequence number.
 
 > **Note:** When `<field1>+<field2>?` is used, if the same package is downloaded multiple times, it will be downloaded twice.
-If `name+increment?` is used, if the same package is downloaded multiple times, it will be placed in folders with an incrementing number.
+If `name+seq?` is used, if the same package is downloaded multiple times, it will be placed in folders with a sequence number.
 
 ##### Example: Receive all packages from a given shared inbox
 

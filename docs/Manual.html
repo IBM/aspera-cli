@@ -1083,15 +1083,24 @@ href="https://github.com/millermatt/osca">https://github.com/millermatt/osca</a>
 <div class="sourceCode" id="cb89"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dnf</span> install <span class="at">-y</span> ca-certificates</span>
 <span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a><span class="ex">update-ca-trust</span> extract</span></code></pre></div>
-<p>The SSL CA certificate bundle can be specified using option
-<code>cert_stores</code>, which is a list of files or folders. By
-default, it uses Ruby’s default certificate store.</p>
-<p>If you use this option, then default locations are not used. Default
-locations can be added using special value <code>DEF</code>. The value
-can be either an <code>Array</code> or <code>String</code> (path).
-Successive options add paths incrementally. All files of a folder are
-added.</p>
-<p>JRuby uses its own implementation and CA bundles.</p>
+<p>The SSL CA certificate bundle can be specified using the
+<code>cert_stores</code> option, which accepts a list of files or
+directories. By default, Ruby’s system certificate store is used.</p>
+<p>When <code>cert_stores</code> is provided:</p>
+<ul>
+<li>It overrides the default locations, which can still be included
+explicitly using the special value <code>DEF</code>.</li>
+<li>The option accepts either a <code>String</code> (single path) or an
+<code>Array</code> (multiple paths).</li>
+<li>Each use of the option appends to the list of search paths
+incrementally.</li>
+<li>If a directory is specified, all files within that directory are
+automatically included.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> JRuby uses its own implementation and CA
+bundles.</p>
+</blockquote>
 <p>For example, on Linux to force the use the system’s certificate
 store:</p>
 <div class="sourceCode" id="cb90"><pre
@@ -7426,10 +7435,10 @@ fields with <code>.</code>.</td>
 </tr>
 </tbody>
 </table>
-<p>The special value <code>increment</code> for
-<code>&lt;field2&gt;</code> will append an incrementing number to the
-folder name starting at <code>1</code>. If <code>?</code> is used, then
-the increment is used only if the folder already exists.</p>
+<p>The special value <code>seq</code> for <code>&lt;field2&gt;</code>
+will append an incrementing number to the folder name starting at
+<code>1</code>. If <code>?</code> is used, then the sequence number is
+used only if the folder already exists.</p>
 <p>Examples:</p>
 <ul>
 <li><code>id</code> : subfolder named after package ID. If the same
@@ -7443,17 +7452,16 @@ package name and ID.</li>
 <li><code>name+id?</code> : subfolder named after the package’s name is
 created, unless it already exists. Else it falls back to the combination
 of both fields with <code>.</code>.</li>
-<li><code>name+increment?</code> : subfolder named after the package’s
-name is created, unless it already exists. Else it falls back to the
-combination of name and an incrementing number.</li>
+<li><code>name+seq?</code> : subfolder named after the package’s name is
+created, unless it already exists. Else it falls back to the combination
+of name and sequence number.</li>
 </ul>
 <blockquote>
 <p><strong>Note:</strong> When
 <code>&lt;field1&gt;+&lt;field2&gt;?</code> is used, if the same package
 is downloaded multiple times, it will be downloaded twice. If
-<code>name+increment?</code> is used, if the same package is downloaded
-multiple times, it will be placed in folders with an incrementing
-number.</p>
+<code>name+seq?</code> is used, if the same package is downloaded
+multiple times, it will be placed in folders with a sequence number.</p>
 </blockquote>
 <h4 data-number="5.6.2.1"
 id="example-receive-all-packages-from-a-given-shared-inbox"><span
