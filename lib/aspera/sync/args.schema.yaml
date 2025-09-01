@@ -5,7 +5,7 @@ $comment: >-
   This spec is specific to ascli.
   The native async conf format is now preferred.
 title: SyncInstanceSpec
-description: Global parameters for async.
+description: Instance (global) and Session (per-sync) parameters for async.
 type: object
 properties:
   alt_logdir:
