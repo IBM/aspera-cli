@@ -1939,12 +1939,15 @@ When a token has expired, then a new token is generated, either using a refresh_
 
 ### Invalid Filename Characters
 
+Some commands of <%=tool%> may create files or folders based on input that may contain invalid characters for the local file system.
 The option `invalid_characters` allows specifying a replacement character for a list of characters that are invalid in filenames on the local file system and replaces them with the specified character.
 
 The first character specifies the replacement character, and the following characters are the invalid ones.
 This is used when a folder or file is created from a value that potentially contains invalid characters.
 For example, using the option `package_folder`.
 The default value is `_<>:"/\|?*`, corresponding to replacement character `_` and characters not allowed on Windows.
+
+> **Note:** This option is different from the `replace_illegal_chars` parameter in `aspera.conf`, which applies to transfers only.
 
 ### Temporary files
 
@@ -7090,7 +7093,7 @@ An interface for the `async` utility is provided in the following plugins:
 - `aoc files sync` (uses node)
 - `shares files sync` (uses node)
 
-The `sync` command performs the following actions:
+The `sync` command, available in above plugins, performs the following actions:
 
 - Start a local Sync session by executing the `async` command with the appropriate parameters.
 - Get local Sync session information using the `asyncadmin` command, if available.
@@ -7102,6 +7105,8 @@ Moreover, <%=tool%> supports sync with application requiring token-based authori
 Some `sync` parameters are filled by the related plugin using transfer spec parameters (e.g. including token).
 
 > **Note:** All `sync` commands require an `async` enabled license and availability of the `async` executable (and `asyncadmin`). The Aspera Transfer Daemon 1.3+ includes this.
+
+### Starting a sync session
 
 `sync start` supports 0, 3 or 4 positional arguments.
 If 3 or 4 arguments are provided, they are applied to the first (and only) session and mapped to (in that order):
@@ -7115,7 +7120,7 @@ If 1 or 2 arguments are provided they are mapped to:
 
 <%=sync_arguments_list(admin: true)%>
 
-### `sync_info`: `conf` format
+#### `sync_info`: `conf` format
 
 It is the same payload as specified on the `async` option `--conf` or in Node API `/asyncs`.
 This is the **preferred** syntax and only allows a single session definition.
@@ -7129,11 +7134,7 @@ For sync, if 3 or 4 arguments are provided they are mapped to:
 
 <%=sync_arguments_list(format: :conf)%>
 
-For admin, if 1 or 2 arguments are provided they are mapped to:
-
-<%=sync_arguments_list(format: :conf, admin: true)%>
-
-### `sync_info`: `args` format
+#### `sync_info`: `args` format
 
 <%=tool%> defines a JSON equivalent to regular `async`options.
 It is based on a JSON representation of `async` command line options.
@@ -7147,9 +7148,28 @@ For sync, if 3 or 4 arguments are provided they are mapped to:
 
 <%=sync_arguments_list(format: :args)%>
 
-For admin, if 1 or 2 arguments are provided they are mapped to:
+### Sync management and monitoring
+
+Two commands are available for managing and monitoring sync sessions:
+
+- `sync admin`: Uses the utility `asyncadmin`, available only on server products.
+- `sync db`: Accesses directly the Async snap database (`snap.db`).
+
+For those commands, the user must provide the path to the database folder, i.e. a folder containing a subfolder named `.private-asp`.
+If this folder contains only one session information (i.e. a folder containing the `snap.db` file), it will be used by default.
+Else, the user must specify a session name.
+
+Like for synchronization, the user can provide some arguments directly on command line, or through a `Hash` in `conf` or `args` format.
+
+If 1 or 2 arguments are provided they are mapped to `conf` format:
+
+<%=sync_arguments_list(format: :conf, admin: true)%>
+
+Or to `args` format:
 
 <%=sync_arguments_list(format: :args, admin: true)%>
+
+If a common DB folder is used, the parameter `local_db_dir` can be used.
 
 ## Hot folder
 

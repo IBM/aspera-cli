@@ -18,7 +18,7 @@ require 'erb'
 require 'English'
 
 Aspera::Log.instance.level = :info
-Aspera::Log.instance.level = ENV['DEBUG'].to_sym if ENV['DEBUG']
+Aspera::Log.instance.level = ENV['ASPERA_CLI_DOC_DEBUG'].to_sym if ENV['ASPERA_CLI_DOC_DEBUG']
 Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
 
 # format special value depending on context
@@ -71,7 +71,7 @@ def sync_arguments_list(format: nil, admin: false)
   end)
 end
 
-def gemspec; Gem::Specification.load(@env[:GEMSPEC]) || raise("error loading #{@env[:GEMSPEC]}"); end
+def gemspec; Gem::Specification.load(@param[:gemspec]) || raise("error loading #{@param[:gemspec]}"); end
 
 # if version contains other characters than digit and dot, it is pre-release
 def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
@@ -93,7 +93,7 @@ end
 
 # not very reliable
 def gem_opt_list
-  File.read(@env[:GEMFILE]).lines.filter_map do |l|
+  File.read(@param[:gemfile]).lines.filter_map do |l|
     m = l.match(/^ *gem\('([^']+)', '([^']+)'\)(.*)/)
     next nil unless m
     {
@@ -108,7 +108,7 @@ end
 def gem_opt_list_unused
   require 'bundler'
   # Load the definition from the Gemfile and Gemfile.lock
-  definition = Bundler::Definition.build(@env[:GEMFILE], "#{@env[:GEMFILE]}.lock", nil)
+  definition = Bundler::Definition.build(@param[:gemfile], "#{@param[:gemfile]}.lock", nil)
   # Filter specs in the optional group
   optional_specs = definition.dependencies.select do |dep|
     dep.groups.include?(:optional)
@@ -165,8 +165,8 @@ end
 
 # generate help for the given command
 def generate_help(varname)
-  raise "missing #{varname}" unless @env.key?(varname)
-  exec_path = @env[varname]
+  raise "missing #{varname}" unless @param.key?(varname)
+  exec_path = @param[varname]
   # Add library path for Ruby CLI execution
   lib_path = File.expand_path('../lib', File.dirname(exec_path))
   output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1)
@@ -175,11 +175,11 @@ def generate_help(varname)
 end
 
 def include_usage
-  generate_help(:ASCLI).gsub(%r{(current=).*(/.aspera/)}, '\1/user_home\2')
+  generate_help(:ascli).gsub(%r{(current=).*(/.aspera/)}, '\1/user_home\2')
 end
 
 def include_asession
-  generate_help(:ASESSION)
+  generate_help(:asession)
 end
 
 # various replacements from commands in test makefile
@@ -234,7 +234,7 @@ REPLACEMENTS = [
 def all_test_commands_by_plugin
   if @commands.nil?
     commands = {}
-    File.open(@env[:TEST_MAKEFILE]) do |file|
+    File.open(@param[:makefile]) do |file|
       file.each_line do |line|
         next unless line.include?('$(INCMAN)')
         line = line.chomp
@@ -371,14 +371,14 @@ end
 def generate_doc
   # parameters
   outfile = ARGV.shift
-  @env = {}
-  %i[TEMPLATE ASCLI ASESSION TEST_MAKEFILE GEMSPEC GEMFILE].each do |var|
-    @env[var] = ARGV.shift
-    raise "Missing arg: #{var}" if @env[var].nil?
+  @param = {}
+  %i[template ascli asession makefile gemspec gemfile].each do |name|
+    @param[name] = ARGV.shift
+    raise "Missing arg: #{name}" if @param[name].nil?
   end
   # no unicode
   Aspera::Environment.force_terminal_c
-  check_links(@env[:TEMPLATE])
+  check_links(@param[:template]) unless ENV['ASPERA_CLI_DOC_SKIP_LINK_CHECK']
   # get current plugins
   plugin_manager = Aspera::Cli::PluginFactory.instance
   plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
@@ -386,7 +386,7 @@ def generate_doc
   @undocumented_plugins = plugin_manager.plugin_list
   tmp_file = [outfile, 'tmp'].join('.')
   File.open(tmp_file, 'w') do |f|
-    f.puts(ERB.new(File.read(@env[:TEMPLATE])).result(Kernel.binding))
+    f.puts(ERB.new(File.read(@param[:template])).result(Kernel.binding))
   end
   Aspera::Log.log.warn("Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
   # check that all test commands are included in the doc

@@ -2254,7 +2254,9 @@ by the default method.</p>
 <h2 data-number="4.8" id="invalid-filename-characters"><span
 class="header-section-number">4.8</span> Invalid Filename
 Characters</h2>
-<p>The option <code>invalid_characters</code> allows specifying a
+<p>Some commands of <code>ascli</code> may create files or folders based
+on input that may contain invalid characters for the local file system.
+The option <code>invalid_characters</code> allows specifying a
 replacement character for a list of characters that are invalid in
 filenames on the local file system and replaces them with the specified
 character.</p>
@@ -2265,6 +2267,11 @@ characters. For example, using the option <code>package_folder</code>.
 The default value is <code>_&lt;&gt;:"/\|?*</code>, corresponding to
 replacement character <code>_</code> and characters not allowed on
 Windows.</p>
+<blockquote>
+<p><strong>Note:</strong> This option is different from the
+<code>replace_illegal_chars</code> parameter in
+<code>aspera.conf</code>, which applies to transfers only.</p>
+</blockquote>
 <h2 data-number="4.9" id="temporary-files"><span
 class="header-section-number">4.9</span> Temporary files</h2>
 <p>Some temporary files may be needed during runtime. The temporary
@@ -10603,7 +10610,8 @@ following plugins:</p>
 <li><code>aoc files sync</code> (uses node)</li>
 <li><code>shares files sync</code> (uses node)</li>
 </ul>
-<p>The <code>sync</code> command performs the following actions:</p>
+<p>The <code>sync</code> command, available in above plugins, performs
+the following actions:</p>
 <ul>
 <li>Start a local Sync session by executing the <code>async</code>
 command with the appropriate parameters.</li>
@@ -10624,6 +10632,8 @@ using transfer spec parameters (e.g. including token).</p>
 <code>async</code> executable (and <code>asyncadmin</code>). The Aspera
 Transfer Daemon 1.3+ includes this.</p>
 </blockquote>
+<h2 data-number="19.1" id="starting-a-sync-session"><span
+class="header-section-number">19.1</span> Starting a sync session</h2>
 <p><code>sync start</code> supports 0, 3 or 4 positional arguments. If 3
 or 4 arguments are provided, they are applied to the first (and only)
 session and mapped to (in that order):</p>
@@ -10641,9 +10651,9 @@ or 2 arguments are provided they are mapped to:</p>
 <li>local folder</li>
 <li>name</li>
 </ul>
-<h2 data-number="19.1" id="sync_info-conf-format"><span
-class="header-section-number">19.1</span> <code>sync_info</code>:
-<code>conf</code> format</h2>
+<h3 data-number="19.1.1" id="sync_info-conf-format"><span
+class="header-section-number">19.1.1</span> <code>sync_info</code>:
+<code>conf</code> format</h3>
 <p>It is the same payload as specified on the <code>async</code> option
 <code>--conf</code> or in Node API <code>/asyncs</code>. This is the
 <strong>preferred</strong> syntax and only allows a single session
@@ -10663,14 +10673,9 @@ Developer Portal</a>.</p>
 <li><code>local</code>-&gt;<code>path</code></li>
 <li><code>remote</code>-&gt;<code>path</code></li>
 </ul>
-<p>For admin, if 1 or 2 arguments are provided they are mapped to:</p>
-<ul>
-<li><code>local</code>-&gt;<code>path</code></li>
-<li><code>name</code></li>
-</ul>
-<h2 data-number="19.2" id="sync_info-args-format"><span
-class="header-section-number">19.2</span> <code>sync_info</code>:
-<code>args</code> format</h2>
+<h3 data-number="19.1.2" id="sync_info-args-format"><span
+class="header-section-number">19.1.2</span> <code>sync_info</code>:
+<code>args</code> format</h3>
 <p><code>ascli</code> defines a JSON equivalent to regular
 <code>async</code>options. It is based on a JSON representation of
 <code>async</code> command line options. Technically, it allows
@@ -10690,11 +10695,38 @@ terminal like regular command line invocation of <code>async</code>.</p>
 <li><code>local_dir</code></li>
 <li><code>remote_dir</code></li>
 </ul>
-<p>For admin, if 1 or 2 arguments are provided they are mapped to:</p>
+<h2 data-number="19.2" id="sync-management-and-monitoring"><span
+class="header-section-number">19.2</span> Sync management and
+monitoring</h2>
+<p>Two commands are available for managing and monitoring sync
+sessions:</p>
+<ul>
+<li><code>sync admin</code>: Uses the utility <code>asyncadmin</code>,
+available only on server products.</li>
+<li><code>sync db</code>: Accesses directly the Async snap database
+(<code>snap.db</code>).</li>
+</ul>
+<p>For those commands, the user must provide the path to the database
+folder, i.e. a folder containing a subfolder named
+<code>.private-asp</code>. If this folder contains only one session
+information (i.e. a folder containing the <code>snap.db</code> file), it
+will be used by default. Else, the user must specify a session name.</p>
+<p>Like for synchronization, the user can provide some arguments
+directly on command line, or through a <code>Hash</code> in
+<code>conf</code> or <code>args</code> format.</p>
+<p>If 1 or 2 arguments are provided they are mapped to <code>conf</code>
+format:</p>
+<ul>
+<li><code>local</code>-&gt;<code>path</code></li>
+<li><code>name</code></li>
+</ul>
+<p>Or to <code>args</code> format:</p>
 <ul>
 <li><code>local_dir</code></li>
 <li><code>name</code></li>
 </ul>
+<p>If a common DB folder is used, the parameter
+<code>local_db_dir</code> can be used.</p>
 <h1 data-number="20" id="hot-folder"><span
 class="header-section-number">20</span> Hot folder</h1>
 <h2 data-number="20.1" id="requirements"><span
