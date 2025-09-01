@@ -21,7 +21,7 @@ module Aspera
     # x-cli-special  [Bool]         true if special handling (defered)
     # x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
     # x-agents       [Array]        Supported agents (for doc only), if not specified: all
-    # x-tspec        [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
+    # x-ts-name      [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
     # x-deprecation  [String]       Deprecation message for doc
     PROPERTY_KEYS = %w[
       description
@@ -38,7 +38,7 @@ module Aspera
       x-cli-special
       x-cli-convert
       x-agents
-      x-tspec
+      x-ts-name
       x-deprecation
     ].freeze
 

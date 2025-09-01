@@ -374,16 +374,16 @@ properties:
         description: Check it against server SSH host key fingerprint
         type: string
         default: ""
-        x-tspec: sshfp
+        x-ts-name: sshfp
       host:
         description: Use the specified host name or address of the remote host
         type: string
-        x-tspec: remote_host
+        x-ts-name: remote_host
       pass:
         description: Authenticate the transfer with the specified password
         type: string
         default: ""
-        x-tspec: remote_password
+        x-ts-name: remote_password
       path:
         description: Synchronize the specified directory on the remote host
         type: string
@@ -393,14 +393,14 @@ properties:
           is 'ssh'
         type: integer
         default: 22
-        x-tspec: ssh_port
+        x-ts-name: ssh_port
       ws_port:
         description:
           Use the specified port for Websocket. Used when connect_mode
           is 'ws'
         type: integer
         default: 9093
-        x-tspec: wss_port
+        x-ts-name: wss_port
       connect_mode:
         description: Define how to connect to the remote
         enum:
@@ -415,7 +415,7 @@ properties:
       proxy:
         description: Specify the address of the Aspera high-speed proxy server
         type: object
-        #x-tspec: proxy : TODO: conversion
+        #x-ts-name: proxy : TODO: conversion
         properties:
           host:
             description: Use the specified host name or address of the proxy
@@ -445,7 +445,7 @@ properties:
         description: Token string passed to server's authentication service
         type: string
         default: ""
-        x-tspec: token
+        x-ts-name: token
       token_node_user:
         description:
           Node API user identity associated with the token. Required
@@ -455,7 +455,7 @@ properties:
       user:
         description: Authenticate the transfer with the specified username
         type: string
-        x-tspec: remote_user
+        x-ts-name: remote_user
   remote_checksum_threads:
     description:
       Maximum number of threads to do checksum on the remote host.
@@ -620,7 +620,7 @@ properties:
     description: User-defined metadata tags
     type: object
     properties: {}
-    x-tspec: tags
+    x-ts-name: tags
   transfer_threads:
     description:
       Use the specified number of dedicated transfer threads to process
@@ -698,7 +698,7 @@ properties:
       target_rate:
         description: Transfer no faster than the specified rate (in bps)
         type: integer
-        default: "10000000"
+        default: 10000000
       write_block_size:
         description:
           Use the specified block size (in bytes) for writing. Default
