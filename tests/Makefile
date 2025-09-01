@@ -66,7 +66,7 @@ full: all interactive optional
 # just to test nagios, but those are tested in the respective plugins
 only_nagios: $(F)f4_nagios $(F)shares_nagios $(F)cons_nagios $(F)f5_nagios $(F)sadm_nagios_hsts $(F)serv_nagios_transfer $(F)nd_nagios
 
-only_sync_local: $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)aoc_sync_conf_pull $(F)aocfsync2 $(F)shares_sync
+only_sync_local: $(F)serv_sync_pull_args $(F)serv_sync_pull_conf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)shares_sync
 
 only_sync: tnsync tnsyncs only_sync_local
 
@@ -889,19 +889,19 @@ $(F)aocfv3inf: $(TMP_EXISTS)
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files v3 info
 	@$(STOP_TEST) $@
-$(F)aoc_sync_conf_pull: $(TMP_EXISTS)
+$(F)aoc_sync_pull_conf_parms: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull
-	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull
-	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aoc_sync_conf_pull /testdst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status $(TMP_SYNCS)aoc_sync_conf_pull
+	rm -fr $(TMP_SYNCS)aoc_sync_pull_conf_parms
+	mkdir -p $(TMP_SYNCS)aoc_sync_pull_conf_parms
+	$(INCMAN)$(CLI_TEST) aoc files sync start pull $(TMP_SYNCS)aoc_sync_pull_conf_parms /testdst --sync-info=@json:@extend:'{"reset":true,"quiet":false,"transport":{"target_rate":@preset:sync.bps@}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status $(TMP_SYNCS)aoc_sync_pull_conf_parms
 	@$(STOP_TEST) $@
-$(F)aocfsync2: $(TMP_EXISTS)
+$(F)aoc_sync_conf_pull_params: $(TMP_EXISTS)
 	@$(START_TEST) $@
-	rm -fr $(TMP_SYNCS)aocfsync2
-	mkdir -p $(TMP_SYNCS)aocfsync2
-	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aocfsync2"},"remote":{"path":"/testdst"}}'
-	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"$(TMP_SYNCS)aocfsync2"}}'
+	rm -fr $(TMP_SYNCS)aoc_sync_conf_pull_params
+	mkdir -p $(TMP_SYNCS)aoc_sync_conf_pull_params
+	$(INCMAN)$(CLI_TEST) aoc files sync start --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","reset":true,"direction":"pull","local":{"path":"$(TMP_SYNCS)aoc_sync_conf_pull_params"},"remote":{"path":"/testdst"}}'
+	$(INCMAN)$(CLI_TEST) aoc files sync admin status --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","local":{"path":"$(TMP_SYNCS)aoc_sync_conf_pull_params"}}'
 	@$(STOP_TEST) $@
 $(F)aoc_file_id_1: $(F)aocftr
 	@$(START_TEST) $@
@@ -976,7 +976,7 @@ $(F)aocshlk1: $(F)aocshlk2 $(F)aocshlk3
 	@$(START_TEST) $@
 	$(INCMAN)$(CLI_TEST) aoc files short_link /testdst private list
 	@$(STOP_TEST) $@
-$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_conf_pull $(F)aocfsync2 $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aocfxgw))
+$(eval $(call test_suite_all,taocf,$(F)aocfbr $(F)aocfbr1 $(F)aocfbt $(F)aocffin $(F)aoc_tstsrc $(F)aoc_tstdst $(F)aocfupl $(F)aocftr $(F)aocndinf $(F)aocfdel $(F)aocfbearnode $(F)aocfdownc $(F)aocfdowna $(F)aocfhttpd $(F)aocfv3inf $(F)aoc_sync_pull_conf_parms $(F)aoc_sync_conf_pull_params $(F)aoc_file_id_1 $(F)aoc_file_id_2 $(F)aoc_file_id_3 $(F)aoc_file_id_4 $(F)aoc_file_id_5 $(F)aoc_file_id_6 $(F)aoc_file_id_7 $(F)aoc_file_id_8 $(F)aoc_file_id_9 $(F)aocfpub $(F)aoc_lnk_priv $(F)aocshlk1 $(F)aocshlk2 $(F)aocshlk3 $(F)aocfxgw))
 #######################################################################################################################
 $(F)aoc_pack_send1: $(TMP_EXISTS)
 	@$(START_TEST) $@

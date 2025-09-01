@@ -1675,12 +1675,28 @@ $ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blah"}]' -
 
 #### Option: `multi_single`
 
-This option controls if object fields are displayed as columns or lines.
+This option controls how result fields are displayed as columns or lines, when option `format` is set to `table`.
+Default is `no`.
+There are two types of results that are affected by this option:
 
-If value is `no` (default), `object_list` are displayed with one object per line, with fields as columns (see above).
-`single_object` are displayed with one field per line (and columns are: `field`, `value`).
+| Result          | Description |
+|-----------------|-------------|
+| `single_object` | A single item with multiple fields. |
+| `object_list`   | A list of items, each with multiple fields. |
 
-If a `object_list` has a single element, it is possible to have `ascli` display the object as a single object (one field per line instead of columns) with option: `multi_single` set to `single`.
+An item (object) is displayed in one of those 2 ways:
+
+| Display    | rows   | columns |
+|------------|--------|---------|
+| Simple     | Fields | `field` and `value` |
+| Transposed | Items  | Fields  |
+
+The display of result is as follows:
+
+| Result          | `no`       | `yes`      | `single` |
+|-----------------|------------|------------|----------|
+| `single_object` | Simple     | Simple     | Simple   |
+| `object_list`   | Transposed | Simple<br/>(Multiple objects) | Simple if 1 object<br/>Transposed if 2+ objects |
 
 This parameter can be set as a global default with:
 
@@ -1688,10 +1704,33 @@ This parameter can be set as a global default with:
 ascli config preset set GLOBAL multi_single single
 ```
 
-In case multiple objects are returned, it is possible to display one table per object with option `multi_single` set to `yes`.
+Examples:
+
+Simulate a result by executing this command:
+
+```bash
+ascli config echo @json:'<json value here>' --multi-single=<no|yes|single>
+```
+
+Example 1: A list of one object
+
+```json
+[{"user":{"id":1,"name":"toto"},"project":"blash"}]
+```
+
+Display with `no` (Transposed):
 
 ```console
-$ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' --multi-single=yes
+╭─────────┬───────────┬─────────╮
+│ user.id │ user.name │ project │
+╞═════════╪═══════════╪═════════╡
+│ 1       │ toto      │ blash   │
+╰─────────┴───────────┴─────────╯
+```
+
+Display with `yes` and `single` (Simple):
+
+```console
 ╭───────────┬───────╮
 │ field     │ value │
 ╞═══════════╪═══════╡
@@ -1699,6 +1738,40 @@ $ ascli config echo @json:'[{"user":{"id":1,"name":"toto"},"project":"blash"}]' 
 │ user.name │ toto  │
 │ project   │ blash │
 ╰───────────┴───────╯
+```
+
+Example 2: A list of two objects:
+
+```json
+[{"id":1,"speed":111},{"id":"2","speed":222}]
+```
+
+Display with `no` and `single` (Transposed):
+
+```console
+╭────┬───────╮
+│ id │ speed │
+╞════╪═══════╡
+│ 1  │ 111   │
+│ 2  │ 222   │
+╰────┴───────╯
+```
+
+Display with `yes` (multiple Simple):
+
+```console
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ id    │ 1     │
+│ speed │ 111   │
+╰───────┴───────╯
+╭───────┬───────╮
+│ field │ value │
+╞═══════╪═══════╡
+│ id    │ 2     │
+│ speed │ 222   │
+╰───────┴───────╯
 ```
 
 #### Option: `display`: Verbosity of output
@@ -5825,9 +5898,9 @@ files short_link /testdst public create
 files show %id:aoc_file_id
 files show /
 files show testdst/test_file.bin
-files sync admin status --sync-info=@json:'{"name":"my_aoc_sync2","local":{"path":"/data/local_sync"}}'
+files sync admin status --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","local":{"path":"/data/local_sync"}}'
 files sync admin status /data/local_sync
-files sync start --sync-info=@json:'{"name":"my_aoc_sync2","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
+files sync start --sync-info=@json:'{"name":"aoc_sync_conf_pull_params","reset":true,"direction":"pull","local":{"path":"/data/local_sync"},"remote":{"path":"/testdst"}}'
 files sync start pull /data/local_sync /testdst --sync-info=@json:'{"reset":true,"quiet":false,"transport":{"target_rate":my_bps}}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query=@json:'{"text":true,"double":true}'
