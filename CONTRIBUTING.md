@@ -66,7 +66,7 @@ Build system uses GNU Make.
 
 ### Environment
 
-A few macros/envvars control some aspects:
+A few macros/env vars control some aspects:
 
 | macro                       | description                          |
 |-----------------------------|--------------------------------------|
@@ -108,6 +108,10 @@ tlmgr update --self
 tlmgr install fvextra selnolig lualatex-math
 ```
 
+To skip URL checking, set env var: `ASPERA_CLI_DOC_SKIP_LINK_CHECK`.
+
+To debug doc generation, set env var: `ASPERA_CLI_DOC_DEBUG=debug`.
+
 ## Running Tests
 
 First, a testing configuration file must be created.
@@ -120,7 +124,7 @@ cp docs/test_env.conf ~/some_secure_folder/.
 
 Fill `~/some_secure_folder/test_env.conf` with system URLs and credentials for tests.
 
-Then tell where this file is located:
+Then, tell where this file is located:
 
 ```bash
 export ASPERA_CLI_TEST_CONF_FILE=~/some_secure_folder/test_env.conf
