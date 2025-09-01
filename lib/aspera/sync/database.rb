@@ -4,7 +4,7 @@ require 'sqlite3'
 
 module Aspera
   module Sync
-    # builds command line arg for async and execute it
+    # Access Sync snapshot DB
     class Database
       def initialize(db_path)
         @db_path = db_path
@@ -21,30 +21,18 @@ module Aspera
         db&.close
       end
 
+      # Database structure
       def overview
         with_db do |db|
+          result = []
           tables = db.execute("SELECT name FROM sqlite_master WHERE type='table';")
-          if tables.empty?
-            puts 'No tables found in the database.'
-          else
-            puts "Tables in the database: #{tables}"
-            tables.each do |table_row|
-              table_name = table_row['name']
-              puts "  - #{table_name}"
-              # Execute a COUNT(*) query to get the number of rows
-              row_count = db.get_first_value("SELECT COUNT(*) FROM #{table_name};")
-              puts "    #{row_count} rows"
-              # Use PRAGMA table_info to get column information for each table
-              column_info = db.execute("PRAGMA table_info(#{table_name});")
-              puts '    Columns:'
-              column_info.each do |column|
-                # Column information is returned as an array: [cid, name, type, notnull, dflt_value, pk]
-                column_name = column['name']
-                column_type = column['type']
-                puts "      - #{column_name} (#{column_type})"
-              end
+          tables.each do |table_row|
+            table_name = table_row['name']
+            db.execute("PRAGMA table_info(#{table_name});").each do |column_info|
+              result.push({'table'=>table_name}.merge(column_info))
             end
           end
+          result
         end
       end
 
@@ -55,6 +43,7 @@ module Aspera
         end
       end
 
+      # Get all objects from table
       def full_table(table_name)
         with_db do |db|
           return db.execute("SELECT * FROM #{table_name}")

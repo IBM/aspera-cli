@@ -79,10 +79,13 @@ module Aspera
               result,
               fields: %w[sstate record_id f_meta_path message])
           when :overview
-            Sync::Database.new(
-              Sync::Operations.session_db_file(
-                Sync::Operations.validated_admin_info(
-                  *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).overview
+            return Main.result_object_list(
+              Sync::Database.new(
+                Sync::Operations.session_db_file(
+                  Sync::Operations.validated_admin_info(
+                    *sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS)))).overview,
+              fields: %w[table name type]
+            )
           else Aspera.error_unexpected_value(command2)
           end
         else Aspera.error_unexpected_value(command)
