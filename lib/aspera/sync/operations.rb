@@ -23,8 +23,11 @@ module Aspera
       # default direction for sync
       DEFAULT_DIRECTION = :push
       # JSON for async instance command line options
-      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, suffix: '/args_instance', folder: true)
-      SESSION_SCHEMA = CommandLineBuilder.read_schema(__FILE__, suffix: '/args_session', folder: true)
+      INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
+      SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
+      INSTANCE_SCHEMA['properties'].delete('sessions')
+      CommandLineBuilder.adjust_properties_defaults(INSTANCE_SCHEMA['properties'])
+      CommandLineBuilder.adjust_properties_defaults(SESSION_SCHEMA['properties'])
 
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
 
