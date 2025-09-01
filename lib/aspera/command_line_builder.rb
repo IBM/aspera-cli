@@ -13,19 +13,23 @@ module Aspera
     # type           [String,Array] Accepted type(s) for non-enum
     # default        [String]       Default value if not specified
     # enum           [Array]        Set with list of values for enum types accepted in transfer spec
+    # items          [Array]
+    # properties     [Array]
     # x-cli-envvar   [String]       Name of env var
     # x-cli-option   [String]       Command line option (starts with "-")
     # x-cli-switch   [Bool]         true if option has no arg, else by default option has a value
     # x-cli-special  [Bool]         true if special handling (defered)
     # x-cli-convert  [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
     # x-agents       [Array]        Supported agents (for doc only), if not specified: all
-    # x-tspec        [Bool,String]  (async) true if same name in transfer spec, else name in transfer spec, else ignored
+    # x-tspec        [Bool,String]  (async) true if same name in transfer spec, else real name in transfer spec, else ignored
     # x-deprecation  [String]       Deprecation message for doc
     PROPERTY_KEYS = %w[
       description
       type
       default
       enum
+      items
+      properties
       required
       $comment
       x-cli-envvar
@@ -51,7 +55,7 @@ module Aspera
       # fill default values
       def adjust_properties_defaults(properties)
         properties.each do |name, info|
-          Aspera.assert_type(info, Hash){name}
+          Aspera.assert_type(info, Hash){"#{info.class} for #{name}"}
           unsupported_keys = info.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
           # by default : string, unless it's without arg
