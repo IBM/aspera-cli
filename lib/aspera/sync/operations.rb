@@ -26,24 +26,12 @@ module Aspera
       INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
       SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
       INSTANCE_SCHEMA['properties'].delete('sessions')
+      CONF_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'conf')
       CommandLineBuilder.adjust_properties_defaults(INSTANCE_SCHEMA['properties'])
       CommandLineBuilder.adjust_properties_defaults(SESSION_SCHEMA['properties'])
+      CommandLineBuilder.adjust_properties_defaults(CONF_SCHEMA['properties'])
 
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
-
-      # Translation of transfer spec parameters to async v2 API (asyncs)
-      # TODO: complete this list with all transfer spec parameters or include in async json schema with x-tspec parameter
-      TSPEC_TO_ASYNC_CONF = {
-        'remote_host'     => 'remote.host',
-        'remote_user'     => 'remote.user',
-        'remote_password' => 'remote.pass',
-        'sshfp'           => 'remote.fingerprint',
-        'ssh_port'        => 'remote.port',
-        'wss_port'        => 'remote.ws_port',
-        'proxy'           => 'remote.proxy',
-        'token'           => 'remote.token',
-        'tags'            => 'tags'
-      }.freeze
 
       # Optional simple command line arguments for sync
       # in Array to keep order as on command line
@@ -90,7 +78,7 @@ module Aspera
       PRIVATE_FOLDER = '.private-asp'
       ASYNC_DB = 'snap.db'
 
-      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :TSPEC_TO_ASYNC_CONF, :ASYNC_ADMIN_EXECUTABLE
+      private_constant :INSTANCE_SCHEMA, :SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE
 
       class << self
         # Set `remote_dir` in sync parameters based on transfer spec
@@ -166,15 +154,7 @@ module Aspera
             # get transfer spec if possible, and feed back to new structure
             if block_given?
               transfer_spec = yield(direction_sym(sync_params), sync_params['local']['path'], remote['path'])
-              # translate transfer spec to async parameters
-              TSPEC_TO_ASYNC_CONF.each do |ts_param, sy_path|
-                next unless transfer_spec.key?(ts_param)
-                sy_dig = sy_path.split('.')
-                param = sy_dig.pop
-                hash = sy_dig.empty? ? sync_params : sync_params[sy_dig.first]
-                hash = sync_params[sy_dig.first] = {} if hash.nil?
-                hash[param] = transfer_spec[ts_param]
-              end
+              tspec_to_sync_info(transfer_spec, sync_params, CONF_SCHEMA)
               update_remote_dir(remote, 'path', transfer_spec)
             end
             remote['connect_mode'] ||= transfer_spec['wss_enabled'] ? 'ws' : 'ssh'
@@ -199,12 +179,7 @@ module Aspera
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
-                SESSION_SCHEMA['properties'].each do |name, properties|
-                  if properties.key?('x-tspec')
-                    tspec_param = properties['x-tspec'].is_a?(TrueClass) ? name : properties['x-tspec'].to_s
-                    session[name] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
-                  end
-                end
+                tspec_to_sync_info(transfer_spec, session, SESSION_SCHEMA)
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
               end
@@ -410,6 +385,26 @@ module Aspera
             db_file = File.join(private, name, ASYNC_DB)
             [name, db_file] if File.exist?(db_file)
           end.to_h
+        end
+
+        # private
+
+        # Transfer specification to synchronization information
+        # tag 'x-tspec' in schema is used to map transfer spec parameters to async sync_info
+        # @param transfer_spec [Hash] transfer specification
+        # @param sync_info [Hash] synchronization information
+        # @param schema [Hash] schema definition
+        def tspec_to_sync_info(transfer_spec, sync_info, schema)
+          schema['properties'].each do |name, property|
+            if property.key?('x-tspec')
+              tspec_param = property['x-tspec'].is_a?(TrueClass) ? name : property['x-tspec'].to_s
+              sync_info[name] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
+            end
+            if property['type'].eql?('object') && property.key?('properties')
+              sync_info[name] ||= {}
+              tspec_to_sync_info(transfer_spec, sync_info[name], property)
+            end
+          end
         end
       end
     end
