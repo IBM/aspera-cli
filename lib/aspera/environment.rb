@@ -35,7 +35,7 @@ module Aspera
 
     # "/" is invalid on both Unix and Windows, other are Windows special characters
     # See: https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    INVALID_FILENAME_CHARACTERS = '<>:"/\\|?*'
+    WINDOWS_FILENAME_INVALID_CHARACTERS = '<>:"/\\|?*'
     REPLACE_CHARACTER = '_'
 
     class << self
@@ -227,7 +227,7 @@ module Aspera
           :text
         end
       @url_method = @default_gui_mode
-      @file_illegal_characters = REPLACE_CHARACTER + INVALID_FILENAME_CHARACTERS
+      @file_illegal_characters = REPLACE_CHARACTER + WINDOWS_FILENAME_INVALID_CHARACTERS
       nil
     end
 
@@ -297,15 +297,29 @@ module Aspera
       end
     end
 
+    # Replacement character for illegal filename characters
+    # Can also be used as safe "join" character
+    def safe_filename_character
+      return REPLACE_CHARACTER if @file_illegal_characters.nil? || @file_illegal_characters.empty?
+      @file_illegal_characters[0]
+    end
+
     # Sanitize a filename by replacing illegal characters
     # @param filename [String] the original filename
-    # @return [String] the sanitized filename
+    # @return [String] A file name safe to use on file system
     def sanitized_filename(filename)
-      return filename if @file_illegal_characters.nil? || @file_illegal_characters.length < 2
-      replacement = @file_illegal_characters[0]
-      illegal_characters = @file_illegal_characters[1..-1]
-      pattern = Regexp.union(illegal_characters.chars)
-      filename.gsub(pattern, replacement)
+      safe_char = safe_filename_character
+      # Windows does not allow file name ending with space or dot
+      # nor control characters anywhere.
+      filename = filename
+        .gsub(/[\. ]+$/, safe_char)
+        .gsub(/[\x00-\x1F\x7F]/, safe_char)
+      if @file_illegal_characters&.size.to_i >= 2
+        # replace all illegal characters with safe_char
+        filename = filename.tr(@file_illegal_characters[1..-1], safe_char)
+      end
+      # ensure only one safe_char is used at a time
+      return filename.gsub(/#{Regexp.escape(safe_char)}+/, safe_char)
     end
   end
 end
