@@ -8,6 +8,7 @@ require 'aspera/command_line_converter'
 require 'aspera/command_line_builder'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/environment'
 require 'json'
 require 'base64'
 require 'open3'
@@ -270,22 +271,15 @@ module Aspera
             end
           end
 
-          # generate default session names if necessary
-          # check if name is already provided, else define an automatic one
+          # Check if name is already provided
+          # else generate one from local/remote paths
           if !session.key?('name')
-            # if no name is specified, generate one from simple arguments
-            session['name'] = SYNC_PARAMETERS.filter_map do |arg_info|
-              key_path = arg_info[info_type].split('.')
-              hash_for_key = session
-              if key_path.length > 1
-                first = key_path.shift
-                hash_for_key[first] ||= {}
-                hash_for_key = hash_for_key[first]
-              end
-              value = hash_for_key[key_path.last]
-              Aspera.assert(!value.nil?){"Missing value for #{key_path.last} to generate name"}
-              value&.split(File::SEPARATOR)&.last(2)&.join('_')&.gsub(/[^a-zA-Z0-9]+/, '_')
-            end.compact.join('_').gsub(/__+/, '_')
+            session['name'] = Environment.instance.sanitized_filename(
+              SYNC_PARAMETERS.filter_map do |arg_info|
+                value = session.dig(*arg_info[info_type].split('.'))
+                Aspera.assert(!value.nil?){"Missing value for #{arg_info[info_type]} to generate name"}
+                value.split(File::SEPARATOR).last(2).join(Environment.instance.safe_filename_character)
+              end.compact.join(Environment.instance.safe_filename_character))
           end
           return async_params
         end
