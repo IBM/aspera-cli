@@ -21,7 +21,7 @@ module Aspera
     # x-agents       [Array]        Supported agents (for doc only), if not specified: all
     # x-tspec        [Bool,String]  (async) true if same name in transfer spec, else name in transfer spec, else ignored
     # x-deprecation  [String]       Deprecation message for doc
-    SCHEMA_KEYS = %w[
+    PROPERTY_KEYS = %w[
       description
       type
       default
@@ -40,7 +40,7 @@ module Aspera
 
     CLI_AGENT = 'direct'
 
-    private_constant :SCHEMA_KEYS, :CLI_AGENT
+    private_constant :PROPERTY_KEYS, :CLI_AGENT
 
     class << self
       # @return true if given agent supports that field
@@ -48,22 +48,23 @@ module Aspera
         !properties.key?('x-agents') || properties['x-agents'].include?(agent)
       end
 
-      # Called by provider of definition before constructor of this class so that schema has all mandatory fields
-      def read_schema(source_path, suffix: nil, folder: false)
-        base = folder ? File.dirname(source_path) : source_path[0..-4]
-        schema = YAML.load_file("#{base}#{suffix}.schema.yaml")
-        schema['properties'].each do |name, properties|
-          Aspera.assert_type(properties, Hash){name}
-          unsupported_keys = properties.keys - SCHEMA_KEYS
+      # fill default values
+      def adjust_properties_defaults(properties)
+        properties.each do |name, info|
+          Aspera.assert_type(info, Hash){name}
+          unsupported_keys = info.keys - PROPERTY_KEYS
           Aspera.assert(unsupported_keys.empty?){"Unsupported definition keys: #{unsupported_keys}"}
           # by default : string, unless it's without arg
-          properties['type'] ||= properties['x-cli-switch'] ? 'boolean' : 'string'
+          info['type'] ||= info['x-cli-switch'] ? 'boolean' : 'string'
           # add default cli option name if not present, and if supported in "direct".
-          properties['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !properties.key?('x-cli-option') && !properties['x-cli-envvar'] && (properties.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, properties))
-          properties.freeze
+          info['x-cli-option'] = '--' + name.to_s.tr('_', '-') if !info.key?('x-cli-option') && !info['x-cli-envvar'] && (info.key?('x-cli-switch') || supported_by_agent(CLI_AGENT, info))
+          info.freeze
         end
-        schema['required'] = [] unless schema.key?('required')
-        schema.freeze
+      end
+
+      # Called by provider of definition before constructor of this class so that schema has all mandatory fields
+      def read_schema(source_path, name)
+        YAML.load_file(File.join(File.dirname(source_path), "#{name}.schema.yaml"))
       end
     end
 
@@ -83,7 +84,7 @@ module Aspera
     # Change required-ness of property in schema
     def required(name, required)
       if required
-        @schema['required'].push(name) unless @schema['required'].include?(name)
+        @schema['required'].push(name) unless @schema['required']&.include?(name)
       else
         @schema['required'].delete(name)
       end
@@ -132,7 +133,7 @@ module Aspera
         return
       end
       # check mandatory parameter (nil is valid value), TODO: change exception ?
-      raise Transfer::Error, "Missing mandatory parameter: #{name}" if @schema['required'].include?(name) && !properties['x-cli-special'] && !@object.key?(name)
+      raise Transfer::Error, "Missing mandatory parameter: #{name}" if @schema['required']&.include?(name) && !properties['x-cli-special'] && !@object.key?(name)
       parameter_value = @object[name]
       # no default setting
       # parameter_value=properties['default'] if parameter_value.nil? and properties.has_key?('default')
@@ -145,7 +146,7 @@ module Aspera
           when 'object' then [Hash]
           when 'integer' then [Integer]
           when 'boolean' then [TrueClass, FalseClass]
-          else Aspera.error_unexpected_value(properties['type'])
+          else Aspera.error_unexpected_value(properties['type']){"Property #{name}"}
           end
         end.flatten
       # check that value is of expected type
