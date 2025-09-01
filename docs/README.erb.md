@@ -7271,10 +7271,17 @@ The general idea is to rely on :
 
 Interesting `ascp` features are found in its arguments: (see `ascp` manual):
 
-- `ascp` already takes care of sending only **new** files: option `-k 1,2,3` (`resume_policy`)
-- `ascp` has some options to remove or move files after transfer: `--remove-after-transfer`, `--move-after-transfer`, `--remove-empty-directories` (`remove_after_transfer`, `move_after_transfer`, `remove_empty_directories`)
-- `ascp` has an option to send only files not modified since the last X seconds: `--exclude-newer-than`, `--exclude-older-than` (`exclude_newer_than`,`exclude_older_than`)
-- `--src-base` (`src_base`) if top level folder name shall not be created on destination
+- Sending only **new** files
+  - option `-k 1,2,3` (`resume_policy`)
+- Remove or move files after transfer:
+  - `--remove-after-transfer` (`remove_after_transfer`)
+  - `--move-after-transfer` (`move_after_transfer`)
+  - `--remove-empty-directories` (`remove_empty_directories`)
+- Send only files not modified since the last X seconds:
+  - `--exclude-newer-than` (`exclude_newer_than`)
+  - `--exclude-older-than` (`exclude_older_than`)
+- Top level folder shall not be created on destination
+  - `--src-base` (`src_base`)
 
 > **Note:** <%=tool%> takes transfer parameters exclusively as a [**transfer-spec**](#transfer-specification), with `ts` option.
 >
