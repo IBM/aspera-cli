@@ -89,7 +89,7 @@ module Aspera
       end
 
       # add other transfer spec parameters
-      def option_transfer_spec_deep_merge(ts); @transfer_spec_command_line.deep_merge!(ts); end
+      def option_transfer_spec_deep_merge(value); @transfer_spec_command_line.deep_merge!(value); end
 
       attr_reader :transfer_info
 
