@@ -390,14 +390,14 @@ module Aspera
         # private
 
         # Transfer specification to synchronization information
-        # tag 'x-tspec' in schema is used to map transfer spec parameters to async sync_info
+        # tag 'x-ts-name' in schema is used to map transfer spec parameters to async sync_info
         # @param transfer_spec [Hash] transfer specification
         # @param sync_info [Hash] synchronization information
         # @param schema [Hash] schema definition
         def tspec_to_sync_info(transfer_spec, sync_info, schema)
           schema['properties'].each do |name, property|
-            if property.key?('x-tspec')
-              tspec_param = property['x-tspec'].is_a?(TrueClass) ? name : property['x-tspec'].to_s
+            if property.key?('x-ts-name')
+              tspec_param = property['x-ts-name']
               sync_info[name] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
             end
             if property['type'].eql?('object') && property.key?('properties')

@@ -36,10 +36,10 @@ properties:
           type: string
         host:
           type: string
-          x-tspec: remote_host
+          x-ts-name: remote_host
         user:
           type: string
-          x-tspec: remote_user
+          x-ts-name: remote_user
         private_key_paths:
           type: array
           x-cli-option: "--private-key-path"
@@ -51,10 +51,10 @@ properties:
           type: object
           x-cli-option: "--tags64"
           x-cli-convert: json64
-          x-tspec: true
+          x-ts-name: tags
         tcp_port:
           type: integer
-          x-tspec: ssh_port
+          x-ts-name: ssh_port
         rate_policy:
           type: string
         target_rate:
@@ -68,35 +68,35 @@ properties:
         cipher:
           type: string
           x-cli-convert: remove_hyphen
-          x-tspec: true
+          x-ts-name: cipher
         transfer_threads:
           type: integer
         preserve_time:
           x-cli-switch: true
-          x-tspec: preserve_times
+          x-ts-name: preserve_times
         preserve_access_time:
           x-cli-switch: true
         preserve_modification_time:
           x-cli-switch: true
         preserve_uid:
           x-cli-switch: true
-          x-tspec: preserve_file_owner_uid
+          x-ts-name: preserve_file_owner_uid
         preserve_gid:
           x-cli-switch: true
-          x-tspec: preserve_file_owner_gid
+          x-ts-name: preserve_file_owner_gid
         create_dir:
           x-cli-switch: true
-          x-tspec: true
+          x-ts-name: create_dir
         reset:
           x-cli-switch: true
         remote_password:
           x-cli-envvar: ASPERA_SCP_PASS
-          x-tspec: true
+          x-ts-name: remote_password
         cookie:
           x-cli-envvar: ASPERA_SCP_COOKIE
-          x-tspec: true
+          x-ts-name: cookie
         token:
           x-cli-envvar: ASPERA_SCP_TOKEN
-          x-tspec: true
+          x-ts-name: token
         license:
           x-cli-envvar: ASPERA_SCP_LICENSE
