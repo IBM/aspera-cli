@@ -225,16 +225,16 @@ module Aspera
       # This is the low level method to start the transfer process.
       # Typically started in a thread.
       # Start process with management port.
-      # @param session this session information, keys :io and :token_regenerator
-      # @param env  [Hash]   environment variables (comes from ascp_args)
-      # @param name [Symbol] name of executable: :ascp, :ascp4 or :async (comes from ascp_args)
-      # @param args [Array]  command line arguments (comes from ascp_args)
+      # @param session [Hash]   This session information, keys :io and :token_regenerator
+      # @param name    [Symbol] Name of executable: :ascp, :ascp4 or :async (comes from ascp_args)
+      # @param env     [Hash]   Environment variables (comes from ascp_args)
+      # @param args    [Array]  Command line arguments (comes from ascp_args)
       # @return [nil] when process has exited
       # @throw FaspError on error
       def start_and_monitor_process(
         session:,
-        env:,
         name:,
+        env:,
         args:
       )
         Aspera.assert_type(session, Hash)
