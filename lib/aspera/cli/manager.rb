@@ -75,6 +75,7 @@ module Aspera
 
         # find shortened string value in allowed symbol list
         def get_from_list(short_value, descr, allowed_values)
+          Aspera.assert_type(short_value, String)
           # we accept shortcuts
           matching_exact = allowed_values.select{ |i| i.to_s.eql?(short_value)}
           return matching_exact.first if matching_exact.length == 1
