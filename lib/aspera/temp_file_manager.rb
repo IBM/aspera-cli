@@ -8,12 +8,13 @@ module Aspera
   # create a temp file name for a given folder
   # files can be deleted on process exit by calling cleanup
   class TempFileManager
+    include Singleton
+
     SEC_IN_DAY = 86_400
     # assume no transfer last longer than this
     # (garbage collect file list which were not deleted after transfer)
     FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
     private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
-    include Singleton
 
     attr_accessor :cleanup_on_exit
 
