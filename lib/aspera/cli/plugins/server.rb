@@ -10,9 +10,6 @@ require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
-require 'tempfile'
-require 'open3'
-
 module Aspera
   module Cli
     module Plugins
@@ -216,18 +213,13 @@ module Aspera
             command_nagios = options.get_next_command(%i[transfer])
             case command_nagios
             when :transfer
-              file = Tempfile.new('transfer_test')
-              filepath = file.path
-              file.write('This is a test file for transfer test')
-              file.close
               probe_ts = server_transfer_spec.merge({
                 'direction'     => 'send',
                 'cookie'        => 'aspera.sync', # hide in console
                 'resume_policy' => 'none',
-                'paths'         => [{'source' => filepath, 'destination' => '.fasping'}]
+                'paths'         => [{'source' => 'faux:///pingfile?1k', 'destination' => '.fasping'}]
               })
               statuses = transfer.start(probe_ts)
-              file.unlink
               if TransferAgent.session_status(statuses).eql?(:success)
                 nagios.add_ok('transfer', 'ok')
               else
