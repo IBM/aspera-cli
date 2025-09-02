@@ -81,7 +81,7 @@ module Aspera
         # Start the sync process
         # @param sync_params [Hash] sync parameters, old or new format
         # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
-        def start(sync_params)
+        def start(sync_params, opt_ts = nil)
           Log.log.debug{Log.dump(:sync_params_initial, sync_params)}
           Aspera.assert_type(sync_params, Hash)
           env_args = {
@@ -97,6 +97,7 @@ module Aspera
             # get transfer spec if possible, and feed back to new structure
             if block_given?
               transfer_spec = yield(direction_sym(sync_params), sync_params['local']['path'], remote['path'])
+              transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
               tspec_to_sync_info(transfer_spec, sync_params, CONF_SCHEMA)
               update_remote_dir(remote, 'path', transfer_spec)
             end
@@ -122,6 +123,7 @@ module Aspera
                 Aspera.assert_type(session['local_dir'], String){'local_dir'}
                 Aspera.assert_type(session['remote_dir'], String){'remote_dir'}
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
+                transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
                 tspec_to_sync_info(transfer_spec, session, SESSION_SCHEMA)
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
@@ -262,10 +264,13 @@ module Aspera
         # @param sync_info [Hash] synchronization information
         # @param schema [Hash] schema definition
         def tspec_to_sync_info(transfer_spec, sync_info, schema)
+          Log.log.debug{Log.dump(:tspec_to_sync_info, transfer_spec)}
           schema['properties'].each do |name, property|
             if property.key?('x-ts-name')
               tspec_param = property['x-ts-name']
-              sync_info[name] ||= transfer_spec[tspec_param] if transfer_spec.key?(tspec_param)
+              if transfer_spec.key?(tspec_param) && !sync_info.key?(name)
+                sync_info[name] = property['x-ts-convert'] ? CommandLineConverter.send(property['x-ts-convert'], transfer_spec[tspec_param]) : transfer_spec[tspec_param]
+              end
             end
             if property['type'].eql?('object') && property.key?('properties')
               sync_info[name] ||= {}

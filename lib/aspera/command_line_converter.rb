@@ -22,6 +22,10 @@ module Aspera
         else Aspera.error_unexpected_value(value){'only: yes or no: '}
         end
       end
+
+      def kbps_to_bps(value)
+        1000 * value
+      end
     end
   end
 end

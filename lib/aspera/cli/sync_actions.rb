@@ -89,7 +89,7 @@ module Aspera
         # try to get 3 arguments as simple arguments
         case command
         when *Sync::Operations::DIRECTIONS
-          Sync::Operations.start(async_info_from_args(direction: command), &block)
+          Sync::Operations.start(async_info_from_args(direction: command), transfer.option_transfer_spec, &block)
           return Main.result_success
         when :admin
           command2 = options.get_next_command(%i[status find meta counters file_info overview])

@@ -6,8 +6,9 @@
     * `sync`: Added operations on sync database with command: `db`.
     * `http_options`: New field `ssl_options` allows setting SSL Context options.
     * `console`: Added support for extended filters in transfer queries.
-    * **global**: New option `invalid_characters`.
+    * **global**: New option `invalid_characters` ensures generated file names are valid.
     * `aoc`: Option `package_folder` allows specification of secondary field.
+    * `sync`: Sync operations now use options `ts` and `to_folder`.
   * Issues Fixed:
     * JRuby: Modified tests and documentation for special SSH options.
     * `transferd`: Fixed discrepancies in transfer spec resume policies.
@@ -18,7 +19,7 @@
     * `ssh_options` : Now additive option, like `ts`.
     * `vault`: When creating an entry, the `label` field is now part of the creation Hash.
     * `console`: Replaced options `filter_from` and `filter_to` with standard option `query`.
-    * `sync`: Streamlined command line interface. Applies to all plugins with `sync` command.
+    * `sync`: Removed option `sync_info`. Streamlined command line interface. Applies to all plugins with `sync` command.
 
 * 4.23.0 2025-08-11
 
