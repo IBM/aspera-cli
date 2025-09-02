@@ -7347,7 +7347,7 @@ OK - [transfer:ok]
 The `smtp` option is a `Hash` (extended value) with the following fields:
 
 <!-- markdownlint-disable MD034 -->
-| field        | Default             | example                    | Description                      |
+| Field        | Default             | Example                    | Description                      |
 |--------------|---------------------|----------------------------|----------------------------------|
 | `server`     | -                   | `smtp.gmail.com`           | SMTP server address              |
 | `tls`        | `true`              | `true`                     | Enable `STARTTLS` (port 587)     |
