@@ -7,6 +7,7 @@ module Aspera
   module Cli
     # Module for sync actions
     module SyncActions
+      # translate state id (int) to string
       STATE_STR = (['Nil'] +
         (1..18).map{ |i| "P(#{i})"} +
         %w[Syncd Error Confl Pconf] +

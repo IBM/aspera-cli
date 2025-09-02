@@ -22,7 +22,7 @@ module Aspera
       DIRECTIONS = %i[push pull bidi].freeze
       # default direction for sync
       DEFAULT_DIRECTION = :push
-      # JSON for async instance command line options
+      # Read JSON schema and mapping to command line options
       INSTANCE_SCHEMA = CommandLineBuilder.read_schema(__FILE__, 'args')
       SESSION_SCHEMA = INSTANCE_SCHEMA['properties']['sessions']['items']
       INSTANCE_SCHEMA['properties'].delete('sessions')
