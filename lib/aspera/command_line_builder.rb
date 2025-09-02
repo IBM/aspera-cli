@@ -154,7 +154,7 @@ module Aspera
           end
         end.flatten
       # check that value is of expected type
-      raise Transfer::Error, "#{name} is : #{parameter_value.class} (#{parameter_value}), shall be #{properties['type']}, " \
+      raise Transfer::Error, "#{name} is #{parameter_value.class} (#{parameter_value}), shall be #{properties['type']}, " \
         unless parameter_value.nil? || expected_classes.include?(parameter_value.class)
       # special processing will be requested with type get_value
       @processed_parameters.push(name) if !properties['x-cli-special'] || read
