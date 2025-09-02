@@ -348,8 +348,8 @@ $(F)serv_sync_pull_args: $(F)serv_upload1 $(F)serv_upload2 $(F)serv_upload3 $(F)
 	mkdir -p $(TMP_SYNCS)serv_sync_pull_args
 	$(INCMAN)$(CLI_TEST) server sync start --sync-info=@json:@extend:'{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","direction":"pull","remote_dir":"@preset:server.inside_folder@","local_dir":"$(TMP_SYNCS)serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
 	$(INCMAN)$(CLI_TEST) server sync admin status --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
-	$(INCMAN)$(CLI_TEST) server sync db meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
-	$(INCMAN)$(CLI_TEST) server sync db counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(INCMAN)$(CLI_TEST) server sync admin meta --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
+	$(INCMAN)$(CLI_TEST) server sync admin counters --sync-info=@json:'{"sessions":[{"name":"serv_sync_pull_args","local_dir":"$(TMP_SYNCS)serv_sync_pull_args"}]}'
 	@$(STOP_TEST) $@
 $(F)serv_sync_pull_conf: $(F)serv_sync_pull_args
 	@$(START_TEST) $@

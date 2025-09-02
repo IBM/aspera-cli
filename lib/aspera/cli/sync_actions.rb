@@ -5,7 +5,7 @@ require 'aspera/assert'
 
 module Aspera
   module Cli
-    # Module for sync actions
+    # Manage command line arguments to provide to Sync::Run, Sync::Database and Sync::Operations
     module SyncActions
       # translate state id (int) to string
       STATE_STR = (['Nil'] +
@@ -40,23 +40,18 @@ module Aspera
       # Execute sync action
       # @param &block [nil, Proc] block to generate transfer spec, takes: direction (one of DIRECTIONS), local_dir, remote_dir
       def execute_sync_action(&block)
-        command = options.get_next_command(%i[start admin db])
+        command = options.get_next_command(%i[start admin])
         # try to get 3 arguments as simple arguments
         case command
         when :start
           Sync::Operations.start(Sync::Operations.validated_sync_info(*sync_info_from_cli(Sync::Operations::SYNC_PARAMETERS)), &block)
           return Main.result_success
         when :admin
-          command2 = options.get_next_command(%i[status])
+          command2 = options.get_next_command(%i[status find meta counters file_info overview])
+          require 'aspera/sync/database' unless command2.eql?(:status)
           case command2
           when :status
             return Main.result_single_object(Sync::Operations.admin_status(Sync::Operations.validated_admin_info(*sync_info_from_cli(Sync::Operations::ADMIN_PARAMETERS))))
-          else Aspera.error_unexpected_value(command2)
-          end
-        when :db
-          command2 = options.get_next_command(%i[overview find meta counters file_info])
-          require 'aspera/sync/database'
-          case command2
           when :find
             folder = options.get_next_argument('path')
             dbs = Sync::Operations.list_db_files(folder)
